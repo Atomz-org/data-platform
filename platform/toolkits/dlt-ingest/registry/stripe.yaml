@@ -1,0 +1,11 @@
+name: stripe
+kind: verified
+dlt_init_name: stripe_analytics
+resources:
+  charges:       { concept: Payment,      incremental: created }
+  customers:     { concept: Customer,     incremental: created }
+  subscriptions: { concept: Subscription, incremental: created }
+secrets: [stripe_api_key]
+notes: |
+  amounts arrive in minor units; divide by 100 in staging.
+  `status` enum drifts when Stripe adds states — the status_enum monitor catches it.

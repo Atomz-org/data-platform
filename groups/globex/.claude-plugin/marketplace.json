@@ -1,0 +1,7 @@
+{
+  "name": "globex",
+  "owner": { "name": "globex" },
+  "plugins": [
+    { "name": "globex-group", "source": "./.claude", "description": "globex group skills" }
+  ]
+}

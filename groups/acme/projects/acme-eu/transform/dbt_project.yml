@@ -1,0 +1,23 @@
+name: 'acme_eu'
+version: '1.0.0'
+config-version: 2
+profile: 'acme_eu'
+
+model-paths: ["models"]
+# The platform cleaning macros are loaded as root-project macros, not as a
+# package: `pf gen-staging` emits unqualified `{{ pf_clean(...) }}` and pf_clean
+# dispatches to its `clean_*` siblings unqualified too. dbt namespaces package
+# macros, so a `pf.`-prefixed call would still fail on the inner dispatch.
+macro-paths: ["macros", "../../../../../platform/dbt/macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: "target"
+
+models:
+  acme_eu:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

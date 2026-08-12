@@ -1,0 +1,47 @@
+version: 2
+metrics:
+  - name: revenue
+    label: Revenue
+    description: Net revenue — succeeded payments only. The single definition.
+    type: simple
+    type_params: {measure: payment_amount}
+    filter: "{{ Dimension('payment__payment_status') }} = 'succeeded'"
+
+  - name: gross_payment_volume
+    label: Gross Payment Volume
+    description: All payment attempts regardless of outcome.
+    type: simple
+    type_params: {measure: payment_amount}
+
+  - name: payment_count
+    label: Payments
+    description: Count of succeeded payments.
+    type: simple
+    type_params: {measure: payment_count}
+    filter: "{{ Dimension('payment__payment_status') }} = 'succeeded'"
+
+  - name: aov
+    label: Average Order Value
+    description: Revenue divided by succeeded payment count.
+    type: ratio
+    type_params:
+      numerator: revenue
+      denominator: payment_count
+
+  - name: revenue_mom_growth
+    label: Revenue MoM Growth
+    description: Month-over-month change in net revenue.
+    type: derived
+    type_params:
+      expr: (revenue - revenue_prev) / nullif(revenue_prev, 0)
+      metrics:
+        - name: revenue
+        - name: revenue
+          offset_window: 1 month
+          alias: revenue_prev
+
+  - name: active_customers
+    label: Active Customers
+    description: Customers with at least one active subscription.
+    type: simple
+    type_params: {measure: active_customer_count}

@@ -1,0 +1,15 @@
+acme_eu:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      threads: 4
+    ci:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      threads: 8
+    prod:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      threads: 8

@@ -1,0 +1,38 @@
+version: 2
+semantic_models:
+  - name: payments
+    description: Payment events. agg_time_dimension derives from the event_time role.
+    model: ref('fct_payments')
+    defaults:
+      agg_time_dimension: paid_at
+    entities:
+      - {name: payment, type: primary, expr: payment_id}
+      - {name: customer, type: foreign, expr: customer_id}
+    dimensions:
+      - name: paid_at
+        type: time
+        type_params: {time_granularity: day}
+      - {name: payment_status, type: categorical}
+      - {name: customer_segment, type: categorical}
+      - {name: plan_tier, type: categorical}
+      - {name: country_code, type: categorical}
+    measures:
+      - {name: payment_amount, agg: sum, expr: amount, agg_time_dimension: paid_at}
+      - {name: payment_count, agg: count, expr: payment_id, agg_time_dimension: paid_at}
+
+  - name: customers
+    description: Customer dimension.
+    model: ref('dim_customers')
+    defaults:
+      agg_time_dimension: created_at
+    entities:
+      - {name: customer, type: primary, expr: customer_id}
+    dimensions:
+      - name: created_at
+        type: time
+        type_params: {time_granularity: day}
+      - {name: customer_segment, type: categorical}
+      - {name: country_code, type: categorical}
+    measures:
+      - {name: customer_count, agg: count_distinct, expr: customer_id, agg_time_dimension: created_at}
+      - {name: active_customer_count, agg: sum, expr: "case when is_active then 1 else 0 end", agg_time_dimension: created_at}

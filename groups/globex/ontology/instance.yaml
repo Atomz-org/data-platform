@@ -1,0 +1,12 @@
+# Ontology instance for globex — which platform classes this group models.
+# Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
+group: globex
+domain: ecommerce
+classes:
+  - Customer
+  - Order
+  - Payment
+  - Refund
+  - Product
+  - Location
+shared_sources: []

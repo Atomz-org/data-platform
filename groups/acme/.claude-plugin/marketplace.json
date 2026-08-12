@@ -1,0 +1,7 @@
+{
+  "name": "acme",
+  "owner": { "name": "acme" },
+  "plugins": [
+    { "name": "acme-group", "source": "./.claude", "description": "acme group skills" }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "extraKnownMarketplaces": {
+    "platform": { "source": { "source": "../../../../platform" } },
+    "acme": { "source": { "source": "../.." } }
+  },
+  "enabledPlugins": [
+    "platform-init@platform",
+    "dlt-ingest@platform",
+    "dlt-quality@platform",
+    "dlt-explore@platform",
+    "duckdb-ops@platform",
+    "dbt-modeling@platform",
+    "dbt-semantic@platform",
+    "dbt-testing@platform",
+    "dbt-govern@platform",
+    "dagster-orchestrate@platform",
+    "python-standards@platform",
+    "acme-group@acme"
+  ],
+  "permissions": {
+    "deny": ["Read(../*/src/**)", "Read(../../../*/projects/**)"],
+    "allow": [
+      "Bash(uv run pf:*)",
+      "Bash(dbt parse:*)", "Bash(dbt ls:*)", "Bash(dbt build:*)", "Bash(dbt test:*)",
+      "Bash(mf query:*)", "Bash(mf list:*)"
+    ]
+  }
+}

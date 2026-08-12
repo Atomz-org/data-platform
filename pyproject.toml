@@ -1,0 +1,24 @@
+[project]
+name = "data-platform"
+version = "0.1.0"
+description = "Agentic data platform: shared infra, per-company projects"
+requires-python = ">=3.11,<3.13"
+dependencies = ["pf"]
+
+[tool.uv.workspace]
+members = ["platform", "groups/*/projects/*"]
+
+[tool.uv.sources]
+pf = { workspace = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=8", "ruff>=0.6",
+  "dlt[duckdb]>=1.4",
+  "dbt-core>=1.9",
+  "dbt-duckdb>=1.9",
+  # 1.10+ required: `pool=` on @asset (the per-project writer lock) landed there
+  "dagster>=1.10",
+  "dagster-webserver>=1.10",
+  "dagster-dbt>=0.26",
+]

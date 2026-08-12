@@ -1,0 +1,11 @@
+version: 2
+saved_queries:
+  - name: exec_weekly
+    description: Feeds the exec dashboard. Materialized so BI reads a table but
+      the numbers still derive from the single metric definitions.
+    query_params:
+      metrics: [revenue, aov, payment_count]
+      group_by: ["TimeDimension('metric_time', 'week')", "Dimension('payment__customer_segment')"]
+    exports:
+      - name: exec_weekly_summary
+        config: {export_as: table, schema: reporting}

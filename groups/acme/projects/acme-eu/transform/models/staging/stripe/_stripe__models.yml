@@ -1,0 +1,87 @@
+version: 2
+
+models:
+  - name: stg_stripe__charges
+    description: >
+      Stripe charge events — the revenue source of record. Cleaned 1:1 from `stripe.charges`; grain: one payment attempt.
+    meta:
+      concept: Payment
+      grain: one payment attempt
+      layer: staging
+    columns:
+      - name: payment_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: amount
+        meta: {role: money_amount}
+        data_tests: [not_null]
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: payment_status
+        meta: {role: status_enum}
+      - name: paid_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: receipt_email
+        meta: {role: pii_email, pii: true}
+      - name: customer_id
+        description: Foreign key to Customer.
+        meta: {role: foreign_key, links_to: Customer}
+      - name: subscription_id
+        description: Foreign key to Subscription.
+        meta: {role: foreign_key, links_to: Subscription}
+
+  - name: stg_stripe__customers
+    description: >
+      Stripe customers for the EU entity. Cleaned 1:1 from `stripe.customers`; grain: one customer account.
+    meta:
+      concept: Customer
+      grain: one customer account
+      layer: staging
+    columns:
+      - name: customer_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: customer_email
+        meta: {role: pii_email, pii: true}
+      - name: customer_name
+        meta: {role: pii_name, pii: true}
+      - name: country_code
+        meta: {role: geo_country}
+      - name: customer_segment
+        meta: {role: status_enum}
+      - name: created_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: organization_id
+        description: Foreign key to Organization.
+        meta: {role: foreign_key, links_to: Organization}
+
+  - name: stg_stripe__subscriptions
+    description: >
+      Active and churned subscriptions. Cleaned 1:1 from `stripe.subscriptions`; grain: one subscription.
+    meta:
+      concept: Subscription
+      grain: one subscription
+      layer: staging
+    columns:
+      - name: subscription_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: plan_tier
+        meta: {role: status_enum}
+      - name: subscription_status
+        meta: {role: status_enum}
+      - name: mrr_amount
+        meta: {role: money_amount}
+        data_tests: [not_null]
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: started_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: canceled_at
+        meta: {role: valid_to}
+      - name: customer_id
+        description: Foreign key to Customer.
+        meta: {role: foreign_key, links_to: Customer}

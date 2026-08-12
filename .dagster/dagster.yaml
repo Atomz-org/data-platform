@@ -1,0 +1,18 @@
+# Dagster instance config. DAGSTER_HOME points here.
+#
+# The pools block is load-bearing: every writing asset is tagged with a
+# per-project pool (`duckdb_writer_<project>`) limited to 1. That is what lets
+# sister companies run in parallel while respecting DuckDB's single-writer lock.
+#
+# `runs` and `pools` must both live under `concurrency` — setting
+# run_coordinator.max_concurrent_runs alongside them is rejected as of 1.13.
+
+telemetry:
+  enabled: false
+
+concurrency:
+  runs:
+    max_concurrent_runs: 8
+  pools:
+    granularity: run
+    default_limit: 1

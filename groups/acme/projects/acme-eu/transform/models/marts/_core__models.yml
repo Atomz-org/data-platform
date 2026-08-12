@@ -1,0 +1,52 @@
+version: 2
+models:
+  - name: dim_customers
+    description: Customer dimension with subscription rollups.
+    access: public
+    meta: {grain: one customer}
+    columns:
+      - name: customer_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: customer_segment
+        description: Sales segment. Drives most reporting cuts.
+
+  - name: fct_payments
+    description: Payment fact at attempt grain, enriched with customer and plan.
+    access: public
+    meta: {grain: one payment attempt}
+    columns:
+      - name: payment_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: amount
+        meta: {role: money_amount}
+      - name: paid_at
+        meta: {role: event_time}
+
+  - name: fct_revenue
+    description: Daily revenue by segment and plan. Union-compatible across sisters.
+    access: public
+    meta: {grain: one day x segment x plan}
+    columns:
+      - name: revenue_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: net_amount
+        meta: {role: money_amount}
+
+exposures:
+  - name: exec_weekly_dashboard
+    type: dashboard
+    maturity: high
+    url: https://bi.internal/acme/exec-weekly
+    description: Weekly exec revenue review. Read by the CFO every Monday.
+    depends_on: [ref('fct_revenue'), ref('dim_customers')]
+    owner: {name: Finance, email: finance@acme.example}
+
+  - name: crm_customer_sync
+    type: application
+    maturity: medium
+    description: Reverse-ETL of customer health back into the CRM.
+    depends_on: [ref('dim_customers')]
+    owner: {name: RevOps, email: revops@acme.example}

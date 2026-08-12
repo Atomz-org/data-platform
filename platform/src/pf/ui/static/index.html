@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Platform — Control Plane</title>
+<style>
+:root {
+  color-scheme: light;
+  --surface-0: #f4f3f0;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0efec;
+  --border:    #e0dfda;
+  --text-primary:   #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted:     #85837c;
+  --accent: #2a78d6;
+  /* ordinal layer ramp — validated light, one hue, monotone L */
+  --layer-0: #86b6ef; --layer-1: #5598e7; --layer-2: #2a78d6;
+  --layer-3: #1c5cab; --layer-4: #104281;
+  /* status — fixed, never themed */
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-0: #111110; --surface-1: #1a1a19; --surface-2: #232322;
+    --border: #383835;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #8b8a82;
+    --accent: #3987e5;
+    --layer-0: #9ec5f4; --layer-1: #6da7ec; --layer-2: #3987e5;
+    --layer-3: #256abf; --layer-4: #184f95;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-0: #111110; --surface-1: #1a1a19; --surface-2: #232322;
+  --border: #383835;
+  --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #8b8a82;
+  --accent: #3987e5;
+  --layer-0: #9ec5f4; --layer-1: #6da7ec; --layer-2: #3987e5;
+  --layer-3: #256abf; --layer-4: #184f95;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--surface-0); color: var(--text-primary);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+}
+header {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 14px 20px; background: var(--surface-1);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20;
+}
+h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+h1 span { color: var(--text-muted); font-weight: 400; }
+.spacer { flex: 1; }
+select, button, input {
+  font: inherit; color: var(--text-primary); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+nav { display: flex; gap: 2px; padding: 0 20px; background: var(--surface-1);
+      border-bottom: 1px solid var(--border); overflow-x: auto; }
+nav button {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  border-radius: 0; padding: 10px 14px; color: var(--text-secondary); white-space: nowrap;
+}
+nav button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--accent); font-weight: 600; }
+main { padding: 20px; max-width: 1500px; margin: 0 auto; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; margin-bottom: 16px;
+}
+.card > h2 { font-size: 13px; margin: 0 0 12px; font-weight: 600;
+             text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.kpi .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); }
+.kpi .value { font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 4px; letter-spacing: -0.02em; }
+.kpi .sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase;
+     letter-spacing: 0.05em; color: var(--text-muted); padding: 8px 10px;
+     border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface-1); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-2); }
+.scroll { overflow-x: auto; max-height: 620px; overflow-y: auto; }
+code, .mono { font-family: var(--mono); font-size: 12px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px;
+        border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); }
+.pill.good     { color: var(--good);     border-color: var(--good); }
+.pill.warning  { color: var(--warning);  border-color: var(--warning); }
+.pill.serious  { color: var(--serious);  border-color: var(--serious); }
+.pill.critical { color: var(--critical); border-color: var(--critical); }
+.muted { color: var(--text-muted); }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+#graph { width: 100%; height: 640px; background: var(--surface-1);
+         border: 1px solid var(--border); border-radius: 12px; }
+#tip { position: fixed; pointer-events: none; opacity: 0; transition: opacity .1s;
+       background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+       padding: 8px 10px; font-size: 12px; max-width: 320px; z-index: 50;
+       box-shadow: 0 6px 24px rgba(0,0,0,.16); }
+pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-x: auto;
+      font-family: var(--mono); font-size: 12px; margin: 0; white-space: pre-wrap; }
+.bar-row { display: grid; grid-template-columns: 140px 1fr 90px; gap: 10px; align-items: center;
+           margin-bottom: 6px; font-size: 12px; }
+.bar-track { background: var(--surface-2); border-radius: 4px; height: 14px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.empty { color: var(--text-muted); padding: 24px; text-align: center; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Data Platform <span>· control plane</span></h1>
+  <select id="projectSel" aria-label="Active project"></select>
+  <span class="spacer"></span>
+  <span id="rootPath" class="muted mono"></span>
+  <button id="themeBtn" title="Toggle theme">◐</button>
+  <button id="refreshBtn" class="primary">Refresh</button>
+</header>
+
+<nav role="tablist">
+  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button role="tab" data-tab="lineage">Lineage</button>
+  <button role="tab" data-tab="models">Models</button>
+  <button role="tab" data-tab="metrics">Metrics</button>
+  <button role="tab" data-tab="ontology">Ontology</button>
+  <button role="tab" data-tab="impact">Impact</button>
+  <button role="tab" data-tab="agents">Agents &amp; Spend</button>
+  <button role="tab" data-tab="monitors">Monitors</button>
+  <button role="tab" data-tab="context">Context Card</button>
+</nav>
+
+<main>
+  <section class="panel active" id="tab-overview">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card"><h2>Groups &amp; projects</h2><div id="treeBox"></div></div>
+      <div class="card"><h2>Graph composition</h2><div id="compBox"></div></div>
+    </div>
+    <div class="card"><h2>Recent pipeline runs</h2><div class="scroll" id="runsBox"></div></div>
+  </section>
+
+  <section class="panel" id="tab-lineage">
+    <div class="card">
+      <div class="row">
+        <label><input type="checkbox" id="showColumns"> show columns</label>
+        <label><input type="checkbox" id="showConcepts" checked> show ontology concepts</label>
+        <button id="tableViewBtn">Table view</button>
+        <span class="muted">Click a node to run impact analysis.</span>
+      </div>
+      <div class="legend" id="layerLegend"></div>
+      <svg id="graph" role="img" aria-label="Lineage graph"></svg>
+      <div id="graphTable" style="display:none" class="scroll"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-models"><div class="card"><h2>dbt models</h2><div class="scroll" id="modelsBox"></div></div></section>
+  <section class="panel" id="tab-metrics"><div class="card"><h2>Metrics (MetricFlow)</h2><div class="scroll" id="metricsBox"></div></div></section>
+
+  <section class="panel" id="tab-ontology">
+    <div class="grid2">
+      <div class="card"><h2>Classes</h2><div class="scroll" id="classesBox"></div></div>
+      <div class="card"><h2>Column roles</h2><div class="scroll" id="rolesBox"></div></div>
+    </div>
+    <div class="card"><h2>Annotation coverage &amp; conformance</h2><div class="scroll" id="annBox"></div></div>
+  </section>
+
+  <section class="panel" id="tab-impact">
+    <div class="card">
+      <div class="row">
+        <input id="impactNode" placeholder="node id, e.g. model:stg_stripe__charges" style="min-width:380px">
+        <button id="impactBtn" class="primary">Analyse blast radius</button>
+      </div>
+      <div id="impactBox"><div class="empty">Enter a node id, or click a node in the Lineage tab.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-agents">
+    <div class="kpis" id="spendKpis"></div>
+    <div class="grid2">
+      <div class="card"><h2>Cost by agent</h2><div id="spendChart"></div></div>
+      <div class="card"><h2>Cost by project</h2><div class="scroll" id="spendProject"></div></div>
+    </div>
+    <div class="card"><h2>Agent runs</h2><div class="scroll" id="agentRuns"></div></div>
+    <div class="card"><h2>Token budgets (always-on tier)</h2><div class="scroll" id="budgetBox"></div></div>
+  </section>
+
+  <section class="panel" id="tab-monitors"><div class="card"><h2>Monitor results</h2><div class="scroll" id="monitorBox"></div></div></section>
+  <section class="panel" id="tab-context"><div class="card"><h2>Context card (what every session loads)</h2><div id="cardBox"></div></div></section>
+</main>
+
+<div id="tip" role="tooltip"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const tip = $('#tip');
+let STATE = { group: null, project: null, tree: null, graph: null };
+
+const LAYER_ORDER = ['ontology','raw','staging','intermediate','marts','semantic','consumption','project','test'];
+const LAYER_BUCKET = { ontology:0, raw:1, staging:2, intermediate:2, marts:3, semantic:4, consumption:4, project:0, test:2 };
+const LAYER_LABEL = ['Ontology','Raw (dlt)','Staging / intermediate','Marts','Semantic / consumption'];
+const SHAPES = { Concept:'diamond', Source:'square', Table:'square', Column:'dot',
+                 Model:'circle', Metric:'triangle', Dimension:'diamond',
+                 Exposure:'hexagon', Test:'cross', Project:'star' };
+
+const fmt = n => n === null || n === undefined ? '—' : Number(n).toLocaleString();
+const money = n => '$' + Number(n || 0).toFixed(4);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+async function api(path, params = {}) {
+  const url = new URL(path, location.origin);
+  Object.entries(params).forEach(([k, v]) => v != null && url.searchParams.set(k, v));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+/* ---------------------------------------------------------------- chrome -- */
+$('#themeBtn').onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : cur === 'light' ? '' : 'dark';
+  next ? document.documentElement.setAttribute('data-theme', next)
+       : document.documentElement.removeAttribute('data-theme');
+  if (STATE.graph) drawGraph();
+};
+$('#refreshBtn').onclick = () => loadAll();
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-selected', 'false'));
+  b.setAttribute('aria-selected', 'true');
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  $('#tab-' + b.dataset.tab).classList.add('active');
+  if (b.dataset.tab === 'lineage' && STATE.graph) drawGraph();
+});
+$('#projectSel').onchange = e => {
+  const [g, p] = e.target.value.split('/');
+  STATE.group = g; STATE.project = p;
+  loadProject();
+};
+['showColumns','showConcepts'].forEach(id => $('#' + id).onchange = () => loadGraph());
+$('#tableViewBtn').onclick = () => {
+  const t = $('#graphTable'), g = $('#graph');
+  const showTable = t.style.display === 'none';
+  t.style.display = showTable ? 'block' : 'none';
+  g.style.display = showTable ? 'none' : 'block';
+};
+
+function showTip(html, evt) {
+  tip.innerHTML = html; tip.style.opacity = '1';
+  const x = Math.min(evt.clientX + 14, innerWidth - 340);
+  tip.style.left = x + 'px'; tip.style.top = (evt.clientY + 14) + 'px';
+}
+const hideTip = () => tip.style.opacity = '0';
+
+/* ------------------------------------------------------------- overview -- */
+function renderKpis(s) {
+  const items = [
+    ['Groups', s.groups, ''],
+    ['Projects', s.projects, 'sisters run in parallel'],
+    ['Models', s.node_counts.Model || 0, ''],
+    ['Metrics', s.node_counts.Metric || 0, 'governed definitions'],
+    ['Agent runs', s.agent_runs, money(s.cost_usd) + ' total'],
+    ['Open alerts', s.open_alerts, s.open_alerts ? 'needs triage' : 'all clear'],
+  ];
+  $('#kpis').innerHTML = items.map(([l, v, sub]) =>
+    `<div class="kpi"><div class="label">${l}</div><div class="value">${fmt(v)}</div>
+     <div class="sub">${esc(sub)}</div></div>`).join('');
+}
+
+function renderTree(tree) {
+  $('#rootPath').textContent = tree.root;
+  const sel = $('#projectSel');
+  const opts = [];
+  tree.groups.forEach(g => g.projects.forEach(p => opts.push(`${g.name}/${p.name}`)));
+  sel.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
+  if (!STATE.group && opts.length) {
+    const first = opts.find(o => !o.split('/')[1].startsWith('_')) || opts[0];
+    [STATE.group, STATE.project] = first.split('/');
+    sel.value = first;
+  } else if (STATE.group) {
+    sel.value = `${STATE.group}/${STATE.project}`;
+  }
+
+  $('#treeBox').innerHTML = tree.groups.length ? tree.groups.map(g => `
+    <div style="margin-bottom:14px">
+      <div style="font-weight:600">${esc(g.name)}
+        <span class="muted" style="font-weight:400">· ${g.classes.length} concepts in scope</span></div>
+      <table><tbody>${g.projects.map(p => `
+        <tr><td class="mono">${esc(p.name)}${p.is_rollup ? ' <span class="pill">rollup</span>' : ''}</td>
+            <td>${p.has_graph ? Object.entries(p.counts).map(([k, v]) => `${k} ${v}`).join(' · ')
+                              : '<span class="muted">graph not built</span>'}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`).join('') : '<div class="empty">No groups yet — run <code>pf new-group</code>.</div>';
+}
+
+function renderComposition(counts) {
+  const entries = Object.entries(counts || {}).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  $('#compBox').innerHTML = entries.length ? entries.map(([k, v]) => `
+    <div class="bar-row"><span>${k}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(v / max * 100).toFixed(1)}%"></span></span>
+      <span class="mono">${fmt(v)}</span></div>`).join('')
+    : '<div class="empty">No graph for this project yet.</div>';
+}
+
+/* ---------------------------------------------------------------- graph -- */
+async function loadGraph() {
+  const g = await api('/api/graph', { group: STATE.group, project: STATE.project });
+  STATE.graph = g;
+  renderComposition(g.counts);
+  drawGraph();
+}
+
+function layerIdx(n) { return LAYER_BUCKET[n.layer] ?? 2; }
+
+function drawGraph() {
+  const svg = $('#graph');
+  if (!STATE.graph) return;
+  const showCols = $('#showColumns').checked, showConcepts = $('#showConcepts').checked;
+  let nodes = STATE.graph.nodes.filter(n =>
+    (showCols || n.kind !== 'Column') && (showConcepts || n.kind !== 'Concept') && n.kind !== 'Project');
+  const ids = new Set(nodes.map(n => n.id));
+  const edges = STATE.graph.edges.filter(e => ids.has(e.src) && ids.has(e.dst));
+
+  const css = getComputedStyle(document.documentElement);
+  const layerColor = i => css.getPropertyValue('--layer-' + i).trim();
+  const gridC = css.getPropertyValue('--border').trim();
+  const textC = css.getPropertyValue('--text-secondary').trim();
+
+  $('#layerLegend').innerHTML = LAYER_LABEL.map((l, i) =>
+    `<span><i class="swatch" style="background:${layerColor(i)}"></i>${l}</span>`).join('')
+    + '<span class="muted">· shape = node kind · click to analyse impact</span>';
+
+  const W = svg.clientWidth || 1200, colW = W / 5;
+  const byLayer = [[], [], [], [], []];
+  nodes.forEach(n => byLayer[layerIdx(n)].push(n));
+  byLayer.forEach(col => col.sort((a, b) => a.name.localeCompare(b.name)));
+  const H = Math.max(560, 40 + Math.max(...byLayer.map(c => c.length)) * 26);
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+
+  const pos = {};
+  byLayer.forEach((col, li) => col.forEach((n, i) => {
+    pos[n.id] = { x: colW * li + colW / 2, y: 44 + (H - 70) * ((i + 0.5) / Math.max(1, col.length)) };
+  }));
+
+  const shape = (n, c) => {
+    const p = pos[n.id], s = n.kind === 'Column' ? 3.5 : 6;
+    switch (SHAPES[n.kind]) {
+      case 'square':  return `<rect x="${p.x - s}" y="${p.y - s}" width="${s * 2}" height="${s * 2}" rx="1.5" fill="${c}"/>`;
+      case 'diamond': return `<rect x="${p.x - s}" y="${p.y - s}" width="${s * 2}" height="${s * 2}" rx="1" fill="${c}" transform="rotate(45 ${p.x} ${p.y})"/>`;
+      case 'triangle':return `<polygon points="${p.x},${p.y - s - 1} ${p.x + s + 1},${p.y + s} ${p.x - s - 1},${p.y + s}" fill="${c}"/>`;
+      case 'hexagon': return `<polygon points="${[0,60,120,180,240,300].map(a=>{const r=a*Math.PI/180;return `${(p.x+s*Math.cos(r)).toFixed(1)},${(p.y+s*Math.sin(r)).toFixed(1)}`}).join(' ')}" fill="${c}"/>`;
+      case 'cross':   return `<path d="M${p.x - s} ${p.y}H${p.x + s}M${p.x} ${p.y - s}V${p.y + s}" stroke="${c}" stroke-width="2.5"/>`;
+      case 'dot':     return `<circle cx="${p.x}" cy="${p.y}" r="${s}" fill="${c}"/>`;
+      default:        return `<circle cx="${p.x}" cy="${p.y}" r="${s}" fill="${c}"/>`;
+    }
+  };
+
+  const edgeSvg = edges.map(e => {
+    const a = pos[e.src], b = pos[e.dst];
+    if (!a || !b) return '';
+    const mx = (a.x + b.x) / 2;
+    return `<path d="M${a.x} ${a.y} C ${mx} ${a.y}, ${mx} ${b.y}, ${b.x} ${b.y}"
+             fill="none" stroke="${gridC}" stroke-width="1" opacity="0.85"/>`;
+  }).join('');
+
+  const nodeSvg = nodes.map(n => {
+    const p = pos[n.id], c = layerColor(layerIdx(n));
+    const showLabel = n.kind !== 'Column' && byLayer[layerIdx(n)].length <= 26;
+    return `<g class="node" data-id="${esc(n.id)}" style="cursor:pointer">
+      ${shape(n, c)}
+      ${showLabel ? `<text x="${p.x + 11}" y="${p.y + 4}" font-size="10.5" fill="${textC}">${esc(n.name.slice(0, 26))}</text>` : ''}
+    </g>`;
+  }).join('');
+
+  svg.innerHTML = LAYER_LABEL.map((l, i) =>
+    `<text x="${colW * i + 12}" y="20" font-size="10.5" font-weight="600" fill="${textC}"
+      letter-spacing="0.05em">${l.toUpperCase()}</text>`).join('')
+    + `<g>${edgeSvg}</g><g>${nodeSvg}</g>`;
+
+  svg.querySelectorAll('.node').forEach(el => {
+    const n = nodes.find(x => x.id === el.dataset.id);
+    el.addEventListener('mousemove', ev => showTip(
+      `<b>${esc(n.name)}</b> <span class="muted">${n.kind}</span><br>
+       <code>${esc(n.id)}</code><br>${esc(n.label || '')}
+       ${n.props.grain ? '<br>grain: ' + esc(n.props.grain) : ''}
+       ${n.props.pii ? '<br><span class="pill critical">PII</span>' : ''}`, ev));
+    el.addEventListener('mouseleave', hideTip);
+    el.addEventListener('click', () => {
+      $('#impactNode').value = n.id;
+      document.querySelector('nav button[data-tab="impact"]').click();
+      runImpact();
+    });
+  });
+
+  $('#graphTable').innerHTML = `<table><thead><tr><th>Kind</th><th>Name</th><th>Layer</th>
+    <th>Id</th><th>Label</th></tr></thead><tbody>${nodes.map(n =>
+    `<tr><td>${n.kind}</td><td>${esc(n.name)}</td><td>${esc(n.layer)}</td>
+     <td class="mono">${esc(n.id)}</td><td>${esc(n.label || '')}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* -------------------------------------------------------- models/metrics -- */
+function table(rows, cols, empty) {
+  if (!rows.length) return `<div class="empty">${empty}</div>`;
+  return `<table><thead><tr>${cols.map(c => `<th>${c[0]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r => `<tr>${cols.map(c => `<td>${c[1](r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------------------------------------------------------------- impact -- */
+async function runImpact() {
+  const node = $('#impactNode').value.trim();
+  if (!node) return;
+  $('#impactBox').innerHTML = '<div class="empty">Analysing…</div>';
+  try {
+    const r = await api('/api/impact', { group: STATE.group, project: STATE.project, node, record: true });
+    const sev = { breaking: 'critical', review: 'warning', safe: 'good' }[r.severity];
+    const icon = { breaking: '⛔', review: '⚠', safe: '✓' }[r.severity];
+    const sec = (title, arr, fmtRow) => arr.length ? `<div class="card"><h2>${title} (${arr.length})</h2>
+      <table><tbody>${arr.map(fmtRow).join('')}</tbody></table></div>` : '';
+    $('#impactBox').innerHTML = `
+      <div class="row"><span class="pill ${sev}">${icon} ${r.severity.toUpperCase()}</span>
+        <b>${esc(r.root)}</b><span class="muted">${r.total} downstream object(s)</span></div>
+      ${r.owners.length ? `<p>Notify: ${r.owners.map(o => `<code>${esc(o)}</code>`).join(', ')}</p>` : ''}
+      ${sec('Models', r.models, n => `<tr><td class="mono">${esc(n.name)}</td><td class="muted">${esc(n.layer)}</td></tr>`)}
+      ${sec('Metrics', r.metrics, n => `<tr><td class="mono">${esc(n.name)}</td><td class="muted">${esc(n.label || '')}</td></tr>`)}
+      ${sec('Exposures', r.exposures, n => `<tr><td class="mono">${esc(n.name)}</td><td>${esc(n.props.owner || 'unowned')}</td></tr>`)}
+      ${sec('Dimensions', r.dimensions, n => `<tr><td class="mono">${esc(n.name)}</td><td></td></tr>`)}
+      <div class="card"><h2>CI output</h2><pre>${esc(r.rendered)}</pre></div>`;
+  } catch (e) {
+    $('#impactBox').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+$('#impactBtn').onclick = runImpact;
+
+/* ---------------------------------------------------------------- loads -- */
+async function loadProject() {
+  const [g, models, metrics, ann, card] = await Promise.all([
+    loadGraph(),
+    api('/api/models', { group: STATE.group, project: STATE.project }),
+    api('/api/metrics', { group: STATE.group, project: STATE.project }),
+    api('/api/annotations', { group: STATE.group, project: STATE.project }),
+    api('/api/card', { group: STATE.group, project: STATE.project }),
+  ]);
+
+  $('#modelsBox').innerHTML = table(models, [
+    ['Model', r => `<code>${esc(r.name)}</code>`],
+    ['Layer', r => `<span class="muted">${esc(r.layer)}</span>`],
+    ['Grain', r => esc(r.grain || '—')],
+    ['Materialized', r => esc(r.materialized || '—')],
+    ['Cols', r => fmt(r.columns)],
+    ['PII', r => r.pii_columns ? `<span class="pill critical">${r.pii_columns}</span>` : '—'],
+    ['Downstream', r => fmt(r.downstream)],
+    ['', r => `<button onclick="$('#impactNode').value='${r.id}';document.querySelector('nav button[data-tab=impact]').click();runImpact()">impact</button>`],
+  ], 'No dbt models — run <code>pf seed</code> then <code>pf kg build</code>.');
+
+  $('#metricsBox').innerHTML = table(metrics, [
+    ['Metric', r => `<code>${esc(r.name)}</code>`],
+    ['Label', r => esc(r.label || '')],
+    ['Type', r => `<span class="muted">${esc(r.type)}</span>`],
+    ['Derived from', r => r.sources.map(s => `<code>${esc(s)}</code>`).join(', ') || '—'],
+    ['', r => `<button onclick="$('#impactNode').value='${r.id}';document.querySelector('nav button[data-tab=impact]').click();runImpact()">impact</button>`],
+  ], 'No metrics defined yet.');
+
+  const issues = ann.issues || [];
+  $('#annBox').innerHTML = `
+    <div class="row">
+      <span class="pill ${issues.some(i => i.severity === 'error') ? 'critical' : 'good'}">
+        ${issues.filter(i => i.severity === 'error').length} error(s)</span>
+      <span class="pill warning">${issues.filter(i => i.severity === 'warning').length} warning(s)</span>
+      <span class="pill">${ann.pii.length} PII column(s)</span>
+    </div>
+    ${table(ann.resources, [
+      ['Resource', r => `<code>${esc(r.resource)}</code>`],
+      ['Concept', r => esc(r.concept)],
+      ['Grain', r => esc(r.grain || '—')],
+      ['Roles', r => Object.entries(r.roles).map(([c, ro]) =>
+        `<code>${esc(c)}</code>:${esc(ro)}`).join(' · ')],
+      ['Links', r => Object.entries(r.links).map(([c, t]) =>
+        `<code>${esc(c)}</code>→${esc(t)}`).join(' · ') || '—'],
+    ], 'No annotations exported yet.')}
+    ${issues.length ? `<h2 style="margin-top:16px">Conformance issues</h2>` + table(issues, [
+      ['Severity', i => `<span class="pill ${i.severity === 'error' ? 'critical' : 'warning'}">${i.severity}</span>`],
+      ['Rule', i => `<code>${esc(i.rule)}</code>`],
+      ['Subject', i => esc(i.subject)],
+      ['Message', i => esc(i.message)],
+    ], '') : ''}`;
+
+  $('#cardBox').innerHTML = card.markdown
+    ? `<div class="row"><span class="pill ${card.est_tokens > 1500 ? 'warning' : 'good'}">
+         ~${fmt(card.est_tokens)} tokens / 1500 budget</span>
+       <span class="muted">${fmt(card.chars)} chars — this is loaded in every session</span></div>
+       <pre>${esc(card.markdown)}</pre>`
+    : '<div class="empty">No context card — run <code>pf kg card</code>.</div>';
+}
+
+async function loadObs() {
+  const [runs, spend, mons, pipes, budgets] = await Promise.all([
+    api('/api/agent-runs'), api('/api/spend'), api('/api/monitors'),
+    api('/api/pipeline-runs'), api('/api/token-budgets'),
+  ]);
+
+  const totalCost = spend.by_agent.reduce((a, r) => a + (r.cost_usd || 0), 0);
+  const totalTok = spend.by_agent.reduce((a, r) => a + (r.input_tokens || 0) + (r.output_tokens || 0), 0);
+  $('#spendKpis').innerHTML = [
+    ['Total spend', money(totalCost), `${runs.length} runs`],
+    ['Tokens', fmt(totalTok), 'input + output'],
+    ['Cache hit rate', spend.cache_hit_pct + '%', 'of input tokens served from cache'],
+    ['Agents active', spend.by_agent.length, ''],
+  ].map(([l, v, s]) => `<div class="kpi"><div class="label">${l}</div>
+     <div class="value">${v}</div><div class="sub">${esc(s)}</div></div>`).join('');
+
+  const max = Math.max(0.000001, ...spend.by_agent.map(r => r.cost_usd || 0));
+  $('#spendChart').innerHTML = spend.by_agent.length ? spend.by_agent.map(r => `
+    <div class="bar-row"><span>${esc(r.agent)}<br><span class="muted">${esc(r.model)}</span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${((r.cost_usd || 0) / max * 100).toFixed(1)}%"></span></span>
+      <span class="mono">${money(r.cost_usd)}</span></div>`).join('')
+    : '<div class="empty">No agent runs recorded yet.</div>';
+
+  $('#spendProject').innerHTML = table(spend.by_project, [
+    ['Group', r => esc(r.group)], ['Project', r => esc(r.project)],
+    ['Runs', r => fmt(r.runs)], ['Cost', r => money(r.cost_usd)],
+  ], 'No spend recorded.');
+
+  $('#agentRuns').innerHTML = table(runs, [
+    ['When', r => `<span class="muted mono">${String(r.ts).slice(0, 19)}</span>`],
+    ['Project', r => esc(r.project)],
+    ['Agent', r => `<code>${esc(r.agent)}</code>`],
+    ['Model', r => `<span class="muted">${esc(r.model)}</span>`],
+    ['Effort', r => esc(r.effort)],
+    ['Status', r => `<span class="pill ${r.status === 'ok' ? 'good' : 'critical'}">${esc(r.status)}</span>`],
+    ['In', r => fmt(r.input_tokens)], ['Out', r => fmt(r.output_tokens)],
+    ['Cached', r => fmt(r.cache_read_tokens)],
+    ['Cost', r => money(r.cost_usd)],
+    ['Summary', r => esc((r.summary || '').slice(0, 90))],
+  ], 'No agent runs yet.');
+
+  $('#monitorBox').innerHTML = table(mons, [
+    ['When', r => `<span class="muted mono">${String(r.ts).slice(0, 19)}</span>`],
+    ['Project', r => esc(r.project)],
+    ['Resource', r => `<code>${esc(r.resource)}.${esc(r.column_name)}</code>`],
+    ['Monitor', r => esc(r.monitor)],
+    ['Status', r => {
+      const cls = r.status === 'ok' ? 'good' : r.status === 'warn' ? 'warning' : 'critical';
+      const ic = r.status === 'ok' ? '✓' : r.status === 'warn' ? '⚠' : '⛔';
+      return `<span class="pill ${cls}">${ic} ${esc(r.status)}</span>`;
+    }],
+    ['Observed', r => fmt(r.observed)], ['Expected', r => fmt(r.expected)],
+    ['Deviation', r => (r.deviation_pct ?? 0).toFixed(1) + '%'],
+    ['Message', r => esc(r.message)],
+  ], 'No monitor results yet.');
+
+  $('#runsBox').innerHTML = table(pipes, [
+    ['When', r => `<span class="muted mono">${String(r.ts).slice(0, 19)}</span>`],
+    ['Project', r => esc(r.project)], ['Kind', r => esc(r.kind)],
+    ['Name', r => `<code>${esc(r.name)}</code>`],
+    ['Status', r => `<span class="pill ${r.status === 'ok' ? 'good' : 'critical'}">${esc(r.status)}</span>`],
+    ['Rows', r => fmt(r.rows)], ['ms', r => fmt(r.duration_ms)],
+  ], 'No pipeline runs recorded.');
+
+  $('#budgetBox').innerHTML = table(budgets, [
+    ['When', r => `<span class="muted mono">${String(r.ts).slice(0, 19)}</span>`],
+    ['Project', r => esc(r.project)], ['Artefact', r => `<code>${esc(r.artefact)}</code>`],
+    ['Tokens', r => fmt(r.tokens)], ['Budget', r => fmt(r.budget)],
+    ['Status', r => `<span class="pill ${r.status === 'ok' ? 'good' : 'critical'}">${esc(r.status)}</span>`],
+  ], 'Run <code>pf tokens</code> to record budgets.');
+}
+
+async function loadOntology() {
+  const o = await api('/api/ontology');
+  $('#classesBox').innerHTML = table(o.classes, [
+    ['Class', c => `<code>${esc(c.name)}</code>`],
+    ['Parent', c => esc(c.parent || '—')],
+    ['Abstract', c => c.abstract ? '<span class="pill">abstract</span>' : ''],
+    ['Description', c => esc(c.description)],
+  ], '');
+  $('#rolesBox').innerHTML = table(o.roles, [
+    ['Role', r => `<code>${esc(r.name)}</code>`],
+    ['PII', r => r.pii ? '<span class="pill critical">PII</span>' : ''],
+    ['Description', r => esc(r.description)],
+  ], '');
+}
+
+async function loadAll() {
+  const [tree, summary] = await Promise.all([api('/api/tree'), api('/api/summary')]);
+  STATE.tree = tree;
+  renderTree(tree);
+  renderKpis(summary);
+  await Promise.all([loadOntology(), loadObs()]);
+  if (STATE.group) await loadProject();
+}
+
+loadAll().catch(e => { $('#kpis').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+</script>
+</body>
+</html>

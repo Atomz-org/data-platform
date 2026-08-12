@@ -1,0 +1,73 @@
+# Platform ontology — the shared business vocabulary.
+# Deliberately small. A 200-class upper ontology nobody maintains is worse than
+# 15 classes everybody uses. Groups select a subset in their instance.yaml.
+version: 1
+
+classes:
+  Party:
+    abstract: true
+    description: Any actor that can enter into an agreement.
+  Customer:
+    parent: Party
+    description: A party that buys. May be a person or an organization.
+  Organization:
+    parent: Party
+    description: A legal entity. Customers may belong to one.
+  Employee:
+    parent: Party
+    description: Internal actor. Rarely modelled in marts; used for attribution.
+
+  Agreement:
+    abstract: true
+    description: A commitment between parties, with a lifecycle.
+  Subscription:
+    parent: Agreement
+    description: A recurring agreement with a plan, term and status.
+  Order:
+    parent: Agreement
+    description: A one-off purchase commitment.
+  Contract:
+    parent: Agreement
+    description: A negotiated agreement, usually with custom terms.
+
+  Event:
+    abstract: true
+    description: Something that happened at a point in time. Immutable.
+  Payment:
+    parent: Event
+    description: Movement of money settling an agreement.
+  Refund:
+    parent: Event
+    description: Negative movement of money against a prior payment.
+  Usage:
+    parent: Event
+    description: Metered consumption attributable to an agreement.
+  Interaction:
+    parent: Event
+    description: A touchpoint (email, call, session) with a party.
+
+  Product:
+    description: A sellable thing. Plans and SKUs are Products.
+  Location:
+    description: A geography. Country, region, or address.
+  Currency:
+    description: An ISO currency. Used to qualify money amounts.
+
+# Column-level semantic roles. Every annotated column carries exactly one.
+roles:
+  natural_key:    { description: Business key from the source system. }
+  surrogate_key:  { description: Generated key, unique within the warehouse. }
+  foreign_key:    { description: Reference to another concept instance. }
+  event_time:     { description: When the event occurred. Candidate agg time dimension. }
+  valid_from:     { description: SCD2 interval start. }
+  valid_to:       { description: SCD2 interval end. }
+  money_amount:   { description: Monetary value. Requires a sibling currency_code. }
+  currency_code:  { description: ISO 4217 code qualifying a money_amount. }
+  quantity:       { description: Countable measure. }
+  status_enum:    { description: Lifecycle state. Monitored for category drift. }
+  geo_country:    { description: ISO country code. }
+  free_text:      { description: Unstructured text. Never a dimension. }
+  pii_email:      { pii: true, description: Email address. }
+  pii_name:       { pii: true, description: Person name. }
+  pii_phone:      { pii: true, description: Phone number. }
+  pii_address:    { pii: true, description: Postal address. }

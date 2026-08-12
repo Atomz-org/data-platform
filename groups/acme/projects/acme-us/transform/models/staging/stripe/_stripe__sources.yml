@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: stripe
+    schema: stripe
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: charges
+      - name: customers
+      - name: subscriptions

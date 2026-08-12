@@ -1,0 +1,2161 @@
+{
+  "nodes": [
+    {
+      "id": "col:model:fct_payments.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.canceled_at",
+      "kind": "Column",
+      "name": "canceled_at",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "valid_to",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.canceled_at",
+      "kind": "Column",
+      "name": "canceled_at",
+      "layer": "raw",
+      "label": "valid_to",
+      "props": {
+        "role": "valid_to",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.country",
+      "kind": "Column",
+      "name": "country",
+      "layer": "raw",
+      "label": "geo_country",
+      "props": {
+        "role": "geo_country",
+        "pii": false,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.country_code",
+      "kind": "Column",
+      "name": "country_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "geo_country",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.created",
+      "kind": "Column",
+      "name": "created",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.created",
+      "kind": "Column",
+      "name": "created",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.created_at",
+      "kind": "Column",
+      "name": "created_at",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.currency",
+      "kind": "Column",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.currency",
+      "kind": "Column",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_email",
+      "kind": "Column",
+      "name": "customer_email",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:dim_customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_name",
+      "kind": "Column",
+      "name": "customer_name",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "pii_name",
+        "pii": true,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dim_customers.customer_segment",
+      "kind": "Column",
+      "name": "customer_segment",
+      "layer": "marts",
+      "label": "Sales segment. Drives most reporting cuts.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_segment",
+      "kind": "Column",
+      "name": "customer_segment",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:metricflow_time_spine.date_day",
+      "kind": "Column",
+      "name": "date_day",
+      "layer": "utils",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "metricflow_time_spine",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.email",
+      "kind": "Column",
+      "name": "email",
+      "layer": "raw",
+      "label": "pii_email",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.id",
+      "kind": "Column",
+      "name": "id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.id",
+      "kind": "Column",
+      "name": "id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.id",
+      "kind": "Column",
+      "name": "id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.mrr_amount",
+      "kind": "Column",
+      "name": "mrr_amount",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.mrr_amount",
+      "kind": "Column",
+      "name": "mrr_amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "raw",
+      "label": "pii_name",
+      "props": {
+        "role": "pii_name",
+        "pii": true,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:model:fct_revenue.net_amount",
+      "kind": "Column",
+      "name": "net_amount",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "fct_revenue",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "staging",
+      "label": "Foreign key to Organization.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.paid_at",
+      "kind": "Column",
+      "name": "paid_at",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.paid_at",
+      "kind": "Column",
+      "name": "paid_at",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.payment_id",
+      "kind": "Column",
+      "name": "payment_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.payment_id",
+      "kind": "Column",
+      "name": "payment_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.payment_status",
+      "kind": "Column",
+      "name": "payment_status",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.plan",
+      "kind": "Column",
+      "name": "plan",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.plan_tier",
+      "kind": "Column",
+      "name": "plan_tier",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.receipt_email",
+      "kind": "Column",
+      "name": "receipt_email",
+      "layer": "raw",
+      "label": "pii_email",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.receipt_email",
+      "kind": "Column",
+      "name": "receipt_email",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_revenue.revenue_date",
+      "kind": "Column",
+      "name": "revenue_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_revenue",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.segment",
+      "kind": "Column",
+      "name": "segment",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "customers"
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.started_at",
+      "kind": "Column",
+      "name": "started_at",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.started_at",
+      "kind": "Column",
+      "name": "started_at",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.status",
+      "kind": "Column",
+      "name": "status",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.status",
+      "kind": "Column",
+      "name": "status",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "staging",
+      "label": "Foreign key to Subscription.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.subscription_status",
+      "kind": "Column",
+      "name": "subscription_status",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "concept:Agreement",
+      "kind": "Concept",
+      "name": "Agreement",
+      "layer": "ontology",
+      "label": "A commitment between parties, with a lifecycle.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Contract",
+      "kind": "Concept",
+      "name": "Contract",
+      "layer": "ontology",
+      "label": "A negotiated agreement, usually with custom terms.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Currency",
+      "kind": "Concept",
+      "name": "Currency",
+      "layer": "ontology",
+      "label": "An ISO currency. Used to qualify money amounts.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Customer",
+      "kind": "Concept",
+      "name": "Customer",
+      "layer": "ontology",
+      "label": "A party that buys. May be a person or an organization.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Employee",
+      "kind": "Concept",
+      "name": "Employee",
+      "layer": "ontology",
+      "label": "Internal actor. Rarely modelled in marts; used for attribution.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Event",
+      "kind": "Concept",
+      "name": "Event",
+      "layer": "ontology",
+      "label": "Something that happened at a point in time. Immutable.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Interaction",
+      "kind": "Concept",
+      "name": "Interaction",
+      "layer": "ontology",
+      "label": "A touchpoint (email, call, session) with a party.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Location",
+      "kind": "Concept",
+      "name": "Location",
+      "layer": "ontology",
+      "label": "A geography. Country, region, or address.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Order",
+      "kind": "Concept",
+      "name": "Order",
+      "layer": "ontology",
+      "label": "A one-off purchase commitment.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Organization",
+      "kind": "Concept",
+      "name": "Organization",
+      "layer": "ontology",
+      "label": "A legal entity. Customers may belong to one.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Party",
+      "kind": "Concept",
+      "name": "Party",
+      "layer": "ontology",
+      "label": "Any actor that can enter into an agreement.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Payment",
+      "kind": "Concept",
+      "name": "Payment",
+      "layer": "ontology",
+      "label": "Movement of money settling an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Product",
+      "kind": "Concept",
+      "name": "Product",
+      "layer": "ontology",
+      "label": "A sellable thing. Plans and SKUs are Products.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Refund",
+      "kind": "Concept",
+      "name": "Refund",
+      "layer": "ontology",
+      "label": "Negative movement of money against a prior payment.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Subscription",
+      "kind": "Concept",
+      "name": "Subscription",
+      "layer": "ontology",
+      "label": "A recurring agreement with a plan, term and status.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Usage",
+      "kind": "Concept",
+      "name": "Usage",
+      "layer": "ontology",
+      "label": "Metered consumption attributable to an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "dim:payments__country_code",
+      "kind": "Dimension",
+      "name": "country_code",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "payments"
+      }
+    },
+    {
+      "id": "dim:customers__country_code",
+      "kind": "Dimension",
+      "name": "country_code",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "customers"
+      }
+    },
+    {
+      "id": "dim:customers__created_at",
+      "kind": "Dimension",
+      "name": "created_at",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "time",
+        "semantic_model": "customers"
+      }
+    },
+    {
+      "id": "dim:payments__customer_segment",
+      "kind": "Dimension",
+      "name": "customer_segment",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "payments"
+      }
+    },
+    {
+      "id": "dim:customers__customer_segment",
+      "kind": "Dimension",
+      "name": "customer_segment",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "customers"
+      }
+    },
+    {
+      "id": "dim:payments__paid_at",
+      "kind": "Dimension",
+      "name": "paid_at",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "time",
+        "semantic_model": "payments"
+      }
+    },
+    {
+      "id": "dim:payments__payment_status",
+      "kind": "Dimension",
+      "name": "payment_status",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "payments"
+      }
+    },
+    {
+      "id": "dim:payments__plan_tier",
+      "kind": "Dimension",
+      "name": "plan_tier",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "payments"
+      }
+    },
+    {
+      "id": "exposure:crm_customer_sync",
+      "kind": "Exposure",
+      "name": "crm_customer_sync",
+      "layer": "consumption",
+      "label": "Reverse-ETL of customer health back into the CRM.",
+      "props": {
+        "type": "application",
+        "owner": "RevOps",
+        "email": "revops@acme.example",
+        "url": null
+      }
+    },
+    {
+      "id": "exposure:exec_weekly_dashboard",
+      "kind": "Exposure",
+      "name": "exec_weekly_dashboard",
+      "layer": "consumption",
+      "label": "Weekly exec revenue review. Read by the CFO every Monday.",
+      "props": {
+        "type": "dashboard",
+        "owner": "Finance",
+        "email": "finance@acme.example",
+        "url": "https://bi.internal/acme/exec-weekly"
+      }
+    },
+    {
+      "id": "metric:active_customers",
+      "kind": "Metric",
+      "name": "active_customers",
+      "layer": "semantic",
+      "label": "Active Customers",
+      "props": {
+        "type": "simple",
+        "description": "Customers with at least one active subscription."
+      }
+    },
+    {
+      "id": "metric:aov",
+      "kind": "Metric",
+      "name": "aov",
+      "layer": "semantic",
+      "label": "Average Order Value",
+      "props": {
+        "type": "ratio",
+        "description": "Revenue divided by succeeded payment count."
+      }
+    },
+    {
+      "id": "metric:gross_payment_volume",
+      "kind": "Metric",
+      "name": "gross_payment_volume",
+      "layer": "semantic",
+      "label": "Gross Payment Volume",
+      "props": {
+        "type": "simple",
+        "description": "All payment attempts regardless of outcome."
+      }
+    },
+    {
+      "id": "metric:payment_count",
+      "kind": "Metric",
+      "name": "payment_count",
+      "layer": "semantic",
+      "label": "Payments",
+      "props": {
+        "type": "simple",
+        "description": "Count of succeeded payments."
+      }
+    },
+    {
+      "id": "metric:revenue",
+      "kind": "Metric",
+      "name": "revenue",
+      "layer": "semantic",
+      "label": "Revenue",
+      "props": {
+        "type": "simple",
+        "description": "Net revenue \u2014 succeeded payments only. The single definition."
+      }
+    },
+    {
+      "id": "metric:revenue_mom_growth",
+      "kind": "Metric",
+      "name": "revenue_mom_growth",
+      "layer": "semantic",
+      "label": "Revenue MoM Growth",
+      "props": {
+        "type": "derived",
+        "description": "Month-over-month change in net revenue."
+      }
+    },
+    {
+      "id": "model:dim_customers",
+      "kind": "Model",
+      "name": "dim_customers",
+      "layer": "marts",
+      "label": "Customer dimension with subscription rollups.",
+      "props": {
+        "schema": "main_marts",
+        "materialized": "table",
+        "grain": "one customer",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:fct_payments",
+      "kind": "Model",
+      "name": "fct_payments",
+      "layer": "marts",
+      "label": "Payment fact at attempt grain, enriched with customer and plan.",
+      "props": {
+        "schema": "main_marts",
+        "materialized": "table",
+        "grain": "one payment attempt",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:fct_revenue",
+      "kind": "Model",
+      "name": "fct_revenue",
+      "layer": "marts",
+      "label": "Daily revenue by segment and plan. Union-compatible across sisters.",
+      "props": {
+        "schema": "main_marts",
+        "materialized": "table",
+        "grain": "one day x segment x plan",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metricflow_time_spine",
+      "kind": "Model",
+      "name": "metricflow_time_spine",
+      "layer": "utils",
+      "label": "Daily time spine required by MetricFlow.",
+      "props": {
+        "schema": "main",
+        "materialized": "table",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:stg_stripe__charges",
+      "kind": "Model",
+      "name": "stg_stripe__charges",
+      "layer": "staging",
+      "label": "Stripe charge events \u2014 the revenue source of record. Cleaned 1:1 from `stripe.charges`; grain: one payment attempt.",
+      "props": {
+        "schema": "main_staging",
+        "materialized": "view",
+        "grain": "one payment attempt",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:stg_stripe__customers",
+      "kind": "Model",
+      "name": "stg_stripe__customers",
+      "layer": "staging",
+      "label": "Stripe customers for the EU entity. Cleaned 1:1 from `stripe.customers`; grain: one customer account.",
+      "props": {
+        "schema": "main_staging",
+        "materialized": "view",
+        "grain": "one customer account",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:stg_stripe__subscriptions",
+      "kind": "Model",
+      "name": "stg_stripe__subscriptions",
+      "layer": "staging",
+      "label": "Active and churned subscriptions. Cleaned 1:1 from `stripe.subscriptions`; grain: one subscription.",
+      "props": {
+        "schema": "main_staging",
+        "materialized": "view",
+        "grain": "one subscription",
+        "tags": []
+      }
+    },
+    {
+      "id": "project:acme-eu",
+      "kind": "Project",
+      "name": "acme-eu",
+      "layer": "project",
+      "label": "acme/acme-eu",
+      "props": {
+        "group": "acme",
+        "path": "/Users/suresh/data-platform/groups/acme/projects/acme-eu"
+      }
+    },
+    {
+      "id": "source:stripe",
+      "kind": "Source",
+      "name": "stripe",
+      "layer": "raw",
+      "label": "dlt source stripe",
+      "props": {}
+    },
+    {
+      "id": "table:stripe.charges",
+      "kind": "Table",
+      "name": "charges",
+      "layer": "raw",
+      "label": "Stripe charge events \u2014 the revenue source of record",
+      "props": {
+        "concept": "Payment",
+        "grain": "one payment attempt",
+        "source": "stripe"
+      }
+    },
+    {
+      "id": "table:stripe.customers",
+      "kind": "Table",
+      "name": "customers",
+      "layer": "raw",
+      "label": "Stripe customers for the EU entity",
+      "props": {
+        "concept": "Customer",
+        "grain": "one customer account",
+        "source": "stripe"
+      }
+    },
+    {
+      "id": "table:stripe.subscriptions",
+      "kind": "Table",
+      "name": "subscriptions",
+      "layer": "raw",
+      "label": "Active and churned subscriptions",
+      "props": {
+        "concept": "Subscription",
+        "grain": "one subscription",
+        "source": "stripe"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_dim_customers_customer_id.dd91cd1c8d",
+      "kind": "Test",
+      "name": "not_null_dim_customers_customer_id",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_fct_payments_payment_id.f8fe414166",
+      "kind": "Test",
+      "name": "not_null_fct_payments_payment_id",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_fct_revenue_revenue_date.ce66a8b3bb",
+      "kind": "Test",
+      "name": "not_null_fct_revenue_revenue_date",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_metricflow_time_spine_date_day.54acf49e8d",
+      "kind": "Test",
+      "name": "not_null_metricflow_time_spine_date_day",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__charges_amount.f518eb79f4",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__charges_amount",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__charges_paid_at.d3a83626fb",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__charges_paid_at",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__charges_payment_id.273c85df33",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__charges_payment_id",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__customers_created_at.481ec0f98a",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__customers_created_at",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__customers_customer_id.70a70c42a7",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__customers_customer_id",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__subscriptions_mrr_amount.f5b27992ed",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__subscriptions_mrr_amount",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__subscriptions_started_at.13f9466c5c",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__subscriptions_started_at",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.not_null_stg_stripe__subscriptions_subscription_id.7af221a3cd",
+      "kind": "Test",
+      "name": "not_null_stg_stripe__subscriptions_subscription_id",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_dim_customers_customer_id.15c9f1e2fd",
+      "kind": "Test",
+      "name": "unique_dim_customers_customer_id",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_fct_payments_payment_id.4572b82d46",
+      "kind": "Test",
+      "name": "unique_fct_payments_payment_id",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_metricflow_time_spine_date_day.ddb41ceac8",
+      "kind": "Test",
+      "name": "unique_metricflow_time_spine_date_day",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_stg_stripe__charges_payment_id.67d98871c8",
+      "kind": "Test",
+      "name": "unique_stg_stripe__charges_payment_id",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_stg_stripe__customers_customer_id.d48ec44cbd",
+      "kind": "Test",
+      "name": "unique_stg_stripe__customers_customer_id",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.acme_eu.unique_stg_stripe__subscriptions_subscription_id.2ea0e2eec3",
+      "kind": "Test",
+      "name": "unique_stg_stripe__subscriptions_subscription_id",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Organization",
+      "kind": "links_to",
+      "props": {
+        "type": "belongs_to",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Subscription",
+      "kind": "links_to",
+      "props": {
+        "type": "holds",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Order",
+      "kind": "links_to",
+      "props": {
+        "type": "places",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Location",
+      "kind": "links_to",
+      "props": {
+        "type": "located_in",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Interaction",
+      "kind": "links_to",
+      "props": {
+        "type": "participates",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "pays",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "settled_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Product",
+      "kind": "links_to",
+      "props": {
+        "type": "for_product",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Usage",
+      "kind": "links_to",
+      "props": {
+        "type": "metered_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Order",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "settled_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Order",
+      "dst": "concept:Product",
+      "kind": "links_to",
+      "props": {
+        "type": "contains",
+        "cardinality": "N:M"
+      }
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "concept:Refund",
+      "kind": "links_to",
+      "props": {
+        "type": "reversed_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "concept:Currency",
+      "kind": "links_to",
+      "props": {
+        "type": "denominated",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Contract",
+      "dst": "concept:Organization",
+      "kind": "links_to",
+      "props": {
+        "type": "signed_by",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "source:stripe",
+      "dst": "table:stripe.charges",
+      "kind": "contains",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "concept:Payment",
+      "kind": "instantiates",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.currency",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.created",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.receipt_email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "col:table:stripe.charges.customer_id",
+      "dst": "concept:Customer",
+      "kind": "links_to",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "col:table:stripe.charges.subscription_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "col:table:stripe.charges.subscription_id",
+      "dst": "concept:Subscription",
+      "kind": "links_to",
+      "props": {}
+    },
+    {
+      "src": "source:stripe",
+      "dst": "table:stripe.customers",
+      "kind": "contains",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "concept:Customer",
+      "kind": "instantiates",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.country",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.created",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "col:table:stripe.customers.organization_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "col:table:stripe.customers.organization_id",
+      "dst": "concept:Organization",
+      "kind": "links_to",
+      "props": {}
+    },
+    {
+      "src": "source:stripe",
+      "dst": "table:stripe.subscriptions",
+      "kind": "contains",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "concept:Subscription",
+      "kind": "instantiates",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.plan",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.mrr_amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.currency",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.canceled_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "col:table:stripe.subscriptions.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "col:table:stripe.subscriptions.customer_id",
+      "dst": "concept:Customer",
+      "kind": "links_to",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.payment_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.currency_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.payment_status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.paid_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.receipt_email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "col:model:stg_stripe__charges.subscription_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.subscription_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.plan_tier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.subscription_status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.mrr_amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.currency_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.canceled_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "col:model:stg_stripe__subscriptions.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.customer_email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.customer_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.country_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.customer_segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.created_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "col:model:stg_stripe__customers.organization_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.payment_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.paid_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.revenue_date",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.net_amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.customer_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.customer_segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "col:model:metricflow_time_spine.date_day",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.charges",
+      "dst": "model:stg_stripe__charges",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.subscriptions",
+      "dst": "model:stg_stripe__subscriptions",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "table:stripe.customers",
+      "dst": "model:stg_stripe__customers",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "model:fct_payments",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "model:fct_payments",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "model:fct_payments",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "model:fct_revenue",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "model:dim_customers",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "model:dim_customers",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "test:test.acme_eu.unique_stg_stripe__charges_payment_id.67d98871c8",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__charges_payment_id.273c85df33",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__charges_amount.f518eb79f4",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__charges_paid_at.d3a83626fb",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "test:test.acme_eu.unique_stg_stripe__customers_customer_id.d48ec44cbd",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__customers_customer_id.70a70c42a7",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__customers_created_at.481ec0f98a",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "test:test.acme_eu.unique_stg_stripe__subscriptions_subscription_id.2ea0e2eec3",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__subscriptions_subscription_id.7af221a3cd",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__subscriptions_mrr_amount.f5b27992ed",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "test:test.acme_eu.not_null_stg_stripe__subscriptions_started_at.13f9466c5c",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "test:test.acme_eu.unique_dim_customers_customer_id.15c9f1e2fd",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "test:test.acme_eu.not_null_dim_customers_customer_id.dd91cd1c8d",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "test:test.acme_eu.unique_fct_payments_payment_id.4572b82d46",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "test:test.acme_eu.not_null_fct_payments_payment_id.f8fe414166",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "test:test.acme_eu.not_null_fct_revenue_revenue_date.ce66a8b3bb",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.acme_eu.unique_metricflow_time_spine_date_day.ddb41ceac8",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.acme_eu.not_null_metricflow_time_spine_date_day.54acf49e8d",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "exposure:exec_weekly_dashboard",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "exposure:exec_weekly_dashboard",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "exposure:crm_customer_sync",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "dim:payments__paid_at",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "dim:payments__payment_status",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "dim:payments__customer_segment",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "dim:payments__plan_tier",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "dim:payments__country_code",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "dim:customers__created_at",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "dim:customers__customer_segment",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "dim:customers__country_code",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "metric:revenue",
+      "kind": "measures",
+      "props": {
+        "measure": "payment_amount"
+      }
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "metric:gross_payment_volume",
+      "kind": "measures",
+      "props": {
+        "measure": "payment_amount"
+      }
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "metric:payment_count",
+      "kind": "measures",
+      "props": {
+        "measure": "payment_count"
+      }
+    },
+    {
+      "src": "metric:revenue",
+      "dst": "metric:aov",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "metric:payment_count",
+      "dst": "metric:aov",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "metric:revenue",
+      "dst": "metric:revenue_mom_growth",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "metric:revenue",
+      "dst": "metric:revenue_mom_growth",
+      "kind": "derives_from",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "metric:active_customers",
+      "kind": "measures",
+      "props": {
+        "measure": "active_customer_count"
+      }
+    }
+  ]
+}

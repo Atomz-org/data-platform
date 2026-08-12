@@ -1,0 +1,12 @@
+# Ontology instance for acme — which platform classes this group models.
+# Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
+group: acme
+domain: b2b_saas
+classes:
+  - Customer
+  - Organization
+  - Subscription
+  - Payment
+  - Usage
+  - Product
+shared_sources: []

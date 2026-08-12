@@ -1,0 +1,63 @@
+version: 1
+resources:
+- resource: charges
+  concept: Payment
+  source: stripe
+  roles:
+    id: natural_key
+    amount: money_amount
+    currency: currency_code
+    status: status_enum
+    created: event_time
+    receipt_email: pii_email
+  rename:
+    id: payment_id
+    currency: currency_code
+    status: payment_status
+    created: paid_at
+  links:
+    customer_id: Customer
+    subscription_id: Subscription
+  description: "Stripe charge events \u2014 the revenue source of record"
+  grain: one payment attempt
+- resource: customers
+  concept: Customer
+  source: stripe
+  roles:
+    id: natural_key
+    email: pii_email
+    name: pii_name
+    country: geo_country
+    segment: status_enum
+    created: event_time
+  rename:
+    id: customer_id
+    email: customer_email
+    name: customer_name
+    country: country_code
+    segment: customer_segment
+    created: created_at
+  links:
+    organization_id: Organization
+  description: Stripe customers for the US entity
+  grain: one customer account
+- resource: subscriptions
+  concept: Subscription
+  source: stripe
+  roles:
+    id: natural_key
+    plan: status_enum
+    status: status_enum
+    mrr_amount: money_amount
+    currency: currency_code
+    started_at: event_time
+    canceled_at: valid_to
+  rename:
+    id: subscription_id
+    plan: plan_tier
+    status: subscription_status
+    currency: currency_code
+  links:
+    customer_id: Customer
+  description: Active and churned subscriptions
+  grain: one subscription
