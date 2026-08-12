@@ -17,6 +17,42 @@ PROJECT_CARD_BUDGET = 1500
 GROUP_CARD_BUDGET = 400
 
 
+COVERAGE_KINDS = ("feeds", "measures")
+
+
+def _uncovered_tables(g, tables: list[Node]) -> list[str]:
+    """Raw tables from which no Metric is reachable.
+
+    This walks the graph rather than comparing names. The previous version asked
+    whether some metric name started with the table name's first six characters,
+    so `charges` never matched `revenue` and the card claimed a coverage gap that
+    did not exist — a false warning sitting in every session's always-on context.
+    """
+    out: list[str] = []
+    for t in tables:
+        seen = {t.id}
+        frontier = [t.id]
+        covered = False
+        while frontier and not covered:
+            nxt: list[str] = []
+            for node_id in frontier:
+                for e in g.out_edges(node_id):
+                    if e.kind not in COVERAGE_KINDS or e.dst in seen:
+                        continue
+                    seen.add(e.dst)
+                    target = g.node(e.dst)
+                    if target and target.kind == "Metric":
+                        covered = True
+                        break
+                    nxt.append(e.dst)
+                if covered:
+                    break
+            frontier = nxt
+        if not covered:
+            out.append(t.name)
+    return sorted(out)
+
+
 def _bullets(nodes: list[Node], fmt, limit: int = 12) -> list[str]:
     out = [fmt(n) for n in sorted(nodes, key=lambda n: n.name)[:limit]]
     if len(nodes) > limit:
@@ -29,13 +65,13 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
     graph_path = root / "kg" / "graph.duckdb"
 
     with open_graph(graph_path, read_only=True) as g:
-        concepts = [n for n in g.nodes("Concept")]
         tables = g.nodes("Table")
         models = g.nodes("Model")
         metrics = g.nodes("Metric")
         dims = g.nodes("Dimension")
         exposures = g.nodes("Exposure")
         columns = g.nodes("Column")
+        uncovered = _uncovered_tables(g, tables)
 
     used_concepts = sorted({t.props.get("concept") for t in tables if t.props.get("concept")})
     sources = sorted({t.props.get("source") for t in tables if t.props.get("source")})
@@ -46,10 +82,9 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
     gaps: list[str] = []
     if not metrics:
         gaps.append("no metrics defined — every business question falls back to raw SQL")
-    tables_wo_metric = [t.name for t in tables if not any(
-        m.name.lower().startswith(t.name.split("__")[-1][:6].lower()) for m in metrics)]
-    if metrics and tables_wo_metric:
-        gaps.append(f"{len(tables_wo_metric)} raw table(s) have no metric coverage")
+    if metrics and uncovered:
+        gaps.append(f"{len(uncovered)} raw table(s) reach no metric: "
+                    + ", ".join(f"`{n}`" for n in uncovered))
     if not exposures:
         gaps.append("no exposures declared — impact analysis stops at the mart")
 

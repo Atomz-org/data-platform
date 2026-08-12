@@ -57,6 +57,15 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
 # ---------------------------------------------------------------- project --
 def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
                 sisters: list[str] | None = None) -> list[Path]:
+    """Scaffold one project.
+
+    The `hooks.PreToolUse` block in PROJECT_SETTINGS is load-bearing, not
+    boilerplate: it is the only thing that applies `gate.yaml` to an agent's
+    edits inside this project. Projects created before it was templated here had
+    to be patched by hand, which is exactly the drift the gate exists to prevent.
+    Callers should follow up with `pf kg build` so the project has a graph from
+    day one — see `cmd_new_project`.
+    """
     gdir = root / "groups" / group
     if not gdir.exists():
         raise FileNotFoundError(f"group '{group}' does not exist — run `pf new-group {group}` first")
@@ -221,6 +230,19 @@ PROJECT_SETTINGS = """\
       "Bash(uv run pf:*)",
       "Bash(dbt parse:*)", "Bash(dbt ls:*)", "Bash(dbt build:*)", "Bash(dbt test:*)",
       "Bash(mf query:*)", "Bash(mf list:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python ../../../../platform/hooks/pre_tool_use.py"
+          }
+        ]
+      }
     ]
   }
 }

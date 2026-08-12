@@ -94,13 +94,38 @@ class Ledger:
                 if e["loop"] == loop and e["project"] == project][-n:]
 
     def consecutive_failures(self, loop: str, project: str) -> int:
+        """Failures since the last clean run, ignoring the breaker's own records.
+
+        `circuit_open` entries are skipped rather than counted or treated as a
+        clean run. Counting them as clean let the breaker un-latch: it tripped,
+        wrote one `circuit_open` row, and the very next invocation saw a
+        non-failure at the head of the streak and ran the broken body again.
+        Skipping them means the breaker stays open until a human clears it with
+        `pf loop reset` — which is the point of a breaker.
+        """
         count = 0
         for e in reversed(self.recent(loop, project, n=20)):
-            if e["outcome"] in ("error", "escalated"):
+            outcome = e["outcome"]
+            if outcome == "circuit_open":
+                continue
+            if outcome in ("error", "escalated"):
                 count += 1
             else:
                 break
         return count
+
+    def reset(self, loop: str, group: str, project: str, note: str = "") -> LoopRun:
+        """Clear a latched breaker by appending a clean marker.
+
+        The ledger is append-only on purpose — the history of a loop that had to
+        be reset is itself worth keeping — so this records the reset rather than
+        deleting the failures.
+        """
+        run = LoopRun(run_id=str(uuid.uuid4())[:8], loop=loop, group=group,
+                      project=project, started_at=_now(), outcome="noop",
+                      message=f"manual reset: {note}" if note else "manual reset")
+        self.append(run)
+        return run
 
     def spend_today(self) -> int:
         today = _now()[:10]

@@ -1,0 +1,244 @@
+{
+  "catalog": "acme",
+  "schema": "acme_eu",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [
+    {
+      "name": "dim_customers",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_customers"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Sales segment. Drives most reporting cuts."
+          }
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "Customer dimension with subscription rollups.",
+        "grain": "one customer",
+        "layer": "marts",
+        "pf.project": "acme-eu",
+        "pf.group": "acme"
+      }
+    },
+    {
+      "name": "fct_payments",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_payments"
+      },
+      "columns": [
+        {
+          "name": "payment_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "paid_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        }
+      ],
+      "primaryKey": "payment_id",
+      "properties": {
+        "description": "Payment fact at attempt grain, enriched with customer and plan.",
+        "grain": "one payment attempt",
+        "layer": "marts",
+        "pf.project": "acme-eu",
+        "pf.group": "acme"
+      }
+    },
+    {
+      "name": "fct_revenue",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_revenue"
+      },
+      "columns": [
+        {
+          "name": "revenue_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "net_amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        }
+      ],
+      "properties": {
+        "description": "Daily revenue by segment and plan. Union-compatible across sisters.",
+        "grain": "one day x segment x plan",
+        "layer": "marts",
+        "pf.project": "acme-eu",
+        "pf.group": "acme"
+      }
+    }
+  ],
+  "relationships": [],
+  "views": [],
+  "cubes": [
+    {
+      "name": "acme_eu_core",
+      "baseObject": "fct_payments",
+      "measures": [
+        {
+          "name": "active_customers",
+          "expression": "-- active_customers",
+          "type": "DOUBLE",
+          "description": "Active Customers",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "aov",
+          "expression": "-- aov",
+          "type": "DOUBLE",
+          "description": "Average Order Value",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "gross_payment_volume",
+          "expression": "-- gross_payment_volume",
+          "type": "DOUBLE",
+          "description": "Gross Payment Volume",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "payment_count",
+          "expression": "-- payment_count",
+          "type": "DOUBLE",
+          "description": "Payments",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "revenue",
+          "expression": "-- revenue",
+          "type": "DOUBLE",
+          "description": "Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "revenue_mom_growth",
+          "expression": "-- revenue_mom_growth",
+          "type": "DOUBLE",
+          "description": "Revenue MoM Growth",
+          "properties": {
+            "pf.metric_type": "derived"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "country_code",
+          "expression": "country_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "country_code",
+          "expression": "country_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_segment",
+          "expression": "customer_segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_segment",
+          "expression": "customer_segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "payment_status",
+          "expression": "payment_status",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "plan_tier",
+          "expression": "plan_tier",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "created_at",
+          "expression": "created_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "paid_at",
+          "expression": "paid_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

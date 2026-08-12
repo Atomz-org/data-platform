@@ -1,0 +1,5 @@
+2026-08-12 16:41:52 +0200 - dagster - DEBUG - __ASSET_JOB - d3dccc3a-cbe4-4794-aba2-67991c06b9fb - 84855 - LOGS_CAPTURED - Capturing logs for process (pid: 84855).
+2026-08-12 16:41:52 +0200 - dagster - DEBUG - __ASSET_JOB - d3dccc3a-cbe4-4794-aba2-67991c06b9fb - 84855 - acme_rollup__group_rollup - STEP_START - Started execution of step "acme_rollup__group_rollup".
+2026-08-12 16:41:52 +0200 - dagster - DEBUG - __ASSET_JOB - d3dccc3a-cbe4-4794-aba2-67991c06b9fb - 84855 - acme_rollup__group_rollup - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
+2026-08-12 16:41:52 +0200 - dagster - DEBUG - __ASSET_JOB - d3dccc3a-cbe4-4794-aba2-67991c06b9fb - 84855 - acme_rollup__group_rollup - ASSET_MATERIALIZATION - Materialized value acme_rollup group_rollup.
+2026-08-12 16:41:52 +0200 - dagster - DEBUG - __ASSET_JOB - d3dccc3a-cbe4-4794-aba2-67991c06b9fb - 84855 - acme_rollup__group_rollup - STEP_SUCCESS - Finished execution of step "acme_rollup__group_rollup" in 76ms.

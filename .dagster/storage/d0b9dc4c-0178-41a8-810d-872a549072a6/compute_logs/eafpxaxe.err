@@ -1,0 +1,5 @@
+2026-08-12 16:41:08 +0200 - dagster - DEBUG - __ASSET_JOB - d0b9dc4c-0178-41a8-810d-872a549072a6 - 84404 - LOGS_CAPTURED - Capturing logs for process (pid: 84404).
+2026-08-12 16:41:08 +0200 - dagster - DEBUG - __ASSET_JOB - d0b9dc4c-0178-41a8-810d-872a549072a6 - 84404 - acme_us__subscriptions - STEP_START - Started execution of step "acme_us__subscriptions".
+2026-08-12 16:41:08 +0200 - dagster - DEBUG - __ASSET_JOB - d0b9dc4c-0178-41a8-810d-872a549072a6 - 84404 - acme_us__subscriptions - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
+2026-08-12 16:41:08 +0200 - dagster - DEBUG - __ASSET_JOB - d0b9dc4c-0178-41a8-810d-872a549072a6 - 84404 - acme_us__subscriptions - ASSET_MATERIALIZATION - Materialized value acme_us subscriptions.
+2026-08-12 16:41:08 +0200 - dagster - DEBUG - __ASSET_JOB - d0b9dc4c-0178-41a8-810d-872a549072a6 - 84404 - acme_us__subscriptions - STEP_SUCCESS - Finished execution of step "acme_us__subscriptions" in 237ms.

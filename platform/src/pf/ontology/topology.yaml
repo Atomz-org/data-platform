@@ -1,20 +1,133 @@
-# Canonical relationships between ontology classes, independent of any warehouse.
-# `x-links-to` annotations on dlt columns are validated against these edges, and
-# the knowledge graph derives business-level lineage from them.
-version: 1
+# Topology — named relations between ontology classes.
+#
+# v2 replaces the flat {from, to, type, cardinality} edge list. That shape could
+# validate an annotation but could not generate anything: a BI tool or an MDL
+# manifest needs a relation *name*, a join direction, and a cardinality it
+# actually understands. Four changes, each load-bearing:
+#
+#   name         Relations are addressable. MDL requires `relationships[].name`;
+#                so does any BI semantic layer worth projecting into.
+#   domain/range OWL object-property framing (Ontology-Playground models the same
+#                thing), replacing the ambiguous from/to.
+#   cardinality  MDL's enum verbatim — ONE_TO_ONE | ONE_TO_MANY | MANY_TO_ONE |
+#                MANY_TO_MANY. A "1:N" string needed translating and translation
+#                is where direction gets silently flipped.
+#   inverse      Every relation reads both ways. Without an inverse name, an
+#                agent describing `Order -> Customer` has no word for it.
+#
+# The *physical* join condition is deliberately NOT here. It is derived at
+# projection time from each project's annotations: the column annotated
+# `links_to: Customer` on a Payment-instantiating table is the foreign key. The
+# topology stays warehouse-independent; the binding is per project.
+version: 2
+namespace: "https://data-platform.local/topology#"
 
-edges:
-  - { from: Customer,     to: Organization, type: belongs_to,  cardinality: "N:1" }
-  - { from: Customer,     to: Subscription, type: holds,       cardinality: "1:N" }
-  - { from: Customer,     to: Order,        type: places,      cardinality: "1:N" }
-  - { from: Customer,     to: Location,     type: located_in,  cardinality: "N:1" }
-  - { from: Customer,     to: Interaction,  type: participates,cardinality: "1:N" }
-  - { from: Customer,     to: Payment,      type: pays,        cardinality: "1:N" }
-  - { from: Subscription, to: Payment,      type: settled_by,  cardinality: "1:N" }
-  - { from: Subscription, to: Product,      type: for_product, cardinality: "N:1" }
-  - { from: Subscription, to: Usage,        type: metered_by,  cardinality: "1:N" }
-  - { from: Order,        to: Payment,      type: settled_by,  cardinality: "1:N" }
-  - { from: Order,        to: Product,      type: contains,    cardinality: "N:M" }
-  - { from: Payment,      to: Refund,       type: reversed_by, cardinality: "1:N" }
-  - { from: Payment,      to: Currency,     type: denominated, cardinality: "N:1" }
-  - { from: Contract,     to: Organization, type: signed_by,   cardinality: "N:1" }
+relations:
+  # -- party structure ----------------------------------------------------
+  - name: customer_belongs_to_organization
+    label: belongs to
+    inverse: has customer
+    domain: Customer
+    range: Organization
+    cardinality: MANY_TO_ONE
+    description: A customer may sit under a parent organization.
+
+  - name: customer_located_in_location
+    label: located in
+    inverse: is location of
+    domain: Customer
+    range: Location
+    cardinality: MANY_TO_ONE
+
+  # -- agreements ---------------------------------------------------------
+  - name: customer_holds_subscription
+    label: holds
+    inverse: held by
+    domain: Customer
+    range: Subscription
+    cardinality: ONE_TO_MANY
+    description: The spine of any recurring-revenue model.
+
+  - name: customer_places_order
+    label: places
+    inverse: placed by
+    domain: Customer
+    range: Order
+    cardinality: ONE_TO_MANY
+
+  - name: contract_signed_by_organization
+    label: signed by
+    inverse: signatory of
+    domain: Contract
+    range: Organization
+    cardinality: MANY_TO_ONE
+
+  - name: subscription_for_product
+    label: for product
+    inverse: sold as
+    domain: Subscription
+    range: Product
+    cardinality: MANY_TO_ONE
+
+  - name: order_contains_product
+    label: contains
+    inverse: appears in
+    domain: Order
+    range: Product
+    cardinality: MANY_TO_MANY
+    description: Needs a line-item bridge in any physical model.
+
+  # -- settlement ---------------------------------------------------------
+  # Payment carries customer_id directly in most billing systems, so the direct
+  # relation is real and not a shortcut through Subscription. Both are declared;
+  # a projection picks whichever the annotations actually bind.
+  - name: customer_pays_payment
+    label: pays
+    inverse: paid by
+    domain: Customer
+    range: Payment
+    cardinality: ONE_TO_MANY
+
+  - name: subscription_settled_by_payment
+    label: settled by
+    inverse: settles
+    domain: Subscription
+    range: Payment
+    cardinality: ONE_TO_MANY
+
+  - name: order_settled_by_payment
+    label: settled by
+    inverse: settles
+    domain: Order
+    range: Payment
+    cardinality: ONE_TO_MANY
+
+  - name: payment_reversed_by_refund
+    label: reversed by
+    inverse: reverses
+    domain: Payment
+    range: Refund
+    cardinality: ONE_TO_MANY
+
+  - name: payment_denominated_in_currency
+    label: denominated in
+    inverse: denominates
+    domain: Payment
+    range: Currency
+    cardinality: MANY_TO_ONE
+    description: Makes the money/currency pairing explicit rather than a convention.
+
+  # -- consumption --------------------------------------------------------
+  - name: subscription_metered_by_usage
+    label: metered by
+    inverse: meters
+    domain: Subscription
+    range: Usage
+    cardinality: ONE_TO_MANY
+
+  - name: customer_participates_in_interaction
+    label: participates in
+    inverse: involves
+    domain: Customer
+    range: Interaction
+    cardinality: ONE_TO_MANY

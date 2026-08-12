@@ -51,7 +51,11 @@ def main() -> int:
     except ValueError:
         rel = file_path
 
-    in_project = project_for(rel, root) is not None
+    # `in_project` is a property of the *session*, not of the file being edited.
+    # Resolving it from the target path made platform_denylist unreachable: a
+    # path under platform/ never resolves to a project, so the one rule that
+    # stops a project session from editing shared infra never fired.
+    in_project = project_for(str(cwd), root) is not None
     result = check_path(rel, root, in_project=in_project)
 
     if result.blocked:
@@ -75,7 +79,21 @@ def main() -> int:
                         return 0
                 except Exception:
                     pass
-        print(f"⚠ {rel} is impact-gated. Run `pf impact {rel}` if the graph is stale.")
+            else:
+                # Deliberately a warning, not a block: a brand-new project has
+                # no graph yet and must stay workable. But say plainly that the
+                # gate is inert rather than implying it passed.
+                print(f"⚠ NO BLAST RADIUS CHECKED for {Path(rel).name} — "
+                      f"{group}/{project} has no knowledge graph at "
+                      f"kg/graph.duckdb, so the impact gate is inert.\n"
+                      f"  This edit is allowed, but nothing verified what it breaks.\n"
+                      f"  Build the index: `pf kg build {group} {project}`")
+                return 0
+            print(f"⚠ {Path(rel).name} is impact-gated but resolved to no graph node. "
+                  f"If it is a new model, run `pf kg build {group} {project}` "
+                  f"then `pf impact {group} {project} model:{Path(rel).stem}`.")
+            return 0
+        print(f"⚠ {rel} is impact-gated; it is outside any project, so no graph applies.")
     return 0
 
 

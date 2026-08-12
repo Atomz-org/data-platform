@@ -1,0 +1,117 @@
+# Policy and evidence layer.
+#
+# Modelled on OpenTopology (otop), whose contribution is not entity-relationship
+# modelling — it is the traceability chain:
+#
+#     intent -> constraint -> artifact -> evidence
+#
+# The gap that closes here is specific. This platform already had rules (PII must
+# be masked; money needs a currency; a mart must declare its grain) but they lived
+# in three disconnected places: prose in a skill, an if-statement in validate.py,
+# and a dbt test. Nothing linked the *reason* to the *check* to the *proof*, so
+# "is this policy actually enforced?" had no answer.
+#
+# Every policy below names the artifact that enforces it and the evidence that
+# proves it ran. `pf policy status` walks that chain; unenforced policies are the
+# interesting output.
+version: 1
+namespace: "https://data-platform.local/policy#"
+
+policies:
+  - id: money-requires-currency
+    intent: >
+      A monetary amount without its currency is not a number, it is a bug waiting
+      for a second entity to be onboarded.
+    applies_to: {role: money_amount}
+    constraint: sibling_role_present
+    params: {sibling: currency_code, scope: resource}
+    severity: error
+    enforced_by: [pf.ontology.validate:money-without-currency]
+    evidence: [pf check]
+
+  - id: entity-requires-identity
+    intent: >
+      A class with no identity property cannot participate in a derived join, so
+      every BI and MDL projection of it is a guess.
+    applies_to: {class: "*"}
+    constraint: identity_declared
+    params: {exclude_abstract: true}
+    severity: error
+    enforced_by: [pf.ontology.validate:class-without-identity]
+    evidence: [pf check]
+
+  - id: link-must-be-in-topology
+    intent: >
+      A foreign key pointing at a class the topology does not relate to is an
+      undeclared join. Undeclared joins are how two teams compute different
+      revenue from the same warehouse.
+    applies_to: {annotation: links}
+    constraint: relation_exists
+    severity: error
+    enforced_by: [pf.ontology.validate:illegal-edge]
+    evidence: [pf check]
+
+  - id: pii-not-in-consumption
+    intent: >
+      PII may land in raw and staging. It must not reach a mart or an exposure
+      without a masking policy or an explicit, recorded waiver.
+    applies_to: {role_glob: "pii_*"}
+    constraint: not_in_layer
+    params: {layers: [marts, semantic, consumption]}
+    severity: error
+    enforced_by: [pf.loops.registry:pii_audit]
+    evidence: [pf loop run pii-audit, STATE.md]
+
+  - id: mart-declares-grain
+    intent: >
+      Grain is the one fact a downstream consumer cannot infer and cannot survive
+      guessing. An undeclared grain is how a join silently fans out.
+    applies_to: {layer: marts}
+    constraint: meta_field_present
+    params: {field: grain}
+    severity: warning
+    enforced_by: [pf.kg.build:model-grain]
+    evidence: [kg/context_card.md]
+
+  - id: metric-owns-aggregation
+    intent: >
+      Aggregation policy — which statuses count, which timestamp, which filter —
+      belongs to exactly one metric definition. A mart column named `revenue` is
+      a second definition that will drift from the first.
+    applies_to: {layer: marts}
+    constraint: no_metric_shaped_columns
+    params: {forbidden_names: [revenue, mrr, arr, churn_rate, ltv]}
+    severity: warning
+    enforced_by: [pf.ontology.validate:metric-shaped-column]
+    evidence: [pf check]
+
+  - id: change-declares-blast-radius
+    intent: >
+      A model or column change must report what it breaks before it lands,
+      including the human who owns each affected exposure.
+    applies_to: {artifact_glob: "**/transform/models/**"}
+    constraint: impact_reported
+    severity: error
+    enforced_by: [platform/hooks/pre_tool_use.py, platform/hooks/pre_commit.sh]
+    evidence: [impact_reports, loop-ledger.json]
+
+  - id: secrets-never-in-context
+    intent: >
+      A credential placed in a prompt, a model file or a committed artefact is
+      durably persisted and replayed into every later session.
+    applies_to: {artifact_glob: "**/secrets.toml"}
+    constraint: path_denied
+    severity: error
+    enforced_by: [gate.yaml:denylist, platform/hooks/pre_tool_use.py]
+    evidence: [pf gate]
+
+# Evidence kinds the chain may reference. An evidence entry naming something not
+# listed here is itself a finding — that is how the chain stays honest.
+evidence_kinds:
+  - {id: "pf check",   produces: conformance report,  durable: false}
+  - {id: "pf gate",    produces: path verdict,        durable: false}
+  - {id: "STATE.md",   produces: open findings,       durable: true}
+  - {id: "impact_reports", produces: blast radius history, durable: true}
+  - {id: "loop-ledger.json", produces: run history,   durable: true}
+  - {id: "kg/context_card.md", produces: project index, durable: true}
+  - {id: "pf loop run pii-audit", produces: PII findings, durable: false}

@@ -1,0 +1,319 @@
+{
+  "nodes": [
+    {
+      "id": "concept:Agreement",
+      "kind": "Concept",
+      "name": "Agreement",
+      "layer": "ontology",
+      "label": "A commitment between parties, with a lifecycle.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Contract",
+      "kind": "Concept",
+      "name": "Contract",
+      "layer": "ontology",
+      "label": "A negotiated agreement, usually with custom terms.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Currency",
+      "kind": "Concept",
+      "name": "Currency",
+      "layer": "ontology",
+      "label": "An ISO currency. Used to qualify money amounts.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Customer",
+      "kind": "Concept",
+      "name": "Customer",
+      "layer": "ontology",
+      "label": "A party that buys. May be a person or an organization.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Employee",
+      "kind": "Concept",
+      "name": "Employee",
+      "layer": "ontology",
+      "label": "Internal actor. Rarely modelled in marts; used for attribution.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Event",
+      "kind": "Concept",
+      "name": "Event",
+      "layer": "ontology",
+      "label": "Something that happened at a point in time. Immutable.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Interaction",
+      "kind": "Concept",
+      "name": "Interaction",
+      "layer": "ontology",
+      "label": "A touchpoint (email, call, session) with a party.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Location",
+      "kind": "Concept",
+      "name": "Location",
+      "layer": "ontology",
+      "label": "A geography. Country, region, or address.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Order",
+      "kind": "Concept",
+      "name": "Order",
+      "layer": "ontology",
+      "label": "A one-off purchase commitment.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Organization",
+      "kind": "Concept",
+      "name": "Organization",
+      "layer": "ontology",
+      "label": "A legal entity. Customers may belong to one.",
+      "props": {
+        "abstract": false,
+        "parent": "Party"
+      }
+    },
+    {
+      "id": "concept:Party",
+      "kind": "Concept",
+      "name": "Party",
+      "layer": "ontology",
+      "label": "Any actor that can enter into an agreement.",
+      "props": {
+        "abstract": true,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Payment",
+      "kind": "Concept",
+      "name": "Payment",
+      "layer": "ontology",
+      "label": "Movement of money settling an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Product",
+      "kind": "Concept",
+      "name": "Product",
+      "layer": "ontology",
+      "label": "A sellable thing. Plans and SKUs are Products.",
+      "props": {
+        "abstract": false,
+        "parent": null
+      }
+    },
+    {
+      "id": "concept:Refund",
+      "kind": "Concept",
+      "name": "Refund",
+      "layer": "ontology",
+      "label": "Negative movement of money against a prior payment.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "concept:Subscription",
+      "kind": "Concept",
+      "name": "Subscription",
+      "layer": "ontology",
+      "label": "A recurring agreement with a plan, term and status.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Usage",
+      "kind": "Concept",
+      "name": "Usage",
+      "layer": "ontology",
+      "label": "Metered consumption attributable to an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event"
+      }
+    },
+    {
+      "id": "project:globex-core",
+      "kind": "Project",
+      "name": "globex-core",
+      "layer": "project",
+      "label": "globex/globex-core",
+      "props": {
+        "group": "globex",
+        "path": "/Users/suresh/data-platform/groups/globex/projects/globex-core"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Organization",
+      "kind": "links_to",
+      "props": {
+        "type": "belongs_to",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Subscription",
+      "kind": "links_to",
+      "props": {
+        "type": "holds",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Order",
+      "kind": "links_to",
+      "props": {
+        "type": "places",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Location",
+      "kind": "links_to",
+      "props": {
+        "type": "located_in",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Interaction",
+      "kind": "links_to",
+      "props": {
+        "type": "participates",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "pays",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "settled_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Product",
+      "kind": "links_to",
+      "props": {
+        "type": "for_product",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "concept:Usage",
+      "kind": "links_to",
+      "props": {
+        "type": "metered_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Order",
+      "dst": "concept:Payment",
+      "kind": "links_to",
+      "props": {
+        "type": "settled_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Order",
+      "dst": "concept:Product",
+      "kind": "links_to",
+      "props": {
+        "type": "contains",
+        "cardinality": "N:M"
+      }
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "concept:Refund",
+      "kind": "links_to",
+      "props": {
+        "type": "reversed_by",
+        "cardinality": "1:N"
+      }
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "concept:Currency",
+      "kind": "links_to",
+      "props": {
+        "type": "denominated",
+        "cardinality": "N:1"
+      }
+    },
+    {
+      "src": "concept:Contract",
+      "dst": "concept:Organization",
+      "kind": "links_to",
+      "props": {
+        "type": "signed_by",
+        "cardinality": "N:1"
+      }
+    }
+  ]
+}

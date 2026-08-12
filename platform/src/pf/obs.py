@@ -45,12 +45,8 @@ CREATE TABLE IF NOT EXISTS token_budgets (
 );
 """
 
-# Opus 5 list pricing, USD per million tokens.
-PRICING = {
-    "claude-opus-5":    {"in": 5.00, "out": 25.00, "cache_read": 0.50, "cache_write": 6.25},
-    "claude-sonnet-5":  {"in": 3.00, "out": 15.00, "cache_read": 0.30, "cache_write": 3.75},
-    "claude-haiku-4-5": {"in": 1.00, "out": 5.00,  "cache_read": 0.10, "cache_write": 1.25},
-}
+# Pricing lives with the rest of each model's facts in `pf.agents.models`, so a
+# new model is one edit rather than two that can drift apart.
 
 
 def db_path(root: str | Path | None = None) -> Path:
@@ -105,13 +101,18 @@ def _now() -> datetime:
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int,
-                  cache_read: int = 0, cache_write: int = 0) -> float:
-    p = PRICING.get(model, PRICING["claude-opus-5"])
-    return round(
-        (input_tokens * p["in"] + output_tokens * p["out"]
-         + cache_read * p["cache_read"] + cache_write * p["cache_write"]) / 1_000_000,
-        6,
-    )
+                  cache_read: int = 0, cache_write: int = 0,
+                  ttl: str = "5m") -> float:
+    """Cost of one call. Unknown models bill at Opus rates — over-reporting an
+    unmapped model is the safe direction for a spend dashboard."""
+    from pf.agents.models import UnknownModel, estimate_usd
+
+    try:
+        return estimate_usd(model, input_tokens, output_tokens, cache_read,
+                            cache_write, ttl)
+    except UnknownModel:
+        return estimate_usd("claude-opus-5", input_tokens, output_tokens,
+                            cache_read, cache_write, ttl)
 
 
 def record_agent_run(*, group: str, project: str, agent: str, model: str,
@@ -176,7 +177,12 @@ def record_token_budget(*, group: str, project: str, artefact: str, tokens: int,
 
 
 def query(sql: str, params: list | None = None, root: str | Path | None = None) -> list[dict]:
-    with connect(root, read_only=False) as con:
+    """Read-only query against the tracking DB.
+
+    Opened read_only so a dashboard refresh or a loop reading monitor results
+    never takes the writer lock that recording pipeline runs needs.
+    """
+    with connect(root, read_only=True) as con:
         cur = con.execute(sql, params or [])
         cols = [d[0] for d in cur.description]
         return [dict(zip(cols, row)) for row in cur.fetchall()]

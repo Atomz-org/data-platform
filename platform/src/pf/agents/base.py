@@ -11,7 +11,10 @@ easy to miss:
     defeat the whole thing — verify with `cache_read_input_tokens`.
   * **Model and effort routing.** Mechanical work goes to Haiku; reasoning over
     lineage goes to Opus at medium. Paying Opus rates to reformat a list is the
-    most common avoidable cost in an agentic platform.
+    most common avoidable cost in an agentic platform. Routing declares *intent*
+    here and `pf.agents.models` renders it into a request the target model
+    actually accepts — `output_config.effort` is rejected outright by Haiku 4.5,
+    so a naive cost-saving route to Haiku 400s on every call.
   * **Refusal handling.** `stop_reason == "refusal"` returns HTTP 200 with empty
     or partial content. Reading `content[0]` unconditionally breaks on it.
 """
@@ -27,6 +30,8 @@ from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
+from pf.agents.models import UnknownModel, cache_ttl, caches, request_params, spec
+
 T = TypeVar("T", bound=BaseModel)
 
 MAX_TOKENS = 16_000
@@ -38,24 +43,72 @@ class NoCredentials(RuntimeError):
 
 @dataclass(frozen=True)
 class AgentConfig:
-    """Model routing for one agent. See loop-budget.md for the rationale."""
+    """Model routing for one step. See loop-budget.md for the rationale.
+
+    `purpose` is not decoration — it is the reason the step is on this model, and
+    it is what a reviewer checks when the bill moves. `cadence_minutes` picks the
+    cache TTL: a 1h entry costs 2x to write and needs ~3 reads to pay for itself,
+    so a step that runs less often than hourly must not ask for one.
+    """
 
     name: str
     model: str
+    purpose: str = ""
     effort: str = "medium"
     thinking: bool = True
     max_tokens: int = MAX_TOKENS
+    cadence_minutes: int | None = None
 
 
 # Routing table. Mirrors loop-budget.md — keep them in sync.
+#
+# The shape of the decision: judgement over lineage that a human would otherwise
+# have to make goes to Opus; drafting against a known grammar goes to Sonnet;
+# classifying rows that are already structured goes to Haiku. Every step returns
+# a typed schema, so none of them pay for prose.
 AGENTS = {
-    "freshness_triage": AgentConfig("freshness_triage", "claude-haiku-4-5",
-                                    effort="low", thinking=False),
-    "test_failure_triage": AgentConfig("test_failure_triage", "claude-opus-5",
-                                       effort="medium"),
-    "metric_gap_proposer": AgentConfig("metric_gap_proposer", "claude-sonnet-5",
-                                       effort="low"),
+    "freshness_triage": AgentConfig(
+        "freshness_triage", "claude-haiku-4-5",
+        purpose="Classify already-structured monitor rows as signal or noise. "
+                "Mechanical, highest cadence, no lineage reasoning — the cheapest "
+                "model is correct here.",
+        effort="low", thinking=False, cadence_minutes=120),
+    "test_failure_triage": AgentConfig(
+        "test_failure_triage", "claude-opus-5",
+        purpose="Decide *why* a dbt node failed by reasoning over its lineage "
+                "neighbourhood. A wrong root cause sends an engineer down the "
+                "wrong path, so this is the one step worth Opus rates.",
+        effort="medium", cadence_minutes=None),
+    "metric_gap_proposer": AgentConfig(
+        "metric_gap_proposer", "claude-sonnet-5",
+        purpose="Draft MetricFlow definitions against a known grammar. Structured "
+                "generation with a schema to check against — mid-tier is the "
+                "quality/cost knee.",
+        effort="low", cadence_minutes=1440),
 }
+
+
+def validate_routing() -> list[str]:
+    """Check every routed step against its model's real capabilities.
+
+    Called by `pf models`. Catching an unsupported parameter here costs a unit
+    test; catching it in production costs a 400 on a loop nobody is watching.
+    """
+    issues: list[str] = []
+    for cfg in AGENTS.values():
+        try:
+            s = spec(cfg.model)
+        except UnknownModel as exc:
+            issues.append(f"{cfg.name}: {exc}")
+            continue
+        if cfg.effort and not s.supports_effort:
+            issues.append(
+                f"{cfg.name}: effort={cfg.effort!r} is dropped — {s.id} rejects "
+                f"`output_config.effort`. Intent preserved, request still valid.")
+        if cfg.max_tokens > s.max_output:
+            issues.append(f"{cfg.name}: max_tokens {cfg.max_tokens} exceeds "
+                          f"{s.id}'s {s.max_output} ceiling; it will be clamped.")
+    return issues
 
 
 def have_credentials() -> bool:
@@ -74,9 +127,21 @@ def client() -> Any:
     return anthropic.Anthropic()
 
 
-def cached_prefix(root: Path, group: str, project: str) -> list[dict[str, Any]]:
+def cached_prefix(root: Path, group: str, project: str,
+                  cfg: AgentConfig | None = None) -> list[dict[str, Any]]:
     """The stable system prefix. Identical bytes across every run — that is the
-    whole requirement for a cache hit."""
+    whole requirement for a cache hit.
+
+    Two model-dependent details decide whether the marker does anything:
+
+      * **The minimum cacheable prefix**, which is per model and not monotonic
+        across generations (512 on Opus 5, 1024 on Sonnet 5, 4096 on Haiku 4.5).
+        Below it the marker is silently ignored. This prefix is roughly a
+        thousand tokens, so it caches on Opus, is marginal on Sonnet, and never
+        caches on Haiku — we omit the marker there rather than implying it works.
+      * **The TTL**, chosen from the step's cadence. Asking for 1h on a loop that
+        runs every two hours pays the 2x write premium to read it zero times.
+    """
     parts: list[str] = []
     for rel in ("platform/toolkits/ROUTING.md", "loop-constraints.md"):
         f = root / rel
@@ -89,10 +154,19 @@ def cached_prefix(root: Path, group: str, project: str) -> list[dict[str, Any]]:
 
     text = ("You are an agent operating inside a governed data platform.\n\n"
             + "\n\n".join(parts))
-    # One breakpoint at the end of the stable prefix. 1h TTL because loops run
-    # on cadences measured in hours, not seconds.
-    return [{"type": "text", "text": text,
-             "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
+    block: dict[str, Any] = {"type": "text", "text": text}
+
+    if cfg is None:
+        return [block]
+
+    # ~4 chars/token, the same local estimate `pf tokens` uses. Deliberately
+    # conservative: over-estimating the prefix would put a marker on a request
+    # that cannot cache, which reads as a working optimisation and is not one.
+    approx_tokens = len(text) // 4
+    if caches(cfg.model, approx_tokens):
+        block["cache_control"] = {"type": "ephemeral",
+                                  "ttl": cache_ttl(cfg.cadence_minutes)}
+    return [block]
 
 
 _DATE_RE = re.compile(r"\(generated \d{4}-\d{2}-\d{2}\)")
@@ -137,16 +211,20 @@ def call(
     """
     from pf import obs
 
-    params: dict[str, Any] = {
-        "model": cfg.model,
-        "max_tokens": cfg.max_tokens,
+    # Rendered per model: effort and thinking are dropped where the target model
+    # rejects them, rather than 400-ing the loop.
+    params = request_params(cfg.model, effort=cfg.effort, thinking=cfg.thinking,
+                            max_tokens=cfg.max_tokens)
+    params |= {
         "system": system,
         "messages": [{"role": "user", "content": user}],
+        # `messages.parse` is the documented structured-output path; it fills in
+        # `output_config.format` from this schema. We pass `effort` in the same
+        # `output_config` — re-check that the SDK merges rather than replaces it
+        # on any anthropic upgrade, since a silent replace would drop effort
+        # routing without failing.
         "output_format": output_format,
-        "output_config": {"effort": cfg.effort},
     }
-    if cfg.thinking:
-        params["thinking"] = {"type": "adaptive"}
 
     t0 = time.time()
     c = client()

@@ -26,6 +26,72 @@ def mcol(model: str, col: str) -> str: return f"col:model:{model}.{col}"
 def metid(name: str) -> str: return f"metric:{name}"
 def dimid(name: str) -> str: return f"dim:{name}"
 def expid(name: str) -> str: return f"exposure:{name}"
+def relid(name: str) -> str: return f"relation:{name}"
+def propid(cls: str, prop: str) -> str: return f"property:{cls}.{prop}"
+def polid(pid: str) -> str: return f"policy:{pid}"
+def evid(eid: str) -> str: return f"evidence:{eid}"
+
+
+def _add_physical_columns(root: Path, project: str, nodes: list[Node],
+                          edges: list[Edge]) -> None:
+    """Add columns that exist in the warehouse but are not documented in dbt.
+
+    The manifest only lists columns someone wrote a description for. That is fine
+    for docs and fatal for projection: the join keys are usually the columns
+    nobody bothered to document, so an MDL manifest built from documented columns
+    alone has models with no foreign keys and therefore no relationships.
+
+    Documentation still wins where it exists — it carries the role and PII flags.
+    This only fills in what is missing.
+    """
+    import duckdb
+
+    db = root / "data" / f"{project.replace('-', '_')}.duckdb"
+    if not db.exists():
+        return
+
+    models = {n.name: n for n in nodes if n.kind == "Model"}
+    if not models:
+        return
+    known = {(n.props.get("model"), n.name) for n in nodes if n.kind == "Column"}
+
+    try:
+        con = duckdb.connect(str(db), read_only=True)
+    except duckdb.Error:
+        return  # a sister holds the write lock; documented columns still stand
+    try:
+        rows = con.execute(
+            "SELECT table_name, column_name, data_type FROM information_schema.columns "
+            "WHERE table_schema NOT IN ('information_schema','pg_catalog')"
+        ).fetchall()
+    except duckdb.Error:
+        return
+    finally:
+        con.close()
+
+    for table, column, data_type in rows:
+        model = models.get(table)
+        if model is None or (table, column) in known:
+            continue
+        if column.startswith("_dlt_"):
+            continue
+        c_id = mcol(table, column)
+        nodes.append(Node(
+            id=c_id, kind="Column", name=column, layer=model.layer, label="",
+            props={"role": _infer_role(column), "pii": False, "model": table,
+                   "data_type": data_type, "documented": False},
+        ))
+        edges.append(Edge(src=model.id, dst=c_id, kind="has_column"))
+
+
+def _infer_role(column: str) -> str:
+    """A conservative guess for undocumented columns. Only structural roles —
+    never PII, which must be declared rather than inferred."""
+    if column.endswith("_id"):
+        return "foreign_key"
+    if column.endswith(("_at", "_date")):
+        return "event_time"
+    return ""
 
 
 def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> dict[str, int]:
@@ -39,6 +105,7 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
     _add_ontology(nodes, edges)
     _add_annotations(root, nodes, edges)
     _add_dbt(root, nodes, edges)
+    _add_physical_columns(root, project or root.name, nodes, edges)
     _add_semantic(root, nodes, edges)
 
     nodes.append(Node(
@@ -62,16 +129,82 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
 
 # ---------------------------------------------------------------- ontology --
 def _add_ontology(nodes: list[Node], edges: list[Edge]) -> None:
+    """Classes, their datatype properties, the named relations between them, and
+    the policy chain. This is the semantic spine every projection reads."""
     onto = load_ontology()
+
     for name, cls in onto.classes.items():
         nodes.append(Node(
             id=cid(name), kind="Concept", name=name, layer="ontology",
-            label=cls.description,
-            props={"abstract": cls.abstract, "parent": cls.parent},
+            label=cls.description or cls.label,
+            props={"abstract": cls.abstract, "parent": cls.parent,
+                   "identity": onto.identity_of(name), "label": cls.label},
         ))
-    for e in onto.edges:
-        edges.append(Edge(src=cid(e.src), dst=cid(e.dst), kind="links_to",
-                          props={"type": e.type, "cardinality": e.cardinality}))
+        # Datatype properties are nodes, not attributes: a projection needs to
+        # address one (an MDL column, an OWL DatatypeProperty), and impact
+        # analysis needs to reach it.
+        for pname, prop in cls.properties.items():
+            nodes.append(Node(
+                id=propid(name, pname), kind="Property", name=pname, layer="ontology",
+                label=f"{prop.datatype}{' · ' + prop.role if prop.role else ''}",
+                props={"datatype": prop.datatype, "role": prop.role,
+                       "required": prop.required, "concept": name,
+                       "mdl_type": prop.mdl_type, "xsd_type": prop.xsd_type,
+                       "is_identity": pname == cls.identity},
+            ))
+            edges.append(Edge(src=cid(name), dst=propid(name, pname), kind="has_property"))
+
+    # A relation is a node so it can be named, addressed and bound to a physical
+    # column. As a bare edge it could not carry a name, an inverse, or a binding.
+    for rel in onto.relations:
+        nodes.append(Node(
+            id=relid(rel.name), kind="Relation", name=rel.name, layer="topology",
+            label=rel.describe(),
+            props={"domain": rel.domain, "range": rel.range,
+                   "cardinality": rel.cardinality,
+                   "inverse_cardinality": rel.inverse_cardinality,
+                   "label": rel.label, "inverse": rel.inverse,
+                   "description": rel.description,
+                   "reverse_label": rel.describe(reverse=True)},
+        ))
+        edges.append(Edge(src=cid(rel.domain), dst=relid(rel.name), kind="domain_of"))
+        edges.append(Edge(src=relid(rel.name), dst=cid(rel.range), kind="range_of"))
+
+    _add_policy(onto, nodes, edges)
+
+
+def _add_policy(onto, nodes: list[Node], edges: list[Edge]) -> None:
+    """OpenTopology's chain: intent -> constraint -> artifact -> evidence.
+
+    Policies are in the graph so "is this rule actually enforced, and what proves
+    it ran" is a traversal rather than an archaeology exercise across three files.
+    """
+    for kind in onto.evidence_kinds:
+        nodes.append(Node(
+            id=evid(kind["id"]), kind="Evidence", name=kind["id"], layer="governance",
+            label=kind.get("produces", ""),
+            props={"durable": bool(kind.get("durable", False))},
+        ))
+
+    for p in onto.policies:
+        nodes.append(Node(
+            id=polid(p.id), kind="Policy", name=p.id, layer="governance",
+            label=p.intent.split("\n")[0][:160],
+            props={"constraint": p.constraint, "severity": p.severity,
+                   "applies_to": p.applies_to, "params": p.params,
+                   "enforced_by": p.enforced_by, "enforced": p.enforced,
+                   "intent": p.intent},
+        ))
+        for e in p.evidence:
+            edges.append(Edge(src=polid(p.id), dst=evid(e), kind="evidenced_by"))
+
+        target = p.applies_to
+        if target.get("class") and target["class"] != "*":
+            edges.append(Edge(src=polid(p.id), dst=cid(target["class"]), kind="governs"))
+        elif target.get("class") == "*":
+            for name, cls in onto.classes.items():
+                if not cls.abstract:
+                    edges.append(Edge(src=polid(p.id), dst=cid(name), kind="governs"))
 
 
 # ------------------------------------------------------------- annotations --
@@ -109,9 +242,28 @@ def _add_annotations(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             if not any(n.id == c_id for n in nodes):
                 nodes.append(Node(id=c_id, kind="Column", name=col, layer="raw",
                                   label="foreign_key",
-                                  props={"role": "foreign_key", "pii": False, "table": table}))
+                                  props={"role": "foreign_key", "pii": False,
+                                         "table": table, "links_to": target}))
                 edges.append(Edge(src=t_id, dst=c_id, kind="has_column"))
             edges.append(Edge(src=c_id, dst=cid(target), kind="links_to"))
+
+            # Bind the physical key to the relation it realises. This edge is
+            # what turns a warehouse-independent topology into a generatable
+            # join: the projection reads the column name from here rather than
+            # guessing a convention.
+            rel = onto.find_relation(ann.concept, target)
+            if rel is not None:
+                reverse = onto.is_a(ann.concept, rel.range)
+                edges.append(Edge(
+                    src=c_id, dst=relid(rel.name), kind="realises",
+                    props={"from_concept": ann.concept, "to_concept": target,
+                           "fk_column": col, "fk_table": table,
+                           # Direction matters: the FK sits on the many side, so
+                           # a relation traversed backwards is MANY_TO_ONE.
+                           "cardinality": rel.inverse_cardinality if reverse
+                                          else rel.cardinality,
+                           "reverse": reverse},
+                ))
 
 
 # --------------------------------------------------------------------- dbt --
@@ -183,16 +335,16 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
         for parent in parents:
             p_id = by_unique.get(parent)
             if p_id:
-                kind = "tested_by" if c_id.startswith("test:") else "derives_from"
-                src, dst = (p_id, c_id) if kind == "derives_from" else (p_id, c_id)
-                edges.append(Edge(src=src, dst=dst, kind=kind))
+                # Both kinds run parent -> child; only the label differs.
+                kind = "tested_by" if c_id.startswith("test:") else "feeds"
+                edges.append(Edge(src=p_id, dst=c_id, kind=kind))
             else:
                 # source nodes are declared in `sources`, map by table name
                 src_node = (manifest.get("sources") or {}).get(parent)
                 if src_node:
                     table = src_node.get("name")
                     source = src_node.get("source_name")
-                    edges.append(Edge(src=tid(source, table), dst=c_id, kind="derives_from"))
+                    edges.append(Edge(src=tid(source, table), dst=c_id, kind="feeds"))
     _ = child_map
 
 
@@ -234,11 +386,11 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
         for key in ("numerator", "denominator"):
             v = tp.get(key)
             if isinstance(v, dict) and v.get("name"):
-                edges.append(Edge(src=metid(v["name"]), dst=n_id, kind="derives_from"))
+                edges.append(Edge(src=metid(v["name"]), dst=n_id, kind="feeds"))
         for m in tp.get("metrics") or []:
             ref = m.get("name") if isinstance(m, dict) else m
             if ref and ref != name:
-                edges.append(Edge(src=metid(ref), dst=n_id, kind="derives_from"))
+                edges.append(Edge(src=metid(ref), dst=n_id, kind="feeds"))
         for measure in measures:
             owner = measure_owner.get(measure)
             if owner:

@@ -14,5 +14,10 @@ concurrency:
   runs:
     max_concurrent_runs: 8
   pools:
-    granularity: run
+    # `op`, not `run`. Run granularity takes one slot for a whole run, which
+    # serialises *runs* but lets every step inside a single run execute at once
+    # — so the three dlt ingest assets fired concurrently under the
+    # multiprocess executor and collided on DuckDB's single-writer lock.
+    # Op granularity is what actually holds the pool to one writer at a time.
+    granularity: op
     default_limit: 1

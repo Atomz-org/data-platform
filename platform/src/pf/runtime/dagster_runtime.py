@@ -49,7 +49,11 @@ def build_definitions(
             Leave empty (the default) to auto-discover every module under
             `src/<module>/sources/`.
         dbt_project_dir: Relative path to the dbt project.
-        sisters: alias -> duckdb path, for a roll-up project only.
+        sisters: alias -> duckdb path, for a roll-up project only. Relative
+            paths are resolved against `project_dir`, never against cwd —
+            Dagster runs a code location with cwd set to its
+            `working_directory` (`<project>/src`), so "../acme-us/..." in a
+            project's definitions.py would otherwise resolve one level too deep.
     """
     from dagster import Definitions, define_asset_job, multiprocess_executor
 
@@ -76,7 +80,7 @@ def build_definitions(
             resources["dbt"] = dbt_resource
 
     if sisters:
-        assets.append(_make_rollup_asset(wh, sisters))
+        assets.append(_make_rollup_asset(wh, _resolve_sisters(root, sisters)))
 
     job = define_asset_job(name=f"{project.replace('-', '_')}_all", selection="*")
 
@@ -127,6 +131,7 @@ def _make_ingest_asset(name: str, resource: Any, wh: Warehouse, mod_path: str):
     from dagster import MetadataValue, asset
 
     ann = getattr(resource, "__pf_annotation__")
+    source = ann.source or "raw"
 
     @asset(
         name=name,
@@ -135,13 +140,19 @@ def _make_ingest_asset(name: str, resource: Any, wh: Warehouse, mod_path: str):
         pool=wh.writer_pool,          # per-project: sisters never queue behind each other
         description=ann.description or f"dlt resource {name}",
         metadata={"concept": ann.concept, "grain": ann.grain, "module": mod_path,
-                  "dagster/kind": "dlt"},
+                  "source": source, "dagster/kind": "dlt"},
         compute_kind="dlt",
     )
     def _ingest(context) -> None:  # noqa: ANN001 — see module note on lazy imports
         from pf.runtime.dlt_runtime import run_source
 
-        info = run_source(wh, resource, source_name=name)
+        # The dataset is the dlt *source* ("stripe"), never the resource name.
+        # Keying it by resource landed `charges.charges` while dbt read
+        # `stripe.charges`, so ingestion and transformation silently ran against
+        # different tables: dbt kept building green on whatever a previous
+        # `pf seed` had left behind. The graph agrees with dbt here —
+        # `table:stripe.charges` is the node id — so the source wins.
+        info = run_source(wh, resource, source_name=source, dataset=source)
         context.add_output_metadata({
             "concept": ann.concept,
             "load_ids": MetadataValue.json(info["load_ids"]),
@@ -210,7 +221,15 @@ def _make_dbt_assets(dbt_dir: Path, wh: Warehouse):
 
 
 # ------------------------------------------------------------------ rollup --
-def _make_rollup_asset(wh: Warehouse, sisters: dict[str, str]):
+def _resolve_sisters(root: Path, sisters: dict[str, str]) -> dict[str, Path]:
+    """Anchor sister database paths to the project root rather than to cwd."""
+    return {
+        alias: Path(p) if Path(p).is_absolute() else (root / p).resolve()
+        for alias, p in sisters.items()
+    }
+
+
+def _make_rollup_asset(wh: Warehouse, sisters: dict[str, Path]):
     """Cross-entity roll-up.
 
     `deps` are plain AssetKeys pointing into the sisters' code locations —
@@ -219,7 +238,10 @@ def _make_rollup_asset(wh: Warehouse, sisters: dict[str, str]):
     """
     from dagster import AssetKey, MetadataValue, asset
 
-    upstream = [AssetKey([_prefix(f"acme-{alias}"), "fct_revenue"]) for alias in sisters]
+    # The sister's project slug is <group>-<alias>. This was hardcoded to
+    # "acme-", so any other group's roll-up drew dependencies on asset keys that
+    # do not exist — silently, since cross-location deps resolve by key.
+    upstream = [AssetKey([_prefix(f"{wh.group}-{alias}"), "fct_revenue"]) for alias in sisters]
 
     @asset(
         name="group_rollup",

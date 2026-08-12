@@ -1,0 +1,5 @@
+2026-08-12 16:38:30 +0200 - dagster - DEBUG - __ASSET_JOB - 0c4884b1-0808-46d5-834d-77b1c0823bc2 - 82980 - LOGS_CAPTURED - Capturing logs for process (pid: 82980).
+2026-08-12 16:38:30 +0200 - dagster - DEBUG - __ASSET_JOB - 0c4884b1-0808-46d5-834d-77b1c0823bc2 - 82980 - acme_us__customers - STEP_START - Started execution of step "acme_us__customers".
+2026-08-12 16:38:30 +0200 - dagster - DEBUG - __ASSET_JOB - 0c4884b1-0808-46d5-834d-77b1c0823bc2 - 82980 - acme_us__customers - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
+2026-08-12 16:38:30 +0200 - dagster - DEBUG - __ASSET_JOB - 0c4884b1-0808-46d5-834d-77b1c0823bc2 - 82980 - acme_us__customers - ASSET_MATERIALIZATION - Materialized value acme_us customers.
+2026-08-12 16:38:30 +0200 - dagster - DEBUG - __ASSET_JOB - 0c4884b1-0808-46d5-834d-77b1c0823bc2 - 82980 - acme_us__customers - STEP_SUCCESS - Finished execution of step "acme_us__customers" in 240ms.

@@ -1,0 +1,5 @@
+2026-08-12 16:32:51 +0200 - dagster - DEBUG - __ASSET_JOB - acf83e8d-5879-4b0f-b1f2-5b5040c83f19 - 80170 - LOGS_CAPTURED - Capturing logs for process (pid: 80170).
+2026-08-12 16:32:51 +0200 - dagster - DEBUG - __ASSET_JOB - acf83e8d-5879-4b0f-b1f2-5b5040c83f19 - 80170 - acme_us__subscriptions - STEP_START - Started execution of step "acme_us__subscriptions".
+2026-08-12 16:32:52 +0200 - dagster - DEBUG - __ASSET_JOB - acf83e8d-5879-4b0f-b1f2-5b5040c83f19 - 80170 - acme_us__subscriptions - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
+2026-08-12 16:32:52 +0200 - dagster - DEBUG - __ASSET_JOB - acf83e8d-5879-4b0f-b1f2-5b5040c83f19 - 80170 - acme_us__subscriptions - ASSET_MATERIALIZATION - Materialized value acme_us subscriptions.
+2026-08-12 16:32:52 +0200 - dagster - DEBUG - __ASSET_JOB - acf83e8d-5879-4b0f-b1f2-5b5040c83f19 - 80170 - acme_us__subscriptions - STEP_SUCCESS - Finished execution of step "acme_us__subscriptions" in 275ms.

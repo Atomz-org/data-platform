@@ -1,4 +1,4 @@
-## acme-eu — data index (generated 2026-08-12)
+## acme-eu — data index (generated 2026-08-13)
 
 **Group:** acme · **Concepts in use:** Customer, Payment, Subscription
 **Sources (1):** stripe
@@ -30,8 +30,5 @@
 - `exec_weekly_dashboard` (dashboard) ← Finance
 
 **PII columns (6):** charges.receipt_email, customers.email, customers.name, stg_stripe__charges.receipt_email, stg_stripe__customers.customer_email, stg_stripe__customers.customer_name
-
-**Known gaps:**
-- 3 raw table(s) have no metric coverage
 
 _Query the graph before reading files: `kg_search`, `kg_neighbors`, `kg_path`._

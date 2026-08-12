@@ -1,73 +1,197 @@
 # Platform ontology — the shared business vocabulary.
-# Deliberately small. A 200-class upper ontology nobody maintains is worse than
-# 15 classes everybody uses. Groups select a subset in their instance.yaml.
-version: 1
+#
+# v2 adds the two things a flat class list cannot express, both taken from
+# formal ontology practice (Microsoft Ontology-Playground models the same pair
+# as OWL classes + datatype properties):
+#
+#   identity   — which property identifies an instance. Without it no join
+#                condition can be derived, so BI and MDL projections are guesses.
+#   properties — datatype properties on the class itself, not just column roles
+#                discovered on whatever table happened to land. A class knows
+#                what it has before any pipeline exists.
+#
+# Kept deliberately small. A 200-class upper ontology nobody maintains is worse
+# than 15 classes everybody uses. Groups select a subset in their instance.yaml.
+version: 2
+namespace: "https://data-platform.local/ontology#"
+prefix: pf
 
 classes:
+  # -- parties ------------------------------------------------------------
   Party:
     abstract: true
+    label: Party
     description: Any actor that can enter into an agreement.
+    properties:
+      party_id: {datatype: string, role: natural_key, required: true}
+
   Customer:
     parent: Party
+    label: Customer
     description: A party that buys. May be a person or an organization.
+    identity: customer_id
+    properties:
+      customer_id: {datatype: string, role: natural_key, required: true}
+      email:       {datatype: string, role: pii_email}
+      name:        {datatype: string, role: pii_name}
+      segment:     {datatype: string, role: status_enum}
+      country:     {datatype: string, role: geo_country}
+      created_at:  {datatype: timestamp, role: event_time}
+
   Organization:
     parent: Party
+    label: Organization
     description: A legal entity. Customers may belong to one.
+    identity: organization_id
+    properties:
+      organization_id: {datatype: string, role: natural_key, required: true}
+      name:            {datatype: string, role: free_text}
+      country:         {datatype: string, role: geo_country}
+
   Employee:
     parent: Party
+    label: Employee
     description: Internal actor. Rarely modelled in marts; used for attribution.
+    identity: employee_id
+    properties:
+      employee_id: {datatype: string, role: natural_key, required: true}
 
+  # -- agreements ---------------------------------------------------------
   Agreement:
     abstract: true
+    label: Agreement
     description: A commitment between parties, with a lifecycle.
+    properties:
+      agreement_id: {datatype: string, role: natural_key, required: true}
+      status:       {datatype: string, role: status_enum}
+
   Subscription:
     parent: Agreement
+    label: Subscription
     description: A recurring agreement with a plan, term and status.
+    identity: subscription_id
+    properties:
+      subscription_id: {datatype: string, role: natural_key, required: true}
+      status:          {datatype: string, role: status_enum}
+      plan:            {datatype: string, role: status_enum}
+      mrr_amount:      {datatype: decimal, role: money_amount}
+      currency:        {datatype: string, role: currency_code}
+      started_at:      {datatype: timestamp, role: event_time}
+      canceled_at:     {datatype: timestamp, role: valid_to}
+
   Order:
     parent: Agreement
+    label: Order
     description: A one-off purchase commitment.
+    identity: order_id
+    properties:
+      order_id:  {datatype: string, role: natural_key, required: true}
+      status:    {datatype: string, role: status_enum}
+      amount:    {datatype: decimal, role: money_amount}
+      currency:  {datatype: string, role: currency_code}
+      placed_at: {datatype: timestamp, role: event_time}
+
   Contract:
     parent: Agreement
+    label: Contract
     description: A negotiated agreement, usually with custom terms.
+    identity: contract_id
+    properties:
+      contract_id: {datatype: string, role: natural_key, required: true}
+      signed_at:   {datatype: timestamp, role: event_time}
 
+  # -- events -------------------------------------------------------------
   Event:
     abstract: true
+    label: Event
     description: Something that happened at a point in time. Immutable.
+    properties:
+      event_id:      {datatype: string, role: natural_key, required: true}
+      occurred_at:   {datatype: timestamp, role: event_time, required: true}
+
   Payment:
     parent: Event
+    label: Payment
     description: Movement of money settling an agreement.
+    identity: payment_id
+    properties:
+      payment_id: {datatype: string, role: natural_key, required: true}
+      amount:     {datatype: decimal, role: money_amount, required: true}
+      currency:   {datatype: string, role: currency_code, required: true}
+      status:     {datatype: string, role: status_enum}
+      paid_at:    {datatype: timestamp, role: event_time, required: true}
+
   Refund:
     parent: Event
+    label: Refund
     description: Negative movement of money against a prior payment.
+    identity: refund_id
+    properties:
+      refund_id:    {datatype: string, role: natural_key, required: true}
+      amount:       {datatype: decimal, role: money_amount}
+      currency:     {datatype: string, role: currency_code}
+      refunded_at:  {datatype: timestamp, role: event_time}
+
   Usage:
     parent: Event
+    label: Usage
     description: Metered consumption attributable to an agreement.
+    identity: usage_id
+    properties:
+      usage_id:    {datatype: string, role: natural_key, required: true}
+      quantity:    {datatype: integer, role: quantity}
+      measured_at: {datatype: timestamp, role: event_time}
+
   Interaction:
     parent: Event
+    label: Interaction
     description: A touchpoint (email, call, session) with a party.
+    identity: interaction_id
+    properties:
+      interaction_id: {datatype: string, role: natural_key, required: true}
+      channel:        {datatype: string, role: status_enum}
+      occurred_at:    {datatype: timestamp, role: event_time}
 
+  # -- reference ----------------------------------------------------------
   Product:
+    label: Product
     description: A sellable thing. Plans and SKUs are Products.
+    identity: product_id
+    properties:
+      product_id: {datatype: string, role: natural_key, required: true}
+      name:       {datatype: string, role: free_text}
+
   Location:
+    label: Location
     description: A geography. Country, region, or address.
+    identity: location_id
+    properties:
+      location_id: {datatype: string, role: natural_key, required: true}
+      country:     {datatype: string, role: geo_country}
+
   Currency:
-    description: An ISO currency. Used to qualify money amounts.
+    label: Currency
+    description: An ISO 4217 currency. Qualifies every money amount.
+    identity: currency_code
+    properties:
+      currency_code: {datatype: string, role: currency_code, required: true}
 
 # Column-level semantic roles. Every annotated column carries exactly one.
+# `datatype` is the projection target for MDL and OWL.
 roles:
-  natural_key:    { description: Business key from the source system. }
-  surrogate_key:  { description: Generated key, unique within the warehouse. }
-  foreign_key:    { description: Reference to another concept instance. }
-  event_time:     { description: When the event occurred. Candidate agg time dimension. }
-  valid_from:     { description: SCD2 interval start. }
-  valid_to:       { description: SCD2 interval end. }
-  money_amount:   { description: Monetary value. Requires a sibling currency_code. }
-  currency_code:  { description: ISO 4217 code qualifying a money_amount. }
-  quantity:       { description: Countable measure. }
-  status_enum:    { description: Lifecycle state. Monitored for category drift. }
-  geo_country:    { description: ISO country code. }
-  free_text:      { description: Unstructured text. Never a dimension. }
-  pii_email:      { pii: true, description: Email address. }
-  pii_name:       { pii: true, description: Person name. }
-  pii_phone:      { pii: true, description: Phone number. }
-  pii_address:    { pii: true, description: Postal address. }
+  natural_key:    {datatype: string,    description: Business key from the source system.}
+  surrogate_key:  {datatype: string,    description: Generated key, unique within the warehouse.}
+  foreign_key:    {datatype: string,    description: Reference to another concept instance.}
+  event_time:     {datatype: timestamp, description: When the event occurred. Candidate agg time dimension.}
+  valid_from:     {datatype: timestamp, description: SCD2 interval start.}
+  valid_to:       {datatype: timestamp, description: SCD2 interval end.}
+  money_amount:   {datatype: decimal,   description: Monetary value. Requires a sibling currency_code.}
+  currency_code:  {datatype: string,    description: ISO 4217 code qualifying a money_amount.}
+  quantity:       {datatype: integer,   description: Countable measure.}
+  status_enum:    {datatype: string,    description: Lifecycle state. Monitored for category drift.}
+  geo_country:    {datatype: string,    description: ISO 3166 country code.}
+  free_text:      {datatype: string,    description: Unstructured text. Never a dimension.}
+  pii_email:      {datatype: string,    pii: true, description: Email address.}
+  pii_name:       {datatype: string,    pii: true, description: Person name.}
+  pii_phone:      {datatype: string,    pii: true, description: Phone number.}
+  pii_address:    {datatype: string,    pii: true, description: Postal address.}

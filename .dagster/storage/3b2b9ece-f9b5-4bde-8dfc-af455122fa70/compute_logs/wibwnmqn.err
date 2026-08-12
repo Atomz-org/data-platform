@@ -1,0 +1,72 @@
+2026-08-12 16:30:19 +0200 - dagster - DEBUG - __ASSET_JOB - 3b2b9ece-f9b5-4bde-8dfc-af455122fa70 - 78920 - LOGS_CAPTURED - Capturing logs for process (pid: 78920).
+2026-08-12 16:30:19 +0200 - dagster - DEBUG - __ASSET_JOB - 3b2b9ece-f9b5-4bde-8dfc-af455122fa70 - 78920 - acme_us__customers - STEP_START - Started execution of step "acme_us__customers".
+2026-08-12 16:30:19 +0200 - dagster - ERROR - __ASSET_JOB - 3b2b9ece-f9b5-4bde-8dfc-af455122fa70 - 78920 - acme_us__customers - STEP_FAILURE - Execution of step "acme_us__customers" failed.
+
+dagster._core.errors.DagsterExecutionStepExecutionError: Error occurred while executing op "acme_us__customers"::
+
+dlt.pipeline.exceptions.PipelineStepFailed: Pipeline execution failed at `step=sync` with exception:
+
+<class 'dlt.destinations.exceptions.DestinationConnectionError'>
+Connection with `client_type=DuckDbSqlClient` to `dataset_name=customers` failed. Please check if you configured the credentials at all and provided the right credentials values. You can be also denied access or your internet connection may be down. The actual reason given is: IO Error: Could not set lock on file "/Users/suresh/data-platform/groups/acme/projects/acme-us/data/acme_us.duckdb": Conflicting lock is held in /opt/homebrew/Cellar/python@3.12/3.12.7_1/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python (PID 78919) by user suresh. See also https://duckdb.org/docs/stable/connect/concurrency
+
+Stack Trace:
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dagster/_core/execution/plan/utils.py", line 57, in op_execution_error_boundary
+    yield
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dagster/_utils/__init__.py", line 394, in iterate_with_context
+    next_output = next(iterator)
+                  ^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dagster/_core/execution/plan/compute_generator.py", line 136, in _coerce_op_compute_fn_to_iterator
+    result = invoke_compute_fn(
+             ^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dagster/_core/execution/plan/compute_generator.py", line 116, in invoke_compute_fn
+    return fn(context, **args_to_pass) if context_arg_provided else fn(**args_to_pass)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/platform/src/pf/runtime/dagster_runtime.py", line 144, in _ingest
+    info = run_source(wh, resource, source_name=name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/platform/src/pf/runtime/dlt_runtime.py", line 41, in run_source
+    info = pipeline.run(source, schema_contract=contract or DEFAULT_CONTRACT)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 237, in _wrap
+    step_info = f(self, *args, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 285, in _wrap
+    return f(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 795, in run
+    self._sync_destination(destination, staging, dataset_name)
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 190, in _wrap
+    rv = f(self, *args, **kwargs)
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 949, in _sync_destination
+    raise PipelineStepFailed(self, "sync", None, ex, None) from ex
+
+The above exception was caused by the following exception:
+dlt.destinations.exceptions.DestinationConnectionError: Connection with `client_type=DuckDbSqlClient` to `dataset_name=customers` failed. Please check if you configured the credentials at all and provided the right credentials values. You can be also denied access or your internet connection may be down. The actual reason given is: IO Error: Could not set lock on file "/Users/suresh/data-platform/groups/acme/projects/acme-us/data/acme_us.duckdb": Conflicting lock is held in /opt/homebrew/Cellar/python@3.12/3.12.7_1/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python (PID 78919) by user suresh. See also https://duckdb.org/docs/stable/connect/concurrency
+
+Stack Trace:
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 870, in _sync_destination
+    remote_state = self._restore_state_from_destination()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/pipeline/pipeline.py", line 1938, in _restore_state_from_destination
+    with self._get_destination_clients(schema)[0] as job_client:
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/destinations/job_client_impl.py", line 448, in __enter__
+    self.sql_client.open_connection()
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/destinations/sql_client.py", line 568, in _wrap
+    raise DestinationConnectionError(type(self).__name__, self.dataset_name, str(ex), ex)
+
+The above exception occurred during handling of the following exception:
+_duckdb.IOException: IO Error: Could not set lock on file "/Users/suresh/data-platform/groups/acme/projects/acme-us/data/acme_us.duckdb": Conflicting lock is held in /opt/homebrew/Cellar/python@3.12/3.12.7_1/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python (PID 78919) by user suresh. See also https://duckdb.org/docs/stable/connect/concurrency
+
+Stack Trace:
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/destinations/sql_client.py", line 560, in _wrap
+    return f(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/destinations/impl/duckdb/sql_client.py", line 153, in open_connection
+    self._conn = self.credentials.conn_pool.borrow_conn(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/suresh/data-platform/.venv/lib/python3.12/site-packages/dlt/destinations/impl/duckdb/configuration.py", line 209, in borrow_conn
+    new_conn = duckdb.connect(
+               ^^^^^^^^^^^^^^^
+

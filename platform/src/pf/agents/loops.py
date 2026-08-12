@@ -68,7 +68,7 @@ def triage_failures(root: Path, group: str, project: str,
         "A test that fails because the test is wrong is a real outcome — say so "
         "rather than proposing a change to the model to satisfy it."
     )
-    parsed, _ = call(cfg, system=cached_prefix(root, group, project), user=user,
+    parsed, _ = call(cfg, system=cached_prefix(root, group, project, cfg), user=user,
                      output_format=Diagnosis, group=group, project=project)
     return parsed
 
@@ -90,7 +90,7 @@ def assess_anomaly(root: Path, group: str, project: str,
         "is noise; a monitor that always warns and is never acted on is worse than "
         "no monitor."
     )
-    parsed, _ = call(cfg, system=cached_prefix(root, group, project), user=user,
+    parsed, _ = call(cfg, system=cached_prefix(root, group, project, cfg), user=user,
                      output_format=AnomalyReport, group=group, project=project)
     return parsed
 
@@ -109,6 +109,6 @@ def propose_metrics(root: Path, group: str, project: str,
         "- Only propose metrics the columns actually support. If a mart genuinely "
         "does not need one, return no proposal for it and say why in the summary."
     )
-    parsed, _ = call(cfg, system=cached_prefix(root, group, project), user=user,
+    parsed, _ = call(cfg, system=cached_prefix(root, group, project, cfg), user=user,
                      output_format=MetricProposals, group=group, project=project)
     return parsed

@@ -135,6 +135,8 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
   <button role="tab" data-tab="models">Models</button>
   <button role="tab" data-tab="metrics">Metrics</button>
   <button role="tab" data-tab="ontology">Ontology</button>
+  <button role="tab" data-tab="topology">Topology</button>
+  <button role="tab" data-tab="mdl">MDL / BI</button>
   <button role="tab" data-tab="impact">Impact</button>
   <button role="tab" data-tab="agents">Agents &amp; Spend</button>
   <button role="tab" data-tab="monitors">Monitors</button>
@@ -174,6 +176,21 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
       <div class="card"><h2>Column roles</h2><div class="scroll" id="rolesBox"></div></div>
     </div>
     <div class="card"><h2>Annotation coverage &amp; conformance</h2><div class="scroll" id="annBox"></div></div>
+  </section>
+
+  <section class="panel" id="tab-topology">
+    <div class="card"><h2>Relations (named object properties)</h2><div class="scroll" id="relBox"></div></div>
+    <div class="card"><h2>Policy chain — intent → constraint → artifact → evidence</h2><div class="scroll" id="polBox"></div></div>
+  </section>
+
+  <section class="panel" id="tab-mdl">
+    <div class="card">
+      <h2>WrenAI MDL manifest (projected from the graph)</h2>
+      <div id="mdlSummary"></div>
+      <div class="scroll" id="mdlRels"></div>
+      <details style="margin-top:12px"><summary class="muted">raw manifest</summary>
+        <pre id="mdlRaw"></pre></details>
+    </div>
   </section>
 
   <section class="panel" id="tab-impact">
@@ -576,6 +593,48 @@ async function loadObs() {
   ], 'Run <code>pf tokens</code> to record budgets.');
 }
 
+async function loadTopology() {
+  const t = await api('/api/topology');
+  $('#relBox').innerHTML = table(t.relations, [
+    ['Relation', r => `<code>${esc(r.name)}</code>`],
+    ['Reads as', r => `${esc(r.forward)}<br><span class="muted">${esc(r.reverse)}</span>`],
+    ['Cardinality', r => `${esc(r.cardinality)}<br><span class="muted">${esc(r.inverse_cardinality)}</span>`],
+    ['Notes', r => esc(r.description || '')],
+  ], 'No relations.');
+
+  $('#polBox').innerHTML = table(t.policies, [
+    ['Policy', p => `<code>${esc(p.id)}</code>`],
+    ['Severity', p => `<span class="pill ${p.severity === 'error' ? 'critical' : 'warning'}">${esc(p.severity)}</span>`],
+    ['Intent', p => esc(p.intent)],
+    ['Enforced by', p => p.enforced
+      ? p.enforced_by.map(x => `<code>${esc(x)}</code>`).join('<br>')
+      : '<span class="pill critical">NOTHING</span>'],
+    ['Evidence', p => p.evidence.map(e => `<code>${esc(e)}</code>`).join('<br>') || '—'],
+  ], 'No policies.');
+}
+
+async function loadMdl() {
+  try {
+    const m = await api('/api/mdl', { group: STATE.group, project: STATE.project });
+    $('#mdlSummary').innerHTML = `<div class="row">
+      <span class="pill good">catalog ${esc(m.catalog)}.${esc(m.schema)}</span>
+      <span class="pill">${m.models.length} models</span>
+      <span class="pill">${m.relationships.length} relationships</span>
+      <span class="pill">${m.cubes.length} cubes</span>
+      <span class="muted">dataSource ${esc(m.dataSource)}</span></div>`;
+    $('#mdlRels').innerHTML = table(m.relationships, [
+      ['Relationship', r => `<code>${esc(r.name)}</code>`],
+      ['Join type', r => esc(r.joinType)],
+      ['Condition', r => `<code>${esc(r.condition)}</code>`],
+      ['From topology', r => `<code>${esc(r.properties['pf.relation'] || '')}</code>`
+        + (r.properties['pf.also_realises'] ? `<br><span class="muted">also: ${esc(r.properties['pf.also_realises'])}</span>` : '')],
+    ], 'No relationships derived — check that foreign keys are annotated with links.');
+    $('#mdlRaw').textContent = JSON.stringify(m, null, 2);
+  } catch (e) {
+    $('#mdlSummary').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+
 async function loadOntology() {
   const o = await api('/api/ontology');
   $('#classesBox').innerHTML = table(o.classes, [
@@ -596,8 +655,8 @@ async function loadAll() {
   STATE.tree = tree;
   renderTree(tree);
   renderKpis(summary);
-  await Promise.all([loadOntology(), loadObs()]);
-  if (STATE.group) await loadProject();
+  await Promise.all([loadOntology(), loadTopology(), loadObs()]);
+  if (STATE.group) { await loadProject(); await loadMdl(); }
 }
 
 loadAll().catch(e => { $('#kpis').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });

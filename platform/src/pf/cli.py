@@ -9,19 +9,26 @@ import sys
 from pathlib import Path
 
 import typer
+import yaml
 from rich.console import Console
 from rich.table import Table
 
 from pf import obs
+from pf.agents.base import AGENTS, validate_routing
+from pf.agents.models import MODELS
+from pf.capabilities import (
+    CAPABILITIES, UnknownCapability, apply as apply_capability, gate_additions,
+    missing_env, resolve as resolve_capabilities,
+)
 from pf.kg.build import build_graph
 from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, \
     render_group_card, render_project_card
 from pf.kg.impact import gate, impact_of, impact_of_many
 from pf.kg.query import kg_neighbors, kg_search
 from pf.ontology.model import load_ontology
-from pf.ontology.validate import validate_instance, validate_project
+from pf.ontology.validate import validate_instance, validate_project, validate_topology
 from pf.runtime.staging import generate as generate_staging
-from pf.loops.audit import audit as loop_audit, recommended_level
+from pf.loops.audit import audit as loop_audit, project_readiness, recommended_level
 from pf.loops.gate import GateResult, check_paths, nodes_for, project_for
 from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
@@ -77,13 +84,121 @@ def cmd_new_project(
     project: str,
     rollup: bool = typer.Option(False, "--rollup", help="cross-entity roll-up project"),
     sisters: str = typer.Option("", help="comma-separated sister projects (roll-up only)"),
+    with_: str = typer.Option("", "--with", help="comma-separated capabilities "
+                                                 "(see `pf capabilities`)"),
 ) -> None:
-    """Create a project (one legal entity) inside a group."""
+    """Create a project (one legal entity) inside a group.
+
+    One command, everything wired: scaffold, knowledge graph, group card,
+    optional capabilities, gate rules, and the Dagster code location. Nothing
+    here is a follow-up step you can forget — a half-registered project is how a
+    gate ends up inert.
+    """
     sister_list = [s.strip() for s in sisters.split(",") if s.strip()]
+    names = [c.strip() for c in with_.split(",") if c.strip()]
+    try:
+        caps = resolve_capabilities(names)
+    except (UnknownCapability, ValueError) as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
     files = new_project(root(), group, project, is_rollup=rollup, sisters=sister_list)
     render_group_card(root() / "groups" / group, group)
+    d = root() / "groups" / group / "projects" / project
+
+    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
+    for cap in caps:
+        written = apply_capability(cap, root(), d, ctx)
+        console.print(f"  [green]+[/] capability [bold]{cap.name}[/] "
+                      f"({len(written)} file(s))")
+    if caps:
+        _merge_gate_rules(gate_additions(caps))
+
+    # Build the graph now, before the project has any sources or models. It is
+    # only the ontology plus a Project node, but it means `kg/graph.duckdb`
+    # exists from day one — so the PreToolUse hook and `pf check` have something
+    # to compute a blast radius against the moment the first model lands, and a
+    # missing graph later means something broke rather than "never built yet".
+    counts = build_graph(d, group=group, project=project)
+
+    # Registering the code location is part of creating the project, not a step
+    # to remember: an unregistered project silently never runs in Dagster.
+    cmd_dagster_workspace()
+
     console.print(f"[green]✓[/] project [bold]{group}/{project}[/] created with {len(files)} files")
-    console.print(f"  next: [cyan]pf seed {group} {project}[/] then [cyan]pf kg build {group} {project}[/]")
+    console.print(f"  [dim]graph initialised: {sum(counts.values())} node(s) · "
+                  f"PreToolUse gate wired · code location registered"
+                  + (f" · capabilities: {', '.join(c.name for c in caps)}" if caps else "")
+                  + "[/]")
+    for cap, missing in missing_env(caps).items():
+        console.print(f"  [yellow]![/] {cap} needs unset env: {', '.join(missing)}")
+    console.print(f"  next: [cyan]pf seed {group} {project}[/] · [cyan]pf loop audit[/]")
+
+
+def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
+    """Append capability-contributed patterns to the generated gate overlay.
+
+    Written to `gate.capabilities.yaml`, never to `gate.yaml`: round-tripping the
+    hand-written policy through the YAML dumper strips every comment in it, and
+    those comments are where each rule's reason lives. `load_policy` unions the
+    two. Appends only — a capability may tighten the gate, never loosen it.
+    """
+    if not additions:
+        return
+    path = root() / "gate.capabilities.yaml"
+    existing = yaml.safe_load(path.read_text()) if path.exists() else {}
+    existing = existing or {}
+    changed = []
+    for section, patterns in additions.items():
+        bucket = existing.setdefault(section, [])
+        for p in patterns:
+            if p not in bucket:
+                bucket.append(p)
+                changed.append(f"{section}:{p}")
+    if changed:
+        path.write_text(
+            "# GENERATED by `pf new-project --with`. Merged over gate.yaml at load\n"
+            "# time by pf.loops.gate.load_policy. Edit the capability, not this file.\n"
+            + yaml.safe_dump(existing, sort_keys=False))
+        console.print(f"  [dim]gate overlay += {', '.join(changed)}[/]")
+
+
+@app.command()
+def capabilities() -> None:
+    """Optional features `pf new-project --with` can wire into a project."""
+    t = Table("capability", "adds", "needs env", "description")
+    for c in CAPABILITIES.values():
+        t.add_row(c.name, f"{len(c.files)} file(s)",
+                  ", ".join(c.env) or "—", c.description)
+    console.print(t)
+    console.print("[dim]Adding one is a single entry in pf.capabilities.CAPABILITIES — "
+                  "it does not touch the scaffolder, the CLI, or the gate.[/]")
+
+
+@app.command()
+def models() -> None:
+    """Model routing per step, with what each model actually accepts."""
+    t = Table("step", "model", "effort", "thinking", "cache", "$/Mtok in/out",
+              title="Agent routing")
+    for cfg in AGENTS.values():
+        s = MODELS.get(cfg.model)
+        if s is None:
+            t.add_row(cfg.name, f"[red]{cfg.model} (unknown)[/]", "—", "—", "—", "—")
+            continue
+        effort = cfg.effort if s.supports_effort else "[dim]n/a[/]"
+        thinking = ("adaptive" if s.thinking == "adaptive" and cfg.thinking
+                    else "budget" if s.thinking == "budget" and cfg.thinking else "off")
+        t.add_row(cfg.name, s.id, effort, thinking,
+                  f"≥{s.cache_min_tokens} tok", f"{s.usd_in:.2f}/{s.usd_out:.2f}")
+    console.print(t)
+    for cfg in AGENTS.values():
+        if cfg.purpose:
+            console.print(f"  [dim]{cfg.name}: {cfg.purpose}[/]")
+    issues = validate_routing()
+    for i in issues:
+        console.print(f"  [yellow]![/] {i}")
+    if not issues:
+        console.print("[green]✓[/] every routed step matches its model's capabilities")
 
 
 @app.command()
@@ -171,7 +286,15 @@ def check(group: str = "", project: str = "",
         console.print("[yellow]no projects found[/]")
         raise typer.Exit(0)
 
-    failed = False
+    topo = validate_topology()
+    topo_errors = [i for i in topo if i.severity == "error"]
+    mark = "[red]✗[/]" if topo_errors else "[green]✓[/]"
+    console.print(f"{mark} ontology + topology  {len(topo_errors)} error(s), "
+                  f"{len(topo) - len(topo_errors)} warning(s)")
+    for i in topo:
+        console.print(f"    {i}")
+
+    failed = bool(topo_errors)
     for g, p, d in targets:
         issues = validate_project(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")
@@ -476,6 +599,19 @@ def cmd_loop_audit() -> None:
         t.add_row(c.name, str(c.weight),
                   "[green]PASS[/]" if c.passed else "[red]FAIL[/]", c.detail)
     console.print(t)
+
+    rows = project_readiness(root())
+    pt = Table("group/project", "hook", "graph", "card", "CLAUDE.md", "state",
+               title="Per-project governance")
+    tick = {True: "[green]✓[/]", False: "[red]✗[/]"}
+    for r in rows:
+        pt.add_row(f"{r.group}/{r.project}", tick[r.hook], tick[r.graph], tick[r.card],
+                   tick[r.claude_md],
+                   "[green]ready[/]" if r.ready else f"[red]missing: {', '.join(r.missing)}[/]")
+    console.print(pt)
+    if any(not r.ready for r in rows):
+        console.print("[yellow]A project without a graph is ungoverned: its edits get a "
+                      "warning, never a blast radius. Run `pf kg build <group> <project>`.[/]")
     colour = "green" if score >= 80 else "yellow" if score >= 55 else "red"
     console.print(f"[{colour}]Score: {score}/100[/] — {recommended_level(score, root())}")
     raise typer.Exit(0 if score >= 55 else 1)
@@ -493,6 +629,24 @@ def cmd_loop_status(limit: int = 15) -> None:
         t.add_row(e["started_at"][:19], e["loop"], e["project"], e["outcome"],
                   str(len(e.get("findings") or [])), str(e.get("duration_ms", 0)))
     console.print(t)
+
+
+@loop_app.command("reset")
+def cmd_loop_reset(loop: str, group: str, project: str,
+                   note: str = typer.Option("", help="why it is safe to resume")) -> None:
+    """Clear a latched circuit breaker after resolving the underlying finding."""
+    if loop not in SPECS:
+        console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
+        raise typer.Exit(1)
+    pdir(group, project)
+    ledger = Ledger(root())
+    fails = ledger.consecutive_failures(loop, project)
+    if not fails:
+        console.print(f"[green]✓[/] {loop} · {group}/{project} is not tripped")
+        return
+    ledger.reset(loop, group, project, note)
+    console.print(f"[green]✓[/] {loop} · {group}/{project} reset "
+                  f"({fails} consecutive failure(s) cleared)")
 
 
 @app.command()
@@ -532,6 +686,69 @@ def gate(paths: str = typer.Option(..., help="comma-separated paths")) -> None:
                       "and say why in the message")
         raise typer.Exit(1)
     console.print(f"[green]✓[/] gate passed ({len(plist)} path(s))")
+
+
+# ------------------------------------------------------- semantic layer --
+sem_app = typer.Typer(help="Ontology, topology and their projections.")
+app.add_typer(sem_app, name="semantic")
+
+
+@sem_app.command("topology")
+def cmd_topology() -> None:
+    """The named relations between ontology classes."""
+    o = load_ontology()
+    t = Table("relation", "domain", "→", "range", "cardinality", "inverse",
+              title=f"Topology v{o.version}")
+    for r in o.relations:
+        t.add_row(r.name, r.domain, r.label or "→", r.range, r.cardinality, r.inverse or "—")
+    console.print(t)
+
+
+@sem_app.command("policy")
+def cmd_policy() -> None:
+    """Policy chain: intent → constraint → artifact → evidence."""
+    o = load_ontology()
+    t = Table("policy", "severity", "constraint", "enforced by", "evidence")
+    for p in o.policies:
+        t.add_row(p.id, p.severity, p.constraint,
+                  "\n".join(p.enforced_by) or "[red]NOTHING[/]",
+                  "\n".join(p.evidence) or "—")
+    console.print(t)
+    un = o.unenforced_policies()
+    if un:
+        console.print(f"[red]{len(un)} unenforced policy(ies):[/] "
+                      + ", ".join(p.id for p in un))
+    else:
+        console.print("[green]every policy names an enforcing artifact[/]")
+
+
+@sem_app.command("mdl")
+def cmd_mdl(group: str, project: str,
+            out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)")) -> None:
+    """Export a WrenAI MDL manifest from the graph."""
+    from pf.projections.mdl import export as export_mdl
+
+    d = pdir(group, project)
+    path = export_mdl(d, group, project, out or None)
+    payload = json.loads(path.read_text())
+    console.print(f"[green]✓[/] {path}")
+    console.print(f"  models={len(payload['models'])} "
+                  f"relationships={len(payload['relationships'])} "
+                  f"cubes={len(payload['cubes'])}")
+    for r in payload["relationships"]:
+        console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
+
+
+@sem_app.command("owl")
+def cmd_owl(out: str = typer.Option("", help="output path")) -> None:
+    """Export the ontology as OWL / RDF-XML."""
+    from pf.projections.owl import export as export_owl, stats
+
+    path = export_owl(out or (root() / "platform" / "src" / "pf" / "ontology" / "ontology.owl"))
+    s = stats()
+    console.print(f"[green]✓[/] {path}")
+    console.print(f"  classes={s['classes']} datatypeProperties={s['datatype_properties']} "
+                  f"objectProperties={s['object_properties']}")
 
 
 @app.command()

@@ -134,6 +134,43 @@ def ontology() -> dict[str, Any]:
     }
 
 
+@app.get("/api/topology")
+def topology() -> dict[str, Any]:
+    """Relations, policies and the evidence chain."""
+    o = load_ontology()
+    return {
+        "version": o.version,
+        "relations": [
+            {"name": r.name, "domain": r.domain, "range": r.range,
+             "cardinality": r.cardinality, "inverse_cardinality": r.inverse_cardinality,
+             "label": r.label, "inverse": r.inverse, "description": r.description,
+             "forward": r.describe(), "reverse": r.describe(reverse=True)}
+            for r in o.relations
+        ],
+        "policies": [
+            {"id": p.id, "intent": p.intent, "constraint": p.constraint,
+             "severity": p.severity, "enforced_by": p.enforced_by,
+             "evidence": p.evidence, "enforced": p.enforced}
+            for p in o.policies
+        ],
+        "classes": [
+            {"name": n, "identity": o.identity_of(n), "abstract": c.abstract,
+             "parent": c.parent, "properties": len(o.properties_of(n))}
+            for n, c in o.classes.items()
+        ],
+    }
+
+
+@app.get("/api/mdl")
+def mdl(group: str, project: str) -> dict[str, Any]:
+    """The WrenAI MDL manifest projected from this project's graph."""
+    from pf.projections.mdl import build_manifest
+    try:
+        return build_manifest(project_dir(group, project), group, project)
+    except Exception as exc:  # graph not built yet
+        raise HTTPException(404, str(exc)) from exc
+
+
 @app.get("/api/annotations")
 def annotations(group: str, project: str) -> dict[str, Any]:
     anns = load_annotations(project_dir(group, project) / "contracts" / "annotations.yaml")
@@ -277,7 +314,7 @@ def models(group: str, project: str) -> list[dict[str, Any]]:
         out = []
         for m in g.nodes("Model"):
             cols = [n for n in (g.node(e.dst) for e in g.out_edges(m.id)) if n and n.kind == "Column"]
-            downstream = [e.dst for e in g.out_edges(m.id) if e.kind in ("derives_from", "measures")]
+            downstream = [e.dst for e in g.out_edges(m.id) if e.kind in ("feeds", "measures")]
             out.append({
                 "name": m.name, "layer": m.layer, "label": m.label,
                 "grain": m.props.get("grain", ""),

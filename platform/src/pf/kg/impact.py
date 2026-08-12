@@ -1,8 +1,13 @@
 """Blast-radius analysis. The merge gate that makes agentic change safe.
 
 Given a node (or a set of changed dbt nodes), walk the graph downstream and
-report every model, metric, exposure, test and sister-project dependency that
-would be affected — plus the human who owns each exposure.
+report every model, metric, dimension, exposure and test that would be affected
+— plus the human who owns each exposure.
+
+Scope is one project. Graphs are per-project and hold no cross-project edges, so
+a sister's dependency on a change here is *not* visible: sisters share the group
+ontology, not a graph. Cross-entity blast radius has to be assessed in the
+`<group>-rollup` project, against its own graph.
 """
 
 from __future__ import annotations
@@ -14,9 +19,9 @@ from pathlib import Path
 
 from pf.kg.store import Graph, Node, open_graph
 
-# Edges that carry impact downstream. `has_column` is included so that changing
-# a column implicates its parent model.
-DOWNSTREAM_KINDS = {"derives_from", "measures", "grouped_by", "exposes", "tested_by"}
+# Edges that carry impact downstream. `has_column` is walked upward instead, so
+# that changing a column implicates its parent model.
+DOWNSTREAM_KINDS = {"feeds", "measures", "grouped_by", "tested_by"}
 UPWARD_KINDS = {"has_column"}
 
 SEVERITY_ORDER = {"breaking": 0, "review": 1, "safe": 2}

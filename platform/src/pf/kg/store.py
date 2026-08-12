@@ -1,4 +1,14 @@
-"""DuckDB-backed graph store. Two tables is enough."""
+"""DuckDB-backed graph store. Two tables is enough.
+
+EDGE DIRECTION IS A CONTRACT: every edge runs *upstream -> downstream*, so
+`out_edges` is always "what depends on this". `feeds` is named for that
+direction — a staging model feeds a mart. It was once called `derives_from`,
+which read backwards in every rendered lineage path.
+
+Only kinds that are actually emitted are listed here. A declared-but-unbuilt
+kind is worse than no vocabulary: it makes traversals that filter on it look
+implemented when they are dead.
+"""
 
 from __future__ import annotations
 
@@ -11,12 +21,27 @@ from typing import Any, Iterator
 import duckdb
 
 NODE_KINDS = (
-    "Concept", "Source", "Table", "Column", "Model", "Metric",
-    "Dimension", "Asset", "Test", "Exposure", "Monitor", "Project",
+    # physical / analytical
+    "Source", "Table", "Column", "Model", "Metric", "Dimension",
+    "Test", "Exposure", "Project",
+    # semantic (ontology + topology)
+    "Concept", "Property", "Relation",
+    # governance (OpenTopology: intent -> constraint -> artifact -> evidence)
+    "Policy", "Evidence",
 )
 EDGE_KINDS = (
-    "instantiates", "has_column", "derives_from", "measures", "grouped_by",
-    "tested_by", "links_to", "materializes", "exposes", "monitors", "contains",
+    # lineage — always upstream -> downstream
+    "feeds", "measures", "grouped_by", "tested_by", "has_column", "contains",
+    # semantics
+    "instantiates",   # Table/Model -> Concept
+    "has_property",   # Concept -> Property
+    "domain_of",      # Concept -> Relation   (relation starts here)
+    "range_of",       # Relation -> Concept   (relation ends here)
+    "realises",       # Column -> Relation    (the physical FK behind a relation)
+    "links_to",       # Column -> Concept     (declared target of a foreign key)
+    # governance
+    "governs",        # Policy -> anything it constrains
+    "evidenced_by",   # Policy -> Evidence
 )
 
 SCHEMA = """
@@ -80,12 +105,24 @@ class Graph:
         )
 
     def add_edges(self, edges: list[Edge]) -> None:
+        """Insert edges, de-duplicated on (src, dst, kind).
+
+        kg_edges has no primary key, and the builders legitimately derive the
+        same edge twice — a ratio metric naming the same measure as numerator
+        and denominator, say. Left in, the duplicate inflates every count and
+        double-weights any future edge-weighted traversal.
+        """
         if not edges:
             return
-        self.con.executemany(
-            "INSERT INTO kg_edges VALUES (?, ?, ?, ?)",
-            [(e.src, e.dst, e.kind, json.dumps(e.props)) for e in edges],
-        )
+        seen: set[tuple[str, str, str]] = set()
+        rows = []
+        for e in edges:
+            key = (e.src, e.dst, e.kind)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append((e.src, e.dst, e.kind, json.dumps(e.props)))
+        self.con.executemany("INSERT INTO kg_edges VALUES (?, ?, ?, ?)", rows)
 
     # -- reads ---------------------------------------------------------------
     def node(self, node_id: str) -> Node | None:

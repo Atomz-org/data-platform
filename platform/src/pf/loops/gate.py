@@ -30,12 +30,35 @@ class GateResult:
 
 
 def load_policy(root: Path) -> dict[str, Any]:
-    f = root / "gate.yaml"
-    return yaml.safe_load(f.read_text()) if f.exists() else {}
+    """The hand-written policy, unioned with capability-contributed rules.
+
+    Two files rather than one so that installing a capability never rewrites
+    `gate.yaml`: a YAML round-trip would silently drop every comment in it, and
+    the comments are where the *reasons* for each rule live. Capabilities may
+    only add patterns — the merge appends, so nothing installable can loosen the
+    gate that judges it.
+    """
+    policy: dict[str, Any] = {}
+    base = root / "gate.yaml"
+    if base.exists():
+        policy = yaml.safe_load(base.read_text()) or {}
+
+    extra_path = root / "gate.capabilities.yaml"
+    if extra_path.exists():
+        extra = yaml.safe_load(extra_path.read_text()) or {}
+        for section, patterns in extra.items():
+            if not isinstance(patterns, list):
+                continue
+            bucket = policy.setdefault(section, [])
+            bucket.extend(p for p in patterns if p not in bucket)
+    return policy
 
 
 def _match(path: str, patterns: list[str]) -> str | None:
-    p = path.replace("\\", "/").lstrip("./")
+    # `removeprefix`, not `lstrip("./")`: lstrip strips a *character set*, so it
+    # ate the leading dot of ".env" and turned a denylisted secret into "env",
+    # which matched nothing. Dotfiles at the repo root were silently writable.
+    p = path.replace("\\", "/").removeprefix("./")
     for pat in patterns or []:
         # fnmatch does not treat ** specially; compare against both the full path
         # and the bare filename so "**/x" and "x" both behave as expected.
