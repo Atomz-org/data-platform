@@ -23,7 +23,8 @@
     "dbt-govern@platform",
     "dagster-orchestrate@platform",
     "python-standards@platform",
-    "acme-group@acme"
+    "acme-group@acme",
+    "evidence-bi@platform"
   ],
   "permissions": {
     "deny": [
@@ -37,7 +38,11 @@
       "Bash(dbt build:*)",
       "Bash(dbt test:*)",
       "Bash(mf query:*)",
-      "Bash(mf list:*)"
+      "Bash(mf list:*)",
+      "Bash(pf report:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run sources:*)"
     ]
   },
   "hooks": {

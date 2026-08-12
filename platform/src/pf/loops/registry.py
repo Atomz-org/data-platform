@@ -42,6 +42,12 @@ SPECS: dict[str, LoopSpec] = {
         description="Report the blast radius of every uncommitted model/source change.",
         autonomy="L1", cadence="pre-commit", token_budget=0, writes=False,
     ),
+    "dashboard-coverage": LoopSpec(
+        name="dashboard-coverage",
+        description="Score the reporting layer; find metrics no page shows and pages "
+                    "referencing metrics that do not exist.",
+        autonomy="L1", cadence="daily", token_budget=0, writes=False,
+    ),
     "pii-audit": LoopSpec(
         name="pii-audit",
         description="Flag PII columns that reach a mart without a masking policy.",
@@ -206,7 +212,21 @@ def pii_audit(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
             f"explicit waiver" for c in sorted(set(leaked))]
 
 
+def dashboard_coverage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    from pf.projections.report_audit import audit as audit_report
+
+    pdir = root / "groups" / group / "projects" / project
+    if not (pdir / "reporting").exists():
+        return []
+    score, findings = audit_report(pdir)
+    out = [str(f) for f in findings if f.severity in ("error", "warning")]
+    if score < 90:
+        out.insert(0, f"report score {score}/100 — run the dashboard-loop skill")
+    return out
+
+
 BODIES = {
+    "dashboard-coverage": dashboard_coverage,
     "freshness-triage": freshness_triage,
     "test-failure-triage": test_failure_triage,
     "metric-gap-harvester": metric_gap_harvester,

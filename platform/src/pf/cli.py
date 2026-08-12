@@ -193,6 +193,29 @@ def models() -> None:
         console.print("[green]✓[/] every routed step matches its model's capabilities")
 
 
+@app.command("capability-add")
+def cmd_capability_add(capability: str, group: str, project: str) -> None:
+    """Add a capability to an existing project, then bootstrap it.
+
+    Capabilities were previously opt-in only at creation, which meant a project
+    made before one existed could never get it — the same hole `pf bootstrap`
+    closed for platform steps.
+    """
+    try:
+        caps = resolve_capabilities([capability])
+    except (UnknownCapability, ValueError) as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
+    d = pdir(group, project)
+    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
+    for cap in caps:
+        written = apply_capability(cap, root(), d, ctx)
+        console.print(f"  [green]+[/] {cap.name} ({len(written)} file(s))")
+    _merge_gate_rules(gate_additions(caps))
+    _print_bootstrap(bootstrap(root(), group, project))
+
+
 @app.command("bootstrap")
 def bootstrap_cmd(
     group: str = typer.Argument("", help="group (omit with --all)"),
@@ -783,6 +806,55 @@ def cmd_owl(out: str = typer.Option("", help="output path")) -> None:
     console.print(f"[green]✓[/] {path}")
     console.print(f"  classes={s['classes']} datatypeProperties={s['datatype_properties']} "
                   f"objectProperties={s['object_properties']}")
+
+
+# ---------------------------------------------------------------- report --
+report_app = typer.Typer(help="Evidence BI reporting layer.")
+app.add_typer(report_app, name="report")
+
+
+@report_app.command("build")
+def cmd_report_build(group: str, project: str) -> None:
+    """Regenerate the Evidence project from the semantic layer."""
+    from pf.projections.evidence import build as build_evidence
+
+    d = pdir(group, project)
+    r = build_evidence(d, group, project)
+    console.print(f"[green]✓[/] {r['path']}")
+    console.print(f"  {r['metrics']} metric(s) compiled · {r['pages']} page(s) · "
+                  f"{r['sources']} source extract(s)")
+    if r["unbacked"]:
+        console.print(f"  [yellow]![/] no time dimension: {', '.join(r['unbacked'])}")
+    if not r["metrics"]:
+        console.print("  [yellow]![/] no metrics in the semantic layer yet — "
+                      "add them in transform/models/semantic/, then `pf seed`")
+
+
+@report_app.command("audit")
+def cmd_report_audit(group: str, project: str) -> None:
+    """Mechanical quality score for the reporting layer."""
+    from pf.projections.report_audit import audit as audit_report
+
+    score, findings = audit_report(pdir(group, project))
+    for f in findings:
+        colour = {"error": "red", "warning": "yellow", "info": "dim"}[f.severity]
+        console.print(f"  [{colour}]{f}[/]")
+    colour = "green" if score >= 90 else "yellow" if score >= 70 else "red"
+    console.print(f"[{colour}]Report score: {score}/100[/] "
+                  f"({sum(1 for f in findings if f.severity == 'error')} error(s), "
+                  f"{sum(1 for f in findings if f.severity == 'warning')} warning(s))")
+    raise typer.Exit(1 if any(f.severity == "error" for f in findings) else 0)
+
+
+@report_app.command("dev")
+def cmd_report_dev(group: str, project: str) -> None:
+    """Run the Evidence dev server for this project."""
+    d = pdir(group, project) / "reporting"
+    if not (d / "node_modules").exists():
+        console.print("[yellow]installing dependencies (first run)…[/]")
+        subprocess.run(["npm", "install"], cwd=str(d), check=False)
+    console.print(f"[green]→[/] http://localhost:3000")
+    subprocess.run(["npm", "run", "dev"], cwd=str(d), check=False)
 
 
 @app.command()

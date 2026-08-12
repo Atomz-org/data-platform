@@ -1,3 +1,6 @@
 [submodule "vendor/loop-engineering"]
 	path = vendor/loop-engineering
 	url = https://github.com/cobusgreyling/loop-engineering
+[submodule "vendor/evidence-bi"]
+	path = vendor/evidence-bi
+	url = https://github.com/Atomz-org/Evidence-BI

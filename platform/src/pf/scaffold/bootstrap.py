@@ -103,6 +103,22 @@ def _export_owl(root: Path, group: str, project: str) -> StepResult:
                       f"{s['classes']} classes, {s['object_properties']} object properties")
 
 
+def _build_reporting(root: Path, group: str, project: str) -> StepResult:
+    """Regenerate the Evidence layer, but only where it was opted into.
+
+    Skipped rather than created when `reporting/` is absent: the reporting layer
+    is a capability, and bootstrap must not silently enable one nobody asked for.
+    """
+    d = _pdir(root, group, project)
+    if not (d / "reporting").exists():
+        return StepResult("reporting", "skipped", "no reporting/ (add --with evidence)")
+    from pf.projections.evidence import build as build_evidence
+
+    r = build_evidence(d, group, project)
+    return StepResult("reporting", "ok",
+                      f"{r['metrics']} metric(s), {r['pages']} page(s)")
+
+
 def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
@@ -148,6 +164,8 @@ STEPS: list[Step] = [
     Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
          _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
+    Step("reporting", "dashboards are a projection of the metrics, regenerated "
+                      "rather than hand-maintained", _build_reporting),
     Step("dagster code location", "an unregistered project never runs",
          _register_code_location),
     Step("conformance", "fail here rather than in BI", _validate),
