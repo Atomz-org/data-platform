@@ -197,6 +197,21 @@ do not read a sister's files from here.
 <!-- Domain facts an agent cannot derive from the models. Keep it tight. -->
 - (none yet)
 
+## The semantic stack
+Vocabulary is platform-wide and already loaded in this project's graph before any
+data exists — `kg_search` finds concepts, relations and policies on day one.
+
+| Ask | Command |
+|---|---|
+| What relates to what | `pf semantic topology` |
+| What must hold, and what enforces it | `pf semantic policy` |
+| BI / WrenAI projection | `pf semantic mdl {{group}} {{project}}` → `mdl/mdl.json` |
+| Re-run every generated artefact | `pf bootstrap {{group}} {{project}}` |
+
+A foreign key must be declared with `links={"col": "SomeClass"}`, and the topology
+must already relate the two classes — that binding is what makes join conditions
+derivable rather than guessed. `pf check` fails on an undeclared join.
+
 ## Conventions
 - Every dlt resource is annotated (`@annotate`) before any model is written.
 - Marts declare `meta.grain`; the semantic layer owns aggregation policy.

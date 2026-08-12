@@ -1,0 +1,10 @@
+{
+  "catalog": "acme",
+  "schema": "acme_rollup",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [],
+  "relationships": [],
+  "views": [],
+  "cubes": []
+}

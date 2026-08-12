@@ -1,0 +1,2100 @@
+{
+  "nodes": [
+    {
+      "id": "concept:Agreement",
+      "kind": "Concept",
+      "name": "Agreement",
+      "layer": "ontology",
+      "label": "A commitment between parties, with a lifecycle.",
+      "props": {
+        "abstract": true,
+        "parent": null,
+        "identity": null,
+        "label": "Agreement"
+      }
+    },
+    {
+      "id": "concept:Contract",
+      "kind": "Concept",
+      "name": "Contract",
+      "layer": "ontology",
+      "label": "A negotiated agreement, usually with custom terms.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement",
+        "identity": "contract_id",
+        "label": "Contract"
+      }
+    },
+    {
+      "id": "concept:Currency",
+      "kind": "Concept",
+      "name": "Currency",
+      "layer": "ontology",
+      "label": "An ISO 4217 currency. Qualifies every money amount.",
+      "props": {
+        "abstract": false,
+        "parent": null,
+        "identity": "currency_code",
+        "label": "Currency"
+      }
+    },
+    {
+      "id": "concept:Customer",
+      "kind": "Concept",
+      "name": "Customer",
+      "layer": "ontology",
+      "label": "A party that buys. May be a person or an organization.",
+      "props": {
+        "abstract": false,
+        "parent": "Party",
+        "identity": "customer_id",
+        "label": "Customer"
+      }
+    },
+    {
+      "id": "concept:Employee",
+      "kind": "Concept",
+      "name": "Employee",
+      "layer": "ontology",
+      "label": "Internal actor. Rarely modelled in marts; used for attribution.",
+      "props": {
+        "abstract": false,
+        "parent": "Party",
+        "identity": "employee_id",
+        "label": "Employee"
+      }
+    },
+    {
+      "id": "concept:Event",
+      "kind": "Concept",
+      "name": "Event",
+      "layer": "ontology",
+      "label": "Something that happened at a point in time. Immutable.",
+      "props": {
+        "abstract": true,
+        "parent": null,
+        "identity": null,
+        "label": "Event"
+      }
+    },
+    {
+      "id": "concept:Interaction",
+      "kind": "Concept",
+      "name": "Interaction",
+      "layer": "ontology",
+      "label": "A touchpoint (email, call, session) with a party.",
+      "props": {
+        "abstract": false,
+        "parent": "Event",
+        "identity": "interaction_id",
+        "label": "Interaction"
+      }
+    },
+    {
+      "id": "concept:Location",
+      "kind": "Concept",
+      "name": "Location",
+      "layer": "ontology",
+      "label": "A geography. Country, region, or address.",
+      "props": {
+        "abstract": false,
+        "parent": null,
+        "identity": "location_id",
+        "label": "Location"
+      }
+    },
+    {
+      "id": "concept:Order",
+      "kind": "Concept",
+      "name": "Order",
+      "layer": "ontology",
+      "label": "A one-off purchase commitment.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement",
+        "identity": "order_id",
+        "label": "Order"
+      }
+    },
+    {
+      "id": "concept:Organization",
+      "kind": "Concept",
+      "name": "Organization",
+      "layer": "ontology",
+      "label": "A legal entity. Customers may belong to one.",
+      "props": {
+        "abstract": false,
+        "parent": "Party",
+        "identity": "organization_id",
+        "label": "Organization"
+      }
+    },
+    {
+      "id": "concept:Party",
+      "kind": "Concept",
+      "name": "Party",
+      "layer": "ontology",
+      "label": "Any actor that can enter into an agreement.",
+      "props": {
+        "abstract": true,
+        "parent": null,
+        "identity": null,
+        "label": "Party"
+      }
+    },
+    {
+      "id": "concept:Payment",
+      "kind": "Concept",
+      "name": "Payment",
+      "layer": "ontology",
+      "label": "Movement of money settling an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event",
+        "identity": "payment_id",
+        "label": "Payment"
+      }
+    },
+    {
+      "id": "concept:Product",
+      "kind": "Concept",
+      "name": "Product",
+      "layer": "ontology",
+      "label": "A sellable thing. Plans and SKUs are Products.",
+      "props": {
+        "abstract": false,
+        "parent": null,
+        "identity": "product_id",
+        "label": "Product"
+      }
+    },
+    {
+      "id": "concept:Refund",
+      "kind": "Concept",
+      "name": "Refund",
+      "layer": "ontology",
+      "label": "Negative movement of money against a prior payment.",
+      "props": {
+        "abstract": false,
+        "parent": "Event",
+        "identity": "refund_id",
+        "label": "Refund"
+      }
+    },
+    {
+      "id": "concept:Subscription",
+      "kind": "Concept",
+      "name": "Subscription",
+      "layer": "ontology",
+      "label": "A recurring agreement with a plan, term and status.",
+      "props": {
+        "abstract": false,
+        "parent": "Agreement",
+        "identity": "subscription_id",
+        "label": "Subscription"
+      }
+    },
+    {
+      "id": "concept:Usage",
+      "kind": "Concept",
+      "name": "Usage",
+      "layer": "ontology",
+      "label": "Metered consumption attributable to an agreement.",
+      "props": {
+        "abstract": false,
+        "parent": "Event",
+        "identity": "usage_id",
+        "label": "Usage"
+      }
+    },
+    {
+      "id": "evidence:STATE.md",
+      "kind": "Evidence",
+      "name": "STATE.md",
+      "layer": "governance",
+      "label": "open findings",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:impact_reports",
+      "kind": "Evidence",
+      "name": "impact_reports",
+      "layer": "governance",
+      "label": "blast radius history",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:kg/context_card.md",
+      "kind": "Evidence",
+      "name": "kg/context_card.md",
+      "layer": "governance",
+      "label": "project index",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:loop-ledger.json",
+      "kind": "Evidence",
+      "name": "loop-ledger.json",
+      "layer": "governance",
+      "label": "run history",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf check",
+      "kind": "Evidence",
+      "name": "pf check",
+      "layer": "governance",
+      "label": "conformance report",
+      "props": {
+        "durable": false
+      }
+    },
+    {
+      "id": "evidence:pf gate",
+      "kind": "Evidence",
+      "name": "pf gate",
+      "layer": "governance",
+      "label": "path verdict",
+      "props": {
+        "durable": false
+      }
+    },
+    {
+      "id": "evidence:pf loop run pii-audit",
+      "kind": "Evidence",
+      "name": "pf loop run pii-audit",
+      "layer": "governance",
+      "label": "PII findings",
+      "props": {
+        "durable": false
+      }
+    },
+    {
+      "id": "policy:change-declares-blast-radius",
+      "kind": "Policy",
+      "name": "change-declares-blast-radius",
+      "layer": "governance",
+      "label": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+      "props": {
+        "constraint": "impact_reported",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/transform/models/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "platform/hooks/pre_tool_use.py",
+          "platform/hooks/pre_commit.sh"
+        ],
+        "enforced": true,
+        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+      }
+    },
+    {
+      "id": "policy:entity-requires-identity",
+      "kind": "Policy",
+      "name": "entity-requires-identity",
+      "layer": "governance",
+      "label": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+      "props": {
+        "constraint": "identity_declared",
+        "severity": "error",
+        "applies_to": {
+          "class": "*"
+        },
+        "params": {
+          "exclude_abstract": true
+        },
+        "enforced_by": [
+          "pf.ontology.validate:class-without-identity"
+        ],
+        "enforced": true,
+        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+      }
+    },
+    {
+      "id": "policy:link-must-be-in-topology",
+      "kind": "Policy",
+      "name": "link-must-be-in-topology",
+      "layer": "governance",
+      "label": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the s",
+      "props": {
+        "constraint": "relation_exists",
+        "severity": "error",
+        "applies_to": {
+          "annotation": "links"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.ontology.validate:illegal-edge"
+        ],
+        "enforced": true,
+        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+      }
+    },
+    {
+      "id": "policy:mart-declares-grain",
+      "kind": "Policy",
+      "name": "mart-declares-grain",
+      "layer": "governance",
+      "label": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+      "props": {
+        "constraint": "meta_field_present",
+        "severity": "warning",
+        "applies_to": {
+          "layer": "marts"
+        },
+        "params": {
+          "field": "grain"
+        },
+        "enforced_by": [
+          "pf.kg.build:model-grain"
+        ],
+        "enforced": true,
+        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+      }
+    },
+    {
+      "id": "policy:metric-owns-aggregation",
+      "kind": "Policy",
+      "name": "metric-owns-aggregation",
+      "layer": "governance",
+      "label": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second d",
+      "props": {
+        "constraint": "no_metric_shaped_columns",
+        "severity": "warning",
+        "applies_to": {
+          "layer": "marts"
+        },
+        "params": {
+          "forbidden_names": [
+            "revenue",
+            "mrr",
+            "arr",
+            "churn_rate",
+            "ltv"
+          ]
+        },
+        "enforced_by": [
+          "pf.ontology.validate:metric-shaped-column"
+        ],
+        "enforced": true,
+        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+      }
+    },
+    {
+      "id": "policy:money-requires-currency",
+      "kind": "Policy",
+      "name": "money-requires-currency",
+      "layer": "governance",
+      "label": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+      "props": {
+        "constraint": "sibling_role_present",
+        "severity": "error",
+        "applies_to": {
+          "role": "money_amount"
+        },
+        "params": {
+          "sibling": "currency_code",
+          "scope": "resource"
+        },
+        "enforced_by": [
+          "pf.ontology.validate:money-without-currency"
+        ],
+        "enforced": true,
+        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+      }
+    },
+    {
+      "id": "policy:pii-not-in-consumption",
+      "kind": "Policy",
+      "name": "pii-not-in-consumption",
+      "layer": "governance",
+      "label": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+      "props": {
+        "constraint": "not_in_layer",
+        "severity": "error",
+        "applies_to": {
+          "role_glob": "pii_*"
+        },
+        "params": {
+          "layers": [
+            "marts",
+            "semantic",
+            "consumption"
+          ]
+        },
+        "enforced_by": [
+          "pf.loops.registry:pii_audit"
+        ],
+        "enforced": true,
+        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+      }
+    },
+    {
+      "id": "policy:secrets-never-in-context",
+      "kind": "Policy",
+      "name": "secrets-never-in-context",
+      "layer": "governance",
+      "label": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+      "props": {
+        "constraint": "path_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/secrets.toml"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:denylist",
+          "platform/hooks/pre_tool_use.py"
+        ],
+        "enforced": true,
+        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+      }
+    },
+    {
+      "id": "project:zenith-uk",
+      "kind": "Project",
+      "name": "zenith-uk",
+      "layer": "project",
+      "label": "zenith/zenith-uk",
+      "props": {
+        "group": "zenith",
+        "path": "/Users/suresh/data-platform/groups/zenith/projects/zenith-uk"
+      }
+    },
+    {
+      "id": "property:Agreement.agreement_id",
+      "kind": "Property",
+      "name": "agreement_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Agreement",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.canceled_at",
+      "kind": "Property",
+      "name": "canceled_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 valid_to",
+      "props": {
+        "datatype": "timestamp",
+        "role": "valid_to",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Interaction.channel",
+      "kind": "Property",
+      "name": "channel",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Interaction",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Contract.contract_id",
+      "kind": "Property",
+      "name": "contract_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Contract",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Organization.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Location.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Location",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.created_at",
+      "kind": "Property",
+      "name": "created_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Currency.currency_code",
+      "kind": "Property",
+      "name": "currency_code",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": true,
+        "concept": "Currency",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.email",
+      "kind": "Property",
+      "name": "email",
+      "layer": "ontology",
+      "label": "string \u00b7 pii_email",
+      "props": {
+        "datatype": "string",
+        "role": "pii_email",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Employee.employee_id",
+      "kind": "Property",
+      "name": "employee_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Employee",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Event.event_id",
+      "kind": "Property",
+      "name": "event_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Event",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Interaction.interaction_id",
+      "kind": "Property",
+      "name": "interaction_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Interaction",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Location.location_id",
+      "kind": "Property",
+      "name": "location_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Location",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Usage.measured_at",
+      "kind": "Property",
+      "name": "measured_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Usage",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.mrr_amount",
+      "kind": "Property",
+      "name": "mrr_amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Product.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 free_text",
+      "props": {
+        "datatype": "string",
+        "role": "free_text",
+        "required": false,
+        "concept": "Product",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 pii_name",
+      "props": {
+        "datatype": "string",
+        "role": "pii_name",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Organization.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 free_text",
+      "props": {
+        "datatype": "string",
+        "role": "free_text",
+        "required": false,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Interaction.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Interaction",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Event.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Event",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.order_id",
+      "kind": "Property",
+      "name": "order_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Organization.organization_id",
+      "kind": "Property",
+      "name": "organization_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Payment.paid_at",
+      "kind": "Property",
+      "name": "paid_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Party.party_id",
+      "kind": "Property",
+      "name": "party_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Party",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.payment_id",
+      "kind": "Property",
+      "name": "payment_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Order.placed_at",
+      "kind": "Property",
+      "name": "placed_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.plan",
+      "kind": "Property",
+      "name": "plan",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Product.product_id",
+      "kind": "Property",
+      "name": "product_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Product",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Usage.quantity",
+      "kind": "Property",
+      "name": "quantity",
+      "layer": "ontology",
+      "label": "integer \u00b7 quantity",
+      "props": {
+        "datatype": "integer",
+        "role": "quantity",
+        "required": false,
+        "concept": "Usage",
+        "mdl_type": "BIGINT",
+        "xsd_type": "xsd:integer",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.refund_id",
+      "kind": "Property",
+      "name": "refund_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Refund",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Refund.refunded_at",
+      "kind": "Property",
+      "name": "refunded_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.segment",
+      "kind": "Property",
+      "name": "segment",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Contract.signed_at",
+      "kind": "Property",
+      "name": "signed_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Contract",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.started_at",
+      "kind": "Property",
+      "name": "started_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Agreement.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Agreement",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.subscription_id",
+      "kind": "Property",
+      "name": "subscription_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Usage.usage_id",
+      "kind": "Property",
+      "name": "usage_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Usage",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "relation:contract_signed_by_organization",
+      "kind": "Relation",
+      "name": "contract_signed_by_organization",
+      "layer": "topology",
+      "label": "Contract signed by Organization",
+      "props": {
+        "domain": "Contract",
+        "range": "Organization",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "signed by",
+        "inverse": "signatory of",
+        "description": "",
+        "reverse_label": "Organization signatory of Contract"
+      }
+    },
+    {
+      "id": "relation:customer_belongs_to_organization",
+      "kind": "Relation",
+      "name": "customer_belongs_to_organization",
+      "layer": "topology",
+      "label": "Customer belongs to Organization",
+      "props": {
+        "domain": "Customer",
+        "range": "Organization",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "belongs to",
+        "inverse": "has customer",
+        "description": "A customer may sit under a parent organization.",
+        "reverse_label": "Organization has customer Customer"
+      }
+    },
+    {
+      "id": "relation:customer_holds_subscription",
+      "kind": "Relation",
+      "name": "customer_holds_subscription",
+      "layer": "topology",
+      "label": "Customer holds Subscription",
+      "props": {
+        "domain": "Customer",
+        "range": "Subscription",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "holds",
+        "inverse": "held by",
+        "description": "The spine of any recurring-revenue model.",
+        "reverse_label": "Subscription held by Customer"
+      }
+    },
+    {
+      "id": "relation:customer_located_in_location",
+      "kind": "Relation",
+      "name": "customer_located_in_location",
+      "layer": "topology",
+      "label": "Customer located in Location",
+      "props": {
+        "domain": "Customer",
+        "range": "Location",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "located in",
+        "inverse": "is location of",
+        "description": "",
+        "reverse_label": "Location is location of Customer"
+      }
+    },
+    {
+      "id": "relation:customer_participates_in_interaction",
+      "kind": "Relation",
+      "name": "customer_participates_in_interaction",
+      "layer": "topology",
+      "label": "Customer participates in Interaction",
+      "props": {
+        "domain": "Customer",
+        "range": "Interaction",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "participates in",
+        "inverse": "involves",
+        "description": "",
+        "reverse_label": "Interaction involves Customer"
+      }
+    },
+    {
+      "id": "relation:customer_pays_payment",
+      "kind": "Relation",
+      "name": "customer_pays_payment",
+      "layer": "topology",
+      "label": "Customer pays Payment",
+      "props": {
+        "domain": "Customer",
+        "range": "Payment",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "pays",
+        "inverse": "paid by",
+        "description": "",
+        "reverse_label": "Payment paid by Customer"
+      }
+    },
+    {
+      "id": "relation:customer_places_order",
+      "kind": "Relation",
+      "name": "customer_places_order",
+      "layer": "topology",
+      "label": "Customer places Order",
+      "props": {
+        "domain": "Customer",
+        "range": "Order",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "places",
+        "inverse": "placed by",
+        "description": "",
+        "reverse_label": "Order placed by Customer"
+      }
+    },
+    {
+      "id": "relation:order_contains_product",
+      "kind": "Relation",
+      "name": "order_contains_product",
+      "layer": "topology",
+      "label": "Order contains Product",
+      "props": {
+        "domain": "Order",
+        "range": "Product",
+        "cardinality": "MANY_TO_MANY",
+        "inverse_cardinality": "MANY_TO_MANY",
+        "label": "contains",
+        "inverse": "appears in",
+        "description": "Needs a line-item bridge in any physical model.",
+        "reverse_label": "Product appears in Order"
+      }
+    },
+    {
+      "id": "relation:order_settled_by_payment",
+      "kind": "Relation",
+      "name": "order_settled_by_payment",
+      "layer": "topology",
+      "label": "Order settled by Payment",
+      "props": {
+        "domain": "Order",
+        "range": "Payment",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "settled by",
+        "inverse": "settles",
+        "description": "",
+        "reverse_label": "Payment settles Order"
+      }
+    },
+    {
+      "id": "relation:payment_denominated_in_currency",
+      "kind": "Relation",
+      "name": "payment_denominated_in_currency",
+      "layer": "topology",
+      "label": "Payment denominated in Currency",
+      "props": {
+        "domain": "Payment",
+        "range": "Currency",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "denominated in",
+        "inverse": "denominates",
+        "description": "Makes the money/currency pairing explicit rather than a convention.",
+        "reverse_label": "Currency denominates Payment"
+      }
+    },
+    {
+      "id": "relation:payment_reversed_by_refund",
+      "kind": "Relation",
+      "name": "payment_reversed_by_refund",
+      "layer": "topology",
+      "label": "Payment reversed by Refund",
+      "props": {
+        "domain": "Payment",
+        "range": "Refund",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "reversed by",
+        "inverse": "reverses",
+        "description": "",
+        "reverse_label": "Refund reverses Payment"
+      }
+    },
+    {
+      "id": "relation:subscription_for_product",
+      "kind": "Relation",
+      "name": "subscription_for_product",
+      "layer": "topology",
+      "label": "Subscription for product Product",
+      "props": {
+        "domain": "Subscription",
+        "range": "Product",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "for product",
+        "inverse": "sold as",
+        "description": "",
+        "reverse_label": "Product sold as Subscription"
+      }
+    },
+    {
+      "id": "relation:subscription_metered_by_usage",
+      "kind": "Relation",
+      "name": "subscription_metered_by_usage",
+      "layer": "topology",
+      "label": "Subscription metered by Usage",
+      "props": {
+        "domain": "Subscription",
+        "range": "Usage",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "metered by",
+        "inverse": "meters",
+        "description": "",
+        "reverse_label": "Usage meters Subscription"
+      }
+    },
+    {
+      "id": "relation:subscription_settled_by_payment",
+      "kind": "Relation",
+      "name": "subscription_settled_by_payment",
+      "layer": "topology",
+      "label": "Subscription settled by Payment",
+      "props": {
+        "domain": "Subscription",
+        "range": "Payment",
+        "cardinality": "ONE_TO_MANY",
+        "inverse_cardinality": "MANY_TO_ONE",
+        "label": "settled by",
+        "inverse": "settles",
+        "description": "",
+        "reverse_label": "Payment settles Subscription"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "src": "concept:Party",
+      "dst": "property:Party.party_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.customer_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.email",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.name",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.segment",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.country",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.created_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Organization",
+      "dst": "property:Organization.organization_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Organization",
+      "dst": "property:Organization.name",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Organization",
+      "dst": "property:Organization.country",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Employee",
+      "dst": "property:Employee.employee_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Agreement",
+      "dst": "property:Agreement.agreement_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Agreement",
+      "dst": "property:Agreement.status",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.subscription_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.status",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.plan",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.mrr_amount",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.currency",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.started_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.canceled_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "property:Order.order_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "property:Order.status",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "property:Order.amount",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "property:Order.currency",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "property:Order.placed_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Contract",
+      "dst": "property:Contract.contract_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Contract",
+      "dst": "property:Contract.signed_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Event",
+      "dst": "property:Event.event_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Event",
+      "dst": "property:Event.occurred_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.payment_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.amount",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.currency",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.status",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.paid_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Refund",
+      "dst": "property:Refund.refund_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Refund",
+      "dst": "property:Refund.amount",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Refund",
+      "dst": "property:Refund.currency",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Refund",
+      "dst": "property:Refund.refunded_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Usage",
+      "dst": "property:Usage.usage_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Usage",
+      "dst": "property:Usage.quantity",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Usage",
+      "dst": "property:Usage.measured_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Interaction",
+      "dst": "property:Interaction.interaction_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Interaction",
+      "dst": "property:Interaction.channel",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Interaction",
+      "dst": "property:Interaction.occurred_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Product",
+      "dst": "property:Product.product_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Product",
+      "dst": "property:Product.name",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Location",
+      "dst": "property:Location.location_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Location",
+      "dst": "property:Location.country",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Currency",
+      "dst": "property:Currency.currency_code",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_belongs_to_organization",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_belongs_to_organization",
+      "dst": "concept:Organization",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_located_in_location",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_located_in_location",
+      "dst": "concept:Location",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_holds_subscription",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_holds_subscription",
+      "dst": "concept:Subscription",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_places_order",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_places_order",
+      "dst": "concept:Order",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Contract",
+      "dst": "relation:contract_signed_by_organization",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:contract_signed_by_organization",
+      "dst": "concept:Organization",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "relation:subscription_for_product",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:subscription_for_product",
+      "dst": "concept:Product",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "relation:order_contains_product",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:order_contains_product",
+      "dst": "concept:Product",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_pays_payment",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_pays_payment",
+      "dst": "concept:Payment",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "relation:subscription_settled_by_payment",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:subscription_settled_by_payment",
+      "dst": "concept:Payment",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Order",
+      "dst": "relation:order_settled_by_payment",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:order_settled_by_payment",
+      "dst": "concept:Payment",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "relation:payment_reversed_by_refund",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:payment_reversed_by_refund",
+      "dst": "concept:Refund",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "relation:payment_denominated_in_currency",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:payment_denominated_in_currency",
+      "dst": "concept:Currency",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "relation:subscription_metered_by_usage",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:subscription_metered_by_usage",
+      "dst": "concept:Usage",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "relation:customer_participates_in_interaction",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_participates_in_interaction",
+      "dst": "concept:Interaction",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "policy:money-requires-currency",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Customer",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Organization",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Employee",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Subscription",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Order",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Contract",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Payment",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Refund",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Usage",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Interaction",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Product",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Location",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-requires-identity",
+      "dst": "concept:Currency",
+      "kind": "governs",
+      "props": {}
+    },
+    {
+      "src": "policy:link-must-be-in-topology",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:pii-not-in-consumption",
+      "dst": "evidence:pf loop run pii-audit",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:pii-not-in-consumption",
+      "dst": "evidence:STATE.md",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:mart-declares-grain",
+      "dst": "evidence:kg/context_card.md",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:metric-owns-aggregation",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:change-declares-blast-radius",
+      "dst": "evidence:impact_reports",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:change-declares-blast-radius",
+      "dst": "evidence:loop-ledger.json",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:secrets-never-in-context",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    }
+  ]
+}

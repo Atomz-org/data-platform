@@ -1,4 +1,4 @@
-## acme-rollup — data index (generated 2026-08-12)
+## acme-rollup — data index (generated 2026-08-13)
 
 **Group:** acme · **Concepts in use:** none
 **Sources (0):** none

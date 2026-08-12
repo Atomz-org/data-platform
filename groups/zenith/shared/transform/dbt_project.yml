@@ -1,0 +1,5 @@
+name: 'zenith_shared'
+version: '1.0.0'
+config-version: 2
+profile: 'zenith_shared'
+macro-paths: ["macros"]

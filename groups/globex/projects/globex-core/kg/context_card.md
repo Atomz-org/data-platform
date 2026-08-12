@@ -1,8 +1,18 @@
-## globex-core — data index (not yet built)
+## globex-core — data index (generated 2026-08-13)
 
-This project has no sources, models or metrics. `kg_search` and `query_metrics`
-will return nothing until it does.
+**Group:** globex · **Concepts in use:** none
+**Sources (0):** none
 
-**Start here:** the `quick-start` skill. In short — scaffold a dlt source
-(`find-source`), annotate it (`annotate-source`), run `pf seed globex globex-core`,
-then build staging and marts. This card regenerates itself on every seed.
+**Raw tables (0):**
+
+**Staging models (0):** none
+
+**Marts (0):**
+
+**Metrics (0):**
+
+**Known gaps:**
+- no metrics defined — every business question falls back to raw SQL
+- no exposures declared — impact analysis stops at the mart
+
+_Query the graph before reading files: `kg_search`, `kg_neighbors`, `kg_path`._

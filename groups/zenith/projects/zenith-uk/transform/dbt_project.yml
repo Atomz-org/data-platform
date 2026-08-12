@@ -1,0 +1,22 @@
+name: 'zenith_uk'
+version: '1.0.0'
+config-version: 2
+profile: 'zenith_uk'
+
+model-paths: ["models"]
+# Platform cleaning macros load as root-project macros, not as a package:
+# `pf_clean` dispatches to its `clean_*` siblings unqualified, and dbt namespaces
+# package macros, so a package install fails on the inner dispatch.
+macro-paths: ["macros", "../../../../../platform/dbt/macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: "target"
+
+models:
+  zenith_uk:
+    staging:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table
+      +schema: marts

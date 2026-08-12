@@ -1,0 +1,7 @@
+{
+  "name": "zenith",
+  "owner": { "name": "zenith" },
+  "plugins": [
+    { "name": "zenith-group", "source": "./.claude", "description": "zenith group skills" }
+  ]
+}

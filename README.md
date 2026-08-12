@@ -83,6 +83,24 @@ Constant regardless of how many groups, sisters or skills exist:
 
 `pf tokens` records these to the tracking DB and fails when one goes over.
 
+## Adding a capability
+
+Post-scaffold work lives in **one** ordered, idempotent list — `pf.scaffold.bootstrap.STEPS`.
+`pf new-project` runs it; `pf bootstrap --all` re-runs it over every existing
+project. Adding a platform capability means adding a step there, and both new and
+old projects pick it up.
+
+```bash
+uv run pf bootstrap-steps          # what runs, and why each step exists
+uv run pf bootstrap <g> <p>        # retrofit one project
+uv run pf bootstrap --all          # retrofit everything after a platform upgrade
+```
+
+This exists because the steps used to be inlined in `new-project`: every
+capability added afterwards — the PreToolUse hook, the dbt macro-paths, the
+placeholder card — had to be hand-patched across existing projects, and each was
+a silent hole until someone noticed.
+
 ## Loop engineering
 
 Building blocks adapted from [loop-engineering](vendor/loop-engineering) (added as

@@ -1,0 +1,10 @@
+{
+  "catalog": "globex",
+  "schema": "globex_core",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [],
+  "relationships": [],
+  "views": [],
+  "cubes": []
+}

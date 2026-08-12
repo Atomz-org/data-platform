@@ -1,0 +1,12 @@
+# Ontology instance for zenith — which platform classes this group models.
+# Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
+group: zenith
+domain: fintech
+classes:
+  - Customer
+  - Organization
+  - Contract
+  - Payment
+  - Refund
+  - Currency
+shared_sources: []

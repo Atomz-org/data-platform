@@ -1,4 +1,4 @@
-## globex — group index (generated 2026-08-12)
+## globex — group index (generated 2026-08-13)
 
 **Sister projects (2):** `globex-core`, `globex-eu`
 **Ontology classes in scope:** Customer, Order, Payment, Refund, Product, Location

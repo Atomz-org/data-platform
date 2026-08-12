@@ -32,6 +32,7 @@ from pf.loops.audit import audit as loop_audit, project_readiness, recommended_l
 from pf.loops.gate import GateResult, check_paths, nodes_for, project_for
 from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
+from pf.scaffold.bootstrap import STEPS, bootstrap
 from pf.scaffold.generator import new_group, new_project
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
@@ -114,22 +115,13 @@ def cmd_new_project(
     if caps:
         _merge_gate_rules(gate_additions(caps))
 
-    # Build the graph now, before the project has any sources or models. It is
-    # only the ontology plus a Project node, but it means `kg/graph.duckdb`
-    # exists from day one — so the PreToolUse hook and `pf check` have something
-    # to compute a blast radius against the moment the first model lands, and a
-    # missing graph later means something broke rather than "never built yet".
-    counts = build_graph(d, group=group, project=project)
-
-    # Registering the code location is part of creating the project, not a step
-    # to remember: an unregistered project silently never runs in Dagster.
-    cmd_dagster_workspace()
-
+    # Everything past the file writes lives in `pf.scaffold.bootstrap`, shared
+    # with `pf bootstrap`. Inlining it here is what previously left projects
+    # created before a capability landed permanently missing it.
     console.print(f"[green]✓[/] project [bold]{group}/{project}[/] created with {len(files)} files")
-    console.print(f"  [dim]graph initialised: {sum(counts.values())} node(s) · "
-                  f"PreToolUse gate wired · code location registered"
-                  + (f" · capabilities: {', '.join(c.name for c in caps)}" if caps else "")
-                  + "[/]")
+    _print_bootstrap(bootstrap(root(), group, project))
+    if caps:
+        console.print(f"  [dim]capabilities: {', '.join(c.name for c in caps)}[/]")
     for cap, missing in missing_env(caps).items():
         console.print(f"  [yellow]![/] {cap} needs unset env: {', '.join(missing)}")
     console.print(f"  next: [cyan]pf seed {group} {project}[/] · [cyan]pf loop audit[/]")
@@ -199,6 +191,48 @@ def models() -> None:
         console.print(f"  [yellow]![/] {i}")
     if not issues:
         console.print("[green]✓[/] every routed step matches its model's capabilities")
+
+
+@app.command("bootstrap")
+def bootstrap_cmd(
+    group: str = typer.Argument("", help="group (omit with --all)"),
+    project: str = typer.Argument("", help="project (omit with --all)"),
+    all_: bool = typer.Option(False, "--all", help="every project in the repo"),
+) -> None:
+    """Re-run every post-scaffold step. Idempotent.
+
+    Run this after upgrading the platform: a project created before a capability
+    existed gets it here, rather than by hand-patching.
+    """
+    targets = all_projects() if all_ else [(group, project, pdir(group, project))]
+    if not all_ and not (group and project):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+
+    failed = False
+    for g, p, _ in targets:
+        console.print(f"[bold]{g}/{p}[/]")
+        results = _print_bootstrap(bootstrap(root(), g, p))
+        failed = failed or not results
+    raise typer.Exit(1 if failed else 0)
+
+
+def _print_bootstrap(results) -> bool:
+    ok = True
+    for r in results:
+        mark = {"ok": "[green]✓[/]", "skipped": "[dim]·[/]", "failed": "[red]✗[/]"}[r.status]
+        console.print(f"  {mark} {r.name:24} [dim]{r.detail}[/]")
+        ok = ok and r.ok
+    return ok
+
+
+@app.command("bootstrap-steps")
+def cmd_bootstrap_steps() -> None:
+    """What `pf bootstrap` does, and why each step exists."""
+    t = Table("step", "why")
+    for s in STEPS:
+        t.add_row(s.name, s.why)
+    console.print(t)
 
 
 @app.command()

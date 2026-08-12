@@ -41,15 +41,17 @@ class ProjectReadiness:
     graph: bool
     card: bool
     claude_md: bool
+    mdl: bool
 
     @property
     def ready(self) -> bool:
-        return self.hook and self.graph and self.card and self.claude_md
+        return self.hook and self.graph and self.card and self.claude_md and self.mdl
 
     @property
     def missing(self) -> list[str]:
         return [n for n, ok in (("hook", self.hook), ("graph", self.graph),
-                                ("card", self.card), ("CLAUDE.md", self.claude_md)) if not ok]
+                                ("card", self.card), ("CLAUDE.md", self.claude_md),
+                                ("mdl", self.mdl)) if not ok]
 
 
 def project_readiness(root: Path) -> list[ProjectReadiness]:
@@ -71,6 +73,7 @@ def project_readiness(root: Path) -> list[ProjectReadiness]:
                 graph=(p / "kg" / "graph.duckdb").exists(),
                 card=(p / "kg" / "context_card.md").exists(),
                 claude_md=(p / "CLAUDE.md").exists(),
+                mdl=(p / "mdl" / "mdl.json").exists(),
             ))
     return out
 

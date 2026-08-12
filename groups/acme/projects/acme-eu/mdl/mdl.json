@@ -30,6 +30,68 @@
           "properties": {
             "description": "Sales segment. Drives most reporting cuts."
           }
+        },
+        {
+          "name": "organization_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "subscription_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "active_subscriptions",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "first_subscribed_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
         }
       ],
       "primaryKey": "customer_id",
@@ -77,6 +139,66 @@
           "properties": {
             "pf.role": "event_time"
           }
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "subscription_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "payment_status",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
         }
       ],
       "primaryKey": "payment_id",
@@ -114,6 +236,46 @@
           "properties": {
             "pf.role": "money_amount"
           }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "gross_amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "payment_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
         }
       ],
       "properties": {
@@ -125,7 +287,24 @@
       }
     }
   ],
-  "relationships": [],
+  "relationships": [
+    {
+      "name": "fct_payments_dim_customers",
+      "models": [
+        "fct_payments",
+        "dim_customers"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_payments.customer_id = dim_customers.customer_id",
+      "properties": {
+        "pf.relation": "customer_pays_payment",
+        "pf.label": "pays",
+        "pf.inverse": "paid by",
+        "pf.description": "",
+        "pf.also_realises": "customer_holds_subscription"
+      }
+    }
+  ],
   "views": [],
   "cubes": [
     {

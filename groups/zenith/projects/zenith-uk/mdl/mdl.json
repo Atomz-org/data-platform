@@ -1,0 +1,10 @@
+{
+  "catalog": "zenith",
+  "schema": "zenith_uk",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [],
+  "relationships": [],
+  "views": [],
+  "cubes": []
+}
