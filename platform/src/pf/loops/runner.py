@@ -164,9 +164,17 @@ def run_loop(
         run.outcome, run.message = "noop", "dry run"
         return run
 
+    from pf.agents.base import reset_spend, spend
+
+    reset_spend()
     t0 = time.time()
     try:
         run.findings = body(run) or []
+        run.tokens_used = spend()
+        if spec.token_budget and run.tokens_used > spec.token_budget:
+            run.message = (f"over budget: {run.tokens_used:,} tokens vs "
+                           f"{spec.token_budget:,} allowed — tighten the prompt "
+                           f"or lower effort")
         run.outcome = "ok" if run.findings else "noop"
     except Exception as exc:  # a loop must never take the platform down
         run.outcome, run.message = "error", f"{type(exc).__name__}: {exc}"[:400]

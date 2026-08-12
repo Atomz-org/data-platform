@@ -53,20 +53,56 @@ SPECS: dict[str, LoopSpec] = {
 # ---------------------------------------------------------------- bodies ----
 def freshness_triage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
     from pf import obs
+    from pf.agents import NoCredentials, assess_anomaly, have_credentials
 
     rows = obs.query(
-        "SELECT resource, column_name, monitor, status, message FROM monitor_results "
+        "SELECT resource, column_name, monitor, status, observed, expected, "
+        "deviation_pct, message FROM monitor_results "
         "WHERE project = ? AND status <> 'ok' ORDER BY ts DESC LIMIT 20", [project])
-    return [f"{r['resource']}.{r['column_name']} [{r['monitor']}] {r['status']}: {r['message']}"
-            for r in rows]
+    raw = [f"{r['resource']}.{r['column_name']} [{r['monitor']}] {r['status']}: {r['message']}"
+           for r in rows]
+    if not raw or not have_credentials():
+        return raw  # deterministic findings are the fallback, not an error
+
+    try:
+        report = assess_anomaly(root, group, project, rows)
+    except NoCredentials:
+        return raw
+    if report is None:
+        return raw
+    if report.ignorable:
+        return []  # judged noise; do not put it in STATE.md
+    return [f"[{report.severity}] {report.headline} — likely: {report.likely_cause}"]
 
 
 def test_failure_triage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    from pf.agents import NoCredentials, have_credentials, triage_failures
+    from pf.kg.query import kg_neighbors
     from pf.runtime.dbt_runtime import failed_nodes
 
     pdir = root / "groups" / group / "projects" / project
-    return [f"{n['unique_id']}: {n['status']} — {(n['message'] or '')[:160]}"
-            for n in failed_nodes(pdir)]
+    failures = failed_nodes(pdir)
+    raw = [f"{n['unique_id']}: {n['status']} — {(n['message'] or '')[:160]}"
+           for n in failures]
+    if not failures or not have_credentials():
+        return raw
+
+    # Lineage from the graph, not from grep: this is what keeps the prompt small.
+    gp = pdir / "kg" / "graph.duckdb"
+    lineage = ""
+    if gp.exists():
+        for f in failures[:3]:
+            model = (f["unique_id"] or "").split(".")[-1]
+            lineage += kg_neighbors(gp, f"model:{model}", depth=1) + "\n\n"
+
+    try:
+        d = triage_failures(root, group, project, failures, lineage)
+    except NoCredentials:
+        return raw
+    if d is None:
+        return raw
+    prefix = "ESCALATE" if d.escalate else d.confidence.upper()
+    return [f"[{prefix}] root_cause={d.root_cause}: {d.summary} → {d.suggested_fix}"]
 
 
 def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
@@ -82,9 +118,32 @@ def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> 
             for e in g.in_edges(metric.id):
                 covered.add(e.src)
     gaps = [m for m in marts if m.id not in covered]
-    return [f"mart `{m.name}` (grain: {m.props.get('grain', '?')}) has no metric "
-            f"measuring it — every question about it falls back to raw SQL"
-            for m in gaps]
+    raw = [f"mart `{m.name}` (grain: {m.props.get('grain', '?')}) has no metric "
+           f"measuring it — every question about it falls back to raw SQL"
+           for m in gaps]
+
+    from pf.agents import NoCredentials, have_credentials, propose_metrics
+    if not gaps or not have_credentials():
+        return raw
+
+    with open_graph(gp, read_only=True) as g:
+        detail = ""
+        for m in gaps:
+            cols = [g.node(e.dst) for e in g.out_edges(m.id)]
+            names = [f"{c.name}({c.props.get('role') or c.props.get('data_type') or '?'})"
+                     for c in cols if c and c.kind == "Column"]
+            detail += f"{m.name} [grain: {m.props.get('grain','?')}]: {', '.join(names)}\n"
+
+    try:
+        proposals = propose_metrics(root, group, project,
+                                    [m.name for m in gaps], detail)
+    except NoCredentials:
+        return raw
+    if proposals is None or not proposals.proposals:
+        return raw
+    return [f"propose metric `{p.metric_name}` ({p.metric_type}) on {p.measure_or_expr}"
+            f"{' where ' + p.filter_expression if p.filter_expression else ''} — {p.rationale}"
+            for p in proposals.proposals]
 
 
 def index_refresher(root: Path, group: str, project: str, run: LoopRun) -> list[str]:

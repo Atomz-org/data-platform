@@ -383,6 +383,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "anthropic" },
     { name = "dagster" },
     { name = "dagster-dbt" },
     { name = "dagster-webserver" },
@@ -398,6 +399,7 @@ requires-dist = [{ name = "pf", editable = "platform" }]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "anthropic", specifier = ">=0.40" },
     { name = "dagster", specifier = ">=1.10" },
     { name = "dagster-dbt", specifier = ">=0.26" },
     { name = "dagster-webserver", specifier = ">=1.10" },
