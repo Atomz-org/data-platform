@@ -1,4 +1,4 @@
--- Grain: one row per payment attempt.
+-- Grain: one row per payment attempt. (edited)
 -- Note this mart has no `revenue` column: which statuses count is a policy,
 -- and policy lives in the semantic layer so it is defined exactly once.
 select

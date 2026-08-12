@@ -83,6 +83,31 @@ Constant regardless of how many groups, sisters or skills exist:
 
 `pf tokens` records these to the tracking DB and fails when one goes over.
 
+## Loop engineering
+
+Building blocks adapted from [loop-engineering](vendor/loop-engineering) (added as
+a submodule): durable state, path gate, token budget, circuit breaker, ledger and
+a readiness score. The loops themselves watch data-platform subjects.
+
+```bash
+uv run pf loop list                       # loops, autonomy levels, budgets
+uv run pf loop run-all acme acme-us       # every L1 loop, then rewrite STATE.md
+uv run pf loop audit                      # Loop Readiness Score (0-100)
+uv run pf loop status                     # ledger
+```
+
+Governance files: `LOOP.md` (definitions) · `STATE.md` (generated) ·
+`loop-constraints.md` (binding) · `gate.yaml` (path policy) · `loop-budget.md`.
+
+**Three enforcement gates** make the impact check structural rather than a rule
+an agent must remember:
+
+| Gate | Fires | Effect |
+|---|---|---|
+| `pf check` | on demand / CI | blast radius of every working-tree change |
+| pre-commit hook | `git commit` | blocks a breaking change; `--no-verify` to override with a reason |
+| PreToolUse hook | before any Edit/Write | denies secrets and generated files; prints blast radius for models |
+
 ## Skill toolkits
 
 13 plugins in `platform/toolkits`, referenced by every project and copied into

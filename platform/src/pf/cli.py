@@ -16,11 +16,15 @@ from pf import obs
 from pf.kg.build import build_graph
 from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, \
     render_group_card, render_project_card
-from pf.kg.impact import gate, impact_of
+from pf.kg.impact import gate, impact_of, impact_of_many
 from pf.kg.query import kg_neighbors, kg_search
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project
 from pf.runtime.staging import generate as generate_staging
+from pf.loops.audit import audit as loop_audit, recommended_level
+from pf.loops.gate import GateResult, check_paths, nodes_for, project_for
+from pf.loops.registry import BODIES, SPECS
+from pf.loops.runner import Ledger, run_loop, update_state
 from pf.scaffold.generator import new_group, new_project
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
@@ -158,8 +162,9 @@ def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
 
 # ----------------------------------------------------------------- checks ---
 @app.command()
-def check(group: str = "", project: str = "") -> None:
-    """Ontology conformance + card budgets across projects."""
+def check(group: str = "", project: str = "",
+          impact: bool = typer.Option(True, help="also gate on blast radius of changes")) -> None:
+    """Ontology conformance, and the blast radius of anything you have changed."""
     targets = [(g, p, d) for g, p, d in all_projects()
                if (not group or g == group) and (not project or p == project)]
     if not targets:
@@ -177,7 +182,53 @@ def check(group: str = "", project: str = "") -> None:
         for i in errors + warns:
             console.print(f"    {i}")
         failed = failed or bool(errors)
+
+        if impact:
+            failed = _impact_on_changes(g, p, d) or failed
     raise typer.Exit(1 if failed else 0)
+
+
+def _impact_on_changes(group: str, project: str, d: Path) -> bool:
+    """Blast radius of every uncommitted change to models or sources.
+
+    This is the gate that makes impact analysis structural rather than a rule an
+    agent has to remember. It was written after a session in which the agent
+    regenerated staging models, broke three marts, and never ran the gate it had
+    built for exactly that failure.
+    """
+    changed = _changed_nodes(d)
+    if not changed:
+        return False
+    gp = d / "kg" / "graph.duckdb"
+    if not gp.exists():
+        console.print("    [yellow]graph not built; cannot assess impact[/]")
+        return False
+    report = impact_of_many(gp, changed)
+    if report.total == 0:
+        console.print(f"    [green]✓[/] {len(changed)} changed node(s), no downstream impact")
+        return False
+    console.print(f"    [dim]changed:[/] {', '.join(changed)}")
+    for line in report.render().splitlines():
+        console.print(f"    {line}")
+    obs.record_impact(group=group, project=project,
+                      root_node=",".join(changed), severity=report.severity,
+                      total=report.total, report=report.to_dict())
+    return report.severity == "breaking"
+
+
+def _changed_nodes(project_dir: Path) -> list[str]:
+    """Graph node ids for models/sources touched in the working tree."""
+    proc = subprocess.run(["git", "status", "--porcelain", "--", str(project_dir)],
+                          capture_output=True, text=True, cwd=str(root()))
+    nodes: list[str] = []
+    for line in proc.stdout.splitlines():
+        path = line[3:].strip().strip('"')
+        p = Path(path)
+        if p.suffix == ".sql" and "models" in p.parts:
+            nodes.append(f"model:{p.stem}")
+        elif p.suffix == ".py" and "sources" in p.parts:
+            nodes.append(f"source:{p.stem}")
+    return sorted(set(nodes))
 
 
 @app.command()
@@ -355,6 +406,132 @@ def cmd_dagster_workspace() -> None:
     console.print(f"[green]✓[/] {out}  ({n} code location(s))")
     console.print(f"  run: [cyan]DAGSTER_HOME={r}/.dagster uv run dagster dev "
                   f"-w platform/workspace.yaml[/]")
+
+
+# ------------------------------------------------------------------ loops --
+loop_app = typer.Typer(help="Loop engineering: scheduled, gated, budgeted agent work.")
+app.add_typer(loop_app, name="loop")
+
+
+@loop_app.command("list")
+def cmd_loop_list() -> None:
+    """Every loop, with its autonomy level and budget."""
+    t = Table("loop", "autonomy", "cadence", "budget", "writes", "description")
+    for s in SPECS.values():
+        t.add_row(s.name, s.autonomy, s.cadence,
+                  f"{s.token_budget:,}" if s.token_budget else "—",
+                  "yes" if s.writes else "no", s.description)
+    console.print(t)
+    console.print("[dim]L1 report-only · L2 gated patches · L3 unattended. "
+                  "Nothing is L3 until it has a track record.[/]")
+
+
+@loop_app.command("run")
+def cmd_loop_run(loop: str, group: str, project: str,
+                 dry_run: bool = typer.Option(False, "--dry-run")) -> None:
+    """Run one loop against one project."""
+    spec = SPECS.get(loop)
+    if spec is None:
+        console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
+        raise typer.Exit(1)
+    d = pdir(group, project)
+    r = root()
+    run = run_loop(spec, lambda run: BODIES[loop](r, group, project, run),
+                   root=r, group=group, project=project, dry_run=dry_run)
+    colour = {"ok": "yellow", "noop": "green", "circuit_open": "red",
+              "error": "red", "escalated": "red"}.get(run.outcome, "white")
+    console.print(f"[{colour}]{run.outcome}[/] {loop} · {group}/{project} "
+                  f"· {run.duration_ms}ms · attempt {run.attempt}")
+    if run.message:
+        console.print(f"  [dim]{run.message}[/]")
+    for f in run.findings:
+        console.print(f"  • {f}")
+    if not run.findings and run.outcome == "noop":
+        console.print("  [dim]nothing to report[/]")
+
+
+@loop_app.command("run-all")
+def cmd_loop_run_all(group: str, project: str) -> None:
+    """Run every read-only (L1) loop and refresh STATE.md."""
+    r, findings = root(), []
+    for name, spec in SPECS.items():
+        if spec.autonomy != "L1":
+            continue
+        run = run_loop(spec, lambda run, n=name: BODIES[n](r, group, project, run),
+                       root=r, group=group, project=project)
+        for f in run.findings:
+            findings.append(f"[{name}] {f}")
+        console.print(f"  {'[yellow]•[/]' if run.findings else '[green]✓[/]'} "
+                      f"{name}: {len(run.findings)} finding(s)")
+    p = update_state(r, findings, watch=[s.name for s in SPECS.values() if s.autonomy != "L1"])
+    console.print(f"[green]✓[/] {p} updated ({len(findings)} open item(s))")
+
+
+@loop_app.command("audit")
+def cmd_loop_audit() -> None:
+    """Loop Readiness Score — is this repo safe to give a loop more autonomy?"""
+    score, checks = loop_audit(root())
+    t = Table("check", "weight", "status", "detail", title="Loop Readiness")
+    for c in checks:
+        t.add_row(c.name, str(c.weight),
+                  "[green]PASS[/]" if c.passed else "[red]FAIL[/]", c.detail)
+    console.print(t)
+    colour = "green" if score >= 80 else "yellow" if score >= 55 else "red"
+    console.print(f"[{colour}]Score: {score}/100[/] — {recommended_level(score, root())}")
+    raise typer.Exit(0 if score >= 55 else 1)
+
+
+@loop_app.command("status")
+def cmd_loop_status(limit: int = 15) -> None:
+    """Recent loop runs from the ledger."""
+    entries = Ledger(root()).read()[-limit:]
+    if not entries:
+        console.print("[yellow]no runs yet[/]")
+        return
+    t = Table("when", "loop", "project", "outcome", "findings", "ms")
+    for e in entries:
+        t.add_row(e["started_at"][:19], e["loop"], e["project"], e["outcome"],
+                  str(len(e.get("findings") or [])), str(e.get("duration_ms", 0)))
+    console.print(t)
+
+
+@app.command()
+def gate(paths: str = typer.Option(..., help="comma-separated paths")) -> None:
+    """Enforce gate.yaml over a set of paths. Used by the pre-commit hook."""
+    from pf.kg.impact import impact_of_many
+
+    r = root()
+    plist = [p.strip() for p in paths.split(",") if p.strip()]
+    results = check_paths(plist, r, in_project=False)
+    blocked = [x for x in results if x.blocked]
+    warned = [x for x in results if x.verdict == "warn"]
+
+    for x in blocked:
+        console.print(f"[red]DENY[/] {x.path}  [{x.rule}]  {x.message}")
+
+    by_project: dict[tuple[str, str, Path], list[str]] = {}
+    for x in warned:
+        proj = project_for(x.path, r)
+        if proj:
+            by_project.setdefault(proj, []).extend(nodes_for(x.path))
+    for (g, p, d), nodes in by_project.items():
+        gp = d / "kg" / "graph.duckdb"
+        if not gp.exists() or not nodes:
+            continue
+        rep = impact_of_many(gp, sorted(set(nodes)))
+        if rep.total:
+            console.print(f"[yellow]IMPACT[/] {g}/{p}")
+            for line in rep.render().splitlines():
+                console.print(f"  {line}")
+            if rep.severity == "breaking":
+                blocked.append(GateResult("deny", "impact:breaking", f"{g}/{p}",
+                                          f"{rep.total} downstream object(s)"))
+
+    if blocked:
+        console.print("\n[red]blocked[/] — resolve, or commit with --no-verify "
+                      "and say why in the message")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/] gate passed ({len(plist)} path(s))")
 
 
 @app.command()

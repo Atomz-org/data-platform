@@ -1,0 +1,71 @@
+[
+  {
+    "run_id": "28067ec8",
+    "loop": "freshness-triage",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-12T14:05:29+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 13,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "6de46454",
+    "loop": "test-failure-triage",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-12T14:05:29+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "4008759e",
+    "loop": "metric-gap-harvester",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-12T14:05:29+00:00",
+    "outcome": "ok",
+    "findings": [
+      "mart `fct_revenue` (grain: one day x segment x plan) has no metric measuring it \u2014 every question about it falls back to raw SQL"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 8,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "aaeafb8e",
+    "loop": "impact-sentinel",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-12T14:05:29+00:00",
+    "outcome": "ok",
+    "findings": [
+      "BREAKING: model:fct_payments affects 12 object(s); notify Finance <finance@acme.example>"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 36,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "f44ca9d6",
+    "loop": "pii-audit",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-12T14:05:29+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 7,
+    "attempt": 1,
+    "message": ""
+  }
+]

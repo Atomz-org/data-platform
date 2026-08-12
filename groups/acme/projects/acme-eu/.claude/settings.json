@@ -1,7 +1,15 @@
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "acme": { "source": { "source": "../.." } }
+    "platform": {
+      "source": {
+        "source": "../../../../platform"
+      }
+    },
+    "acme": {
+      "source": {
+        "source": "../.."
+      }
+    }
   },
   "enabledPlugins": [
     "platform-init@platform",
@@ -18,11 +26,31 @@
     "acme-group@acme"
   ],
   "permissions": {
-    "deny": ["Read(../*/src/**)", "Read(../../../*/projects/**)"],
+    "deny": [
+      "Read(../*/src/**)",
+      "Read(../../../*/projects/**)"
+    ],
     "allow": [
       "Bash(uv run pf:*)",
-      "Bash(dbt parse:*)", "Bash(dbt ls:*)", "Bash(dbt build:*)", "Bash(dbt test:*)",
-      "Bash(mf query:*)", "Bash(mf list:*)"
+      "Bash(dbt parse:*)",
+      "Bash(dbt ls:*)",
+      "Bash(dbt build:*)",
+      "Bash(dbt test:*)",
+      "Bash(mf query:*)",
+      "Bash(mf list:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python ../../../../platform/hooks/pre_tool_use.py"
+          }
+        ]
+      }
     ]
   }
 }
