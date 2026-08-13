@@ -1,0 +1,118 @@
+{
+  "upstreams": {
+    "context-ontology-accelerator": {
+      "adopted": {
+        "packages/context-manager": "292696066e6b4800fa5705d1a7cf99e26b30db1c",
+        "packages/mcp-server": "a81c5ae1b300ac96b5eed378ccbece6a2317b973",
+        "packages/vkg": "9fbd787769b2f238d5eeaae2ecdf433ad5edd018",
+        "scripts/agents/pr-review": "e4b0c8aeaa38715a885fec60463cbef7bce5b58c"
+      },
+      "branch": "main",
+      "commit": "9095f00237b37cf318e33808d2c571c0f6f731d4"
+    },
+    "dagster-skills": {
+      "adopted": {
+        "skills/dagster-expert/skills/dagster-expert/SKILL.md": "538cbdff86760539d8786886ea0121533184352c",
+        "skills/dignified-python/skills/dignified-python/SKILL.md": "bb2f5f8b32905cb6b5ae355faf783da14d118794"
+      },
+      "branch": "master",
+      "commit": "a0774616a075182cd84b4fafc63d788f35431bc1"
+    },
+    "dbt-agent-skills": {
+      "adopted": {
+        "skills/dbt-migration/skills/migrating-dbt-core-to-fusion/SKILL.md": "38b4cf6ed1fdaa1d51836daf4636d6a1df25dd87",
+        "skills/dbt-migration/skills/upgrading-dbt-core/SKILL.md": "fa1b5c58f622348c980100e887dacb83395f3c20",
+        "skills/dbt/skills/adding-dbt-unit-test/SKILL.md": "fada541cb23ed67af45e6e49b4b0ce64a932c61b",
+        "skills/dbt/skills/answering-natural-language-questions-with-dbt/SKILL.md": "c54596bb86dea93926ddc3d8bb683e2524f8c5e1",
+        "skills/dbt/skills/building-dbt-semantic-layer/SKILL.md": "78214e307e6dab7f51120a1eabb798717d254f96",
+        "skills/dbt/skills/fetching-dbt-docs/SKILL.md": "6cc8bfc1cfed7f88919be04121feb312ae61deb3",
+        "skills/dbt/skills/running-dbt-commands/SKILL.md": "18a82c29a80107d121af37d58a2e6f0766f40f58",
+        "skills/dbt/skills/troubleshooting-dbt-job-errors/SKILL.md": "a1746789ee0377afc3c0abe4ba3c669c27b38834",
+        "skills/dbt/skills/using-dbt-for-analytics-engineering/SKILL.md": "e52739c385d033de6b379b4991dd4e3c97fad237"
+      },
+      "branch": "main",
+      "commit": "f0a666d4a9fe600b651bf005b8f1c712ce4e5788"
+    },
+    "dlthub-ai-workbench": {
+      "adopted": {
+        "TOOLKITS.md": "64ea52830b4c1aac4aee7cf29273c22efc7722b3",
+        "workbench/data-exploration/skills/explore-data/SKILL.md": "e0a93065ca04f1a72dda8d6ebe52ecc696ebbb08",
+        "workbench/data-quality/skills/setup-data-quality/SKILL.md": "70ce52a9b69d0e25ff9c53de326e4665f645952d",
+        "workbench/filesystem-pipeline/skills/create-filesystem-pipeline/SKILL.md": "b6d74d63bf0c9090b05a3c51e6d4f7224b90c966",
+        "workbench/init/skills/setup-secrets/SKILL.md": "cbcaa91441d61809a5321dcb184467e21da3e116",
+        "workbench/quick-start/skills/quick-start/SKILL.md": "b93b52b94c34b6213b713325bd3e13e8f2473462",
+        "workbench/rest-api-pipeline/skills/optimize-rest-api-performance/SKILL.md": "bc4247ee52523fb38bd6a51eb67f175b9907afe5",
+        "workbench/sql-database-pipeline/skills/create-sql-database-pipeline/SKILL.md": "7b70fd699dc9c8132f930e67fc99cbe8ef05df2d",
+        "workbench/sql-database-pipeline/skills/find-source/SKILL.md": "68ac436634c2d5be98cb64836d433c2aca3d3093",
+        "workbench/transformations/skills/annotate-sources/SKILL.md": "ad59c8a4afd893cdf3d1b2beb6d39ac8474f1ea5",
+        "workbench/transformations/skills/create-ontology/SKILL.md": "fbb3ea828ea5db7895cf3a7db051031dde9e0df9",
+        "workbench/transformations/skills/generate-cdm/SKILL.md": "3bbe9c55465884e0a313da2f32210e284db84015"
+      },
+      "branch": "master",
+      "commit": "4575f468ca49aad841ac3cc8d370a10378af518a"
+    },
+    "duckdb-skills": {
+      "adopted": {
+        "skills/attach-db/SKILL.md": "785bb39076be93f9cb35910819d95483d6f00acf",
+        "skills/duckdb-docs/SKILL.md": "f200b0d02d3dbb158735c0ec79520f9a5267b1c1",
+        "skills/install-duckdb/SKILL.md": "a4e30e263d89988311018da5e6d1c18a3d2f2c97",
+        "skills/query/SKILL.md": "abc8258a046fa8cd109bb37935c9d31047936c66",
+        "skills/read-file/SKILL.md": "b5fe7bfd4e19c6eb00de10165d647ba041df7fe1",
+        "skills/read-memories/SKILL.md": "8997532b0adfe7bfd9e1d48e38c24de17c8d5a1c"
+      },
+      "branch": "main",
+      "commit": "7feda8e01e22bc0886c86123f3884947e36d8c69"
+    },
+    "evidence-bi": {
+      "adopted": {
+        "components": "d306e25e078ac7b832e694f662ec16b89b190aac",
+        "docs": "4fdc829922521ad14c24754fe1c9f1a0d46da1be",
+        "evidence.config.yaml": "f468d28e9dff17942a3fd4a2806fd71ebc72f0a1",
+        "queries": "bd587feb0fe37fcdf110220ace5c59ed352d8c5a"
+      },
+      "branch": "main",
+      "commit": "fddb712ece491bcd0b76c2d54d52ed4e21a3cd5c"
+    },
+    "loop-engineering": {
+      "adopted": {
+        "LOOP.md": "ecf6c89c7a6427eace7401d3f24bd177ed34e39c",
+        "STATE.md": "7c68fa3da7cb451efd4f7c2dd8bb7d3809ce6950",
+        "docs/safety.md": "e98d5ecb513eedf695cf4e07fd3a3f0e87847d85",
+        "gate.yaml": "60da165329a4d2a5616e27c44425789358c15d1d",
+        "loop-budget.md": "a2f30862a2a5af08a59cabd802c3132934543750",
+        "loop-constraints.md": "9774aaf0c38f12838acd89916a613f2ade1d4e12",
+        "patterns/dependency-sweeper.md": "9eb1c5077d222ca6cb8219acdc4ea1c15b9cf188",
+        "patterns/pr-babysitter.md": "e2b040b8ccfa367f6d688cec8c3c58ffbdc489b2",
+        "patterns/registry.schema.json": "b29819929fdaa928e4c821a16dfa072c33a4248d",
+        "patterns/registry.yaml": "3fc002d850c75b14b0100df2fecdc5ef8a7b751a",
+        "skills/loop-verifier/SKILL.md": "935d3bb97a88fc9dc03ce2c63ae577ac3a46b7bb"
+      },
+      "branch": "main",
+      "commit": "bfa5a96068f901cdac6f7253c518ad5c0ef133a1"
+    },
+    "ontology-playground": {
+      "adopted": {
+        "catalogue/official": "e0d4c7a256c398fe05324b3683753d599add12b0",
+        "docs": "303a5fd92939054226160559c058cbccaa9396b7"
+      },
+      "branch": "main",
+      "commit": "683adcc8d5a449b9ca9c82e92aaf51c066025c25"
+    },
+    "opentopology": {
+      "adopted": {
+        "schemas/otop-core-v0.2.schema.json": "944bc28f80dcbb38a0b631ccb0185330c9c10589",
+        "specs/otop-core-0.2.md": "962cda2a98cc3808bd4767c2d3f119b38aba206f"
+      },
+      "branch": "main",
+      "commit": "ad1a69eaf18f82e93d8754a5deec7886ea16b0d2"
+    },
+    "wrenai": {
+      "adopted": {
+        "core/wren-mdl/mdl.schema.json": "b9c7ea9bd37e16ec919a50b83bee7720dda3d35d"
+      },
+      "branch": "main",
+      "commit": "7f7370e4e9b05a51dbde918cd5c9ecbedafe3d20"
+    }
+  },
+  "version": 1
+}

@@ -1,0 +1,506 @@
+# Vendor provenance registry.
+#
+# Every upstream this platform borrowed from is a submodule under vendor/, and
+# every borrowing is written down here: which upstream file, which of our files,
+# and how tightly the two are coupled.
+#
+# The reason is drift. "Ported from dbt-agent-skills" in a README ages into a
+# lie the first time upstream renames a skill, and nobody notices because nothing
+# checks. Here, an upstream path that disappears fails `pf vendor verify`, and an
+# upstream path whose content changes names the exact files of ours that need
+# review — instead of "something in a 16 MB repo moved."
+#
+# COUPLING KINDS, loosest to tightest:
+#
+#   shape     We adopted a structure or an idea. No file-level dependency.
+#             Upstream drift is informational.
+#   port      We reimplemented upstream content for our own runtime. Upstream
+#             drift means one of our files should be re-read against it.
+#   parity    We check our structure against upstream's required fields. If
+#             upstream adds a required concept, we are missing one.
+#   schema    Our output is validated against this vendored file at test time.
+#             Upstream drift can fail a build — which is the point.
+#   data      We read this file at runtime. Upstream drift changes behaviour.
+#
+# `declined` is not padding. Writing down what we deliberately did not take is
+# what stops the next person from "completing the port" and reintroducing an
+# assumption this platform is built to avoid.
+version: 1
+
+upstreams:
+  # ---------------------------------------------------------------- ingest --
+  - id: dlthub-ai-workbench
+    name: dltHub AI Workbench
+    url: https://github.com/dlt-hub/dlthub-ai-workbench
+    path: vendor/dlthub-ai-workbench
+    branch: master
+    licence: dltHub License (proprietary)
+    licence_review: >
+      Scope-of-use is limited to dltHub Services. This platform runs dlt Core on
+      Dagster, which reads as a third-party orchestration service under the
+      "NOT permitted" examples. Our dlt toolkits are independent rewrites against
+      dlt Core's public API for that reason, and the submodule is pinned for
+      reference and drift detection rather than redistribution. Confirm with
+      counsel before shipping this platform externally.
+    role: skills
+    why: >
+      The workbench established the toolkit/skill layout this platform's
+      `platform/toolkits/` follows, and the annotate-then-generate flow that our
+      ontology layer is built on.
+    adopted:
+      - upstream: TOOLKITS.md
+        kind: shape
+        ours: [platform/toolkits/ROUTING.md]
+        note: >
+          Toolkit-of-skills packaging. Ours adds a precedence order, because four
+          merged skill sets overlap and an agent that picks wrong answers a
+          governed metric question with ad-hoc SQL.
+      - upstream: workbench/transformations/skills/annotate-sources/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dlt-ingest/skills/annotate-source/SKILL.md
+          - platform/src/pf/ontology/annotate.py
+        note: >
+          Upstream annotates for its own transformation engine. Ours drives
+          staging generation, PII policy, monitors, graph edges and conformance —
+          the annotation is the contract, not a hint.
+      - upstream: workbench/transformations/skills/create-ontology/SKILL.md
+        kind: shape
+        ours:
+          - platform/src/pf/ontology/concepts.yaml
+          - platform/src/pf/ontology/model.py
+        note: >
+          Upstream's ontology is per-pipeline. Ours is three-layered
+          (platform / group / project) so sister companies share a vocabulary
+          without inheriting each other's invented terms.
+      - upstream: workbench/transformations/skills/generate-cdm/SKILL.md
+        kind: shape
+        ours: [platform/src/pf/runtime/staging.py]
+        note: Common-model generation became 1:1 staging with role-driven cleaning.
+      - upstream: workbench/sql-database-pipeline/skills/find-source/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-ingest/skills/find-source/SKILL.md]
+      - upstream: workbench/sql-database-pipeline/skills/create-sql-database-pipeline/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-ingest/skills/create-sql-pipeline/SKILL.md]
+      - upstream: workbench/filesystem-pipeline/skills/create-filesystem-pipeline/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-ingest/skills/create-filesystem-pipeline/SKILL.md]
+      - upstream: workbench/data-exploration/skills/explore-data/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-explore/skills/explore-data/SKILL.md]
+      - upstream: workbench/data-quality/skills/setup-data-quality/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-quality/skills/setup-data-quality/SKILL.md]
+      - upstream: workbench/rest-api-pipeline/skills/optimize-rest-api-performance/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dlt-performance/skills/optimize-performance/SKILL.md]
+      - upstream: workbench/quick-start/skills/quick-start/SKILL.md
+        kind: port
+        ours: [platform/toolkits/platform-init/skills/quick-start/SKILL.md]
+      - upstream: workbench/init/skills/setup-secrets/SKILL.md
+        kind: shape
+        ours: [platform/src/pf/mcp/server.py]
+        note: >
+          Became `secrets_view_redacted` / `secrets_update_fragment`. An agent can
+          write a credential fragment but can never read one back into context.
+    declined:
+      - what: dltHub Platform deploy skills (one-shot, deploy-run-sample-pipeline)
+        why: >
+          They target dltHub's hosted runtime. This platform deploys to Dagster,
+          and the request was explicitly dlt Core rather than dltHub.
+      - what: workbench/init/skills/dlthub-router/SKILL.md
+        why: Our router is ROUTING.md plus the knowledge graph, which routes on structure rather than skill name.
+
+  # ------------------------------------------------------------------- dbt --
+  - id: dbt-agent-skills
+    name: dbt Agent Skills
+    url: https://github.com/dbt-labs/dbt-agent-skills
+    path: vendor/dbt-agent-skills
+    branch: main
+    licence: Apache-2.0
+    role: skills
+    why: >
+      dbt Labs' own account of how an agent should drive dbt. Written for dbt
+      Cloud; every skill here was rewritten against dbt Core + dbt-duckdb.
+    adopted:
+      - upstream: skills/dbt/skills/using-dbt-for-analytics-engineering/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-modeling/skills/using-dbt/SKILL.md]
+      - upstream: skills/dbt/skills/running-dbt-commands/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dbt-modeling/skills/run-commands/SKILL.md
+          - platform/src/pf/runtime/dbt_runtime.py
+        note: >
+          Cloud job triggers became local `dbt` invocations with our profile and
+          target resolution.
+      - upstream: skills/dbt/skills/fetching-dbt-docs/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-modeling/skills/fetch-docs/SKILL.md]
+      - upstream: skills/dbt/skills/building-dbt-semantic-layer/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dbt-semantic/skills/build-semantic-layer/SKILL.md
+          - docs/SEMANTICS.md
+        note: >
+          The ratio-metric rule (carry numerator and denominator; never average a
+          ratio) comes from here and is now enforced in the report audit.
+      - upstream: skills/dbt/skills/answering-natural-language-questions-with-dbt/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-semantic/skills/answer-with-metrics/SKILL.md]
+      - upstream: skills/dbt/skills/adding-dbt-unit-test/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-testing/skills/add-unit-test/SKILL.md]
+      - upstream: skills/dbt/skills/troubleshooting-dbt-job-errors/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dbt-govern/skills/troubleshoot-runs/SKILL.md
+          - platform/src/pf/loops/registry.py
+        note: Upstream's triage taxonomy is what the test-failure-triage loop classifies into.
+      - upstream: skills/dbt-migration/skills/upgrading-dbt-core/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-migrate/skills/upgrade-and-migrate/SKILL.md]
+      - upstream: skills/dbt-migration/skills/migrating-dbt-core-to-fusion/SKILL.md
+        kind: port
+        ours: [platform/toolkits/dbt-migrate/skills/upgrade-and-migrate/SKILL.md]
+    declined:
+      - what: skills/dbt/skills/configuring-dbt-mcp-server/SKILL.md
+        why: >
+          We ship our own MCP server. It exposes dbt alongside the graph, metrics
+          and impact analysis behind one truncation policy; two servers would give
+          an agent an ungoverned second route to the warehouse.
+      - what: skills/dbt/skills/working-with-dbt-mesh/SKILL.md
+        why: >
+          `groups/` is our mesh. Cross-entity access is the roll-up project's
+          ATTACH READ_ONLY, which is enforceable; mesh refs are not.
+      - what: skills/dbt/skills/using-dbt-state/SKILL.md
+        why: >
+          State comparison answers "what changed". The knowledge graph answers
+          "what breaks", which is the question the merge gate asks.
+      - what: skills/dbt-extras/skills/creating-mermaid-dbt-dag/SKILL.md
+        why: >
+          The graph is already the DAG, and the UI renders it. A second rendering
+          path drifts from the first.
+      - what: skills/dbt-migration/skills/migrating-dbt-project-across-platforms/SKILL.md
+        why: DuckDB is the warehouse by design — one adapter, one dialect, no portability layer.
+
+  # ---------------------------------------------------------------- duckdb --
+  - id: duckdb-skills
+    name: DuckDB Skills
+    url: https://github.com/duckdb/duckdb-skills
+    path: vendor/duckdb-skills
+    branch: main
+    licence: MIT
+    role: skills
+    why: DuckDB's own guidance on driving DuckDB from an agent.
+    adopted:
+      - upstream: skills/query/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/query/SKILL.md]
+        note: Ours is read-only and truncated by policy — schema plus <=20 rows.
+      - upstream: skills/attach-db/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/attach-db/SKILL.md]
+        note: >
+          Session state moved into the project (`.duckdb-skills/state.sql`) so a
+          sister company's ATTACH can never leak into another's session.
+      - upstream: skills/install-duckdb/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/install-duckdb/SKILL.md]
+      - upstream: skills/duckdb-docs/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/duckdb-docs/SKILL.md]
+      - upstream: skills/read-file/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/read-file/SKILL.md]
+      - upstream: skills/read-memories/SKILL.md
+        kind: port
+        ours: [platform/toolkits/duckdb-ops/skills/read-memories/SKILL.md]
+    declined:
+      - what: skills/convert-file/SKILL.md
+        why: File conversion enters this platform through dlt, where it is annotated and tracked.
+      - what: skills/s3-explore/SKILL.md
+        why: >
+          Unannotated object-store browsing bypasses the ingest contract. Buckets
+          are reached through a dlt filesystem source.
+      - what: skills/spatial/SKILL.md
+        why: No geospatial concepts in the ontology. Add the skill when a class needs one.
+
+  # --------------------------------------------------------------- dagster --
+  - id: dagster-skills
+    name: Dagster Skills
+    url: https://github.com/dagster-io/skills
+    path: vendor/dagster-skills
+    branch: master
+    licence: Apache-2.0
+    role: skills
+    why: Dagster's own asset-first idioms, which our runtime factory generates against.
+    adopted:
+      - upstream: skills/dagster-expert/skills/dagster-expert/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dagster-orchestrate/skills/build-assets/SKILL.md
+          - platform/src/pf/runtime/dagster_runtime.py
+        note: >
+          Asset-first modelling, external assets for dlt sources, and @dbt_assets
+          with a custom translator — which is what makes lineage cross the
+          dlt/dbt boundary instead of collapsing into one opaque node.
+      - upstream: skills/dignified-python/skills/dignified-python/SKILL.md
+        kind: port
+        ours: [platform/toolkits/python-standards/skills/dignified-python/SKILL.md]
+    declined:
+      - what: Dagster+ / cloud deployment guidance
+        why: Code locations here are local processes, one per project, for genuine sister parallelism.
+
+  # ----------------------------------------------------------------- loops --
+  - id: loop-engineering
+    name: Loop Engineering
+    url: https://github.com/cobusgreyling/loop-engineering
+    path: vendor/loop-engineering
+    branch: main
+    licence: MIT
+    role: shape
+    why: >
+      The governance shape for scheduled agent work: durable state, a path gate,
+      a token budget, a circuit breaker and an autonomy ladder. The patterns are
+      software-delivery loops; the subjects here are data-platform ones.
+    adopted:
+      - upstream: LOOP.md
+        kind: shape
+        ours: [LOOP.md]
+      - upstream: STATE.md
+        kind: shape
+        ours: [STATE.md]
+        note: Generated here, never hand-edited — a hand-edited state file stops being evidence.
+      - upstream: gate.yaml
+        kind: shape
+        ours: [gate.yaml, gate.capabilities.yaml, platform/hooks/pre_tool_use.py]
+        note: >
+          Upstream's gate is advisory. Ours is a PreToolUse hook, so the denylist
+          is structural rather than a rule an agent has to remember.
+      - upstream: loop-budget.md
+        kind: shape
+        ours: [loop-budget.md, platform/src/pf/loops/runner.py]
+      - upstream: loop-constraints.md
+        kind: shape
+        ours: [loop-constraints.md]
+      - upstream: patterns/registry.yaml
+        kind: shape
+        ours: [platform/src/pf/loops/registry.py]
+        note: Same fields — autonomy level, cadence, token budget, human gates.
+      - upstream: patterns/registry.schema.json
+        kind: parity
+        ours: [platform/src/pf/loops/registry.py]
+        note: >
+          Field parity, not instance validation. Our loops cannot satisfy the
+          schema literally: `cadence` is a time grammar (`^[0-9]+[mhd]...`) and
+          four of ours are event-driven (pre-commit, on manifest change, on dbt
+          failure), while `file` requires a per-pattern markdown page where ours
+          are one LOOP.md. So `pf vendor verify` asserts the weaker, honest
+          property — every field upstream marks required has a counterpart in
+          LoopSpec. If upstream adds a required governance concept, we are
+          missing it, and that is the signal worth having.
+      - upstream: docs/safety.md
+        kind: shape
+        ours: [platform/src/pf/loops/runner.py]
+        note: Circuit breaker — the same failure twice stops the loop rather than retrying it.
+      - upstream: skills/loop-verifier/SKILL.md
+        kind: shape
+        ours: [platform/src/pf/loops/audit.py]
+      - upstream: patterns/dependency-sweeper.md
+        kind: shape
+        ours: [platform/src/pf/loops/registry.py, platform/src/pf/vendor/model.py]
+        note: >
+          The direct ancestor of the `vendor-drift` loop: report upstream movement,
+          never apply it. L1 by construction — a submodule bump is a human decision.
+      - upstream: patterns/pr-babysitter.md
+        kind: shape
+        ours: [.github/workflows/pr-report.yml, platform/src/pf/pr.py]
+        note: >
+          Ours reports rather than fixes. The PR comment carries blast radius,
+          vendor drift and readiness; a human still merges.
+    declined:
+      - what: npx @cobusgreyling/loop-context tooling
+        why: >
+          The ledger, budget and circuit breaker are implemented in `pf` so they
+          share the tracking DB with agent spend and impact history. One Node
+          dependency in the critical path of every loop is not worth it.
+      - what: patterns/issue-triage.md, patterns/ci-sweeper.md
+        why: Software-delivery subjects. Our loops watch freshness, drift, metric coverage and PII.
+
+  # -------------------------------------------------------------- evidence --
+  - id: evidence-bi
+    name: Evidence BI (dbt semantic layer edition)
+    url: https://github.com/Atomz-org/Evidence-BI
+    path: vendor/evidence-bi
+    branch: main
+    licence: not stated upstream
+    licence_review: >
+      No LICENSE file at the upstream root as of the pinned commit. Treated as
+      reference only: our reporting layer is generated from our own semantic
+      layer, and no upstream file is copied into a project.
+    role: reference
+    why: >
+      Governed metrics plus designed dashboards — BI as a projection of the
+      semantic layer rather than a place where metrics get redefined.
+    adopted:
+      - upstream: evidence.config.yaml
+        kind: shape
+        ours: [platform/src/pf/projections/evidence.py]
+      - upstream: components
+        kind: shape
+        ours: [platform/src/pf/projections/evidence.py]
+        note: >
+          Chart and layout conventions. The CVD-safe palette and the dual-axis
+          prohibition are enforced mechanically in report_audit.py.
+      - upstream: queries
+        kind: shape
+        ours: [platform/src/pf/projections/evidence.py]
+        note: >
+          Every query is compiled from a metric definition. A hand-written query
+          in a page is a second definition, and the audit flags it.
+      - upstream: docs
+        kind: shape
+        ours: [platform/toolkits/evidence-bi/skills/build-dashboard/SKILL.md]
+    declined:
+      - what: cube/, rill/, canvas/ connectors
+        why: One semantic layer (MetricFlow) and one MDL projection. A second connector is a second definition of revenue.
+      - what: deploy/
+        why: Deployment is out of scope for the platform; `pf report dev` is local.
+
+  # -------------------------------------------------------------- ontology --
+  - id: ontology-playground
+    name: Microsoft Ontology Playground
+    url: https://github.com/microsoft/Ontology-Playground
+    path: vendor/ontology-playground
+    branch: main
+    licence: MIT
+    role: reference
+    why: >
+      A working reference for how a business ontology is actually shaped —
+      classes with identity, datatype properties, and object properties with
+      domain/range — plus round-tripping through RDF/XML.
+    adopted:
+      - upstream: catalogue/official
+        kind: shape
+        ours:
+          - platform/src/pf/ontology/concepts.yaml
+          - platform/src/pf/ontology/topology.yaml
+        note: >
+          Their ecommerce and finance catalogue entries model the same
+          Customer/Order/Payment core. Ours matched against them rather than
+          inventing a vocabulary.
+      - upstream: docs
+        kind: shape
+        ours: [platform/src/pf/projections/owl.py]
+        note: >
+          RDF/XML fidelity — cardinality projected as FunctionalProperty /
+          InverseFunctionalProperty so an external OWL tool reads what we meant.
+    declined:
+      - what: The React/Vite playground application (src/, api/)
+        why: It is an editor. Our ontology is edited as YAML in the repo and reviewed as a diff.
+      - what: api/generate-ontology
+        why: >
+          We induce from what actually landed in the warehouse (`pf semantic scan`)
+          rather than from a prompt, so every axiom carries observed evidence.
+
+  # -------------------------------------------------------------- topology --
+  - id: opentopology
+    name: OpenTopology (otop-core)
+    url: https://github.com/opentopology/opentopology
+    path: vendor/opentopology
+    branch: main
+    licence: Apache-2.0
+    role: spec
+    why: >
+      otop's contribution is not entity modelling — it is the traceability chain
+      intent -> constraint -> artifact -> evidence. That is what turns "we have a
+      PII rule" into "here is the check, and here is the run that proves it fired".
+    adopted:
+      - upstream: schemas/otop-core-v0.2.schema.json
+        kind: schema
+        ours:
+          - platform/src/pf/projections/otop.py
+          - platform/src/pf/ontology/policy.yaml
+        note: >
+          Our policy layer is emitted as an otop 0.2 manifest and validated
+          against this exact file. If upstream tightens the schema, the export
+          fails here rather than in a consumer.
+      - upstream: specs/otop-core-0.2.md
+        kind: shape
+        ours: [platform/src/pf/ontology/policy.yaml]
+        note: >
+          Relationship vocabulary taken verbatim: governed_by, implemented_by,
+          verified_by. Renaming them locally would break every otop consumer.
+    declined:
+      - what: signatures / attestation blocks
+        why: >
+          Nothing signs evidence in this platform yet. An unsigned signature block
+          is worse than none — it implies a guarantee that does not exist.
+      - what: otop-core-0.1 schema
+        why: Superseded by 0.2. We track one version so there is one answer to "does this conform".
+
+  # ------------------------------------------------------------------- MDL --
+  - id: wrenai
+    name: WrenAI
+    url: https://github.com/Canner/WrenAI
+    path: vendor/wrenai
+    branch: main
+    licence: Apache-2.0 for core/**, CC-BY-4.0 for docs/**
+    role: spec
+    why: >
+      MDL is the interchange format a BI or text-to-SQL layer can consume without
+      being told our internals. Emitting it keeps the semantic layer portable.
+    adopted:
+      - upstream: core/wren-mdl/mdl.schema.json
+        kind: schema
+        ours: [platform/src/pf/projections/mdl.py]
+        note: >
+          Field names and the cardinality enum come from this file, not from
+          memory. `layoutVersion` is an integer here — we got that wrong once by
+          guessing, which is the reason the schema is vendored.
+    declined:
+      - what: The Wren engine, UI and AI service
+        why: >
+          Room is left, not taken. We emit a conformant manifest; adopting Wren
+          means pointing it at `mdl/mdl.json`, with nothing else to change.
+
+  # ------------------------------------------------------------- induction --
+  - id: context-ontology-accelerator
+    name: AWS Context Ontology Accelerator
+    url: https://github.com/aws/context-ontology-accelerator
+    path: vendor/context-ontology-accelerator
+    branch: main
+    licence: Apache-2.0
+    role: reference
+    why: >
+      The Scan -> Model -> Serve shape for inducing an ontology from real systems,
+      with a steward in the middle. Induction proposes; a person decides.
+    adopted:
+      - upstream: packages/context-manager
+        kind: shape
+        ours:
+          - platform/src/pf/ontology/induct.py
+          - platform/src/pf/ontology/proposal.py
+        note: >
+          Scan reads statistics rather than names, so cardinality comes from
+          distinct counts. The steward loop — every axiom carrying its evidence,
+          nothing auto-applied for PII or relations — is ours on top.
+      - upstream: packages/vkg
+        kind: shape
+        ours: [platform/src/pf/kg/build.py]
+        note: Virtual knowledge graph over physical tables; ours is materialised in DuckDB and queried by agents.
+      - upstream: packages/mcp-server
+        kind: shape
+        ours: [platform/src/pf/mcp/server.py]
+        note: Serving the ontology to agents over MCP rather than as a file to read.
+      - upstream: scripts/agents/pr-review
+        kind: shape
+        ours: [.github/workflows/pr-report.yml]
+    declined:
+      - what: infra/ (CDK stacks, Lambda, state machines)
+        why: This platform is local-first and runs on Dagster. The AWS deployment surface is not ours.
+      - what: packages/web-app
+        why: >
+          `pf ui` is the control plane, and it reads the same graph the agents do.

@@ -1410,6 +1410,7 @@ source = { editable = "platform" }
 dependencies = [
     { name = "duckdb" },
     { name = "fastapi" },
+    { name = "jsonschema" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "rich" },
@@ -1443,6 +1444,7 @@ requires-dist = [
     { name = "dlt", extras = ["duckdb"], marker = "extra == 'data'", specifier = ">=1.4" },
     { name = "duckdb", specifier = ">=1.1" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "jsonschema", specifier = ">=4.20" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6" },
     { name = "rich", specifier = ">=13" },
