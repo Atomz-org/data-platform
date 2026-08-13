@@ -73,6 +73,13 @@ def check_path(path: str, root: Path, in_project: bool = False) -> GateResult:
     """Classify one path against the policy."""
     policy = load_policy(root)
 
+    # Exceptions are checked first, and only against the denylist. `.env.*` has
+    # to catch `.env.local` and `.env.production`; it also caught `.env.example`,
+    # a committed template with no secret in it, which made the one file people
+    # need to edit when adding a variable unwritable.
+    if _match(path, policy.get("denylist_except", [])):
+        return GateResult("allow", "denylist_except", path, "")
+
     hit = _match(path, policy.get("denylist", []))
     if hit:
         return GateResult("deny", f"denylist:{hit}", path,
@@ -128,8 +135,11 @@ def tracked_denied(root: Path) -> list[GateResult]:
                           capture_output=True, text=True)
     if proc.returncode != 0:
         return []
+    allowed = policy.get("denylist_except", []) or []
     out: list[GateResult] = []
     for path in proc.stdout.splitlines():
+        if _match(path, allowed):
+            continue
         hit = _match(path, deny)
         if hit:
             out.append(GateResult(

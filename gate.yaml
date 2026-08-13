@@ -31,6 +31,14 @@ denylist:
   - ".dagster/schedules/**"
   - ".dagster/.*"
 
+# Checked before the denylist, and only against it. `.env.*` must catch
+# `.env.local` and `.env.production`; it also caught `.env.example`, which is a
+# committed template with no secret in it and the one file someone edits when
+# adding a variable. `pf check` flags every denied path git is tracking, so an
+# exception here is a deliberate, visible statement rather than a silent hole.
+denylist_except:
+  - ".env.example"
+
 # Paths a *project* session may not write. Platform infra is shared: a change
 # made while working on one company silently affects every other.
 platform_denylist:
