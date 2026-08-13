@@ -62,3 +62,9 @@
 	path = vendor/recce/pr-update
 	url = https://github.com/DataRecce/PR-Update
 	branch = main
+[submodule "vendor/forge"]
+	path = vendor/forge
+	url = https://github.com/Webba-Creative-Technologies/forge
+[submodule "vendor/shadcn-admin"]
+	path = vendor/shadcn-admin
+	url = https://github.com/arhamkhnz/next-shadcn-admin-dashboard-baseui
