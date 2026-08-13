@@ -1,0 +1,90 @@
+# Every PR gets a platform impact report, posted as one comment that is edited
+# in place rather than a new comment per push — a thread of eleven stale reports
+# is how a reviewer learns to ignore the bot.
+#
+# The same JSON the comment is rendered from is uploaded as an artifact and
+# committed to the reports branch, so `pf ui` shows the verdict CI computed
+# instead of recomputing its own and disagreeing.
+name: PR impact report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Submodules are the vendored upstreams; without them the drift
+          # section is silently empty, which reads as "no drift".
+          submodules: recursive
+          # Blast radius is computed against the merge base, so a shallow
+          # checkout would report every file in the repo as changed.
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync
+        run: uv sync --frozen
+
+      - name: Build the report
+        id: report
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          uv run pf pr report \
+            --number "$PR_NUMBER" \
+            --base "origin/${{ github.event.pull_request.base.ref }}" \
+            --title "${{ github.event.pull_request.title }}" \
+            --markdown pr-report.md || true
+          {
+            echo "verdict=$(python -c "import json,glob;print(json.load(open(glob.glob('data/pr/*.json')[0]))['verdict'])")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('pr-report.md', 'utf8');
+            const marker = '<!-- pf-pr-report -->';
+            const {owner, repo} = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const existing = await github.paginate(
+              github.rest.issues.listComments, {owner, repo, issue_number});
+            const mine = existing.find(c => c.body && c.body.includes(marker));
+            if (mine) {
+              await github.rest.issues.updateComment(
+                {owner, repo, comment_id: mine.id, body});
+            } else {
+              await github.rest.issues.createComment(
+                {owner, repo, issue_number, body});
+            }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pf-pr-report
+          path: |
+            data/pr/*.json
+            pr-report.md
+
+      # Separate from the comment step on purpose: the report is posted whether
+      # or not it blocks, so a reviewer always sees why.
+      - name: Enforce the verdict
+        if: steps.report.outputs.verdict == 'block'
+        run: |
+          echo "::error::Impact report verdict is BLOCK — see the PR comment."
+          exit 1

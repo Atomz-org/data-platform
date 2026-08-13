@@ -53,6 +53,12 @@ SPECS: dict[str, LoopSpec] = {
         description="Flag PII columns that reach a mart without a masking policy.",
         autonomy="L1", cadence="daily", token_budget=0, writes=False,
     ),
+    "vendor-drift": LoopSpec(
+        name="vendor-drift",
+        description="Report vendored upstreams that moved, and which of our files "
+                    "each movement implicates.",
+        autonomy="L1", cadence="weekly", token_budget=0, writes=False,
+    ),
 }
 
 
@@ -225,8 +231,39 @@ def dashboard_coverage(root: Path, group: str, project: str, run: LoopRun) -> li
     return out
 
 
+def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    """Upstream movement, translated into files a person should re-read.
+
+    L1 and staying there. Bumping a submodule is a one-line commit an agent could
+    trivially make, and that is exactly why it must not: the value of the pin is
+    that someone read the diff, and an automatic bump destroys the only evidence
+    that anyone did.
+
+    Repo-scoped rather than project-scoped — the vendored upstreams are shared —
+    so it reports once and not once per sister company.
+    """
+    from pf.vendor.model import drift
+
+    out: list[str] = []
+    for d in drift(root):
+        if not d.current:
+            out.append(f"{d.upstream_id}: submodule not checked out")
+            continue
+        if not d.locked:
+            out.append(f"{d.upstream_id}: never reviewed — `pf vendor approve {d.upstream_id}`")
+            continue
+        if not d.needs_review:
+            continue
+        behind = f"{d.commits_behind} commit(s)" if d.commits_behind >= 0 else "shallow"
+        files = ", ".join(d.affected_files()[:4]) or "no derived file recorded"
+        out.append(f"[{d.severity}] {d.upstream_id} moved {behind}; "
+                   f"{len(d.paths)} adopted path(s) changed — re-read {files}")
+    return out
+
+
 BODIES = {
     "dashboard-coverage": dashboard_coverage,
+    "vendor-drift": vendor_drift,
     "freshness-triage": freshness_triage,
     "test-failure-triage": test_failure_triage,
     "metric-gap-harvester": metric_gap_harvester,

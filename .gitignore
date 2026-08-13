@@ -13,3 +13,4 @@ kg/*.duckdb
 .dagster/storage/
 .DS_Store
 node_modules/
+data/pr/

@@ -1,0 +1,76 @@
+# Keep the vendored upstreams current, without ever updating them silently.
+#
+# This is loop-engineering's dependency-sweeper pattern, held at L1: the job
+# fetches, reports, and opens a PR. It never runs `pf vendor approve`, because
+# approval means "a human read the diff" and a workflow cannot mean that.
+#
+# The PR body names the exact files of ours to re-read, which is the whole
+# reason the provenance registry exists — otherwise "wrenai moved 40 commits"
+# is a notification nobody can act on.
+name: Vendor sync
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"     # Monday morning, before anyone opens a PR
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "One upstream id, or blank for all"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: vendor-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      - name: Fetch upstreams and report
+        id: sync
+        env:
+          NO_COLOR: "1"     # the output becomes the PR body
+        run: |
+          uv run pf vendor sync ${{ inputs.only && format('--only {0}', inputs.only) || '' }} \
+            | tee vendor-sync.txt
+          uv run pf vendor verify | tee -a vendor-sync.txt || true
+          if git diff --quiet -- vendor; then
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update the sync PR
+        if: steps.sync.outputs.moved == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: vendor/sync
+          # One long-lived branch, force-updated: a new branch per week leaves a
+          # graveyard of stale sync PRs that each need closing by hand.
+          title: "Vendor sync: upstreams moved"
+          commit-message: "Vendor sync: fetch upstream tracking branches"
+          add-paths: |
+            vendor
+          labels: vendor, needs-review
+          body-path: vendor-sync.txt
+          draft: false
+
+      - name: Nothing moved
+        if: steps.sync.outputs.moved != 'true'
+        run: echo "Every upstream is already on its reviewed commit."

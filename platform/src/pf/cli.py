@@ -958,6 +958,202 @@ def cmd_owl(out: str = typer.Option("", help="output path")) -> None:
                   f"objectProperties={s['object_properties']}")
 
 
+@sem_app.command("otop")
+def cmd_otop(group: str = typer.Argument("", help="omit for a platform-wide export"),
+             project: str = typer.Argument(""),
+             out: str = typer.Option("", help="output path")) -> None:
+    """Export the policy layer as an OpenTopology (otop-core 0.2) manifest."""
+    from pf.projections.otop import export as export_otop, build_manifest, stats
+
+    d = pdir(group, project) if group and project else None
+    path = export_otop(root(), group, project, d, out or None)
+    s = stats(build_manifest(root(), group, project, d))
+    console.print(f"[green]✓[/] {path}")
+    console.print(f"  intents={s.get('intent', 0)} constraints={s.get('constraint', 0)} "
+                  f"artifacts={s.get('artifact', 0)} evidence={s.get('evidence', 0)} "
+                  f"relationships={s['relationships']}")
+    for k in ("pass", "fail", "unknown", "not_applicable"):
+        if s.get(f"evidence_{k}"):
+            colour = {"pass": "green", "fail": "red"}.get(k, "yellow")
+            console.print(f"  [{colour}]{k}[/]: {s[f'evidence_{k}']}")
+
+
+# ---------------------------------------------------------------- vendor --
+vendor_app = typer.Typer(help="Vendored upstreams: provenance, drift and contracts.")
+app.add_typer(vendor_app, name="vendor")
+
+_SEV_COLOUR = {"error": "red", "warning": "yellow", "info": "dim", "none": "green"}
+
+
+@vendor_app.command("list")
+def cmd_vendor_list(verbose: bool = typer.Option(False, "--verbose", "-v",
+                                                 help="show every adopted path")) -> None:
+    """Every upstream, what it gave us, and whether we are on the reviewed commit."""
+    from pf.vendor.model import drift, load_registry
+
+    ups = load_registry()
+    by_id = {d.upstream_id: d for d in drift(root(), ups)}
+    t = Table(box=None, pad_edge=False)
+    for c in ("upstream", "role", "licence", "adopted", "declined", "state"):
+        t.add_column(c)
+    for u in ups:
+        d = by_id.get(u.id)
+        if d is None or not d.current:
+            state = "[red]missing[/]"
+        elif not d.locked:
+            state = "[yellow]never reviewed[/]"
+        elif not d.moved:
+            state = "[green]reviewed[/]"
+        elif d.needs_review:
+            state = f"[{_SEV_COLOUR[d.severity]}]drift ({len(d.paths)})[/]"
+        else:
+            state = "[dim]moved, nothing adopted[/]"
+        lic = u.licence if not u.needs_licence_review else f"[yellow]{u.licence} ![/]"
+        t.add_row(u.id, u.role, lic, str(len(u.adopted)), str(len(u.declined)), state)
+    console.print(t)
+    flagged = [u for u in ups if u.needs_licence_review]
+    if flagged:
+        console.print(f"\n[yellow]![/] licence review outstanding: "
+                      + ", ".join(u.id for u in flagged)
+                      + "  →  `pf vendor licences`")
+    if verbose:
+        for u in ups:
+            console.print(f"\n[bold]{u.id}[/] {u.url}")
+            for a in u.adopted:
+                colour = _SEV_COLOUR[a.severity]
+                console.print(f"  [{colour}]{a.kind:<7}[/] {a.upstream}")
+                for o in a.ours:
+                    console.print(f"          [dim]→ {o}[/]")
+
+
+@vendor_app.command("licences")
+def cmd_vendor_licences() -> None:
+    """Licences, and the ones that constrain how this platform may be used."""
+    from pf.vendor.model import load_registry
+
+    for u in load_registry():
+        console.print(f"[bold]{u.id}[/]  {u.licence}")
+        if u.licence_review:
+            console.print(f"  [yellow]{u.licence_review}[/]")
+
+
+@vendor_app.command("why")
+def cmd_vendor_why(path: str) -> None:
+    """Where a file of ours came from, and what we changed."""
+    from pf.vendor.model import why as vendor_why
+
+    hits = vendor_why(root(), path)
+    if not hits:
+        console.print(f"[dim]{path} has no recorded upstream — it is ours.[/]")
+        return
+    for u, a in hits:
+        console.print(f"[bold]{u.name}[/] [dim]{u.url}[/]")
+        console.print(f"  {a.kind}: [cyan]{a.upstream}[/]")
+        if a.note:
+            console.print(f"  [dim]{' '.join(a.note.split())}[/]")
+
+
+@vendor_app.command("drift")
+def cmd_vendor_drift(fail: bool = typer.Option(False, "--fail",
+                                               help="exit 1 when review is needed")) -> None:
+    """What moved since a human last reviewed it. Local only — never fetches."""
+    from pf.vendor.model import drift
+
+    reports = drift(root())
+    _render_drift(reports)
+    if fail and any(d.needs_review for d in reports):
+        raise typer.Exit(1)
+
+
+@vendor_app.command("sync")
+def cmd_vendor_sync(only: str = typer.Option("", help="one upstream id"),
+                    approve: bool = typer.Option(
+                        False, "--approve",
+                        help="record the new state as reviewed (only when nothing "
+                             "adopted changed)")) -> None:
+    """Fetch each upstream's tracking branch, then report what it means for us."""
+    from pf.vendor.model import approve as approve_lock, sync as vendor_sync
+
+    reports, errors = vendor_sync(root(), only=only)
+    for e in errors:
+        console.print(f"[red]fetch failed[/] {e}")
+    _render_drift(reports)
+    clean = [d.upstream_id for d in reports if d.moved and not d.needs_review]
+    if approve and clean:
+        approve_lock(root(), clean)
+        console.print(f"[green]✓[/] recorded as reviewed: {', '.join(clean)}")
+    elif clean:
+        console.print(f"[dim]fast-forwardable (nothing adopted changed): "
+                      f"{', '.join(clean)} — re-run with --approve[/]")
+    if any(d.needs_review for d in reports):
+        console.print("[yellow]![/] review the affected files, then "
+                      "`pf vendor approve <id>`")
+
+
+@vendor_app.command("approve")
+def cmd_vendor_approve(ids: list[str] = typer.Argument(None)) -> None:
+    """Record the current checkout as the reviewed state."""
+    from pf.vendor.model import approve as approve_lock
+
+    path, done = approve_lock(root(), list(ids) if ids else None)
+    console.print(f"[green]✓[/] {path}")
+    console.print(f"  reviewed: {', '.join(done)}")
+
+
+@vendor_app.command("verify")
+def cmd_vendor_verify(group: str = typer.Argument(""),
+                      project: str = typer.Argument("")) -> None:
+    """Do the declared paths still exist, and do the schema contracts still hold?"""
+    from pf.vendor.verify import verify
+
+    target = (group, project, pdir(group, project)) if group and project else None
+    if target is None:
+        for g, p, d in all_projects():
+            if (d / "kg" / "graph.duckdb").exists():
+                target = (g, p, d)
+                break
+    res = verify(root(), target)
+    for f in res.findings:
+        console.print(f"  [{_SEV_COLOUR[f.severity]}]{f}[/]")
+    n_err = len(res.errors)
+    colour = "red" if n_err else "green"
+    console.print(f"[{colour}]{res.checked} contract(s) checked, {n_err} error(s)[/]")
+    raise typer.Exit(1 if n_err else 0)
+
+
+def _render_drift(reports: list) -> None:
+    any_drift = False
+    for d in reports:
+        if not d.current:
+            console.print(f"[red]{d.upstream_id}[/] not checked out")
+            continue
+        if not d.locked:
+            console.print(f"[yellow]{d.upstream_id}[/] never reviewed "
+                          f"({d.current[:8]}) — `pf vendor approve {d.upstream_id}`")
+            any_drift = True
+            continue
+        # Paths are rendered even when the commit matches: same commit, different
+        # path OID means the lock was edited by hand or the branch was force-pushed,
+        # and silently passing that would defeat the point of locking at all.
+        if not d.moved and not d.paths:
+            continue
+        any_drift = True
+        behind = f"{d.commits_behind} commit(s)" if d.commits_behind >= 0 else "shallow"
+        head = (f"[{_SEV_COLOUR[d.severity]}]{d.upstream_id}[/] "
+                + (f"{d.locked[:8]} → {d.current[:8]} ({behind})" if d.moved
+                   else f"{d.current[:8]} [red]lock inconsistent[/]"))
+        if not d.paths:
+            console.print(f"{head} [dim]— nothing we adopted changed[/]")
+            continue
+        console.print(head)
+        for p in d.paths:
+            console.print(f"    [{_SEV_COLOUR[p.severity]}]{p.state:<8}[/] {p.path}")
+            for o in p.ours:
+                console.print(f"             [cyan]review → {o}[/]")
+    if not any_drift:
+        console.print("[green]every upstream is on its reviewed commit[/]")
+
+
 # ---------------------------------------------------------------- report --
 report_app = typer.Typer(help="Evidence BI reporting layer.")
 app.add_typer(report_app, name="report")
@@ -1005,6 +1201,53 @@ def cmd_report_dev(group: str, project: str) -> None:
         subprocess.run(["npm", "install"], cwd=str(d), check=False)
     console.print(f"[green]→[/] http://localhost:3000")
     subprocess.run(["npm", "run", "dev"], cwd=str(d), check=False)
+
+
+# -------------------------------------------------------------------- pr --
+pr_app = typer.Typer(help="Per-pull-request platform impact report.")
+app.add_typer(pr_app, name="pr")
+
+
+@pr_app.command("report")
+def cmd_pr_report(number: int = typer.Option(0, help="PR number (defaults to $GITHUB_REF)"),
+                  base: str = typer.Option("", help="base ref to diff against"),
+                  title: str = typer.Option(""),
+                  markdown_out: str = typer.Option("", "--markdown",
+                                                   help="also write the comment body here"),
+                  fail: bool = typer.Option(False, "--fail",
+                                            help="exit 1 when the verdict is `block`")) -> None:
+    """Blast radius, conformance, readiness and vendor drift for this change."""
+    from pf.pr import build as build_pr, markdown as pr_markdown, pr_number_from_env, save
+
+    r = build_pr(root(), number or pr_number_from_env(), base, title)
+    body = pr_markdown(r)
+    path = save(root(), r)
+    if markdown_out:
+        Path(markdown_out).write_text(body + "\n")
+    console.print(body)
+    console.print(f"\n[dim]{path}[/]")
+    if fail and r.verdict == "block":
+        raise typer.Exit(1)
+
+
+@pr_app.command("list")
+def cmd_pr_list() -> None:
+    """Reports recorded so far — what the UI's PR view shows."""
+    from pf.pr import load_all
+
+    rows = load_all(root())
+    if not rows:
+        console.print("[dim]no reports yet — run `pf pr report`[/]")
+        return
+    t = Table(box=None, pad_edge=False)
+    for c in ("pr", "verdict", "branch", "projects", "files", "generated"):
+        t.add_column(c)
+    for r in rows:
+        colour = {"block": "red", "review": "yellow", "clear": "green"}[r["verdict"]]
+        t.add_row(str(r["number"] or "-"), f"[{colour}]{r['verdict']}[/]", r["branch"],
+                  ", ".join(f"{p['group']}/{p['project']}" for p in r["projects"]) or "-",
+                  str(len(r["files"])), r["generated_at"][:19])
+    console.print(t)
 
 
 @app.command()

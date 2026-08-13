@@ -737,5 +737,18 @@
     "duration_ms": 14,
     "attempt": 1,
     "message": ""
+  },
+  {
+    "run_id": "2b05cda1",
+    "loop": "vendor-drift",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-13T00:46:46+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 971,
+    "attempt": 1,
+    "message": ""
   }
 ]
