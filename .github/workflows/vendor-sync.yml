@@ -49,6 +49,10 @@ jobs:
         run: |
           uv run pf vendor sync ${{ inputs.only && format('--only {0}', inputs.only) || '' }} \
             | tee vendor-sync.txt
+          # A graph is needed for the MDL contract, and graphs are generated
+          # rather than committed. Building one project's is enough to exercise
+          # it, and cheap — no warehouse or dbt run involved.
+          uv run pf bootstrap acme acme-us >/dev/null 2>&1 || true
           uv run pf vendor verify | tee -a vendor-sync.txt || true
           if git diff --quiet -- vendor; then
             echo "moved=false" >> "$GITHUB_OUTPUT"

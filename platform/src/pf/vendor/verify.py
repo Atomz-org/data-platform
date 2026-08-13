@@ -200,5 +200,14 @@ def verify(root: str | Path, project: tuple[str, str, Path] | None = None) -> Re
     if project:
         g, p, d = project
         findings += check_mdl(root, d, g, p)
+    else:
+        # Graphs are generated and gitignored, so a fresh clone (and therefore
+        # CI) has none. Silently skipping the MDL contract there would let the
+        # one check that has already caught a real schema mistake quietly stop
+        # running — visible only as a missing line nobody looks for.
+        findings.append(Finding(
+            "warning", "contract:mdl", "-",
+            "not exercised: no project has a built graph. Run `pf seed <g> <p>` "
+            "or `pf kg build` first, or pass a project explicitly"))
     n = sum(len(u.adopted) for u in ups) + 3
     return Result(findings=findings, checked=n)
