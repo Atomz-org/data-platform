@@ -37,7 +37,13 @@
       "Bash(dbt build:*)",
       "Bash(dbt test:*)",
       "Bash(mf query:*)",
-      "Bash(mf list:*)"
+      "Bash(mf list:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)"
     ]
   },
   "hooks": {
