@@ -122,7 +122,8 @@ class Observation:
     detail: str = ""
 
 
-def _observe(root: Path, project_dir: Path | None, kind: str) -> Observation:
+def _observe(root: Path, project_dir: Path | None, kind: str,
+             group: str = "", project: str = "") -> Observation:
     """Resolve one evidence kind against reality.
 
     Deliberately conservative: anything we cannot check right now is `unknown`,
@@ -152,7 +153,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str) -> Observation:
 
     if kind.startswith("pf loop run "):
         loop = kind.removeprefix("pf loop run ").strip()
-        return _from_ledger(root, loop, now)
+        return _from_ledger(root, loop, now, group, project)
 
     if kind == "impact_reports":
         try:
@@ -174,7 +175,23 @@ def _observe(root: Path, project_dir: Path | None, kind: str) -> Observation:
     return Observation("unknown", now, f"{rel} not produced yet")
 
 
-def _from_ledger(root: Path, loop: str, now: str) -> Observation:
+# pf.loops.runner.Outcome, mapped to otop's evidence results. `ok` and `noop`
+# both mean the loop ran to completion — `noop` is "ran, found nothing", which is
+# a pass for a policy check. Everything that means "we did not get an answer"
+# maps to `unknown` rather than `fail`: an unrun check is not a failed one, and
+# reporting it as failed devalues the results that are real.
+LEDGER_RESULT: dict[str, str] = {
+    "ok": "pass",
+    "noop": "pass",
+    "error": "fail",
+    "escalated": "fail",
+    "gate_blocked": "unknown",
+    "circuit_open": "unknown",
+}
+
+
+def _from_ledger(root: Path, loop: str, now: str,
+                 group: str = "", project: str = "") -> Observation:
     p = root / "loop-ledger.json"
     if not p.exists():
         return Observation("unknown", now, "no ledger")
@@ -183,15 +200,38 @@ def _from_ledger(root: Path, loop: str, now: str) -> Observation:
     except json.JSONDecodeError:
         return Observation("unknown", now, "ledger unreadable")
     runs = doc.get("runs") if isinstance(doc, dict) else doc
-    hits = [r for r in (runs or []) if isinstance(r, dict) and r.get("loop") == loop]
+    # Scoped to this project. The ledger is repo-wide, and an unfiltered lookup
+    # let one company's clean pii-audit stand as evidence that another company's
+    # PII policy holds — which is precisely the cross-entity assumption this
+    # platform is built to prevent.
+    hits = [r for r in (runs or [])
+            if isinstance(r, dict) and r.get("loop") == loop
+            and (not project or r.get("project") == project)
+            and (not group or r.get("group") == group)]
     if not hits:
-        return Observation("unknown", now, f"{loop} has never run")
+        where = f" for {group}/{project}" if project else ""
+        return Observation("unknown", now, f"{loop} has never run{where}")
     last = hits[-1]
-    ok = str(last.get("status", "")).lower() in ("ok", "pass", "success", "clean")
-    return Observation("pass" if ok else "fail",
-                       str(last.get("ts") or now)[:19].replace(" ", "T") + "Z"
-                       if last.get("ts") else now,
-                       f"{loop}: {last.get('status', 'unknown')}")
+    # The ledger's field is `outcome`; reading `status` returned None for every
+    # run, which fell through to "not ok" and exported a clean pii-audit as a
+    # policy failure.
+    outcome = str(last.get("outcome") or last.get("status") or "").lower()
+    when = str(last.get("started_at") or last.get("ts") or "")
+    return Observation(LEDGER_RESULT.get(outcome, "unknown"),
+                       _as_ts(when) or now,
+                       f"{loop}: {outcome or 'no outcome recorded'}"
+                       + (f" ({len(last.get('findings') or [])} finding(s))"
+                          if last.get("findings") else ""))
+
+
+def _as_ts(value: str) -> str:
+    """Ledger timestamps are ISO with an offset; otop wants UTC ending in Z."""
+    if not value:
+        return ""
+    try:
+        return datetime.fromisoformat(value).astimezone(timezone.utc).strftime(TS_FMT)
+    except ValueError:
+        return ""
 
 
 # ---------------------------------------------------------------- export ----
@@ -283,7 +323,7 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
                                       implemented_at=policy_created))
 
         for kind in p.evidence:
-            o = _observe(root, pdir, kind)
+            o = _observe(root, pdir, kind, group, project)
             ev_id = f"evidence.{NS}.{p.id}.{_slug(kind)}"
             objects.append(_obj(
                 ev_id, "evidence", f"{kind} for {p.id}", o.observed_at,

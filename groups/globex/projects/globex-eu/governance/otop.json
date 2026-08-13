@@ -4,9 +4,9 @@
     "id": "otop.pf.globex.globex-eu",
     "title": "Policy and evidence \u2014 globex/globex-eu",
     "repository": "https://github.com/suresh-enhanza/data-platform.git",
-    "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+    "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
     "metadata": {
-      "created_at": "2026-08-13T01:04:29Z",
+      "created_at": "2026-08-13T01:14:44Z",
       "actor": "pf.projections.otop"
     }
   },
@@ -70,8 +70,8 @@
       "title": "pf check for money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:43Z",
+        "observed_at": "2026-08-13T01:14:43Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -132,8 +132,8 @@
       "title": "pf check for entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -192,8 +192,8 @@
       "title": "pf check for link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -258,12 +258,12 @@
       "title": "pf loop run pii-audit for pii-not-in-consumption",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "PII_findings",
-      "result": "fail",
+      "result": "unknown",
       "subjects": [
         {
           "id": "constraint.pf.pii-not-in-consumption",
@@ -274,7 +274,7 @@
       "provenance": {
         "actor": "pf.projections.otop",
         "scope": "globex/globex-eu",
-        "detail": "pii-audit: unknown"
+        "detail": "pii-audit has never run for globex/globex-eu"
       }
     },
     {
@@ -345,8 +345,8 @@
       "title": "kg/context_card.md for mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:43Z",
+        "observed_at": "2026-08-13T01:14:43Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "project_index",
@@ -413,8 +413,8 @@
       "title": "pf check for metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -473,8 +473,8 @@
       "title": "impact_reports for change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "blast_radius_history",
@@ -558,8 +558,8 @@
       "title": "pf gate for secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "observed_at": "2026-08-13T01:04:29Z",
+        "created_at": "2026-08-13T01:14:44Z",
+        "observed_at": "2026-08-13T01:14:44Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -590,7 +590,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "money-without-currency",
@@ -613,7 +613,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "class-without-identity",
@@ -636,7 +636,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "illegal-edge",
@@ -659,7 +659,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/loops/registry.py",
         "language": "python",
         "symbol": "pii_audit",
@@ -682,7 +682,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/kg/build.py",
         "language": "python",
         "symbol": "model-grain",
@@ -705,7 +705,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "metric-shaped-column",
@@ -728,7 +728,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/hooks/pre_tool_use.py",
         "language": "python",
         "digest": "git:2cb586ed58222bcb50e9cd0013d536cb2c9e6856"
@@ -750,7 +750,7 @@
       "language": "bash",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "platform/hooks/pre_commit.sh",
         "language": "bash",
         "digest": "git:ce8e6f322ce15a546c16d2eb25bddf4fab5b6688"
@@ -765,18 +765,18 @@
       "title": "gate.yaml:denylist",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T03:12:08Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "configuration",
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "b11a68e77cecfc8361facb3be68bad1812bc20ee",
+        "commit": "07c6b57530cc80194500b5e6fce6f098d151d5b1",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "denylist",
-        "digest": "git:04e5cf5ad83c243f370e0533408aaa5bfa616bbb"
+        "digest": "git:1b3ce66eafe4bbacfd460ebca512038e34764393"
       },
       "extensions": {
         "exists": true
@@ -820,8 +820,8 @@
       "to": "evidence.pf.money-requires-currency.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:43Z",
+        "verified_at": "2026-08-13T01:14:43Z"
       }
     },
     {
@@ -860,8 +860,8 @@
       "to": "evidence.pf.entity-requires-identity.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     },
     {
@@ -900,8 +900,8 @@
       "to": "evidence.pf.link-must-be-in-topology.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     },
     {
@@ -940,8 +940,8 @@
       "to": "evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     },
     {
@@ -990,8 +990,8 @@
       "to": "evidence.pf.mart-declares-grain.kg-context-card-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:43Z",
+        "verified_at": "2026-08-13T01:14:43Z"
       }
     },
     {
@@ -1030,8 +1030,8 @@
       "to": "evidence.pf.metric-owns-aggregation.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     },
     {
@@ -1080,8 +1080,8 @@
       "to": "evidence.pf.change-declares-blast-radius.impact-reports",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     },
     {
@@ -1140,8 +1140,8 @@
       "to": "evidence.pf.secrets-never-in-context.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T01:04:29Z",
-        "verified_at": "2026-08-13T01:04:29Z"
+        "created_at": "2026-08-13T01:14:44Z",
+        "verified_at": "2026-08-13T01:14:44Z"
       }
     }
   ],
