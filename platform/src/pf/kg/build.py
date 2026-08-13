@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 
 from pf.ontology.annotate import load_annotations
-from pf.ontology.model import load_ontology
+from pf.ontology.model import load_group_ontology, load_ontology
 from pf.kg.store import Edge, Graph, Node, open_graph
 
 
@@ -102,8 +102,14 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
     nodes: list[Node] = []
     edges: list[Edge] = []
 
-    _add_ontology(nodes, edges)
-    _add_annotations(root, nodes, edges)
+    # The group ontology, not the platform one: a term a steward approved into
+    # groups/<g>/ontology/extension.yaml is not usable by dbt, Wren, BI or an
+    # agent until it is in the graph, and building from the platform ontology
+    # silently drops every approved extension.
+    onto = load_group_ontology(_repo_root(root), group) if group else load_ontology()
+
+    _add_ontology(nodes, edges, onto)
+    _add_annotations(root, nodes, edges, onto)
     _add_dbt(root, nodes, edges)
     _add_physical_columns(root, project or root.name, nodes, edges)
     _add_semantic(root, nodes, edges)
@@ -128,10 +134,11 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
 
 
 # ---------------------------------------------------------------- ontology --
-def _add_ontology(nodes: list[Node], edges: list[Edge]) -> None:
+def _add_ontology(nodes: list[Node], edges: list[Edge],
+                  onto=None) -> None:
     """Classes, their datatype properties, the named relations between them, and
     the policy chain. This is the semantic spine every projection reads."""
-    onto = load_ontology()
+    onto = onto or load_ontology()
 
     for name, cls in onto.classes.items():
         nodes.append(Node(
@@ -208,9 +215,17 @@ def _add_policy(onto, nodes: list[Node], edges: list[Edge]) -> None:
 
 
 # ------------------------------------------------------------- annotations --
-def _add_annotations(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
+def _repo_root(project_dir: Path) -> Path:
+    for p in [project_dir, *project_dir.parents]:
+        if (p / "platform").is_dir() and (p / "groups").is_dir():
+            return p
+    return project_dir
+
+
+def _add_annotations(root: Path, nodes: list[Node], edges: list[Edge],
+                     onto=None) -> None:
     anns = load_annotations(root / "contracts" / "annotations.yaml")
-    onto = load_ontology()
+    onto = onto or load_ontology()
     pii = onto.pii_roles()
 
     for ann in anns:

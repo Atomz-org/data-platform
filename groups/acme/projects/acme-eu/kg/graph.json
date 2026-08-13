@@ -15,6 +15,19 @@
       }
     },
     {
+      "id": "col:model:stg_stripe__charges.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_payments.amount",
       "kind": "Column",
       "name": "amount",
@@ -40,15 +53,15 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.amount",
+      "id": "col:model:stg_stripe__subscriptions.canceled_at",
       "kind": "Column",
-      "name": "amount",
+      "name": "canceled_at",
       "layer": "staging",
       "label": "",
       "props": {
-        "role": "money_amount",
+        "role": "valid_to",
         "pii": false,
-        "model": "stg_stripe__charges",
+        "model": "stg_stripe__subscriptions",
         "data_type": null
       }
     },
@@ -65,19 +78,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__subscriptions.canceled_at",
-      "kind": "Column",
-      "name": "canceled_at",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "valid_to",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:table:stripe.customers.country",
       "kind": "Column",
       "name": "country",
@@ -87,19 +87,6 @@
         "role": "geo_country",
         "pii": false,
         "table": "customers"
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__customers.country_code",
-      "kind": "Column",
-      "name": "country_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "geo_country",
-        "pii": false,
-        "model": "stg_stripe__customers",
-        "data_type": null
       }
     },
     {
@@ -128,6 +115,19 @@
         "model": "dim_customers",
         "data_type": "VARCHAR",
         "documented": false
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.country_code",
+      "kind": "Column",
+      "name": "country_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "geo_country",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
       }
     },
     {
@@ -206,6 +206,33 @@
       }
     },
     {
+      "id": "col:model:fct_revenue.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_payments.currency_code",
       "kind": "Column",
       "name": "currency_code",
@@ -230,33 +257,6 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__charges.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_revenue.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_revenue",
-        "data_type": "VARCHAR",
-        "documented": false
       }
     },
     {
@@ -287,6 +287,19 @@
       }
     },
     {
+      "id": "col:model:dim_customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:table:stripe.subscriptions.customer_id",
       "kind": "Column",
       "name": "customer_id",
@@ -300,15 +313,28 @@
       }
     },
     {
-      "id": "col:model:dim_customers.customer_id",
+      "id": "col:table:stripe.charges.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "marts",
-      "label": "",
+      "layer": "raw",
+      "label": "foreign_key",
       "props": {
-        "role": "natural_key",
+        "role": "foreign_key",
         "pii": false,
-        "model": "dim_customers",
+        "table": "charges",
+        "links_to": "Customer"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
         "data_type": null
       }
     },
@@ -326,19 +352,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__subscriptions.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_stripe__customers.customer_id",
       "kind": "Column",
       "name": "customer_id",
@@ -349,19 +362,6 @@
         "pii": false,
         "model": "stg_stripe__customers",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.charges.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "charges",
-        "links_to": "Customer"
       }
     },
     {
@@ -378,6 +378,20 @@
       }
     },
     {
+      "id": "col:model:fct_payments.customer_segment",
+      "kind": "Column",
+      "name": "customer_segment",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
       "id": "col:model:dim_customers.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
@@ -388,20 +402,6 @@
         "pii": false,
         "model": "dim_customers",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_revenue.customer_segment",
-      "kind": "Column",
-      "name": "customer_segment",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_revenue",
-        "data_type": "VARCHAR",
-        "documented": false
       }
     },
     {
@@ -418,7 +418,7 @@
       }
     },
     {
-      "id": "col:model:fct_payments.customer_segment",
+      "id": "col:model:fct_revenue.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
@@ -426,7 +426,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_payments",
+        "model": "fct_revenue",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -485,7 +485,7 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.id",
+      "id": "col:table:stripe.charges.id",
       "kind": "Column",
       "name": "id",
       "layer": "raw",
@@ -493,7 +493,7 @@
       "props": {
         "role": "natural_key",
         "pii": false,
-        "table": "subscriptions"
+        "table": "charges"
       }
     },
     {
@@ -509,7 +509,7 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.id",
+      "id": "col:table:stripe.subscriptions.id",
       "kind": "Column",
       "name": "id",
       "layer": "raw",
@@ -517,7 +517,7 @@
       "props": {
         "role": "natural_key",
         "pii": false,
-        "table": "charges"
+        "table": "subscriptions"
       }
     },
     {
@@ -585,6 +585,19 @@
       }
     },
     {
+      "id": "col:table:stripe.customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "customers",
+        "links_to": "Organization"
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.organization_id",
       "kind": "Column",
       "name": "organization_id",
@@ -612,16 +625,16 @@
       }
     },
     {
-      "id": "col:table:stripe.customers.organization_id",
+      "id": "col:model:stg_stripe__charges.paid_at",
       "kind": "Column",
-      "name": "organization_id",
-      "layer": "raw",
-      "label": "foreign_key",
+      "name": "paid_at",
+      "layer": "staging",
+      "label": "",
       "props": {
-        "role": "foreign_key",
+        "role": "event_time",
         "pii": false,
-        "table": "customers",
-        "links_to": "Organization"
+        "model": "stg_stripe__charges",
+        "data_type": null
       }
     },
     {
@@ -634,19 +647,6 @@
         "role": "event_time",
         "pii": false,
         "model": "fct_payments",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__charges.paid_at",
-      "kind": "Column",
-      "name": "paid_at",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "stg_stripe__charges",
         "data_type": null
       }
     },
@@ -665,19 +665,6 @@
       }
     },
     {
-      "id": "col:model:fct_payments.payment_id",
-      "kind": "Column",
-      "name": "payment_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_stripe__charges.payment_id",
       "kind": "Column",
       "name": "payment_id",
@@ -687,6 +674,19 @@
         "role": "natural_key",
         "pii": false,
         "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.payment_id",
+      "kind": "Column",
+      "name": "payment_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_payments",
         "data_type": null
       }
     },
@@ -771,18 +771,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.receipt_email",
-      "kind": "Column",
-      "name": "receipt_email",
-      "layer": "raw",
-      "label": "pii_email",
-      "props": {
-        "role": "pii_email",
-        "pii": true,
-        "table": "charges"
-      }
-    },
-    {
       "id": "col:model:stg_stripe__charges.receipt_email",
       "kind": "Column",
       "name": "receipt_email",
@@ -793,6 +781,18 @@
         "pii": true,
         "model": "stg_stripe__charges",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.receipt_email",
+      "kind": "Column",
+      "name": "receipt_email",
+      "layer": "raw",
+      "label": "pii_email",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "table": "charges"
       }
     },
     {
@@ -846,18 +846,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.status",
-      "kind": "Column",
-      "name": "status",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "charges"
-      }
-    },
-    {
       "id": "col:table:stripe.subscriptions.status",
       "kind": "Column",
       "name": "status",
@@ -867,6 +855,18 @@
         "role": "status_enum",
         "pii": false,
         "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.status",
+      "kind": "Column",
+      "name": "status",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "charges"
       }
     },
     {
@@ -884,19 +884,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__subscriptions.subscription_id",
-      "kind": "Column",
-      "name": "subscription_id",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_payments.subscription_id",
       "kind": "Column",
       "name": "subscription_id",
@@ -911,19 +898,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.subscription_id",
-      "kind": "Column",
-      "name": "subscription_id",
-      "layer": "staging",
-      "label": "Foreign key to Subscription.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:table:stripe.charges.subscription_id",
       "kind": "Column",
       "name": "subscription_id",
@@ -934,6 +908,32 @@
         "pii": false,
         "table": "charges",
         "links_to": "Subscription"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "staging",
+      "label": "Foreign key to Subscription.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
       }
     },
     {
@@ -997,7 +997,7 @@
       "props": {
         "abstract": false,
         "parent": "Party",
-        "identity": "customer_id",
+        "identity": "id",
         "label": "Customer"
       }
     },
@@ -1140,7 +1140,7 @@
       "props": {
         "abstract": false,
         "parent": "Agreement",
-        "identity": "subscription_id",
+        "identity": "id",
         "label": "Subscription"
       }
     },
@@ -1709,38 +1709,6 @@
       }
     },
     {
-      "id": "property:Refund.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Payment.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.amount",
       "kind": "Property",
       "name": "amount",
@@ -1757,14 +1725,46 @@
       }
     },
     {
+      "id": "property:Payment.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "float \u00b7 money_amount",
+      "props": {
+        "datatype": "float",
+        "role": "money_amount",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "DOUBLE",
+        "xsd_type": "xsd:double",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Subscription.canceled_at",
       "kind": "Property",
       "name": "canceled_at",
       "layer": "ontology",
-      "label": "timestamp \u00b7 valid_to",
+      "label": "timestamp \u00b7 event_time",
       "props": {
         "datatype": "timestamp",
-        "role": "valid_to",
+        "role": "event_time",
         "required": false,
         "concept": "Subscription",
         "mdl_type": "TIMESTAMP",
@@ -1805,22 +1805,6 @@
       }
     },
     {
-      "id": "property:Organization.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Location.country",
       "kind": "Property",
       "name": "country",
@@ -1831,6 +1815,22 @@
         "role": "geo_country",
         "required": false,
         "concept": "Location",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Organization.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Organization",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1853,6 +1853,38 @@
       }
     },
     {
+      "id": "property:Payment.created",
+      "kind": "Property",
+      "name": "created",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.created",
+      "kind": "Property",
+      "name": "created",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Customer.created_at",
       "kind": "Property",
       "name": "created_at",
@@ -1869,7 +1901,7 @@
       }
     },
     {
-      "id": "property:Payment.currency",
+      "id": "property:Refund.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -1877,8 +1909,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
+        "required": false,
+        "concept": "Refund",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1893,7 +1925,7 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": false,
+        "required": true,
         "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
@@ -1901,7 +1933,7 @@
       }
     },
     {
-      "id": "property:Refund.currency",
+      "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -1909,8 +1941,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": false,
-        "concept": "Refund",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1949,6 +1981,38 @@
       }
     },
     {
+      "id": "property:Payment.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Customer.customer_id",
       "kind": "Property",
       "name": "customer_id",
@@ -1961,7 +2025,7 @@
         "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
-        "is_identity": true
+        "is_identity": false
       }
     },
     {
@@ -1973,7 +2037,7 @@
       "props": {
         "datatype": "string",
         "role": "pii_email",
-        "required": false,
+        "required": true,
         "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
@@ -2007,6 +2071,54 @@
         "role": "natural_key",
         "required": true,
         "concept": "Event",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Payment.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2065,28 +2177,28 @@
       "kind": "Property",
       "name": "mrr_amount",
       "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
+      "label": "float \u00b7 money_amount",
       "props": {
-        "datatype": "decimal",
+        "datatype": "float",
         "role": "money_amount",
-        "required": false,
+        "required": true,
         "concept": "Subscription",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
+        "mdl_type": "DOUBLE",
+        "xsd_type": "xsd:double",
         "is_identity": false
       }
     },
     {
-      "id": "property:Customer.name",
+      "id": "property:Product.name",
       "kind": "Property",
       "name": "name",
       "layer": "ontology",
-      "label": "string \u00b7 pii_name",
+      "label": "string \u00b7 free_text",
       "props": {
         "datatype": "string",
-        "role": "pii_name",
+        "role": "free_text",
         "required": false,
-        "concept": "Customer",
+        "concept": "Product",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2109,16 +2221,16 @@
       }
     },
     {
-      "id": "property:Product.name",
+      "id": "property:Customer.name",
       "kind": "Property",
       "name": "name",
       "layer": "ontology",
-      "label": "string \u00b7 free_text",
+      "label": "string \u00b7 pii_name",
       "props": {
         "datatype": "string",
-        "role": "free_text",
-        "required": false,
-        "concept": "Product",
+        "role": "pii_name",
+        "required": true,
+        "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2186,6 +2298,22 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.organization_id",
+      "kind": "Property",
+      "name": "organization_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
       }
     },
     {
@@ -2261,7 +2389,7 @@
       "props": {
         "datatype": "string",
         "role": "status_enum",
-        "required": false,
+        "required": true,
         "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
@@ -2297,6 +2425,22 @@
         "concept": "Usage",
         "mdl_type": "BIGINT",
         "xsd_type": "xsd:integer",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.receipt_email",
+      "kind": "Property",
+      "name": "receipt_email",
+      "layer": "ontology",
+      "label": "string \u00b7 pii_email",
+      "props": {
+        "datatype": "string",
+        "role": "pii_email",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
         "is_identity": false
       }
     },
@@ -2341,7 +2485,7 @@
       "props": {
         "datatype": "string",
         "role": "status_enum",
-        "required": false,
+        "required": true,
         "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
@@ -2373,7 +2517,7 @@
       "props": {
         "datatype": "timestamp",
         "role": "event_time",
-        "required": false,
+        "required": true,
         "concept": "Subscription",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
@@ -2389,24 +2533,8 @@
       "props": {
         "datatype": "string",
         "role": "status_enum",
-        "required": false,
+        "required": true,
         "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Agreement.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": false,
-        "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2437,8 +2565,40 @@
       "props": {
         "datatype": "string",
         "role": "status_enum",
-        "required": false,
+        "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Agreement.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Agreement",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.subscription_id",
+      "kind": "Property",
+      "name": "subscription_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2457,7 +2617,7 @@
         "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
-        "is_identity": true
+        "is_identity": false
       }
     },
     {
@@ -2511,6 +2671,23 @@
       }
     },
     {
+      "id": "relation:customer_holds_charge_subscription",
+      "kind": "Relation",
+      "name": "customer_holds_charge_subscription",
+      "layer": "topology",
+      "label": "Subscription holds Customer",
+      "props": {
+        "domain": "Subscription",
+        "range": "Customer",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "holds",
+        "inverse": "held by",
+        "description": "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014 `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning.",
+        "reverse_label": "Customer held by Subscription"
+      }
+    },
+    {
       "id": "relation:customer_holds_subscription",
       "kind": "Relation",
       "name": "customer_holds_subscription",
@@ -2559,6 +2736,23 @@
         "inverse": "involves",
         "description": "",
         "reverse_label": "Interaction involves Customer"
+      }
+    },
+    {
+      "id": "relation:customer_pays_charge",
+      "kind": "Relation",
+      "name": "customer_pays_charge",
+      "layer": "topology",
+      "label": "Payment pays Customer",
+      "props": {
+        "domain": "Payment",
+        "range": "Customer",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "pays",
+        "inverse": "paid by",
+        "description": "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014 `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning.",
+        "reverse_label": "Customer paid by Payment"
       }
     },
     {
@@ -2712,6 +2906,23 @@
         "inverse": "settles",
         "description": "",
         "reverse_label": "Payment settles Subscription"
+      }
+    },
+    {
+      "id": "relation:subscription_settles_charge",
+      "kind": "Relation",
+      "name": "subscription_settles_charge",
+      "layer": "topology",
+      "label": "Payment settles Subscription",
+      "props": {
+        "domain": "Payment",
+        "range": "Subscription",
+        "cardinality": "MANY_TO_ONE",
+        "inverse_cardinality": "ONE_TO_MANY",
+        "label": "settles",
+        "inverse": "settled by",
+        "description": "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014 `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning.",
+        "reverse_label": "Subscription settled by Payment"
       }
     },
     {
@@ -2983,6 +3194,24 @@
       "props": {}
     },
     {
+      "src": "concept:Customer",
+      "dst": "property:Customer.id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.organization_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Customer",
+      "dst": "property:Customer.created",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
       "src": "concept:Organization",
       "dst": "property:Organization.organization_id",
       "kind": "has_property",
@@ -3057,6 +3286,18 @@
     {
       "src": "concept:Subscription",
       "dst": "property:Subscription.canceled_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "property:Subscription.customer_id",
       "kind": "has_property",
       "props": {}
     },
@@ -3141,6 +3382,36 @@
     {
       "src": "concept:Payment",
       "dst": "property:Payment.paid_at",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.customer_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.subscription_id",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.created",
+      "kind": "has_property",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "property:Payment.receipt_email",
       "kind": "has_property",
       "props": {}
     },
@@ -3399,6 +3670,42 @@
     {
       "src": "relation:customer_participates_in_interaction",
       "dst": "concept:Interaction",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "relation:customer_pays_charge",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_pays_charge",
+      "dst": "concept:Customer",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Payment",
+      "dst": "relation:subscription_settles_charge",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:subscription_settles_charge",
+      "dst": "concept:Subscription",
+      "kind": "range_of",
+      "props": {}
+    },
+    {
+      "src": "concept:Subscription",
+      "dst": "relation:customer_holds_charge_subscription",
+      "kind": "domain_of",
+      "props": {}
+    },
+    {
+      "src": "relation:customer_holds_charge_subscription",
+      "dst": "concept:Customer",
       "kind": "range_of",
       "props": {}
     },
