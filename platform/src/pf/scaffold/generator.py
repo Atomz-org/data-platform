@@ -40,8 +40,10 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
     ctx = {"group": group, "domain": domain,
-           "classes_yaml": "\n".join(f"  - {c}" for c in classes)}
+           "classes_yaml": "\n".join(f"  - {c}" for c in classes),
+           "tools_yaml": _default_tools_yaml()}
     created = [
+        write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
@@ -52,6 +54,26 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
     (gdir / "projects").mkdir(parents=True, exist_ok=True)
     (gdir / "kg").mkdir(parents=True, exist_ok=True)
     return created
+
+
+def _default_tools_yaml() -> str:
+    """The `tools:` block a new group starts with, read from the registry.
+
+    Asked of the installed tools rather than hardcoded, so registering a tool
+    stays the only step — the same reason `pf tool list` and the UI do not name
+    one either. A discovery failure yields an empty block: a group scaffolded
+    with nothing enabled is recoverable with `pf tool enable`, whereas a
+    scaffold that raises leaves half a group on disk.
+    """
+    try:
+        from pf.tools import all_tools
+        names = sorted(n for n, t in all_tools().items()
+                       if t.default_enabled and "group" in t.scope)
+    except Exception:  # noqa: BLE001 — a broken plugin must not block scaffolding
+        names = []
+    if not names:
+        return " {}"
+    return "\n" + "\n".join(f"  {n}:\n    enabled: true" for n in names)
 
 
 # ---------------------------------------------------------------- project --
@@ -110,6 +132,7 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / "decisions" / "README.md", PROJECT_DECISIONS, ctx),
         write(pdir / ".memory" / "notes" / "README.md", PROJECT_MEMORY, ctx),
         write(pdir / "kg" / "context_card.md", EMPTY_CARD, ctx),
+        write(pdir / "tools.yaml", PROJECT_TOOLS, ctx),
     ]
     for d in ("data", "kg", "contracts"):
         (pdir / d).mkdir(parents=True, exist_ok=True)
@@ -117,6 +140,40 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
 
 
 # ================================================================ templates ==
+GROUP_TOOLS = """\
+# Which platform tools this group runs. `pf tool list` shows what is available.
+#
+# Enabled here means enabled for **every sister project** in {{group}} — that is
+# the point of a group. Sisters share infrastructure and differ only in business
+# logic, so "we review dbt changes with Recce" is decided once for the family.
+# A project can override any key in its own tools.yaml, including turning a tool
+# off, which is the escape hatch for an entity the decision does not fit.
+#
+#   pf tool enable recce {{group}}              # the whole family
+#   pf tool enable recce {{group}} <project>    # one entity
+#
+# A tool that is enabled but not installed on this machine is skipped with a
+# note, never a failure: enabling is a decision about the project, installing is
+# a fact about the laptop.
+#
+# What is listed below is what the installed tools declare as a default for a
+# new family, not a fixed set. Turn any of it off; it is your file now.
+version: 1
+tools:{{tools_yaml}}
+"""
+
+PROJECT_TOOLS = """\
+# Tools for {{project}}, merged over groups/{{group}}/tools.yaml.
+#
+# Set `enabled: false` here to opt out of something the group turned on. Config
+# dicts deep-merge, so overriding one key (a port, say) keeps the rest.
+#
+#   pf tool list {{group}} {{project}}      # what is on, and where it came from
+#   pf tool doctor {{group}} {{project}}    # why a tool is not doing anything
+version: 1
+tools: {}
+"""
+
 GROUP_INSTANCE = """\
 # Ontology instance for {{group}} — which platform classes this group models.
 # Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
