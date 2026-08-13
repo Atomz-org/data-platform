@@ -38,25 +38,33 @@ def _git(root: Path, *args: str) -> str:
     return r.stdout.strip() if r.returncode == 0 else ""
 
 
-def changed_files(root: Path, base: str = "") -> list[str]:
+def changed_files(root: Path, base: str = "", exclude_deleted: bool = False) -> list[str]:
     """Files this PR touches.
 
     Falls back through three sources so the command is useful locally, on a
     branch and in CI: an explicit base ref, the merge-base with the default
     branch, then the working tree.
+
+    `exclude_deleted` exists for the path gate. The gate asks "was this edited by
+    hand", and a deleted file was not — without the filter, removing a generated
+    artefact from tracking is reported as a gate violation for touching it.
+    Blast radius still uses the full list, because deleting a model is exactly
+    the kind of change the blast radius is for.
     """
+    filt = ["--diff-filter=d"] if exclude_deleted else []
     if base:
-        out = _git(root, "diff", "--name-only", f"{base}...HEAD")
+        out = _git(root, "diff", "--name-only", *filt, f"{base}...HEAD")
         if out:
             return [ln for ln in out.splitlines() if ln]
     for ref in ("origin/main", "origin/master", "main", "master"):
         mb = _git(root, "merge-base", ref, "HEAD")
         if mb:
-            out = _git(root, "diff", "--name-only", f"{mb}..HEAD")
+            out = _git(root, "diff", "--name-only", *filt, f"{mb}..HEAD")
             if out:
                 return [ln for ln in out.splitlines() if ln]
     out = _git(root, "status", "--porcelain")
-    return [ln[3:].strip() for ln in out.splitlines() if ln[3:].strip()]
+    return [ln[3:].strip() for ln in out.splitlines()
+            if ln[3:].strip() and not (exclude_deleted and ln[:2].strip() == "D")]
 
 
 # ------------------------------------------------------------------ model ----
@@ -136,7 +144,9 @@ def build(root: str | Path, number: int = 0, base: str = "", title: str = "") ->
 
     # Path gate first: a denied path is a stop, and computing blast radius for a
     # change that must not land at all is wasted work and a misleading report.
-    denied = [f"{g.path}: {g.message}" for g in check_paths(files, root) if g.blocked]
+    denied = [f"{g.path}: {g.message}"
+              for g in check_paths(changed_files(root, base, exclude_deleted=True), root)
+              if g.blocked]
 
     readiness = {(r.group, r.project): r for r in project_readiness(root)}
 

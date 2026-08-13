@@ -140,6 +140,8 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
   <button role="tab" data-tab="impact">Impact</button>
   <button role="tab" data-tab="agents">Agents &amp; Spend</button>
   <button role="tab" data-tab="monitors">Monitors</button>
+  <button role="tab" data-tab="upstreams">Upstreams</button>
+  <button role="tab" data-tab="prs">Pull requests</button>
   <button role="tab" data-tab="context">Context Card</button>
 </nav>
 
@@ -214,6 +216,42 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
   </section>
 
   <section class="panel" id="tab-monitors"><div class="card"><h2>Monitor results</h2><div class="scroll" id="monitorBox"></div></div></section>
+
+  <section class="panel" id="tab-upstreams">
+    <div class="kpis" id="vendorKpis"></div>
+    <div class="card">
+      <h2>This project's stack, layer by layer</h2>
+      <p class="muted" style="margin:-4px 0 12px">Every layer descends from a
+        vendored upstream. Counts are from this project's own graph.</p>
+      <div id="stackBox"></div>
+    </div>
+    <div class="card">
+      <h2>Vendored upstreams</h2>
+      <div class="scroll" id="vendorBox"></div>
+    </div>
+    <div class="card">
+      <h2>Provenance — what we took, and what we deliberately did not</h2>
+      <div class="row">
+        <input id="whyPath" placeholder="a file of ours, e.g. platform/src/pf/projections/mdl.py" style="min-width:460px">
+        <button id="whyBtn">Where did this come from?</button>
+      </div>
+      <div id="whyBox"></div>
+      <div id="adoptBox" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-prs">
+    <div class="card">
+      <div class="row">
+        <button id="prRefreshBtn" class="primary">Report on the working tree</button>
+        <span class="muted">Runs the same code path CI runs, so what you see here
+          is what CI will post on the PR.</span>
+      </div>
+      <div id="prVerdict"></div>
+    </div>
+    <div class="card"><h2>Recorded reports</h2><div class="scroll" id="prListBox"></div></div>
+    <div class="card"><h2>Report body (as posted to GitHub)</h2><pre id="prBody" class="empty">No report yet.</pre></div>
+  </section>
   <section class="panel" id="tab-context"><div class="card"><h2>Context card (what every session loads)</h2><div id="cardBox"></div></div></section>
 </main>
 
@@ -222,7 +260,8 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
 <script>
 const $ = s => document.querySelector(s);
 const tip = $('#tip');
-let STATE = { group: null, project: null, tree: null, graph: null };
+let STATE = { group: null, project: null, tree: null, graph: null,
+              vendor: null, prs: [] };
 
 const LAYER_ORDER = ['ontology','raw','staging','intermediate','marts','semantic','consumption','project','test'];
 const LAYER_BUCKET = { ontology:0, raw:1, staging:2, intermediate:2, marts:3, semantic:4, consumption:4, project:0, test:2 };
@@ -262,7 +301,9 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
 $('#projectSel').onchange = e => {
   const [g, p] = e.target.value.split('/');
   STATE.group = g; STATE.project = p;
-  loadProject();
+  // MDL and the stack view are per project too; before this they kept showing
+  // the previously selected project's manifest after a switch.
+  loadProject().then(() => Promise.all([loadMdl(), loadStack()]));
 };
 ['showColumns','showConcepts'].forEach(id => $('#' + id).onchange = () => loadGraph());
 $('#tableViewBtn').onclick = () => {
@@ -650,13 +691,176 @@ async function loadOntology() {
   ], '');
 }
 
+/* ------------------------------------------------------------- upstreams -- */
+const KIND_PILL = { schema: 'critical', data: 'critical', parity: 'warning',
+                    port: 'warning', shape: '' };
+
+async function loadVendor() {
+  const v = await api('/api/vendor');
+  STATE.vendor = v;
+
+  const t = v.totals;
+  $('#vendorKpis').innerHTML = [
+    ['Upstreams', t.upstreams, 'pinned as submodules'],
+    ['Adoptions', t.adopted, 'path pairs, each verifiable'],
+    ['Declined', t.declined, 'written down on purpose'],
+    ['Need review', t.needs_review, t.needs_review ? 'an adopted path moved' : 'all on the reviewed commit'],
+    ['Licence review', t.licence_review, t.licence_review ? 'a human must decide' : 'clear'],
+  ].map(([l, val, sub]) =>
+    `<div class="kpi"><div class="label">${l}</div><div class="value">${fmt(val)}</div>
+     <div class="sub">${esc(sub)}</div></div>`).join('');
+
+  $('#vendorBox').innerHTML = table(v.upstreams, [
+    ['Upstream', u => `<a href="${esc(u.url)}" target="_blank" rel="noopener">
+        <code>${esc(u.id)}</code></a><br><span class="muted">${esc(u.name)}</span>`],
+    ['Role', u => esc(u.role)],
+    ['Licence', u => u.licence_review
+      ? `<span class="pill warning">${esc(u.licence)}</span>`
+      : esc(u.licence)],
+    ['Pinned', u => `<code class="mono">${esc((u.commit || '').slice(0, 8) || '—')}</code>
+      <span class="muted">@${esc(u.branch)}</span>`],
+    ['State', u => !u.locked ? '<span class="pill warning">never reviewed</span>'
+      : u.needs_review ? `<span class="pill ${u.severity === 'error' ? 'critical' : 'warning'}">
+          drift · ${u.drift.length} path(s)</span>`
+      : u.moved ? '<span class="pill">moved, nothing adopted</span>'
+      : '<span class="pill good">reviewed</span>'],
+    ['Took / left', u => `${u.adopted.length} / <span class="muted">${u.declined.length}</span>`],
+  ], 'No registry.');
+
+  // Drift is the actionable part, so it leads rather than hiding in a column.
+  const drifting = v.upstreams.filter(u => u.needs_review);
+  if (drifting.length) {
+    $('#vendorBox').insertAdjacentHTML('afterbegin', drifting.map(u => `
+      <div class="card" style="border-color:var(--${u.severity === 'error' ? 'critical' : 'warning'})">
+        <strong>${esc(u.id)}</strong> moved — ${u.commits_behind >= 0 ? u.commits_behind + ' commit(s)' : 'shallow'} ahead of the reviewed pin.
+        ${u.drift.map(d => `<div style="margin-top:6px">
+          <span class="pill ${KIND_PILL[d.kind] || ''}">${esc(d.kind)}</span>
+          <code>${esc(d.path)}</code> ${esc(d.state)}
+          ${d.ours.map(o => `<div class="muted" style="margin-left:16px">re-read <code>${esc(o)}</code></div>`).join('')}
+        </div>`).join('')}
+      </div>`).join(''));
+  }
+
+  const flagged = v.upstreams.filter(u => u.licence_review);
+  $('#adoptBox').innerHTML = (flagged.length ? `
+    <div class="card" style="border-color:var(--warning)">
+      <h2>Licence review outstanding</h2>
+      ${flagged.map(u => `<p><strong>${esc(u.id)}</strong> — ${esc(u.licence)}<br>
+        <span class="muted">${esc(u.licence_review)}</span></p>`).join('')}
+    </div>` : '')
+    + v.upstreams.map(u => `
+    <details style="margin-bottom:8px">
+      <summary><code>${esc(u.id)}</code>
+        <span class="muted">— ${u.adopted.length} adopted, ${u.declined.length} declined</span></summary>
+      <p class="muted">${esc(u.why)}</p>
+      ${table(u.adopted, [
+        ['Kind', a => `<span class="pill ${KIND_PILL[a.kind] || ''}">${esc(a.kind)}</span>`],
+        ['Upstream path', a => `<code>${esc(a.upstream)}</code>`],
+        ['Ours', a => a.ours.map(o => `<code>${esc(o)}</code>`).join('<br>')],
+        ['What we changed', a => `<span class="muted">${esc(a.note || '—')}</span>`],
+      ], 'Nothing adopted.')}
+      <h2 style="margin-top:12px">Deliberately not taken</h2>
+      ${table(u.declined, [
+        ['What', d => esc(d.what)],
+        ['Why', d => `<span class="muted">${esc(d.why)}</span>`],
+      ], 'Nothing declined.')}
+    </details>`).join('');
+}
+
+async function loadStack() {
+  if (!STATE.group) return;
+  const s = await api('/api/vendor/stack', { group: STATE.group, project: STATE.project });
+  $('#stackBox').innerHTML = table(s.layers, [
+    ['Layer', l => `<strong>${esc(l.title)}</strong><br>
+      <span class="muted mono">${esc(l.artefacts)}</span>`],
+    ['In this project', l => l.node_kinds.length
+      ? (l.nodes ? `<span class="pill good">${fmt(l.nodes)} node(s)</span>`
+                 : '<span class="pill">not built yet</span>')
+      : '<span class="muted">—</span>'],
+    ['Toolkits', l => l.toolkits.map(t => `<code>${esc(t)}</code>`).join(' ') || '<span class="muted">—</span>'],
+    ['Descends from', l => `<a href="${esc(l.upstream_url)}" target="_blank" rel="noopener">
+       <code>${esc(l.upstream)}</code></a>
+       ${l.needs_review ? '<span class="pill warning">drifted</span>' : ''}
+       ${l.licence_review ? '<span class="pill warning">licence</span>' : ''}`],
+  ], '');
+}
+
+$('#whyBtn').onclick = async () => {
+  const path = $('#whyPath').value.trim();
+  if (!path) return;
+  const r = await api('/api/vendor/why', { path });
+  $('#whyBox').innerHTML = r.hits.length ? r.hits.map(h => `
+    <div class="card"><strong>${esc(h.name)}</strong>
+      <span class="pill ${KIND_PILL[h.kind] || ''}">${esc(h.kind)}</span><br>
+      <code>${esc(h.upstream_path)}</code>
+      <a href="${esc(h.url)}" target="_blank" rel="noopener" class="muted">↗ upstream</a>
+      <p class="muted">${esc(h.note || 'No note recorded.')}</p></div>`).join('')
+    : `<div class="empty"><code>${esc(path)}</code> has no recorded upstream — it is ours.</div>`;
+};
+
+/* --------------------------------------------------------------------- pr -- */
+const VERDICT_PILL = { block: 'critical', review: 'warning', clear: 'good' };
+
+function renderPrVerdict(r) {
+  if (!r) { $('#prVerdict').innerHTML = '<div class="empty">No report yet.</div>'; return; }
+  $('#prVerdict').innerHTML = `
+    <div class="row">
+      <span class="pill ${VERDICT_PILL[r.verdict]}" style="font-size:14px">${r.verdict.toUpperCase()}</span>
+      <span>${esc(r.title || '')}</span>
+      <span class="muted mono">${esc(r.branch)} · ${esc((r.commit || '').slice(0, 8))}</span>
+      <span class="muted">${r.files.length} file(s) · readiness ${r.readiness_score}/100</span>
+    </div>
+    ${r.gate_denied.length ? `<div class="card" style="border-color:var(--critical)">
+      <h2>Path gate</h2>${r.gate_denied.map(d => `<div><code>${esc(d)}</code></div>`).join('')}</div>` : ''}
+    ${table(r.projects, [
+      ['Project', p => `<code>${esc(p.group)}/${esc(p.project)}</code>`],
+      ['Files', p => fmt(p.files.length)],
+      ['Blast radius', p => `<span class="pill ${{breaking:'critical',review:'warning',safe:'good'}[p.severity]}">
+        ${esc(p.severity)}</span> ${fmt(p.impacted)} node(s)`],
+      ['Exposure owners', p => p.owners.join(', ') || '<span class="muted">—</span>'],
+      ['Conformance', p => p.conformance_errors.length
+        ? `<span class="pill critical">${p.conformance_errors.length} error(s)</span>`
+        : `<span class="pill good">clean</span>`],
+      ['Ready', p => p.ready ? '<span class="pill good">yes</span>'
+        : `<span class="pill warning">${esc(p.missing.join(', '))}</span>`],
+    ], 'No project files touched.')}
+    ${r.platform_touched.length ? `<div class="card" style="border-color:var(--warning)">
+      <h2>Shared platform touched — lands in every project at once</h2>
+      ${r.platform_touched.slice(0, 25).map(f => `<div class="mono">${esc(f)}</div>`).join('')}
+      ${r.platform_touched.length > 25 ? `<div class="muted">…and ${r.platform_touched.length - 25} more</div>` : ''}
+    </div>` : ''}`;
+}
+
+async function loadPrs() {
+  const { reports } = await api('/api/prs');
+  STATE.prs = reports;
+  $('#prListBox').innerHTML = table(reports, [
+    ['PR', r => r.number ? `#${r.number}` : `<span class="muted">${esc(r.branch)}</span>`],
+    ['Verdict', r => `<span class="pill ${VERDICT_PILL[r.verdict]}">${esc(r.verdict)}</span>`],
+    ['Title', r => esc(r.title || '')],
+    ['Projects', r => r.projects.map(p => `<code>${esc(p.group)}/${esc(p.project)}</code>`).join(' ') || '—'],
+    ['Files', r => fmt(r.files.length)],
+    ['Generated', r => `<span class="muted mono">${esc((r.generated_at || '').slice(0, 19))}</span>`],
+  ], 'No reports yet — CI writes these on every pull request.');
+  if (reports.length) renderPrVerdict(reports[0]);
+}
+
+$('#prRefreshBtn').onclick = async () => {
+  $('#prVerdict').innerHTML = '<div class="empty">Computing blast radius…</div>';
+  const r = await fetch('/api/pr/refresh', { method: 'POST' }).then(x => x.json());
+  renderPrVerdict(r);
+  $('#prBody').textContent = r.markdown;
+  $('#prBody').classList.remove('empty');
+  await loadPrs();
+};
+
 async function loadAll() {
   const [tree, summary] = await Promise.all([api('/api/tree'), api('/api/summary')]);
   STATE.tree = tree;
   renderTree(tree);
   renderKpis(summary);
-  await Promise.all([loadOntology(), loadTopology(), loadObs()]);
-  if (STATE.group) { await loadProject(); await loadMdl(); }
+  await Promise.all([loadOntology(), loadTopology(), loadObs(), loadVendor(), loadPrs()]);
+  if (STATE.group) { await loadProject(); await loadMdl(); await loadStack(); }
 }
 
 loadAll().catch(e => { $('#kpis').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });

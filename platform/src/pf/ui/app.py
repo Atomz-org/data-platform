@@ -127,9 +127,12 @@ def ontology() -> dict[str, Any]:
             {"name": r.name, "pii": r.pii, "description": r.description}
             for r in o.roles.values()
         ],
+        # v1 exposed `o.edges`; v2 replaced it with named relations. Kept under
+        # the old key so an existing consumer is not broken by the rename.
         "edges": [
-            {"from": e.src, "to": e.dst, "type": e.type, "cardinality": e.cardinality}
-            for e in o.edges
+            {"from": r.domain, "to": r.range, "type": r.name,
+             "cardinality": r.cardinality}
+            for r in o.relations
         ],
     }
 
@@ -350,6 +353,163 @@ def card(group: str, project: str) -> dict[str, Any]:
     p = project_dir(group, project) / "kg" / "context_card.md"
     text = p.read_text() if p.exists() else ""
     return {"markdown": text, "chars": len(text), "est_tokens": max(1, len(text) // 4)}
+
+
+# ------------------------------------------------------------------ vendor --
+# The stack a project runs on, and where each layer came from. Written here
+# rather than derived, because "which upstream taught us to do X" is a judgement
+# about intent that no file-level heuristic recovers.
+STACK_LAYERS: list[dict[str, Any]] = [
+    {"layer": "ingest", "title": "Ingest (dlt)", "upstream": "dlthub-ai-workbench",
+     "toolkits": ["dlt-ingest", "dlt-explore", "dlt-quality", "dlt-performance"],
+     "artefacts": "src/<project>/sources/*.py", "node_kinds": ["Source", "Table"]},
+    {"layer": "warehouse", "title": "Warehouse (DuckDB)", "upstream": "duckdb-skills",
+     "toolkits": ["duckdb-ops"], "artefacts": "data/<project>.duckdb", "node_kinds": []},
+    {"layer": "transform", "title": "Transform (dbt)", "upstream": "dbt-agent-skills",
+     "toolkits": ["dbt-modeling", "dbt-testing", "dbt-govern", "dbt-migrate"],
+     "artefacts": "transform/models/**", "node_kinds": ["Model", "Test"]},
+    {"layer": "semantic", "title": "Semantic layer (MetricFlow)", "upstream": "dbt-agent-skills",
+     "toolkits": ["dbt-semantic"], "artefacts": "transform/models/semantic/**",
+     "node_kinds": ["Metric", "Dimension"]},
+    {"layer": "orchestrate", "title": "Orchestration (Dagster)", "upstream": "dagster-skills",
+     "toolkits": ["dagster-orchestrate", "python-standards"],
+     "artefacts": "src/<project>/definitions.py", "node_kinds": []},
+    {"layer": "ontology", "title": "Ontology & induction", "upstream": "context-ontology-accelerator",
+     "toolkits": ["dlt-ingest"], "artefacts": "contracts/annotations.yaml",
+     "node_kinds": ["Concept", "Property"]},
+    {"layer": "topology", "title": "Topology & policy", "upstream": "opentopology",
+     "toolkits": [], "artefacts": "governance/otop.json",
+     "node_kinds": ["Relation", "Policy", "Evidence"]},
+    {"layer": "mdl", "title": "MDL projection", "upstream": "wrenai",
+     "toolkits": [], "artefacts": "mdl/mdl.json", "node_kinds": []},
+    {"layer": "reporting", "title": "Reporting (Evidence)", "upstream": "evidence-bi",
+     "toolkits": ["evidence-bi"], "artefacts": "reporting/pages/**", "node_kinds": ["Exposure"]},
+    {"layer": "loops", "title": "Loops & governance", "upstream": "loop-engineering",
+     "toolkits": [], "artefacts": "STATE.md, loop-ledger.json", "node_kinds": []},
+]
+
+
+@app.get("/api/vendor")
+def vendor() -> dict[str, Any]:
+    """Every vendored upstream, what we took, and whether it has drifted."""
+    from pf.vendor.model import drift as vendor_drift, load_registry
+
+    root = root_dir()
+    ups = load_registry()
+    by_id = {d.upstream_id: d for d in vendor_drift(root)}
+    out = []
+    for u in ups:
+        d = by_id.get(u.id)
+        out.append({
+            "id": u.id, "name": u.name, "url": u.url, "path": u.path,
+            "branch": u.branch, "licence": u.licence, "role": u.role,
+            "why": u.why, "licence_review": u.licence_review,
+            "commit": (d.current if d else ""), "locked": (d.locked if d else ""),
+            "moved": bool(d and d.moved),
+            "needs_review": bool(d and d.needs_review),
+            "commits_behind": (d.commits_behind if d else 0),
+            "severity": (d.severity if d else "none"),
+            "adopted": [{"upstream": a.upstream, "kind": a.kind, "ours": a.ours,
+                         "note": a.note, "severity": a.severity} for a in u.adopted],
+            "declined": [{"what": x.what, "why": x.why} for x in u.declined],
+            "drift": [{"path": p.path, "kind": p.kind, "state": p.state,
+                       "severity": p.severity, "ours": p.ours}
+                      for p in (d.paths if d else [])],
+        })
+    return {"upstreams": out,
+            "totals": {"upstreams": len(ups),
+                       "adopted": sum(len(u.adopted) for u in ups),
+                       "declined": sum(len(u.declined) for u in ups),
+                       "needs_review": sum(1 for r in out if r["needs_review"]),
+                       "licence_review": sum(1 for r in out if r["licence_review"])}}
+
+
+@app.get("/api/vendor/stack")
+def vendor_stack(group: str, project: str) -> dict[str, Any]:
+    """One project's stack, layer by layer, each traced to its upstream.
+
+    This is the project-perspective view: a project owns no vendored code, but
+    every layer it runs on descends from one, and the counts come from that
+    project's own graph rather than from the platform.
+    """
+    from pf.vendor.model import drift as vendor_drift, load_registry
+
+    d = project_dir(group, project)
+    gp = d / "kg" / "graph.duckdb"
+    counts: dict[str, int] = {}
+    if gp.exists():
+        with open_graph(gp, read_only=True) as g:
+            counts = g.counts()
+
+    ups = {u.id: u for u in load_registry()}
+    drifting = {r.upstream_id for r in vendor_drift(root_dir()) if r.needs_review}
+
+    layers = []
+    for spec in STACK_LAYERS:
+        u = ups.get(spec["upstream"])
+        present = sum(counts.get(k, 0) for k in spec["node_kinds"])
+        layers.append({
+            **spec,
+            "upstream_name": u.name if u else spec["upstream"],
+            "upstream_url": u.url if u else "",
+            "licence": u.licence if u else "",
+            "licence_review": bool(u and u.needs_licence_review),
+            "adopted": len(u.adopted) if u else 0,
+            "declined": len(u.declined) if u else 0,
+            "needs_review": spec["upstream"] in drifting,
+            "nodes": present,
+        })
+    return {"group": group, "project": project, "layers": layers, "counts": counts}
+
+
+@app.get("/api/vendor/why")
+def vendor_why(path: str) -> dict[str, Any]:
+    from pf.vendor.model import why as lookup
+
+    hits = lookup(root_dir(), path)
+    return {"path": path, "hits": [
+        {"upstream": u.id, "name": u.name, "url": u.url, "kind": a.kind,
+         "upstream_path": a.upstream, "note": a.note, "ours": a.ours}
+        for u, a in hits]}
+
+
+@app.get("/api/otop")
+def otop(group: str = "", project: str = "") -> dict[str, Any]:
+    """The policy layer as an OpenTopology 0.2 manifest, with live evidence."""
+    from pf.projections.otop import build_manifest
+
+    d = project_dir(group, project) if group and project else None
+    return build_manifest(root_dir(), group, project, d)
+
+
+# --------------------------------------------------------------------- prs --
+@app.get("/api/prs")
+def prs() -> dict[str, Any]:
+    """Recorded PR reports, newest first.
+
+    Reads the same JSON that CI wrote, rather than recomputing. A dashboard that
+    recomputes will eventually disagree with the comment on the PR, and then
+    neither number is trusted.
+    """
+    from pf.pr import load_all
+
+    return {"reports": load_all(root_dir())}
+
+
+@app.post("/api/pr/refresh")
+def pr_refresh(number: int = 0, base: str = "") -> dict[str, Any]:
+    """Compute and record the report for the working tree. The one write here.
+
+    Exists so the local dashboard is useful before a PR is opened — same code
+    path CI runs, so what you see locally is what CI will post.
+    """
+    from pf.pr import build as build_pr, markdown as pr_markdown, save
+
+    r = build_pr(root_dir(), number, base)
+    save(root_dir(), r)
+    payload = r.to_dict()
+    payload["markdown"] = pr_markdown(r)
+    return payload
 
 
 def serve(host: str = "127.0.0.1", port: int = 8787) -> None:
