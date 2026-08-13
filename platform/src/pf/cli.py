@@ -29,7 +29,7 @@ from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
 from pf.runtime.staging import generate as generate_staging
 from pf.loops.audit import audit as loop_audit, project_readiness, recommended_level
-from pf.loops.gate import GateResult, check_paths, nodes_for, project_for
+from pf.loops.gate import GateResult, check_paths, nodes_for, project_for, tracked_denied
 from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
 from pf.scaffold.bootstrap import STEPS, bootstrap
@@ -343,6 +343,22 @@ def check(group: str = "", project: str = "",
         console.print("[yellow]no projects found[/]")
         raise typer.Exit(0)
 
+    # Before anything project-specific: does git agree with the gate about what
+    # is generated? When it does not, every later diff is polluted with files
+    # nobody edited, and a reviewer stops reading them.
+    tracked = tracked_denied(root())
+    if tracked:
+        console.print(f"[red]✗[/] tracked artefacts  {len(tracked)} file(s) git is "
+                      f"tracking that the gate calls generated")
+        for r in tracked[:8]:
+            console.print(f"    [red]{r.path}[/] [dim]({r.rule})[/]")
+        if len(tracked) > 8:
+            console.print(f"    [dim]…and {len(tracked) - 8} more[/]")
+        console.print("    [dim]git rm --cached <paths>, then add the pattern to "
+                      ".gitignore[/]")
+    else:
+        console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
+
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
     mark = "[red]✗[/]" if topo_errors else "[green]✓[/]"
@@ -351,7 +367,7 @@ def check(group: str = "", project: str = "",
     for i in topo:
         console.print(f"    {i}")
 
-    failed = bool(topo_errors)
+    failed = bool(topo_errors) or bool(tracked)
     for g, p, d in targets:
         issues = validate_project(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")

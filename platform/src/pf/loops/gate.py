@@ -8,6 +8,7 @@ agent read the constraints file.
 from __future__ import annotations
 
 import fnmatch
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -105,6 +106,37 @@ def check_paths(paths: list[str], root: Path, in_project: bool = False) -> list[
                                   f"a single run may touch at most {limit} files; "
                                   f"split the change"))
     return results
+
+
+def tracked_denied(root: Path) -> list[GateResult]:
+    """Files git is tracking that the gate calls generated.
+
+    The two policies were written independently and drifted, in the quietest
+    possible way. `.gitignore` had `kg/*.duckdb`; because that pattern contains a
+    slash, git anchors it to the repo root, so it never matched
+    `groups/*/projects/*/kg/graph.duckdb`. The gate denied those paths the whole
+    time — and git committed 1,622 of them, because nothing compared the two.
+
+    Checking is the fix. A denylist entry that git ignores is a rule; one that
+    git tracks is a rule with a counterexample sitting in the repository.
+    """
+    policy = load_policy(root)
+    deny = policy.get("denylist", []) or []
+    if not deny:
+        return []
+    proc = subprocess.run(["git", "ls-files"], cwd=str(root),
+                          capture_output=True, text=True)
+    if proc.returncode != 0:
+        return []
+    out: list[GateResult] = []
+    for path in proc.stdout.splitlines():
+        hit = _match(path, deny)
+        if hit:
+            out.append(GateResult(
+                "deny", f"tracked:{hit}", path,
+                "git is tracking a file the gate calls generated — "
+                "`git rm --cached` it and add the pattern to .gitignore"))
+    return out
 
 
 def project_for(path: str, root: Path) -> tuple[str, str, Path] | None:

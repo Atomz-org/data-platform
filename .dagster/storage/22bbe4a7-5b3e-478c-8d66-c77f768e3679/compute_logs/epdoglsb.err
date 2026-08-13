@@ -1,5 +1,0 @@
-2026-08-12 16:41:19 +0200 - dagster - DEBUG - __ASSET_JOB - 22bbe4a7-5b3e-478c-8d66-c77f768e3679 - 84514 - LOGS_CAPTURED - Capturing logs for process (pid: 84514).
-2026-08-12 16:41:19 +0200 - dagster - DEBUG - __ASSET_JOB - 22bbe4a7-5b3e-478c-8d66-c77f768e3679 - 84514 - acme_eu__charges - STEP_START - Started execution of step "acme_eu__charges".
-2026-08-12 16:41:19 +0200 - dagster - DEBUG - __ASSET_JOB - 22bbe4a7-5b3e-478c-8d66-c77f768e3679 - 84514 - acme_eu__charges - STEP_OUTPUT - Yielded output "result" of type "Nothing". (Type check passed).
-2026-08-12 16:41:19 +0200 - dagster - DEBUG - __ASSET_JOB - 22bbe4a7-5b3e-478c-8d66-c77f768e3679 - 84514 - acme_eu__charges - ASSET_MATERIALIZATION - Materialized value acme_eu charges.
-2026-08-12 16:41:19 +0200 - dagster - DEBUG - __ASSET_JOB - 22bbe4a7-5b3e-478c-8d66-c77f768e3679 - 84514 - acme_eu__charges - STEP_SUCCESS - Finished execution of step "acme_eu__charges" in 346ms.

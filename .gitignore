@@ -1,17 +1,31 @@
 .venv/
 __pycache__/
 *.pyc
-data/*.duckdb
-data/*.duckdb.wal
-**/target/
-**/logs/
-**/.duckdb-skills/
-**/.dlt/secrets.toml
-.env
-kg/*.duckdb
-.dagster/history/
-.dagster/storage/
 .DS_Store
 node_modules/
-data/pr/
+.env
+
+# Generated artefacts. These must stay in step with gate.yaml's denylist —
+# `pf check` fails if git is tracking anything the gate calls generated. They
+# drifted once: the patterns here were written without `**/`, which anchors them
+# to the repo root, so `groups/*/projects/*/kg/graph.duckdb` was never ignored
+# and 1,622 regenerable files ended up committed.
+**/target/
+**/logs/
 **/dbt_packages/
+**/.duckdb-skills/
+**/kg/*.duckdb
+**/kg/*.duckdb.wal
+**/kg/context_card.md
+**/data/*.duckdb
+**/data/*.duckdb.wal
+**/reporting/queries/metrics/
+data/pr/
+.dagster/history/
+.dagster/storage/
+.dagster/logs/
+.dagster/schedules/
+
+# Secrets
+**/.dlt/secrets.toml
+**/secrets.toml
