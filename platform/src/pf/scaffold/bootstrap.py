@@ -103,6 +103,24 @@ def _export_owl(root: Path, group: str, project: str) -> StepResult:
                       f"{s['classes']} classes, {s['object_properties']} object properties")
 
 
+def _vendor_docs(root: Path, group: str, project: str) -> StepResult:
+    """Regenerate the provenance docs from the registry.
+
+    Platform-level and idempotent, so it is written once rather than per project.
+    Generated for the same reason everything else here is: a hand-written page
+    beside a machine-read registry is two accounts of one fact, and one of them
+    goes quietly wrong.
+    """
+    from pf.kg.card import estimate_tokens
+    from pf.vendor.card import VENDOR_CARD_BUDGET, render_card, render_doc
+
+    render_doc(root)
+    card = render_card(root)
+    n = estimate_tokens(card.read_text())
+    status: Status = "ok" if n <= VENDOR_CARD_BUDGET else "failed"
+    return StepResult("vendor docs", status, f"card ~{n} / {VENDOR_CARD_BUDGET} tokens")
+
+
 def _export_otop(root: Path, group: str, project: str) -> StepResult:
     """The governance projection, with this project's evidence resolved live.
 
@@ -185,6 +203,8 @@ STEPS: list[Step] = [
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
     Step("otop manifest", "policy and evidence as an OpenTopology 0.2 graph; "
                           "validated against the vendored schema", _export_otop),
+    Step("vendor docs", "provenance stays generated, so it cannot drift from the "
+                        "registry the tooling reads", _vendor_docs),
     Step("reporting", "dashboards are a projection of the metrics, regenerated "
                       "rather than hand-maintained", _build_reporting),
     Step("dagster code location", "an unregistered project never runs",

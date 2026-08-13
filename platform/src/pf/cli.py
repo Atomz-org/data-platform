@@ -459,6 +459,15 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
         rows.append(("platform", "ROUTING.md", n, 400, "OK" if n <= 400 else "OVER"))
         over = over or n > 400
 
+    from pf.vendor.card import VENDOR_CARD_BUDGET
+
+    vcard = root() / "docs" / "VENDOR-CARD.md"
+    if vcard.exists():
+        n = _count(vcard.read_text(), exact)
+        rows.append(("platform", "VENDOR-CARD.md", n, VENDOR_CARD_BUDGET,
+                     "OK" if n <= VENDOR_CARD_BUDGET else "OVER"))
+        over = over or n > VENDOR_CARD_BUDGET
+
     t = Table("scope", "artefact", "tokens", "budget", "status", title="Always-on token budget")
     for r in rows:
         t.add_row(r[0], r[1], str(r[2]), str(r[3]), f"[green]{r[4]}[/]" if r[4] == "OK" else f"[red]{r[4]}[/]")
@@ -1114,6 +1123,21 @@ def cmd_vendor_approve(ids: list[str] = typer.Argument(None)) -> None:
     path, done = approve_lock(root(), list(ids) if ids else None)
     console.print(f"[green]✓[/] {path}")
     console.print(f"  reviewed: {', '.join(done)}")
+
+
+@vendor_app.command("docs")
+def cmd_vendor_docs() -> None:
+    """Regenerate docs/VENDOR.md and the token-budgeted docs/VENDOR-CARD.md."""
+    from pf.kg.card import estimate_tokens
+    from pf.vendor.card import VENDOR_CARD_BUDGET, render_card, render_doc
+
+    doc = render_doc(root())
+    card = render_card(root())
+    n = estimate_tokens(card.read_text())
+    console.print(f"[green]✓[/] {doc}  [dim]{len(doc.read_text().splitlines())} lines[/]")
+    colour = "green" if n <= VENDOR_CARD_BUDGET else "red"
+    console.print(f"[green]✓[/] {card}  [{colour}]~{n} / {VENDOR_CARD_BUDGET} tokens[/]")
+    raise typer.Exit(1 if n > VENDOR_CARD_BUDGET else 0)
 
 
 @vendor_app.command("verify")

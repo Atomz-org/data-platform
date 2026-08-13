@@ -81,6 +81,7 @@ class Upstream:
     branch: str
     licence: str
     role: str
+    summary: str = ""
     why: str = ""
     licence_review: str = ""
     adopted: list[Adoption] = field(default_factory=list)
@@ -101,7 +102,8 @@ def load_registry(path: Path | None = None) -> list[Upstream]:
         out.append(Upstream(
             id=u["id"], name=u["name"], url=u["url"], path=u["path"],
             branch=u.get("branch", "main"), licence=u.get("licence", "unknown"),
-            role=u.get("role", "reference"), why=(u.get("why") or "").strip(),
+            role=u.get("role", "reference"), summary=(u.get("summary") or "").strip(),
+            why=(u.get("why") or "").strip(),
             licence_review=(u.get("licence_review") or "").strip(),
             adopted=[Adoption(upstream=a["upstream"], kind=a.get("kind", "shape"),
                               ours=list(a.get("ours") or []),

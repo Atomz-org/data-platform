@@ -30,6 +30,7 @@ version: 1
 upstreams:
   # ---------------------------------------------------------------- ingest --
   - id: dlthub-ai-workbench
+    summary: "toolkit/skill layout, and the annotate-then-generate ingest flow"
     name: dltHub AI Workbench
     url: https://github.com/dlt-hub/dlthub-ai-workbench
     path: vendor/dlthub-ai-workbench
@@ -114,6 +115,7 @@ upstreams:
 
   # ------------------------------------------------------------------- dbt --
   - id: dbt-agent-skills
+    summary: "how an agent drives dbt — rewritten for dbt Core + DuckDB"
     name: dbt Agent Skills
     url: https://github.com/dbt-labs/dbt-agent-skills
     path: vendor/dbt-agent-skills
@@ -187,6 +189,7 @@ upstreams:
 
   # ---------------------------------------------------------------- duckdb --
   - id: duckdb-skills
+    summary: "driving DuckDB from an agent, read-only and truncated by policy"
     name: DuckDB Skills
     url: https://github.com/duckdb/duckdb-skills
     path: vendor/duckdb-skills
@@ -229,6 +232,7 @@ upstreams:
 
   # --------------------------------------------------------------- dagster --
   - id: dagster-skills
+    summary: "asset-first orchestration; @dbt_assets is what makes lineage cross dlt/dbt"
     name: Dagster Skills
     url: https://github.com/dagster-io/skills
     path: vendor/dagster-skills
@@ -255,6 +259,7 @@ upstreams:
 
   # ----------------------------------------------------------------- loops --
   - id: loop-engineering
+    summary: "loop governance: state, gate, budget, circuit breaker, autonomy ladder"
     name: Loop Engineering
     url: https://github.com/cobusgreyling/loop-engineering
     path: vendor/loop-engineering
@@ -331,6 +336,7 @@ upstreams:
 
   # -------------------------------------------------------------- evidence --
   - id: evidence-bi
+    summary: "BI as a projection of the semantic layer, not a second place metrics live"
     name: Evidence BI (dbt semantic layer edition)
     url: https://github.com/Atomz-org/Evidence-BI
     path: vendor/evidence-bi
@@ -371,6 +377,7 @@ upstreams:
 
   # -------------------------------------------------------------- ontology --
   - id: ontology-playground
+    summary: "what a business ontology actually looks like, and RDF/XML fidelity"
     name: Microsoft Ontology Playground
     url: https://github.com/microsoft/Ontology-Playground
     path: vendor/ontology-playground
@@ -407,6 +414,7 @@ upstreams:
 
   # -------------------------------------------------------------- topology --
   - id: opentopology
+    summary: "the traceability chain: intent → constraint → artifact → evidence"
     name: OpenTopology (otop-core)
     url: https://github.com/opentopology/opentopology
     path: vendor/opentopology
@@ -443,6 +451,7 @@ upstreams:
 
   # ------------------------------------------------------------------- MDL --
   - id: wrenai
+    summary: "MDL — the interchange format BI and text-to-SQL consume"
     name: WrenAI
     url: https://github.com/Canner/WrenAI
     path: vendor/wrenai
@@ -468,6 +477,7 @@ upstreams:
 
   # ------------------------------------------------------------- induction --
   - id: context-ontology-accelerator
+    summary: "Scan → Model → Serve induction, with a steward in the middle"
     name: AWS Context Ontology Accelerator
     url: https://github.com/aws/context-ontology-accelerator
     path: vendor/context-ontology-accelerator

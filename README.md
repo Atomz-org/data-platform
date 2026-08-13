@@ -5,9 +5,10 @@ per company. Sister companies run in parallel; Claude loads exactly one project'
 context per session.
 
 ```
-platform/          engines, ontology, knowledge graph, MCP, 13 skill toolkits   ← you never edit
+platform/          engines, ontology, knowledge graph, MCP, 14 skill toolkits   ← you never edit
 groups/<g>/        a family of sister companies: ontology instance, shared macros
   projects/<p>/    one legal entity: sources, models, metrics                    ← you only edit here
+vendor/            10 upstreams pinned as submodules, with recorded provenance   ← you never edit
 data/_platform.duckdb   tracking DB (agent runs, spend, monitors, impact history)
 ```
 
@@ -33,6 +34,8 @@ uv run pf status                   # every group and project
 | `pf check` | Ontology conformance across every project |
 | `pf tokens` | Always-on token budget; fails if a card is over |
 | `pf kg build/card/search/neighbors` | Knowledge graph operations |
+| `pf vendor list/sync/drift/verify/why` | Vendored upstreams and their provenance |
+| `pf pr report` | Blast radius, conformance and drift for the current change |
 | `pf ui` / `pf mcp` | Dashboard / MCP server |
 
 ## What you write vs never touch
@@ -128,7 +131,57 @@ an agent must remember:
 
 ## Skill toolkits
 
-13 plugins in `platform/toolkits`, referenced by every project and copied into
+14 plugins in `platform/toolkits`, referenced by every project and copied into
 none. Ported from dltHub AI Workbench, dbt-labs/dbt-agent-skills,
 duckdb/duckdb-skills and dagster-io/skills, adapted for dlt Core / dbt Core.
 `ROUTING.md` resolves their overlaps: graph → metrics → ad-hoc SQL, in that order.
+
+## Vendored upstreams
+
+Ten upstreams are pinned as branch-tracked submodules under `vendor/`, and every
+borrowing is written down as a **path pair** — one file upstream, one or more of
+ours — in `platform/src/pf/vendor/registry.yaml`. 53 adoptions, 22 explicit
+declines. Full account: [`docs/VENDOR.md`](docs/VENDOR.md); the agent-loadable
+index is [`docs/VENDOR-CARD.md`](docs/VENDOR-CARD.md) (~420 tokens). Both are
+generated from the registry.
+
+| Command | What it does |
+|---|---|
+| `pf vendor list [-v]` | Every upstream, licence, pinned commit, reviewed state |
+| `pf vendor sync` | Fetch each tracking branch, then report what it means for us |
+| `pf vendor drift` | What moved since a human last looked — local, never fetches |
+| `pf vendor approve <id>` | Record the current checkout as reviewed |
+| `pf vendor verify` | Declared paths still exist; schema contracts still hold |
+| `pf vendor why <file>` | Where a file of ours came from, and what we changed |
+| `pf vendor licences` | Licences, and the two that constrain how this ships |
+
+**`vendor.lock.json` is not the submodule pointer.** The gitlink records which
+commit is checked out; the lock records which commit a person *reviewed*, plus a
+git OID per adopted path. Those diverge the moment someone runs
+`--remote` without reading anything, and that gap is what makes drift observable.
+An upstream that moved forty commits without touching anything we adopted is a
+free fast-forward; one that touched `core/wren-mdl/mdl.schema.json` names
+`projections/mdl.py` and stops.
+
+Three of the pins are **executable contracts**, checked by `pf vendor verify`:
+
+| Vendored file | Checks |
+|---|---|
+| `opentopology/schemas/otop-core-v0.2.schema.json` | `pf semantic otop` output |
+| `wrenai/core/wren-mdl/mdl.schema.json` | `pf semantic mdl` output |
+| `loop-engineering/patterns/registry.schema.json` | field parity with `LoopSpec` |
+
+Sync runs weekly in CI and opens a PR; it never approves, because approval means
+a human read the diff.
+
+## Pull requests
+
+`pf pr report` assembles what a reviewer would otherwise rebuild by hand: per
+project, the blast radius with exposure owners, conformance and readiness;
+repo-wide, path-gate verdicts and vendor drift; then one verdict — **block /
+review / clear**. `clear` means nothing downstream breaks and no gate fired. It
+is not an approval.
+
+The report is written to `data/pr/<n>.json` and posted as a single PR comment
+that is edited in place. `pf ui` reads the same JSON, so the dashboard shows the
+verdict CI computed rather than a second opinion.
