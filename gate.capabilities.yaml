@@ -5,5 +5,11 @@ denylist:
 - '**/reporting/.evidence/**'
 - '**/reporting/build/**'
 - '**/reporting/node_modules/**'
+- '**/transform/recce_state.json'
+- '**/transform/recce_summary.md'
+- '**/transform/target-base/**'
+- '**/mdl/mdl.json'
+- '**/mdl/connection.json'
 impact_required:
 - '**/reporting/pages/**'
+- '**/transform/recce.yml'
