@@ -750,6 +750,156 @@ sem_app = typer.Typer(help="Ontology, topology and their projections.")
 app.add_typer(sem_app, name="semantic")
 
 
+@sem_app.command("scan")
+def cmd_onto_scan(group: str, project: str,
+                  schema: str = typer.Option("", help="warehouse schema (default: the dlt dataset)"),
+                  source: str = typer.Option("", help="label for the proposal")) -> None:
+    """Scan what a source actually landed and induce an ontology proposal."""
+    from pf.ontology import induct, proposal
+    from pf.ontology.model import load_group_ontology
+
+    d = pdir(group, project)
+    wh = d / "data" / f"{project.replace('-', '_')}.duckdb"
+    if not wh.exists():
+        console.print(f"[red]no warehouse at {wh}[/] — run `pf seed {group} {project}` first")
+        raise typer.Exit(1)
+
+    schemas = [schema] if schema else _dlt_schemas(wh)
+    if not schemas:
+        console.print("[yellow]no source schemas found[/]")
+        raise typer.Exit(1)
+
+    tables = []
+    for s in schemas:
+        tables.extend(induct.scan(wh, s))
+    if not tables:
+        console.print("[yellow]nothing to scan[/]")
+        raise typer.Exit(1)
+
+    onto = load_group_ontology(root(), group)
+    axioms = induct.induce(tables, set(onto.classes))
+    p = proposal.create(root(), group, project, source or schemas[0], axioms)
+
+    t = Table("kind", "proposed", "pre-accepted")
+    for kind in ("class", "identity", "property", "relation"):
+        total = sum(1 for a in p.axioms if a["kind"] == kind)
+        acc = sum(1 for a in p.axioms if a["kind"] == kind and a["accept"])
+        t.add_row(kind, str(total), str(acc))
+    console.print(t)
+    console.print(f"[green]✓[/] proposal [bold]{p.pid}[/] "
+                  f"({len(tables)} table(s) scanned across {', '.join(schemas)})")
+    console.print(f"  [dim]{proposal.path_for(root(), group, p.pid)}[/]")
+    console.print(f"  Nothing is in effect yet. Review, edit, then approve:")
+    console.print(f"    [cyan]pf semantic review {group} {p.pid}[/]")
+    console.print(f"    [cyan]pf semantic approve {group} {p.pid}[/]")
+
+
+def _dlt_schemas(warehouse: Path) -> list[str]:
+    """Schemas that look like dlt datasets, not dbt output."""
+    import duckdb
+
+    con = duckdb.connect(str(warehouse), read_only=True)
+    try:
+        rows = con.execute(
+            "SELECT DISTINCT table_schema FROM information_schema.tables "
+            "WHERE table_schema NOT IN ('information_schema','pg_catalog','main') "
+            "AND table_schema NOT LIKE 'main_%' "
+            # dlt writes a parallel <dataset>_staging schema during merge loads.
+            # Scanning it duplicates every class with an identical, meaningless twin.
+            "AND table_schema NOT LIKE '%_staging' ORDER BY 1").fetchall()
+    finally:
+        con.close()
+    return [r[0] for r in rows]
+
+
+@sem_app.command("proposals")
+def cmd_onto_proposals(group: str) -> None:
+    """Every ontology proposal for a group."""
+    from pf.ontology import proposal
+
+    items = proposal.listing(root(), group)
+    if not items:
+        console.print("[yellow]none[/] — run `pf semantic scan <group> <project>`")
+        return
+    t = Table("id", "status", "source", "axioms", "accepted", "approved by")
+    for p in items:
+        t.add_row(p.pid, p.status, p.source, str(len(p.axioms)),
+                  str(len(p.accepted)), p.approved_by or "—")
+    console.print(t)
+
+
+@sem_app.command("review")
+def cmd_onto_review(group: str, pid: str, show: str = typer.Option(
+        "accepted", help="accepted | all | rejected")) -> None:
+    """What a proposal would change, and what it unlocks."""
+    from pf.ontology import proposal
+
+    p = proposal.read(root(), group, pid)
+    d = proposal.diff_against(root(), group, p)
+
+    console.print(f"[bold]{p.pid}[/]  status={p.status}  source={p.source}  "
+                  f"{len(p.accepted)}/{len(p.axioms)} accepted")
+    console.print()
+    for label, items in (("new classes", d["new_classes"]),
+                         ("reused existing classes", d["reused_classes"]),
+                         ("new properties", d["new_properties"]),
+                         ("new relations", d["new_relations"])):
+        if items:
+            console.print(f"  [bold]{label}[/] ({len(items)})")
+            for i in items[:12]:
+                console.print(f"    • {i}")
+            if len(items) > 12:
+                console.print(f"    … {len(items) - 12} more")
+    console.print()
+
+    rows = p.accepted if show == "accepted" else (
+        p.axioms if show == "all" else [a for a in p.axioms if not a.get("accept")])
+    t = Table("✓", "kind", "subject", "conf", "evidence", "rationale")
+    for a in rows[:40]:
+        t.add_row("✓" if a.get("accept") else "·", a["kind"], a["subject"],
+                  a.get("confidence", ""), (a.get("evidence") or "")[:44],
+                  (a.get("rationale") or "")[:60])
+    console.print(t)
+    if len(rows) > 40:
+        console.print(f"  [dim]… {len(rows) - 40} more — read the YAML[/]")
+    console.print(f"\n  Edit: [cyan]{proposal.path_for(root(), group, pid)}[/]")
+    console.print(f"  Then: [cyan]pf semantic approve {group} {pid}[/]")
+
+
+@sem_app.command("approve")
+def cmd_onto_approve(group: str, pid: str,
+                     by: str = typer.Option("", help="steward name for the audit trail"),
+                     yes: bool = typer.Option(False, "--yes", help="skip confirmation")) -> None:
+    """Merge accepted axioms into the group extension, then rebuild everything."""
+    from pf.ontology import proposal
+
+    p = proposal.read(root(), group, pid)
+    d = proposal.diff_against(root(), group, p)
+    console.print(f"About to add: {len(d['new_classes'])} class(es), "
+                  f"{len(d['new_properties'])} property(ies), "
+                  f"{len(d['new_relations'])} relation(s) to "
+                  f"[bold]groups/{group}/ontology/extension.yaml[/]")
+    if not yes and not typer.confirm("Approve?"):
+        console.print("[yellow]not approved[/]")
+        raise typer.Exit(1)
+
+    try:
+        p, ext_path, applied = proposal.approve(root(), group, pid, by=by)
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
+    console.print(f"[green]✓[/] approved by {p.approved_by} at {p.approved_at}")
+    console.print(f"  {ext_path}: " + ", ".join(f"{v} {k}" for k, v in applied.items() if v))
+
+    # An approved term that has not reached the graph is not yet usable by dbt,
+    # Wren, the BI layer or an agent. Propagation is part of approval.
+    for g, proj, _ in all_projects():
+        if g == group:
+            console.print(f"  [dim]propagating → {g}/{proj}[/]")
+            _print_bootstrap(bootstrap(root(), g, proj))
+
+
 @sem_app.command("topology")
 def cmd_topology() -> None:
     """The named relations between ontology classes."""

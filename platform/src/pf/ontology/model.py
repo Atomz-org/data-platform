@@ -300,5 +300,65 @@ def load_ontology(directory: str | Path | None = None) -> Ontology:
     )
 
 
+def load_group_ontology(root: str | Path, group: str) -> Ontology:
+    """Platform ontology with a group's extension merged over it.
+
+    Three layers, and the separation is what keeps companies independent:
+
+        platform   universal vocabulary — stable, shared, rarely changes
+        group      this family's own classes and relations — extension.yaml
+        project    physical bindings — contracts/annotations.yaml
+
+    A class a single company invented does not belong in the platform ontology;
+    putting it there makes every other company inherit a term that means nothing
+    to them. The extension is where induced, steward-approved additions land, and
+    promoting one to the platform is a separate, deliberate act.
+    """
+    base = load_ontology()
+    ext_path = Path(root) / "groups" / group / "ontology" / "extension.yaml"
+    if not ext_path.exists():
+        return base
+
+    ext = yaml.safe_load(ext_path.read_text()) or {}
+
+    classes = dict(base.classes)
+    for name, spec in (ext.get("classes") or {}).items():
+        spec = spec or {}
+        existing = classes.get(name)
+        # A group may add properties to a platform class without redefining it.
+        props = dict(existing.properties) if existing else {}
+        props.update(_parse_properties(spec))
+        classes[name] = OntologyClass(
+            name=name,
+            label=spec.get("label", existing.label if existing else name),
+            description=spec.get("description", existing.description if existing else ""),
+            parent=spec.get("parent", existing.parent if existing else None),
+            abstract=bool(spec.get("abstract", existing.abstract if existing else False)),
+            identity=spec.get("identity", existing.identity if existing else None),
+            properties=props,
+        )
+
+    roles = dict(base.roles)
+    for name, spec in (ext.get("roles") or {}).items():
+        spec = spec or {}
+        roles[name] = Role(name=name, datatype=spec.get("datatype", "string"),
+                           description=spec.get("description", ""),
+                           pii=bool(spec.get("pii", False)))
+
+    relations = list(base.relations)
+    by_name = {r.name for r in relations}
+    for r in (ext.get("relations") or []):
+        if r["name"] in by_name:
+            relations = [x for x in relations if x.name != r["name"]]
+        relations.append(Relation(
+            name=r["name"], domain=r["domain"], range=r["range"],
+            cardinality=r["cardinality"], label=r.get("label", ""),
+            inverse=r.get("inverse", ""), description=r.get("description", "")))
+
+    return Ontology(version=base.version, namespace=base.namespace, prefix=base.prefix,
+                    classes=classes, roles=roles, relations=relations,
+                    policies=base.policies, evidence_kinds=base.evidence_kinds)
+
+
 # v1 compatibility: callers importing TopologyEdge get the Relation type.
 TopologyEdge = Relation

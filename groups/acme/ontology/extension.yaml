@@ -1,0 +1,129 @@
+# Group ontology extension — approved additions only.
+#
+# Layers over the platform ontology; never replaces it. Terms here are
+# specific to this group, so another company never inherits a word that
+# means nothing to them. Written by `pf ontology approve`; hand edits are
+# expected and preserved.
+
+classes:
+  Payment:
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      customer_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      subscription_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      amount:
+        datatype: float
+        role: money_amount
+        required: true
+      currency:
+        datatype: string
+        role: currency_code
+        required: true
+      status:
+        datatype: string
+        role: status_enum
+        required: true
+      created:
+        datatype: timestamp
+        role: event_time
+        required: true
+      receipt_email:
+        datatype: string
+        role: pii_email
+        required: true
+  Customer:
+    identity: id
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      organization_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      email:
+        datatype: string
+        role: pii_email
+        required: true
+      name:
+        datatype: string
+        role: pii_name
+        required: true
+      segment:
+        datatype: string
+        role: status_enum
+        required: true
+      created:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Subscription:
+    identity: id
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      customer_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      plan:
+        datatype: string
+        role: status_enum
+        required: true
+      status:
+        datatype: string
+        role: status_enum
+        required: true
+      mrr_amount:
+        datatype: float
+        role: money_amount
+        required: true
+      currency:
+        datatype: string
+        role: currency_code
+        required: true
+      started_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      canceled_at:
+        datatype: timestamp
+        role: event_time
+relations:
+- name: customer_pays_charge
+  domain: Payment
+  range: Customer
+  cardinality: MANY_TO_ONE
+  label: pays
+  inverse: paid by
+  description: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+- name: subscription_settles_charge
+  domain: Payment
+  range: Subscription
+  cardinality: MANY_TO_ONE
+  label: settles
+  inverse: settled by
+  description: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+- name: customer_holds_charge_subscription
+  domain: Subscription
+  range: Customer
+  cardinality: MANY_TO_ONE
+  label: holds
+  inverse: held by
+  description: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+version: 1

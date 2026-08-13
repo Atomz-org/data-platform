@@ -22,3 +22,16 @@ Then, always:
 - Commit the connector back to `platform/toolkits/dlt-ingest/registry/<name>.yaml`
   so the next company inherits it.
 - Never put credentials in the source file. Use `secrets_update_fragment`.
+
+## After the first load: propose the ontology
+
+A source that has landed but is not in the vocabulary is invisible to dbt, Wren,
+the BI layer and every agent. Close that gap immediately:
+
+```bash
+pf seed <group> <project>                        # land the data
+pf semantic scan <group> <project> --source <n>  # induce a proposal
+```
+
+Then use the `steward-ontology` skill. The scan proposes; a human decides. Do not
+approve your own proposal without reading the evidence on each axiom.

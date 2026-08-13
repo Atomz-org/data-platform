@@ -1,0 +1,362 @@
+# ONTOLOGY PROPOSAL — DRAFT
+#
+# Induced from stripe in acme/acme-us on 2026-08-13T00:03:30+00:00.
+# Nothing here is in effect until `pf ontology approve acme 2026-08-13-stripe`.
+#
+# HOW TO REVIEW
+#   * Every axiom carries `evidence` (what was observed) and `rationale` (why the
+#     rule fired). Disagree with the reasoning, not just the conclusion.
+#   * Set `accept: true` on what you want. Anything left false is dropped.
+#   * Edit freely — rename a class, set a `parent`, give a relation its real
+#     business verb. Your edits are the point; this file is a draft, not a result.
+#   * `refers_to` relation names are placeholders. A relation called
+#     `payment_refers_to_customer` tells a reader nothing; `customer_pays_payment`
+#     tells them everything.
+#
+# WHAT APPROVAL DOES
+#   Merges accepted axioms into groups/acme/ontology/extension.yaml, then
+#   rebuilds the knowledge graph, the MDL manifest and the reporting layer for
+#   every project in this group. The platform ontology is NOT modified — promoting
+#   a term to the platform is a separate, deliberate act.
+
+id: 2026-08-13-stripe
+group: acme
+project: acme-us
+source: stripe
+created: '2026-08-13T00:03:30+00:00'
+status: draft
+axioms:
+- kind: class
+  subject: Charge
+  action: add
+  table: charges
+  rows: 1800
+  identity: id
+  parent: null
+  confidence: high
+  evidence: table `stripe.charges` with 1,800 rows
+  rationale: "A table at a consistent grain proposes an entity. Set `parent` if it specialises an existing\
+    \ class \u2014 that is a judgement only you can make."
+  accept: true
+- kind: identity
+  subject: Charge
+  property: id
+  conflicts_with_existing: false
+  confidence: high
+  evidence: '`id` is unique and not-null across 1,800 rows'
+  rationale: Without an identity no join condition can be derived, so every BI and MDL projection of this
+    class would be a guess.
+  accept: true
+- kind: property
+  subject: Charge.id
+  datatype: string
+  role: natural_key
+  required: true
+  distinct: 1800
+  confidence: high
+  evidence: unique=True, not_null=True, rows=1800
+  rationale: 'Unique and not-null across every row: this identifies the entity.'
+  accept: true
+- kind: property
+  subject: Charge.customer_id
+  datatype: string
+  role: foreign_key
+  required: true
+  distinct: 120
+  confidence: high
+  evidence: name ends in _id, distinct=120 of 1800 rows
+  rationale: Repeats across rows, so it points at another entity rather than identifying this one.
+  accept: true
+- kind: property
+  subject: Charge.subscription_id
+  datatype: string
+  role: foreign_key
+  required: true
+  distinct: 140
+  confidence: high
+  evidence: name ends in _id, distinct=140 of 1800 rows
+  rationale: Repeats across rows, so it points at another entity rather than identifying this one.
+  accept: true
+- kind: property
+  subject: Charge.amount
+  datatype: float
+  role: money_amount
+  required: true
+  distinct: 1716
+  confidence: high
+  evidence: "name matches /amount|price|total|\u2026/ and type DOUBLE"
+  rationale: Numeric and named for money. Requires a sibling currency_code.
+  accept: true
+- kind: property
+  subject: Charge.currency
+  datatype: string
+  role: currency_code
+  required: true
+  distinct: 2
+  confidence: high
+  evidence: name matches /currency/
+  rationale: Qualifies a monetary amount; the money policy requires the pair.
+  accept: true
+- kind: property
+  subject: Charge.status
+  datatype: string
+  role: status_enum
+  required: true
+  distinct: 6
+  confidence: high
+  evidence: 6 distinct values over 1800 rows
+  rationale: 'Low cardinality and named for a lifecycle state: a dimension, and a candidate for category-drift
+    monitoring.'
+  accept: true
+- kind: property
+  subject: Charge.created
+  datatype: timestamp
+  role: event_time
+  required: true
+  distinct: 1668
+  confidence: high
+  evidence: type TIMESTAMP WITH TIME ZONE
+  rationale: 'Temporal column: candidate aggregation time dimension for metrics.'
+  accept: true
+- kind: property
+  subject: Charge.receipt_email
+  datatype: string
+  role: pii_email
+  required: true
+  distinct: 120
+  confidence: medium
+  evidence: column name matches /(^|_)(email|e_?mail)(_|$)/
+  rationale: "Name suggests personal data. Proposed, never auto-applied \u2014 a wrong PII tag carries\
+    \ authority it did not earn, and a missing one fails the mart policy loudly."
+  accept: false
+- kind: class
+  subject: Customer
+  action: reuse
+  table: customers
+  confidence: high
+  evidence: '`Customer` already exists in the ontology'
+  rationale: Reusing a term rather than minting a synonym is the whole point of a shared vocabulary. Verify
+    the meaning matches before approving.
+  accept: true
+- kind: identity
+  subject: Customer
+  property: id
+  conflicts_with_existing: true
+  confidence: low
+  evidence: '`id` is unique and not-null across 120 rows'
+  rationale: "This class ALREADY has a curated identity. The scanned column is the raw source name; the\
+    \ curated one is the modelled warehouse name. Accepting this replaces a deliberate decision with a\
+    \ source detail \u2014 usually wrong. Set `override: true` only if you mean it."
+  accept: false
+- kind: property
+  subject: Customer.id
+  datatype: string
+  role: natural_key
+  required: true
+  distinct: 120
+  confidence: high
+  evidence: unique=True, not_null=True, rows=120
+  rationale: 'Unique and not-null across every row: this identifies the entity.'
+  accept: true
+- kind: property
+  subject: Customer.organization_id
+  datatype: string
+  role: foreign_key
+  required: true
+  distinct: 39
+  confidence: high
+  evidence: name ends in _id, distinct=39 of 120 rows
+  rationale: Repeats across rows, so it points at another entity rather than identifying this one.
+  accept: true
+- kind: property
+  subject: Customer.email
+  datatype: string
+  role: pii_email
+  required: true
+  distinct: 120
+  confidence: medium
+  evidence: column name matches /(^|_)(email|e_?mail)(_|$)/
+  rationale: "Name suggests personal data. Proposed, never auto-applied \u2014 a wrong PII tag carries\
+    \ authority it did not earn, and a missing one fails the mart policy loudly."
+  accept: false
+- kind: property
+  subject: Customer.name
+  datatype: string
+  role: free_text
+  required: true
+  distinct: 120
+  confidence: low
+  evidence: string with high cardinality
+  rationale: Defaulted to free text; never becomes a dimension.
+  accept: false
+- kind: property
+  subject: Customer.country
+  datatype: string
+  role: geo_country
+  required: true
+  distinct: 2
+  confidence: medium
+  evidence: name matches /country/
+  rationale: Geographic dimension.
+  accept: false
+- kind: property
+  subject: Customer.segment
+  datatype: string
+  role: status_enum
+  required: true
+  distinct: 3
+  confidence: high
+  evidence: 3 distinct values over 120 rows
+  rationale: 'Low cardinality and named for a lifecycle state: a dimension, and a candidate for category-drift
+    monitoring.'
+  accept: true
+- kind: property
+  subject: Customer.created
+  datatype: timestamp
+  role: event_time
+  required: true
+  distinct: 101
+  confidence: high
+  evidence: type TIMESTAMP WITH TIME ZONE
+  rationale: 'Temporal column: candidate aggregation time dimension for metrics.'
+  accept: true
+- kind: class
+  subject: Subscription
+  action: reuse
+  table: subscriptions
+  confidence: high
+  evidence: '`Subscription` already exists in the ontology'
+  rationale: Reusing a term rather than minting a synonym is the whole point of a shared vocabulary. Verify
+    the meaning matches before approving.
+  accept: true
+- kind: identity
+  subject: Subscription
+  property: id
+  conflicts_with_existing: true
+  confidence: low
+  evidence: '`id` is unique and not-null across 140 rows'
+  rationale: "This class ALREADY has a curated identity. The scanned column is the raw source name; the\
+    \ curated one is the modelled warehouse name. Accepting this replaces a deliberate decision with a\
+    \ source detail \u2014 usually wrong. Set `override: true` only if you mean it."
+  accept: false
+- kind: property
+  subject: Subscription.id
+  datatype: string
+  role: natural_key
+  required: true
+  distinct: 140
+  confidence: high
+  evidence: unique=True, not_null=True, rows=140
+  rationale: 'Unique and not-null across every row: this identifies the entity.'
+  accept: true
+- kind: property
+  subject: Subscription.customer_id
+  datatype: string
+  role: foreign_key
+  required: true
+  distinct: 80
+  confidence: high
+  evidence: name ends in _id, distinct=80 of 140 rows
+  rationale: Repeats across rows, so it points at another entity rather than identifying this one.
+  accept: true
+- kind: property
+  subject: Subscription.plan
+  datatype: string
+  role: status_enum
+  required: true
+  distinct: 3
+  confidence: high
+  evidence: 3 distinct values over 140 rows
+  rationale: 'Low cardinality and named for a lifecycle state: a dimension, and a candidate for category-drift
+    monitoring.'
+  accept: true
+- kind: property
+  subject: Subscription.status
+  datatype: string
+  role: status_enum
+  required: true
+  distinct: 2
+  confidence: high
+  evidence: 2 distinct values over 140 rows
+  rationale: 'Low cardinality and named for a lifecycle state: a dimension, and a candidate for category-drift
+    monitoring.'
+  accept: true
+- kind: property
+  subject: Subscription.mrr_amount
+  datatype: float
+  role: money_amount
+  required: true
+  distinct: 140
+  confidence: high
+  evidence: "name matches /amount|price|total|\u2026/ and type DOUBLE"
+  rationale: Numeric and named for money. Requires a sibling currency_code.
+  accept: true
+- kind: property
+  subject: Subscription.currency
+  datatype: string
+  role: currency_code
+  required: true
+  distinct: 1
+  confidence: high
+  evidence: name matches /currency/
+  rationale: Qualifies a monetary amount; the money policy requires the pair.
+  accept: true
+- kind: property
+  subject: Subscription.started_at
+  datatype: timestamp
+  role: event_time
+  required: true
+  distinct: 118
+  confidence: high
+  evidence: type TIMESTAMP WITH TIME ZONE
+  rationale: 'Temporal column: candidate aggregation time dimension for metrics.'
+  accept: true
+- kind: property
+  subject: Subscription.canceled_at
+  datatype: timestamp
+  role: event_time
+  required: false
+  distinct: 29
+  confidence: high
+  evidence: type TIMESTAMP WITH TIME ZONE
+  rationale: 'Temporal column: candidate aggregation time dimension for metrics.'
+  accept: true
+- kind: relation
+  subject: charge_refers_to_customer
+  domain: Charge
+  range: Customer
+  cardinality: MANY_TO_ONE
+  via: customer_id
+  label: refers to customer
+  inverse: has charge
+  confidence: high
+  evidence: '`customer_id` has 120 distinct values over 1,800 rows'
+  rationale: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+  accept: false
+- kind: relation
+  subject: charge_refers_to_subscription
+  domain: Charge
+  range: Subscription
+  cardinality: MANY_TO_ONE
+  via: subscription_id
+  label: refers to subscription
+  inverse: has charge
+  confidence: high
+  evidence: '`subscription_id` has 140 distinct values over 1,800 rows'
+  rationale: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+  accept: false
+- kind: relation
+  subject: subscription_refers_to_customer
+  domain: Subscription
+  range: Customer
+  cardinality: MANY_TO_ONE
+  via: customer_id
+  label: refers to customer
+  inverse: has subscription
+  confidence: high
+  evidence: '`customer_id` has 80 distinct values over 140 rows'
+  rationale: "Foreign key resolves to a scanned entity. Rename the relation to the business verb \u2014\
+    \ `places`, `settles`, `holds` \u2014 before approving; `refers_to` is a placeholder, not a meaning."
+  accept: false
