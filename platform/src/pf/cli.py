@@ -40,6 +40,15 @@ kg_app = typer.Typer(help="Knowledge graph operations.")
 app.add_typer(kg_app, name="kg")
 console = Console()
 
+# A tool's scaffold-time half *is* a capability, so it is merged into the same
+# registry `pf new-project --with` and `pf capability-add` read. One scaffolder,
+# one gate merge — a tool is not a second way to write files into a project.
+# Done here rather than in pf.capabilities to keep that module free of any
+# dependency on the tool layer.
+from pf.tools import register_capabilities as _register_tool_capabilities  # noqa: E402
+
+_register_tool_capabilities()
+
 
 def root() -> Path:
     return obs.repo_root()
@@ -1303,6 +1312,157 @@ def mcp() -> None:
     """Run the MCP server over stdio."""
     from pf.mcp.server import main
     main()
+
+
+# ------------------------------------------------------------------ tools --
+# Tools are capabilities that also *run*. The sub-app below knows about tools in
+# general and about no tool in particular: every row comes from the registry, so
+# a tool installed from outside this repo appears here without an edit.
+tool_app = typer.Typer(help="Pluggable tools: dbt review, BI, whatever is installed.")
+app.add_typer(tool_app, name="tool")
+
+
+@tool_app.command("list")
+def cmd_tool_list(group: str = typer.Argument("", help="show enablement for a project"),
+                  project: str = typer.Argument("")) -> None:
+    """Every registered tool, and where it is enabled."""
+    from pf.tools import discover, readiness
+
+    found, errors = discover()
+    if group and project:
+        rows = readiness(root(), group, project)
+        t = Table("tool", "enabled", "from", "installed", "ready", "blockers",
+                  title=f"tools · {group}/{project}")
+        for r in rows:
+            t.add_row(
+                r["name"],
+                "[green]yes[/]" if r["enabled"] else "[dim]no[/]",
+                r["source"] if r["enabled"] else "—",
+                "[green]yes[/]" if r["installed"] else f"[yellow]no[/]",
+                "[green]✓[/]" if r["ready"] else "[dim]·[/]",
+                "; ".join(r["blockers"]) or (r["hint"] if not r["installed"] else ""),
+            )
+        console.print(t)
+    else:
+        t = Table("tool", "scope", "installed", "surface", "description")
+        for name, tool in sorted(found.items()):
+            t.add_row(name, ",".join(sorted(tool.scope)),
+                      "[green]yes[/]" if tool.installed else "[yellow]no[/]",
+                      tool.surface.url() if tool.surface else "—", tool.summary)
+        console.print(t)
+    for e in errors:
+        console.print(f"  [red]✗[/] {e}")
+    console.print("[dim]Adding one is a `TOOL` object plus an entry in "
+                  "pf.tools.registry.BUILTIN_MODULES — or a `pf.tools` entry point "
+                  "in any installed package, which needs no edit here.[/]")
+
+
+@tool_app.command("enable")
+def cmd_tool_enable(tool: str, group: str,
+                    project: str = typer.Argument("", help="omit to enable for the whole group"),
+                    scaffold: bool = typer.Option(True, help="apply the capability and bootstrap")) -> None:
+    """Turn a tool on for a group (every sister) or one project."""
+    from pf.tools import get as get_tool, write as write_tool_config
+    from pf.tools.spec import InvalidTool
+
+    try:
+        t = get_tool(tool)
+    except InvalidTool as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
+    level = "project" if project else "group"
+    if not t.supports(level):
+        console.print(f"[red]{tool} cannot be enabled at {level} level[/] "
+                      f"(scope: {', '.join(sorted(t.scope))})")
+        raise typer.Exit(1)
+
+    path = write_tool_config(root(), group, project, tool, on=True)
+    console.print(f"[green]✓[/] {tool} enabled for "
+                  f"[bold]{group}{'/' + project if project else ' (all sisters)'}[/]")
+    console.print(f"  [dim]{path}[/]")
+
+    if not scaffold:
+        return
+    # The capability half — files, settings, gate rules — goes through exactly the
+    # same path `pf capability-add` uses, so there is one scaffolder and one gate
+    # merge rather than a second way to write into a project.
+    targets = [(group, project)] if project else [
+        (g, p) for g, p, _ in all_projects() if g == group]
+    for g, p in targets:
+        d = pdir(g, p)
+        if t.capability is not None:
+            ctx = {"group": g, "project": p, "module": p.replace("-", "_")}
+            written = apply_capability(t.capability, root(), d, ctx)
+            console.print(f"  [green]+[/] {g}/{p} ({len(written)} file(s))")
+    if t.capability is not None:
+        _merge_gate_rules(t.gate_sections())
+    for g, p in targets:
+        console.print(f"[bold]{g}/{p}[/]")
+        _print_bootstrap(bootstrap(root(), g, p))
+
+
+@tool_app.command("disable")
+def cmd_tool_disable(tool: str, group: str, project: str = typer.Argument("")) -> None:
+    """Turn a tool off. Generated files are left in place, deliberately —
+    deleting them on disable would throw away a recorded review."""
+    from pf.tools import write as write_tool_config
+
+    path = write_tool_config(root(), group, project, tool, on=False)
+    console.print(f"[green]✓[/] {tool} disabled for "
+                  f"{group}{'/' + project if project else ' (group default)'}")
+    console.print(f"  [dim]{path}[/]")
+
+
+@tool_app.command("doctor")
+def cmd_tool_doctor(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                    all_: bool = typer.Option(False, "--all")) -> None:
+    """Why is a tool not doing anything? Registered, enabled, installed, ready."""
+    from pf.tools import readiness
+
+    targets = all_projects() if all_ else [(group, project, pdir(group, project))]
+    if not all_ and not (group and project):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+
+    problems = 0
+    for g, p, _ in targets:
+        rows = [r for r in readiness(root(), g, p) if r["enabled"]]
+        if not rows:
+            console.print(f"[dim]{g}/{p}: no tools enabled[/]")
+            continue
+        console.print(f"[bold]{g}/{p}[/]")
+        for r in rows:
+            if r["ready"]:
+                console.print(f"  [green]✓[/] {r['name']:12} ready  [dim]{r['surface']}[/]")
+                continue
+            problems += 1
+            reason = ("; ".join(r["blockers"]) or r["hint"]
+                      or f"missing {', '.join(r['missing'])}")
+            console.print(f"  [yellow]![/] {r['name']:12} {reason}")
+    raise typer.Exit(1 if problems else 0)
+
+
+def _register_tool_commands() -> None:
+    """Let each tool attach its own subcommands under `pf tool <name>`.
+
+    Hooks are resolved one at a time and failures are contained: a third-party
+    tool with a broken CLI hook must not stop `pf` from starting, because the
+    command you need at that moment is probably `pf tool doctor`.
+    """
+    from pf.tools import all_tools
+
+    for name, tool in sorted(all_tools().items()):
+        try:
+            hook = tool.hook("commands")
+            if hook is not None:
+                hook(tool_app)
+        except Exception as exc:  # noqa: BLE001 — a broken tool CLI is not fatal
+            console.print(f"[dim]tool '{name}' registered no commands: "
+                          f"{type(exc).__name__}[/]", highlight=False)
+
+
+_register_tool_commands()
 
 
 if __name__ == "__main__":

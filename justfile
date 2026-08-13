@@ -11,3 +11,10 @@ run-all g:          ; @uv run pf run-all {{g}}
 check:              ; @uv run pf check
 tokens:             ; @uv run pf tokens
 ui:                 ; @uv run pf ui
+
+# tools
+tools g p:          ; @uv run pf tool list {{g}} {{p}}
+tool-doctor g p:    ; @uv run pf tool doctor {{g}} {{p}}
+review g p:         ; @uv run pf tool recce run {{g}} {{p}}
+review-ui g p:      ; @uv run pf tool recce serve {{g}} {{p}}
+baseline g p:       ; @uv run pf tool recce baseline {{g}} {{p}}
