@@ -28,6 +28,18 @@
       }
     },
     {
+      "id": "col:table:stripe.charges.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
       "id": "col:model:fct_payments.amount",
       "kind": "Column",
       "name": "amount",
@@ -38,18 +50,6 @@
         "pii": false,
         "model": "fct_payments",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.charges.amount",
-      "kind": "Column",
-      "name": "amount",
-      "layer": "raw",
-      "label": "money_amount",
-      "props": {
-        "role": "money_amount",
-        "pii": false,
-        "table": "charges"
       }
     },
     {
@@ -90,20 +90,6 @@
       }
     },
     {
-      "id": "col:model:fct_payments.country_code",
-      "kind": "Column",
-      "name": "country_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:dim_customers.country_code",
       "kind": "Column",
       "name": "country_code",
@@ -113,6 +99,20 @@
         "role": "",
         "pii": false,
         "model": "dim_customers",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_payments.country_code",
+      "kind": "Column",
+      "name": "country_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_payments",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -182,18 +182,6 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.currency",
-      "kind": "Column",
-      "name": "currency",
-      "layer": "raw",
-      "label": "currency_code",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "table": "subscriptions"
-      }
-    },
-    {
       "id": "col:table:stripe.charges.currency",
       "kind": "Column",
       "name": "currency",
@@ -206,30 +194,15 @@
       }
     },
     {
-      "id": "col:model:fct_revenue.currency_code",
+      "id": "col:table:stripe.subscriptions.currency",
       "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_revenue",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__charges.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
       "props": {
         "role": "currency_code",
         "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
+        "table": "subscriptions"
       }
     },
     {
@@ -260,6 +233,33 @@
       }
     },
     {
+      "id": "col:model:fct_revenue.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.customer_email",
       "kind": "Column",
       "name": "customer_email",
@@ -273,29 +273,15 @@
       }
     },
     {
-      "id": "col:model:fct_payments.customer_id",
+      "id": "col:model:stg_stripe__charges.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "marts",
-      "label": "",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "fct_payments",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:dim_customers.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "dim_customers",
+        "model": "stg_stripe__charges",
         "data_type": null
       }
     },
@@ -313,19 +299,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "charges",
-        "links_to": "Customer"
-      }
-    },
-    {
       "id": "col:model:stg_stripe__subscriptions.customer_id",
       "kind": "Column",
       "name": "customer_id",
@@ -339,16 +312,43 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.customer_id",
+      "id": "col:table:stripe.charges.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
+      "layer": "raw",
+      "label": "foreign_key",
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "stg_stripe__charges",
+        "table": "charges",
+        "links_to": "Customer"
+      }
+    },
+    {
+      "id": "col:model:dim_customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "dim_customers",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -392,16 +392,17 @@
       }
     },
     {
-      "id": "col:model:dim_customers.customer_segment",
+      "id": "col:model:fct_revenue.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
-      "label": "Sales segment. Drives most reporting cuts.",
+      "label": "",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dim_customers",
-        "data_type": null
+        "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -418,17 +419,16 @@
       }
     },
     {
-      "id": "col:model:fct_revenue.customer_segment",
+      "id": "col:model:dim_customers.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
-      "label": "",
+      "label": "Sales segment. Drives most reporting cuts.",
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_revenue",
-        "data_type": "VARCHAR",
-        "documented": false
+        "model": "dim_customers",
+        "data_type": null
       }
     },
     {
@@ -535,18 +535,6 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.mrr_amount",
-      "kind": "Column",
-      "name": "mrr_amount",
-      "layer": "raw",
-      "label": "money_amount",
-      "props": {
-        "role": "money_amount",
-        "pii": false,
-        "table": "subscriptions"
-      }
-    },
-    {
       "id": "col:model:stg_stripe__subscriptions.mrr_amount",
       "kind": "Column",
       "name": "mrr_amount",
@@ -557,6 +545,18 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.mrr_amount",
+      "kind": "Column",
+      "name": "mrr_amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "subscriptions"
       }
     },
     {
@@ -585,6 +585,20 @@
       }
     },
     {
+      "id": "col:model:dim_customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
       "id": "col:table:stripe.customers.organization_id",
       "kind": "Column",
       "name": "organization_id",
@@ -608,20 +622,6 @@
         "pii": false,
         "model": "stg_stripe__customers",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:model:dim_customers.organization_id",
-      "kind": "Column",
-      "name": "organization_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "dim_customers",
-        "data_type": "VARCHAR",
-        "documented": false
       }
     },
     {
@@ -744,6 +744,19 @@
       }
     },
     {
+      "id": "col:model:stg_stripe__subscriptions.plan_tier",
+      "kind": "Column",
+      "name": "plan_tier",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_payments.plan_tier",
       "kind": "Column",
       "name": "plan_tier",
@@ -758,16 +771,15 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__subscriptions.plan_tier",
+      "id": "col:table:stripe.charges.receipt_email",
       "kind": "Column",
-      "name": "plan_tier",
-      "layer": "staging",
-      "label": "",
+      "name": "receipt_email",
+      "layer": "raw",
+      "label": "pii_email",
       "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
+        "role": "pii_email",
+        "pii": true,
+        "table": "charges"
       }
     },
     {
@@ -781,18 +793,6 @@
         "pii": true,
         "model": "stg_stripe__charges",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.charges.receipt_email",
-      "kind": "Column",
-      "name": "receipt_email",
-      "layer": "raw",
-      "label": "pii_email",
-      "props": {
-        "role": "pii_email",
-        "pii": true,
-        "table": "charges"
       }
     },
     {
@@ -1316,6 +1316,26 @@
       }
     },
     {
+      "id": "evidence:pf tool recce config",
+      "kind": "Evidence",
+      "name": "pf tool recce config",
+      "layer": "governance",
+      "label": "derived review checks",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool recce run",
+      "kind": "Evidence",
+      "name": "pf tool recce run",
+      "layer": "governance",
+      "label": "data diff against baseline",
+      "props": {
+        "durable": true
+      }
+    },
+    {
       "id": "exposure:crm_customer_sync",
       "kind": "Exposure",
       "name": "crm_customer_sync",
@@ -1520,6 +1540,27 @@
       }
     },
     {
+      "id": "policy:change-verified-against-baseline",
+      "kind": "Policy",
+      "name": "change-verified-against-baseline",
+      "layer": "governance",
+      "label": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a b",
+      "props": {
+        "constraint": "diff_reported",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/models/marts/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.recce:dagster_assets",
+          "pf.tools.recce:register_commands"
+        ],
+        "enforced": true,
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+      }
+    },
+    {
       "id": "policy:entity-requires-identity",
       "kind": "Policy",
       "name": "entity-requires-identity",
@@ -1661,6 +1702,27 @@
       }
     },
     {
+      "id": "policy:review-artifacts-exclude-pii",
+      "kind": "Policy",
+      "name": "review-artifacts-exclude-pii",
+      "layer": "governance",
+      "label": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore pers",
+      "props": {
+        "constraint": "pii_excluded_from_review",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/transform/recce.yml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.ontology.model:Role.review_intent",
+          "pf.tools.recce:generate_config"
+        ],
+        "enforced": true,
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+      }
+    },
+    {
       "id": "policy:secrets-never-in-context",
       "kind": "Policy",
       "name": "secrets-never-in-context",
@@ -1709,6 +1771,22 @@
       }
     },
     {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Order.amount",
       "kind": "Property",
       "name": "amount",
@@ -1737,22 +1815,6 @@
         "concept": "Payment",
         "mdl_type": "DOUBLE",
         "xsd_type": "xsd:double",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Refund.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -1821,22 +1883,6 @@
       }
     },
     {
-      "id": "property:Organization.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Customer.country",
       "kind": "Property",
       "name": "country",
@@ -1853,18 +1899,18 @@
       }
     },
     {
-      "id": "property:Payment.created",
+      "id": "property:Organization.country",
       "kind": "Property",
-      "name": "created",
+      "name": "country",
       "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
+      "label": "string \u00b7 geo_country",
       "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
         "is_identity": false
       }
     },
@@ -1879,6 +1925,22 @@
         "role": "event_time",
         "required": true,
         "concept": "Customer",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.created",
+      "kind": "Property",
+      "name": "created",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -1901,7 +1963,7 @@
       }
     },
     {
-      "id": "property:Refund.currency",
+      "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -1909,8 +1971,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": false,
-        "concept": "Refund",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1933,22 +1995,6 @@
       }
     },
     {
-      "id": "property:Payment.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.currency",
       "kind": "Property",
       "name": "currency",
@@ -1959,6 +2005,22 @@
         "role": "currency_code",
         "required": false,
         "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Refund",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1981,22 +2043,6 @@
       }
     },
     {
-      "id": "property:Payment.customer_id",
-      "kind": "Property",
-      "name": "customer_id",
-      "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
-      "props": {
-        "datatype": "string",
-        "role": "foreign_key",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Subscription.customer_id",
       "kind": "Property",
       "name": "customer_id",
@@ -2007,6 +2053,22 @@
         "role": "foreign_key",
         "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -3838,6 +3900,18 @@
     {
       "src": "policy:change-declares-blast-radius",
       "dst": "evidence:loop-ledger.json",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:change-verified-against-baseline",
+      "dst": "evidence:pf tool recce run",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:review-artifacts-exclude-pii",
+      "dst": "evidence:pf tool recce config",
       "kind": "evidenced_by",
       "props": {}
     },

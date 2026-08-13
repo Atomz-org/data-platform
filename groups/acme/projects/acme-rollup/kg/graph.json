@@ -279,6 +279,26 @@
       }
     },
     {
+      "id": "evidence:pf tool recce config",
+      "kind": "Evidence",
+      "name": "pf tool recce config",
+      "layer": "governance",
+      "label": "derived review checks",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool recce run",
+      "kind": "Evidence",
+      "name": "pf tool recce run",
+      "layer": "governance",
+      "label": "data diff against baseline",
+      "props": {
+        "durable": true
+      }
+    },
+    {
       "id": "policy:change-declares-blast-radius",
       "kind": "Policy",
       "name": "change-declares-blast-radius",
@@ -297,6 +317,27 @@
         ],
         "enforced": true,
         "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+      }
+    },
+    {
+      "id": "policy:change-verified-against-baseline",
+      "kind": "Policy",
+      "name": "change-verified-against-baseline",
+      "layer": "governance",
+      "label": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a b",
+      "props": {
+        "constraint": "diff_reported",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/models/marts/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.recce:dagster_assets",
+          "pf.tools.recce:register_commands"
+        ],
+        "enforced": true,
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
       }
     },
     {
@@ -441,6 +482,27 @@
       }
     },
     {
+      "id": "policy:review-artifacts-exclude-pii",
+      "kind": "Policy",
+      "name": "review-artifacts-exclude-pii",
+      "layer": "governance",
+      "label": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore pers",
+      "props": {
+        "constraint": "pii_excluded_from_review",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/transform/recce.yml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.ontology.model:Role.review_intent",
+          "pf.tools.recce:generate_config"
+        ],
+        "enforced": true,
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+      }
+    },
+    {
       "id": "policy:secrets-never-in-context",
       "kind": "Policy",
       "name": "secrets-never-in-context",
@@ -489,22 +551,6 @@
       }
     },
     {
-      "id": "property:Refund.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.amount",
       "kind": "Property",
       "name": "amount",
@@ -515,6 +561,22 @@
         "role": "money_amount",
         "required": false,
         "concept": "Order",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
         "mdl_type": "DECIMAL",
         "xsd_type": "xsd:decimal",
         "is_identity": false
@@ -585,7 +647,7 @@
       }
     },
     {
-      "id": "property:Location.country",
+      "id": "property:Customer.country",
       "kind": "Property",
       "name": "country",
       "layer": "ontology",
@@ -594,7 +656,7 @@
         "datatype": "string",
         "role": "geo_country",
         "required": false,
-        "concept": "Location",
+        "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -617,7 +679,7 @@
       }
     },
     {
-      "id": "property:Customer.country",
+      "id": "property:Location.country",
       "kind": "Property",
       "name": "country",
       "layer": "ontology",
@@ -626,7 +688,7 @@
         "datatype": "string",
         "role": "geo_country",
         "required": false,
-        "concept": "Customer",
+        "concept": "Location",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -761,7 +823,7 @@
       }
     },
     {
-      "id": "property:Subscription.customer_id",
+      "id": "property:Payment.customer_id",
       "kind": "Property",
       "name": "customer_id",
       "layer": "ontology",
@@ -770,7 +832,7 @@
         "datatype": "string",
         "role": "foreign_key",
         "required": true,
-        "concept": "Subscription",
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -793,7 +855,7 @@
       }
     },
     {
-      "id": "property:Payment.customer_id",
+      "id": "property:Subscription.customer_id",
       "kind": "Property",
       "name": "customer_id",
       "layer": "ontology",
@@ -802,7 +864,7 @@
         "datatype": "string",
         "role": "foreign_key",
         "required": true,
-        "concept": "Payment",
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -969,22 +1031,6 @@
       }
     },
     {
-      "id": "property:Organization.name",
-      "kind": "Property",
-      "name": "name",
-      "layer": "ontology",
-      "label": "string \u00b7 free_text",
-      "props": {
-        "datatype": "string",
-        "role": "free_text",
-        "required": false,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Customer.name",
       "kind": "Property",
       "name": "name",
@@ -995,6 +1041,22 @@
         "role": "pii_name",
         "required": true,
         "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Organization.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 free_text",
+      "props": {
+        "datatype": "string",
+        "role": "free_text",
+        "required": false,
+        "concept": "Organization",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1321,22 +1383,6 @@
       }
     },
     {
-      "id": "property:Subscription.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": true,
-        "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.status",
       "kind": "Property",
       "name": "status",
@@ -1363,6 +1409,22 @@
         "role": "status_enum",
         "required": false,
         "concept": "Agreement",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": true,
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2394,6 +2456,18 @@
     {
       "src": "policy:change-declares-blast-radius",
       "dst": "evidence:loop-ledger.json",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:change-verified-against-baseline",
+      "dst": "evidence:pf tool recce run",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:review-artifacts-exclude-pii",
+      "dst": "evidence:pf tool recce config",
       "kind": "evidenced_by",
       "props": {}
     },
