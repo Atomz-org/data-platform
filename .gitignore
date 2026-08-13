@@ -9,3 +9,7 @@ data/*.duckdb.wal
 **/.dlt/secrets.toml
 .env
 kg/*.duckdb
+.dagster/history/
+.dagster/storage/
+.DS_Store
+node_modules/

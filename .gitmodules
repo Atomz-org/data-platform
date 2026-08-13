@@ -1,6 +1,48 @@
 [submodule "vendor/loop-engineering"]
 	path = vendor/loop-engineering
 	url = https://github.com/cobusgreyling/loop-engineering
+	branch = main
 [submodule "vendor/evidence-bi"]
 	path = vendor/evidence-bi
 	url = https://github.com/Atomz-org/Evidence-BI
+	branch = main
+[submodule "vendor/dlthub-ai-workbench"]
+	path = vendor/dlthub-ai-workbench
+	url = https://github.com/dlt-hub/dlthub-ai-workbench
+	branch = master
+	shallow = true
+[submodule "vendor/dbt-agent-skills"]
+	path = vendor/dbt-agent-skills
+	url = https://github.com/dbt-labs/dbt-agent-skills
+	branch = main
+	shallow = true
+[submodule "vendor/duckdb-skills"]
+	path = vendor/duckdb-skills
+	url = https://github.com/duckdb/duckdb-skills
+	branch = main
+	shallow = true
+[submodule "vendor/dagster-skills"]
+	path = vendor/dagster-skills
+	url = https://github.com/dagster-io/skills
+	branch = master
+	shallow = true
+[submodule "vendor/ontology-playground"]
+	path = vendor/ontology-playground
+	url = https://github.com/microsoft/Ontology-Playground
+	branch = main
+	shallow = true
+[submodule "vendor/opentopology"]
+	path = vendor/opentopology
+	url = https://github.com/opentopology/opentopology
+	branch = main
+	shallow = true
+[submodule "vendor/context-ontology-accelerator"]
+	path = vendor/context-ontology-accelerator
+	url = https://github.com/aws/context-ontology-accelerator
+	branch = main
+	shallow = true
+[submodule "vendor/wrenai"]
+	path = vendor/wrenai
+	url = https://github.com/Canner/WrenAI
+	branch = main
+	shallow = true
