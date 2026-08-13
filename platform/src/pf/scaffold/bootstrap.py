@@ -40,7 +40,10 @@ class StepResult:
 class Step:
     name: str
     why: str
-    run: Callable[[Path, str, str], StepResult]
+    #: May return several results. A step that fans out over a variable number of
+    #: things — one entry per enabled tool — would otherwise have to flatten
+    #: itself into a single line, and "3 tools ok" hides which one is broken.
+    run: Callable[[Path, str, str], "StepResult | list[StepResult]"]
 
 
 # ------------------------------------------------------------------ steps --
@@ -156,6 +159,23 @@ def _build_reporting(root: Path, group: str, project: str) -> StepResult:
                       f"{r['metrics']} metric(s), {r['pages']} page(s)")
 
 
+def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
+    """Every tool this project enables, set up idempotently.
+
+    One step for all tools rather than a step per tool: which tools exist is not
+    knowable here — a third party can add one by installing a package — so the
+    list has to be resolved at run time. This is the seam that makes a tool reach
+    projects created before it existed, exactly as this module does for platform
+    steps.
+    """
+    from pf.tools import bootstrap_tools, enabled_names
+
+    names = enabled_names(root, group, project)
+    if not names:
+        return [StepResult("tools", "skipped", "none enabled (`pf tool enable`)")]
+    return bootstrap_tools(root, group, project)
+
+
 def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
@@ -207,6 +227,8 @@ STEPS: list[Step] = [
                         "registry the tooling reads", _vendor_docs),
     Step("reporting", "dashboards are a projection of the metrics, regenerated "
                       "rather than hand-maintained", _build_reporting),
+    Step("tools", "a tool enabled for the group must reach every sister, "
+                  "including projects created before it existed", _bootstrap_tools),
     Step("dagster code location", "an unregistered project never runs",
          _register_code_location),
     Step("conformance", "fail here rather than in BI", _validate),
@@ -223,8 +245,10 @@ def bootstrap(root: Path, group: str, project: str) -> list[StepResult]:
     results: list[StepResult] = []
     for step in STEPS:
         try:
-            results.append(step.run(root, group, project))
+            out = step.run(root, group, project)
         except Exception as exc:  # noqa: BLE001 — a step failing is data, not a crash
             results.append(StepResult(step.name, "failed",
                                       f"{type(exc).__name__}: {exc}"[:200]))
+            continue
+        results.extend(out if isinstance(out, list) else [out])
     return results

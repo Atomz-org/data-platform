@@ -178,18 +178,38 @@ classes:
 
 # Column-level semantic roles. Every annotated column carries exactly one.
 # `datatype` is the projection target for MDL and OWL.
+#
+# `review` is what a data-review tool should ask of a column carrying this role.
+# It is deliberately tool-agnostic — the ontology states the question, each tool
+# translates it into whatever check it implements (Recce turns `distribution`
+# into a profile diff; something else may turn it into an anomaly monitor).
+# Adding a role here is all it takes for every review tool to pick it up.
+#
+#   identity      identifies a row — align rows on it before comparing
+#   distribution  a magnitude; watch for the shape moving
+#   categories    a bounded value set; watch for members gained or lost
+#   none          do not compare values
+#
+# Omit it and a magnitude datatype (decimal/integer/float) defaults to
+# `distribution`; everything else defaults to `none`. Whether a *string* is a
+# bounded category or free text is not knowable from the datatype, and guessing
+# wrong makes every review noisy — so strings say so explicitly.
+#
+# `pii: true` forces `none` regardless of what is declared. A value-level diff
+# writes the compared rows into the tool's state file, which is durable and
+# shared; `pii-not-in-consumption` applied to review artefacts.
 roles:
-  natural_key:    {datatype: string,    description: Business key from the source system.}
-  surrogate_key:  {datatype: string,    description: Generated key, unique within the warehouse.}
+  natural_key:    {datatype: string,    review: identity,     description: Business key from the source system.}
+  surrogate_key:  {datatype: string,    review: identity,     description: Generated key, unique within the warehouse.}
   foreign_key:    {datatype: string,    description: Reference to another concept instance.}
   event_time:     {datatype: timestamp, description: When the event occurred. Candidate agg time dimension.}
   valid_from:     {datatype: timestamp, description: SCD2 interval start.}
   valid_to:       {datatype: timestamp, description: SCD2 interval end.}
   money_amount:   {datatype: decimal,   description: Monetary value. Requires a sibling currency_code.}
-  currency_code:  {datatype: string,    description: ISO 4217 code qualifying a money_amount.}
+  currency_code:  {datatype: string,    review: categories,   description: ISO 4217 code qualifying a money_amount.}
   quantity:       {datatype: integer,   description: Countable measure.}
-  status_enum:    {datatype: string,    description: Lifecycle state. Monitored for category drift.}
-  geo_country:    {datatype: string,    description: ISO 3166 country code.}
+  status_enum:    {datatype: string,    review: categories,   description: Lifecycle state. Monitored for category drift.}
+  geo_country:    {datatype: string,    review: categories,   description: ISO 3166 country code.}
   free_text:      {datatype: string,    description: Unstructured text. Never a dimension.}
   pii_email:      {datatype: string,    pii: true, description: Email address.}
   pii_name:       {datatype: string,    pii: true, description: Person name.}

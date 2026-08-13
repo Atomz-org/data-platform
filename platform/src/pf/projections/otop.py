@@ -155,6 +155,30 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
         loop = kind.removeprefix("pf loop run ").strip()
         return _from_ledger(root, loop, now, group, project)
 
+    if kind.startswith("pf tool recce"):
+        # Resolved from the artefacts on disk rather than by re-running anything.
+        # `unknown` is the honest answer for a project that has never been
+        # reviewed — see the module note: anything we cannot check right now is
+        # never `pass`.
+        if project_dir is None:
+            return Observation("not_applicable", now, "platform-scope export")
+        from pf.tools.recce import config_file, has_baseline, state_file
+
+        if kind == "pf tool recce config":
+            p = config_file(project_dir)
+            if not p.exists():
+                return Observation("unknown", now, "recce.yml not generated yet")
+            ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+            return Observation("pass", ts, str(p.relative_to(root)))
+
+        p = state_file(project_dir)
+        if not p.exists():
+            return Observation(
+                "unknown", now,
+                "no diff recorded" if has_baseline(project_dir) else "no baseline captured")
+        ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+        return Observation("pass", ts, str(p.relative_to(root)))
+
     if kind == "impact_reports":
         try:
             from pf import obs

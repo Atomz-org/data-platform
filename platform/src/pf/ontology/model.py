@@ -85,12 +85,56 @@ class OntologyClass:
     properties: dict[str, Property] = field(default_factory=dict)
 
 
+# What a review tool should do with a column carrying this role. Deliberately
+# tool-agnostic: the ontology declares the *question worth asking*, and each tool
+# translates it into whatever check it happens to implement. Recce turns
+# `distribution` into a profile diff; a different tool may turn it into an
+# anomaly monitor. Neither vocabulary leaks into the other.
+#
+#   identity      this column identifies a row — align rows on it before comparing
+#   distribution  a magnitude; watch for the shape moving
+#   categories    a bounded value set; watch for members gained or lost
+#   none          do not compare values for this role
+REVIEW_INTENTS = frozenset({"identity", "distribution", "categories", "none"})
+
+# Defaults inferred from the declared datatype, so a role added tomorrow is
+# reviewed without anyone remembering to wire it up. Only magnitudes get a
+# default: whether a string is a bounded category or free text is not knowable
+# from `datatype: string`, and guessing wrong makes every review noisy.
+_REVIEW_BY_DATATYPE: dict[str, str] = {
+    "decimal": "distribution",
+    "integer": "distribution",
+    "float": "distribution",
+    "number": "distribution",
+}
+
+
 @dataclass(frozen=True)
 class Role:
     name: str
     datatype: str = "string"
     description: str = ""
     pii: bool = False
+    #: Explicit review intent. Empty means "infer from datatype".
+    review: str = ""
+
+    @property
+    def review_intent(self) -> str:
+        """What a review tool should ask of this column.
+
+        PII wins over everything, including an explicit declaration. A value-level
+        diff materialises the compared rows into the tool's state file, which is
+        a durable, shareable artefact — so diffing an email column writes real
+        addresses into something that gets committed and passed around. The
+        `pii-not-in-consumption` policy already says PII must not reach the
+        consumption layer; this is the same rule applied to review artefacts,
+        enforced here so no individual tool has to remember it.
+        """
+        if self.pii:
+            return "none"
+        if self.review:
+            return self.review
+        return _REVIEW_BY_DATATYPE.get(self.datatype, "none")
 
 
 @dataclass(frozen=True)
@@ -267,6 +311,7 @@ def load_ontology(directory: str | Path | None = None) -> Ontology:
             datatype=(spec or {}).get("datatype", "string"),
             description=(spec or {}).get("description", ""),
             pii=bool((spec or {}).get("pii", False)),
+            review=(spec or {}).get("review", ""),
         )
         for name, spec in (concepts.get("roles") or {}).items()
     }
@@ -343,7 +388,8 @@ def load_group_ontology(root: str | Path, group: str) -> Ontology:
         spec = spec or {}
         roles[name] = Role(name=name, datatype=spec.get("datatype", "string"),
                            description=spec.get("description", ""),
-                           pii=bool(spec.get("pii", False)))
+                           pii=bool(spec.get("pii", False)),
+                           review=spec.get("review", ""))
 
     relations = list(base.relations)
     by_name = {r.name for r in relations}
