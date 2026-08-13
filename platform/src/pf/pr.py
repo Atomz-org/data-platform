@@ -52,16 +52,29 @@ def changed_files(root: Path, base: str = "", exclude_deleted: bool = False) -> 
     the kind of change the blast radius is for.
     """
     filt = ["--diff-filter=d"] if exclude_deleted else []
-    if base:
-        out = _git(root, "diff", "--name-only", *filt, f"{base}...HEAD")
-        if out:
-            return [ln for ln in out.splitlines() if ln]
-    for ref in ("origin/main", "origin/master", "main", "master"):
+
+    def against(ref: str) -> list[str] | None:
         mb = _git(root, "merge-base", ref, "HEAD")
-        if mb:
-            out = _git(root, "diff", "--name-only", *filt, f"{mb}..HEAD")
-            if out:
-                return [ln for ln in out.splitlines() if ln]
+        if not mb:
+            return None
+        # Two-arg diff, not `mb..HEAD`: comparing the *working tree* to the merge
+        # base picks up uncommitted work too. In CI they are the same thing; on a
+        # branch mid-change they are not, and the report is most useful exactly
+        # then.
+        out = _git(root, "diff", "--name-only", *filt, mb)
+        return [ln for ln in out.splitlines() if ln]
+
+    if base:
+        # An explicit base is an instruction, not a hint. Falling back to
+        # origin/main when the diff came back empty silently answered a
+        # different question than the one asked — and reported 747 files for a
+        # one-file change.
+        return against(base) or []
+
+    for ref in ("origin/main", "origin/master", "main", "master"):
+        found = against(ref)
+        if found:
+            return found
     out = _git(root, "status", "--porcelain")
     return [ln[3:].strip() for ln in out.splitlines()
             if ln[3:].strip() and not (exclude_deleted and ln[:2].strip() == "D")]
@@ -135,7 +148,7 @@ class PRReport:
 # ----------------------------------------------------------------- build ----
 def build(root: str | Path, number: int = 0, base: str = "", title: str = "") -> PRReport:
     from pf.loops.audit import audit as loop_audit, project_readiness
-    from pf.loops.gate import check_paths, nodes_for, project_for
+    from pf.loops.gate import check_path, nodes_for, project_for
 
     root = Path(root)
     files = [f for f in changed_files(root, base) if f]
@@ -144,8 +157,13 @@ def build(root: str | Path, number: int = 0, base: str = "", title: str = "") ->
 
     # Path gate first: a denied path is a stop, and computing blast radius for a
     # change that must not land at all is wasted work and a misleading report.
+    # `check_path` per file, not `check_paths`: the latter also applies the
+    # per-run `maxFiles` cap, which exists to keep one *agent run* small. A pull
+    # request legitimately touches more files than an agent should in one go, and
+    # conflating the two makes every real PR report BLOCK for the wrong reason.
     denied = [f"{g.path}: {g.message}"
-              for g in check_paths(changed_files(root, base, exclude_deleted=True), root)
+              for g in (check_path(f, root)
+                        for f in changed_files(root, base, exclude_deleted=True))
               if g.blocked]
 
     readiness = {(r.group, r.project): r for r in project_readiness(root)}
@@ -340,7 +358,13 @@ def save(root: str | Path, r: PRReport) -> Path:
     d.mkdir(parents=True, exist_ok=True)
     name = f"{r.number}.json" if r.number else f"branch-{r.branch.replace('/', '-')}.json"
     p = d / name
-    p.write_text(json.dumps(r.to_dict(), indent=2) + "\n")
+    # The rendered comment is stored alongside the data. Re-rendering it later
+    # from a different code version would show something other than what was
+    # actually posted on the PR, and the record is only worth keeping if it is
+    # the record.
+    payload = r.to_dict()
+    payload["markdown"] = markdown(r)
+    p.write_text(json.dumps(payload, indent=2) + "\n")
     return p
 
 

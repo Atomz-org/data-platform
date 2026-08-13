@@ -47,7 +47,7 @@ class Step:
 def _ensure_dirs(root: Path, group: str, project: str) -> StepResult:
     d = _pdir(root, group, project)
     made = []
-    for rel in ("data", "kg", "contracts", "mdl", ".duckdb-skills",
+    for rel in ("data", "kg", "contracts", "mdl", "governance", ".duckdb-skills",
                 "decisions", ".memory/notes", "evals/cases"):
         p = d / rel
         if not p.exists():
@@ -101,6 +101,25 @@ def _export_owl(root: Path, group: str, project: str) -> StepResult:
     s = stats()
     return StepResult("OWL export", "ok",
                       f"{s['classes']} classes, {s['object_properties']} object properties")
+
+
+def _export_otop(root: Path, group: str, project: str) -> StepResult:
+    """The governance projection, with this project's evidence resolved live.
+
+    Per project rather than platform-wide because the policies are shared but the
+    evidence is not: the same rule passes in one project and fails in another,
+    and a manifest that averaged them would be true of nowhere.
+    """
+    from pf.projections.otop import build_manifest, export as export_otop, stats
+
+    d = _pdir(root, group, project)
+    export_otop(root, group, project, d)
+    s = stats(build_manifest(root, group, project, d))
+    unknown = s.get("evidence_unknown", 0)
+    return StepResult("otop manifest", "ok",
+                      f"{s.get('constraint', 0)} constraint(s), "
+                      f"{s.get('evidence', 0)} evidence"
+                      + (f", {unknown} unproven" if unknown else ""))
 
 
 def _build_reporting(root: Path, group: str, project: str) -> StepResult:
@@ -164,6 +183,8 @@ STEPS: list[Step] = [
     Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
          _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
+    Step("otop manifest", "policy and evidence as an OpenTopology 0.2 graph; "
+                          "validated against the vendored schema", _export_otop),
     Step("reporting", "dashboards are a projection of the metrics, regenerated "
                       "rather than hand-maintained", _build_reporting),
     Step("dagster code location", "an unregistered project never runs",

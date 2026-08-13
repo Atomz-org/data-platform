@@ -362,18 +362,18 @@ def card(group: str, project: str) -> dict[str, Any]:
 STACK_LAYERS: list[dict[str, Any]] = [
     {"layer": "ingest", "title": "Ingest (dlt)", "upstream": "dlthub-ai-workbench",
      "toolkits": ["dlt-ingest", "dlt-explore", "dlt-quality", "dlt-performance"],
-     "artefacts": "src/<project>/sources/*.py", "node_kinds": ["Source", "Table"]},
+     "artefacts": "src/*/sources/*.py", "node_kinds": ["Source", "Table"]},
     {"layer": "warehouse", "title": "Warehouse (DuckDB)", "upstream": "duckdb-skills",
-     "toolkits": ["duckdb-ops"], "artefacts": "data/<project>.duckdb", "node_kinds": []},
+     "toolkits": ["duckdb-ops"], "artefacts": "data/*.duckdb", "node_kinds": []},
     {"layer": "transform", "title": "Transform (dbt)", "upstream": "dbt-agent-skills",
      "toolkits": ["dbt-modeling", "dbt-testing", "dbt-govern", "dbt-migrate"],
-     "artefacts": "transform/models/**", "node_kinds": ["Model", "Test"]},
+     "artefacts": "transform/models/**/*.sql", "node_kinds": ["Model", "Test"]},
     {"layer": "semantic", "title": "Semantic layer (MetricFlow)", "upstream": "dbt-agent-skills",
-     "toolkits": ["dbt-semantic"], "artefacts": "transform/models/semantic/**",
+     "toolkits": ["dbt-semantic"], "artefacts": "transform/models/semantic/*",
      "node_kinds": ["Metric", "Dimension"]},
     {"layer": "orchestrate", "title": "Orchestration (Dagster)", "upstream": "dagster-skills",
      "toolkits": ["dagster-orchestrate", "python-standards"],
-     "artefacts": "src/<project>/definitions.py", "node_kinds": []},
+     "artefacts": "src/*/definitions.py", "node_kinds": []},
     {"layer": "ontology", "title": "Ontology & induction", "upstream": "context-ontology-accelerator",
      "toolkits": ["dlt-ingest"], "artefacts": "contracts/annotations.yaml",
      "node_kinds": ["Concept", "Property"]},
@@ -383,9 +383,10 @@ STACK_LAYERS: list[dict[str, Any]] = [
     {"layer": "mdl", "title": "MDL projection", "upstream": "wrenai",
      "toolkits": [], "artefacts": "mdl/mdl.json", "node_kinds": []},
     {"layer": "reporting", "title": "Reporting (Evidence)", "upstream": "evidence-bi",
-     "toolkits": ["evidence-bi"], "artefacts": "reporting/pages/**", "node_kinds": ["Exposure"]},
+     "toolkits": ["evidence-bi"], "artefacts": "reporting/pages/**/*.md",
+     "node_kinds": ["Exposure"]},
     {"layer": "loops", "title": "Loops & governance", "upstream": "loop-engineering",
-     "toolkits": [], "artefacts": "STATE.md, loop-ledger.json", "node_kinds": []},
+     "toolkits": [], "artefacts": "kg/context_card.md", "node_kinds": []},
 ]
 
 
@@ -448,8 +449,13 @@ def vendor_stack(group: str, project: str) -> dict[str, Any]:
     for spec in STACK_LAYERS:
         u = ups.get(spec["upstream"])
         present = sum(counts.get(k, 0) for k in spec["node_kinds"])
+        # Layers the graph does not model (the warehouse file, the Dagster
+        # definitions, the MDL manifest) would otherwise render as a blank cell,
+        # which reads as "missing" when it means "not counted here".
+        files = len(list(d.glob(spec["artefacts"])))
         layers.append({
             **spec,
+            "files": files,
             "upstream_name": u.name if u else spec["upstream"],
             "upstream_url": u.url if u else "",
             "licence": u.licence if u else "",

@@ -776,7 +776,8 @@ async function loadStack() {
     ['In this project', l => l.node_kinds.length
       ? (l.nodes ? `<span class="pill good">${fmt(l.nodes)} node(s)</span>`
                  : '<span class="pill">not built yet</span>')
-      : '<span class="muted">—</span>'],
+      : (l.files ? `<span class="pill good">${fmt(l.files)} file(s)</span>`
+                 : '<span class="pill">absent</span>')],
     ['Toolkits', l => l.toolkits.map(t => `<code>${esc(t)}</code>`).join(' ') || '<span class="muted">—</span>'],
     ['Descends from', l => `<a href="${esc(l.upstream_url)}" target="_blank" rel="noopener">
        <code>${esc(l.upstream)}</code></a>
@@ -841,8 +842,17 @@ async function loadPrs() {
     ['Projects', r => r.projects.map(p => `<code>${esc(p.group)}/${esc(p.project)}</code>`).join(' ') || '—'],
     ['Files', r => fmt(r.files.length)],
     ['Generated', r => `<span class="muted mono">${esc((r.generated_at || '').slice(0, 19))}</span>`],
+    ['', (r, i) => `<button onclick="showPr(${STATE.prs.indexOf(r)})">open</button>`],
   ], 'No reports yet — CI writes these on every pull request.');
-  if (reports.length) renderPrVerdict(reports[0]);
+  if (reports.length) showPr(0);
+}
+
+function showPr(i) {
+  const r = STATE.prs[i];
+  if (!r) return;
+  renderPrVerdict(r);
+  $('#prBody').textContent = r.markdown || '(no rendered body stored for this report)';
+  $('#prBody').classList.toggle('empty', !r.markdown);
 }
 
 $('#prRefreshBtn').onclick = async () => {
