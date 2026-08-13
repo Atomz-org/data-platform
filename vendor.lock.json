@@ -106,6 +106,38 @@
       "branch": "main",
       "commit": "ad1a69eaf18f82e93d8754a5deec7886ea16b0d2"
     },
+    "recce": {
+      "adopted": {
+        "recce/cli.py": "6e81a9bff47c1fa7d75fa7947d30daf820b2afae",
+        "recce/constants.py": "e6d9f8732a2c51cb99bc4e84c9a1b269e89920f9",
+        "recce/mcp_server.py": "690a9786aca38f3e9b77f2d39c92356f839b3a65",
+        "recce/summary.py": "87886299a393f3321c5b0433ab8d09527c5d2ba4"
+      },
+      "branch": "main",
+      "commit": "d20b695fb944e7bf6024aa265273e6f2410644bd"
+    },
+    "recce-claude-plugin": {
+      "adopted": {
+        "plugins/recce/agents/recce-reviewer.md": "3636571592bb1c8db3044f2c7d2482cd2cd0b639",
+        "plugins/recce/skills/recce-review": "557c2e845f718e82e69e075f264eff926b5c1984"
+      },
+      "branch": "main",
+      "commit": "0f02794d2e236c026769b6962144a3c91bd37b1d"
+    },
+    "recce-pr-update": {
+      "adopted": {
+        "action.yml": "7162477126195a2eb61b4b8fc05dc3ce3b7fd7a4"
+      },
+      "branch": "main",
+      "commit": "44e9719e3f29ad8e9534980c6a068d5d7e4214f2"
+    },
+    "recce-ui": {
+      "adopted": {
+        "package.json": "dce47748c16656a55f884060bc6292b8c63d4300"
+      },
+      "branch": "main",
+      "commit": "98fb9b3805d8846cac53dcb68ba16abeb77fb9b6"
+    },
     "wrenai": {
       "adopted": {
         "core/wren-mdl/mdl.schema.json": "b9c7ea9bd37e16ec919a50b83bee7720dda3d35d"

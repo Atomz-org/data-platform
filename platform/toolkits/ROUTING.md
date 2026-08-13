@@ -21,5 +21,7 @@ Raw SQL that recomputes a defined metric is a bug, not a shortcut.
 ## Always
 - Before any schema or model change, run `impact_analysis` and report the blast
   radius, including exposure owners.
+- After changing a model, confirm the blast radius empirically → `recce-review`.
+  Lineage says what could break; only a diff says what did.
 - Every data-returning tool is truncated by policy (schema + <=20 rows + counts).
   If you need more, aggregate in SQL — do not raise the limit.
