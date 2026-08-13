@@ -46,3 +46,19 @@
 	url = https://github.com/Canner/WrenAI
 	branch = main
 	shallow = true
+[submodule "vendor/recce/core"]
+	path = vendor/recce/core
+	url = https://github.com/DataRecce/recce
+	branch = main
+[submodule "vendor/recce/ui"]
+	path = vendor/recce/ui
+	url = https://github.com/DataRecce/recce-ui
+	branch = main
+[submodule "vendor/recce/claude-plugin"]
+	path = vendor/recce/claude-plugin
+	url = https://github.com/DataRecce/recce-claude-plugin
+	branch = main
+[submodule "vendor/recce/pr-update"]
+	path = vendor/recce/pr-update
+	url = https://github.com/DataRecce/PR-Update
+	branch = main
