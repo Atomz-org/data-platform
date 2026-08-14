@@ -166,6 +166,17 @@ class Tool:
     #: a tool nobody discovers, and the alternative was a hardcoded list in the
     #: scaffolder that every new tool had to remember to edit.
     default_enabled: bool = False
+    #: Whether this tool's `bootstrap` hook runs even when its requirements are
+    #: missing. Off by default, because most bootstraps drive the binary.
+    #:
+    #: It exists for tools whose bootstrap is a pure *projection* — it reads the
+    #: project and writes a file, and the client is only needed later to send
+    #: that file somewhere. OpenMetadata is the case: skipping its bootstrap on
+    #: a laptop with no `metadata` CLI meant a project scaffolded there had no
+    #: catalogue artefacts at all, so the integration silently depended on who
+    #: ran the scaffolder. A tool setting this must degrade on its own — the
+    #: hook is called with the requirement genuinely absent.
+    offline_bootstrap: bool = False
     requires: tuple[Requirement, ...] = ()
     dbt: DbtBinding | None = None
     surface: Surface | None = None

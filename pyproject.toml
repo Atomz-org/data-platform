@@ -20,6 +20,9 @@ recce = ["recce>=1.60,<2"]
 wren = [
     "wrenai>=0.13,<1",
 ]
+# The ingestion framework, not the server. The server is a deployment concern
+# (Docker/Helm, see vendor/openmetadata); this is the client that talks to it.
+openmetadata = ["openmetadata-ingestion>=1.13,<2"]
 
 [tool.uv.workspace]
 members = ["platform", "groups/*/projects/*"]

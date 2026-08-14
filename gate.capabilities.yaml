@@ -10,6 +10,8 @@ denylist:
 - '**/transform/target-base/**'
 - '**/mdl/mdl.json'
 - '**/mdl/connection.json'
+- '**/catalog/ingestion.yaml'
+- '**/catalog/openmetadata.json'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'

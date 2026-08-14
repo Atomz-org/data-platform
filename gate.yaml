@@ -76,6 +76,14 @@ denylist_except:
   # denied made `pf check` report drift forever over a file nobody edits.
   - ".dagster/.nux/nux.yaml"
 
+  # The catalogue projection, for the same reason mdl.json is carried: a pull
+  # request that changes a concept then shows exactly what the catalogue will
+  # say about it, before anyone publishes. Both are small and deterministic —
+  # no timestamps — so they diff cleanly, unlike the recce artefacts above.
+  # The ingestion workflow holds an env-var reference, never the JWT.
+  - "**/catalog/ingestion.yaml"
+  - "**/catalog/openmetadata.json"
+
 # Paths a *project* session may not write. Platform infra is shared: a change
 # made while working on one company silently affects every other.
 platform_denylist:

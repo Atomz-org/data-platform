@@ -84,6 +84,11 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     A tool that is enabled but not installed is *skipped*, not failed: enabling
     a tool is a decision about the project, installing it is a fact about the
     machine, and a laptop without the extra should not turn every project red.
+
+    Unless it declares `offline_bootstrap`, in which case the hook runs anyway.
+    A bootstrap that only projects the project into a file needs nothing
+    installed, and skipping it made the artefacts depend on which machine ran
+    the scaffolder — the one thing scaffolding must not do.
     """
     from pf.scaffold.bootstrap import StepResult
 
@@ -98,7 +103,7 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
                                       "enabled but not registered"))
             continue
         missing = tool.missing()
-        if missing:
+        if missing and not tool.offline_bootstrap:
             results.append(StepResult(
                 f"tool:{name}", "skipped",
                 "not installed — " + ", ".join(
