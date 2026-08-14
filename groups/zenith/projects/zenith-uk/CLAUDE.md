@@ -1,6 +1,7 @@
 # zenith-uk — project context
 
 @kg/context_card.md
+@kg/tools_card.md
 
 Group: `zenith`. The sister roster lives in the group card above —
 do not read a sister's files from here.

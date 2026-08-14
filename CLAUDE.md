@@ -14,6 +14,8 @@ Multi-tenant agentic data platform. Infra is shared; business logic is not.
   `docs/VENDOR-CARD.md` (~420 tokens) is the index, `pf vendor why <file>` the
   reverse lookup. Bumping a pin is a human decision, never an agent's.
 
+@platform/toolkits/TOOLKITS.md
+
 **Never read another group or another sister project.** Business logic does not
 transfer between entities — an assumption carried across is a bug.
 

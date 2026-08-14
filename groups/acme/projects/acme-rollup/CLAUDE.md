@@ -1,6 +1,7 @@
 # acme-rollup — project context
 
 @kg/context_card.md
+@kg/tools_card.md
 
 Group: `acme`. Sister projects: acme-us, acme-eu.
 

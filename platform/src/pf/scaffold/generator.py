@@ -189,6 +189,7 @@ PROJECT_CLAUDE = """\
 # {{project}} — project context
 
 @kg/context_card.md
+@kg/tools_card.md
 
 Group: `{{group}}`. The sister roster lives in the group card above —
 do not read a sister's files from here.

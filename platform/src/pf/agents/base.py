@@ -142,12 +142,14 @@ def cached_prefix(root: Path, group: str, project: str,
       * **The TTL**, chosen from the step's cadence. Asking for 1h on a loop that
         runs every two hours pays the 2x write premium to read it zero times.
     """
-    # TOOLKITS.md carries what exists and the rules for using it; ROUTING.md
-    # carries precedence between them. Both are stable across runs, so they sit
-    # behind the cache breakpoint and bill at ~0.1x on every read after the first.
+    # Deliberately *not* TOOLKITS.md. That index exists so an interactive session
+    # can pick the right skill, and these three agents invoke no skills — they
+    # return a structured verdict. Carrying it here would add ~1,200 tokens to
+    # every call for content the callee cannot act on, and at a 5m TTL against
+    # cadences of 2h/daily/on-failure it would rarely be a cache read. It reaches
+    # interactive sessions through CLAUDE.md instead.
     parts: list[str] = []
-    for rel in ("platform/toolkits/ROUTING.md", "platform/toolkits/TOOLKITS.md",
-                "loop-constraints.md"):
+    for rel in ("platform/toolkits/ROUTING.md", "loop-constraints.md"):
         f = root / rel
         if f.exists():
             parts.append(f"<{Path(rel).stem}>\n{f.read_text().strip()}\n</{Path(rel).stem}>")
@@ -157,6 +159,9 @@ def cached_prefix(root: Path, group: str, project: str,
     if card.exists():
         parts.append(f"<context_card>\n{_stable(card.read_text())}\n</context_card>")
 
+    # This one does earn its place: it is ~150 tokens, and its rules bite on what
+    # these agents actually produce — the ratio rule is a direct constraint on a
+    # proposed metric, not background reading.
     tools = pdir / "kg" / "tools_card.md"
     if tools.exists():
         parts.append(f"<capabilities>\n{tools.read_text().strip()}\n</capabilities>")
