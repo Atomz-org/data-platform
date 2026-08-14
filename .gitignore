@@ -17,6 +17,10 @@ node_modules/
 **/kg/*.duckdb
 **/kg/*.duckdb.wal
 **/kg/context_card.md
+# Rendered by `pf context`. The reviewable sources are each toolkit's CONTEXT.md
+# and the Capability declarations, both of which are committed.
+**/kg/tools_card.md
+platform/toolkits/TOOLKITS.md
 **/data/*.duckdb
 **/data/*.duckdb.wal
 **/reporting/queries/metrics/

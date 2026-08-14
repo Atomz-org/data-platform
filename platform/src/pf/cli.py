@@ -73,8 +73,14 @@ def cmd_new_group(
     domain: str = typer.Option("b2b_saas", help="b2b_saas | ecommerce | marketplace | fintech"),
 ) -> None:
     """Create a new company group (a family of sister companies)."""
+    from pf.context import build as build_context
+
     files = new_group(root(), group, domain)
     render_group_card(root() / "groups" / group, group)
+    # The toolkit index is platform-wide, so a group with no projects yet still
+    # needs it present — `pf work <group>` sessions read it before any project
+    # exists to bootstrap.
+    build_context(root())
     console.print(f"[green]✓[/] group [bold]{group}[/] created with {len(files)} files")
     console.print(f"  next: [cyan]pf new-project {group} {group}-us[/]")
 
@@ -153,6 +159,33 @@ def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
             "# time by pf.loops.gate.load_policy. Edit the capability, not this file.\n"
             + yaml.safe_dump(existing, sort_keys=False))
         console.print(f"  [dim]gate overlay += {', '.join(changed)}[/]")
+
+
+@app.command("context")
+def cmd_context(group: str = typer.Argument(""), project: str = typer.Argument("")) -> None:
+    """Rebuild the toolkit index and capability cards.
+
+    Also run by `pf bootstrap`, so this is only needed after editing a toolkit's
+    CONTEXT.md or a Capability declaration and wanting the result immediately.
+    """
+    from pf.context import (
+        TOOLKIT_INDEX_BUDGET, TOOLS_CARD_BUDGET, build, problems,
+    )
+
+    for line in problems(root()):
+        console.print(f"  [yellow]![/] unparseable frontmatter — contributes nothing: {line}")
+
+    targets = [(group, project)] if group and project else [
+        (g, p) for g, p, _ in all_projects()]
+    written: list[Path] = []
+    for g, p in targets:
+        written += build(root(), g, p)
+
+    for path in dict.fromkeys(written):
+        budget = TOOLKIT_INDEX_BUDGET if path.name == "TOOLKITS.md" else TOOLS_CARD_BUDGET
+        n = estimate_tokens(path.read_text())
+        mark = "[green]✓[/]" if n <= budget else "[red]✗[/]"
+        console.print(f"  {mark} {path.relative_to(root())} [dim]{n}/{budget} tokens[/]")
 
 
 @app.command()
@@ -359,6 +392,22 @@ def check(group: str = "", project: str = "",
     else:
         console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
 
+    # Generated context that has stopped matching what it is generated from is
+    # believed by every agent that reads it — the same failure the tracked-artefact
+    # check exists for, one layer up.
+    from pf.context import is_stale, problems as context_problems
+
+    broken = context_problems(root())
+    for line in broken:
+        console.print(f"[yellow]![/] unparseable frontmatter, contributes no rules: {line}")
+    stale = [f"{g}/{p}" for g, p, _ in targets if is_stale(root(), g, p)]
+    if stale:
+        console.print(f"[red]✗[/] context artefacts  stale for {', '.join(stale)}")
+        console.print("    [dim]run `pf context`[/]")
+    else:
+        console.print("[green]✓[/] context artefacts  toolkit index and capability "
+                      "cards match their sources")
+
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
     mark = "[red]✗[/]" if topo_errors else "[green]✓[/]"
@@ -367,7 +416,7 @@ def check(group: str = "", project: str = "",
     for i in topo:
         console.print(f"    {i}")
 
-    failed = bool(topo_errors) or bool(tracked)
+    failed = bool(topo_errors) or bool(tracked) or bool(stale)
     for g, p, d in targets:
         issues = validate_project(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")
@@ -432,9 +481,12 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
     """Enforce the always-on token budget. Fails if a card is over."""
     rows, over = [], False
     for g, p, d in all_projects():
+        from pf.context import TOOLS_CARD_BUDGET
+
         for artefact, path, budget in [
             ("context_card", d / "kg" / "context_card.md", PROJECT_CARD_BUDGET),
             ("project_claude", d / "CLAUDE.md", 600),
+            ("tools_card", d / "kg" / "tools_card.md", TOOLS_CARD_BUDGET),
         ]:
             if not path.exists():
                 continue
@@ -459,6 +511,15 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
         rows.append(("platform", "ROUTING.md", n, 400, "OK" if n <= 400 else "OVER"))
         over = over or n > 400
 
+    from pf.context import TOOLKIT_INDEX, TOOLKIT_INDEX_BUDGET
+
+    index = root() / TOOLKIT_INDEX
+    if index.exists():
+        n = _count(index.read_text(), exact)
+        rows.append(("platform", "TOOLKITS.md", n, TOOLKIT_INDEX_BUDGET,
+                     "OK" if n <= TOOLKIT_INDEX_BUDGET else "OVER"))
+        over = over or n > TOOLKIT_INDEX_BUDGET
+
     from pf.vendor.card import VENDOR_CARD_BUDGET
 
     vcard = root() / "docs" / "VENDOR-CARD.md"
@@ -472,7 +533,8 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
     for r in rows:
         t.add_row(r[0], r[1], str(r[2]), str(r[3]), f"[green]{r[4]}[/]" if r[4] == "OK" else f"[red]{r[4]}[/]")
     console.print(t)
-    total = sum(r[2] for r in rows if r[1] in ("context_card", "project_claude", "group_card", "ROUTING.md"))
+    total = sum(r[2] for r in rows if r[1] in ("context_card", "project_claude", "group_card",
+                                               "ROUTING.md", "TOOLKITS.md", "tools_card"))
     console.print(f"[dim]worst-case session preamble ≈ {total} tokens[/]")
     raise typer.Exit(1 if over else 0)
 

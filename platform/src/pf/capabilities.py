@@ -36,6 +36,17 @@ class Capability:
 
     name: str
     description: str
+    #: One line an agent needs *before* deciding to use this — what it changes
+    #: about how work is done here. `description` names the capability for a
+    #: human reading `pf capabilities`; this is what stops an agent solving the
+    #: problem the expensive way because it did not know the capability was on.
+    context: str = ""
+    #: Hard rules, one clause each, phrased as instructions. These are the facts
+    #: that are not inferable from the files themselves — that a compiled query
+    #: is regenerated rather than patched, that a workflow is infrastructure. The
+    #: gate already refuses these edits; saying so up front is what saves the turn
+    #: spent discovering the refusal.
+    rules: tuple[str, ...] = ()
     files: dict[str, str] = field(default_factory=dict)
     settings: dict[str, Any] = field(default_factory=dict)
     gate: dict[str, list[str]] = field(default_factory=dict)
@@ -159,6 +170,16 @@ CAPABILITIES: dict[str, Capability] = {
     "evidence": Capability(
         name="evidence",
         description="Evidence BI reporting layer, generated from the semantic layer.",
+        context="This project publishes dashboards as code. Every number on a page "
+                "traces to a metric compiled into reporting/queries/metrics/ — a "
+                "figure that does not exist there is a missing metric definition, "
+                "not a page to write SQL into.",
+        rules=(
+            "Pages never restate business logic; add the metric, then `pf report build`.",
+            "Never edit reporting/queries/metrics/ — it is compiled from the semantic layer.",
+            ("Ratio metrics carry numerator and denominator; re-divide as "
+             "sum(num)/sum(den), never avg(ratio)."),
+        ),
         files={
             "reporting/README.md": EVIDENCE_README,
             "reporting/.gitignore": EVIDENCE_GITIGNORE,
@@ -186,6 +207,15 @@ CAPABILITIES: dict[str, Capability] = {
     "github": Capability(
         name="github",
         description="Run the impact gate on every pull request touching this project.",
+        context="The impact gate runs in CI on every PR touching this project's "
+                "models or sources, so a breaking blast radius fails the check even "
+                "when the local hook was bypassed.",
+        rules=(
+            ("Never edit .github/workflows/ — CI config is infrastructure, and the "
+             "gate cannot be judged by the thing it is gating."),
+            ("The workflow rebuilds the graph before gating; do not assume a "
+             "committed graph."),
+        ),
         files={
             ".github/workflows/impact-gate-{{project}}.yml": GITHUB_WORKFLOW,
             "docs/github.md": GITHUB_README,

@@ -80,6 +80,26 @@ def _render_group_card(root: Path, group: str, project: str) -> StepResult:
     return StepResult("group card", "ok", "sister roster refreshed")
 
 
+def _render_context(root: Path, group: str, project: str) -> StepResult:
+    """Regenerate the toolkit index and this project's capability card.
+
+    Runs on every bootstrap, which is what keeps the card honest: `pf capability-add`
+    bootstraps after applying, so a capability can never be present in a project
+    while absent from the context every agent in it reads.
+    """
+    from pf.context import build, problems
+
+    written = build(root, group, project)
+    broken = problems(root)
+    detail = ", ".join(p.name for p in written)
+    if broken:
+        # Not a failure: the index still renders. But a toolkit whose frontmatter
+        # does not parse has silently contributed no rules at all.
+        return StepResult("toolkit index + capability card", "ok",
+                          f"{detail} — unparseable frontmatter: {'; '.join(broken)}")
+    return StepResult("toolkit index + capability card", "ok", detail)
+
+
 def _export_mdl(root: Path, group: str, project: str) -> StepResult:
     """The BI/agent projection. Emitted even when empty so the path is stable and
     a consumer can be pointed at it before the first model exists."""
@@ -198,6 +218,9 @@ STEPS: list[Step] = [
     Step("context card", "the always-on index every session loads", _render_card),
     Step("group card", "sister roster, so a new project is visible to its siblings",
          _render_group_card),
+    Step("toolkit index + capability card",
+         "what exists and what is forbidden, in context before the mistake rather "
+         "than in a file the agent would have had to know to open", _render_context),
     Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
          _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
