@@ -11,3 +11,5 @@ tools:
     enabled: true
   wren:
     enabled: true
+  openmetadata:
+    enabled: true
