@@ -1,0 +1,35 @@
+{
+  "template": "volume_collapse_is_not_ignorable",
+  "agent": "freshness_triage",
+  "why": "The counterweight to the two noise templates. A prompt tuned only against weekend dips and small samples learns to call everything noise, which is a worse monitor than one that warns too often — it fails silently. Here the sample is large, the day is an ordinary weekday, the same-weekday baseline rules out seasonality, and a second independent monitor on the same table agrees. Nothing is left but a real fault.",
+  "tags": ["anomaly", "calibration"],
+  "requires": {"mart": "mart"},
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "{{mart.name}}",
+        "column_name": "{{mart.column}}",
+        "monitor": "row_count_vs_7d_avg",
+        "status": "fail",
+        "observed": 24118,
+        "expected": 1902334,
+        "deviation_pct": -98.7,
+        "message": "Row count on a Tuesday is 98.7% below the trailing 7-day average. The same-weekday (Tuesday) trailing average is 1,884,006. This table has not been below 1.5M rows on any weekday in 180 days."
+      },
+      {
+        "resource": "{{mart.name}}",
+        "column_name": "{{mart.column}}",
+        "monitor": "null_rate",
+        "status": "fail",
+        "observed": 61.4,
+        "expected": 0.2,
+        "deviation_pct": 30600.0,
+        "message": "Null rate is 61.4% against a 180-day baseline of 0.2%, on the same run."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": false,
+    "severity": {"one_of": ["warn", "critical"]}
+  }
+}

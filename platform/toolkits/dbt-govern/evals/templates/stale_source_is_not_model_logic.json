@@ -1,0 +1,22 @@
+{
+  "template": "stale_source_is_not_model_logic",
+  "agent": "test_failure_triage",
+  "why": "The most common misdiagnosis in dbt triage, and the one this toolkit's troubleshoot-runs skill exists to prevent: only `stale_source` is fixed by re-running. A freshness failure reads as a broken model to anyone seeing just the test name, and sending an engineer to study SQL that has not changed in weeks is the expensive outcome. The evidence that settles it is structural and available in any warehouse — rows present and internally consistent, maximum timestamp old, nothing in the lineage changed.",
+  "tags": ["triage", "classification"],
+  "requires": {"src": "source", "stg": "staging_model"},
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.source_freshness_{{src.name}}",
+        "status": "fail",
+        "message": "Source freshness: max(loaded_at) is 74 hours old, warn_after 12 hours, error_after 24 hours. Rows are present and row count is unchanged from the last successful load."
+      }
+    ],
+    "lineage": "source:{{src.name}} (last loaded 74h ago, row count unchanged, no schema change in 90d)\n  -> model:{{stg.name}} (sql unchanged for 26 days, last build succeeded on the data it had)\n\nRecent git activity on this lineage: none in the last 14 days.\nIngestion pipeline for {{src.name}}: last successful run 74h ago; 3 subsequent runs errored with a connection timeout to the upstream system.\nNo other test on this lineage is failing."
+  },
+  "expect": {
+    "root_cause": "stale_source",
+    "confidence": {"one_of": ["medium", "high"]},
+    "suggested_fix": {"contains_any": ["re-run", "rerun", "ingest", "pipeline", "backfill", "reload"]}
+  }
+}

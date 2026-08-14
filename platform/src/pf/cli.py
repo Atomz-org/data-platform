@@ -436,6 +436,150 @@ def _changed_nodes(project_dir: Path) -> list[str]:
     return sorted(set(nodes))
 
 
+@app.command("evals-gen")
+def cmd_evals_gen(group: str, project: str,
+                  toolkit: str = typer.Option("", help="only templates from these toolkits (comma-separated)"),
+                  ) -> None:
+    """Ground every toolkit's eval templates in this project's own models.
+
+    A toolkit knows what correct judgement looks like; it cannot know which
+    tables to say it about. This resolves the second half from the project's
+    knowledge graph and writes real cases into `evals/cases/generated/`.
+    """
+    from pf.evals.generate import generate
+    from pf.evals.template import TemplateError
+
+    pdir(group, project)  # exits if the project does not exist
+    wanted = {t.strip() for t in toolkit.split(",") if t.strip()} or None
+
+    try:
+        results = generate(root(), group, project, toolkits=wanted)
+    except TemplateError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    if not results:
+        console.print("[yellow]no templates found[/] [dim]— toolkits ship them in "
+                      "platform/toolkits/<toolkit>/evals/templates/[/]")
+        raise typer.Exit(0)
+
+    for r in results:
+        if r.path:
+            console.print(f"  [green]✓[/] {r.template.toolkit:<14} {r.template.name}")
+        else:
+            console.print(f"  [yellow]–[/] {r.template.toolkit:<14} {r.template.name} "
+                          f"[dim]{r.skipped}[/]")
+
+    written = [r for r in results if r.path]
+    console.print(f"\n{len(written)} case(s) written to "
+                  f"groups/{group}/projects/{project}/evals/cases/generated/")
+    if written:
+        console.print("[dim]Generated from this project's models — the reasoning is the "
+                      "toolkit's, the expectations are a starting point. Read them "
+                      "before trusting a green run.[/]")
+
+
+@app.command()
+def evals(group: str = typer.Argument("", help="omit to run the platform tier alone"),
+          project: str = typer.Argument(""),
+          live: bool = typer.Option(False, "--live",
+                                    help="call the real models and grade the responses (costs money)"),
+          samples: int = typer.Option(1, help="samples per live case; >1 exposes unstable prompts"),
+          agent: str = typer.Option("", help="only cases for this agent"),
+          tag: str = typer.Option("", help="only cases carrying this tag"),
+          scope: str = typer.Option("", help="platform, group or project; default is every tier that applies"),
+          ) -> None:
+    """Test the parts of this platform that are prompts.
+
+    Two tiers. The contract tier is deterministic, needs no credential and costs
+    nothing, so it runs by default and belongs in CI. The live tier calls the
+    real models and is the only one that can tell you a prompt got worse — it is
+    opt-in because it bills.
+    """
+    from pf.evals import discover, run_contract, run_live
+    from pf.evals.case import CaseError
+
+    scopes = {s.strip() for s in scope.split(",") if s.strip()} or None
+
+    # --------------------------------------------------------- contract ----
+    console.print("[bold]contract[/] [dim]— no credential, no spend[/]")
+    contract = run_contract(root(), group, project)
+    for r in contract:
+        mark = {"pass": "[green]✓[/]", "warn": "[yellow]![/]", "fail": "[red]✗[/]"}[r.outcome]
+        console.print(f"  {mark} {r.name:<44} [dim]{r.detail}[/]")
+    failed = any(r.outcome == "fail" for r in contract)
+
+    # ------------------------------------------------------------ cases ----
+    # Loading every case is itself a check: a malformed fixture or an expectation
+    # naming a field the schema does not have is caught here, for free, instead
+    # of after a round of billed calls.
+    try:
+        cases = discover(root(), group or None, project or None,
+                         agents={agent} if agent else None,
+                         tags={tag} if tag else None,
+                         scopes=scopes)
+    except CaseError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    tiers: dict[str, list] = {}
+    for c in cases:
+        tiers.setdefault(c.scope, []).append(c)
+
+    console.print(f"\n[bold]cases[/] [dim]— {len(cases)} loaded[/]")
+    for tier in ("platform", "group", "project"):
+        owned: dict[str, int] = {}
+        for c in tiers.get(tier, []):
+            owned[c.owner or "—"] = owned.get(c.owner or "—", 0) + 1
+        if owned:
+            detail = ", ".join(f"{k} ({v})" for k, v in sorted(owned.items()))
+            console.print(f"  [cyan]{tier:<9}[/] {detail}")
+    if not cases:
+        console.print("  [dim]none — add cases to a toolkit's evals/, or this "
+                      "project's evals/cases/[/]")
+
+    if not live:
+        if cases:
+            console.print("\n[dim]cases loaded and valid; --live to grade them "
+                          "against the real models[/]")
+        raise typer.Exit(1 if failed else 0)
+
+    # ---------------------------------------------------------- live -------
+    if not group or not project:
+        console.print("[red]✗[/] --live needs a group and a project: the agents "
+                      "run against a project's context card")
+        raise typer.Exit(1)
+
+    from pf.agents.base import NoCredentials
+
+    console.print(f"\n[bold]live[/] [dim]— {len(cases)} case(s) × {samples} sample(s)[/]")
+    try:
+        report = run_live(root(), group, project, cases, samples=samples)
+    except NoCredentials as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    for r in report.results:
+        if r.error:
+            mark, note = "[red]✗[/]", f"[red]{r.error}[/]"
+        elif r.ok:
+            mark, note = "[green]✓[/]", f"[dim]{r.pass_rate}  {r.tokens:,}t[/]"
+        elif r.flaky:
+            mark, note = "[yellow]![/]", f"[yellow]unstable {r.pass_rate}[/]"
+        else:
+            mark, note = "[red]✗[/]", f"[red]{r.pass_rate}[/]"
+        console.print(f"  {mark} [dim]{r.case.scope[:4]}[/] {r.case.qualified_name:<52} {note}")
+        for f in r.failures:
+            console.print(f"      [red]{f}[/]")
+
+    console.print(f"\n  {report.tokens:,} tokens  ${report.usd:.4f}")
+    if report.flaky:
+        console.print(f"  [yellow]{len(report.flaky)} unstable[/] [dim]— passed some "
+                      f"samples and not others; the prompt is not wrong, it is "
+                      f"underdetermined[/]")
+    raise typer.Exit(1 if failed or not report.ok else 0)
+
+
 @app.command()
 def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_tokens API")) -> None:
     """Enforce the always-on token budget. Fails if a card is over."""

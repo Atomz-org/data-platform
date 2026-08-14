@@ -1,0 +1,26 @@
+{
+  "template": "hard_staleness_is_not_seasonal",
+  "agent": "freshness_triage",
+  "why": "Staleness is not a statistical deviation and must not be explained away as one. No seasonal story accounts for a table that has received nothing for three days. This template exists because a prompt biased toward suppressing noise will reach for the weekend explanation here too — and the load stopped on a Wednesday, on a table that loads seven days a week.",
+  "tags": ["anomaly", "calibration"],
+  "requires": {"stg": "staging_model"},
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "{{stg.name}}",
+        "column_name": "loaded_at",
+        "monitor": "freshness",
+        "status": "fail",
+        "observed": 79.5,
+        "expected": 6.0,
+        "deviation_pct": 1225.0,
+        "message": "Hours since max(loaded_at) is 79.5, threshold 6.0. The last successful load was Wednesday 06:00. This table is loaded hourly, seven days a week, and has not missed a load in 240 days."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": false,
+    "severity": {"one_of": ["warn", "critical"]},
+    "likely_cause": {"contains_any": ["load", "ingest", "pipeline", "stale", "stopped", "fail", "schedul"]}
+  }
+}

@@ -20,6 +20,10 @@ node_modules/
 **/data/*.duckdb
 **/data/*.duckdb.wal
 **/reporting/queries/metrics/
+# Rendered from toolkit templates by `pf evals-gen`, the same way the graph is
+# rendered by `pf kg build`. Hand-written project cases sit one level up, in
+# evals/cases/, and are committed.
+**/evals/cases/generated/
 data/pr/
 .dagster/history/
 .dagster/storage/
