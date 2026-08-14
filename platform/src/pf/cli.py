@@ -161,6 +161,69 @@ def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
         console.print(f"  [dim]gate overlay += {', '.join(changed)}[/]")
 
 
+@app.command("onboard")
+def cmd_onboard(
+    group: str, project: str, source: str,
+    apply_: bool = typer.Option(False, "--apply", help="write the changes; default is a plan"),
+) -> None:
+    """Adopt an existing repository (git URL or path) as a project.
+
+    Plans by default. The apply writes a whole project, rewrites an orchestrator
+    and merges dependency files — the moment to find out where `intermediate/`
+    landed is before it happens.
+    """
+    from pf.onboard import apply as apply_plan, plan as make_plan, resolve_source
+
+    scratch = root() / "data" / "onboard" / f"{group}-{project}"
+    try:
+        src = resolve_source(source, scratch)
+    except RuntimeError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    p = make_plan(root(), group, project, src)
+    s = p.survey
+
+    console.print(f"[bold]{src}[/] [dim]→ {group}/{project}[/]")
+    console.print(f"  dbt: [cyan]{s.dbt_name or 'none found'}[/] "
+                  f"({s.model_count} model file(s))")
+    if s.layer_mapping:
+        console.print("  layers: " + ", ".join(
+            f"{k}→{v}" for k, v in sorted(s.layer_mapping.items())))
+    if s.orchestrators:
+        console.print(f"  orchestrator: [cyan]{', '.join(sorted(s.orchestrators))}[/]")
+    if s.ingestion:
+        console.print(f"  ingestion: {', '.join(sorted(s.ingestion))}")
+    if s.warehouses:
+        console.print(f"  warehouse: {', '.join(sorted(s.warehouses))}")
+
+    console.print("\n[bold]plan[/]")
+    for a in p.actions:
+        count = f" [dim]×{a.count}[/]" if a.count else ""
+        console.print(f"  [green]+[/] {a.kind:<12} {a.detail}{count}")
+
+    for w in p.warnings:
+        console.print(f"  [yellow]![/] {w}")
+
+    if not apply_:
+        console.print("\n[dim]plan only — re-run with --apply to write it[/]")
+        raise typer.Exit(0)
+
+    console.print("\n[bold]applying[/]")
+    try:
+        for line in apply_plan(root(), p):
+            console.print(f"  [green]✓[/] {line}")
+    except FileExistsError as exc:
+        console.print(f"  [red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    _print_bootstrap(bootstrap(root(), group, project))
+
+    console.print("\n[bold]still to do[/] [dim]— the part no tool can infer[/]")
+    for item in p.checklist:
+        console.print(f"  [yellow]□[/] {item}")
+
+
 @app.command("context")
 def cmd_context(group: str = typer.Argument(""), project: str = typer.Argument("")) -> None:
     """Rebuild the toolkit index and capability cards.
