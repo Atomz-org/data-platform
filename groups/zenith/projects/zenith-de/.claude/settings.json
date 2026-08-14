@@ -48,7 +48,9 @@
       "Bash(recce server:*)",
       "Bash(recce debug:*)",
       "Bash(pf tool wren:*)",
-      "Bash(wren:*)"
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)"
     ]
   },
   "hooks": {
