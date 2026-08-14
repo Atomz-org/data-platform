@@ -1,4 +1,4 @@
-## acme — group index (generated 2026-08-13)
+## acme — group index (generated 2026-08-14)
 
 **Sister projects (3):** `acme-eu`, `acme-rollup`, `acme-us`
 **Ontology classes in scope:** Customer, Organization, Subscription, Payment, Usage, Product

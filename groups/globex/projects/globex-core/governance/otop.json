@@ -4,9 +4,9 @@
     "id": "otop.pf.globex.globex-core",
     "title": "Policy and evidence \u2014 globex/globex-core",
     "repository": "https://github.com/suresh-enhanza/data-platform.git",
-    "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+    "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
     "metadata": {
-      "created_at": "2026-08-13T19:02:03Z",
+      "created_at": "2026-08-14T08:59:21Z",
       "actor": "pf.projections.otop"
     }
   },
@@ -17,7 +17,7 @@
       "title": "Agentic Data Platform governance policy",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -32,7 +32,7 @@
       "title": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -45,7 +45,7 @@
       "title": "money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -70,8 +70,8 @@
       "title": "pf check for money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:20Z",
+        "observed_at": "2026-08-14T08:59:20Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -95,7 +95,7 @@
       "title": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -108,7 +108,7 @@
       "title": "entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -132,8 +132,8 @@
       "title": "pf check for entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -157,7 +157,7 @@
       "title": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from th...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -170,7 +170,7 @@
       "title": "link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -192,8 +192,8 @@
       "title": "pf check for link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -217,7 +217,7 @@
       "title": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -230,7 +230,7 @@
       "title": "pii-not-in-consumption",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -258,8 +258,8 @@
       "title": "pf loop run pii-audit for pii-not-in-consumption",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "PII_findings",
@@ -308,7 +308,7 @@
       "title": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -321,7 +321,7 @@
       "title": "mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -345,8 +345,8 @@
       "title": "kg/context_card.md for mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:02Z",
-        "observed_at": "2026-08-13T19:02:02Z",
+        "created_at": "2026-08-14T08:59:20Z",
+        "observed_at": "2026-08-14T08:59:20Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "project_index",
@@ -370,7 +370,7 @@
       "title": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a secon...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -383,7 +383,7 @@
       "title": "metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -413,8 +413,8 @@
       "title": "pf check for metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -438,7 +438,7 @@
       "title": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -451,7 +451,7 @@
       "title": "change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -473,8 +473,8 @@
       "title": "impact_reports for change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "blast_radius_history",
@@ -489,7 +489,7 @@
       "provenance": {
         "actor": "pf.projections.otop",
         "scope": "globex/globex-core",
-        "detail": "7 recorded"
+        "detail": "9 recorded"
       }
     },
     {
@@ -523,7 +523,7 @@
       "title": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against ...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -536,7 +536,7 @@
       "title": "change-verified-against-baseline",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -558,8 +558,8 @@
       "title": "pf tool recce run for change-verified-against-baseline",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "data_diff_against_baseline",
@@ -583,7 +583,7 @@
       "title": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore p...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -596,7 +596,7 @@
       "title": "review-artifacts-exclude-pii",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -643,7 +643,7 @@
       "title": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -656,7 +656,7 @@
       "title": "secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -678,8 +678,8 @@
       "title": "pf gate for secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "observed_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-14T08:59:21Z",
+        "observed_at": "2026-08-14T08:59:21Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -710,7 +710,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "money-without-currency",
@@ -733,7 +733,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "class-without-identity",
@@ -756,7 +756,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "illegal-edge",
@@ -779,7 +779,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/loops/registry.py",
         "language": "python",
         "symbol": "pii_audit",
@@ -802,7 +802,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/kg/build.py",
         "language": "python",
         "symbol": "model-grain",
@@ -825,7 +825,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "metric-shaped-column",
@@ -848,7 +848,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/hooks/pre_tool_use.py",
         "language": "python",
         "digest": "git:2cb586ed58222bcb50e9cd0013d536cb2c9e6856"
@@ -870,7 +870,7 @@
       "language": "bash",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/hooks/pre_commit.sh",
         "language": "bash",
         "digest": "git:ce8e6f322ce15a546c16d2eb25bddf4fab5b6688"
@@ -885,17 +885,18 @@
       "title": "pf.tools.recce:dagster_assets",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-13T21:59:12Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
-        "symbol": "dagster_assets"
+        "symbol": "dagster_assets",
+        "digest": "git:67e6ca24dc96a93585a6116d8dd5658e79d64e18"
       },
       "extensions": {
         "exists": true
@@ -907,17 +908,18 @@
       "title": "pf.tools.recce:register_commands",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-13T21:59:12Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
-        "symbol": "register_commands"
+        "symbol": "register_commands",
+        "digest": "git:67e6ca24dc96a93585a6116d8dd5658e79d64e18"
       },
       "extensions": {
         "exists": true
@@ -929,18 +931,18 @@
       "title": "pf.ontology.model:Role.review_intent",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T02:03:30Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/ontology/model.py",
         "language": "python",
         "symbol": "Role.review_intent",
-        "digest": "git:8e06af5f68f9b56bad734e1a60cb14c2eebd4b13"
+        "digest": "git:cf41b7c4e5726c26f20924a380bc06154b06f626"
       },
       "extensions": {
         "exists": true
@@ -952,17 +954,18 @@
       "title": "pf.tools.recce:generate_config",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
+        "created_at": "2026-08-13T21:59:12Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
-        "symbol": "generate_config"
+        "symbol": "generate_config",
+        "digest": "git:67e6ca24dc96a93585a6116d8dd5658e79d64e18"
       },
       "extensions": {
         "exists": true
@@ -974,18 +977,18 @@
       "title": "gate.yaml:denylist",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-13T03:12:08Z",
+        "created_at": "2026-08-14T09:15:03Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "configuration",
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/suresh-enhanza/data-platform.git",
-        "commit": "039bd919fe2e91aafe398aa973db7c0802b90473",
+        "commit": "2c244873e03b2ea5149936e90bf00e13b2eb2ac5",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "denylist",
-        "digest": "git:1b3ce66eafe4bbacfd460ebca512038e34764393"
+        "digest": "git:54ccd637f11dafb03eb5318672ad93ed626e8e5d"
       },
       "extensions": {
         "exists": true
@@ -999,7 +1002,7 @@
       "to": "intent.pf.money-requires-currency",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1010,7 +1013,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1019,8 +1022,8 @@
       "to": "artifact.pf.pf.ontology.validate.money-without-currency",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1029,8 +1032,8 @@
       "to": "evidence.pf.money-requires-currency.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:20Z",
+        "verified_at": "2026-08-14T08:59:20Z"
       }
     },
     {
@@ -1039,7 +1042,7 @@
       "to": "intent.pf.entity-requires-identity",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1050,7 +1053,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1059,8 +1062,8 @@
       "to": "artifact.pf.pf.ontology.validate.class-without-identity",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1069,8 +1072,8 @@
       "to": "evidence.pf.entity-requires-identity.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1079,7 +1082,7 @@
       "to": "intent.pf.link-must-be-in-topology",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1090,7 +1093,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1099,8 +1102,8 @@
       "to": "artifact.pf.pf.ontology.validate.illegal-edge",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1109,8 +1112,8 @@
       "to": "evidence.pf.link-must-be-in-topology.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1119,7 +1122,7 @@
       "to": "intent.pf.pii-not-in-consumption",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1130,7 +1133,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1139,8 +1142,8 @@
       "to": "artifact.pf.pf.loops.registry.pii-audit",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1149,8 +1152,8 @@
       "to": "evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1169,7 +1172,7 @@
       "to": "intent.pf.mart-declares-grain",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1180,7 +1183,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1189,8 +1192,8 @@
       "to": "artifact.pf.pf.kg.build.model-grain",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1199,8 +1202,8 @@
       "to": "evidence.pf.mart-declares-grain.kg-context-card-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:02Z",
-        "verified_at": "2026-08-13T19:02:02Z"
+        "created_at": "2026-08-14T08:59:20Z",
+        "verified_at": "2026-08-14T08:59:20Z"
       }
     },
     {
@@ -1209,7 +1212,7 @@
       "to": "intent.pf.metric-owns-aggregation",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1220,7 +1223,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1229,8 +1232,8 @@
       "to": "artifact.pf.pf.ontology.validate.metric-shaped-column",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1239,8 +1242,8 @@
       "to": "evidence.pf.metric-owns-aggregation.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1249,7 +1252,7 @@
       "to": "intent.pf.change-declares-blast-radius",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1260,7 +1263,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1269,8 +1272,8 @@
       "to": "artifact.pf.platform.hooks.pre-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1279,8 +1282,8 @@
       "to": "artifact.pf.platform.hooks.pre-commit.sh",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1289,8 +1292,8 @@
       "to": "evidence.pf.change-declares-blast-radius.impact-reports",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1309,7 +1312,7 @@
       "to": "intent.pf.change-verified-against-baseline",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1320,7 +1323,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1329,8 +1332,8 @@
       "to": "artifact.pf.pf.tools.recce.dagster-assets",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1339,8 +1342,8 @@
       "to": "artifact.pf.pf.tools.recce.register-commands",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1349,8 +1352,8 @@
       "to": "evidence.pf.change-verified-against-baseline.pf-tool-recce-run",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     },
     {
@@ -1359,7 +1362,7 @@
       "to": "intent.pf.review-artifacts-exclude-pii",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1370,7 +1373,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1379,8 +1382,8 @@
       "to": "artifact.pf.pf.ontology.model.Role.review-intent",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1389,8 +1392,8 @@
       "to": "artifact.pf.pf.tools.recce.generate-config",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1409,7 +1412,7 @@
       "to": "intent.pf.secrets-never-in-context",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
+        "created_at": "2026-08-13T22:01:06Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -1420,7 +1423,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1429,8 +1432,8 @@
       "to": "artifact.pf.gate.yaml.denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1439,8 +1442,8 @@
       "to": "artifact.pf.platform.hooks.pre-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-13T00:11:17Z",
-        "implemented_at": "2026-08-13T00:11:17Z"
+        "created_at": "2026-08-13T22:01:06Z",
+        "implemented_at": "2026-08-13T22:01:06Z"
       }
     },
     {
@@ -1449,8 +1452,8 @@
       "to": "evidence.pf.secrets-never-in-context.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-13T19:02:03Z",
-        "verified_at": "2026-08-13T19:02:03Z"
+        "created_at": "2026-08-14T08:59:21Z",
+        "verified_at": "2026-08-14T08:59:21Z"
       }
     }
   ],
