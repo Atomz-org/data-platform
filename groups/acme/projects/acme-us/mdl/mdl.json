@@ -28,17 +28,8 @@
           "notNull": false,
           "isHidden": false,
           "properties": {
+            "pf.role": "status_enum",
             "description": "Sales segment. Drives most reporting cuts."
-          }
-        },
-        {
-          "name": "organization_id",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {
-            "pf.role": "foreign_key"
           }
         },
         {
@@ -47,7 +38,9 @@
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "geo_country"
+          }
         },
         {
           "name": "created_at",
@@ -65,15 +58,29 @@
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "quantity"
+          }
         },
         {
           "name": "active_subscriptions",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "organization_id",
           "type": "VARCHAR",
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "foreign_key"
+          }
         },
         {
           "name": "first_subscribed_at",
@@ -141,6 +148,57 @@
           }
         },
         {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "payment_status",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Which statuses count as revenue is a semantic-layer policy."
+          }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
           "name": "customer_id",
           "type": "VARCHAR",
           "isCalculated": false,
@@ -159,46 +217,6 @@
           "properties": {
             "pf.role": "foreign_key"
           }
-        },
-        {
-          "name": "currency_code",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "payment_status",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "customer_segment",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "country_code",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "plan_tier",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
         }
       ],
       "primaryKey": "payment_id",
@@ -238,20 +256,14 @@
           }
         },
         {
-          "name": "customer_segment",
-          "type": "VARCHAR",
+          "name": "gross_amount",
+          "type": "DECIMAL",
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "plan_tier",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "money_amount"
+          }
         },
         {
           "name": "currency_code",
@@ -259,15 +271,29 @@
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "currency_code"
+          }
         },
         {
-          "name": "gross_amount",
-          "type": "DECIMAL",
+          "name": "customer_segment",
+          "type": "VARCHAR",
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
         },
         {
           "name": "payment_count",
@@ -275,7 +301,9 @@
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
-          "properties": {}
+          "properties": {
+            "pf.role": "quantity"
+          }
         }
       ],
       "properties": {
@@ -300,8 +328,22 @@
         "pf.relation": "customer_pays_payment",
         "pf.label": "pays",
         "pf.inverse": "paid by",
-        "pf.description": "",
-        "pf.also_realises": "customer_holds_subscription"
+        "pf.description": ""
+      }
+    },
+    {
+      "name": "fct_payments_dim_customers",
+      "models": [
+        "fct_payments",
+        "dim_customers"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_payments.subscription_id = dim_customers.customer_id",
+      "properties": {
+        "pf.relation": "subscription_settled_by_payment",
+        "pf.label": "settled by",
+        "pf.inverse": "settles",
+        "pf.description": ""
       }
     }
   ],
