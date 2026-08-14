@@ -834,6 +834,17 @@ upstreams:
     branch: main
     licence: Apache-2.0
     role: engine
+    # Cloned shallow, and that is a real limitation rather than a preference.
+    # Full history did not fit — `git fetch --unshallow` exhausted the disk on a
+    # machine with 8 GB free. Consequences, so nobody is surprised:
+    #   - drift detection still works: it hashes the content of adopted files at
+    #     the current checkout, which a shallow clone has.
+    #   - `pf vendor sync` cannot report "N commit(s)" between two pins for this
+    #     upstream, because the range is not in the clone. Read the compare view
+    #     on GitHub instead when bumping it.
+    # `vendor/openmetadata-standards` is full-history — it is 8 MB and it is the
+    # one carrying the schemas our tests validate against, so its diffs matter
+    # most and cost least.
     why: >
       The catalogue is the surface for people who do not read YAML. What made it
       worth integrating rather than reimplementing is the dbt connector: it reads

@@ -73,6 +73,15 @@
       "branch": "main",
       "commit": "fddb712ece491bcd0b76c2d54d52ed4e21a3cd5c"
     },
+    "forge": {
+      "adopted": {
+        "DESIGN.md": "ed4c38c82a2511bc07f1037e86bd0269c04e58f0",
+        "package.json": "5b73fcc5c1ee7f30d685eea1429d62878be60e46",
+        "skills/forge": "40b44b79a97be5f54f6e8cd4afa97103ee5298ff"
+      },
+      "branch": "main",
+      "commit": "7572eb82ca22a9cf4407e16743a32a5c28d43533"
+    },
     "loop-engineering": {
       "adopted": {
         "LOOP.md": "ecf6c89c7a6427eace7401d3f24bd177ed34e39c",
@@ -97,6 +106,25 @@
       },
       "branch": "main",
       "commit": "683adcc8d5a449b9ca9c82e92aaf51c066025c25"
+    },
+    "openmetadata": {
+      "adopted": {
+        "ingestion/src/metadata/workflow/metadata.py": "796d83bef54d12ea2302a4d324e1f860b5f5770c"
+      },
+      "branch": "main",
+      "commit": "13e0ba24d567d3b3ad4d5e9719d58e1425b06044"
+    },
+    "openmetadata-standards": {
+      "adopted": {
+        "schemas/api/classification/createClassification.json": "b56737222efc6e9adf9b614a87623cff11f9ecfd",
+        "schemas/api/classification/createTag.json": "fbdbf522cc53f64f15b4754d5f9cb2574e2802c4",
+        "schemas/api/data/createGlossary.json": "0d0bf7d66308fa0a0a393e8f7b2feb546e72f773",
+        "schemas/api/data/createGlossaryTerm.json": "a22a88ff8c8831904c23b8da11a5991a53657d12",
+        "schemas/api/data/createMetric.json": "597655ea1a51af0fdc44b92f58efd6b2def21031",
+        "schemas/type/basic.json": "5eeafb88f464e2b2ad7e7fc04a33f5b1589e9cf3"
+      },
+      "branch": "main",
+      "commit": "7c1629b925e20928d6e50e7fe829a7e9c20dc918"
     },
     "opentopology": {
       "adopted": {
@@ -137,6 +165,13 @@
       },
       "branch": "main",
       "commit": "98fb9b3805d8846cac53dcb68ba16abeb77fb9b6"
+    },
+    "shadcn-admin": {
+      "adopted": {
+        "src/app": "c1b7f7faeef5f919a488bd52b7608b2488448b70"
+      },
+      "branch": "main",
+      "commit": "2e7b75cec95d6f7653081e91d0f22b376529e9f3"
     },
     "wrenai": {
       "adopted": {
