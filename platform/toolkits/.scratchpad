@@ -1,0 +1,37 @@
+  ✓ knowledge graph          226 nodes across 14 kinds
+  ✓ context card             ~378 tokens / 1500
+  ✓ group card               sister roster refreshed
+  ✓ MDL manifest             3 model(s), 1 relationship(s)
+  ✓ OWL export               16 classes, 28 object properties
+  ✓ otop manifest            8 constraint(s), 10 evidence, 1 unproven
+  ✓ vendor docs              card ~521 / 700 tokens
+  ✓ reporting                6 metric(s), 7 page(s)
+  ✓ recce                    5 preset check(s) · no baseline yet (`pf tool recce baseline`)
+  ✓ dagster code location    7 location(s)
+  ✓ conformance              clean
+acme/acme-rollup
+  ✓ directories              present
+  ✓ knowledge graph          108 nodes across 6 kinds
+  ✓ context card             ~107 tokens / 1500
+  ✓ group card               sister roster refreshed
+  ✓ MDL manifest             0 model(s), 0 relationship(s)
+  ✓ OWL export               16 classes, 28 object properties
+  ✓ otop manifest            8 constraint(s), 10 evidence, 1 unproven
+  ✓ vendor docs              card ~521 / 700 tokens
+  · reporting                no reporting/ (add --with evidence)
+  ✓ recce                    2 preset check(s) · no baseline yet (`pf tool recce baseline`)
+  ✓ dagster code location    7 location(s)
+  ✓ conformance              1 warning(s)
+acme/acme-us
+  ✓ directories              present
+  ✓ knowledge graph          226 nodes across 14 kinds
+  ✓ context card             ~378 tokens / 1500
+  ✓ group card               sister roster refreshed
+  ✓ MDL manifest             3 model(s), 1 relationship(s)
+  ✓ OWL export               16 classes, 28 object properties
+  ✓ otop manifest            8 constraint(s), 10 evidence
+  ✓ vendor docs              card ~521 / 700 tokens
+  ✓ reporting                6 metric(s), 7 page(s)
+  ✓ recce                    5 preset check(s) · no baseline yet (`pf tool recce baseline`)
+  ✓ dagster code location    7 location(s)
+  ✓ conformance              clean
