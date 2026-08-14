@@ -1,0 +1,49 @@
+{
+  "name": "proposals_reference_only_real_columns",
+  "agent": "metric_gap_proposer",
+  "why": "The failure mode structured output cannot catch. A schema-valid, well-named, confidently-rationalised metric over a column that does not exist reads perfectly and breaks at compile time \u2014 the types are right and the grammar is right, so nothing upstream of dbt objects. This is the one template that is strictly better for being grounded: the allowlist is this project's real column list, so it catches a proposal reaching for the discount, tax or margin column that this mart happens not to have.",
+  "tags": [
+    "metrics",
+    "hallucination"
+  ],
+  "input": {
+    "gaps": [
+      "fct_revenue"
+    ],
+    "mart_detail": "model:fct_revenue [grain: one day x segment x plan]\nColumns: revenue_date(event_time), net_amount(money_amount), customer_segment(VARCHAR), plan_tier(VARCHAR), currency_code(VARCHAR), gross_amount(DECIMAL(38,2)), payment_count(BIGINT)\n\nThese are all of the columns this mart has, and no related mart carries others. Only propose metrics these columns actually support."
+  },
+  "expect": {
+    "proposals[].measure_or_expr": {
+      "references_only": [
+        "fct_revenue",
+        "revenue_date",
+        "net_amount",
+        "customer_segment",
+        "plan_tier",
+        "currency_code",
+        "gross_amount",
+        "payment_count"
+      ]
+    },
+    "proposals[].filter_expression": {
+      "references_only": [
+        "fct_revenue",
+        "revenue_date",
+        "net_amount",
+        "customer_segment",
+        "plan_tier",
+        "currency_code",
+        "gross_amount",
+        "payment_count"
+      ]
+    },
+    "proposals[].metric_name": {
+      "matches": "^[a-z][a-z0-9_]*$"
+    }
+  },
+  "generated": {
+    "template": "proposals_reference_only_real_columns",
+    "toolkit": "dbt-semantic",
+    "grounded_on": "fct_revenue"
+  }
+}

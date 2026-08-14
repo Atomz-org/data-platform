@@ -1,0 +1,4 @@
+{
+  "datasource": "duckdb",
+  "path": "/Users/suresh/data-platform/groups/globex/projects/globex-core/data/globex_core.duckdb"
+}

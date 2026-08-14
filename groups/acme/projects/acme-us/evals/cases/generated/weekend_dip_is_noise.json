@@ -1,0 +1,32 @@
+{
+  "name": "weekend_dip_is_noise",
+  "agent": "freshness_triage",
+  "why": "Statistical monitors are not assertions, and this toolkit's skill says so: some deviation is normal. A table dropping sharply on a Saturday is the single most common false positive a volume monitor produces, and a monitor that always warns and is never acted on is worse than no monitor \u2014 it trains the team to ignore the channel that will one day carry a real failure.",
+  "tags": [
+    "anomaly",
+    "noise"
+  ],
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "dim_customers",
+        "column_name": "customer_id",
+        "monitor": "row_count_vs_7d_avg",
+        "status": "warn",
+        "observed": 412,
+        "expected": 2870,
+        "deviation_pct": -85.6,
+        "message": "Row count for Saturday is 85.6% below the trailing 7-day average. The trailing window contains 5 weekdays and 2 weekend days. The same-weekday (Saturday) trailing average is 431, which the observed value is within 5% of."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": true,
+    "severity": "info"
+  },
+  "generated": {
+    "template": "weekend_dip_is_noise",
+    "toolkit": "dlt-quality",
+    "grounded_on": "dim_customers"
+  }
+}

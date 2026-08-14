@@ -1,0 +1,33 @@
+{
+  "name": "ambiguous_evidence_escalates",
+  "agent": "test_failure_triage",
+  "why": "Calibration, half one. Two causes fit the evidence equally \u2014 the source changed shape and the model changed, on the same day \u2014 and the lineage does not record which came first. The correct behaviour is to decline to guess and hand it to a human. Paired with `confident_evidence_does_not_escalate` on purpose: either half alone is passed by a degenerate prompt that always escalates, or never does.",
+  "tags": [
+    "triage",
+    "calibration"
+  ],
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.relationships_dim_customers_customer_id",
+        "status": "fail",
+        "message": "Got 12,904 results, configured to fail if != 0. Values in customer_id with no match in the referenced table."
+      }
+    ],
+    "lineage": "source:stripe (loaded 4h ago; schema changed 4h ago \u2014 a key field was renamed upstream)\n  -> model:dim_customers [grain: one customer] (sql modified 4h ago by a different author; the join key was changed in the same commit)\n\nThe source schema change and the model edit landed within the same hour. The build log does not record which ran first, and the last successful build predates both. Reverting either one alone would produce a consistent state, and the evidence does not say which was intended."
+  },
+  "expect": {
+    "escalate": true,
+    "confidence": {
+      "one_of": [
+        "low",
+        "medium"
+      ]
+    }
+  },
+  "generated": {
+    "template": "ambiguous_evidence_escalates",
+    "toolkit": "dbt-govern",
+    "grounded_on": "dim_customers, stripe"
+  }
+}

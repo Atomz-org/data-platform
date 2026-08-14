@@ -1,0 +1,4 @@
+{
+  "datasource": "duckdb",
+  "path": "/Users/suresh/data-platform/groups/zenith/projects/zenith-de/data/zenith_de.duckdb"
+}

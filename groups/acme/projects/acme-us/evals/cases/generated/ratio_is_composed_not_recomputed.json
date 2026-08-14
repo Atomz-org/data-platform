@@ -1,0 +1,40 @@
+{
+  "name": "ratio_is_composed_not_recomputed",
+  "agent": "metric_gap_proposer",
+  "why": "Pins the composition rule this toolkit's skill states: prefer composing existing metrics over recomputing. A ratio recomputed as its own simple metric is the bug that produces two different conversion rates in one company, and it re-divides wrongly at every grain except the one it was written for \u2014 `avg(ratio)` instead of `sum(num)/sum(den)`. The proposal must also stay inside the columns the mart actually has.",
+  "tags": [
+    "metrics",
+    "composition"
+  ],
+  "input": {
+    "gaps": [
+      "fct_revenue"
+    ],
+    "mart_detail": "model:fct_revenue [grain: one day x segment x plan]\nColumns: revenue_date(event_time), net_amount(money_amount), gross_amount(money_amount), currency_code(currency_code), customer_segment(status_enum), plan_tier(status_enum), payment_count(quantity)\n\nNo metric currently references this mart. Where two of its measures stand in a part-to-whole relationship, a ratio metric composed from them is preferred to a new metric that recomputes the division in SQL."
+  },
+  "expect": {
+    "proposals": {
+      "min_count": 1
+    },
+    "proposals[].metric_name": {
+      "matches": "^[a-z][a-z0-9_]*$"
+    },
+    "proposals[].measure_or_expr": {
+      "references_only": [
+        "fct_revenue",
+        "revenue_date",
+        "net_amount",
+        "gross_amount",
+        "currency_code",
+        "customer_segment",
+        "plan_tier",
+        "payment_count"
+      ]
+    }
+  },
+  "generated": {
+    "template": "ratio_is_composed_not_recomputed",
+    "toolkit": "dbt-semantic",
+    "grounded_on": "fct_revenue"
+  }
+}

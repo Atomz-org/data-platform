@@ -1,0 +1,29 @@
+{
+  "name": "confident_evidence_does_not_escalate",
+  "agent": "test_failure_triage",
+  "why": "Calibration, half two. The evidence here points one way only, so escalating would itself be the failure: a triage step that flags everything for a human has reduced no work, and teams stop reading it within a week. Paired with `ambiguous_evidence_escalates` so that neither an always-escalate nor a never-escalate prompt can pass both.",
+  "tags": [
+    "triage",
+    "calibration"
+  ],
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.source_freshness_stripe",
+        "status": "fail",
+        "message": "Source freshness: max(loaded_at) is 31 hours old, error_after 24 hours."
+      }
+    ],
+    "lineage": "source:stripe (last loaded 31h ago; all rows present and internally consistent)\n  -> model:stg_stripe__charges (sql unchanged for 88 days, last build succeeded on the data it had)\n\nRecent git activity on this lineage: none in the last 60 days.\nIngestion for stripe is scheduled hourly; the last 7 scheduled runs did not start. The scheduler host was rebooted 31 hours ago and this pipeline's schedule entry did not survive the reboot.\nNo other test on this lineage is failing, and no schema has changed."
+  },
+  "expect": {
+    "root_cause": "stale_source",
+    "escalate": false,
+    "confidence": "high"
+  },
+  "generated": {
+    "template": "confident_evidence_does_not_escalate",
+    "toolkit": "dbt-govern",
+    "grounded_on": "stg_stripe__charges, stripe"
+  }
+}

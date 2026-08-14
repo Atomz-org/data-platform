@@ -1,0 +1,42 @@
+{
+  "name": "nulls_from_source_are_upstream_data",
+  "agent": "test_failure_triage",
+  "why": "Separates `upstream_data` from `model_logic` where both would produce the same failing test. What settles it is that the nulls are already present at the source, in a column the model only passes through. Getting this wrong means rewriting a correct model to paper over a genuine ingestion defect \u2014 and the defect keeps landing.",
+  "tags": [
+    "triage",
+    "classification"
+  ],
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.not_null_stg_stripe__charges_payment_id",
+        "status": "fail",
+        "message": "Got 8,431 results, configured to fail if != 0. Null values in payment_id."
+      }
+    ],
+    "lineage": "source:stripe (loaded 1h ago, on schedule)\n  Column profile at load time for the field feeding payment_id: 8,431 nulls / 204,551 rows (4.1%). Previous load: 0 nulls / 203,880 rows.\n  -> model:stg_stripe__charges (sql unchanged for 61 days; payment_id is selected directly with no transformation, no filter and no coalesce)\n\nRecent git activity on this lineage: none in the last 30 days.\nUpstream note: the operational system behind stripe deployed a change 26 hours ago that made this field optional at entry."
+  },
+  "expect": {
+    "root_cause": "upstream_data",
+    "confidence": {
+      "one_of": [
+        "medium",
+        "high"
+      ]
+    },
+    "evidence": {
+      "contains_any": [
+        "source",
+        "null",
+        "upstream",
+        "optional",
+        "load"
+      ]
+    }
+  },
+  "generated": {
+    "template": "nulls_from_source_are_upstream_data",
+    "toolkit": "dbt-govern",
+    "grounded_on": "stg_stripe__charges, stripe"
+  }
+}

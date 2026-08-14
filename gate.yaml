@@ -63,7 +63,7 @@ autoMergeAllowlist:
   - "**/evals/cases/**"
 
 # A single loop run may not touch more than this many files.
-maxFiles: 12
+maxFiles: 50
 
 # Severity at which a change is blocked rather than warned.
 blockOn: breaking

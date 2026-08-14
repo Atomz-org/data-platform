@@ -1,0 +1,37 @@
+{
+  "name": "small_sample_deviation_is_noise",
+  "agent": "freshness_triage",
+  "why": "The other noise class worth pinning. A percentage deviation computed over a few dozen rows carries almost no information \u2014 five extra rows on a 38-row table is a 13% swing \u2014 and treating it as signal is how a monitor earns its way onto the permanent ignore list. The reasoning is arithmetic, not domain knowledge, so it holds for any small table anywhere.",
+  "tags": [
+    "anomaly",
+    "noise"
+  ],
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "dim_customers",
+        "column_name": "customer_id",
+        "monitor": "row_count_vs_7d_avg",
+        "status": "warn",
+        "observed": 43,
+        "expected": 38,
+        "deviation_pct": 13.2,
+        "message": "Row count is 13.2% above the trailing 7-day average of 38 rows. Absolute change: +5 rows. This table has never exceeded 60 rows and grows by a handful of rows most weeks."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": true,
+    "severity": {
+      "one_of": [
+        "info",
+        "warn"
+      ]
+    }
+  },
+  "generated": {
+    "template": "small_sample_deviation_is_noise",
+    "toolkit": "dlt-quality",
+    "grounded_on": "dim_customers"
+  }
+}

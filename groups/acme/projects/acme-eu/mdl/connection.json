@@ -1,0 +1,4 @@
+{
+  "datasource": "duckdb",
+  "path": "/Users/suresh/data-platform/groups/acme/projects/acme-eu/data/acme_eu.duckdb"
+}

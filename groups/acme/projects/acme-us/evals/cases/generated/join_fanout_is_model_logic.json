@@ -1,0 +1,42 @@
+{
+  "name": "join_fanout_is_model_logic",
+  "agent": "test_failure_triage",
+  "why": "The inverse of the stale-source error: real data, current freshness, and a uniqueness test failing because a join multiplied rows. The distinguishing evidence is a row count that grew while the source's did not, plus a recent change to the model's own SQL. An agent that blames the source here sends someone to re-run a pipeline that is working perfectly.",
+  "tags": [
+    "triage",
+    "classification"
+  ],
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.unique_dim_customers_customer_id",
+        "status": "fail",
+        "message": "Got 41,882 results, configured to fail if != 0. Duplicate customer_id values detected."
+      }
+    ],
+    "lineage": "model:dim_customers [grain: one customer] \u2014 79,986 rows out; previous successful build produced 38,104 rows; sql modified 3 hours ago\n  columns: customer_id(natural_key), customer_segment(status_enum), country_code(geo_country), created_at(event_time), subscription_count(quantity), active_subscriptions(quantity), organization_id(foreign_key), first_subscribed_at(event_time), is_active(BOOLEAN)\n\nAll upstream sources loaded on schedule within the last 2 hours, with unchanged row counts and no schema changes.\n\nRecent git activity: dim_customers.sql was modified 3 hours ago \u2014 a LEFT JOIN to an upstream table was added in that commit. That table holds many rows per key of dim_customers's declared grain."
+  },
+  "expect": {
+    "root_cause": "model_logic",
+    "confidence": {
+      "one_of": [
+        "medium",
+        "high"
+      ]
+    },
+    "evidence": {
+      "contains_any": [
+        "join",
+        "row",
+        "duplicate",
+        "fan",
+        "grain"
+      ]
+    }
+  },
+  "generated": {
+    "template": "join_fanout_is_model_logic",
+    "toolkit": "dbt-govern",
+    "grounded_on": "dim_customers"
+  }
+}
