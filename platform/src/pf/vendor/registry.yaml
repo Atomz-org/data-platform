@@ -693,7 +693,7 @@ upstreams:
 
   # -------------------------------------------------------------------- ui --
   - id: forge
-    summary: "the component layer and design tokens the control plane is built on"
+    summary: "the control plane's component layer and design tokens"
     name: Forge (wss3-forge)
     url: https://github.com/Webba-Creative-Technologies/forge
     path: vendor/forge
@@ -736,7 +736,7 @@ upstreams:
           overlays and state transitions, where it explains what moved.
 
   - id: shadcn-admin
-    summary: "dashboard layout and theme-preset patterns, read as reference"
+    summary: "dashboard shell and theme presets, reference only"
     name: Next.js shadcn Admin Dashboard
     url: https://github.com/arhamkhnz/next-shadcn-admin-dashboard-baseui
     path: vendor/shadcn-admin
@@ -768,3 +768,102 @@ upstreams:
           The control plane binds to 127.0.0.1 and is single-operator. Shipping a
           login form over no authentication would imply a boundary that is not
           there.
+
+  # ------------------------------------------------------------- catalogue --
+  - id: openmetadata-standards
+    summary: "entity schemas our catalogue payloads validate against"
+    name: OpenMetadata Standards
+    url: https://github.com/open-metadata/OpenMetadataStandards
+    path: vendor/openmetadata-standards
+    branch: main
+    licence: Apache-2.0
+    role: spec
+    why: >
+      Pinned separately from the product, and this is the point of the split. The
+      server validates what it is sent; without these schemas we would find out
+      whether a payload was well-formed by watching an ingestion fail against a
+      live catalogue. Here the same JSON Schemas run in the test suite, so an
+      upstream field becoming required breaks the build at the pin bump instead.
+    adopted:
+      - upstream: schemas/api/data/createGlossary.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: The glossary payload is validated against this exact file.
+      - upstream: schemas/api/data/createGlossaryTerm.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: >
+          Every ontology class and policy becomes one of these. `glossary`,
+          `name` and `description` are required, which is why an undocumented
+          concept publishes an explicit "no description in the ontology" rather
+          than an empty string that would read as deliberate.
+      - upstream: schemas/api/classification/createClassification.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+      - upstream: schemas/api/classification/createTag.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: One tag per ontology role.
+      - upstream: schemas/api/data/createMetric.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+      - upstream: schemas/type/basic.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: >
+          `entityName` forbids `::` because that is the field separator in the
+          `entityLink` grammar. `_om_name` enforces it rather than trusting our
+          identifiers to be safe by luck.
+    declined:
+      - what: the RDF/OWL ontology and SHACL shapes
+        why: >
+          Tempting, because this platform already emits OWL. Declined for now:
+          aligning our OWL export to OpenMetadata's ontology is a modelling
+          decision about whose vocabulary wins, and making it silently inside a
+          catalogue integration is how an ontology acquires a second owner.
+      - what: the OpenAPI specification
+        why: >
+          We do not generate a client. `metadata` ships one, and a second
+          hand-rolled client is a second thing to keep in step with the server.
+
+  - id: openmetadata
+    summary: "catalogue ingestion, and the dbt connector for lineage"
+    name: OpenMetadata
+    url: https://github.com/open-metadata/OpenMetadata
+    path: vendor/openmetadata
+    branch: main
+    licence: Apache-2.0
+    role: engine
+    why: >
+      The catalogue is the surface for people who do not read YAML. What made it
+      worth integrating rather than reimplementing is the dbt connector: it reads
+      manifest.json and catalog.json and produces column-level lineage, which we
+      would otherwise be re-deriving from the knowledge graph, worse, and then
+      reconciling two answers.
+    adopted:
+      - upstream: ingestion/src/metadata/workflow/metadata.py
+        kind: shape
+        ours: [platform/src/pf/tools/openmetadata.py]
+        note: >
+          The workflow shape our generated `catalog/ingestion.yaml` conforms to —
+          source / sink / workflowConfig. Run through the `metadata` CLI rather
+          than by importing MetadataWorkflow, so the pinned wheel owns its own
+          execution and we own only the configuration.
+    declined:
+      - what: the Airflow-based ingestion scheduler
+        why: >
+          OpenMetadata schedules ingestion with its own Airflow. This platform
+          already orchestrates with Dagster, and the catalogue must describe the
+          build that just happened — so ingestion is a Dagster asset downstream
+          of the marts, not a separate timer that drifts from the warehouse
+          between runs.
+      - what: writing back from the catalogue to the ontology
+        why: >
+          The ontology is canonical in YAML, in git, judged by `pf check` and the
+          gate. A catalogue that can silently redefine a concept is a second
+          source of truth, and then neither side can say what `Customer` means.
+      - what: emitting tables and lineage from our own graph
+        why: >
+          `metadata ingest-dbt` already does it from the dbt artefacts. Two
+          descriptions of one table drift apart, and the catalogue shows whichever
+          ran last.
