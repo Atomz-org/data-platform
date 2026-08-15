@@ -1,0 +1,178 @@
+version: 2
+
+models:
+  - name: cmp_store_vs_fleet_avg
+    config:
+      tags: ['type:comparison']
+    description: >
+      Compares each store's key metrics (revenue, margin, labor cost) against
+      the fleet-wide average with absolute and percentage differences.
+      Grain: one row per store.
+    columns:
+      - name: location_id
+        description: Unique store identifier.
+        tests:
+          - unique
+          - not_null
+      - name: store_name
+        description: Store name.
+      - name: store_revenue
+        description: Store's total revenue.
+      - name: fleet_avg_revenue
+        description: Fleet-wide average revenue per store.
+      - name: revenue_vs_fleet_pct
+        description: Percentage difference from fleet average.
+      - name: margin_vs_fleet_pp
+        description: Operating margin difference in percentage points.
+      - name: revenue_rank
+        description: Store rank by revenue (1 = highest).
+
+  - name: cmp_yoy_revenue_by_store
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Year-over-year revenue and order comparison per store per month.
+      Grain: store x month.
+    columns:
+      - name: location_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: current_month
+        description: The current period month.
+      - name: current_revenue
+        description: Revenue in the current month.
+      - name: prior_year_revenue
+        description: Revenue in the same month one year ago.
+      - name: yoy_revenue_growth_pct
+        description: Year-over-year revenue growth percentage.
+
+  - name: cmp_mom_growth_by_store
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Month-over-month growth rates for revenue, orders, and customers per store,
+      with 3-month trailing average. Grain: store x month.
+    columns:
+      - name: location_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: current_month
+        description: Current period month.
+      - name: mom_revenue_growth_pct
+        description: Month-over-month revenue growth percentage.
+      - name: mom_order_growth_pct
+        description: Month-over-month order growth percentage.
+      - name: trailing_3m_avg_revenue
+        description: 3-month trailing average revenue.
+
+  - name: cmp_product_vs_category_avg
+    config:
+      tags: ['type:comparison']
+    description: >
+      Compares each product's sales, revenue, and margin against its category average.
+      Includes index values (100 = category average). Grain: one row per product.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: product_name
+        description: Product name.
+      - name: category_name
+        description: Category the product belongs to.
+      - name: revenue_vs_category
+        description: Revenue difference from category average.
+      - name: revenue_index
+        description: Revenue index (100 = category average).
+      - name: margin_vs_category_pp
+        description: Margin difference in percentage points from category average.
+
+  - name: cmp_weekday_vs_weekend
+    config:
+      tags: ['type:comparison']
+    description: >
+      Compares weekday vs weekend performance per store including revenue,
+      orders, and average ticket with lift percentages. Grain: one row per store.
+    columns:
+      - name: location_id
+        description: Store identifier.
+        tests:
+          - unique
+          - not_null
+      - name: weekday_avg_revenue_per_day
+        description: Average daily revenue on weekdays.
+      - name: weekend_avg_revenue_per_day
+        description: Average daily revenue on weekends.
+      - name: weekend_revenue_lift_pct
+        description: Percentage lift in weekend revenue vs weekday.
+      - name: weekend_ticket_lift_pct
+        description: Percentage lift in weekend average ticket vs weekday.
+
+  - name: cmp_new_vs_returning_customers
+    config:
+      tags: ['type:comparison']
+    description: >
+      Monthly comparison of new vs returning customer metrics including orders,
+      revenue, average order value, and revenue share. Grain: one row per month.
+    columns:
+      - name: order_month
+        description: Calendar month.
+        tests:
+          - unique
+          - not_null
+      - name: new_customers
+        description: Number of new customers.
+      - name: returning_customers
+        description: Number of returning customers.
+      - name: returning_revenue_share_pct
+        description: Percentage of revenue from returning customers.
+      - name: returning_customer_share_pct
+        description: Percentage of customers who are returning.
+
+  - name: cmp_loyalty_vs_non_loyalty
+    config:
+      tags: ['type:comparison']
+    description: >
+      Side-by-side comparison of loyalty program members vs non-members on
+      lifetime spend, order frequency, retention, and revenue share.
+      Grain: one row per segment (loyalty / non_loyalty).
+    columns:
+      - name: customer_segment
+        description: Either 'loyalty' or 'non_loyalty'.
+        tests:
+          - unique
+          - not_null
+      - name: customer_count
+        description: Number of customers in the segment.
+      - name: avg_lifetime_spend
+        description: Average lifetime spend per customer.
+      - name: avg_total_orders
+        description: Average number of orders per customer.
+      - name: repeat_rate_pct
+        description: Percentage of customers with more than one order.
+      - name: revenue_share_pct
+        description: Segment's share of total revenue.
+
+  - name: cmp_seasonal_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Same-fiscal-quarter year-over-year comparison per store for seasonal
+      performance analysis. Grain: store x fiscal_year x fiscal_quarter.
+    columns:
+      - name: location_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: current_fiscal_year
+        description: Current fiscal year.
+      - name: fiscal_quarter
+        description: Fiscal quarter (1-4).
+      - name: current_revenue
+        description: Revenue in the current period.
+      - name: prior_year_revenue
+        description: Revenue in the same quarter of the prior year.
+      - name: yoy_revenue_growth_pct
+        description: Year-over-year revenue growth percentage.

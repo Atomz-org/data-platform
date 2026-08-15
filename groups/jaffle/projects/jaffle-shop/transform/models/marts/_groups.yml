@@ -1,0 +1,31 @@
+version: 2
+
+groups:
+  - name: finance
+    owner:
+      name: Finance Team
+      email: finance@jaffleshop.com
+  - name: supply_chain
+    owner:
+      name: Supply Chain Team
+      email: supply@jaffleshop.com
+  - name: marketing
+    owner:
+      name: Marketing Team
+      email: marketing@jaffleshop.com
+  - name: hr_operations
+    owner:
+      name: HR Team
+      email: hr@jaffleshop.com
+  - name: product
+    owner:
+      name: Product Team
+      email: product@jaffleshop.com
+  - name: data_platform
+    owner:
+      name: Data Platform Team
+      email: data@jaffleshop.com
+  - name: executive
+    owner:
+      name: Executive Team
+      email: exec@jaffleshop.com

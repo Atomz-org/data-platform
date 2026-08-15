@@ -1,0 +1,9 @@
+id,menu_item_id,name,description,serving_size,is_active,created_at,updated_at
+1,1,House Blend Drip,Standard drip coffee using house blend beans,12,true,2022-01-01 10:00:00,2024-01-15 10:00:00
+2,2,Classic Cold Brew,24-hour cold brew extraction,16,true,2022-01-01 10:00:00,2024-03-01 10:00:00
+3,3,Vanilla Latte Recipe,Espresso with steamed milk and vanilla syrup,16,true,2022-01-01 10:00:00,2023-06-15 10:00:00
+4,4,Caramel Macchiato Recipe,Espresso with vanilla milk and caramel drizzle,16,true,2022-06-01 10:00:00,2024-02-01 10:00:00
+5,5,Blueberry Muffin Recipe,Fresh baked blueberry muffin,1,true,2022-01-01 10:00:00,2023-09-01 10:00:00
+6,6,Chai Tea Latte Recipe,Spiced chai concentrate with steamed milk,16,true,2022-03-01 10:00:00,2024-01-01 10:00:00
+7,7,Espresso Shot Recipe,Single shot of espresso,2,true,2022-01-01 10:00:00,2022-01-01 10:00:00
+8,8,Chocolate Croissant Recipe,Butter croissant with dark chocolate,1,true,2022-04-01 10:00:00,2023-11-01 10:00:00

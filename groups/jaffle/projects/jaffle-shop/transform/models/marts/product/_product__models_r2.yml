@@ -1,0 +1,174 @@
+models:
+  - name: int_product_sales_by_location
+    description: Product sales volume and revenue per store per day. One row per product, location, and date.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+      - name: location_name
+        description: Name of the store location.
+      - name: sale_date
+        description: The date of the sales.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: units_sold
+        description: Number of units sold at this store on this date.
+      - name: daily_revenue
+        description: Total revenue for this product at this store on this date in USD.
+
+  - name: int_menu_item_popularity_rank
+    description: Menu items ranked by sales volume and revenue within each category and overall. One row per product.
+    columns:
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: menu_category_id
+        description: Foreign key to the menu category.
+      - name: category_name
+        description: Name of the menu category.
+      - name: total_units_sold
+        description: Total units sold across all time.
+      - name: total_revenue
+        description: Total revenue across all time in USD.
+      - name: volume_rank_in_category
+        description: Rank by units sold within the menu category.
+      - name: revenue_rank_in_category
+        description: Rank by revenue within the menu category.
+      - name: overall_volume_rank
+        description: Rank by units sold across all products.
+      - name: overall_revenue_rank
+        description: Rank by revenue across all products.
+
+  - name: int_ingredient_waste_cost
+    description: Estimated ingredient waste cost by comparing peak-based purchasing against actual usage. One row per ingredient per month.
+    columns:
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+        data_tests:
+          - not_null
+      - name: ingredient_name
+        description: Name of the ingredient.
+      - name: ingredient_category
+        description: Category of the ingredient.
+      - name: is_perishable
+        description: Whether the ingredient is perishable.
+      - name: usage_month
+        description: The month of usage data.
+        data_tests:
+          - not_null
+      - name: total_quantity_used
+        description: Total quantity actually consumed during the month.
+      - name: estimated_waste_quantity
+        description: Estimated wasted quantity (peak-based purchase minus actual usage).
+      - name: avg_unit_cost
+        description: Average unit cost for the month in USD.
+      - name: estimated_waste_cost
+        description: Estimated cost of wasted ingredients in USD.
+      - name: estimated_waste_pct
+        description: Estimated waste as a percentage of total purchased quantity.
+
+  - name: int_product_margin_trend
+    description: Monthly product margin trend combining selling price with ingredient cost. One row per product per month.
+    columns:
+      - name: sale_month
+        description: The month of the sales.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: monthly_units_sold
+        description: Units sold during the month.
+      - name: monthly_revenue
+        description: Revenue for the month in USD.
+      - name: gross_margin
+        description: Gross margin per unit in USD.
+      - name: gross_margin_pct
+        description: Gross margin as a percentage of price.
+      - name: monthly_gross_profit
+        description: Total gross profit for the month in USD.
+      - name: margin_pct_change
+        description: Change in margin percentage from previous month.
+
+  - name: int_new_product_performance
+    description: First 30/60/90 day sales performance of products since their launch date. One row per product.
+    columns:
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: launch_date
+        description: Date of the first pricing record, used as launch proxy.
+      - name: days_on_market
+        description: Total days since product launch.
+      - name: units_sold_30d
+        description: Units sold in the first 30 days.
+      - name: revenue_30d
+        description: Revenue in the first 30 days in USD.
+      - name: avg_daily_units_30d
+        description: Average daily units sold in the first 30 days.
+      - name: units_sold_60d
+        description: Units sold in the first 60 days.
+      - name: revenue_60d
+        description: Revenue in the first 60 days in USD.
+      - name: avg_daily_units_60d
+        description: Average daily units sold in the first 60 days.
+      - name: units_sold_90d
+        description: Units sold in the first 90 days.
+      - name: revenue_90d
+        description: Revenue in the first 90 days in USD.
+      - name: avg_daily_units_90d
+        description: Average daily units sold in the first 90 days.
+
+  - name: int_customer_product_preference
+    description: Customer product purchase frequency and preference ranking. One row per customer-product combination.
+    columns:
+      - name: customer_id
+        description: Foreign key to the customer.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: purchase_count
+        description: Total number of times the customer purchased this product.
+      - name: order_count
+        description: Number of distinct orders containing this product.
+      - name: product_preference_rank
+        description: Rank of this product for this customer by purchase count.
+      - name: purchase_share_pct
+        description: This product's share of the customer's total purchases.
+      - name: first_purchase_date
+        description: Date of the customer's first purchase of this product.
+      - name: last_purchase_date
+        description: Date of the customer's most recent purchase of this product.

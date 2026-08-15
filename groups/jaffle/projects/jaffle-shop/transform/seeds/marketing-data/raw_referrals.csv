@@ -1,0 +1,7 @@
+id,referrer_customer_id,referee_customer_id,campaign_id,status,referral_code,reward_amount,referred_at,converted_at
+1,1,100,5,converted,REF-001-ABC,500,2024-03-10 10:00:00,2024-03-12 14:00:00
+2,3,200,5,converted,REF-003-DEF,500,2024-03-15 09:00:00,2024-03-20 11:00:00
+3,5,300,5,pending,REF-005-GHI,500,2024-04-01 08:00:00,
+4,50,400,5,converted,REF-050-JKL,500,2024-05-10 14:00:00,2024-05-15 09:00:00
+5,100,500,5,expired,REF-100-MNO,500,2024-06-01 10:00:00,
+6,20,600,5,converted,REF-020-PQR,500,2024-07-15 11:00:00,2024-07-20 16:00:00

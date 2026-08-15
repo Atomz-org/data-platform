@@ -181,6 +181,31 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
     applied = {"classes": 0, "properties": 0, "identities": 0, "relations": 0}
     skipped: list[str] = []
 
+    # A property, identity or relation cannot conjure the class it belongs to.
+    #
+    # Every axiom used to be applied independently, and `classes.setdefault(cls)`
+    # meant an accepted `Supply.cost` created a class `Supply` — with no label, no
+    # description and no identity — after the `Supply` class axiom had been
+    # rejected for having no unique key. The rejected term came back through the
+    # side door, minus everything that made it reviewable, and then failed
+    # `validate_topology` as a class with no identity. Rejecting a class has to
+    # reject what hangs off it, or rejection means nothing.
+    from pf.ontology.model import load_ontology
+
+    # Already-real classes are the platform ontology's plus anything a previous
+    # approval put in this extension; a proposal that adds only a property to an
+    # existing class must still land.
+    known = set(classes) | set(load_ontology().classes)
+    approved_classes = known | {a["subject"] for a in p.accepted
+                                if a["kind"] == "class"}
+
+    def _class(name: str, axiom: dict[str, Any]) -> dict[str, Any] | None:
+        if name not in approved_classes:
+            skipped.append(f"{axiom['kind']} {axiom['subject']} "
+                           f"(class `{name}` was not approved)")
+            return None
+        return classes.setdefault(name, {})
+
     for a in p.accepted:
         kind = a["kind"]
         if kind == "class" and a.get("action") == "add":
@@ -204,12 +229,17 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
                 skipped.append(f"identity {cls} → {a['property']} "
                                f"(would override a curated identity; set override: true)")
                 continue
-            classes.setdefault(cls, {})["identity"] = a["property"]
+            spec = _class(cls, a)
+            if spec is None:
+                continue
+            spec["identity"] = a["property"]
             applied["identities"] += 1
 
         elif kind == "property":
             cls, prop = a["subject"].split(".", 1)
-            spec = classes.setdefault(cls, {})
+            spec = _class(cls, a)
+            if spec is None:
+                continue
             props = spec.setdefault("properties", {})
             entry = {"datatype": a.get("datatype", "string")}
             if a.get("role"):
@@ -221,6 +251,11 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
 
         elif kind == "relation":
             name = a["subject"]
+            missing = [c for c in (a["domain"], a["range"])
+                       if c not in approved_classes]
+            if missing:
+                skipped.append(f"relation {name} (class(es) {missing} not approved)")
+                continue
             relations[:] = [r for r in relations if r.get("name") != name]
             relations.append({
                 "name": name, "domain": a["domain"], "range": a["range"],
@@ -231,6 +266,15 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
             applied["relations"] += 1
 
     ext.setdefault("version", 1)
+    # Recorded before the write, not after. It was set on the dict once the file
+    # had already been serialised, so every skip an approval made — an identity
+    # that would have overridden a curated one, a property whose class was
+    # rejected — was reported to the terminal and then thrown away. The reason an
+    # axiom did not land is the part worth keeping.
+    if skipped:
+        ext["_skipped_on_last_approval"] = skipped
+    else:
+        ext.pop("_skipped_on_last_approval", None)
     ext_path.parent.mkdir(parents=True, exist_ok=True)
     ext_path.write_text(
         "# Group ontology extension — approved additions only.\n"
@@ -240,8 +284,6 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
         "# means nothing to them. Written by `pf ontology approve`; hand edits are\n"
         "# expected and preserved.\n\n"
         + yaml.safe_dump(ext, sort_keys=False, width=100))
-    if skipped:
-        ext.setdefault("_skipped_on_last_approval", skipped)
     return ext_path, applied
 
 

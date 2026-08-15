@@ -1,0 +1,8 @@
+id,name,contact_name,contact_email,phone,address,city,state,country,is_active,created_at
+1,Bean Brothers Roasters,Carlos Martinez,carlos@beanbrothers.com,415-555-0101,100 Roast Ave,San Francisco,CA,US,true,2022-01-15 09:00:00
+2,Local Dairy Co,Sarah Johnson,sarah@localdairy.com,415-555-0102,200 Milk Ln,Oakland,CA,US,true,2022-02-01 09:00:00
+3,Wholesale Baking Supply,Tom Baker,tom@wholesalebaking.com,503-555-0103,300 Flour St,Portland,OR,US,true,2022-03-10 09:00:00
+4,Pacific Tea Imports,Mei Lin,mei@pacifictea.com,206-555-0104,400 Leaf Dr,Seattle,WA,US,true,2022-04-20 09:00:00
+5,Sweet Syrup Co,James Rivera,james@sweetsyrup.com,510-555-0105,500 Sugar Blvd,Berkeley,CA,US,true,2022-05-15 09:00:00
+6,EcoCup Packaging,Linda Green,linda@ecocup.com,415-555-0106,600 Pack Way,San Francisco,CA,US,true,2022-06-01 09:00:00
+7,Mountain Spring Water,David Park,david@mountainspring.com,916-555-0107,700 Spring Rd,Sacramento,CA,US,false,2022-07-10 09:00:00

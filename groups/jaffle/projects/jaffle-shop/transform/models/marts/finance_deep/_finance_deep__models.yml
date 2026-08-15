@@ -1,0 +1,185 @@
+models:
+  - name: int_revenue_by_daypart
+    description: Revenue split by daypart (morning, lunch, afternoon, evening) per store per day.
+    columns:
+      - name: revenue_date
+        description: The date of the revenue.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: daypart
+        description: Time-of-day classification (morning, lunch, afternoon, evening).
+      - name: order_count
+        description: Number of orders in this daypart.
+      - name: total_revenue
+        description: Total revenue for this daypart.
+      - name: avg_order_value
+        description: Average order value for this daypart.
+
+  - name: int_invoice_payment_matching
+    description: Matches invoices to payments and flags partial, over, or underpayments.
+    columns:
+      - name: invoice_id
+        description: The unique invoice identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: payment_match_status
+        description: Payment status (unpaid, underpaid, fully_paid, overpaid).
+
+  - name: int_refund_processing_time
+    description: Refund records enriched with processing time in days and speed tier.
+    columns:
+      - name: refund_id
+        description: The unique refund identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: processing_days
+        description: Number of days from refund request to resolution.
+      - name: processing_speed_tier
+        description: Classification of processing speed (same_day, fast, normal, slow, pending).
+
+  - name: int_gift_card_lifecycle
+    description: Gift card lifecycle metrics including age, usage frequency, and balance tier.
+    columns:
+      - name: gift_card_id
+        description: The unique gift card identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: card_age_days
+        description: Days since the gift card was issued.
+      - name: utilization_pct
+        description: Percentage of the initial balance that has been used.
+      - name: balance_tier
+        description: Current balance tier (high_balance, medium_balance, low_balance, depleted).
+
+  - name: int_expense_fixed_vs_variable
+    description: Classifies expense categories as fixed or variable based on coefficient of variation.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: expense_category_id
+        description: Foreign key to the expense category.
+      - name: expense_classification
+        description: Whether the expense is classified as fixed or variable.
+      - name: coefficient_of_variation
+        description: Statistical measure of relative variability.
+
+  - name: int_revenue_per_customer_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: Monthly revenue and order count per customer.
+    columns:
+      - name: customer_id
+        description: The unique customer identifier.
+      - name: revenue_month
+        description: The month of the revenue.
+      - name: total_revenue
+        description: Total revenue from this customer in the month.
+
+  - name: int_payment_decline_rate
+    description: Payment decline and failure rate by payment method and store per day.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: payment_method
+        description: Payment method used.
+      - name: decline_rate_pct
+        description: Percentage of payment attempts that were declined or failed.
+
+  - name: int_average_transaction_value
+    description: Daily average transaction value by store with rolling 7-day and 30-day trends.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: transaction_date
+        description: The date of the transactions.
+      - name: avg_transaction_value
+        description: Average order total for the day.
+      - name: rolling_7d_avg_atv
+        description: Rolling 7-day average of daily ATV.
+      - name: rolling_30d_avg_atv
+        description: Rolling 30-day average of daily ATV.
+
+  - name: int_revenue_by_customer_segment
+    description: Revenue breakdown by customer RFM segment per month.
+    columns:
+      - name: rfm_segment
+        description: Customer RFM segment name.
+      - name: revenue_month
+        description: The month of the revenue.
+      - name: segment_revenue
+        description: Total revenue from this segment.
+      - name: customer_count
+        description: Number of customers in the segment that month.
+
+  - name: int_expense_by_revenue_ratio
+    description: Monthly expense-to-revenue ratio by expense category and store.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: expense_month
+        description: The month of the expense.
+      - name: expense_to_revenue_pct
+        description: Expense as a percentage of revenue.
+
+  - name: int_accounts_receivable_turnover
+    description: Accounts receivable turnover ratio and days sales outstanding per month.
+    columns:
+      - name: sales_month
+        description: The month of the analysis.
+      - name: ar_turnover_ratio
+        description: Net credit sales divided by average AR balance.
+      - name: days_sales_outstanding
+        description: Average number of days to collect receivables.
+
+  - name: int_budget_utilization_rate
+    description: Budget utilization percentage by category and store per month.
+    columns:
+      - name: budget_id
+        description: The unique budget identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: utilization_rate_pct
+        description: Percentage of budget consumed.
+      - name: budget_status
+        description: Budget health status (over_budget, near_budget, on_track, under_utilized).
+
+  - name: int_daily_profit_by_store
+    config:
+      tags: ['cadence:daily']
+    description: Daily profit calculated as revenue minus allocated expenses per store.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: profit_date
+        description: The date of the profit calculation.
+      - name: daily_profit
+        description: Revenue minus expenses for the day.
+      - name: profit_margin_pct
+        description: Profit as a percentage of revenue.
+
+  - name: int_payment_method_by_segment
+    description: Payment method preferences broken down by customer RFM segment.
+    columns:
+      - name: rfm_segment
+        description: Customer RFM segment name.
+      - name: payment_method
+        description: Payment method used.
+      - name: pct_of_segment_transactions
+        description: Percentage of segment transactions using this method.
+
+  - name: int_revenue_concentration_index
+    description: Herfindahl index measuring revenue concentration across customers per store.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+          - unique
+      - name: herfindahl_index
+        description: Sum of squared revenue shares (0-1 scale).
+      - name: concentration_level
+        description: Concentration classification (highly_diversified to high_concentration).

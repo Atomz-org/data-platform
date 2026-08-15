@@ -1,0 +1,182 @@
+models:
+  - name: int_campaign_customer_overlap
+    description: Analysis of how many customers are targeted by multiple simultaneous campaigns.
+    columns:
+      - name: campaigns_targeted
+        description: Number of campaigns a customer group was targeted by.
+      - name: customer_count
+        description: Number of customers in this overlap group.
+      - name: overlap_tier
+        description: Overlap classification (single_campaign, moderate_overlap, high_overlap).
+
+  - name: int_coupon_time_to_redemption
+    description: Days from coupon issuance to first redemption per coupon.
+    columns:
+      - name: coupon_id
+        description: The unique coupon identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: days_to_first_redemption
+        description: Days from valid_from to first redemption.
+      - name: redemption_speed
+        description: Speed tier (immediate, first_week, first_month, delayed, unredeemed).
+
+  - name: int_loyalty_engagement_frequency
+    description: Average days between loyalty transactions per member.
+    columns:
+      - name: loyalty_member_id
+        description: The unique loyalty member identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_days_between_transactions
+        description: Average gap between loyalty transactions.
+      - name: engagement_tier
+        description: Engagement level (weekly_active, monthly_active, quarterly_active, infrequent).
+
+  - name: int_email_unsubscribe_analysis
+    description: Unsubscribe rates by campaign with open and click context.
+    columns:
+      - name: campaign_id
+        description: The unique campaign identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: unsubscribe_rate_pct
+        description: Percentage of sent emails that resulted in unsubscribes.
+      - name: open_rate_pct
+        description: Percentage of sent emails that were opened.
+
+  - name: int_referral_revenue_attribution
+    description: Revenue attributed to each referrer from converted referrals.
+    columns:
+      - name: referrer_customer_id
+        description: The customer who made the referral.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_attributed_revenue
+        description: Total revenue from referred customers.
+      - name: net_referral_revenue
+        description: Revenue minus rewards paid.
+
+  - name: int_campaign_by_store_performance
+    description: Campaign performance broken down by store location.
+    columns:
+      - name: campaign_id
+        description: The campaign identifier.
+      - name: location_id
+        description: The store location identifier.
+      - name: redemption_count
+        description: Number of coupon redemptions.
+      - name: total_order_revenue
+        description: Revenue from orders using campaign coupons.
+
+  - name: int_loyalty_points_velocity
+    description: Rate of points accumulation and redemption per member per month.
+    columns:
+      - name: loyalty_member_id
+        description: The loyalty member identifier.
+      - name: points_month
+        description: The month of points activity.
+      - name: points_earned
+        description: Points earned in the month.
+      - name: points_redeemed
+        description: Points redeemed in the month.
+      - name: rolling_3m_avg_earned
+        description: Rolling 3-month average of points earned.
+
+  - name: int_customer_channel_affinity
+    description: Which marketing channel each customer responds to most.
+    columns:
+      - name: customer_id
+        description: The customer identifier.
+      - name: channel
+        description: The marketing channel (email, coupon).
+      - name: channel_rank
+        description: Rank of this channel for the customer by engagement.
+      - name: channel_pct
+        description: Percentage of total engagements from this channel.
+
+  - name: int_coupon_discount_depth
+    description: Average discount depth by coupon discount type.
+    columns:
+      - name: discount_type
+        description: Type of discount (percentage, fixed amount, etc.).
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_effective_discount_pct
+        description: Average effective discount as percentage of order value.
+
+  - name: int_social_post_timing
+    description: Social post engagement by day-of-week and platform.
+    columns:
+      - name: platform
+        description: Social media platform.
+      - name: day_name
+        description: Day of the week.
+      - name: engagement_rate_pct
+        description: Total engagements as percentage of impressions.
+
+  - name: int_loyalty_reward_redemption_rate
+    description: Percentage of earned points that get redeemed per member.
+    columns:
+      - name: loyalty_member_id
+        description: The loyalty member identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: redemption_rate_pct
+        description: Points redeemed as percentage of points earned.
+      - name: redemption_behavior
+        description: Behavior classification (high_redeemer, moderate_redeemer, low_redeemer, non_redeemer).
+
+  - name: int_campaign_frequency_impact
+    description: Impact of campaign send frequency on response rates.
+    columns:
+      - name: send_month
+        description: The month of the analysis.
+      - name: send_frequency_tier
+        description: Email frequency tier (low, moderate, high).
+      - name: avg_open_rate
+        description: Average email open rate.
+      - name: avg_unsubscribe_rate
+        description: Average unsubscribe rate.
+
+  - name: int_new_member_activation
+    description: Days from loyalty signup to first transaction per member.
+    columns:
+      - name: loyalty_member_id
+        description: The loyalty member identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: days_to_first_transaction
+        description: Days from enrollment to first loyalty transaction.
+      - name: activation_speed
+        description: Activation speed tier (same_day, first_week, first_month, delayed, not_activated).
+
+  - name: int_coupon_geographic_performance
+    description: Coupon redemption rates by store location and discount type.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: discount_type
+        description: Type of discount.
+      - name: total_redemptions
+        description: Number of redemptions at this location.
+
+  - name: int_marketing_roi_by_quarter
+    description: Quarterly marketing ROI combining campaign costs and total marketing spend.
+    columns:
+      - name: roi_quarter
+        description: The quarter of the ROI calculation.
+        data_tests:
+          - not_null
+          - unique
+      - name: quarterly_roi_pct
+        description: Return on investment percentage for the quarter.
+      - name: revenue_per_marketing_dollar
+        description: Revenue generated per dollar of marketing spend.

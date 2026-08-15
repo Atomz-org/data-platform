@@ -1,0 +1,183 @@
+models:
+  - name: int_shift_actual_vs_scheduled
+    description: Compares scheduled shift times with actual timecard times per shift.
+    columns:
+      - name: shift_id
+        description: The unique shift identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: hours_variance
+        description: Difference between actual and scheduled hours.
+      - name: schedule_adherence_status
+        description: Whether the shift was on_target, over_scheduled, under_scheduled, or no_show.
+
+  - name: int_employee_schedule_adherence
+    description: On-time clock-in and attendance rate per employee.
+    columns:
+      - name: employee_id
+        description: The employee identifier.
+      - name: attendance_rate_pct
+        description: Percentage of scheduled shifts that were worked.
+      - name: on_time_rate_pct
+        description: Percentage of worked shifts with on-time clock-in.
+
+  - name: int_payroll_by_pay_period
+    description: Payroll aggregated by pay period with deduction and overtime rates.
+    columns:
+      - name: pay_period_start
+        description: Start date of the pay period.
+      - name: pay_period_end
+        description: End date of the pay period.
+      - name: total_gross_pay
+        description: Total gross pay for the period.
+      - name: deduction_rate_pct
+        description: Deductions as percentage of gross pay.
+      - name: overtime_pct
+        description: Overtime hours as percentage of total hours.
+
+  - name: int_training_time_to_complete
+    description: Average days to complete each training course.
+    columns:
+      - name: training_course_id
+        description: The unique training course identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_days_to_complete
+        description: Average number of days from start to completion.
+      - name: avg_completion_score
+        description: Average score achieved by completers.
+
+  - name: int_performance_by_department
+    description: Average performance scores by department over time.
+    columns:
+      - name: department_id
+        description: The department identifier.
+      - name: review_quarter
+        description: The quarter of the performance reviews.
+      - name: avg_overall_score
+        description: Average overall performance score.
+      - name: employees_reviewed
+        description: Number of employees reviewed.
+
+  - name: int_employee_availability
+    description: Scheduled vs available hours per employee per week.
+    columns:
+      - name: employee_id
+        description: The employee identifier.
+      - name: week_start
+        description: Start of the week.
+      - name: total_scheduled_hours
+        description: Total hours scheduled for the week.
+      - name: available_hours_remaining
+        description: Hours remaining out of 40-hour week.
+      - name: availability_status
+        description: Availability classification (full_time, part_time, minimal).
+
+  - name: int_maintenance_frequency
+    description: Maintenance event frequency per equipment type and location.
+    columns:
+      - name: equipment_type
+        description: Type of equipment.
+      - name: location_id
+        description: The store location.
+      - name: total_maintenance_events
+        description: Total number of maintenance events.
+      - name: avg_events_per_equipment
+        description: Average maintenance events per piece of equipment.
+
+  - name: int_store_hours_compliance
+    description: Actual operating hours vs posted store hours compliance check.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: work_date
+        description: The date being checked.
+      - name: compliance_status
+        description: Whether the store is compliant, open_when_closed, or closed_when_open.
+
+  - name: int_labor_utilization_rate
+    description: Productive hours (orders present) vs total clocked hours per store per day.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: work_date
+        description: The date of the analysis.
+      - name: orders_per_labor_hour
+        description: Orders processed per labor hour.
+      - name: utilization_tier
+        description: Utilization classification (idle, low, moderate, high).
+
+  - name: int_employee_cross_location
+    description: Employees who work at multiple locations with flexibility classification.
+    columns:
+      - name: employee_id
+        description: The employee identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: locations_worked
+        description: Number of distinct locations worked.
+      - name: location_flexibility
+        description: Classification (single_location, dual_location, multi_location).
+
+  - name: int_overtime_by_department
+    description: Overtime hours distribution across departments by month.
+    columns:
+      - name: department_id
+        description: The department identifier.
+      - name: overtime_month
+        description: The month of the overtime analysis.
+      - name: total_overtime_hours
+        description: Total overtime hours in the department.
+      - name: employees_with_overtime
+        description: Number of employees with overtime.
+
+  - name: int_new_hire_training_progress
+    description: Training completion timeline for employees within their first 90 days.
+    columns:
+      - name: employee_id
+        description: The employee identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: courses_completed
+        description: Number of courses completed during onboarding.
+      - name: onboarding_status
+        description: Onboarding progress (not_started, behind, in_progress, on_track).
+
+  - name: int_payroll_tax_by_jurisdiction
+    description: Payroll tax obligations aggregated by store location per month.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: payroll_month
+        description: The month of payroll.
+      - name: total_gross_pay
+        description: Total gross pay for the location.
+      - name: effective_deduction_rate_pct
+        description: Effective deduction rate as percentage of gross pay.
+
+  - name: int_shift_pattern_by_employee
+    description: Typical shift patterns (morning, afternoon, evening) per employee.
+    columns:
+      - name: employee_id
+        description: The employee identifier.
+      - name: primary_shift_pattern
+        description: Most common shift type (morning_primary, afternoon_primary, evening_primary).
+      - name: shift_variety
+        description: Whether employee works all_shifts, mixed, or single_shift_type.
+
+  - name: int_equipment_cost_per_store
+    description: Total equipment purchase and maintenance cost per store.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_equipment_cost
+        description: Combined purchase and maintenance cost.
+      - name: avg_total_cost_per_equipment
+        description: Average total cost per piece of equipment.

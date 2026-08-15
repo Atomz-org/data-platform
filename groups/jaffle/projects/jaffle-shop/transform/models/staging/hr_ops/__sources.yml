@@ -1,0 +1,39 @@
+version: 2
+
+sources:
+  - name: hr_ops
+    schema: "{{ target.schema }}_raw"
+    description: HR and store operations data for the Jaffle Shop
+    tables:
+      - name: raw_employees
+        description: Employee records including name, hire date, role, and store assignment
+      - name: raw_departments
+        description: Department definitions (operations, kitchen, front-of-house, management)
+      - name: raw_positions
+        description: Job position definitions with pay grades
+      - name: raw_shifts
+        description: Scheduled and actual shift records
+      - name: raw_timecards
+        description: Clock-in/clock-out records for employees
+        loaded_at_field: work_date
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+      - name: raw_payroll
+        description: Payroll records per employee per pay period
+        loaded_at_field: pay_date
+        freshness:
+          warn_after: {count: 48, period: hour}
+          error_after: {count: 168, period: hour}
+      - name: raw_performance_reviews
+        description: Employee performance review scores
+      - name: raw_training_courses
+        description: Available training courses for employees
+      - name: raw_training_completions
+        description: Employee training completion records
+      - name: raw_equipment
+        description: Store equipment inventory (espresso machines, grinders, etc.)
+      - name: raw_maintenance_logs
+        description: Equipment maintenance and repair records
+      - name: raw_store_hours
+        description: Operating hours by store by day of week

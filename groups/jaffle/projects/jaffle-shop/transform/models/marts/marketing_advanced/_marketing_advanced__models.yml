@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: mkt_customer_journey_touchpoints
+    description: All marketing touchpoints per customer in chronological order across email, coupon, and social channels.
+
+  - name: mkt_attribution_multi_touch
+    description: Multi-touch attribution distributing conversion credit using linear and position-based models.
+
+  - name: mkt_campaign_incrementality
+    description: Estimate incremental revenue from campaigns by comparing campaign period vs pre-campaign baseline.
+
+  - name: mkt_email_deliverability
+    description: Email deliverability metrics per campaign including bounce rate, spam rate, and engagement rates.
+
+  - name: mkt_email_list_health
+    description: Email subscriber status classification from active to unsubscribed based on engagement patterns.
+
+  - name: mkt_coupon_stacking_analysis
+    description: Customers using multiple coupons per order with stacking behavior severity classification.
+
+  - name: mkt_loyalty_point_liability
+    description: Total outstanding loyalty point liability in dollars across all members.
+
+  - name: mkt_loyalty_engagement_score
+    description: Per-member engagement score based on transaction frequency, recency, and point redemption.
+
+  - name: mkt_referral_network_analysis
+    description: Referral tree depth and width per referrer with total referred customer revenue.
+
+  - name: mkt_social_content_performance
+    description: Social content engagement metrics by platform and post type with engagement ranking.
+
+  - name: mkt_campaign_fatigue
+    description: Customers receiving excessive campaign touches with declining response rate detection.
+
+  - name: mkt_customer_win_back
+    description: Churned customers who returned and what likely triggered the win-back.
+
+  - name: mkt_loyalty_program_break_even
+    description: Points issued vs redeemed with cumulative breakage analysis and monthly cost tracking.
+
+  - name: mkt_seasonal_campaign_calendar
+    description: Historical campaign timing patterns showing which campaign types perform best by month.
+
+  - name: mkt_customer_communication_preference
+    description: Preferred marketing channel per customer based on email open rates vs coupon response.
+
+  - name: mkt_brand_awareness_proxy
+    description: Social engagement and impressions growth as brand awareness proxy by platform.
+
+  - name: mkt_coupon_fraud_detection
+    description: Unusual coupon usage patterns flagging potential abuse and suspicious activity.
+
+  - name: mkt_loyalty_tier_value
+    description: Average spend and revenue share per loyalty tier to quantify upgrade value.
+
+  - name: mkt_campaign_overlap_impact
+    description: Impact analysis when multiple campaigns run simultaneously with overlap severity.
+
+  - name: mkt_customer_lifecycle_stage
+    description: Classify customers into lifecycle stages from prospect through churned and win-back.
+
+  - name: mkt_channel_mix_optimization
+    description: Recommended channel investment mix based on historical ROAS by campaign type.
+
+  - name: mkt_email_ab_test_results
+    description: A/B test analysis for email campaigns comparing variant performance on open and click rates.
+
+  - name: mkt_promo_calendar_view
+    description: Calendar view of all promotions with overlap detection across campaigns and coupons.
+
+  - name: mkt_customer_next_best_action
+    description: Recommended next marketing action per customer based on lifecycle stage and preferences.
+
+  - name: mkt_retention_driver_analysis
+    description: Factors most correlated with customer retention including loyalty, frequency, and recency.

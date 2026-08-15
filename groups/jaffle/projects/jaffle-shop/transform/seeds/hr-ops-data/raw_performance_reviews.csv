@@ -1,0 +1,7 @@
+id,employee_id,reviewer_id,review_period,comments,overall_score,attendance_score,quality_score,teamwork_score,review_date
+1,2,1,2023-H2,Excellent latte art skills. Consistent and reliable.,4.5,5.0,4.5,4.0,2024-01-15
+2,3,5,2023-H2,Strong performer. Handles rush hours well.,4.0,4.0,4.0,4.5,2024-01-15
+3,4,5,2023-H2,Good progress since starting. Needs speed improvement.,3.5,4.0,3.0,4.0,2024-01-15
+4,7,5,2023-H2,Quick learner. Great customer interactions.,4.0,3.5,4.5,4.0,2024-01-15
+5,8,5,2023-H2,Reliable team member. Could take more initiative.,3.5,4.5,3.5,3.0,2024-01-15
+6,6,1,2023-H2,Inconsistent attendance. Quality of work is good when present.,2.5,2.0,4.0,3.0,2024-01-15

@@ -750,5 +750,132 @@
     "duration_ms": 971,
     "attempt": 1,
     "message": ""
+  },
+  {
+    "run_id": "a985799b",
+    "loop": "onboard-ontology",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-14T20:49:25+00:00",
+    "outcome": "escalated",
+    "findings": [
+      "annotations conform: 23 error(s): money-without-currency x23",
+      "topology conforms: 1 error(s)",
+      "every raw resource annotated: 1 missing: ['raw_supplies']"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": "3 of 4 checks failed"
+  },
+  {
+    "run_id": "dd1718b6",
+    "loop": "onboard-ontology",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-14T20:57:57+00:00",
+    "outcome": "escalated",
+    "findings": [
+      "every raw resource annotated: 1 missing: ['raw_supplies']"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 2,
+    "message": "1 of 4 checks failed"
+  },
+  {
+    "run_id": "b014014f",
+    "loop": "onboard-ontology",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T02:36:29+00:00",
+    "outcome": "ok",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 3,
+    "message": "all 4 checks passed"
+  },
+  {
+    "run_id": "33dc72e6",
+    "loop": "onboard-dialect",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T02:41:33+00:00",
+    "outcome": "ok",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": "all 7 checks passed"
+  },
+  {
+    "run_id": "92e134c1",
+    "loop": "onboard-layers",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T02:47:19+00:00",
+    "outcome": "ok",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": "all 3 checks passed"
+  },
+  {
+    "run_id": "c9343b36",
+    "loop": "onboard-metrics",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T02:51:56+00:00",
+    "outcome": "escalated",
+    "findings": [
+      "semantic manifest validates:   To fix this, change the name of one of these resources: /   - semantic_model.jaffle_shop.orders (models/semantic/sem_commerce.yml) /   - semantic_model.jaffle_shop.orders (models/marts/orders.yml)"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": "1 of 4 checks failed"
+  },
+  {
+    "run_id": "2a89b114",
+    "loop": "onboard-metrics",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T02:55:17+00:00",
+    "outcome": "ok",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 2,
+    "message": "passed with 1 check(s) not exercised"
+  },
+  {
+    "run_id": "65bc1e47",
+    "loop": "onboard-review",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T04:03:02+00:00",
+    "outcome": "escalated",
+    "findings": [
+      "base state built: no target-base/manifest.json"
+    ],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": "1 of 3 checks failed"
+  },
+  {
+    "run_id": "1d0ce946",
+    "loop": "onboard-review",
+    "group": "jaffle",
+    "project": "jaffle-shop",
+    "started_at": "2026-08-15T04:05:05+00:00",
+    "outcome": "ok",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 2,
+    "message": "all 3 checks passed"
   }
 ]

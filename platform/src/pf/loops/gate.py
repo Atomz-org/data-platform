@@ -55,6 +55,44 @@ def load_policy(root: Path) -> dict[str, Any]:
     return policy
 
 
+#: File types that cannot be a credential store, whatever they are called.
+#:
+#: Deliberately short. `.yml` is not here — Kubernetes secrets and Ansible vaults
+#: are YAML — and neither is `.py`, `.json` or `.csv`, each of which really can
+#: hold a key. SQL and Markdown cannot: one is a query, the other is prose.
+_NEVER_A_SECRET = frozenset({".sql", ".md"})
+
+
+def _is_name_heuristic(pattern: str) -> bool:
+    """Whether a denylist pattern is a guess from a filename rather than a fact.
+
+    `**/secrets.toml` names a file. `**/credentials/**` names a directory. Both
+    are statements about a specific thing. `**/*_key*` is different in kind: it
+    matches any filename containing `_key` anywhere, which is a heuristic for
+    "this looks like it holds a credential" — and heuristics have false
+    positives. It denied `surrogate_key_hash.sql`, an ordinary dbt macro, and
+    would deny `dim_key_accounts.sql` in the next project.
+
+    The distinction is structural, not a list to maintain: a pattern whose
+    basename is wrapped in `*` matches a substring of a name, and that is what
+    makes it a guess.
+    """
+    name = pattern.rsplit("/", 1)[-1]
+    return len(name) > 2 and name.startswith("*") and name.endswith("*")
+
+
+def _applicable(path: str, patterns: list[str]) -> list[str]:
+    """Drop name heuristics that cannot be true of this kind of file.
+
+    Only the guesses are dropped. Every exact path and directory rule still
+    applies — a compiled `target/**/*.sql` stays denied, because that rule is
+    about where the file is, not about what its name suggests.
+    """
+    if Path(path).suffix.lower() not in _NEVER_A_SECRET:
+        return patterns
+    return [p for p in patterns or [] if not _is_name_heuristic(p)]
+
+
 def _match(path: str, patterns: list[str]) -> str | None:
     # `removeprefix`, not `lstrip("./")`: lstrip strips a *character set*, so it
     # ate the leading dot of ".env" and turned a denylisted secret into "env",
@@ -80,7 +118,7 @@ def check_path(path: str, root: Path, in_project: bool = False) -> GateResult:
     if _match(path, policy.get("denylist_except", [])):
         return GateResult("allow", "denylist_except", path, "")
 
-    hit = _match(path, policy.get("denylist", []))
+    hit = _match(path, _applicable(path, policy.get("denylist", [])))
     if hit:
         return GateResult("deny", f"denylist:{hit}", path,
                           "generated artefact or secret — never edited by hand")
@@ -132,7 +170,7 @@ def tracked_denied(root: Path) -> list[GateResult]:
     if not deny:
         return []
     proc = subprocess.run(["git", "ls-files"], cwd=str(root),
-                          capture_output=True, text=True)
+                          capture_output=True, text=True, check=False)
     if proc.returncode != 0:
         return []
     allowed = policy.get("denylist_except", []) or []
@@ -140,7 +178,7 @@ def tracked_denied(root: Path) -> list[GateResult]:
     for path in proc.stdout.splitlines():
         if _match(path, allowed):
             continue
-        hit = _match(path, deny)
+        hit = _match(path, _applicable(path, deny))
         if hit:
             out.append(GateResult(
                 "deny", f"tracked:{hit}", path,

@@ -179,6 +179,78 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dagster code location", "ok", f"{n} location(s)")
 
 
+def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
+    """Keep an existing project's dbt config in step with the platform's.
+
+    Two things drift, and both drift silently. A project scaffolded before a
+    dialect toolkit existed has no `macro-paths` entry for it, so every `sf_*`
+    call site in it fails to compile with "macro not found" — an error that
+    points at the model rather than at the missing path. And a project with no
+    `base` target cannot be diffed by Recce at all, because Recce compares two
+    built states and there is nowhere to build the other one.
+
+    Rewritten in place rather than regenerated, so a project's own edits to its
+    dbt_project.yml survive. Text-level for `macro-paths` because a YAML
+    round-trip would reflow the whole file and lose the comments explaining why
+    the platform macros are on the path in the first place.
+    """
+    import yaml
+
+    from pf.onboard.dialect import TOOLKITS
+    from pf.scaffold.generator import PROJECT_TARGETS, render_target
+
+    d = _pdir(root, group, project)
+    changed: list[str] = []
+
+    dbt_yml = d / "transform" / "dbt_project.yml"
+    if dbt_yml.exists():
+        text = dbt_yml.read_text()
+        try:
+            paths = [str(p) for p in
+                     (yaml.safe_load(text) or {}).get("macro-paths") or []]
+        except yaml.YAMLError:
+            paths = []
+        wanted = [f"../../../../../platform/toolkits/{t}/macros" for t in TOOLKITS]
+        missing = [w for w in wanted if not any(w in p for p in paths)]
+        if missing and "macro-paths:" in text:
+            lines = text.splitlines()
+            out, inserted = [], False
+            for i, line in enumerate(lines):
+                out.append(line)
+                nxt = lines[i + 1] if i + 1 < len(lines) else ""
+                if (not inserted and line.lstrip().startswith("- ")
+                        and any(p in line for p in paths)
+                        and not nxt.lstrip().startswith("- ")):
+                    out += [f'  - "{m}"' for m in missing]
+                    inserted = True
+            if inserted:
+                dbt_yml.write_text("\n".join(out) + "\n")
+                changed.append(f"macro-paths += {len(missing)}")
+
+    profiles = d / "transform" / "profiles.yml"
+    if profiles.exists():
+        text = profiles.read_text()
+        try:
+            doc = yaml.safe_load(text) or {}
+        except yaml.YAMLError:
+            doc = {}
+        outputs = next((v.get("outputs") or {} for v in doc.values()
+                        if isinstance(v, dict) and "outputs" in v), {})
+        # Only ever adds. A project that has retargeted `prod` at a real
+        # warehouse must not have it reset to the DuckDB default by a step whose
+        # job is to fill gaps.
+        absent = [n for n in PROJECT_TARGETS if outputs and n not in outputs]
+        if absent:
+            profiles.write_text(text.rstrip("\n") + "\n"
+                                + "".join(render_target(n, PROJECT_TARGETS[n])
+                                          for n in absent))
+            changed.append(f"profiles += {', '.join(absent)}")
+
+    if not changed:
+        return StepResult("dbt wiring", "ok", "macro-paths and targets current")
+    return StepResult("dbt wiring", "ok", "; ".join(changed))
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
 
@@ -209,6 +281,9 @@ STEPS: list[Step] = [
                       "rather than hand-maintained", _build_reporting),
     Step("dagster code location", "an unregistered project never runs",
          _register_code_location),
+    Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
+                       "compile its macros, and one with no base target cannot "
+                       "be diffed", _dbt_wiring),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 

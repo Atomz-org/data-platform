@@ -1,0 +1,162 @@
+version: 2
+
+models:
+  - name: coh_customer_monthly_cohort
+    config:
+      tags: ['type:cohort', 'cadence:monthly']
+    description: >
+      Assigns each customer to their first-purchase month cohort and tracks
+      their orders and revenue in each subsequent month. Grain: customer x order_month.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - not_null
+      - name: cohort_month
+        description: Month of the customer's first-ever order.
+      - name: order_month
+        description: Calendar month of activity.
+      - name: months_since_first_order
+        description: Number of months between cohort month and order month.
+      - name: monthly_orders
+        description: Distinct orders placed by this customer in the order month.
+      - name: monthly_revenue
+        description: Total revenue from this customer in the order month.
+
+  - name: coh_customer_cohort_size
+    config:
+      tags: ['type:cohort']
+    description: >
+      Number of new customers acquired per month (cohort size) with cumulative totals.
+      Grain: one row per cohort month.
+    columns:
+      - name: cohort_month
+        description: Month when new customers placed their first order.
+        tests:
+          - unique
+          - not_null
+      - name: new_customers
+        description: Count of customers whose first order fell in this month.
+      - name: cumulative_customers
+        description: Running total of all new customers up to this month.
+
+  - name: coh_customer_retention_curve
+    config:
+      tags: ['type:cohort']
+    description: >
+      Retention rate at month+0 through month+12 for each acquisition cohort.
+      Grain: cohort_month x months_since_first_order.
+    columns:
+      - name: cohort_month
+        description: Cohort acquisition month.
+        tests:
+          - not_null
+      - name: months_since_first_order
+        description: Period offset from cohort month (0-12).
+      - name: cohort_size
+        description: Number of customers in this cohort.
+      - name: active_customers
+        description: Customers who placed at least one order in this period.
+      - name: retention_rate_pct
+        description: Percentage of cohort still active in this period.
+
+  - name: coh_customer_revenue_by_cohort
+    config:
+      tags: ['type:cohort']
+    description: >
+      Cumulative and per-period revenue contribution by customer cohort over time.
+      Grain: cohort_month x months_since_first_order.
+    columns:
+      - name: cohort_month
+        description: Cohort acquisition month.
+        tests:
+          - not_null
+      - name: months_since_first_order
+        description: Period offset from cohort month.
+      - name: period_revenue
+        description: Revenue generated in this specific period.
+      - name: cumulative_revenue
+        description: Running total of revenue since cohort formation.
+      - name: revenue_per_active_customer
+        description: Average revenue per active customer in this period.
+
+  - name: coh_loyalty_tier_movement
+    config:
+      tags: ['type:cohort']
+    description: >
+      Monthly summary of loyalty tier membership and transitions (maintained, upgrades pending).
+      Grain: activity_month x tier_name.
+    columns:
+      - name: activity_month
+        description: Month of the loyalty activity.
+        tests:
+          - not_null
+      - name: tier_name
+        description: Current tier name.
+      - name: member_count
+        description: Total members in this tier for the month.
+      - name: maintained_count
+        description: Members who maintained their tier.
+
+  - name: coh_employee_tenure_cohort
+    config:
+      tags: ['type:cohort']
+    description: >
+      Groups employees by hire quarter and summarizes retention, tenure, and early attrition.
+      Grain: one row per hire quarter.
+    columns:
+      - name: hire_quarter
+        description: Quarter when employees were hired.
+        tests:
+          - unique
+          - not_null
+      - name: cohort_size
+        description: Number of employees hired in this quarter.
+      - name: still_active
+        description: Employees still active from this cohort.
+      - name: retention_rate_pct
+        description: Percentage of cohort still active.
+      - name: avg_tenure_days
+        description: Average tenure in days for the cohort.
+
+  - name: coh_store_vintage_analysis
+    config:
+      tags: ['type:cohort']
+    description: >
+      Groups stores by opening year and compares performance trajectory over
+      months since opening. Grain: opening_year x months_since_opening.
+    columns:
+      - name: opening_year
+        description: Year the store opened.
+        tests:
+          - not_null
+      - name: months_since_opening
+        description: Months elapsed since store opened (0-24).
+      - name: stores_in_vintage
+        description: Number of stores in this vintage.
+      - name: avg_revenue_per_store
+        description: Average monthly revenue per store in the vintage.
+
+  - name: coh_product_adoption_curve
+    config:
+      tags: ['type:cohort']
+    description: >
+      Tracks product adoption speed by measuring orders and units sold in the
+      first 30, 60, 90, and 180 days after a product's first sale.
+      Grain: one row per product.
+    columns:
+      - name: product_id
+        description: Unique product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: first_sale_date
+        description: Date of the product's first recorded sale.
+      - name: units_first_30d
+        description: Units sold in the first 30 days.
+      - name: units_first_90d
+        description: Units sold in the first 90 days.
+      - name: revenue_first_180d
+        description: Revenue in the first 180 days.

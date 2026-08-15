@@ -1,0 +1,196 @@
+models:
+  - name: int_invoice_line_items_enriched
+    description: Invoice line items joined with product information for product-level revenue analysis.
+    columns:
+      - name: invoice_line_item_id
+        description: The unique key for each invoice line item.
+        data_tests:
+          - not_null
+          - unique
+      - name: invoice_id
+        description: Foreign key to the parent invoice.
+      - name: product_id
+        description: Foreign key to the product.
+      - name: product_name
+        description: Name of the product from the products dimension.
+      - name: product_type
+        description: Type of product (e.g., jaffle, beverage).
+      - name: quantity
+        description: Quantity of the product on this line item.
+      - name: unit_price
+        description: Actual unit price charged in USD.
+      - name: line_total
+        description: Total for this line item in USD.
+      - name: list_price
+        description: Standard list price of the product in USD.
+      - name: price_variance
+        description: Difference between charged price and list price.
+
+  - name: int_invoices_enriched
+    description: Invoices enriched with order and customer context for downstream reporting.
+    columns:
+      - name: invoice_id
+        description: The unique key for each invoice.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Foreign key to the originating order.
+      - name: customer_id
+        description: Foreign key to the customer.
+      - name: customer_name
+        description: Full name of the customer.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: total_amount
+        description: Total invoice amount in USD.
+      - name: days_to_payment
+        description: Number of days between invoice issuance and payment.
+      - name: days_overdue
+        description: Number of days the invoice is past due (0 if not overdue).
+
+  - name: int_refunds_enriched
+    description: Refunds enriched with invoice and order context for refund analysis.
+    columns:
+      - name: refund_id
+        description: The unique key for each refund.
+        data_tests:
+          - not_null
+          - unique
+      - name: refund_amount
+        description: Refund amount in USD.
+      - name: refund_pct_of_invoice
+        description: Refund amount as a percentage of the invoice total.
+      - name: days_to_resolution
+        description: Number of days from request to resolution.
+
+  - name: int_daily_revenue
+    config:
+      tags: ['cadence:daily']
+    description: Daily revenue aggregation by store location.
+    columns:
+      - name: revenue_date
+        description: The date of revenue.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: location_name
+        description: Name of the store location.
+      - name: invoice_count
+        description: Number of invoices for the day.
+      - name: gross_revenue
+        description: Gross revenue (subtotal before tax) in USD.
+      - name: tax_collected
+        description: Total tax collected in USD.
+      - name: total_revenue
+        description: Total revenue including tax in USD.
+      - name: avg_invoice_amount
+        description: Average invoice amount for the day in USD.
+
+  - name: int_payment_method_mix
+    description: Payment method breakdown per order showing transaction counts and amounts.
+    columns:
+      - name: order_id
+        description: Foreign key to the order.
+      - name: payment_method
+        description: Payment method used.
+      - name: transaction_count
+        description: Number of transactions with this method.
+      - name: method_total
+        description: Total amount for this payment method in USD.
+      - name: completed_amount
+        description: Amount of completed transactions in USD.
+      - name: failed_amount
+        description: Amount of failed transactions in USD.
+
+  - name: int_gift_card_running_balance
+    description: Running balance of each gift card over time as redemptions occur.
+    columns:
+      - name: gift_card_id
+        description: The unique key for each gift card.
+      - name: card_number
+        description: The gift card number.
+      - name: initial_balance
+        description: Original balance loaded onto the gift card in USD.
+      - name: processed_date
+        description: Date of the redemption transaction.
+      - name: daily_redemption_amount
+        description: Total redemption amount for the day in USD.
+      - name: running_balance_after
+        description: Remaining balance after this day's redemptions in USD.
+
+  - name: int_tax_collected_by_jurisdiction
+    description: Tax amounts grouped by jurisdiction and period for tax reporting.
+    columns:
+      - name: jurisdiction
+        description: Tax jurisdiction.
+      - name: tax_type
+        description: Type of tax.
+      - name: tax_rate_pct
+        description: Applied tax rate percentage.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: tax_month
+        description: Month the tax was collected.
+      - name: taxable_amount
+        description: Total taxable amount (subtotal) in USD.
+      - name: tax_collected
+        description: Total tax collected in USD.
+
+  - name: int_expense_summary_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: Monthly expense rollup by store and category.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: expense_category_id
+        description: Foreign key to the expense category.
+      - name: category_name
+        description: Name of the expense category.
+      - name: expense_month
+        description: Month the expenses were incurred.
+      - name: expense_count
+        description: Number of individual expense records.
+      - name: total_expense_amount
+        description: Total expense amount for the month in USD.
+      - name: avg_expense_amount
+        description: Average expense amount in USD.
+
+  - name: int_budget_vs_actual
+    description: Comparison of budgeted vs actual revenue and expenses by store and month.
+    columns:
+      - name: budget_id
+        description: The unique key for each budget entry.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: budget_type
+        description: Type of budget (revenue or expense).
+      - name: budget_month
+        description: Month the budget applies to.
+      - name: budgeted_amount
+        description: Budgeted amount in USD.
+      - name: actual_amount
+        description: Actual amount in USD.
+      - name: variance_amount
+        description: Difference between actual and budgeted amounts in USD.
+      - name: variance_pct
+        description: Variance as a percentage of the budgeted amount.
+
+  - name: int_accounts_receivable_aging
+    description: Accounts receivable balances aged into buckets (current, 1-30, 31-60, 61-90, 90+ days).
+    columns:
+      - name: receivable_id
+        description: The unique key for each receivable.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to the customer.
+      - name: amount_outstanding
+        description: Remaining outstanding balance in USD.
+      - name: days_past_due
+        description: Number of days past the due date.
+      - name: aging_bucket
+        description: Aging category (current, 1-30 days, 31-60 days, 61-90 days, 90+ days).
+      - name: aging_bucket_sort
+        description: Numeric sort order for aging buckets.

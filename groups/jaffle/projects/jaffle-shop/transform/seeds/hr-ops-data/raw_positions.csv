@@ -1,0 +1,9 @@
+id,department_id,title,pay_grade,min_pay_rate,max_pay_rate,is_management
+1,1,Store Manager,M2,5500,7500,true
+2,1,Barista,H1,1800,2400,false
+3,1,Shift Lead,H2,2400,3200,false
+4,2,Regional Manager,M3,7500,10000,true
+5,3,Marketing Coordinator,S1,4000,5500,false
+6,4,Accounting Specialist,S2,4500,6000,false
+7,5,HR Generalist,S1,4000,5500,false
+8,6,Supply Chain Analyst,S2,4500,6000,false

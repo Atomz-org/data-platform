@@ -1,0 +1,127 @@
+version: 2
+
+models:
+  - name: narrow_store_count
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the total number of stores.
+
+  - name: narrow_total_revenue
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the total revenue across all orders.
+
+  - name: narrow_total_customers
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the total number of distinct customers.
+
+  - name: narrow_avg_order_value
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the average order value.
+
+  - name: narrow_total_products
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the total number of products.
+
+  - name: narrow_latest_order_date
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the most recent order date.
+
+  - name: narrow_active_employees
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the count of active employees.
+
+  - name: narrow_total_loyalty_members
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the count of loyalty program members.
+
+  - name: narrow_total_suppliers
+    config:
+      tags: ['type:narrow']
+    description: Single-value model returning the count of suppliers.
+
+  - name: narrow_store_ids
+    config:
+      tags: ['type:narrow']
+    description: Single-column model listing all distinct store location IDs.
+
+  - name: narrow_customer_ids
+    config:
+      tags: ['type:narrow']
+    description: Single-column model listing all distinct customer IDs.
+
+  - name: narrow_product_ids
+    config:
+      tags: ['type:narrow']
+    description: Single-column model listing all distinct product IDs.
+
+  - name: narrow_order_date_range
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with the earliest and latest order dates.
+
+  - name: narrow_revenue_date_range
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with the first and last revenue dates.
+
+  - name: narrow_customer_count_by_type
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with customer counts grouped by type (new/returning).
+
+  - name: narrow_store_count_by_status
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with store counts grouped by open status.
+
+  - name: narrow_avg_items_per_order
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with average and median items per order.
+
+  - name: narrow_loyalty_tier_counts
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with member counts per loyalty tier.
+
+  - name: narrow_department_headcount
+    config:
+      tags: ['type:narrow']
+    description: Two-column model with active employee headcount per department.
+
+  - name: narrow_top_10_products
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing the top 10 products by total revenue.
+
+  - name: narrow_top_10_customers
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing the top 10 customers by lifetime spend.
+
+  - name: narrow_top_10_stores
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing the top 10 stores by total revenue.
+
+  - name: narrow_bottom_5_products
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing the bottom 5 products by total revenue.
+
+  - name: narrow_recent_orders
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing the 100 most recent orders.
+
+  - name: narrow_expiring_contracts
+    config:
+      tags: ['type:narrow']
+    description: Three-column model listing supplier contracts by expiry date with days until expiry.

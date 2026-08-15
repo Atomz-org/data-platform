@@ -1,0 +1,4 @@
+id,name,description,min_points,max_points,points_multiplier,annual_reward
+1,Bronze,Welcome tier for all members,0,2499,1.0,0
+2,Silver,Frequent visitors,2500,7499,1.5,500
+3,Gold,Our most loyal customers,7500,99999,2.0,2000

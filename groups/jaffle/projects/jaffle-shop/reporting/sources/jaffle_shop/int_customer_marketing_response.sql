@@ -1,0 +1,3 @@
+-- source extract for int_customer_marketing_response (PII columns excluded by the MDL projection)
+select customer_id, campaign_response_rate_pct, marketing_engagement_level, total_coupons_redeemed, campaigns_responded_to, total_discount_received, first_coupon_redeemed_at, last_coupon_redeemed_at, acquisition_source, acquisition_campaign_id, acquisition_date
+from main_marts.int_customer_marketing_response

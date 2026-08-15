@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: inc_fct_orders
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental version of orders mart processing only new orders by
+      ordered_at timestamp with customer and location enrichment.
+
+  - name: inc_fct_order_items
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental order items joined with orders for incremental filter
+      and products for enrichment.
+
+  - name: inc_fct_invoices
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental invoices with derived status based on payment and
+      due date.
+
+  - name: inc_fct_payment_transactions
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental payment transactions with payment method and monthly
+      aggregation support.
+
+  - name: inc_fct_loyalty_transactions
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental loyalty point transactions tracking earn and burn
+      events by member.
+
+  - name: inc_fct_inventory_movements
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental inventory movements tracking stock changes across
+      warehouses and stores.
+
+  - name: inc_fct_email_events
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental email marketing events tracking opens, clicks, and
+      other engagement actions.
+
+  - name: inc_met_daily_revenue
+    config:
+      tags: ['type:incremental', 'cadence:daily']
+      materialized: incremental
+    description: >
+      Incremental daily revenue aggregation from invoices with store-level
+      granularity.
+
+  - name: inc_met_daily_orders
+    config:
+      tags: ['type:incremental', 'cadence:daily']
+      materialized: incremental
+    description: >
+      Incremental daily order metrics including order count, unique
+      customers, and average order value.
+
+  - name: inc_met_daily_product_sales
+    config:
+      tags: ['type:incremental', 'cadence:daily']
+      materialized: incremental
+    description: >
+      Incremental daily product sales from order items with store and
+      product granularity.
+
+  - name: inc_fct_timecards
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental timecards tracking employee clock-in/out and hours
+      worked.
+
+  - name: inc_fct_shifts
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental shifts tracking scheduled and actual hours by employee
+      and store.
+
+  - name: inc_fct_waste_events
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental waste events tracking product waste by store with
+      reason and cost.
+
+  - name: inc_fct_coupon_redemptions
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental coupon redemptions tracking discount usage by customer
+      and order.
+
+  - name: inc_fct_product_reviews
+    config:
+      tags: ['type:incremental']
+      materialized: incremental
+    description: >
+      Incremental product reviews with rating and sentiment classification.

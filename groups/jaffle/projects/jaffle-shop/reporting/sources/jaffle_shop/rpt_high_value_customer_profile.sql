@@ -1,0 +1,3 @@
+-- source extract for rpt_high_value_customer_profile (PII columns excluded by the MDL projection)
+select customer_id, customer_name, lifetime_spend, total_orders, avg_order_value, first_order_at, last_order_at, customer_tenure_days, days_since_last_order, ltv_tier, rfm_total_score, loyalty_tier, loyalty_points_balance, loyalty_lifecycle_stage, preferred_store_name, preferred_store_visit_pct, distinct_stores_visited, favorite_product, second_favorite_product, third_favorite_product, total_items_purchased, acquisition_source, marketing_engagement_level, total_coupons_redeemed, campaign_response_rate_pct, total_discount_received, spend_percentile_rank, engagement_status, monthly_spend_rate
+from main_marts.rpt_high_value_customer_profile
