@@ -23,7 +23,9 @@ from pf.capabilities import (
 from pf.kg.build import build_graph
 from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, \
     render_group_card, render_project_card
-from pf.kg.impact import gate, impact_of, impact_of_many
+# Aliased: the `gate` command below is a *path* gate and would otherwise shadow
+# this import at module level, so `pf impact-gate` would call the wrong one.
+from pf.kg.impact import gate as impact_gate, impact_of, impact_of_many
 from pf.kg.query import kg_neighbors, kg_search
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
@@ -327,7 +329,7 @@ def impact(group: str, project: str, node: str,
 def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
     """CI gate over a comma-separated set of changed nodes."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
-    code, rendered = gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
+    code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
     console.print(rendered)
     raise typer.Exit(code)
 
