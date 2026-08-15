@@ -11,6 +11,10 @@ node_modules/
 # to the repo root, so `groups/*/projects/*/kg/graph.duckdb` was never ignored
 # and 1,622 regenerable files ended up committed.
 **/target/
+# `target-base/` is where the `base` dbt target's artefacts land — the second
+# state Recce diffs against. Same class of output as `target/`, and just as
+# regenerable; the pattern is separate because `**/target/` does not match it.
+**/target-*/
 **/logs/
 **/dbt_packages/
 **/.duckdb-skills/

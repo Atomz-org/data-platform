@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from pf.scaffold.generator import render
+from pf.scaffold.generator import PROJECT_TARGETS, render, render_profiles
 
 
 @dataclass(frozen=True)
@@ -43,6 +43,12 @@ class Capability:
     # Capabilities that must be applied first. Kept explicit so ordering is a
     # declared fact rather than dict-insertion luck.
     requires: tuple[str, ...] = ()
+    # Only offered to an import whose source actually targets this warehouse.
+    # Without it, `pf onboard` wires in every registered capability, and a
+    # Postgres project would be handed a Snowflake production target it has no
+    # use for and no credentials to fill. Declared here rather than special-cased
+    # in the onboarder so a `bigquery` sibling is one more entry.
+    warehouse: str = ""
 
 
 # --------------------------------------------------------------- github -----
@@ -155,6 +161,68 @@ static/data/
 """
 
 
+# ------------------------------------------------------------ warehouses ----
+SNOWFLAKE_README = """\
+# Production warehouse — Snowflake
+
+**{{group}}/{{project}}** develops on DuckDB and runs production on Snowflake.
+One set of models serves both: the `sf_*` macros in
+`platform/toolkits/dbt-snowflake` dispatch per adapter, so a model is written
+once and compiles to whatever the *target* understands. `pf dialect` lists what
+is covered, and `pf align validate {{group}} {{project}} --stage dialect` is the
+gate that says whether this project is actually portable or merely untested.
+
+## Why development stays on DuckDB
+
+A developer who needs a warehouse account to run the project stops running the
+project. Every target but `prod` is a local DuckDB file, so `dbt build` works on
+a laptop, offline, with no credentials, in seconds — and `base` exists so Recce
+has a second state to diff against.
+
+## Credentials
+
+Read from the environment at run time and **never written to a file here**:
+
+    SNOWFLAKE_ACCOUNT   SNOWFLAKE_USER    SNOWFLAKE_ROLE
+    SNOWFLAKE_WAREHOUSE SNOWFLAKE_DATABASE SNOWFLAKE_SCHEMA
+
+Authentication is key-pair by default — set `SNOWFLAKE_PRIVATE_KEY_PATH`. Set
+`SNOWFLAKE_PASSWORD` instead only if key-pair is not available to you; dbt uses
+whichever is present. `pf doctor` reports which are missing. Never paste one into
+a chat, a model file, or this repository.
+
+## Running against it
+
+```bash
+DBT_TARGET=prod dbt build          # explicit, every time
+pf align validate {{group}} {{project}} --stage dialect
+```
+
+There is deliberately no shortcut. The target is named on every invocation
+because the failure mode — believing you are on dev and being on prod — is worse
+than the typing.
+"""
+
+#: The whole profiles.yml with `prod` retargeted, built from the same target
+#: table the scaffold uses. Derived rather than written out, so dev/ci/base stay
+#: identical to every other project's — a capability that quietly changed the
+#: development target would move the thing it was asked to leave alone.
+SNOWFLAKE_PROFILES = render_profiles("{{module}}", {
+    **PROJECT_TARGETS,
+    "prod": {
+        "type": "snowflake",
+        "account": "{{ env_var('SNOWFLAKE_ACCOUNT') }}",
+        "user": "{{ env_var('SNOWFLAKE_USER') }}",
+        "private_key_path": "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') }}",
+        "password": "{{ env_var('SNOWFLAKE_PASSWORD', '') }}",
+        "role": "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}",
+        "warehouse": "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}",
+        "database": "{{ env_var('SNOWFLAKE_DATABASE') }}",
+        "schema": "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}",
+        "threads": 8,
+    },
+})
+
 CAPABILITIES: dict[str, Capability] = {
     "evidence": Capability(
         name="evidence",
@@ -182,6 +250,24 @@ CAPABILITIES: dict[str, Capability] = {
             ],
             "impact_required": ["**/reporting/pages/**"],
         },
+    ),
+    "snowflake": Capability(
+        name="snowflake",
+        description="Run production on Snowflake while development stays on DuckDB.",
+        files={
+            "transform/profiles.yml": SNOWFLAKE_PROFILES,
+            "docs/snowflake.md": SNOWFLAKE_README,
+        },
+        settings={
+            "permissions": {"allow": ["Bash(pf align:*)", "Bash(pf dialect:*)"]},
+            "enabledPlugins": ["dbt-snowflake@platform"],
+        },
+        # Only `prod` reads these, so a developer needs none of them. `pf doctor`
+        # reports what is unset rather than the scaffold refusing to write the
+        # target — a project is configured for Snowflake long before anyone has
+        # an account for it.
+        env=("SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_DATABASE"),
+        warehouse="snowflake",
     ),
     "github": Capability(
         name="github",
