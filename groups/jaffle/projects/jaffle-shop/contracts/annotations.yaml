@@ -1,0 +1,735 @@
+version: 2
+resources:
+- resource: raw_accounts_receivable
+  concept: AccountReceivable
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    customer_id: foreign_key
+    invoice_id: foreign_key
+    amount_due: money_amount
+    amount_paid: money_amount
+    amount_outstanding: money_amount
+    due_at: event_time
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_accounts_receivable by `pf semantic scan`.
+  grain: one accountreceivable (8 rows scanned)
+  currency: USD
+- resource: raw_budgets
+  concept: Budget
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    store_id: foreign_key
+    category_id: foreign_key
+    budgeted_amount: money_amount
+    month_start: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_budgets by `pf semantic scan`.
+  grain: one budget (8 rows scanned)
+  currency: USD
+- resource: raw_campaign_spend
+  concept: CampaignSpend
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    campaign_id: foreign_key
+    amount: money_amount
+    spend_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_campaign_spend by `pf semantic scan`.
+  grain: one campaignspend (10 rows scanned)
+  currency: USD
+- resource: raw_campaigns
+  concept: Campaign
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    start_date: event_time
+    end_date: event_time
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_campaigns by `pf semantic scan`.
+  grain: one campaign (7 rows scanned)
+- resource: raw_coupon_redemptions
+  concept: CouponRedemption
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    coupon_id: foreign_key
+    order_id: foreign_key
+    customer_id: foreign_key
+    redeemed_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_coupon_redemptions by `pf semantic scan`.
+  grain: one couponredemption (8 rows scanned)
+- resource: raw_coupons
+  concept: Coupon
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    campaign_id: foreign_key
+    discount_amount: money_amount
+    minimum_order_amount: money_amount
+    valid_from: event_time
+    valid_until: event_time
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_coupons by `pf semantic scan`.
+  grain: one coupon (7 rows scanned)
+  currency: USD
+- resource: raw_customers
+  concept: Customer
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_customers by `pf semantic scan`.
+  grain: one customer
+- resource: raw_delivery_shipments
+  concept: DeliveryShipment
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    purchase_order_id: foreign_key
+    supplier_id: foreign_key
+    destination_id: foreign_key
+    shipped_at: event_time
+    estimated_arrival_at: event_time
+    actual_arrival_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_delivery_shipments by `pf semantic scan`.
+  grain: one deliveryshipment (7 rows scanned)
+- resource: raw_departments
+  concept: Department
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_departments by `pf semantic scan`.
+  grain: one department (6 rows scanned)
+- resource: raw_email_events
+  concept: EmailEvent
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    campaign_id: foreign_key
+    customer_id: foreign_key
+    event_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_email_events by `pf semantic scan`.
+  grain: one emailevent (10 rows scanned)
+- resource: raw_employees
+  concept: Employee
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    store_id: foreign_key
+    department_id: foreign_key
+    position_id: foreign_key
+    hire_date: event_time
+    termination_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_employees by `pf semantic scan`.
+  grain: one employee
+- resource: raw_equipment
+  concept: Equipment
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    store_id: foreign_key
+    purchase_cost: money_amount
+    purchase_date: event_time
+    warranty_expiry: event_time
+    last_maintenance_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_equipment by `pf semantic scan`.
+  grain: one equipment (8 rows scanned)
+  currency: USD
+- resource: raw_expense_categories
+  concept: ExpenseCategory
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_expense_categories by `pf semantic scan`.
+  grain: one expensecategory (8 rows scanned)
+- resource: raw_expenses
+  concept: Expense
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    store_id: foreign_key
+    category_id: foreign_key
+    amount: money_amount
+    incurred_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_expenses by `pf semantic scan`.
+  grain: one expense (8 rows scanned)
+  currency: USD
+- resource: raw_gift_cards
+  concept: GiftCard
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    customer_id: foreign_key
+    initial_balance: money_amount
+    current_balance: money_amount
+    issued_at: event_time
+    expires_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_gift_cards by `pf semantic scan`.
+  grain: one giftcard (7 rows scanned)
+  currency: USD
+- resource: raw_ingredient_prices
+  concept: IngredientPrice
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    ingredient_id: foreign_key
+    supplier_id: foreign_key
+    unit_cost: money_amount
+    effective_from: event_time
+    effective_to: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_ingredient_prices by `pf semantic scan`.
+  grain: one ingredientprice (8 rows scanned)
+  currency: USD
+- resource: raw_ingredients
+  concept: Ingredient
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_ingredients by `pf semantic scan`.
+  grain: one ingredient (10 rows scanned)
+- resource: raw_inventory_counts
+  concept: InventoryCount
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    location_id: foreign_key
+    counted_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_inventory_counts by `pf semantic scan`.
+  grain: one inventorycount (8 rows scanned)
+- resource: raw_inventory_movements
+  concept: InventoryMovement
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    location_id: foreign_key
+    reference_id: foreign_key
+    moved_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_inventory_movements by `pf semantic scan`.
+  grain: one inventorymovement (8 rows scanned)
+- resource: raw_invoice_line_items
+  concept: InvoiceLineItem
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    invoice_id: foreign_key
+    product_id: foreign_key
+    unit_price: money_amount
+    line_total: money_amount
+  rename: {}
+  links: {}
+  description: Induced from raw_invoice_line_items by `pf semantic scan`.
+  grain: one invoicelineitem (10 rows scanned)
+  currency: USD
+- resource: raw_invoices
+  concept: Invoice
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    order_id: foreign_key
+    customer_id: foreign_key
+    subtotal: money_amount
+    tax_amount: money_amount
+    total_amount: money_amount
+    amount_paid: money_amount
+    amount_due: money_amount
+    issued_at: event_time
+    due_at: event_time
+    paid_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_invoices by `pf semantic scan`.
+  grain: one invoice (8 rows scanned)
+  currency: USD
+- resource: raw_items
+  concept: Item
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    order_id: foreign_key
+  rename: {}
+  links: {}
+  description: Induced from raw_items by `pf semantic scan`.
+  grain: one item (90,900 rows scanned)
+- resource: raw_loyalty_members
+  concept: LoyaltyMember
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    customer_id: foreign_key
+    tier_id: foreign_key
+    enrolled_at: event_time
+    last_activity_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_loyalty_members by `pf semantic scan`.
+  grain: one loyaltymember (8 rows scanned)
+- resource: raw_loyalty_tiers
+  concept: LoyaltyTier
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_loyalty_tiers by `pf semantic scan`.
+  grain: one loyaltytier (3 rows scanned)
+- resource: raw_loyalty_transactions
+  concept: LoyaltyTransaction
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    loyalty_member_id: foreign_key
+    order_id: foreign_key
+    transacted_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_loyalty_transactions by `pf semantic scan`.
+  grain: one loyaltytransaction (8 rows scanned)
+- resource: raw_maintenance_logs
+  concept: MaintenanceLog
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    equipment_id: foreign_key
+    cost: money_amount
+    scheduled_date: event_time
+    completed_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_maintenance_logs by `pf semantic scan`.
+  grain: one maintenancelog (7 rows scanned)
+  currency: USD
+- resource: raw_menu_categories
+  concept: MenuCategory
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    parent_category_id: foreign_key
+  rename: {}
+  links: {}
+  description: Induced from raw_menu_categories by `pf semantic scan`.
+  grain: one menucategory (8 rows scanned)
+- resource: raw_menu_items
+  concept: MenuItem
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    category_id: foreign_key
+    price: money_amount
+  rename: {}
+  links: {}
+  description: Induced from raw_menu_items by `pf semantic scan`.
+  grain: one menuitem (10 rows scanned)
+  currency: USD
+- resource: raw_nutritional_info
+  concept: NutritionalInfo
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    menu_item_id: foreign_key
+    total_fat_g: money_amount
+    total_carbs_g: money_amount
+    total_sugars_g: money_amount
+    updated_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_nutritional_info by `pf semantic scan`.
+  grain: one nutritionalinfo (8 rows scanned)
+  currency: USD
+- resource: raw_orders
+  concept: Order
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    ordered_at: event_time
+    store_id: foreign_key
+    subtotal: money_amount
+    order_total: money_amount
+  rename: {}
+  links: {}
+  description: Induced from raw_orders by `pf semantic scan`.
+  grain: one order
+  currency: USD
+- resource: raw_payment_transactions
+  concept: PaymentTransaction
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    order_id: foreign_key
+    gift_card_id: foreign_key
+    amount: money_amount
+    processed_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_payment_transactions by `pf semantic scan`.
+  grain: one paymenttransaction (8 rows scanned)
+  currency: USD
+- resource: raw_payroll
+  concept: Payroll
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    employee_id: foreign_key
+    pay_period_start: event_time
+    pay_period_end: event_time
+    pay_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_payroll by `pf semantic scan`.
+  grain: one payroll (8 rows scanned)
+- resource: raw_performance_reviews
+  concept: PerformanceReview
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    employee_id: foreign_key
+    reviewer_id: foreign_key
+    review_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_performance_reviews by `pf semantic scan`.
+  grain: one performancereview (6 rows scanned)
+- resource: raw_po_line_items
+  concept: PoLineItem
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    purchase_order_id: foreign_key
+    product_id: foreign_key
+    unit_cost: money_amount
+    line_total: money_amount
+  rename: {}
+  links: {}
+  description: Induced from raw_po_line_items by `pf semantic scan`.
+  grain: one polineitem (8 rows scanned)
+  currency: USD
+- resource: raw_po_receipts
+  concept: PoReceipt
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    purchase_order_id: foreign_key
+    po_line_item_id: foreign_key
+    received_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_po_receipts by `pf semantic scan`.
+  grain: one poreceipt (7 rows scanned)
+- resource: raw_positions
+  concept: Position
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    department_id: foreign_key
+  rename: {}
+  links: {}
+  description: Induced from raw_positions by `pf semantic scan`.
+  grain: one position (8 rows scanned)
+- resource: raw_pricing_history
+  concept: PricingHistory
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    old_price: money_amount
+    new_price: money_amount
+    changed_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_pricing_history by `pf semantic scan`.
+  grain: one pricinghistory (8 rows scanned)
+  currency: USD
+- resource: raw_product_reviews
+  concept: ProductReview
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    customer_id: foreign_key
+    order_id: foreign_key
+    reviewed_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_product_reviews by `pf semantic scan`.
+  grain: one productreview (7 rows scanned)
+- resource: raw_products
+  concept: Product
+  source: jaffle-seeds
+  roles:
+    sku: natural_key
+    price: money_amount
+  rename: {}
+  links: {}
+  description: Induced from raw_products by `pf semantic scan`.
+  grain: one product
+  currency: USD
+- resource: raw_purchase_orders
+  concept: PurchaseOrder
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    supplier_id: foreign_key
+    warehouse_id: foreign_key
+    total_amount: money_amount
+    ordered_at: event_time
+    expected_delivery_at: event_time
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_purchase_orders by `pf semantic scan`.
+  grain: one purchaseorder (8 rows scanned)
+  currency: USD
+- resource: raw_recipe_ingredients
+  concept: RecipeIngredient
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    recipe_id: foreign_key
+    ingredient_id: foreign_key
+  rename: {}
+  links: {}
+  description: Induced from raw_recipe_ingredients by `pf semantic scan`.
+  grain: one recipeingredient (15 rows scanned)
+- resource: raw_recipes
+  concept: Recipe
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    menu_item_id: foreign_key
+    created_at: event_time
+    updated_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_recipes by `pf semantic scan`.
+  grain: one recipe (8 rows scanned)
+- resource: raw_referrals
+  concept: Referral
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    referrer_customer_id: foreign_key
+    referee_customer_id: foreign_key
+    campaign_id: foreign_key
+    reward_amount: money_amount
+    referred_at: event_time
+    converted_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_referrals by `pf semantic scan`.
+  grain: one referral (6 rows scanned)
+  currency: USD
+- resource: raw_refunds
+  concept: Refund
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    order_id: foreign_key
+    invoice_id: foreign_key
+    refund_amount: money_amount
+    requested_at: event_time
+    resolved_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_refunds by `pf semantic scan`.
+  grain: one refund
+  currency: USD
+- resource: raw_seasonal_menus
+  concept: SeasonalMenu
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    menu_item_id: foreign_key
+    start_date: event_time
+    end_date: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_seasonal_menus by `pf semantic scan`.
+  grain: one seasonalmenu (6 rows scanned)
+- resource: raw_shifts
+  concept: Shift
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    employee_id: foreign_key
+    store_id: foreign_key
+    shift_date: event_time
+    scheduled_start: event_time
+    scheduled_end: event_time
+    actual_start: event_time
+    actual_end: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_shifts by `pf semantic scan`.
+  grain: one shift (8 rows scanned)
+- resource: raw_social_media_posts
+  concept: SocialMediaPost
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    campaign_id: foreign_key
+    posted_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_social_media_posts by `pf semantic scan`.
+  grain: one socialmediapost (7 rows scanned)
+- resource: raw_store_hours
+  concept: StoreHour
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    store_id: foreign_key
+  rename: {}
+  links: {}
+  description: Induced from raw_store_hours by `pf semantic scan`.
+  grain: one storehour (14 rows scanned)
+- resource: raw_stores
+  concept: Store
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    opened_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_stores by `pf semantic scan`.
+  grain: one store (6 rows scanned)
+- resource: raw_supplier_contracts
+  concept: SupplierContract
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    supplier_id: foreign_key
+    minimum_order_amount: money_amount
+    effective_date: event_time
+    expiration_date: event_time
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_supplier_contracts by `pf semantic scan`.
+  grain: one suppliercontract (6 rows scanned)
+  currency: USD
+- resource: raw_suppliers
+  concept: Supplier
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    created_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_suppliers by `pf semantic scan`.
+  grain: one supplier (7 rows scanned)
+- resource: raw_tax_rates
+  concept: TaxRate
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    effective_from: event_time
+    effective_to: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_tax_rates by `pf semantic scan`.
+  grain: one taxrate (6 rows scanned)
+- resource: raw_timecards
+  concept: Timecard
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    employee_id: foreign_key
+    store_id: foreign_key
+    work_date: event_time
+    clock_in: event_time
+    clock_out: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_timecards by `pf semantic scan`.
+  grain: one timecard (8 rows scanned)
+- resource: raw_training_completions
+  concept: TrainingCompletion
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    employee_id: foreign_key
+    course_id: foreign_key
+    started_at: event_time
+    completed_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_training_completions by `pf semantic scan`.
+  grain: one trainingcompletion (10 rows scanned)
+- resource: raw_training_courses
+  concept: TrainingCourse
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+  rename: {}
+  links: {}
+  description: Induced from raw_training_courses by `pf semantic scan`.
+  grain: one trainingcourse (8 rows scanned)
+- resource: raw_warehouses
+  concept: Warehouse
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    opened_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_warehouses by `pf semantic scan`.
+  grain: one warehouse (5 rows scanned)
+- resource: raw_waste_logs
+  concept: WasteLog
+  source: jaffle-seeds
+  roles:
+    id: natural_key
+    product_id: foreign_key
+    location_id: foreign_key
+    cost_of_waste: money_amount
+    wasted_at: event_time
+  rename: {}
+  links: {}
+  description: Induced from raw_waste_logs by `pf semantic scan`.
+  grain: one wastelog (7 rows scanned)
+  currency: USD
+unmodelled:
+  raw_supplies: 'Junction table, not an entity: 29 supplies x 10 SKUs = 65 rows, so
+    no column identifies a row and (id, sku) is a compound bridge key. The entity
+    is the supply (id); this table is its many-to-many with Product. Model it as a
+    relation once the topology names that verb.'
