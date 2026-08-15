@@ -1,0 +1,292 @@
+models:
+  - name: stg_employees
+    description: Employee records with basic cleaning applied, one row per employee.
+    columns:
+      - name: employee_id
+        description: The unique key for each employee.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Foreign key to the store location where the employee works.
+      - name: department_id
+        description: Foreign key to the employee's department.
+      - name: position_id
+        description: Foreign key to the employee's position.
+      - name: first_name
+        description: Employee's first name.
+      - name: last_name
+        description: Employee's last name.
+      - name: full_name
+        description: Employee's full name (first + last).
+      - name: email
+        description: Employee's email address.
+      - name: employment_status
+        description: Current employment status (e.g., active, terminated, on_leave).
+      - name: hire_date
+        description: Date the employee was hired.
+      - name: termination_date
+        description: Date the employee was terminated (null if still active).
+
+  - name: stg_departments
+    description: Department definitions, one row per department.
+    columns:
+      - name: department_id
+        description: The unique key for each department.
+        data_tests:
+          - not_null
+          - unique
+      - name: department_name
+        description: Name of the department.
+      - name: department_description
+        description: Description of the department's function.
+
+  - name: stg_positions
+    description: Job position definitions with pay grades, one row per position.
+    columns:
+      - name: position_id
+        description: The unique key for each position.
+        data_tests:
+          - not_null
+          - unique
+      - name: department_id
+        description: Foreign key to the department this position belongs to.
+      - name: position_title
+        description: Title of the position.
+      - name: pay_grade
+        description: Pay grade classification for the position.
+      - name: min_hourly_rate
+        description: Minimum hourly pay rate in USD.
+      - name: max_hourly_rate
+        description: Maximum hourly pay rate in USD.
+      - name: is_management
+        description: Whether this position is a management role.
+
+  - name: stg_shifts
+    description: Scheduled and actual shift records, one row per shift.
+    columns:
+      - name: shift_id
+        description: The unique key for each shift.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Foreign key to the employee assigned to the shift.
+      - name: location_id
+        description: Foreign key to the store location for the shift.
+      - name: shift_type
+        description: Type of shift (e.g., morning, afternoon, evening, closing).
+      - name: shift_status
+        description: Status of the shift (e.g., scheduled, completed, no_show).
+      - name: shift_date
+        description: Date of the shift.
+      - name: scheduled_start
+        description: Scheduled start time of the shift.
+      - name: scheduled_end
+        description: Scheduled end time of the shift.
+      - name: actual_start
+        description: Actual start time of the shift.
+      - name: actual_end
+        description: Actual end time of the shift.
+      - name: scheduled_hours
+        description: Number of hours the shift is scheduled for.
+
+  - name: stg_timecards
+    description: Clock-in/clock-out records, one row per timecard entry.
+    columns:
+      - name: timecard_id
+        description: The unique key for each timecard entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Foreign key to the employee.
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: work_date
+        description: Date of the work entry.
+      - name: clock_in
+        description: Clock-in timestamp.
+      - name: clock_out
+        description: Clock-out timestamp.
+      - name: hours_worked
+        description: Total hours worked for this entry.
+      - name: break_minutes
+        description: Total break time in minutes.
+      - name: timecard_status
+        description: Status of the timecard (e.g., approved, pending, rejected).
+
+  - name: stg_payroll
+    description: Payroll records per employee per pay period, one row per payroll entry.
+    columns:
+      - name: payroll_id
+        description: The unique key for each payroll record.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Foreign key to the employee.
+      - name: pay_period_start
+        description: Start date of the pay period.
+      - name: pay_period_end
+        description: End date of the pay period.
+      - name: pay_date
+        description: Date the payment was issued.
+      - name: payroll_hours
+        description: Total regular hours worked in the pay period.
+      - name: payroll_overtime_hours
+        description: Total overtime hours in the pay period.
+      - name: gross_pay
+        description: Gross pay amount in USD.
+      - name: deductions
+        description: Total deductions in USD.
+      - name: net_pay
+        description: Net pay amount in USD.
+
+  - name: stg_performance_reviews
+    description: Employee performance review scores, one row per review.
+    columns:
+      - name: review_id
+        description: The unique key for each performance review.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Foreign key to the employee being reviewed.
+      - name: reviewer_id
+        description: Foreign key to the employee conducting the review.
+      - name: review_period
+        description: Period the review covers (e.g., Q1 2024).
+      - name: review_comments
+        description: Reviewer comments.
+      - name: overall_score
+        description: Overall performance score.
+      - name: attendance_score
+        description: Attendance component score.
+      - name: quality_score
+        description: Work quality component score.
+      - name: teamwork_score
+        description: Teamwork component score.
+      - name: review_date
+        description: Date the review was conducted.
+
+  - name: stg_training_courses
+    description: Available training courses, one row per course.
+    columns:
+      - name: training_course_id
+        description: The unique key for each training course.
+        data_tests:
+          - not_null
+          - unique
+      - name: course_name
+        description: Name of the training course.
+      - name: course_description
+        description: Description of the training course.
+      - name: course_category
+        description: Category of the course (e.g., safety, barista, management).
+      - name: duration_hours
+        description: Duration of the course in hours.
+      - name: is_required
+        description: Whether the course is required for all employees.
+      - name: is_active
+        description: Whether the course is currently active.
+
+  - name: stg_training_completions
+    description: Employee training completion records, one row per completion.
+    columns:
+      - name: training_completion_id
+        description: The unique key for each training completion record.
+        data_tests:
+          - not_null
+          - unique
+      - name: employee_id
+        description: Foreign key to the employee.
+      - name: training_course_id
+        description: Foreign key to the training course.
+      - name: completion_status
+        description: Status of the training (e.g., in_progress, completed, failed).
+      - name: completion_score
+        description: Score achieved on the training assessment.
+      - name: started_date
+        description: Date the employee started the training.
+      - name: completed_date
+        description: Date the employee completed the training.
+
+  - name: stg_equipment
+    description: Store equipment inventory, one row per piece of equipment.
+    columns:
+      - name: equipment_id
+        description: The unique key for each piece of equipment.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: equipment_name
+        description: Name of the equipment.
+      - name: equipment_type
+        description: Type of equipment (e.g., espresso_machine, grinder, oven).
+      - name: manufacturer
+        description: Equipment manufacturer.
+      - name: model_number
+        description: Equipment model number.
+      - name: serial_number
+        description: Equipment serial number.
+      - name: equipment_status
+        description: Current status (e.g., operational, maintenance, retired).
+      - name: purchase_cost
+        description: Purchase cost in USD.
+      - name: purchase_date
+        description: Date the equipment was purchased.
+      - name: warranty_expiry_date
+        description: Date the warranty expires.
+      - name: last_maintenance_date
+        description: Date of the last maintenance performed.
+
+  - name: stg_maintenance_logs
+    description: Equipment maintenance and repair records, one row per log entry.
+    columns:
+      - name: maintenance_log_id
+        description: The unique key for each maintenance log entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: equipment_id
+        description: Foreign key to the equipment.
+      - name: technician_id
+        description: ID of the technician who performed the maintenance.
+      - name: maintenance_type
+        description: Type of maintenance (e.g., preventive, corrective, emergency).
+      - name: maintenance_description
+        description: Description of the maintenance performed.
+      - name: maintenance_status
+        description: Status of the maintenance (e.g., scheduled, in_progress, completed).
+      - name: maintenance_cost
+        description: Cost of the maintenance in USD.
+      - name: downtime_hours
+        description: Hours of equipment downtime due to this maintenance.
+      - name: scheduled_date
+        description: Date the maintenance was scheduled.
+      - name: completed_date
+        description: Date the maintenance was completed.
+
+  - name: stg_store_hours
+    description: Operating hours by store by day of week, one row per store-day combination.
+    columns:
+      - name: store_hours_id
+        description: The unique key for each store hours record.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: day_of_week
+        description: Day of week as integer (0=Sunday, 6=Saturday).
+      - name: day_name
+        description: Day of week as human-readable name.
+      - name: open_time
+        description: Store opening time.
+      - name: close_time
+        description: Store closing time.
+      - name: is_closed
+        description: Whether the store is closed on this day.

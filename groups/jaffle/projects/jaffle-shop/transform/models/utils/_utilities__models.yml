@@ -1,0 +1,81 @@
+models:
+  - name: util_date_spine
+    description: >
+      Date spine from ~2017 to ~2027 (3650 days from today, going backwards).
+      Provides calendar attributes for each day including day of week, week start,
+      month start, quarter start, and weekend flag.
+    columns:
+      - name: date_day
+        description: The calendar date.
+        data_tests:
+          - unique
+          - not_null
+      - name: day_of_week
+        description: "Day of week as integer (0=Sunday, 6=Saturday)."
+      - name: day_name
+        description: "Day name (e.g., Monday, Tuesday)."
+      - name: week_start
+        description: The start of the ISO week containing this date.
+      - name: month_start
+        description: The first day of the month.
+      - name: quarter_start
+        description: The first day of the calendar quarter.
+      - name: year
+        description: The calendar year.
+      - name: is_weekend
+        description: Whether the date falls on Saturday or Sunday.
+
+  - name: util_fiscal_periods
+    description: >
+      Fiscal calendar mapping. Maps each calendar date to a fiscal year,
+      fiscal quarter, and fiscal month assuming a February 1 fiscal year start.
+    columns:
+      - name: date_day
+        description: The calendar date.
+        data_tests:
+          - unique
+          - not_null
+      - name: fiscal_year
+        description: "Fiscal year (e.g., FY starting Feb 1 2024 = fiscal year 2024)."
+      - name: fiscal_quarter
+        description: "Fiscal quarter (1-4)."
+      - name: fiscal_month
+        description: "Fiscal month (1-12, where Feb=1, Jan=12)."
+
+  - name: util_store_calendar
+    description: >
+      Cross join of the date spine with locations. Provides one row per store
+      per day starting from each store's opening date, useful for gap-filling
+      sparse event data.
+    columns:
+      - name: date_day
+        description: The calendar date.
+      - name: location_id
+        description: The store/location identifier.
+      - name: location_name
+        description: The name of the store.
+      - name: days_since_opening
+        description: Number of days since the store opened.
+      - name: is_weekend
+        description: Whether the date is a weekend day.
+
+  - name: util_product_active_dates
+    description: >
+      Date range when each product was actively sold. Derived from first and
+      last order dates per product in stg_order_items.
+    columns:
+      - name: product_id
+        description: The product identifier.
+        data_tests:
+          - unique
+          - not_null
+      - name: product_name
+        description: The name of the product.
+      - name: active_from
+        description: Date of the first order containing this product.
+      - name: last_seen_at
+        description: Date of the most recent order containing this product.
+      - name: active_days
+        description: Number of days between first and last order.
+      - name: is_currently_active
+        description: Whether the product was ordered within the last 30 days.

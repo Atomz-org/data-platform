@@ -1,0 +1,230 @@
+models:
+  - name: stg_recipes
+    description: Recipe definitions linking menu items to required ingredients, one row per recipe.
+    columns:
+      - name: recipe_id
+        description: The unique key for each recipe.
+        data_tests:
+          - not_null
+          - unique
+      - name: menu_item_id
+        description: Foreign key to the menu item this recipe produces.
+      - name: recipe_name
+        description: Name of the recipe.
+      - name: recipe_description
+        description: Description of the recipe.
+      - name: serving_size
+        description: Number of servings the recipe produces.
+      - name: is_active_recipe
+        description: Whether this recipe is currently in use.
+      - name: created_date
+        description: Date the recipe was created.
+      - name: updated_date
+        description: Date the recipe was last updated.
+
+  - name: stg_recipe_ingredients
+    description: Ingredient quantities per recipe, one row per recipe-ingredient combination.
+    columns:
+      - name: recipe_ingredient_id
+        description: The unique key for each recipe ingredient entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: recipe_id
+        description: Foreign key to the recipe.
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+      - name: quantity
+        description: Quantity of the ingredient required.
+      - name: quantity_unit
+        description: Unit of measure for the quantity (e.g., grams, ml, units).
+
+  - name: stg_ingredients
+    description: Master ingredient list, one row per ingredient.
+    columns:
+      - name: ingredient_id
+        description: The unique key for each ingredient.
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_name
+        description: Name of the ingredient.
+      - name: ingredient_category
+        description: Category of the ingredient (e.g., dairy, grain, produce).
+      - name: default_unit
+        description: Default unit of measure for this ingredient.
+      - name: is_perishable
+        description: Whether the ingredient is perishable.
+      - name: is_allergen
+        description: Whether the ingredient is a common allergen.
+
+  - name: stg_ingredient_prices
+    description: Historical price records for each ingredient from suppliers, one row per price record.
+    columns:
+      - name: ingredient_price_id
+        description: The unique key for each ingredient price record.
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+      - name: supplier_id
+        description: Foreign key to the supplier providing this price.
+      - name: unit_cost
+        description: Cost per unit of the ingredient in USD.
+      - name: minimum_order_quantity
+        description: Minimum order quantity for this price tier.
+      - name: effective_from_date
+        description: Date this price became effective.
+      - name: effective_to_date
+        description: Date this price expires (null if currently active).
+
+  - name: stg_menu_items
+    description: Menu items including combos and seasonal offerings, one row per menu item.
+    columns:
+      - name: menu_item_id
+        description: The unique key for each menu item.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to the base product (null for combos).
+      - name: menu_category_id
+        description: Foreign key to the menu category.
+      - name: menu_item_name
+        description: Display name of the menu item.
+      - name: menu_item_description
+        description: Description shown on the menu.
+      - name: menu_item_size
+        description: Size variant (e.g., small, medium, large).
+      - name: menu_item_price
+        description: Current menu price in USD.
+      - name: display_order
+        description: Sort order for menu display.
+      - name: is_available
+        description: Whether the item is currently available.
+      - name: is_combo
+        description: Whether this is a combo/bundle item.
+      - name: is_seasonal
+        description: Whether this is a seasonal item.
+
+  - name: stg_menu_categories
+    description: Menu category hierarchy, one row per category.
+    columns:
+      - name: menu_category_id
+        description: The unique key for each menu category.
+        data_tests:
+          - not_null
+          - unique
+      - name: parent_category_id
+        description: Foreign key to the parent category (null for top-level).
+      - name: category_name
+        description: Name of the menu category.
+      - name: category_description
+        description: Description of the menu category.
+      - name: category_display_order
+        description: Sort order for category display.
+      - name: category_depth
+        description: Depth in the category hierarchy (0 for top-level).
+      - name: is_active_category
+        description: Whether this category is currently active.
+
+  - name: stg_seasonal_menus
+    description: Seasonal and limited-time menu configurations, one row per seasonal menu entry.
+    columns:
+      - name: seasonal_menu_id
+        description: The unique key for each seasonal menu entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: menu_item_id
+        description: Foreign key to the menu item included in the seasonal menu.
+      - name: season_name
+        description: Name of the season (e.g., summer, holiday, spring).
+      - name: promotion_name
+        description: Name of the seasonal promotion.
+      - name: promotion_start_date
+        description: Start date of the seasonal promotion.
+      - name: promotion_end_date
+        description: End date of the seasonal promotion.
+      - name: is_active_promotion
+        description: Whether this seasonal promotion is currently active.
+
+  - name: stg_nutritional_info
+    description: Nutritional data per menu item, one row per menu item.
+    columns:
+      - name: nutritional_info_id
+        description: The unique key for each nutritional info record.
+        data_tests:
+          - not_null
+          - unique
+      - name: menu_item_id
+        description: Foreign key to the menu item.
+      - name: calories
+        description: Total calories per serving.
+      - name: total_fat_g
+        description: Total fat in grams per serving.
+      - name: saturated_fat_g
+        description: Saturated fat in grams per serving.
+      - name: trans_fat_g
+        description: Trans fat in grams per serving.
+      - name: cholesterol_mg
+        description: Cholesterol in milligrams per serving.
+      - name: sodium_mg
+        description: Sodium in milligrams per serving.
+      - name: total_carbs_g
+        description: Total carbohydrates in grams per serving.
+      - name: dietary_fiber_g
+        description: Dietary fiber in grams per serving.
+      - name: total_sugars_g
+        description: Total sugars in grams per serving.
+      - name: protein_g
+        description: Protein in grams per serving.
+      - name: caffeine_mg
+        description: Caffeine in milligrams per serving.
+      - name: serving_size_description
+        description: Description of the serving size.
+      - name: updated_date
+        description: Date the nutritional info was last updated.
+
+  - name: stg_pricing_history
+    description: Historical price changes for products, one row per price change.
+    columns:
+      - name: pricing_history_id
+        description: The unique key for each pricing history record.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to the product.
+      - name: old_price
+        description: Previous price in USD.
+      - name: new_price
+        description: New price in USD.
+      - name: change_reason
+        description: Reason for the price change.
+      - name: price_changed_date
+        description: Date the price change took effect.
+
+  - name: stg_product_reviews
+    description: Customer reviews and ratings per product, one row per review.
+    columns:
+      - name: review_id
+        description: The unique key for each review.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to the product being reviewed.
+      - name: customer_id
+        description: Foreign key to the customer who wrote the review.
+      - name: order_id
+        description: Foreign key to the order associated with the review.
+      - name: rating
+        description: Numeric rating (1-5 scale).
+      - name: review_title
+        description: Title of the review.
+      - name: review_body
+        description: Full text of the review.
+      - name: reviewed_date
+        description: Date the review was submitted.

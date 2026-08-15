@@ -1,0 +1,222 @@
+models:
+  - name: stg_invoices
+    description: Invoices generated from orders, one row per invoice.
+    columns:
+      - name: invoice_id
+        description: The unique key for each invoice.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Foreign key to the order this invoice was generated from.
+      - name: customer_id
+        description: Foreign key to the customer billed on the invoice.
+      - name: invoice_status
+        description: Current status of the invoice (e.g., draft, sent, paid, overdue).
+      - name: subtotal
+        description: Invoice subtotal in USD before tax.
+      - name: tax_amount
+        description: Tax amount in USD applied to the invoice.
+      - name: total_amount
+        description: Total invoice amount in USD including tax.
+      - name: amount_paid
+        description: Amount paid against this invoice in USD.
+      - name: amount_due
+        description: Remaining amount due on this invoice in USD.
+      - name: issued_date
+        description: Date the invoice was issued.
+      - name: due_date
+        description: Date the invoice payment is due.
+      - name: paid_date
+        description: Date the invoice was fully paid.
+
+  - name: stg_invoice_line_items
+    description: Individual line items on each invoice, one row per line item.
+    columns:
+      - name: invoice_line_item_id
+        description: The unique key for each invoice line item.
+        data_tests:
+          - not_null
+          - unique
+      - name: invoice_id
+        description: Foreign key to the parent invoice.
+      - name: product_id
+        description: Foreign key to the product on this line item.
+      - name: line_item_description
+        description: Description of the line item.
+      - name: quantity
+        description: Quantity of the product on this line item.
+      - name: unit_price
+        description: Unit price in USD.
+      - name: line_total
+        description: Total for this line item in USD (quantity x unit price).
+
+  - name: stg_refunds
+    description: Refund requests and their resolution, one row per refund.
+    columns:
+      - name: refund_id
+        description: The unique key for each refund.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Foreign key to the order being refunded.
+      - name: invoice_id
+        description: Foreign key to the invoice being refunded.
+      - name: refund_reason
+        description: Reason provided for the refund request.
+      - name: refund_status
+        description: Current status of the refund (e.g., pending, approved, denied).
+      - name: refund_amount
+        description: Refund amount in USD.
+      - name: requested_date
+        description: Date the refund was requested.
+      - name: resolved_date
+        description: Date the refund was resolved.
+
+  - name: stg_tax_rates
+    description: Tax rate configuration by jurisdiction, one row per tax rate.
+    columns:
+      - name: tax_rate_id
+        description: The unique key for each tax rate configuration.
+        data_tests:
+          - not_null
+          - unique
+      - name: jurisdiction
+        description: The jurisdiction this tax rate applies to (e.g., state, city).
+      - name: tax_type
+        description: Type of tax (e.g., sales tax, excise tax).
+      - name: tax_rate_pct
+        description: The tax rate as a decimal percentage.
+      - name: effective_from_date
+        description: Date this tax rate became effective.
+      - name: effective_to_date
+        description: Date this tax rate expires (null if currently active).
+
+  - name: stg_gift_cards
+    description: Gift card issuance and balance tracking, one row per gift card.
+    columns:
+      - name: gift_card_id
+        description: The unique key for each gift card.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to the customer who purchased the gift card.
+      - name: card_number
+        description: The gift card number.
+      - name: gift_card_status
+        description: Current status of the gift card (e.g., active, redeemed, expired).
+      - name: initial_balance
+        description: Original balance loaded onto the gift card in USD.
+      - name: current_balance
+        description: Current remaining balance on the gift card in USD.
+      - name: issued_date
+        description: Date the gift card was issued.
+      - name: expires_date
+        description: Date the gift card expires.
+
+  - name: stg_payment_transactions
+    description: Individual payment transactions against orders, one row per transaction.
+    columns:
+      - name: payment_transaction_id
+        description: The unique key for each payment transaction.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Foreign key to the order this payment applies to.
+      - name: gift_card_id
+        description: Foreign key to the gift card used (null if not a gift card payment).
+      - name: payment_method
+        description: Payment method used (e.g., credit_card, debit_card, gift_card, cash).
+      - name: payment_status
+        description: Current status of the transaction (e.g., completed, pending, failed).
+      - name: reference_number
+        description: External reference number from the payment processor.
+      - name: payment_amount
+        description: Transaction amount in USD.
+      - name: processed_date
+        description: Date the payment was processed.
+
+  - name: stg_accounts_receivable
+    description: Outstanding receivables from corporate/catering customers, one row per receivable.
+    columns:
+      - name: receivable_id
+        description: The unique key for each accounts receivable record.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to the corporate/catering customer.
+      - name: invoice_id
+        description: Foreign key to the associated invoice.
+      - name: receivable_status
+        description: Current status of the receivable (e.g., open, partial, paid, written_off).
+      - name: amount_due
+        description: Original amount due in USD.
+      - name: amount_paid
+        description: Amount paid so far in USD.
+      - name: amount_outstanding
+        description: Remaining outstanding balance in USD.
+      - name: due_date
+        description: Date the payment is due.
+      - name: created_date
+        description: Date the receivable record was created.
+
+  - name: stg_expense_categories
+    description: Expense classification categories, one row per category.
+    columns:
+      - name: expense_category_id
+        description: The unique key for each expense category.
+        data_tests:
+          - not_null
+          - unique
+      - name: category_name
+        description: Name of the expense category.
+      - name: category_description
+        description: Description of what this category covers.
+      - name: is_operating_expense
+        description: Whether this category is an operating expense.
+      - name: is_cost_of_goods_sold
+        description: Whether this category is a cost of goods sold.
+
+  - name: stg_expenses
+    description: Operating expenses by store, one row per expense.
+    columns:
+      - name: expense_id
+        description: The unique key for each expense.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: expense_category_id
+        description: Foreign key to the expense category.
+      - name: expense_description
+        description: Description of the expense.
+      - name: vendor
+        description: Vendor or supplier for this expense.
+      - name: expense_amount
+        description: Expense amount in USD.
+      - name: incurred_date
+        description: Date the expense was incurred.
+
+  - name: stg_budgets
+    description: Monthly budget targets by store and category, one row per budget entry.
+    columns:
+      - name: budget_id
+        description: The unique key for each budget entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: location_id
+        description: Foreign key to the store location.
+      - name: expense_category_id
+        description: Foreign key to the budget category.
+      - name: budget_type
+        description: Type of budget (e.g., revenue, expense).
+      - name: budgeted_amount
+        description: Budgeted amount in USD.
+      - name: budget_month
+        description: The month this budget applies to.

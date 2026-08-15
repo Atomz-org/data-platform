@@ -1,0 +1,240 @@
+models:
+  - name: stg_suppliers
+    description: Supplier companies that provide ingredients and supplies to Jaffle Shop, one row per supplier.
+    columns:
+      - name: supplier_id
+        description: The unique key for each supplier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_name
+        description: The name of the supplier company.
+      - name: contact_name
+        description: Primary contact person at the supplier.
+      - name: contact_email
+        description: Email address of the primary contact.
+      - name: is_active
+        description: Whether the supplier is currently active.
+      - name: created_at
+        description: The date the supplier record was created.
+
+  - name: stg_supplier_contracts
+    description: Contract terms negotiated with each supplier, one row per contract.
+    columns:
+      - name: contract_id
+        description: The unique key for each contract.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: The foreign key to the supplier.
+        data_tests:
+          - not_null
+      - name: contract_type
+        description: The type of contract (e.g. fixed-price, volume-based).
+      - name: minimum_order_amount
+        description: The minimum order amount in USD required by the contract.
+      - name: lead_time_days
+        description: Contracted lead time in days from order to delivery.
+      - name: effective_date
+        description: The date the contract becomes effective.
+      - name: expiration_date
+        description: The date the contract expires.
+
+  - name: stg_purchase_orders
+    description: Purchase orders placed with suppliers, one row per purchase order.
+    columns:
+      - name: purchase_order_id
+        description: The unique key for each purchase order.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: The foreign key to the supplier.
+        data_tests:
+          - not_null
+      - name: warehouse_id
+        description: The foreign key to the destination warehouse.
+      - name: po_status
+        description: Current status of the purchase order (e.g. draft, submitted, received, cancelled).
+      - name: total_amount
+        description: The total amount of the purchase order in USD.
+      - name: ordered_at
+        description: The date the purchase order was placed.
+      - name: expected_delivery_at
+        description: The expected delivery date.
+
+  - name: stg_po_line_items
+    description: Individual line items on each purchase order, one row per line item.
+    columns:
+      - name: po_line_item_id
+        description: The unique key for each purchase order line item.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: The foreign key to the purchase order.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: The foreign key to the product being ordered.
+        data_tests:
+          - not_null
+      - name: quantity_ordered
+        description: The quantity of the product ordered.
+      - name: unit_cost
+        description: The cost per unit in USD.
+      - name: line_total
+        description: The total cost for this line item in USD.
+
+  - name: stg_po_receipts
+    description: Goods received against purchase orders, one row per receipt.
+    columns:
+      - name: receipt_id
+        description: The unique key for each receipt.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: The foreign key to the purchase order.
+        data_tests:
+          - not_null
+      - name: po_line_item_id
+        description: The foreign key to the purchase order line item.
+        data_tests:
+          - not_null
+      - name: quantity_received
+        description: The quantity of goods received.
+      - name: quality_status
+        description: Quality inspection result (e.g. accepted, rejected, partial).
+      - name: received_at
+        description: The date the goods were received.
+
+  - name: stg_warehouses
+    description: Warehouse and distribution center locations, one row per warehouse.
+    columns:
+      - name: warehouse_id
+        description: The unique key for each warehouse.
+        data_tests:
+          - not_null
+          - unique
+      - name: warehouse_name
+        description: The name of the warehouse.
+      - name: warehouse_type
+        description: The type of warehouse (e.g. distribution center, cold storage).
+      - name: capacity_units
+        description: The total storage capacity in standard units.
+      - name: is_active
+        description: Whether the warehouse is currently operational.
+      - name: opened_at
+        description: The date the warehouse opened.
+
+  - name: stg_inventory_counts
+    description: Periodic physical inventory counts by product and location, one row per count event.
+    columns:
+      - name: inventory_count_id
+        description: The unique key for each inventory count record.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location (store or warehouse).
+        data_tests:
+          - not_null
+      - name: quantity_on_hand
+        description: Total quantity physically present.
+      - name: quantity_reserved
+        description: Quantity reserved for pending orders.
+      - name: quantity_available
+        description: Quantity available for new orders.
+      - name: counted_at
+        description: The date the physical count was performed.
+
+  - name: stg_inventory_movements
+    description: Inbound and outbound inventory transactions, one row per movement.
+    columns:
+      - name: movement_id
+        description: The unique key for each inventory movement.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location (store or warehouse).
+        data_tests:
+          - not_null
+      - name: movement_type
+        description: The type of movement (e.g. inbound, outbound, transfer, adjustment).
+      - name: quantity
+        description: The quantity moved (positive for inbound, negative for outbound).
+      - name: reference_type
+        description: The type of source document (e.g. purchase_order, sale, transfer).
+      - name: reference_id
+        description: The ID of the source document.
+      - name: moved_at
+        description: The date the inventory movement occurred.
+
+  - name: stg_waste_logs
+    description: Records of spoiled or wasted inventory, one row per waste event.
+    columns:
+      - name: waste_log_id
+        description: The unique key for each waste log entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: waste_reason
+        description: The reason for waste (e.g. expired, damaged, quality).
+      - name: quantity_wasted
+        description: The quantity of product wasted.
+      - name: cost_of_waste
+        description: The cost of the wasted inventory in USD.
+      - name: wasted_at
+        description: The date the waste was recorded.
+
+  - name: stg_delivery_shipments
+    description: Shipments from suppliers to stores and warehouses, one row per shipment.
+    columns:
+      - name: shipment_id
+        description: The unique key for each shipment.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: The foreign key to the purchase order.
+        data_tests:
+          - not_null
+      - name: supplier_id
+        description: The foreign key to the supplier.
+        data_tests:
+          - not_null
+      - name: destination_id
+        description: The ID of the destination (store or warehouse).
+      - name: destination_type
+        description: The type of destination (e.g. store, warehouse).
+      - name: carrier
+        description: The shipping carrier.
+      - name: tracking_number
+        description: The shipment tracking number.
+      - name: shipment_status
+        description: Current status of the shipment (e.g. in_transit, delivered, delayed).
+      - name: shipped_at
+        description: The date the shipment was dispatched.
+      - name: estimated_arrival_at
+        description: The estimated arrival date.
+      - name: actual_arrival_at
+        description: The actual arrival date, null if not yet delivered.
