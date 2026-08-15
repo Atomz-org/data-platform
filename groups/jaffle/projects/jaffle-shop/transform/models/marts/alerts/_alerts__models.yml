@@ -1,0 +1,153 @@
+version: 2
+
+models:
+  - name: alert_ar_overdue_90_days
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags ar overdue 90 days threshold violations.
+  - name: alert_budget_overrun
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags budget overrun threshold violations.
+  - name: alert_campaign_underperforming
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags campaign underperforming threshold violations.
+  - name: alert_coupon_abuse_flag
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags coupon abuse flag threshold violations.
+  - name: alert_customer_churn_spike
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags customer churn spike threshold violations.
+  - name: alert_email_bounce_spike
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags email bounce spike threshold violations.
+  - name: alert_employee_no_show_pattern
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags employee no show pattern threshold violations.
+  - name: alert_equipment_breakdown_risk
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags equipment breakdown risk threshold violations.
+  - name: alert_expense_spike
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags expense spike threshold violations.
+  - name: alert_gift_card_fraud_flag
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags gift card fraud flag threshold violations.
+  - name: alert_high_refund_rate
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags high refund rate threshold violations.
+  - name: alert_high_waste_rate
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags high waste rate threshold violations.
+  - name: alert_low_inventory
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags low inventory threshold violations.
+  - name: alert_loyalty_churn_wave
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags loyalty churn wave threshold violations.
+  - name: alert_maintenance_overdue
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags maintenance overdue threshold violations.
+  - name: alert_margin_erosion
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags margin erosion threshold violations.
+  - name: alert_new_customer_decline
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags new customer decline threshold violations.
+  - name: alert_overtime_excessive
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags overtime excessive threshold violations.
+  - name: alert_payment_failure_spike
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags payment failure spike threshold violations.
+  - name: alert_price_below_cost
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags price below cost threshold violations.
+  - name: alert_refund_spike_daily
+    config:
+      tags: ['type:alert', 'cadence:daily']
+    description: >
+      Alert model that flags refund spike daily threshold violations.
+  - name: alert_repeat_rate_drop
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags repeat rate drop threshold violations.
+  - name: alert_revenue_drop_daily
+    config:
+      tags: ['type:alert', 'cadence:daily']
+    description: >
+      Alert model that flags revenue drop daily threshold violations.
+  - name: alert_revenue_drop_weekly
+    config:
+      tags: ['type:alert', 'cadence:weekly']
+    description: >
+      Alert model that flags revenue drop weekly threshold violations.
+  - name: alert_stockout_risk
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags stockout risk threshold violations.
+  - name: alert_supplier_late_delivery
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags supplier late delivery threshold violations.
+  - name: alert_supplier_quality_issue
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags supplier quality issue threshold violations.
+  - name: alert_training_overdue
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags training overdue threshold violations.
+  - name: alert_understaffed_shift
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags understaffed shift threshold violations.
+  - name: alert_waste_spike
+    config:
+      tags: ['type:alert']
+    description: >
+      Alert model that flags waste spike threshold violations.

@@ -1,0 +1,153 @@
+version: 2
+
+models:
+  - name: rank_campaigns_by_conversion
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for campaigns by conversion.
+  - name: rank_campaigns_by_reach
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for campaigns by reach.
+  - name: rank_campaigns_by_roi
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for campaigns by roi.
+  - name: rank_coupons_by_redemption_rate
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for coupons by redemption rate.
+  - name: rank_coupons_by_revenue_impact
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for coupons by revenue impact.
+  - name: rank_customers_by_basket_size
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for customers by basket size.
+  - name: rank_customers_by_frequency
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for customers by frequency.
+  - name: rank_customers_by_loyalty_points
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for customers by loyalty points.
+  - name: rank_customers_by_ltv
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for customers by ltv.
+  - name: rank_customers_by_recency
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for customers by recency.
+  - name: rank_employees_by_performance
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for employees by performance.
+  - name: rank_employees_by_productivity
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for employees by productivity.
+  - name: rank_employees_by_tenure
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for employees by tenure.
+  - name: rank_ingredients_by_cost
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for ingredients by cost.
+  - name: rank_ingredients_by_usage_volume
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for ingredients by usage volume.
+  - name: rank_products_by_growth
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for products by growth.
+  - name: rank_products_by_margin
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for products by margin.
+  - name: rank_products_by_revenue_monthly
+    config:
+      tags: ['type:ranking', 'cadence:monthly']
+    description: >
+      Ranking model for products by revenue monthly.
+  - name: rank_products_by_review_score
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for products by review score.
+  - name: rank_products_by_velocity
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for products by velocity.
+  - name: rank_products_by_volume_monthly
+    config:
+      tags: ['type:ranking', 'cadence:monthly']
+    description: >
+      Ranking model for products by volume monthly.
+  - name: rank_stores_by_customer_count
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for stores by customer count.
+  - name: rank_stores_by_growth_monthly
+    config:
+      tags: ['type:ranking', 'cadence:monthly']
+    description: >
+      Ranking model for stores by growth monthly.
+  - name: rank_stores_by_labor_efficiency
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for stores by labor efficiency.
+  - name: rank_stores_by_profit_monthly
+    config:
+      tags: ['type:ranking', 'cadence:monthly']
+    description: >
+      Ranking model for stores by profit monthly.
+  - name: rank_stores_by_revenue_monthly
+    config:
+      tags: ['type:ranking', 'cadence:monthly']
+    description: >
+      Ranking model for stores by revenue monthly.
+  - name: rank_stores_by_waste_rate
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for stores by waste rate.
+  - name: rank_suppliers_by_cost
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for suppliers by cost.
+  - name: rank_suppliers_by_lead_time
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for suppliers by lead time.
+  - name: rank_suppliers_by_reliability
+    config:
+      tags: ['type:ranking']
+    description: >
+      Ranking model for suppliers by reliability.

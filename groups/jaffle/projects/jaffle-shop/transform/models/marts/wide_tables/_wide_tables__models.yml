@@ -1,0 +1,141 @@
+version: 2
+
+models:
+  - name: wide_order_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Full order detail with order items, customer, store, and product
+      information pre-joined for BI consumption.
+
+  - name: wide_customer_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Customer summary with LTV, RFM, loyalty, segment, preferred store
+      and products from dim_customer_360.
+
+  - name: wide_store_monthly
+    config:
+      tags: ['type:wide_table', 'cadence:monthly']
+    description: >
+      Store monthly metrics combining revenue, labor, customers, and
+      profit with derived efficiency ratios.
+
+  - name: wide_product_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Product summary with sales, margin, reviews, category, and ranking
+      from multiple product-related models.
+
+  - name: wide_employee_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Employee summary with tenure, performance scores, training progress,
+      and department context.
+
+  - name: wide_supplier_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Supplier summary with spend, quality score, lead time, delivery
+      rate, and tier classification.
+
+  - name: wide_campaign_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Campaign summary with spend, ROI, conversions, and performance
+      tier from campaign-related models.
+
+  - name: wide_loyalty_member_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Loyalty member with tier, points, spend, engagement metrics, and
+      churn risk classification.
+
+  - name: wide_inventory_summary
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Current inventory with value, turnover, reorder status, and health
+      classification per product per location.
+
+  - name: wide_daily_business_summary
+    config:
+      tags: ['type:wide_table', 'cadence:daily']
+    description: >
+      Company-wide daily summary combining revenue, orders, customers,
+      labor, and waste metrics.
+
+  - name: wide_weekly_business_summary
+    config:
+      tags: ['type:wide_table', 'cadence:weekly']
+    description: >
+      Weekly rollup of daily business summary with aggregated KPIs.
+
+  - name: wide_monthly_business_summary
+    config:
+      tags: ['type:wide_table', 'cadence:monthly']
+    description: >
+      Monthly rollup with month-over-month and year-over-year growth
+      calculations.
+
+  - name: wide_order_with_customer
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Orders enriched with full customer context from dim_customer_360
+      including segment, LTV, and churn risk.
+
+  - name: wide_order_with_products
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Orders with product details and margins from menu items and margin
+      calculations.
+
+  - name: wide_shift_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Shift with employee, store, department, hours, and calculated cost
+      with shift status classification.
+
+  - name: wide_purchase_order_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Purchase order with supplier, line items, receipts, and delivery
+      status assessment.
+
+  - name: wide_coupon_redemption_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Coupon redemption with coupon details, customer segment, and
+      campaign context.
+
+  - name: wide_maintenance_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Maintenance event with equipment details, store, cost, downtime,
+      and planned vs unplanned classification.
+
+  - name: wide_invoice_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Invoice with customer, store, line items, payment summary, and
+      outstanding balance calculation.
+
+  - name: wide_waste_event_detail
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Waste event with product, store, cost, reason, and cost per unit
+      wasted calculation.
