@@ -93,6 +93,34 @@ def has_baseline(project_dir: Path) -> bool:
     return (baseline_dir(project_dir) / "manifest.json").exists()
 
 
+def has_data(project_dir: Path) -> bool:
+    """Is there a warehouse with anything in it?
+
+    Every value-level check (row counts, value diffs, profiles) queries both
+    sides. A checkout has code and no warehouse — the duckdb file is generated
+    by `pf seed`, never committed — so on CI the answer is no, and the review
+    that can still run is the structural one.
+    """
+    import duckdb
+
+    p = Path(dbt_env(project_dir)["PF_DUCKDB_PATH"])
+    if not p.exists():
+        return False
+    try:
+        con = duckdb.connect(str(p), read_only=True)
+    except duckdb.Error:
+        return False  # a sister holds the write lock — assume it has data
+    try:
+        return bool(con.execute(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema NOT IN ('information_schema','pg_catalog') LIMIT 1"
+        ).fetchone())
+    except duckdb.Error:
+        return False
+    finally:
+        con.close()
+
+
 # ----------------------------------------------------------------- config --
 # The only tool-specific mapping in this module: an ontology review *intent*
 # becomes a recce check type. The intents themselves live in the ontology
@@ -430,7 +458,50 @@ def dbt_env(project_dir: Path) -> dict[str, str]:
     env = dict(os.environ)
     env.setdefault("DBT_TARGET", "dev")
     env["PF_DUCKDB_PATH"] = str(wh.path)
+    # dbt's duckdb adapter opens the file but will not create the directory
+    # holding it. `Warehouse.connect` does that for our own queries; dbt never
+    # goes through it, so on a fresh checkout every invocation here died with
+    # `IO Error: Cannot open file`.
+    wh.path.parent.mkdir(parents=True, exist_ok=True)
     return env
+
+
+def ensure_packages(project_dir: Path) -> bool:
+    """Install `packages.yml` when `dbt_packages/` is not there yet.
+
+    dbt refuses to compile at all in that state — "found N package(s) specified
+    in packages.yml, but only 0 installed" — and a fresh checkout is exactly
+    that state. Every other caller reaches dbt through `pf seed`, which installs
+    first; the CI entry point below is the one that does not.
+    """
+    from pf.runtime.dbt_runtime import deps
+
+    d = dbt_dir(project_dir)
+    if not any((d / f).exists() for f in ("packages.yml", "dependencies.yml")):
+        return False
+    installed = d / "dbt_packages"
+    if installed.is_dir() and any(installed.iterdir()):
+        return False
+    deps(project_dir, duckdb_path=dbt_env(project_dir)["PF_DUCKDB_PATH"])
+    return True
+
+
+def ensure_current_manifest(project_dir: Path) -> bool:
+    """Parse this branch's dbt project so there is a *current* side to diff.
+
+    Recce compares `target/` against `target-base/`. A committed baseline with
+    no current artefacts — the normal state of a CI checkout — leaves the
+    current side empty and recce exits with `Cannot load the manifest`.
+
+    A parse, not a build: the manifest carries the schemas and the lineage,
+    which is what the structural checks read, and it needs no warehouse.
+    """
+    from pf.runtime.dbt_runtime import parse
+
+    if has_manifest(project_dir):
+        return True
+    parse(project_dir, duckdb_path=dbt_env(project_dir)["PF_DUCKDB_PATH"])
+    return has_manifest(project_dir)
 
 
 def _recce(project_dir: Path, *args: str, timeout: int = 900) -> subprocess.CompletedProcess:
@@ -1055,17 +1126,51 @@ def register_commands(app: Any) -> None:
 
     @recce_app.command("ci")
     def cmd_ci(group: str, project: str) -> None:
-        """Baseline if absent, then diff. What the generated workflow runs."""
+        """Baseline if absent, then diff. What the generated workflow runs.
+
+        A CI checkout is code with no warehouse behind it, so this degrades in
+        two steps rather than failing: without data the value-level checks are
+        skipped and the structural ones still run; without a baseline *and*
+        without data there is nothing to compare and the run says so. A review
+        that could not be exercised is a finding for the reader, not a red
+        cross on a branch that did nothing wrong.
+        """
         d = _pdir(group, project)
+        ensure_packages(d)
+        data = has_data(d)
+
         if not has_baseline(d):
+            if not data:
+                console.print("[yellow]no baseline, and no warehouse to build "
+                              "one from — review not exercised[/]")
+                summary_file(d).write_text(
+                    f"## recce — {group}/{project}\n\n"
+                    "**Not exercised.** This project has no committed baseline "
+                    f"(`transform/{BASELINE_DIR}/manifest.json`) and no warehouse "
+                    "to build one from, so there was nothing to compare this "
+                    "branch against.\n\n"
+                    "Run `pf seed` and then `pf tool recce baseline "
+                    f"{group} {project}` on a known-good build, and commit the "
+                    "captured artefacts.\n"
+                )
+                raise typer.Exit(0)
             console.print("[yellow]no baseline — capturing the current build[/]")
             try:
                 capture_baseline(d)
-            except FileNotFoundError as exc:
+            except (FileNotFoundError, RuntimeError) as exc:
                 console.print(f"[red]{exc}[/]")
                 raise typer.Exit(1)
-        result = run(d)
-        console.print(f"{result.get('checks_total', 0)} check(s), "
+
+        if not ensure_current_manifest(d):
+            console.print("[red]dbt parse produced no manifest — this branch's "
+                          "dbt project does not compile[/]")
+            raise typer.Exit(1)
+
+        result = run(d, skip_query=not data)
+        # Parenthesised, not bracketed: Rich reads `[...]` as a style tag and
+        # would swallow the scope instead of printing it.
+        scope = "full" if data else "structural only — no warehouse"
+        console.print(f"{result.get('checks_total', 0)} check(s) ({scope}), "
                       f"ok={result.get('ok')}")
         raise typer.Exit(0 if result.get("ok") else 1)
 
