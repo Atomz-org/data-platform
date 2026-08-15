@@ -1,0 +1,203 @@
+version: 2
+
+models:
+  - name: trend_aov_monthly
+    config:
+      tags: ['type:trend', 'cadence:monthly']
+    description: >
+      Trend analysis for aov monthly with moving averages and anomaly detection.
+  - name: trend_aov_weekly
+    config:
+      tags: ['type:trend', 'cadence:weekly']
+    description: >
+      Trend analysis for aov weekly with moving averages and anomaly detection.
+  - name: trend_avg_basket_size
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for avg basket size with moving averages and anomaly detection.
+  - name: trend_coupon_redemption_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for coupon redemption rate with moving averages and anomaly detection.
+  - name: trend_customer_count_monthly
+    config:
+      tags: ['type:trend', 'cadence:monthly']
+    description: >
+      Trend analysis for customer count monthly with moving averages and anomaly detection.
+  - name: trend_customer_count_weekly
+    config:
+      tags: ['type:trend', 'cadence:weekly']
+    description: >
+      Trend analysis for customer count weekly with moving averages and anomaly detection.
+  - name: trend_delivery_on_time
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for delivery on time with moving averages and anomaly detection.
+  - name: trend_email_open_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for email open rate with moving averages and anomaly detection.
+  - name: trend_employee_turnover_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for employee turnover rate with moving averages and anomaly detection.
+  - name: trend_expense_daily
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for expense daily with moving averages and anomaly detection.
+  - name: trend_food_vs_beverage_mix
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for food vs beverage mix with moving averages and anomaly detection.
+  - name: trend_gift_card_sales
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for gift card sales with moving averages and anomaly detection.
+  - name: trend_gross_margin
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for gross margin with moving averages and anomaly detection.
+  - name: trend_ingredient_cost_index
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for ingredient cost index with moving averages and anomaly detection.
+  - name: trend_inventory_movement_daily
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for inventory movement daily with moving averages and anomaly detection.
+  - name: trend_inventory_turnover
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for inventory turnover with moving averages and anomaly detection.
+  - name: trend_labor_cost_pct
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for labor cost pct with moving averages and anomaly detection.
+  - name: trend_loyalty_enrollment
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for loyalty enrollment with moving averages and anomaly detection.
+  - name: trend_loyalty_points_velocity
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for loyalty points velocity with moving averages and anomaly detection.
+  - name: trend_maintenance_frequency
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for maintenance frequency with moving averages and anomaly detection.
+  - name: trend_marketing_spend_daily
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for marketing spend daily with moving averages and anomaly detection.
+  - name: trend_new_customer_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for new customer rate with moving averages and anomaly detection.
+  - name: trend_orders_28d_ma
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for orders 28d ma with moving averages and anomaly detection.
+  - name: trend_orders_7d_ma
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for orders 7d ma with moving averages and anomaly detection.
+  - name: trend_payment_volume_daily
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for payment volume daily with moving averages and anomaly detection.
+  - name: trend_payroll_monthly
+    config:
+      tags: ['type:trend', 'cadence:monthly']
+    description: >
+      Trend analysis for payroll monthly with moving averages and anomaly detection.
+  - name: trend_po_volume
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for po volume with moving averages and anomaly detection.
+  - name: trend_pricing_changes
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for pricing changes with moving averages and anomaly detection.
+  - name: trend_product_sales_velocity
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for product sales velocity with moving averages and anomaly detection.
+  - name: trend_refund_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for refund rate with moving averages and anomaly detection.
+  - name: trend_repeat_purchase_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for repeat purchase rate with moving averages and anomaly detection.
+  - name: trend_revenue_28d_ma
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for revenue 28d ma with moving averages and anomaly detection.
+  - name: trend_revenue_7d_ma
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for revenue 7d ma with moving averages and anomaly detection.
+  - name: trend_revenue_90d_ma
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for revenue 90d ma with moving averages and anomaly detection.
+  - name: trend_revenue_per_employee
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for revenue per employee with moving averages and anomaly detection.
+  - name: trend_shift_hours_daily
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for shift hours daily with moving averages and anomaly detection.
+  - name: trend_store_daily_traffic
+    config:
+      tags: ['type:trend', 'cadence:daily']
+    description: >
+      Trend analysis for store daily traffic with moving averages and anomaly detection.
+  - name: trend_supplier_lead_time
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for supplier lead time with moving averages and anomaly detection.
+  - name: trend_timecard_hours_weekly
+    config:
+      tags: ['type:trend', 'cadence:weekly']
+    description: >
+      Trend analysis for timecard hours weekly with moving averages and anomaly detection.
+  - name: trend_waste_rate
+    config:
+      tags: ['type:trend']
+    description: >
+      Trend analysis for waste rate with moving averages and anomaly detection.

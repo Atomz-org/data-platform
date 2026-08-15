@@ -1,0 +1,270 @@
+version: 2
+
+models:
+  - name: int_customer_ltv
+    description: >
+      Customer lifetime value metrics including total spend, order count,
+      average order value, and tenure calculated from customers and orders.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: lifetime_spend
+        description: Total amount spent by the customer across all orders.
+      - name: total_orders
+        description: Total number of distinct orders placed.
+      - name: avg_order_value
+        description: Average spend per order.
+      - name: customer_tenure_days
+        description: Days between first and last order.
+      - name: ltv_tier
+        description: Customer tier based on spend and order frequency (platinum/gold/silver/bronze).
+
+  - name: int_customer_rfm_scores
+    description: >
+      Recency, Frequency, Monetary scoring (1-5 quintiles) for each customer
+      based on order history. Higher scores indicate better behavior.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: recency_score
+        description: Score 1-5 based on days since last order (5 = most recent).
+      - name: frequency_score
+        description: Score 1-5 based on order count (5 = most frequent).
+      - name: monetary_score
+        description: Score 1-5 based on total spend (5 = highest spend).
+      - name: rfm_total_score
+        description: Sum of R + F + M scores (range 3-15).
+      - name: rfm_segment_code
+        description: Concatenated RFM scores as a string code (e.g., '554').
+
+  - name: int_customer_loyalty_enriched
+    description: >
+      Enriched customer view combining base customer data with loyalty
+      membership details, tier, points balance, and lifecycle stage.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: current_tier
+        description: Current loyalty tier of the member.
+      - name: loyalty_points_balance
+        description: Current loyalty points balance.
+      - name: loyalty_lifecycle_stage
+        description: Member lifecycle stage (non_member/new_member/established_member/veteran_member).
+
+  - name: int_customer_preferred_store
+    description: >
+      Most frequently visited store per customer, determined by order count
+      and spend at each location.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: preferred_store_id
+        description: Location ID of the customer's most visited store.
+      - name: preferred_store_visit_pct
+        description: Percentage of total visits at the preferred store.
+      - name: distinct_stores_visited
+        description: Number of unique stores visited by the customer.
+
+  - name: int_customer_preferred_products
+    description: >
+      Top 3 most purchased products per customer pivoted into a single row
+      with product names, counts, and share of total purchases.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: top1_product_name
+        description: Name of the customer's most purchased product.
+      - name: top1_purchase_count
+        description: Number of times the top product was purchased.
+
+  - name: int_customer_marketing_response
+    description: >
+      Customer-level marketing engagement metrics including coupon redemptions,
+      campaign response rate, acquisition source, and engagement level.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: campaign_response_rate_pct
+        description: Percentage of available campaigns the customer responded to.
+      - name: marketing_engagement_level
+        description: Classification of marketing engagement (highly/moderately/low/no engagement).
+
+  - name: int_store_revenue_costs
+    description: >
+      Monthly store-level financial summary combining revenue, operating
+      expenses, and labor costs with net operating income calculation.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: report_month
+        description: Month of the financial summary.
+      - name: net_operating_income
+        description: Revenue minus expenses minus labor cost.
+      - name: operating_margin_pct
+        description: Net operating income as percentage of revenue.
+
+  - name: int_store_labor_pct
+    description: >
+      Labor cost as a percentage of revenue per store per month,
+      with comparison against the fleet average.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: report_month
+        description: Month of the calculation.
+      - name: labor_cost_pct
+        description: Labor cost as percentage of store revenue.
+      - name: fleet_avg_labor_pct
+        description: Fleet-wide average labor cost percentage for the same month.
+
+  - name: int_store_inventory_cost
+    description: >
+      Inventory holding cost estimate per store based on current inventory
+      levels and a 2% monthly holding cost rate proxy.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+        tests:
+          - unique
+          - not_null
+      - name: total_inventory_value
+        description: Total value of inventory on hand.
+      - name: estimated_monthly_holding_cost
+        description: Estimated monthly inventory holding cost (2% of value).
+
+  - name: int_store_marketing_spend
+    description: >
+      Marketing spend allocated to each store on a monthly basis,
+      with channel breakdown and average daily spend.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: spend_month
+        description: Month of marketing spend.
+      - name: monthly_marketing_spend
+        description: Total marketing spend for the store in the month.
+      - name: top_spend_channel
+        description: Marketing channel with the highest spend.
+
+  - name: int_total_cost_of_goods
+    description: >
+      Total COGS per product combining ingredient costs from recipes
+      and supply costs from the supplies table.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: total_cogs_per_unit
+        description: Total cost of goods sold per unit (ingredients + supplies).
+      - name: ingredient_cost_share_pct
+        description: Percentage of COGS attributed to ingredients.
+
+  - name: int_gross_margin_by_product
+    description: >
+      Gross margin calculation per product comparing revenue from sales
+      against COGS from int_total_cost_of_goods.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: gross_margin
+        description: Total gross margin (revenue minus COGS).
+      - name: gross_margin_pct
+        description: Gross margin as percentage of revenue.
+
+  - name: int_demand_forecast_weekly
+    config:
+      tags: ['cadence:weekly']
+    description: >
+      Weekly product demand forecast using a 4-week trailing moving average,
+      with volatility measurement and forecast error tracking.
+    columns:
+      - name: product_id
+        description: Product identifier.
+      - name: sale_week
+        description: Week of the sales data.
+      - name: forecasted_quantity
+        description: Predicted quantity based on 4-week moving average.
+      - name: forecast_error_pct
+        description: Percentage error between forecast and actual demand.
+
+  - name: int_supply_capacity
+    description: >
+      Current supply availability vs demand per product, with weeks-of-supply
+      calculation and stock status classification.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: supply_demand_gap
+        description: Difference between current stock and weekly demand forecast.
+      - name: weeks_of_supply
+        description: Number of weeks current inventory can sustain demand.
+      - name: stock_status
+        description: Classification (out_of_stock/critical_low/low/adequate/overstock).
+
+  - name: int_order_throughput_by_hour
+    description: >
+      Order volume and revenue aggregated by store and hour-of-day,
+      showing average throughput and each hour's share of total orders.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: order_hour
+        description: Hour of the day (0-23).
+      - name: avg_orders_per_hour
+        description: Average number of orders in this hour across all days.
+      - name: hour_share_of_total_pct
+        description: This hour's percentage of the store's total orders.
+
+  - name: int_peak_hour_analysis
+    description: >
+      Peak hour identification per store using statistical classification
+      (orders above 1 std dev of the store's hourly average).
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: order_hour
+        description: Hour of the day (0-23).
+      - name: hour_classification
+        description: Classification (peak/standard/off_peak).
+      - name: store_total_peak_hours
+        description: Total number of peak hours for this store.
+
+  - name: int_revenue_per_employee_hour
+    description: >
+      Revenue generated per labor hour and per employee by store on a daily
+      basis, with 7-day rolling average for trend smoothing.
+    columns:
+      - name: store_id
+        description: Store location identifier.
+      - name: work_date
+        description: Date of the measurement.
+      - name: revenue_per_labor_hour
+        description: Revenue generated per labor hour worked.
+      - name: revenue_per_employee
+        description: Revenue generated per employee working that day.
