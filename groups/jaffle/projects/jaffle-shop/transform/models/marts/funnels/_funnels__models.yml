@@ -1,0 +1,138 @@
+version: 2
+
+models:
+  - name: fnl_order_conversion
+    config:
+      tags: ['type:funnel']
+    description: >
+      Monthly order funnel showing total orders placed, orders with revenue,
+      fulfilled orders, and conversion rates. Grain: one row per month.
+    columns:
+      - name: order_month
+        description: Calendar month.
+        tests:
+          - unique
+          - not_null
+      - name: total_orders_placed
+        description: Total distinct orders placed.
+      - name: orders_with_revenue
+        description: Orders with positive revenue.
+      - name: revenue_capture_rate_pct
+        description: Percentage of orders that generated revenue.
+      - name: fulfillment_rate_pct
+        description: Percentage of revenue-generating orders that were fulfilled.
+
+  - name: fnl_loyalty_enrollment
+    config:
+      tags: ['type:funnel']
+    description: >
+      End-to-end loyalty funnel from total customers through signup, first earn,
+      and first redemption with conversion rates at each stage. Single-row summary.
+    columns:
+      - name: stage_1_total_customers
+        description: Total customer count.
+      - name: stage_2_loyalty_signups
+        description: Customers who joined loyalty program.
+      - name: stage_3_first_earn
+        description: Members who earned points at least once.
+      - name: stage_4_first_redemption
+        description: Members who redeemed points at least once.
+      - name: overall_conversion_pct
+        description: End-to-end conversion from customer to redeemer.
+
+  - name: fnl_campaign_to_purchase
+    config:
+      tags: ['type:funnel']
+    description: >
+      Campaign-level funnel tracking coupon recipients through redemption to
+      repeat purchase within 90 days. Grain: one row per campaign.
+    columns:
+      - name: campaign_id
+        description: Unique campaign identifier.
+        tests:
+          - unique
+          - not_null
+      - name: campaign_name
+        description: Name of the campaign.
+      - name: stage_1_coupon_recipients
+        description: Customers who received a coupon from this campaign.
+      - name: stage_2_redeemed
+        description: Customers who redeemed a coupon.
+      - name: stage_3_repeat_purchase
+        description: Customers who made a repeat purchase within 90 days.
+      - name: redemption_rate_pct
+        description: Coupon redemption rate.
+      - name: repeat_purchase_rate_pct
+        description: Rate of repeat purchase after redemption.
+
+  - name: fnl_new_customer_onboarding
+    config:
+      tags: ['type:funnel']
+    description: >
+      New customer onboarding funnel by cohort month showing progression from
+      first order to second order (within 30 days), third order, and loyalty signup.
+      Grain: one row per cohort month.
+    columns:
+      - name: cohort_month
+        description: Month of the customer's first order.
+        tests:
+          - unique
+          - not_null
+      - name: stage_1_first_order
+        description: Customers who made their first order.
+      - name: stage_2_second_within_30d
+        description: Customers who returned within 30 days.
+      - name: stage_3_third_order
+        description: Customers who reached three orders.
+      - name: second_order_rate_pct
+        description: Percentage reaching second order.
+      - name: avg_days_to_second_order
+        description: Average days between first and second order.
+
+  - name: fnl_refund_to_resolution
+    config:
+      tags: ['type:funnel']
+    description: >
+      Monthly refund funnel from request through review, approval/denial, and processing.
+      Includes resolution time and approval rates. Grain: one row per month.
+    columns:
+      - name: refund_month
+        description: Month the refund was requested.
+        tests:
+          - unique
+          - not_null
+      - name: total_refund_requests
+        description: Total refund requests in the month.
+      - name: approved
+        description: Refunds that were approved.
+      - name: denied
+        description: Refunds that were denied.
+      - name: approval_rate_pct
+        description: Percentage of requests approved.
+      - name: avg_days_to_resolution
+        description: Average days from request to resolution.
+
+  - name: fnl_employee_lifecycle
+    config:
+      tags: ['type:funnel']
+    description: >
+      Employee lifecycle funnel by hire quarter and department showing progression
+      from hire through training completion, productivity, and review.
+      Grain: hire_quarter x department.
+    columns:
+      - name: hire_quarter
+        description: Quarter when employees were hired.
+        tests:
+          - not_null
+      - name: department_name
+        description: Department of the employees.
+      - name: stage_1_hired_count
+        description: Number of employees hired.
+      - name: stage_2_trained_count
+        description: Employees who completed all required training.
+      - name: stage_3_productive_count
+        description: Employees who handled at least one order.
+      - name: training_completion_rate_pct
+        description: Percentage completing required training.
+      - name: avg_days_to_productive
+        description: Average days from hire to first productive work.

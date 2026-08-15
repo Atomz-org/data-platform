@@ -1,0 +1,180 @@
+models:
+  - name: int_product_return_rate
+    description: Implied waste rate per product comparing waste events to product sales.
+    columns:
+      - name: product_id
+        description: The unique product identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: waste_rate_pct
+        description: Waste quantity as percentage of total sold.
+      - name: waste_cost_as_pct_of_revenue
+        description: Waste cost as percentage of total revenue.
+
+  - name: int_recipe_complexity_score
+    description: Complexity score for recipes based on ingredient count and quantity.
+    columns:
+      - name: recipe_id
+        description: The unique recipe identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: complexity_score
+        description: Average of ingredient count and quantity complexity scores (1-5 scale).
+      - name: complexity_tier
+        description: Complexity classification (low, medium, high).
+
+  - name: int_menu_item_velocity_by_store
+    description: Product sales velocity per store with velocity tier.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: location_id
+        description: The store location identifier.
+      - name: daily_sales_velocity
+        description: Average daily units sold.
+      - name: velocity_tier
+        description: Sales velocity tier (fast_mover, moderate_mover, slow_mover).
+
+  - name: int_ingredient_usage_variance
+    description: Expected vs actual ingredient usage variance per product per day.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: usage_date
+        description: The date of usage.
+      - name: usage_variance
+        description: Actual minus expected ingredient usage.
+      - name: variance_pct
+        description: Variance as percentage of expected usage.
+
+  - name: int_price_elasticity_estimate
+    description: Estimated price elasticity from price changes and corresponding volume changes.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: price_changed_date
+        description: Date of the price change.
+      - name: estimated_elasticity
+        description: Estimated price elasticity (volume change % / price change %).
+
+  - name: int_product_review_trend
+    description: Monthly review score trend per product with rolling average.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: review_month
+        description: The month of reviews.
+      - name: avg_rating
+        description: Average rating for the month.
+      - name: rolling_3m_avg_rating
+        description: Rolling 3-month average rating.
+      - name: rating_tier
+        description: Rating classification (excellent, good, fair, poor).
+
+  - name: int_category_sales_share
+    description: Each product category share of total sales per store.
+    columns:
+      - name: category
+        description: Product type/category.
+      - name: location_id
+        description: The store location identifier.
+      - name: revenue_share_pct
+        description: Category revenue as percentage of store total.
+
+  - name: int_seasonal_product_index
+    description: Seasonality index per product based on monthly sales vs annual average.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: sales_month
+        description: The month of sales.
+      - name: seasonality_index
+        description: Monthly sales divided by annual average (1.0 = average).
+      - name: season_type
+        description: Season classification (peak_season, normal_season, off_season).
+
+  - name: int_combo_meal_analysis
+    description: Products frequently ordered together in multi-item orders with co-occurrence frequency.
+    columns:
+      - name: product_a
+        description: First product in the pair.
+      - name: product_b
+        description: Second product in the pair.
+      - name: co_occurrence_count
+        description: Number of orders containing both products.
+
+  - name: int_new_vs_returning_product_mix
+    description: Product mix differences between new and returning customers.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: customer_type
+        description: Whether the customer is new or returning.
+      - name: item_count
+        description: Number of order items.
+      - name: total_revenue
+        description: Total revenue from this product by this customer type.
+
+  - name: int_product_shelf_life_proxy
+    description: Product freshness proxy based on average days between sales.
+    columns:
+      - name: product_id
+        description: The product identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_days_between_sales
+        description: Average gap between sale days.
+      - name: freshness_tier
+        description: Freshness classification (daily_demand, high_turnover, weekly_demand, low_turnover).
+
+  - name: int_drink_customization_proxy
+    description: Beverage variety analysis by menu category and product type.
+    columns:
+      - name: menu_category_id
+        description: The menu category identifier.
+      - name: product_count
+        description: Number of distinct products in the category.
+      - name: menu_item_count
+        description: Number of menu items (including size variants).
+      - name: variety_level
+        description: Variety classification (standard, moderate_variety, high_variety).
+
+  - name: int_product_dependency_graph
+    description: Product pairs that share ingredients with overlap percentage.
+    columns:
+      - name: product_a
+        description: First product in the pair.
+      - name: product_b
+        description: Second product in the pair.
+      - name: shared_ingredient_count
+        description: Number of ingredients shared.
+      - name: ingredient_overlap_pct
+        description: Shared ingredients as percentage of the smaller product ingredient set.
+
+  - name: int_menu_breadth_by_store
+    description: Count of distinct products sold per store.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: distinct_products_sold
+        description: Number of distinct products sold.
+      - name: product_diversity_ratio
+        description: Distinct products per order.
+
+  - name: int_avg_basket_composition
+    description: Average number and type of items per order across all stores.
+    columns:
+      - name: avg_items_per_order
+        description: Average items per order.
+      - name: avg_basket_value
+        description: Average basket value.
+      - name: single_item_orders
+        description: Count of single-item orders.
+      - name: large_basket_orders
+        description: Count of orders with 4+ items.

@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: fin_revenue_waterfall
+    description: Monthly revenue waterfall showing opening balance, new customers, returning, upsell, downsell, churn, and closing balance.
+
+  - name: fin_customer_profitability
+    description: Revenue minus allocated costs per customer. Store costs allocated by customer order share.
+
+  - name: fin_payment_reconciliation
+    description: Match payment transactions to invoices and flag unreconciled, underpayments, and overpayments.
+
+  - name: fin_gift_card_breakage
+    description: Estimate gift card breakage (unused balances likely never redeemed) based on age and activity patterns.
+
+  - name: fin_discount_leakage
+    description: Total discount given via coupons vs budgeted marketing spend, with leakage flags.
+
+  - name: fin_revenue_per_sqft_proxy
+    description: Revenue per store normalized by store age as a size proxy.
+
+  - name: fin_operating_leverage
+    description: Fixed vs variable cost analysis per store with operating leverage ratio.
+
+  - name: fin_same_store_sales
+    description: Same-store sales growth for stores open more than 12 months, comparing year-over-year.
+
+  - name: fin_revenue_by_daypart
+    description: Revenue by daypart (morning, lunch, afternoon, evening) per store per month.
+
+  - name: fin_average_check_trend
+    description: Average order value trend over time by store with 4-week moving average.
+
+  - name: fin_payment_failure_rate
+    description: Failed and declined transactions as percentage of total attempts by payment method.
+
+  - name: fin_refund_turnaround
+    description: Average days from refund request to completion with SLA compliance percentages.
+
+  - name: fin_tax_efficiency
+    description: Effective tax rate vs statutory rate gap analysis by jurisdiction.
+
+  - name: fin_working_capital_cycle
+    description: Cash conversion cycle calculation from days receivable, days inventory, and days payable.
+
+  - name: fin_revenue_forecast_simple
+    description: Simple 3-month revenue forecast per store using linear regression trend.
+
+  - name: fin_cost_allocation_by_product
+    description: Allocate store overhead costs to products by their revenue share.
+
+  - name: fin_margin_by_daypart
+    description: Gross margin by daypart using order items and menu item margins.
+
+  - name: fin_gift_card_revenue_timing
+    description: Timing gap between gift card purchase and redemption with redemption rate analysis.
+
+  - name: fin_seasonal_budget_adjustment
+    description: Monthly seasonal adjustment factors derived from historical revenue patterns.
+
+  - name: fin_expense_per_transaction
+    description: Operating expense per transaction trend by store and month.
+
+  - name: fin_loyalty_program_cost
+    description: Total cost of loyalty program including points issued, redeemed, and outstanding liability.
+
+  - name: fin_coupon_cost_analysis
+    description: Total coupon discount cost by campaign with cumulative tracking.
+
+  - name: fin_revenue_mix_shift
+    description: Shift in revenue mix by product type over time with month-over-month share changes.
+
+  - name: fin_store_roi
+    description: Return on investment per store tracking cumulative profit vs estimated setup cost.
+
+  - name: fin_breakeven_timeline
+    description: Months to breakeven per store with status and estimated timeline for those not yet profitable.

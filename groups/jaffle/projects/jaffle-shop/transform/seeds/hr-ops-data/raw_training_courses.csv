@@ -1,0 +1,9 @@
+id,name,description,category,duration_hours,is_required,is_active
+1,Barista Basics,Introduction to espresso making and coffee preparation,onboarding,8,true,true
+2,Food Safety Certification,ServSafe food handler certification,compliance,4,true,true
+3,Advanced Latte Art,Techniques for creating latte art designs,skill_development,4,false,true
+4,Customer Service Excellence,Handling difficult situations and upselling,soft_skills,2,true,true
+5,Store Opening Procedures,Morning setup and equipment preparation,operations,2,true,true
+6,Cash Handling & POS,Point of sale system and cash management,operations,3,true,true
+7,Leadership for Shift Leads,Supervisory skills and team management,leadership,8,false,true
+8,Seasonal Drinks Workshop,Preparing limited-time seasonal beverages,skill_development,2,false,true

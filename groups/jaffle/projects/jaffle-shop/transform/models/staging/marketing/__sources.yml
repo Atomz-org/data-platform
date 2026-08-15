@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: marketing
+    schema: "{{ target.schema }}_raw"
+    description: Marketing and loyalty program data for the Jaffle Shop
+    tables:
+      - name: raw_campaigns
+        description: Marketing campaigns across email, social, and in-store channels
+      - name: raw_campaign_spend
+        description: Daily spend per campaign per channel
+      - name: raw_coupons
+        description: Coupon definitions including code, discount type, amount, and validity
+      - name: raw_coupon_redemptions
+        description: Each time a coupon is used on an order
+      - name: raw_loyalty_members
+        description: Loyalty program membership records
+      - name: raw_loyalty_transactions
+        description: Points earned and redeemed by loyalty members
+        loaded_at_field: transacted_at
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+      - name: raw_loyalty_tiers
+        description: Tier definitions for the loyalty program (Bronze, Silver, Gold, Platinum)
+      - name: raw_email_events
+        description: Email interaction events including sends, opens, clicks, and unsubscribes
+        loaded_at_field: event_at
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
+      - name: raw_social_media_posts
+        description: Social media content and engagement metrics
+      - name: raw_referrals
+        description: Customer referral tracking records

@@ -1,0 +1,11 @@
+models:
+  - name: metricflow_time_spine
+    description: >
+      MetricFlow time spine table providing a continuous series of daily dates
+      for metric calculations.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        description: Calendar date
+        granularity: day

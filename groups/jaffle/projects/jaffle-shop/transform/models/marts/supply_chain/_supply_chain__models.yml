@@ -1,0 +1,187 @@
+models:
+  - name: int_purchase_orders_enriched
+    description: Purchase orders enriched with supplier details and line item summaries. One row per purchase order.
+    columns:
+      - name: purchase_order_id
+        description: The unique key for each purchase order.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: The foreign key to the supplier.
+      - name: supplier_name
+        description: The name of the supplier company.
+      - name: count_line_items
+        description: The number of distinct line items on the purchase order.
+      - name: total_quantity_ordered
+        description: The sum of all quantities ordered across line items.
+      - name: calculated_total_amount
+        description: The sum of all line item totals in USD.
+
+  - name: int_po_fulfillment_status
+    description: Purchase order fulfillment status based on receipts vs ordered quantities. One row per purchase order.
+    columns:
+      - name: purchase_order_id
+        description: The unique key for each purchase order.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: The foreign key to the supplier.
+      - name: po_fulfillment_status
+        description: Overall fulfillment status (not_fulfilled, partially_fulfilled, fully_fulfilled).
+      - name: total_quantity_ordered
+        description: Total quantity ordered across all line items.
+      - name: total_quantity_received
+        description: Total quantity received across all receipts.
+
+  - name: int_inventory_current_level
+    description: Current inventory levels computed as running sum of all inventory movements by product and location.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: current_quantity
+        description: The current net quantity on hand.
+      - name: total_inbound
+        description: Total inbound quantity since tracking began.
+      - name: total_outbound
+        description: Total outbound quantity since tracking began.
+      - name: last_movement_at
+        description: The date of the most recent inventory movement.
+
+  - name: int_inventory_snapshot_daily
+    config:
+      tags: ['cadence:daily']
+    description: Daily inventory snapshot combining physical counts with system-calculated levels to identify variances.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: counted_on_hand
+        description: Physical count quantity on hand from the most recent count.
+      - name: system_quantity
+        description: System-calculated quantity based on movement records.
+      - name: count_variance
+        description: Difference between system quantity and physical count (positive means system overstates).
+
+  - name: int_supplier_spend_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: Monthly procurement spend aggregated by supplier.
+    columns:
+      - name: supplier_id
+        description: The foreign key to the supplier.
+        data_tests:
+          - not_null
+      - name: supplier_name
+        description: The name of the supplier company.
+      - name: order_month
+        description: The month of the purchase orders.
+        data_tests:
+          - not_null
+      - name: count_purchase_orders
+        description: Number of purchase orders placed in the month.
+      - name: total_spend
+        description: Total spend in USD for the month.
+      - name: avg_unit_cost
+        description: Average unit cost across all line items in the month.
+
+  - name: int_lead_time_by_supplier
+    description: Lead time statistics by supplier, computed from order date to first receipt date.
+    columns:
+      - name: supplier_id
+        description: The unique key for each supplier.
+        data_tests:
+          - not_null
+          - unique
+      - name: count_completed_orders
+        description: Number of purchase orders with at least one receipt.
+      - name: avg_lead_time_days
+        description: Average actual lead time in days.
+      - name: avg_lead_time_variance_days
+        description: Average difference between actual and expected lead time (positive means late).
+      - name: on_time_delivery_rate
+        description: Proportion of orders delivered on or before expected date.
+
+  - name: int_waste_rate_by_product
+    description: Waste statistics by product including waste rate relative to total inbound inventory.
+    columns:
+      - name: product_id
+        description: The unique key for each product.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_waste_events
+        description: Number of waste events recorded.
+      - name: total_quantity_wasted
+        description: Total quantity of product wasted.
+      - name: total_cost_of_waste
+        description: Total cost of waste in USD.
+      - name: waste_rate
+        description: Ratio of wasted quantity to total inbound quantity.
+
+  - name: int_stock_depletion_rate
+    description: Stock depletion rates and estimated days of stock remaining by product and location.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: current_quantity
+        description: Current inventory quantity.
+      - name: daily_depletion_rate
+        description: Average daily outbound quantity over the last 30 days.
+      - name: estimated_days_of_stock
+        description: Estimated number of days until stock is depleted at current rate.
+
+  - name: int_reorder_point_calc
+    description: Reorder point calculations incorporating depletion rate and supplier lead times.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: reorder_point
+        description: Quantity threshold below which a reorder should be triggered.
+      - name: suggested_reorder_quantity
+        description: Suggested quantity to reorder (30 days of stock).
+      - name: needs_reorder
+        description: Boolean indicating if current quantity is below the reorder point.
+
+  - name: int_delivery_tracking
+    description: Delivery shipments enriched with purchase order details, warehouse info, and transit metrics.
+    columns:
+      - name: shipment_id
+        description: The unique key for each shipment.
+        data_tests:
+          - not_null
+          - unique
+      - name: purchase_order_id
+        description: The foreign key to the purchase order.
+      - name: shipment_status
+        description: Current status of the shipment.
+      - name: actual_transit_days
+        description: Number of days from shipment to actual arrival.
+      - name: expected_transit_days
+        description: Number of days from shipment to estimated arrival.
+      - name: is_on_time
+        description: Whether the shipment arrived on or before the estimated date.

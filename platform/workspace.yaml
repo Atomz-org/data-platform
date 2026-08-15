@@ -24,6 +24,10 @@ load_from:
       working_directory: /Users/suresh/data-platform/groups/globex/projects/globex-eu/src
       location_name: globex__globex-eu
   - python_module:
+      module_name: jaffle_shop.definitions
+      working_directory: /Users/suresh/data-platform/groups/jaffle/projects/jaffle-shop/src
+      location_name: jaffle__jaffle-shop
+  - python_module:
       module_name: zenith_de.definitions
       working_directory: /Users/suresh/data-platform/groups/zenith/projects/zenith-de/src
       location_name: zenith__zenith-de

@@ -1,0 +1,175 @@
+models:
+  - name: int_campaign_orders
+    description: >
+      Links campaigns to individual orders via coupon redemptions.
+      Each row represents an order attributed to a campaign.
+    columns:
+      - name: campaign_id
+        description: Foreign key to campaigns.
+        data_tests:
+          - not_null
+      - name: order_id
+        description: Foreign key to orders.
+        data_tests:
+          - not_null
+
+  - name: int_campaign_roi
+    description: >
+      Campaign-level ROI metrics combining spend data with attributed revenue.
+      One row per campaign.
+    columns:
+      - name: campaign_id
+        description: The unique key for each campaign.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_spend
+        description: Total amount spent on the campaign in dollars.
+      - name: attributed_revenue
+        description: Total order revenue attributed to the campaign in dollars.
+      - name: roi_ratio
+        description: Return on investment ratio ((revenue - spend) / spend).
+      - name: cost_per_order
+        description: Average cost per attributed order in dollars.
+
+  - name: int_coupon_performance
+    description: >
+      Coupon-level performance metrics including redemption rates and discount totals.
+      One row per coupon.
+    columns:
+      - name: coupon_id
+        description: The unique key for each coupon.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_redemptions
+        description: Number of times the coupon was redeemed.
+      - name: redemption_rate
+        description: Ratio of actual redemptions to maximum allowed redemptions.
+      - name: total_discount_given
+        description: Total discount amount given through this coupon in dollars.
+
+  - name: int_coupon_cannibalization
+    description: >
+      Analyzes whether coupon redemptions drove incremental orders or
+      discounted orders that would have happened anyway (repeat customers).
+      One row per coupon.
+    columns:
+      - name: coupon_id
+        description: The unique key for each coupon.
+        data_tests:
+          - not_null
+          - unique
+      - name: cannibalization_rate
+        description: Proportion of redemptions from repeat customers (likely non-incremental).
+      - name: incremental_redemptions
+        description: Redemptions from first-time customers (likely incremental).
+      - name: cannibalized_redemptions
+        description: Redemptions from repeat customers (likely would have purchased anyway).
+
+  - name: int_loyalty_points_balance
+    description: >
+      Aggregated loyalty points balance and lifetime stats per member.
+      One row per loyalty member.
+    columns:
+      - name: loyalty_member_id
+        description: The unique key for each loyalty member.
+        data_tests:
+          - not_null
+          - unique
+      - name: current_points_balance
+        description: Net points balance (earned - redeemed - expired + bonus).
+      - name: total_points_earned
+        description: Lifetime points earned.
+      - name: total_points_redeemed
+        description: Lifetime points redeemed.
+
+  - name: int_loyalty_tier_progression
+    description: >
+      Enriched loyalty member records with current tier, earned tier,
+      and next tier progression details. One row per member.
+    columns:
+      - name: loyalty_member_id
+        description: The unique key for each loyalty member.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to customers.
+        data_tests:
+          - not_null
+      - name: current_tier_name
+        description: Name of the member's currently assigned tier.
+      - name: earned_tier_name
+        description: Name of the tier the member has earned based on lifetime points.
+      - name: points_to_next_tier
+        description: Points needed to reach the next tier level.
+
+  - name: int_email_engagement_funnel
+    description: >
+      Email campaign funnel metrics from sent through clicked,
+      with conversion rates at each stage. One row per campaign-subject combination.
+    columns:
+      - name: campaign_id
+        description: Foreign key to campaigns.
+      - name: open_rate
+        description: Proportion of sent emails that were opened.
+      - name: click_through_rate
+        description: Proportion of opened emails that were clicked.
+      - name: unsubscribe_rate
+        description: Proportion of sent emails that resulted in unsubscribes.
+
+  - name: int_customer_acquisition_source
+    description: >
+      First-touch attribution for each customer identifying their
+      acquisition channel (referral, campaign, or organic). One row per customer.
+    columns:
+      - name: customer_id
+        description: The unique key for each customer.
+        data_tests:
+          - not_null
+          - unique
+      - name: acquisition_source
+        description: How the customer was acquired (referral, campaign, organic).
+        data_tests:
+          - not_null
+      - name: campaign_name
+        description: Name of the attributed campaign (null for organic/referral without campaign).
+
+  - name: int_referral_chain
+    description: >
+      Referral relationships enriched with customer details and referrer stats.
+      One row per referral.
+    columns:
+      - name: referral_id
+        description: The unique key for each referral.
+        data_tests:
+          - not_null
+          - unique
+      - name: referrer_customer_id
+        description: Foreign key to the referring customer.
+        data_tests:
+          - not_null
+      - name: referee_customer_id
+        description: Foreign key to the referred customer.
+        data_tests:
+          - not_null
+      - name: referral_conversion_rate
+        description: The referrer's overall referral conversion rate.
+
+  - name: int_social_engagement_summary
+    description: >
+      Aggregated social media engagement metrics by platform.
+      One row per platform.
+    columns:
+      - name: platform
+        description: Social media platform name.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_posts
+        description: Total number of posts on this platform.
+      - name: avg_engagement_rate
+        description: Average engagement rate across all posts on this platform.
+      - name: total_impressions
+        description: Total impressions across all posts on this platform.

@@ -1,0 +1,61 @@
+models:
+  - name: int_employee_productivity
+    description: >
+      Revenue per labor hour and orders per hour per employee, joining actual
+      labor hours with orders placed during employee shifts.
+    columns:
+      - name: employee_id
+        description: Employee identifier.
+        data_tests:
+          - not_null
+
+  - name: int_absenteeism_rate
+    description: >
+      Scheduled shifts vs actual timecard appearances per employee, computing
+      no-show rate as a percentage of total scheduled shifts.
+    columns:
+      - name: employee_id
+        description: Employee identifier.
+        data_tests:
+          - not_null
+
+  - name: int_payroll_cost_trend
+    description: >
+      Monthly payroll cost trends by department, including gross pay,
+      overtime hours, cost per hour, and month-over-month change.
+    columns:
+      - name: department_id
+        description: Department identifier.
+        data_tests:
+          - not_null
+
+  - name: int_shift_preference_pattern
+    description: >
+      Shift popularity and attendance patterns by day-of-week and shift type
+      per store, ranked by volume and no-show rates.
+    columns:
+      - name: location_id
+        description: Store location identifier.
+        data_tests:
+          - not_null
+
+  - name: int_equipment_lifecycle
+    description: >
+      Equipment age, maintenance frequency, cost-of-ownership ratios, and
+      lifecycle status classification (healthy, aging, at_risk, high_maintenance_cost).
+    columns:
+      - name: equipment_id
+        description: Equipment identifier.
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_store_labor_demand
+    description: >
+      Predicted labor hours needed per store and day-of-week, based on
+      historical order volume and actual labor hour ratios.
+    columns:
+      - name: location_id
+        description: Store location identifier.
+        data_tests:
+          - not_null

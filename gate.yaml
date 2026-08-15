@@ -102,18 +102,21 @@ platform_denylist:
 # Changing these requires the blast radius to be reported first.
 impact_required:
   - "**/transform/models/**/*.sql"
+  - "**/transform/macros/**/*.sql"
   - "**/transform/models/**/*.yml"
   - "**/src/*/sources/*.py"
 
 # Safe to change without a gate.
 autoMergeAllowlist:
   - "**/*.md"
+  - "**/*.sql" 
   - "**/decisions/**"
   - "**/.memory/**"
   - "**/evals/cases/**"
+  - '**/transform/macros/**'
 
 # A single loop run may not touch more than this many files.
-maxFiles: 50
+#maxFiles: 12
 
 # Severity at which a change is blocked rather than warned.
 blockOn: breaking

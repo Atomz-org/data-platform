@@ -121,7 +121,7 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / "src" / module / "agents" / "__init__.py",
               '"""Project-specific agent logic."""\n', ctx),
         write(pdir / "transform" / "dbt_project.yml", PROJECT_DBT, ctx),
-        write(pdir / "transform" / "profiles.yml", PROJECT_PROFILES, ctx),
+        write(pdir / "transform" / "profiles.yml", render_profiles(module), ctx),
         write(pdir / "transform" / "packages.yml", PROJECT_PACKAGES, ctx),
         write(pdir / "transform" / "models" / "staging" / ".gitkeep", "", ctx),
         write(pdir / "transform" / "models" / "marts" / ".gitkeep", "", ctx),
@@ -384,7 +384,16 @@ model-paths: ["models"]
 # Platform cleaning macros load as root-project macros, not as a package:
 # `pf_clean` dispatches to its `clean_*` siblings unqualified, and dbt namespaces
 # package macros, so a package install fails on the inner dispatch.
-macro-paths: ["macros", "../../../../../platform/dbt/macros"]
+#
+# dbt-snowflake is the cross-database function layer: `{{ sf_iff(...) }}` and its
+# siblings compile to whatever the *target* adapter understands, so one model
+# runs on DuckDB in development and Snowflake in production. `pf dialect` lists
+# what is covered. Adding a sibling toolkit (dbt-bigquery) means adding its
+# macros directory here.
+macro-paths:
+  - "macros"
+  - "../../../../../platform/dbt/macros"
+  - "../../../../../platform/toolkits/dbt-snowflake/macros"
 seed-paths: ["seeds"]
 test-paths: ["tests"]
 target-path: "target"
@@ -399,23 +408,50 @@ models:
       +schema: marts
 """
 
-PROJECT_PROFILES = """\
-{{module}}:
-  target: "{{ env_var('DBT_TARGET', 'dev') }}"
-  outputs:
-    dev:
-      type: duckdb
-      path: "{{ env_var('PF_DUCKDB_PATH') }}"
-      threads: 4
-    ci:
-      type: duckdb
-      path: "{{ env_var('PF_DUCKDB_PATH') }}"
-      threads: 8
-    prod:
-      type: duckdb
-      path: "{{ env_var('PF_DUCKDB_PATH') }}"
-      threads: 8
-"""
+#: The dbt targets every project gets, as data rather than as one literal block.
+#:
+#: Written this way because targets are the part of a project that varies most
+#: between the repositories this platform adopts, and each one is wanted
+#: individually: `pf align` checks that a named target exists and has the
+#: expected warehouse type, the `dbt wiring` bootstrap step appends a target a
+#: project predates, and a capability replaces `prod` with a real warehouse
+#: without touching the other three. All four of those need one target, and a
+#: single YAML literal can only give them all four.
+#:
+#: Every default here is DuckDB, which is the whole point: a developer must be
+#: able to build the entire project on a laptop with no credentials, or they
+#: stop building it. Production is declared per project — `pf capability-add
+#: <group> <project> snowflake` rewrites this `prod` entry.
+PROJECT_TARGETS: dict[str, dict[str, object]] = {
+    "dev":  {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 4},
+    "ci":   {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
+    "prod": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
+    # Recce compares two *built* states, so there has to be somewhere to build
+    # the second one. Same file, different schema: a separate database would mean
+    # loading the seeds twice and would put the two states out of reach of a
+    # single connection. The per-layer `+schema:` config appends to this, so
+    # staging lands in `base_staging` and never collides with `main_staging`.
+    "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}",
+             "schema": "base", "threads": 4},
+}
+
+
+def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
+    """One dbt output block. The unit `pf align` checks and bootstrap appends."""
+    lines = [f"{indent}{name}:"]
+    for key, value in spec.items():
+        rendered = f'"{value}"' if isinstance(value, str) and "{{" in value else value
+        lines.append(f"{indent}  {key}: {rendered}")
+    return "\n".join(lines) + "\n"
+
+
+def render_profiles(module: str, targets: dict[str, dict[str, object]] | None = None) -> str:
+    """A whole profiles.yml. `DBT_TARGET` selects; nothing else switches warehouse."""
+    targets = PROJECT_TARGETS if targets is None else targets
+    head = (f"{module}:\n"
+            f"  target: \"{{{{ env_var('DBT_TARGET', 'dev') }}}}\"\n"
+            f"  outputs:\n")
+    return head + "".join(render_target(n, s) for n, s in targets.items())
 
 PROJECT_PACKAGES = """\
 packages:

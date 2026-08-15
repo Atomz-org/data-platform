@@ -1,0 +1,7 @@
+{
+  "name": "jaffle",
+  "owner": { "name": "jaffle" },
+  "plugins": [
+    { "name": "jaffle-group", "source": "./.claude", "description": "jaffle group skills" }
+  ]
+}

@@ -1,0 +1,160 @@
+version: 2
+
+models:
+  - name: int_customer_order_frequency_trend
+    description: >
+      Monthly order count per customer with 3-month moving average and trend
+      direction to detect acceleration or deceleration in ordering behavior.
+      Grain: customer_id x order_month.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - not_null
+      - name: order_month
+        description: Calendar month.
+        tests:
+          - not_null
+      - name: monthly_order_count
+        description: Orders placed in this month.
+      - name: order_count_3m_avg
+        description: 3-month moving average of order count.
+      - name: monthly_trend_direction
+        description: Whether orders are accelerating, decelerating, or stable.
+      - name: trend_acceleration
+        description: Rate of change in 3-month average vs prior 3-month average.
+
+  - name: int_product_sales_velocity
+    description: >
+      Daily product sales velocity at 7-day and 28-day windows with velocity
+      ratio for trend detection and spike identification.
+      Grain: product_id x sale_date.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: sale_date
+        description: Date of sales activity.
+        tests:
+          - not_null
+      - name: velocity_7d
+        description: 7-day rolling average of daily units sold.
+      - name: velocity_28d
+        description: 28-day rolling average of daily units sold.
+      - name: velocity_ratio
+        description: Ratio of 7-day to 28-day velocity (above 1 = accelerating).
+      - name: is_spike_day
+        description: Whether daily sales exceeded 1.5x the 28-day average.
+
+  - name: int_store_daily_summary
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily store-level summary combining orders, revenue, labor hours,
+      and waste events into a single operational view.
+      Grain: location_id x order_date.
+    columns:
+      - name: location_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: order_date
+        description: Calendar date.
+        tests:
+          - not_null
+      - name: order_count
+        description: Number of orders.
+      - name: daily_revenue
+        description: Total revenue for the day.
+      - name: labor_hours
+        description: Total labor hours worked.
+      - name: revenue_per_labor_hour
+        description: Revenue generated per hour of labor.
+      - name: waste_cost
+        description: Total cost of waste for the day.
+      - name: waste_as_pct_of_revenue
+        description: Waste cost as a percentage of daily revenue.
+
+  - name: int_customer_first_purchase_context
+    description: >
+      Contextual details of each customer's first order including store, products
+      purchased, day of week, and order value. Grain: one row per customer.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: first_order_id
+        description: Order ID of the customer's first purchase.
+      - name: first_order_date
+        description: Date of first purchase.
+      - name: first_store_name
+        description: Store where the first order was placed.
+      - name: first_order_total
+        description: Total value of the first order.
+      - name: first_order_distinct_products
+        description: Number of distinct products in the first order.
+      - name: first_order_day_name
+        description: Day of the week of the first order.
+      - name: first_order_is_weekend
+        description: Whether the first order was on a weekend.
+
+  - name: int_product_price_history_enriched
+    description: >
+      Price history enriched with days-at-price, volume-during-price, and
+      point elasticity estimates for price optimization analysis.
+      Grain: one row per pricing event.
+    columns:
+      - name: pricing_history_id
+        description: Unique pricing history record identifier.
+        tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: Product identifier.
+      - name: price
+        description: Price set during this period.
+      - name: period_start
+        description: Start date of this price period.
+      - name: period_end
+        description: End date of this price period.
+      - name: days_at_price
+        description: Number of days the product was at this price.
+      - name: units_during_period
+        description: Units sold during this price period.
+      - name: avg_daily_units_at_price
+        description: Average daily units sold at this price.
+      - name: point_elasticity_estimate
+        description: Estimated point price elasticity from this price change.
+
+  - name: int_employee_monthly_metrics
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly per-employee operational metrics combining hours worked, overtime,
+      shift attendance, and productivity. Grain: employee_id x metric_month.
+    columns:
+      - name: employee_id
+        description: Employee identifier.
+        tests:
+          - not_null
+      - name: metric_month
+        description: Calendar month.
+        tests:
+          - not_null
+      - name: total_hours
+        description: Total hours worked in the month.
+      - name: overtime_hours
+        description: Overtime hours in the month.
+      - name: overtime_pct
+        description: Overtime as percentage of total hours.
+      - name: days_worked
+        description: Number of days worked.
+      - name: attendance_rate_pct
+        description: Percentage of scheduled shifts attended.
+      - name: orders_handled
+        description: Total orders handled in the month.
+      - name: avg_orders_per_hour
+        description: Average orders per hour worked.

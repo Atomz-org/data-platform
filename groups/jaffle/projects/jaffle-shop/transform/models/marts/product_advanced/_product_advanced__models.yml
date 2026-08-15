@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: prod_menu_optimization_matrix
+    description: 2x2 matrix classifying menu items as star, plow horse, puzzle, or dog by popularity vs profitability.
+
+  - name: prod_recipe_cost_simulation
+    description: What-if simulation of 10% ingredient price increase impact on recipe margins.
+
+  - name: prod_product_cannibalization
+    description: Detect new products that reduced sales of existing similar products after launch.
+
+  - name: prod_bundle_recommendation
+    description: Suggested product bundles based on co-purchase affinity scores with combined margin.
+
+  - name: prod_price_point_analysis
+    description: Sales volume changes around price point changes with price elasticity estimation.
+
+  - name: prod_ingredient_dependency
+    description: Products dependent on same key ingredient showing concentration risk levels.
+
+  - name: prod_menu_complexity_score
+    description: Menu complexity assessment by ingredient count per recipe item.
+
+  - name: prod_daypart_product_mix
+    description: Which products sell at which time of day with daypart share percentages.
+
+  - name: prod_product_introduction_success
+    description: Success rate of new product launches based on first 90-day sales performance.
+
+  - name: prod_nutritional_trend
+    description: Average calories, fat, protein, and carbs per order trending over time.
+
+  - name: prod_allergen_risk_assessment
+    description: Products containing common allergens flagged with risk level classification.
+
+  - name: prod_recipe_simplification
+    description: Recipes with many ingredients that are candidates for simplification with estimated savings.
+
+  - name: prod_seasonal_menu_rotation
+    description: Which products should rotate in or out by season based on seasonal sales patterns.
+
+  - name: prod_product_end_of_life
+    description: Products with declining sales trends that should be considered for discontinuation.
+
+  - name: prod_ingredient_cost_hedge
+    description: Ingredients with volatile prices identified for hedging with recommendation levels.
+
+  - name: prod_cross_sell_opportunity
+    description: Product pairs with high affinity but low co-purchase frequency as cross-sell targets.
+
+  - name: prod_menu_item_contribution
+    description: Each menu item contribution to total revenue and profit with cumulative ranking.
+
+  - name: prod_food_vs_beverage_trend
+    description: Food vs beverage sales mix trend over time with month-over-month growth.
+
+  - name: prod_portion_cost_analysis
+    description: Per-unit cost breakdown by ingredient for each product with cost ranking.
+
+  - name: prod_product_velocity_segments
+    description: Products segmented by sales velocity as fast, medium, or slow movers with inventory recommendations.
+
+  - name: prod_limited_time_offer_analysis
+    description: Performance of seasonal and limited-time-offer items vs permanent menu items.
+
+  - name: prod_menu_price_competitiveness
+    description: Price positioning of each item relative to its category average.
+
+  - name: prod_waste_by_product_analysis
+    description: Waste rates and cost by product as percentage of production and revenue.
+
+  - name: prod_recipe_yield_analysis
+    description: Expected vs actual recipe yield comparing ingredient usage to product sales.
+
+  - name: prod_product_profitability_rank
+    description: Products ranked by total contribution margin with cumulative profit share.

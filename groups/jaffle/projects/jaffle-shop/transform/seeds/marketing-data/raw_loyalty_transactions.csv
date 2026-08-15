@@ -1,0 +1,9 @@
+id,loyalty_member_id,order_id,transaction_type,description,points,transacted_at
+1,1,1,earn,Purchase reward,450,2023-03-15 10:05:00
+2,1,5,earn,Purchase reward,600,2023-07-01 08:15:00
+3,3,2,earn,Purchase reward,250,2023-05-20 09:10:00
+4,3,,earn,Birthday bonus,500,2023-06-15 00:00:00
+5,5,10,earn,Purchase reward,850,2024-01-05 09:10:00
+6,1,,redeem,Free drink redemption,-500,2024-02-01 11:00:00
+7,7,22,earn,Purchase reward,720,2024-06-01 08:35:00
+8,8,30,earn,Purchase reward,480,2024-09-12 10:05:00

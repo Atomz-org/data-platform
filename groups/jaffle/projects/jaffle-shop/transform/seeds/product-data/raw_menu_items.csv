@@ -1,0 +1,11 @@
+id,product_id,category_id,name,description,size,price,display_order,is_available,is_combo,is_seasonal
+1,1,1,House Blend Coffee,Our signature house blend drip coffee,medium,350,1,true,false,false
+2,2,1,Cold Brew,Smooth 24-hour cold brew,large,500,2,true,false,false
+3,3,2,Vanilla Latte,Espresso with steamed milk and vanilla,large,575,1,true,false,false
+4,4,2,Caramel Macchiato,Espresso with vanilla and caramel drizzle,large,625,2,true,false,false
+5,5,3,Blueberry Muffin,Fresh baked blueberry muffin,regular,450,1,true,false,false
+6,6,2,Chai Tea Latte,Spiced chai with steamed milk,large,525,3,true,false,false
+7,7,1,Espresso,Single shot of espresso,single,300,3,true,false,false
+8,8,3,Chocolate Croissant,Butter croissant with dark chocolate,regular,475,2,true,false,false
+9,9,4,Morning Combo,Coffee and muffin combo,regular,650,1,true,true,false
+10,10,2,Pumpkin Spice Latte,Seasonal pumpkin spice latte,large,650,4,true,false,true

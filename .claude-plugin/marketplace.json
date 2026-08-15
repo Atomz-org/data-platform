@@ -73,6 +73,16 @@
       "name": "evidence-bi",
       "source": "../platform/toolkits/evidence-bi",
       "description": "Evidence BI reporting layer, metric-first"
+    },
+    {
+      "name": "dbt-snowflake",
+      "source": "../platform/toolkits/dbt-snowflake",
+      "description": "Cross-database macros so one model runs on DuckDB and Snowflake"
+    },
+    {
+      "name": "project-onboarding",
+      "source": "../platform/toolkits/project-onboarding",
+      "description": "Adopt a repository and align it with the platform, stage by stage"
     }
   ]
 }

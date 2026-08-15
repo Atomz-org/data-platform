@@ -1,0 +1,62 @@
+version: 2
+
+models:
+  - name: hr_employee_journey
+    description: Employee lifecycle events from hire through training, first shift, and performance reviews.
+
+  - name: hr_succession_planning
+    description: Identify employees ready for promotion based on tenure and performance scores.
+
+  - name: hr_compensation_analysis
+    description: Pay rate distribution by position and department with salary range penetration.
+
+  - name: hr_overtime_cost_impact
+    description: Total overtime cost and its percentage of total labor cost with month-over-month trends.
+
+  - name: hr_shift_swap_opportunity
+    description: Overlapping available employees at same location on same day for potential shift swaps.
+
+  - name: hr_new_hire_retention
+    description: 30, 60, and 90 day retention rates for new hire cohorts by month.
+
+  - name: hr_training_gap_analysis
+    description: Required vs completed mandatory training per employee with completion percentage.
+
+  - name: hr_labor_scheduling_efficiency
+    description: Scheduled hours vs actual demand with staffing efficiency percentage and over/under flags.
+
+  - name: hr_employee_cost_per_order
+    description: Fully-loaded employee cost per order handled with labor cost to revenue ratio.
+
+  - name: hr_peak_staffing_analysis
+    description: Staffing levels during peak vs off-peak hours with orders-per-staff metrics.
+
+  - name: hr_cross_training_coverage
+    description: Employees qualified across multiple departments based on training completions.
+
+  - name: hr_payroll_variance
+    description: Actual payroll vs expected pay from hours times rate with variance classification.
+
+  - name: hr_seasonal_hiring_pattern
+    description: Historical hiring volume patterns by calendar month with seasonal classification.
+
+  - name: hr_employee_engagement_proxy
+    description: Engagement proxy score based on absenteeism, voluntary overtime, and tenure.
+
+  - name: hr_labor_productivity_trend
+    description: Monthly labor productivity trend measuring revenue and orders per labor hour.
+
+  - name: hr_department_budget_utilization
+    description: Departmental labor spend vs annual budget allocation with over/under tracking.
+
+  - name: hr_shift_preference_fulfillment
+    description: How often employees receive their preferred shift types with fulfillment rate.
+
+  - name: hr_performance_review_analytics
+    description: Performance score distribution and trends by department per quarter.
+
+  - name: hr_onboarding_time_to_value
+    description: Days from hire to first fully productive month with ramp category classification.
+
+  - name: hr_attrition_risk_factors
+    description: Attrition risk assessment based on tenure, overtime, and performance score factors.

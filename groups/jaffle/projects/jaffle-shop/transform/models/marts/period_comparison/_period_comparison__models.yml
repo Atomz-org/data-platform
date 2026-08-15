@@ -1,0 +1,178 @@
+version: 2
+
+models:
+  - name: poc_avg_ticket_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for avg ticket mom.
+  - name: poc_avg_ticket_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for avg ticket yoy.
+  - name: poc_coupon_usage_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for coupon usage mom.
+  - name: poc_customers_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for customers mom.
+  - name: poc_customers_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for customers yoy.
+  - name: poc_delivery_count_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for delivery count mom.
+  - name: poc_email_engagement_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for email engagement mom.
+  - name: poc_employee_headcount_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for employee headcount mom.
+  - name: poc_expense_mom_by_category
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for expense mom by category.
+  - name: poc_gift_card_sales_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for gift card sales mom.
+  - name: poc_gross_margin_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for gross margin mom.
+  - name: poc_gross_margin_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for gross margin yoy.
+  - name: poc_inventory_value_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for inventory value mom.
+  - name: poc_labor_cost_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for labor cost mom.
+  - name: poc_labor_cost_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for labor cost yoy.
+  - name: poc_loyalty_signups_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for loyalty signups mom.
+  - name: poc_maintenance_cost_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for maintenance cost mom.
+  - name: poc_marketing_spend_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for marketing spend mom.
+  - name: poc_marketing_spend_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for marketing spend yoy.
+  - name: poc_orders_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for orders mom.
+  - name: poc_orders_wow
+    config:
+      tags: ['type:comparison', 'cadence:weekly']
+    description: >
+      Period-over-period comparison for orders wow.
+  - name: poc_orders_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for orders yoy.
+  - name: poc_payroll_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for payroll mom.
+  - name: poc_product_revenue_mom_by_category
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for product revenue mom by category.
+  - name: poc_product_sales_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for product sales mom.
+  - name: poc_product_sales_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for product sales yoy.
+  - name: poc_refund_rate_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for refund rate mom.
+  - name: poc_revenue_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for revenue mom.
+  - name: poc_revenue_wow
+    config:
+      tags: ['type:comparison', 'cadence:weekly']
+    description: >
+      Period-over-period comparison for revenue wow.
+  - name: poc_revenue_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for revenue yoy.
+  - name: poc_store_revenue_mom_by_location
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for store revenue mom by location.
+  - name: poc_supplier_spend_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for supplier spend mom.
+  - name: poc_training_completions_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for training completions mom.
+  - name: poc_waste_mom
+    config:
+      tags: ['type:comparison', 'cadence:monthly']
+    description: >
+      Period-over-period comparison for waste mom.
+  - name: poc_waste_yoy
+    config:
+      tags: ['type:comparison', 'cadence:quarterly']
+    description: >
+      Period-over-period comparison for waste yoy.

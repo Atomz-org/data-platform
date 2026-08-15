@@ -1,0 +1,120 @@
+models:
+  - name: int_supplier_quality_score
+    description: Supplier quality scores based on defect rates from PO receipts and waste logs. One row per supplier.
+    columns:
+      - name: supplier_id
+        description: The unique key for each supplier.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_quantity_received
+        description: Total quantity received across all receipts for this supplier.
+      - name: total_quantity_rejected
+        description: Total quantity rejected across all receipts for this supplier.
+      - name: defect_rate
+        description: Ratio of rejected quantity to total received quantity.
+      - name: quality_score
+        description: Quality score (1 - defect_rate), where 1.0 is perfect quality.
+      - name: total_waste_quantity
+        description: Total waste quantity attributed to products from this supplier.
+      - name: total_waste_cost
+        description: Total cost of waste attributed to products from this supplier in USD.
+
+  - name: int_inventory_value_by_location
+    description: Inventory value calculated as current quantity times average unit cost per product and location.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: The foreign key to the location.
+        data_tests:
+          - not_null
+      - name: current_quantity
+        description: Current inventory quantity on hand.
+      - name: unit_cost
+        description: Average unit cost from purchase order line items in USD.
+      - name: inventory_value
+        description: Total inventory value (quantity x unit cost) in USD.
+      - name: last_movement_at
+        description: Date of the most recent inventory movement.
+
+  - name: int_procurement_cycle_time
+    description: Procurement cycle time from PO creation to receipt completion. One row per purchase order.
+    columns:
+      - name: purchase_order_id
+        description: The unique key for each purchase order.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: The foreign key to the supplier.
+      - name: cycle_time_days
+        description: Days from order placement to last receipt.
+      - name: expected_cycle_time_days
+        description: Days from order placement to expected delivery date.
+      - name: cycle_time_variance_days
+        description: Difference between actual and expected cycle time (positive means late).
+
+  - name: int_ingredient_demand_forecast
+    description: Weekly ingredient demand with trailing 4-week moving average forecast based on order items and supplies.
+    columns:
+      - name: product_id
+        description: The foreign key to the product.
+        data_tests:
+          - not_null
+      - name: supply_id
+        description: The foreign key to the supply/ingredient.
+        data_tests:
+          - not_null
+      - name: supply_name
+        description: The name of the supply/ingredient.
+      - name: demand_week
+        description: The week of the demand data.
+        data_tests:
+          - not_null
+      - name: units_ordered
+        description: Actual units ordered in the week.
+      - name: forecast_units_4wk_avg
+        description: Forecasted units based on 4-week trailing moving average.
+      - name: forecast_cost_4wk_avg
+        description: Forecasted ingredient cost based on 4-week trailing moving average in USD.
+
+  - name: int_supplier_concentration
+    description: Supplier spend concentration metrics showing each supplier's share of total procurement. One row per supplier.
+    columns:
+      - name: supplier_id
+        description: The unique key for each supplier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_name
+        description: The name of the supplier company.
+      - name: lifetime_spend
+        description: Total lifetime spend with this supplier in USD.
+      - name: avg_spend_share_pct
+        description: Average monthly spend share as a decimal (e.g., 0.30 = 30%).
+      - name: max_spend_share_pct
+        description: Maximum monthly spend share as a decimal.
+      - name: active_months
+        description: Number of months with purchase activity.
+
+  - name: int_delivery_on_time_rate
+    description: Delivery on-time rate statistics per supplier based on delivery tracking data. One row per supplier.
+    columns:
+      - name: supplier_id
+        description: The unique key for each supplier.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_deliveries
+        description: Total number of delivery shipments.
+      - name: on_time_deliveries
+        description: Number of shipments that arrived on or before estimated date.
+      - name: late_deliveries
+        description: Number of shipments that arrived after estimated date.
+      - name: on_time_rate
+        description: Proportion of completed deliveries that were on time.
+      - name: avg_transit_days
+        description: Average actual transit days across all deliveries.

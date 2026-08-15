@@ -1,14 +1,14 @@
 # Loop State — data platform
 
-Last run: 2026-08-12T17:42:41+00:00
+Last run: 2026-08-15T04:22:32+00:00
 
 ## High priority (a loop is acting, or waiting on a human)
 
-- [metric-gap-harvester] mart `fct_revenue` (grain: one day x segment x plan) has no metric measuring it — every question about it falls back to raw SQL
+- jaffle/jaffle-shop: onboarding at stage `review` (6/6 open) — all 3 checks passed
 
 ## Watch list
 
-- index-refresher
+- (empty)
 
 ---
 Written by `pf loop run`. Cadence, autonomy and budgets live in `LOOP.md`;

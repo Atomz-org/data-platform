@@ -1,0 +1,30 @@
+# Moved out of models/marts/products.yml by the onboarding ladder, stage
+# `metrics`. The definitions are the project's own and are unchanged;
+# only their location moved, because MetricFlow YAML belongs in the
+# semantic layer where `pf align`, the knowledge graph and the reporting
+# projection all look for it.
+
+version: 2
+semantic_models:
+- name: products
+  description: 'Product dimension table. The grain of the table is one row per product.
+
+    '
+  model: ref('products')
+  entities:
+  - name: product
+    type: primary
+    expr: product_id
+  dimensions:
+  - name: product_name
+    type: categorical
+  - name: product_type
+    type: categorical
+  - name: product_description
+    type: categorical
+  - name: is_food_item
+    type: categorical
+  - name: is_drink_item
+    type: categorical
+  - name: product_price
+    type: categorical

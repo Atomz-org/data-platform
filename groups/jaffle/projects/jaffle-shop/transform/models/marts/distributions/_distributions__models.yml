@@ -1,0 +1,128 @@
+version: 2
+
+models:
+  - name: dist_basket_size
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of basket size with percentiles and histogram buckets.
+  - name: dist_campaign_roi
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of campaign roi with percentiles and histogram buckets.
+  - name: dist_coupon_discount
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of coupon discount with percentiles and histogram buckets.
+  - name: dist_customer_ltv
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of customer ltv with percentiles and histogram buckets.
+  - name: dist_customer_order_frequency
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of customer order frequency with percentiles and histogram buckets.
+  - name: dist_delivery_lead_time
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of delivery lead time with percentiles and histogram buckets.
+  - name: dist_employee_hours_weekly
+    config:
+      tags: ['type:distribution', 'cadence:weekly']
+    description: >
+      Distribution analysis of employee hours weekly with percentiles and histogram buckets.
+  - name: dist_employee_tenure
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of employee tenure with percentiles and histogram buckets.
+  - name: dist_gift_card_balance
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of gift card balance with percentiles and histogram buckets.
+  - name: dist_ingredient_cost
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of ingredient cost with percentiles and histogram buckets.
+  - name: dist_inventory_days_on_hand
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of inventory days on hand with percentiles and histogram buckets.
+  - name: dist_invoice_amount
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of invoice amount with percentiles and histogram buckets.
+  - name: dist_loyalty_points_balance
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of loyalty points balance with percentiles and histogram buckets.
+  - name: dist_maintenance_cost
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of maintenance cost with percentiles and histogram buckets.
+  - name: dist_order_value
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of order value with percentiles and histogram buckets.
+  - name: dist_payment_amount
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of payment amount with percentiles and histogram buckets.
+  - name: dist_performance_score
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of performance score with percentiles and histogram buckets.
+  - name: dist_po_value
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of po value with percentiles and histogram buckets.
+  - name: dist_product_daily_sales
+    config:
+      tags: ['type:distribution', 'cadence:daily']
+    description: >
+      Distribution analysis of product daily sales with percentiles and histogram buckets.
+  - name: dist_refund_amount
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of refund amount with percentiles and histogram buckets.
+  - name: dist_shift_length
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of shift length with percentiles and histogram buckets.
+  - name: dist_store_daily_revenue
+    config:
+      tags: ['type:distribution', 'cadence:daily']
+    description: >
+      Distribution analysis of store daily revenue with percentiles and histogram buckets.
+  - name: dist_supplier_lead_time
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of supplier lead time with percentiles and histogram buckets.
+  - name: dist_training_completion_time
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of training completion time with percentiles and histogram buckets.
+  - name: dist_waste_event_cost
+    config:
+      tags: ['type:distribution']
+    description: >
+      Distribution analysis of waste event cost with percentiles and histogram buckets.

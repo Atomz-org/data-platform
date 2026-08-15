@@ -23,7 +23,9 @@ from pf.capabilities import (
 from pf.kg.build import build_graph
 from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, \
     render_group_card, render_project_card
-from pf.kg.impact import gate, impact_of, impact_of_many
+# Aliased: the `gate` command below is a *path* gate and would otherwise shadow
+# this import at module level, so `pf impact-gate` would call the wrong one.
+from pf.kg.impact import gate as impact_gate, impact_of, impact_of_many
 from pf.kg.query import kg_neighbors, kg_search
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
@@ -225,6 +227,360 @@ def cmd_capability_add(capability: str, group: str, project: str) -> None:
     _print_bootstrap(bootstrap(root(), group, project))
 
 
+_SEVERITY_STYLE = {"blocks": "red", "decide": "yellow", "note": "dim"}
+
+
+def _print_risks(risks: list) -> None:
+    for r in risks:
+        style = _SEVERITY_STYLE.get(r.severity, "white")
+        console.print(f"  [{style}]{r.severity:>6}[/] [bold]{r.kind}[/]  {r.detail}")
+        console.print(f"         [dim]{r.remedy}[/]")
+
+
+@app.command("onboard")
+def cmd_onboard(
+    group: str, project: str, source: str,
+    apply_: bool = typer.Option(False, "--apply", help="write the changes; default is a plan"),
+    force: bool = typer.Option(False, "--force", help="apply despite blocking findings"),
+) -> None:
+    """Adopt an existing repository (git URL or path) as a project.
+
+    Plans by default. The apply writes a whole project, rewrites an orchestrator
+    and merges dependency files — the moment to find out where `intermediate/`
+    landed is before it happens.
+    """
+    from pf.onboard import apply as apply_plan, plan as make_plan, resolve_source
+
+    scratch = root() / "data" / "onboard" / f"{group}-{project}"
+    try:
+        src = resolve_source(source, scratch)
+    except RuntimeError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    p = make_plan(root(), group, project, src)
+    s = p.survey
+
+    console.print(f"[bold]{src}[/] [dim]→ {group}/{project}[/]")
+    console.print(f"  dbt: [cyan]{s.dbt_name or 'none found'}[/] "
+                  f"({s.sql_model_count} model(s), {len(s.macros)} macro(s), "
+                  f"{len(s.seeds)} seed(s), {len(s.tests)} test(s))")
+    if s.layer_mapping:
+        console.print("  layers: " + ", ".join(
+            f"{k}→{v}" for k, v in sorted(s.layer_mapping.items())))
+    if s.orchestrators:
+        console.print(f"  orchestrator: [cyan]{', '.join(sorted(s.orchestrators))}[/]")
+    if s.ingestion:
+        console.print(f"  ingestion: {', '.join(sorted(s.ingestion))}")
+    if s.warehouses:
+        console.print(f"  warehouse: {', '.join(sorted(s.warehouses))}")
+
+    console.print("\n[bold]plan[/]")
+    for a in p.actions:
+        count = f" [dim]×{a.count}[/]" if a.count else ""
+        console.print(f"  [green]+[/] {a.kind:<12} {a.detail}{count}")
+
+    if p.risks:
+        console.print("\n[bold]findings[/]")
+        _print_risks(p.risks)
+    for w in p.warnings:
+        console.print(f"  [yellow]![/] {w}")
+
+    if not apply_:
+        console.print("\n[dim]plan only — re-run with --apply to write it[/]")
+        raise typer.Exit(0)
+
+    # A blocking finding means the result either will not build or will build
+    # and be wrong. Applying over the top of that produces a project someone
+    # then has to un-import, so it takes a deliberate second instruction.
+    if p.blocking and not force:
+        console.print(f"\n[red]✗[/] {len(p.blocking)} blocking finding(s) — "
+                      f"resolve them, or re-run with --force to apply anyway")
+        raise typer.Exit(1)
+
+    console.print("\n[bold]applying[/]")
+    try:
+        for line in apply_plan(root(), p):
+            console.print(f"  [green]✓[/] {line}")
+    except FileExistsError as exc:
+        console.print(f"  [red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    _print_bootstrap(bootstrap(root(), group, project))
+
+    console.print("\n[bold]still to do[/] [dim]— the part no tool can infer[/]")
+    for item in p.checklist:
+        console.print(f"  [yellow]□[/] {item}")
+
+
+@app.command("dialect")
+def cmd_dialect(
+    path: str = typer.Argument(".", help="a repo, a project, or any directory of SQL"),
+) -> None:
+    """Which SQL functions a tree calls, and whether they are portable.
+
+    Not only for imports. Run it against an existing project after adopting SQL
+    from anywhere. The ambiguous findings deserve the attention: those already
+    run, and can already be wrong.
+    """
+    from pf.onboard.dialect import AMBIGUOUS, UNSUPPORTED, analyse, toolkit_macros
+    from pf.onboard.survey import is_build_artifact
+
+    target = Path(path).expanduser().resolve()
+    files = [f for f in target.rglob("*.sql")
+             if not is_build_artifact(f.relative_to(target).parts)]
+    if not files:
+        console.print(f"[yellow]![/] no .sql under {target}")
+        raise typer.Exit(0)
+
+    local = {f.stem for f in files if "macros" in f.parts}
+    r = analyse(files, local_macros=local)
+    console.print(f"[bold]{target}[/] [dim]— {len(files)} file(s), "
+                  f"{len(r.calls)} distinct function(s)[/]")
+
+    if r.clean:
+        console.print("\n[green]✓[/] every call is portable as written")
+        return
+
+    available = toolkit_macros(root())
+
+    if r.ambiguous:
+        console.print("\n[red]ambiguous[/] [dim]— these run, and can be wrong[/]")
+        for name, n in r.ambiguous.most_common():
+            console.print(f"  [yellow]![/] [bold]{name}[/] [dim]×{n}[/] — {AMBIGUOUS[name]}")
+    if r.covered:
+        console.print("\n[yellow]needs wrapping[/] [dim]— a portable macro exists[/]")
+        for name, n in r.covered.most_common():
+            macro = UNSUPPORTED[name].macro
+            missing = "" if macro in available else " [red](macro not found!)[/]"
+            console.print(f"  [yellow]→[/] {name} [dim]×{n}[/]  "
+                          f"use [cyan]{{{{ {macro}(...) }}}}[/]"
+                          f" [dim]({UNSUPPORTED[name].seen_in})[/]{missing}")
+    if r.unsupported:
+        console.print("\n[red]unsupported[/] [dim]— no macro covers these[/]")
+        for name, n in r.unsupported.most_common():
+            console.print(f"  [red]✗[/] {name} [dim]×{n}[/]")
+
+    console.print(f"\n[dim]{len(available)} portable macro(s) available from "
+                  f"platform/toolkits/[/]")
+
+
+# ------------------------------------------------------------- the ladder --
+align_app = typer.Typer(help="Onboarding ladder: evaluate → implement → validate, "
+                             "one stage at a time.")
+app.add_typer(align_app, name="align")
+
+_MARK = {"pass": ("green", "✓"), "fail": ("red", "✗"), "unexercised": ("yellow", "?")}
+
+
+def _print_verdict(stage, verdict) -> None:
+    for c in verdict.checks:
+        style, glyph = _MARK[c.status]
+        console.print(f"    [{style}]{glyph}[/] {c.name:<34} [dim]{c.evidence}[/]")
+
+
+@align_app.command("status")
+def cmd_align_status(
+    group: str, project: str,
+    write_state: bool = typer.Option(False, "--state",
+                                     help="also write the position into STATE.md"),
+) -> None:
+    """Which rung of the onboarding ladder this project is on.
+
+    Every verdict is re-derived from the project on disk, so it cannot be stale.
+    The ladder stops at the first closed gate rather than reporting the stages
+    behind it, whose findings a fix upstream would erase anyway.
+
+    `--state` writes the position to STATE.md, the durable spine that outlives a
+    conversation. The verdicts are still not stored — only where the ladder
+    stopped and what it stopped on, both re-derived on every write.
+    """
+    from pf.onboard.ladder import STAGES, ladder, state_entries
+
+    rungs = ladder(root(), group, project)
+    console.print(f"[bold]{group}/{project}[/] [dim]— onboarding ladder[/]\n")
+
+    done = 0
+    for stage, verdict in rungs:
+        if verdict.complete:
+            console.print(f"  [green]✓[/] [bold]{stage.name}[/] [dim]{verdict.summary}[/]")
+            done += 1
+        elif verdict.open:
+            console.print(f"  [yellow]~[/] [bold]{stage.name}[/] [dim]{verdict.summary}[/]")
+            _print_verdict(stage, verdict)
+            done += 1
+        else:
+            console.print(f"  [red]✗[/] [bold]{stage.name}[/] — {stage.subject}")
+            _print_verdict(stage, verdict)
+
+    remaining = [s.name for s in STAGES[len(rungs):]]
+    if remaining:
+        console.print(f"  [dim]· {', '.join(remaining)} — not reached[/]")
+    console.print(f"\n[dim]{done}/{len(STAGES)} stage(s) open. "
+                  f"`pf align evaluate {group} {project}` for what to do next.[/]")
+
+    if write_state:
+        from pf.loops.runner import update_state
+
+        p = update_state(root(), state_entries(root(), group, project))
+        console.print(f"[dim]wrote {p.relative_to(root())}[/]")
+
+    raise typer.Exit(0 if done == len(STAGES) else 1)
+
+
+@align_app.command("evaluate")
+def cmd_align_evaluate(
+    group: str, project: str,
+    stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
+) -> None:
+    """Phase one of a stage: what is wrong, and what to do about it.
+
+    Read-only and free. Nothing here calls a model — the findings are derived
+    from the project, and the judgement they need is the implement phase's job.
+    """
+    from pf.onboard.ladder import BY_NAME, Ctx, current
+
+    if stage:
+        if stage not in BY_NAME:
+            console.print(f"[red]unknown stage '{stage}'[/] — "
+                          f"{', '.join(BY_NAME)}")
+            raise typer.Exit(1)
+        st = BY_NAME[stage]
+    else:
+        cur = current(root(), group, project)
+        if cur is None:
+            console.print(f"[green]✓[/] {group}/{project} is through every stage")
+            raise typer.Exit(0)
+        st = cur[0]
+
+    c = Ctx(root=root(), group=group, project=project)
+    risks = st.evaluate(c)
+    console.print(f"[bold]{group}/{project}[/] [dim]— stage[/] [cyan]{st.name}[/]")
+    console.print(f"[dim]{st.subject}[/]\n")
+    if not risks:
+        console.print("[green]✓[/] nothing to do — run "
+                      f"[cyan]pf align validate {group} {project} --stage {st.name}[/]")
+        raise typer.Exit(0)
+    _print_risks(risks)
+    console.print(f"\n[dim]implement: read {st.reference} in the project-onboarding "
+                  f"toolkit, fix one finding, then validate.[/]")
+    raise typer.Exit(1 if any(r.blocking for r in risks) else 0)
+
+
+@align_app.command("validate")
+def cmd_align_validate(
+    group: str, project: str,
+    stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
+) -> None:
+    """Phase three of a stage: the gate, with the evidence for its verdict.
+
+    A check reports `unexercised` when the tool that would decide it is not
+    installed. That is not a pass — it is the honest answer, and it does not
+    close the gate, because a missing MetricFlow CLI must not wall a project off
+    from the rest of the ladder.
+    """
+    from pf.onboard.ladder import BY_NAME, Ctx, Verdict, current, record
+
+    if stage and stage not in BY_NAME:
+        console.print(f"[red]unknown stage '{stage}'[/] — {', '.join(BY_NAME)}")
+        raise typer.Exit(1)
+    if stage:
+        st = BY_NAME[stage]
+    else:
+        cur = current(root(), group, project)
+        if cur is None:
+            console.print(f"[green]✓[/] {group}/{project} is through every stage")
+            raise typer.Exit(0)
+        st = cur[0]
+
+    c = Ctx(root=root(), group=group, project=project)
+    verdict = Verdict(st.name, st.validate(c))
+    console.print(f"[bold]{group}/{project}[/] [dim]— stage[/] [cyan]{st.name}[/]\n")
+    _print_verdict(st, verdict)
+
+    allowed, why = record(root(), group, project, st, verdict)
+
+    if verdict.complete:
+        console.print(f"\n[green]✓[/] {verdict.summary} — the next stage is open")
+        raise typer.Exit(0)
+    if verdict.open:
+        console.print(f"\n[yellow]~[/] {verdict.summary}. The gate is open; the "
+                      f"unexercised checks are gaps in the evidence, not passes.")
+        raise typer.Exit(0)
+
+    console.print(f"\n[red]✗[/] {verdict.summary} — "
+                  f"`pf align evaluate {group} {project} --stage {st.name}`")
+    if not allowed:
+        console.print(f"\n[red]■ {why}[/]")
+        console.print("[dim]Stop. Do not attempt this stage a fourth time — "
+                      "report what was tried and what decision it needs. "
+                      f"`pf loop reset onboard-{st.name} {group} {project}` "
+                      "clears the breaker once that decision is made.[/]")
+    raise typer.Exit(1)
+
+
+@align_app.command("verify")
+def cmd_align_verify(
+    group: str, project: str,
+    stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
+) -> None:
+    """The checker half: judge the change, not the result.
+
+    `validate` asks whether the project is correct now. This asks whether the
+    change that got it there is one to accept — scope, size, and whether
+    anything was switched off rather than fixed. They catch different things: a
+    project passes every gate if you delete the test that was failing.
+
+    Run it before committing a stage's work, and treat a rejection as a
+    rejection. The default stance of a checker is no.
+    """
+    from pf.onboard.ladder import BY_NAME, Ctx, Verdict, current, verify
+
+    if stage and stage not in BY_NAME:
+        console.print(f"[red]unknown stage '{stage}'[/] — {', '.join(BY_NAME)}")
+        raise typer.Exit(1)
+    if stage:
+        st = BY_NAME[stage]
+    else:
+        cur = current(root(), group, project)
+        if cur is None:
+            console.print(f"[green]✓[/] {group}/{project} is through every stage")
+            raise typer.Exit(0)
+        st = cur[0]
+
+    c = Ctx(root=root(), group=group, project=project)
+    verdict = Verdict(st.name, verify(c, st))
+    console.print(f"[bold]{group}/{project}[/] [dim]— checker on stage[/] "
+                  f"[cyan]{st.name}[/]\n")
+    _print_verdict(st, verdict)
+    if verdict.failures:
+        console.print(f"\n[red]✗ REJECT[/] — {verdict.summary}. Narrow the change "
+                      f"to what the finding needed and re-run.")
+        raise typer.Exit(1)
+    console.print(f"\n[green]✓ ACCEPT[/] — {verdict.summary}. Scope and shape are "
+                  f"fine; whether it addresses the right finding is not decidable "
+                  f"here and is still yours to confirm.")
+    raise typer.Exit(0)
+
+
+@align_app.command("stages")
+def cmd_align_stages() -> None:
+    """The ladder itself: what each stage is for, and why it is where it is."""
+    from pf.onboard.ladder import STAGES
+
+    table = Table()
+    table.add_column("#", justify="right", style="dim")
+    table.add_column("stage", style="cyan")
+    table.add_column("subject")
+    table.add_column("budget", justify="right", style="dim")
+    for i, s in enumerate(STAGES, 1):
+        table.add_row(str(i), s.name, s.subject,
+                      f"{s.token_budget:,}" if s.token_budget else "0")
+    console.print(table)
+    console.print("[dim]Each stage is evaluate → implement → validate. The gate "
+                  "is code; only the middle phase is an agent's.[/]")
+
+
 @app.command("bootstrap")
 def bootstrap_cmd(
     group: str = typer.Argument("", help="group (omit with --all)"),
@@ -336,7 +692,7 @@ def impact(group: str, project: str, node: str,
 def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
     """CI gate over a comma-separated set of changed nodes."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
-    code, rendered = gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
+    code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
     console.print(rendered)
     raise typer.Exit(code)
 
@@ -1076,6 +1432,61 @@ def cmd_onto_approve(group: str, pid: str,
         if g == group:
             console.print(f"  [dim]propagating → {g}/{proj}[/]")
             _print_bootstrap(bootstrap(root(), g, proj))
+
+
+@sem_app.command("annotate")
+def cmd_onto_annotate(
+    group: str, project: str, pid: str,
+    apply_: bool = typer.Option(False, "--apply", help="write contracts/annotations.yaml"),
+    currency: str = typer.Option("", "--currency",
+                                 help="ISO 4217 code for sources with money "
+                                      "columns and no currency column"),
+) -> None:
+    """Draft a project's annotations from an ontology proposal's accepted axioms.
+
+    The scan already established which table instantiates which class, what
+    identifies it and what role each column plays. Retyping that by hand is not
+    review, it is transcription, and on fifty raw tables it is where an
+    onboarding quietly stops being done properly.
+
+    Only accepted axioms are read. `links` stays empty until the relations are
+    named and approved — a relation still called `refers_to` is a placeholder,
+    and an annotation must not assert a link the ontology has not accepted.
+
+    Existing entries are never overwritten, so this is safe to re-run as more of
+    a proposal is approved.
+    """
+    from pf.ontology import proposal
+    from pf.ontology.annotate import from_proposal, merge_annotations
+
+    p = proposal.read(root(), group, pid)
+    drafted = from_proposal(p, source=p.source, currency=currency.upper())
+    if not drafted:
+        console.print(f"[yellow]![/] nothing accepted in {pid} that implies an "
+                      f"annotation — approve the class axioms first")
+        raise typer.Exit(1)
+
+    target = pdir(group, project) / "contracts" / "annotations.yaml"
+    linked = sum(1 for a in drafted if a.links)
+    console.print(f"[bold]{pid}[/] → {len(drafted)} annotation(s), "
+                  f"{sum(len(a.roles) for a in drafted)} role(s), "
+                  f"{linked} with links")
+    if not apply_:
+        for a in drafted[:5]:
+            console.print(f"  [cyan]{a.resource}[/] → {a.concept} "
+                          f"[dim]({len(a.roles)} role(s))[/]")
+        console.print(f"  [dim]…and {max(0, len(drafted) - 5)} more[/]")
+        console.print("\n[dim]draft only — re-run with --apply to write "
+                      f"{target.relative_to(root())}[/]")
+        raise typer.Exit(0)
+
+    added, kept = merge_annotations(target, drafted)
+    console.print(f"[green]✓[/] {target.relative_to(root())}: "
+                  f"+{added} new, {kept} existing left untouched")
+    if not linked:
+        console.print("[yellow]![/] no links — the proposal's relations are still "
+                      "placeholders. Name them after the business verb in the "
+                      f"proposal, approve, then re-run.")
 
 
 @sem_app.command("topology")

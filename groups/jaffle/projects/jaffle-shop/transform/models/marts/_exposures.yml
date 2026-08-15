@@ -1,0 +1,84 @@
+version: 2
+
+exposures:
+  - name: weekly_business_review
+    label: Weekly Business Review Dashboard
+    type: dashboard
+    maturity: high
+    url: https://bi.jaffleshop.com/dashboards/weekly-review
+    description: Executive weekly business review dashboard showing KPIs, revenue trends, and store performance
+    depends_on:
+      - ref('exec_company_kpis_monthly')
+      - ref('rpt_store_pnl')
+      - ref('met_weekly_revenue_by_store')
+      - ref('rpt_customer_segments')
+    owner:
+      name: Finance Team
+      email: finance@jaffleshop.com
+
+  - name: store_manager_portal
+    label: Store Manager Portal
+    type: application
+    maturity: high
+    url: https://portal.jaffleshop.com/store
+    description: Real-time store management portal for inventory, staffing, and daily performance
+    depends_on:
+      - ref('view_store_mgr_daily_report')
+      - ref('view_store_mgr_inventory_status')
+      - ref('view_store_mgr_staff_schedule')
+      - ref('view_store_mgr_product_performance')
+    owner:
+      name: Operations Team
+      email: ops@jaffleshop.com
+
+  - name: marketing_analytics
+    label: Marketing Analytics Platform
+    type: dashboard
+    maturity: medium
+    url: https://bi.jaffleshop.com/dashboards/marketing
+    description: Marketing campaign performance, loyalty program health, and customer acquisition
+    depends_on:
+      - ref('rpt_campaign_effectiveness')
+      - ref('rpt_loyalty_program_health')
+      - ref('rpt_customer_acquisition_funnel')
+      - ref('dim_customer_360')
+    owner:
+      name: Marketing Team
+      email: marketing@jaffleshop.com
+
+  - name: inventory_reorder_system
+    label: Inventory Reorder System
+    type: application
+    maturity: medium
+    description: Automated inventory reorder triggers based on stock levels and demand forecasts
+    depends_on:
+      - ref('rev_etl_inventory_reorder')
+      - ref('rpt_stock_alerts')
+    owner:
+      name: Supply Chain Team
+      email: supply@jaffleshop.com
+
+  - name: ml_churn_prediction
+    label: Customer Churn Prediction Model
+    type: ml
+    maturity: low
+    description: ML model predicting customer churn probability using feature store
+    depends_on:
+      - ref('ml_feature_customer_churn')
+      - ref('scr_customer_churn_propensity')
+    owner:
+      name: Data Science Team
+      email: datascience@jaffleshop.com
+
+  - name: crm_sync
+    label: CRM Customer Sync
+    type: application
+    maturity: high
+    description: Reverse ETL pipeline syncing customer data to CRM
+    depends_on:
+      - ref('rev_etl_crm_customer_sync')
+      - ref('rev_etl_email_segment_high_value')
+      - ref('rev_etl_email_segment_at_risk')
+    owner:
+      name: Marketing Ops
+      email: marketingops@jaffleshop.com

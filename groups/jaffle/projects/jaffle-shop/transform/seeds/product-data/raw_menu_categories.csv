@@ -1,0 +1,9 @@
+id,parent_category_id,name,description,display_order,depth,is_active
+1,,Coffee,Brewed coffee and espresso drinks,1,0,true
+2,,Espresso Drinks,Espresso-based specialty beverages,2,0,true
+3,,Bakery,Fresh baked goods,3,0,true
+4,,Combos,Value meal combinations,4,0,true
+5,1,Hot Coffee,Hot brewed coffee drinks,1,1,true
+6,1,Iced Coffee,Cold coffee drinks,2,1,true
+7,3,Muffins,Variety of fresh muffins,1,1,true
+8,3,Pastries,Croissants and pastries,2,1,true

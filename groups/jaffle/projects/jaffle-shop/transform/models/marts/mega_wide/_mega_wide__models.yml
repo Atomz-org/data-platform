@@ -1,0 +1,550 @@
+version: 2
+
+models:
+  - name: mega_wide_daily_flash
+    config:
+      tags: ['type:wide_table', 'cadence:daily']
+    description: >
+      Daily company-level flash report. One row per calendar day, joining and
+      aggregating revenue, customer, product, labor, inventory, financial,
+      marketing, and operations metrics from every domain model.
+      Contains 90+ columns organized into 10 column groups including rolling
+      window trend comparisons and anomaly detection flags.
+      Built on the date spine so every calendar day is represented even
+      when no transactions occurred.
+    columns:
+      - name: date_day
+        description: Calendar date (primary key). Every day in the date spine is present.
+        tests:
+          - unique
+          - not_null
+      - name: day_of_week
+        description: Day of week as integer (0=Sunday, 6=Saturday).
+      - name: day_name
+        description: Day of week name (e.g. Monday, Tuesday).
+      - name: week_start
+        description: First day of the ISO week containing this date.
+      - name: month_start
+        description: First day of the month.
+      - name: quarter_start
+        description: First day of the quarter.
+      - name: year
+        description: Four-digit calendar year.
+      - name: is_weekend
+        description: True if Saturday or Sunday.
+      - name: total_revenue
+        description: Sum of all order totals for the day.
+      - name: total_orders
+        description: Count of distinct orders placed on this day.
+      - name: avg_order_value
+        description: Mean order total for the day.
+      - name: median_order_value_proxy
+        description: Approximate median order value using percentile_cont(0.5).
+      - name: min_order_value
+        description: Smallest single order total for the day.
+      - name: max_order_value
+        description: Largest single order total for the day.
+      - name: total_items_sold
+        description: Total quantity of line items sold.
+      - name: food_revenue
+        description: Revenue from food-type products only.
+      - name: beverage_revenue
+        description: Revenue from beverage-type products only.
+      - name: new_customer_revenue
+        description: Revenue attributed to first-time customers.
+      - name: returning_customer_revenue
+        description: Revenue attributed to customers who ordered before this day.
+      - name: revenue_per_store_avg
+        description: Total revenue divided by count of stores with at least one order.
+      - name: unique_customers
+        description: Count of distinct customers who placed an order.
+      - name: new_customers
+        description: Customers whose first-ever order was on this day.
+      - name: returning_customers
+        description: Customers who had ordered before this day.
+      - name: pct_new_customers
+        description: Percentage of unique customers that are new.
+      - name: avg_spend_per_customer
+        description: Average order total per customer.
+      - name: max_spend_customer
+        description: Highest single order total among all customers.
+      - name: loyalty_customer_orders
+        description: Orders placed by customers who are loyalty members.
+      - name: non_loyalty_orders
+        description: Orders placed by non-loyalty customers.
+      - name: customers_with_coupon
+        description: Distinct customers who redeemed a coupon.
+      - name: repeat_purchase_customers
+        description: Customers who had at least one prior order before this day.
+      - name: unique_products_sold
+        description: Count of distinct products appearing in orders.
+      - name: avg_items_per_order
+        description: Average number of line items per order.
+      - name: food_orders
+        description: Orders containing only food items.
+      - name: drink_orders
+        description: Orders containing only beverage items.
+      - name: mixed_orders
+        description: Orders containing both food and beverage items.
+      - name: top_product_revenue
+        description: Revenue of the highest-selling product line item for the day.
+      - name: bottom_product_revenue
+        description: Revenue of the lowest-selling product line item for the day.
+      - name: avg_product_margin
+        description: Average margin (revenue minus supply cost) per item.
+      - name: total_labor_hours
+        description: Total scheduled labor hours across all stores.
+      - name: total_labor_cost
+        description: Total labor cost across all stores.
+      - name: labor_cost_pct_revenue
+        description: Labor cost as a percentage of total revenue.
+      - name: employees_working
+        description: Count of employees scheduled to work.
+      - name: orders_per_labor_hour
+        description: Total orders divided by total labor hours (efficiency).
+      - name: overtime_hours
+        description: Total overtime hours logged.
+      - name: overtime_pct
+        description: Overtime hours as a percentage of total labor hours.
+      - name: avg_shift_length
+        description: Average length of a work shift in hours.
+      - name: no_show_count
+        description: Number of employee no-shows.
+      - name: late_arrivals_proxy
+        description: Estimated count of late employee arrivals.
+      - name: waste_event_count
+        description: Number of waste events recorded.
+      - name: waste_cost
+        description: Total cost of wasted product.
+      - name: inbound_units
+        description: Inventory units received (inbound movements).
+      - name: outbound_units
+        description: Inventory units dispatched (outbound movements).
+      - name: net_inventory_change
+        description: Inbound minus outbound units.
+      - name: stockout_product_count_proxy
+        description: Estimated count of products that hit zero stock.
+      - name: inventory_movement_count
+        description: Total inventory movement records.
+      - name: waste_pct_revenue
+        description: Waste cost as a percentage of daily revenue.
+      - name: total_expenses
+        description: Sum of all expense records for the day.
+      - name: gross_profit_proxy
+        description: Revenue minus expenses minus labor cost (proxy).
+      - name: refund_count
+        description: Number of refunds issued.
+      - name: refund_amount
+        description: Total dollar value of refunds.
+      - name: gift_card_transactions
+        description: Count of gift card transactions.
+      - name: net_cash_flow_proxy
+        description: Revenue minus expenses, labor, and refunds.
+      - name: expense_pct_revenue
+        description: Total expenses as a percentage of revenue.
+      - name: avg_expense_per_store
+        description: Average expense amount per store with expenses.
+      - name: coupon_discount_total
+        description: Total discount given through coupon redemptions.
+      - name: tax_collected_proxy
+        description: Estimated tax collected (8% of revenue).
+      - name: campaign_spend
+        description: Total marketing campaign spend.
+      - name: coupon_redemption_count
+        description: Number of coupons redeemed.
+      - name: coupon_discount_given
+        description: Total coupon discount amount given.
+      - name: loyalty_points_issued
+        description: Loyalty points earned by customers.
+      - name: loyalty_points_redeemed
+        description: Loyalty points redeemed by customers.
+      - name: email_sends
+        description: Number of marketing emails sent.
+      - name: email_opens
+        description: Number of marketing emails opened.
+      - name: new_loyalty_signups
+        description: Count of new loyalty program sign-ups.
+      - name: maintenance_event_count
+        description: Number of equipment maintenance events.
+      - name: maintenance_cost
+        description: Total cost of maintenance events.
+      - name: equipment_affected_count
+        description: Distinct equipment items that had maintenance.
+      - name: delivery_count_proxy
+        description: Estimated delivery orders (15% of total orders).
+      - name: stores_with_orders
+        description: Count of stores that received at least one order.
+      - name: stores_without_orders
+        description: Count of stores with zero orders for the day.
+      - name: revenue_7d_avg
+        description: 7-day trailing average of daily revenue.
+      - name: revenue_28d_avg
+        description: 28-day trailing average of daily revenue.
+      - name: revenue_vs_7d_avg_pct
+        description: Percentage deviation of today's revenue from the 7-day average.
+      - name: revenue_vs_28d_avg_pct
+        description: Percentage deviation of today's revenue from the 28-day average.
+      - name: orders_7d_avg
+        description: 7-day trailing average of daily orders.
+      - name: orders_vs_7d_avg_pct
+        description: Percentage deviation of today's orders from the 7-day average.
+      - name: customers_7d_avg
+        description: 7-day trailing average of daily unique customers.
+      - name: is_revenue_anomaly
+        description: True if revenue deviates more than 2 standard deviations from the 28-day mean.
+      - name: is_order_anomaly
+        description: True if orders deviate more than 2 standard deviations from the 28-day mean.
+      - name: day_over_day_revenue_change
+        description: Absolute change in revenue compared to the previous day.
+
+  - name: mega_wide_customer_master
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Ultimate denormalized customer dimension. One row per customer combining
+      order history, RFM scoring, loyalty membership, product preferences,
+      coupon behavior, engagement signals, churn/LTV scoring, and spend trends.
+      Contains 80+ columns for BI and analytics consumption.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier (primary key).
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: Full customer name.
+      - name: customer_type
+        description: Customer classification type.
+      - name: customer_since_date
+        description: Date the customer record was created.
+      - name: first_order_date
+        description: Date of the customer's first order.
+      - name: last_order_date
+        description: Date of the customer's most recent order.
+      - name: lifetime_orders
+        description: Total number of orders placed.
+      - name: lifetime_spend
+        description: Total amount spent across all orders.
+      - name: avg_order_value
+        description: Average order total.
+      - name: max_order_value
+        description: Largest single order total.
+      - name: min_order_value
+        description: Smallest single order total.
+      - name: total_items_purchased
+        description: Total quantity of items bought.
+      - name: avg_items_per_order
+        description: Average items per order.
+      - name: total_food_items
+        description: Total food-type items purchased.
+      - name: total_drink_items
+        description: Total beverage-type items purchased.
+      - name: pct_food_items
+        description: Percentage of items that are food.
+      - name: days_as_customer
+        description: Days since first order.
+      - name: orders_per_month
+        description: Average monthly order frequency.
+      - name: days_since_last_order
+        description: Days elapsed since the most recent order.
+      - name: recency_score
+        description: RFM recency score (higher is more recent).
+      - name: frequency_score
+        description: RFM frequency score (higher is more frequent).
+      - name: monetary_score
+        description: RFM monetary score (higher is bigger spender).
+      - name: rfm_segment
+        description: Named RFM segment label (e.g. Champion, At Risk).
+      - name: rfm_combined_score
+        description: Combined RFM numeric score.
+      - name: is_active_last_30d
+        description: True if customer ordered in the last 30 days.
+      - name: is_active_last_90d
+        description: True if customer ordered in the last 90 days.
+      - name: is_loyalty_member
+        description: True if enrolled in the loyalty program.
+      - name: loyalty_member_id
+        description: Loyalty program member identifier.
+      - name: loyalty_join_date
+        description: Date the customer joined the loyalty program.
+      - name: loyalty_tenure_days
+        description: Days since joining the loyalty program.
+      - name: loyalty_tier
+        description: Current loyalty tier (e.g. Silver, Gold, Platinum).
+      - name: loyalty_points_balance
+        description: Current loyalty points balance.
+      - name: total_points_earned
+        description: Lifetime loyalty points earned.
+      - name: total_points_redeemed
+        description: Lifetime loyalty points redeemed.
+      - name: loyalty_transactions_count
+        description: Total number of loyalty transactions.
+      - name: avg_points_per_transaction
+        description: Average points per loyalty transaction.
+      - name: days_since_last_loyalty_activity
+        description: Days since the last loyalty transaction.
+      - name: loyalty_status
+        description: Current loyalty membership status (active, lapsed, etc.).
+      - name: preferred_store_id
+        description: Store where the customer orders most frequently.
+      - name: preferred_store_name
+        description: Name of the preferred store.
+      - name: stores_visited_count
+        description: Number of distinct stores the customer has ordered from.
+      - name: preferred_day_of_week
+        description: Day of week the customer orders most often (0=Sun).
+      - name: preferred_hour_of_day
+        description: Hour of day the customer orders most often.
+      - name: top_product_1_id
+        description: Product ID of the customer's most-purchased item.
+      - name: top_product_1_name
+        description: Name of the customer's most-purchased item.
+      - name: top_product_2_id
+        description: Product ID of the customer's second most-purchased item.
+      - name: top_product_2_name
+        description: Name of the customer's second most-purchased item.
+      - name: top_product_3_id
+        description: Product ID of the customer's third most-purchased item.
+      - name: top_product_3_name
+        description: Name of the customer's third most-purchased item.
+      - name: preferred_product_type
+        description: Product type (food or beverage) of the top product.
+      - name: has_used_coupon
+        description: True if the customer has ever redeemed a coupon.
+      - name: total_coupons_used
+        description: Lifetime count of coupons redeemed.
+      - name: total_discount_received
+        description: Total dollar value of coupon discounts received.
+      - name: avg_discount_per_coupon
+        description: Average discount amount per coupon redemption.
+      - name: first_coupon_date
+        description: Date of first coupon redemption.
+      - name: last_coupon_date
+        description: Date of most recent coupon redemption.
+      - name: coupon_orders_pct
+        description: Percentage of orders that used a coupon.
+      - name: favorite_coupon_type_proxy
+        description: Most frequently used coupon type (proxy).
+      - name: review_count
+        description: Number of product reviews written.
+      - name: avg_review_score
+        description: Average rating given in reviews.
+      - name: has_referred_others
+        description: True if the customer has made referrals.
+      - name: referral_count
+        description: Number of successful referrals made.
+      - name: acquisition_source
+        description: Channel through which the customer was acquired.
+      - name: email_engagement_proxy
+        description: Count of email opens (engagement proxy).
+      - name: churn_propensity_score
+        description: Predicted probability of churning (0-1 scale).
+      - name: churn_risk_level
+        description: Categorical churn risk (Low, Medium, High).
+      - name: ltv_score
+        description: Predicted customer lifetime value score.
+      - name: ltv_bucket
+        description: LTV tier bucket (e.g. High, Medium, Low).
+      - name: value_segment
+        description: Business value segment classification.
+      - name: customer_health_score
+        description: Composite customer health score.
+      - name: predicted_monthly_spend
+        description: Predicted average monthly spend.
+      - name: predicted_churn_in_90d
+        description: Predicted probability of churning within 90 days.
+      - name: spend_trend_3m
+        description: Percentage change in average monthly spend (recent 3m vs prior 3m).
+      - name: order_frequency_trend_3m
+        description: Percentage change in monthly order count (recent 3m vs prior 3m).
+      - name: avg_order_value_trend_3m
+        description: Percentage change in average order value (recent 3m vs prior 3m).
+      - name: is_spend_growing
+        description: True if recent 3-month spend exceeds prior 3-month spend.
+      - name: is_frequency_growing
+        description: True if recent 3-month order frequency exceeds prior period.
+      - name: months_of_declining_spend
+        description: Count of months with month-over-month spend decline.
+      - name: reactivation_flag
+        description: True if customer was inactive >90 days but has a recent order.
+      - name: lifecycle_stage
+        description: >
+          Customer lifecycle classification: prospect, new, active, cooling,
+          at_risk, or churned based on recency and order count.
+
+  - name: mega_wide_store_master
+    config:
+      tags: ['type:wide_table']
+    description: >
+      Ultimate denormalized store dimension. One row per location combining
+      lifetime revenue, customer metrics, product sales, labor analytics,
+      inventory health, P&L financials, equipment operations, and composite
+      scoring with cross-store rankings. Contains 80+ columns.
+    columns:
+      - name: location_id
+        description: Unique store/location identifier (primary key).
+        tests:
+          - unique
+          - not_null
+      - name: location_name
+        description: Human-readable store name.
+      - name: tax_rate
+        description: Local tax rate applied at this location.
+      - name: opened_date
+        description: Date the store opened.
+      - name: store_age_months
+        description: Number of months since the store opened.
+      - name: store_age_bucket
+        description: Age classification (0-6 months, 6-12 months, 1-2 years, 2-5 years, 5+ years).
+      - name: total_lifetime_revenue
+        description: Sum of all order totals since opening.
+      - name: total_lifetime_orders
+        description: Total number of orders placed at this store.
+      - name: avg_monthly_revenue
+        description: Average monthly revenue across all months of operation.
+      - name: avg_order_value
+        description: Average order total at this store.
+      - name: revenue_last_30d
+        description: Revenue in the last 30 days.
+      - name: revenue_last_90d
+        description: Revenue in the last 90 days.
+      - name: revenue_last_365d
+        description: Revenue in the last 365 days.
+      - name: revenue_growth_mom
+        description: Month-over-month revenue growth percentage (most recent month).
+      - name: revenue_growth_yoy
+        description: Year-over-year revenue growth percentage.
+      - name: best_month_revenue
+        description: Highest single-month revenue ever achieved.
+      - name: worst_month_revenue
+        description: Lowest single-month revenue.
+      - name: revenue_volatility
+        description: Standard deviation of monthly revenue (stability indicator).
+      - name: peak_daily_revenue
+        description: Highest single-day revenue.
+      - name: avg_daily_revenue
+        description: Average daily revenue.
+      - name: total_unique_customers
+        description: Count of distinct customers who have ever ordered.
+      - name: monthly_avg_customers
+        description: Average monthly unique customer count.
+      - name: new_customers_last_30d
+        description: First-time customers acquired in the last 30 days.
+      - name: returning_customer_pct
+        description: Percentage of customers with more than one order.
+      - name: avg_customer_spend
+        description: Average total spend per customer.
+      - name: top_customer_spend
+        description: Highest total spend by any single customer.
+      - name: customer_retention_rate
+        description: Percentage of total customers active in the last 30 days.
+      - name: loyalty_member_pct
+        description: Percentage of customers enrolled in the loyalty program.
+      - name: avg_visits_per_customer
+        description: Average number of orders per customer.
+      - name: customer_concentration_index
+        description: Herfindahl-style index measuring revenue concentration among customers.
+      - name: unique_products_sold
+        description: Count of distinct products sold at this store.
+      - name: avg_items_per_order
+        description: Average line items per order.
+      - name: top_product_id
+        description: Product ID of the best-selling product by revenue.
+      - name: top_product_name
+        description: Name of the best-selling product.
+      - name: top_product_revenue
+        description: Revenue from the top-selling product.
+      - name: food_revenue_pct
+        description: Percentage of revenue from food products.
+      - name: beverage_revenue_pct
+        description: Percentage of revenue from beverage products.
+      - name: avg_product_margin
+        description: Average margin across products sold.
+      - name: product_mix_diversity
+        description: Count of distinct product types offered.
+      - name: seasonal_items_sold
+        description: Quantity of seasonal items sold.
+      - name: current_headcount
+        description: Number of employees currently assigned to this store.
+      - name: avg_monthly_labor_cost
+        description: Average monthly labor expense.
+      - name: labor_cost_pct_revenue
+        description: Labor cost as a percentage of lifetime revenue.
+      - name: avg_orders_per_labor_hour
+        description: Orders processed per labor hour (efficiency).
+      - name: total_overtime_hours_monthly
+        description: Total overtime hours per month.
+      - name: overtime_pct
+        description: Overtime as a percentage of total labor hours.
+      - name: avg_shift_coverage
+        description: Average shift length in hours.
+      - name: employee_turnover_rate
+        description: Percentage of employees who have been terminated.
+      - name: avg_employee_tenure_months
+        description: Average months of employment for current staff.
+      - name: training_completion_rate
+        description: Percentage of employees who completed training.
+      - name: avg_performance_score
+        description: Average employee performance score.
+      - name: absenteeism_rate
+        description: Average daily no-show rate.
+      - name: current_inventory_value
+        description: Current total inventory value at cost.
+      - name: avg_monthly_waste_cost
+        description: Average monthly cost of wasted product.
+      - name: waste_pct_revenue
+        description: Annual waste cost as a percentage of lifetime revenue.
+      - name: monthly_procurement_spend
+        description: Monthly procurement/ordering spend.
+      - name: avg_lead_time_days
+        description: Average supplier lead time in days.
+      - name: stockout_frequency_monthly
+        description: Monthly count of stockout events.
+      - name: inventory_turnover_monthly
+        description: Monthly inventory turnover rate.
+      - name: top_wasted_product
+        description: Product ID with the highest waste cost.
+      - name: total_expenses_monthly
+        description: Total monthly expenses from the P&L.
+      - name: expense_pct_revenue
+        description: Monthly expenses as a percentage of revenue.
+      - name: gross_margin
+        description: Gross margin percentage.
+      - name: net_margin
+        description: Net margin percentage after all costs.
+      - name: monthly_profit
+        description: Monthly net profit amount.
+      - name: break_even_monthly_revenue
+        description: Monthly revenue needed to break even.
+      - name: budget_variance_pct
+        description: Percentage variance from budget.
+      - name: ar_outstanding
+        description: Accounts receivable outstanding balance.
+      - name: gift_card_liability
+        description: Outstanding gift card liability.
+      - name: cost_per_order
+        description: Average total cost per order processed.
+      - name: equipment_count
+        description: Number of equipment items at this location.
+      - name: equipment_avg_age
+        description: Average age of equipment in months.
+      - name: monthly_maintenance_cost
+        description: Average monthly maintenance expense.
+      - name: equipment_uptime_pct
+        description: Average equipment uptime percentage.
+      - name: avg_service_speed_proxy
+        description: Proxy for service speed (placeholder metric).
+      - name: peak_hour
+        description: Hour of day with the most orders.
+      - name: store_health_score
+        description: Composite store health score.
+      - name: store_health_tier
+        description: Store health classification tier.
+      - name: revenue_rank
+        description: Rank by total revenue (1 = highest).
+      - name: profit_rank
+        description: Rank by total profit (1 = highest).
+      - name: efficiency_rank
+        description: Rank by orders per labor hour (1 = most efficient).
+      - name: overall_rank
+        description: Average of revenue, profit, and efficiency ranks.

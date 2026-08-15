@@ -1,0 +1,159 @@
+models:
+  - name: int_revenue_by_store_daily
+    config:
+      tags: ['cadence:daily']
+    description: Daily revenue per store enriched with location details and rolling/day-over-day metrics.
+    columns:
+      - name: revenue_date
+        description: The date of revenue.
+        data_tests:
+          - not_null
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+      - name: location_name
+        description: Name of the store location.
+      - name: store_opened_date
+        description: Date the store opened.
+      - name: invoice_count
+        description: Number of invoices for the day at this store.
+      - name: gross_revenue
+        description: Gross revenue before tax in USD.
+      - name: total_revenue
+        description: Total revenue including tax in USD.
+      - name: rolling_7d_revenue
+        description: Sum of total revenue over the trailing 7 days for this store.
+      - name: avg_7d_revenue
+        description: Average daily revenue over the trailing 7 days in USD.
+      - name: dod_growth_rate
+        description: Day-over-day revenue growth rate.
+
+  - name: int_revenue_by_product_daily
+    config:
+      tags: ['cadence:daily']
+    description: Daily revenue per product from invoice line items joined with product details.
+    columns:
+      - name: revenue_date
+        description: The date of revenue.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product (e.g., jaffle, beverage).
+      - name: units_sold
+        description: Total quantity of units sold for the day.
+      - name: product_revenue
+        description: Total revenue from this product for the day in USD.
+      - name: avg_unit_price
+        description: Average unit price charged in USD.
+      - name: revenue_per_unit
+        description: Revenue divided by units sold in USD.
+
+  - name: int_refund_rate_by_store
+    description: Monthly refund count and rate per store, comparing refunds against invoices.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+      - name: report_month
+        description: Reporting month.
+        data_tests:
+          - not_null
+      - name: invoice_count
+        description: Number of invoices for the month at this store.
+      - name: total_invoice_amount
+        description: Total invoice amount for the month in USD.
+      - name: refund_count
+        description: Number of refunds for the month.
+      - name: total_refund_amount
+        description: Total refund amount for the month in USD.
+      - name: refund_rate
+        description: Refund count divided by invoice count.
+      - name: refund_amount_rate
+        description: Refund amount divided by invoice amount.
+      - name: avg_days_to_resolution
+        description: Average days to resolve refunds for the month.
+
+  - name: int_gift_card_redemption_velocity
+    description: Rate of gift card spend over time — average days between uses and transaction patterns per card.
+    columns:
+      - name: gift_card_id
+        description: The unique key for each gift card.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_transactions
+        description: Total number of completed redemption transactions.
+      - name: total_redeemed
+        description: Total amount redeemed in USD.
+      - name: avg_transaction_amount
+        description: Average redemption transaction amount in USD.
+      - name: first_use_date
+        description: Date of the first redemption.
+      - name: last_use_date
+        description: Date of the most recent redemption.
+      - name: active_span_days
+        description: Days between first and last use.
+      - name: avg_days_between_uses
+        description: Average number of days between consecutive redemptions.
+      - name: transactions_per_day
+        description: Average transactions per day over the active span.
+
+  - name: int_expense_trend_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: Month-over-month expense trend with percentage change and rolling averages by store and category.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+      - name: expense_category_id
+        description: Foreign key to the expense category.
+      - name: category_name
+        description: Name of the expense category.
+      - name: expense_month
+        description: Month the expenses were incurred.
+        data_tests:
+          - not_null
+      - name: total_expense_amount
+        description: Total expense amount for the month in USD.
+      - name: mom_change_amount
+        description: Month-over-month change in expense amount in USD.
+      - name: mom_change_pct
+        description: Month-over-month percentage change in expenses.
+      - name: rolling_3m_avg_expense
+        description: Rolling 3-month average expense amount in USD.
+
+  - name: int_cost_per_order_by_store
+    description: Total expenses divided by order count per store per month, with COGS and OpEx breakdown.
+    columns:
+      - name: location_id
+        description: Foreign key to the store location.
+        data_tests:
+          - not_null
+      - name: report_month
+        description: Reporting month.
+        data_tests:
+          - not_null
+      - name: order_count
+        description: Number of orders for the month.
+      - name: total_order_revenue
+        description: Total order revenue for the month in USD.
+      - name: total_expenses
+        description: Total expenses for the month in USD.
+      - name: total_cost_per_order
+        description: Total expenses divided by order count in USD.
+      - name: cogs_per_order
+        description: COGS divided by order count in USD.
+      - name: opex_per_order
+        description: Operating expenses divided by order count in USD.
+      - name: expense_to_revenue_ratio
+        description: Total expenses as a ratio of total order revenue.

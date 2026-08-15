@@ -1,0 +1,106 @@
+version: 2
+
+models:
+  - name: scr_customer_churn_propensity
+    config:
+      tags: ['type:scoring']
+    description: >
+      0-100 churn risk score per customer based on recency, frequency,
+      loyalty activity, and spend trend from dim_customer_360.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: churn_propensity_score
+        description: Composite churn risk score (0-100), higher = more likely to churn.
+      - name: churn_risk_tier
+        description: Risk classification (high, medium, low).
+
+  - name: scr_store_health
+    config:
+      tags: ['type:scoring']
+    description: >
+      0-100 store health score combining revenue growth, profitability,
+      labor efficiency, and inventory health.
+    columns:
+      - name: location_id
+        description: Unique store identifier.
+        tests:
+          - unique
+          - not_null
+      - name: store_health_score
+        description: Composite store health score (0-100).
+      - name: health_tier
+        description: Health classification (excellent, good, needs_improvement, critical).
+
+  - name: scr_supplier_reliability
+    config:
+      tags: ['type:scoring']
+    description: >
+      0-100 supplier reliability score from on-time delivery, quality,
+      price stability, and lead time consistency.
+    columns:
+      - name: supplier_id
+        description: Unique supplier identifier.
+        tests:
+          - unique
+          - not_null
+      - name: reliability_score
+        description: Composite reliability score (0-100).
+      - name: reliability_tier
+        description: Reliability classification (excellent, good, fair, poor).
+
+  - name: scr_employee_performance
+    config:
+      tags: ['type:scoring']
+    description: >
+      0-100 employee performance score from productivity, attendance,
+      training completion, and review scores.
+    columns:
+      - name: employee_id
+        description: Unique employee identifier.
+        tests:
+          - unique
+          - not_null
+      - name: performance_score
+        description: Composite performance score (0-100).
+      - name: performance_tier
+        description: Performance classification (top_performer, solid, developing, needs_support).
+
+  - name: scr_product_viability
+    config:
+      tags: ['type:scoring']
+    description: >
+      0-100 product health score from sales trend, margin, review rating,
+      and inventory availability.
+    columns:
+      - name: product_id
+        description: Unique product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: viability_score
+        description: Composite viability score (0-100).
+      - name: viability_tier
+        description: Viability classification (star, healthy, watch, at_risk).
+
+  - name: scr_menu_item_ranking
+    config:
+      tags: ['type:scoring']
+    description: >
+      Composite menu item ranking by revenue contribution, margin,
+      popularity, and review rating.
+    columns:
+      - name: product_id
+        description: Unique product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: composite_score
+        description: Weighted composite score combining revenue, margin, volume, and reviews.
+      - name: overall_composite_rank
+        description: Overall rank by composite score (1 = best).
+      - name: category_composite_rank
+        description: Rank within menu category by composite score.

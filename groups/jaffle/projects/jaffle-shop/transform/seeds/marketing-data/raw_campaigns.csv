@@ -1,0 +1,8 @@
+id,name,channel,status,description,budget,start_date,end_date,created_at
+1,Spring Latte Launch,email,completed,Promote new spring latte flavors,500000,2023-03-01,2023-04-30,2023-02-15 10:00:00
+2,Summer Cold Brew,social_media,completed,Summer cold brew promotion,300000,2023-06-01,2023-08-31,2023-05-15 10:00:00
+3,Holiday Gift Cards,email,completed,Holiday season gift card push,750000,2023-11-15,2023-12-31,2023-11-01 10:00:00
+4,New Year Detox,display_ads,completed,January healthy drinks campaign,200000,2024-01-01,2024-01-31,2023-12-15 10:00:00
+5,Loyalty Program Launch,multi_channel,active,Launch new loyalty rewards program,1000000,2024-03-01,2024-12-31,2024-02-01 10:00:00
+6,Back to School,social_media,active,Student discount promotion,250000,2024-08-15,2024-09-30,2024-07-20 10:00:00
+7,Fall Pumpkin Spice,email,planned,Pumpkin spice seasonal launch,400000,2024-09-01,2024-11-30,2024-08-01 10:00:00
