@@ -75,13 +75,28 @@ def validate_sources(
                                     f"'{ann.concept}' and '{target}'")
                 )
 
+        # A money column has to say what it is denominated in, but the currency
+        # is not always a column. Most single-currency sources simply do not
+        # carry one, and the old rule left them with two bad options: annotate a
+        # column that does not exist, or drop the `money_amount` role and lose
+        # currency normalisation entirely. `currency: USD` on the resource is the
+        # third and truthful one — the denomination is still declared, it is just
+        # declared as a constant. What stays an error is money with no
+        # denomination at all, which is the case that actually silently adds
+        # dollars to euros.
         money = [c for c, r in ann.roles.items() if r == "money_amount"]
         has_currency = any(r == "currency_code" for r in ann.roles.values())
-        if money and not has_currency:
+        if money and not has_currency and not ann.currency:
             issues.append(
                 ValidationIssue("error", "money-without-currency", subj,
-                                f"columns {money} are money_amount but no currency_code "
-                                f"column is annotated on this resource")
+                                f"columns {money} are money_amount but this resource "
+                                f"annotates no currency_code column and declares no "
+                                f"constant `currency:`")
+            )
+        if ann.currency and not onto.has_currency(ann.currency):
+            issues.append(
+                ValidationIssue("error", "unknown-currency", subj,
+                                f"currency '{ann.currency}' is not a known code")
             )
 
         keys = [c for c, r in ann.roles.items() if r in ("natural_key", "surrogate_key")]
@@ -173,16 +188,42 @@ def validate_instance(instance_path: str | Path, ontology: Ontology | None = Non
     return issues
 
 
+def _ontology_for(project_dir: Path) -> Ontology:
+    """The platform ontology plus this project's group extension.
+
+    Loading only the platform ontology here was a real failure, not a
+    simplification: every concept a group had legitimately added through
+    `pf semantic approve` came back as "not in the ontology", so a project that
+    passed the ladder's own conformance check failed `pf check` and `pf bootstrap`
+    on the same annotations. The group is derivable from the path — a project
+    lives at `<root>/groups/<group>/projects/<project>` — so there is no reason
+    to validate against a vocabulary the project does not actually use.
+    """
+    from pf.ontology.model import load_group_ontology
+
+    parts = project_dir.resolve().parts
+    if "groups" in parts and "projects" in parts:
+        i = parts.index("groups")
+        root = Path(*parts[:i]) if i else Path("/")
+        group = parts[i + 1]
+        try:
+            return load_group_ontology(root, group)
+        except (OSError, ValueError):
+            pass
+    return load_ontology()
+
+
 def validate_project(project_dir: str | Path) -> list[ValidationIssue]:
     """Validate one project's exported annotations."""
-    anns = load_annotations(Path(project_dir) / "contracts" / "annotations.yaml")
+    pdir = Path(project_dir)
+    anns = load_annotations(pdir / "contracts" / "annotations.yaml")
     if not anns:
         return [
             ValidationIssue("warning", "no-annotations", str(project_dir),
                             "contracts/annotations.yaml is missing or empty; "
                             "run `pf seed` or the pipeline to export it")
         ]
-    return validate_sources(anns)
+    return validate_sources(anns, _ontology_for(pdir))
 
 
 def pii_columns(annotations: Iterable[Annotation], ontology: Ontology | None = None) -> list[tuple[str, str, str]]:
