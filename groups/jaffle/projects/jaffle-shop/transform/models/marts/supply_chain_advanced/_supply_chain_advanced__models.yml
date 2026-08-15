@@ -1,0 +1,77 @@
+version: 2
+
+models:
+  - name: sc_supplier_payment_terms
+    description: Payment terms analysis showing average days to pay suppliers with implied terms classification.
+
+  - name: sc_ingredient_price_volatility
+    description: Price volatility per ingredient using coefficient of variation proxy with risk categorization.
+
+  - name: sc_safety_stock_calculation
+    description: Safety stock level calculation per product per location using demand and lead time variability.
+
+  - name: sc_economic_order_quantity
+    description: EOQ calculation per ingredient based on annual demand, ordering costs, and holding costs.
+
+  - name: sc_supplier_diversification
+    description: Number of active suppliers per product with single-source risk identification.
+
+  - name: sc_inventory_carrying_cost
+    description: Monthly inventory carrying cost per product per location at 20% annual holding rate.
+
+  - name: sc_stockout_frequency
+    description: Count of days with zero inventory per product per location with severity classification.
+
+  - name: sc_order_fill_rate
+    description: Percentage of customer orders fully fillable based on current inventory levels.
+
+  - name: sc_supplier_price_comparison
+    description: Compare unit costs across suppliers for same products with price position labels.
+
+  - name: sc_delivery_route_efficiency
+    description: Delivery cost per unit and as percentage of goods value by supplier route.
+
+  - name: sc_waste_root_cause
+    description: Waste categorized by likely root cause including overstock expiry, damage, and overproduction.
+
+  - name: sc_perishable_inventory_risk
+    description: Perishable items with estimated days of supply and spoilage risk assessment.
+
+  - name: sc_bulk_discount_analysis
+    description: Cost savings from bulk purchasing vs small orders by product.
+
+  - name: sc_warehouse_space_utilization
+    description: Warehouse capacity usage with utilization levels and available capacity.
+
+  - name: sc_supplier_payment_history
+    description: On-time payment rate to suppliers with average payment cycle analysis.
+
+  - name: sc_ingredient_substitution
+    description: Ingredients with similar properties available for substitution during stockouts.
+
+  - name: sc_supply_risk_assessment
+    description: Combined supply risk from single-source, volatile price, and long lead time factors.
+
+  - name: sc_procurement_calendar
+    description: Purchase order placement patterns by day of week.
+
+  - name: sc_inventory_accuracy
+    description: Variance between system inventory count and physical count with accuracy status.
+
+  - name: sc_landed_cost_analysis
+    description: Total landed cost including purchase, delivery, and waste costs per ingredient per supplier.
+
+  - name: sc_seasonal_inventory_plan
+    description: Recommended inventory levels by season based on historical demand patterns.
+
+  - name: sc_supplier_lead_time_trend
+    description: Lead time trend over time per supplier with direction classification.
+
+  - name: sc_purchase_order_accuracy
+    description: PO vs receipt quantity accuracy summary by status.
+
+  - name: sc_inventory_days_on_hand
+    description: Days of inventory on hand per product per location with health classification.
+
+  - name: sc_total_cost_of_ownership
+    description: Total supplier cost including material, delivery, quality loss, and admin overhead.

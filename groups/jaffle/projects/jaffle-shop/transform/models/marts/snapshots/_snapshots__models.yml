@@ -1,0 +1,158 @@
+models:
+  - name: int_inventory_level_weekly_snapshot
+    config:
+      tags: ['cadence:weekly']
+    description: >
+      Weekly inventory snapshot per product per location. Aggregates cumulative
+      inventory movements into end-of-week balances from fct_inventory_movements.
+    columns:
+      - name: week_end_date
+        description: The last day of the week for this snapshot.
+      - name: product_id
+        description: The product identifier.
+      - name: location_id
+        description: The location (store/warehouse) identifier.
+      - name: end_of_week_balance
+        description: Cumulative net inventory balance at the end of the week.
+      - name: weekly_inbound
+        description: Total inbound quantity up to this week.
+      - name: weekly_outbound
+        description: Total outbound quantity up to this week.
+      - name: movement_count
+        description: Total number of inventory movements up to this week.
+
+  - name: int_pricing_snapshot_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly price snapshot per product. Captures the latest price in effect
+      at the end of each month from stg_pricing_history.
+    columns:
+      - name: month_start
+        description: The first day of the month for this snapshot.
+      - name: product_id
+        description: The product identifier.
+      - name: price_at_month_end
+        description: The price in effect at the end of the month.
+      - name: last_change_reason
+        description: The reason for the most recent price change.
+      - name: last_price_change_date
+        description: The date of the most recent price change on or before month end.
+
+  - name: int_employee_roster_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly employee headcount snapshot per store. Counts active employees
+      per location at each month boundary based on hire and termination dates.
+    columns:
+      - name: month_start
+        description: The first day of the month for this snapshot.
+      - name: location_id
+        description: The store/location identifier.
+      - name: headcount
+        description: Total active employees at the location for the month.
+      - name: management_count
+        description: Number of management-level employees.
+      - name: new_hires_in_month
+        description: Employees hired during this month.
+      - name: terminations_in_month
+        description: Employees terminated during this month.
+
+  - name: int_loyalty_balance_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly loyalty points balance snapshot per member. Tracks cumulative
+      and in-month point activity from fct_loyalty_transactions.
+    columns:
+      - name: month_start
+        description: The first day of the month for this snapshot.
+      - name: loyalty_member_id
+        description: The loyalty program member identifier.
+      - name: customer_id
+        description: The associated customer identifier.
+      - name: end_of_month_balance
+        description: Cumulative points balance at month end.
+      - name: points_earned_in_month
+        description: Points earned during this specific month.
+      - name: points_redeemed_in_month
+        description: Points redeemed during this specific month.
+      - name: transactions_in_month
+        description: Number of loyalty transactions in the month.
+
+  - name: int_gift_card_balance_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly gift card balance snapshot. Tracks the remaining balance on each
+      gift card at end of month from int_gift_card_running_balance.
+    columns:
+      - name: month_start
+        description: The first day of the month for this snapshot.
+      - name: gift_card_id
+        description: The gift card identifier.
+      - name: customer_id
+        description: The customer who owns the gift card.
+      - name: end_of_month_balance
+        description: Remaining gift card balance at end of month.
+      - name: total_redeemed_to_date
+        description: Cumulative amount redeemed from the gift card.
+
+  - name: int_ar_balance_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly accounts receivable balance snapshot. Summarizes outstanding
+      AR by aging bucket from int_accounts_receivable_aging.
+    columns:
+      - name: month_start
+        description: The month of receivable creation.
+      - name: open_receivables
+        description: Count of open/partial receivables.
+      - name: total_outstanding
+        description: Total outstanding AR balance.
+      - name: outstanding_current
+        description: Outstanding amount in the current (not yet due) bucket.
+      - name: outstanding_90_plus
+        description: Outstanding amount over 90 days past due.
+
+  - name: int_customer_status_monthly
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly customer lifecycle status. Classifies each customer as active
+      (ordered within 90 days), dormant (90-180 days), or churned (180+ days).
+    columns:
+      - name: month_start
+        description: The first day of the month for this snapshot.
+      - name: customer_id
+        description: The customer identifier.
+      - name: customer_status
+        description: "Customer status: active, dormant, or churned."
+      - name: days_since_last_order
+        description: Days between month end and last order date.
+      - name: lifetime_orders
+        description: Total orders placed up to this month.
+
+  - name: int_store_metrics_weekly
+    config:
+      tags: ['cadence:weekly']
+    description: >
+      Weekly composite store metrics. Aggregates order count, revenue, and
+      average ticket size per store per week from stg_orders.
+    columns:
+      - name: week_start
+        description: The first day of the week.
+      - name: location_id
+        description: The store/location identifier.
+      - name: location_name
+        description: The name of the store/location.
+      - name: order_count
+        description: Total orders placed during the week.
+      - name: unique_customers
+        description: Distinct customers who ordered during the week.
+      - name: total_revenue
+        description: Total revenue for the week.
+      - name: avg_ticket_size
+        description: Average order value for the week.
