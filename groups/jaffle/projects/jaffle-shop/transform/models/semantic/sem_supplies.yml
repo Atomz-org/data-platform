@@ -1,0 +1,28 @@
+# Moved out of models/marts/supplies.yml by the onboarding ladder, stage
+# `metrics`. The definitions are the project's own and are unchanged;
+# only their location moved, because MetricFlow YAML belongs in the
+# semantic layer where `pf align`, the knowledge graph and the reporting
+# projection all look for it.
+
+version: 2
+semantic_models:
+- name: supplies
+  description: 'Supplies dimension table. The grain of the table is one row per supply and product combination.
+
+    '
+  model: ref('supplies')
+  entities:
+  - name: supply
+    type: primary
+    expr: supply_uuid
+  dimensions:
+  - name: supply_id
+    type: categorical
+  - name: product_id
+    type: categorical
+  - name: supply_name
+    type: categorical
+  - name: supply_cost
+    type: categorical
+  - name: is_perishable_supply
+    type: categorical

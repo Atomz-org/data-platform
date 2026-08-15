@@ -1,0 +1,32 @@
+# Moved out of models/marts/locations.yml by the onboarding ladder, stage
+# `metrics`. The definitions are the project's own and are unchanged;
+# only their location moved, because MetricFlow YAML belongs in the
+# semantic layer where `pf align`, the knowledge graph and the reporting
+# projection all look for it.
+
+version: 2
+semantic_models:
+- name: locations
+  description: 'Location dimension table. The grain of the table is one row per location.
+
+    '
+  model: ref('locations')
+  defaults:
+    agg_time_dimension: opened_date
+  entities:
+  - name: location
+    type: primary
+    expr: location_id
+  dimensions:
+  - name: location_name
+    type: categorical
+  - name: opened_date
+    expr: opened_date
+    type: time
+    type_params:
+      time_granularity: day
+  measures:
+  - name: average_tax_rate
+    description: Average tax rate.
+    expr: tax_rate
+    agg: average
