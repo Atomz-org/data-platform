@@ -1,0 +1,219 @@
+models:
+  - name: adv_above_store_average
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Orders where the amount exceeds the store's average order total,
+      identified using a correlated subquery in the WHERE clause.
+
+  - name: adv_category_hierarchy
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Full parent-child category hierarchy built using a recursive CTE
+      over dim_menu_categories.
+
+  - name: adv_conditional_aggregates
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Conditional aggregations using PostgreSQL's FILTER clause as a cleaner
+      alternative to CASE WHEN inside aggregate functions.
+
+  - name: adv_consecutive_growth
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Longest streaks of consecutive month-over-month revenue growth per store,
+      detected using the islands-and-gaps technique with window functions.
+
+  - name: adv_customer_analysis_cube
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      All possible aggregation combinations of customer type, location, and order
+      year using CUBE, producing 2^3 = 8 grouping levels including grand total.
+
+  - name: adv_customer_product_array
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Each customer's purchase history aggregated into a PostgreSQL array using
+      array_agg with DISTINCT and ORDER BY.
+
+  - name: adv_expense_rollup
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Hierarchical expense subtotals using ROLLUP on location, category, and month,
+      producing subtotals at each level of the hierarchy.
+
+  - name: adv_first_purchase_product
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      The product from each customer's earliest order, found using a correlated
+      subquery that matches on customer_id and minimum order date.
+
+  - name: adv_gap_analysis
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Days where a store had no orders, detected by cross joining the date spine
+      with locations and identifying gaps in the time series.
+
+  - name: adv_latest_event_per_customer
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Each customer's last 5 orders with full details, retrieved efficiently
+      using a LATERAL join.
+
+  - name: adv_latest_price_per_product
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Most recent price for each product using PostgreSQL's DISTINCT ON,
+      a concise alternative to ROW_NUMBER() plus filter.
+
+  - name: adv_latest_review_per_product
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Most recent review for each product using PostgreSQL's DISTINCT ON.
+
+  - name: adv_moving_median
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      7-day moving median revenue per store, computed via a LATERAL subquery
+      with percentile_cont since standard window functions do not support median.
+
+  - name: adv_multi_filter_summary
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Multi-domain aggregation combining multiple FILTER conditions in a single
+      scan of the orders table, avoiding multiple passes and subqueries.
+
+  - name: adv_org_hierarchy
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Employee org chart built with a recursive CTE, deriving manager relationships
+      from department and tenure data in dim_employees.
+
+  - name: adv_referral_tree
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Recursive tree of referrer-to-referee relationships from int_referral_chain,
+      tracking the full chain from root referrers through all levels.
+
+  - name: adv_revenue_cube
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Multi-dimensional revenue analysis across store, product, and month using
+      GROUPING SETS with the grouping() function to identify aggregation levels.
+
+  - name: adv_running_distinct_customers
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Running count of distinct customers over time, using dense_rank() to work
+      around the lack of COUNT(DISTINCT) support in window functions.
+
+  - name: adv_store_product_overlap
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Product assortment comparison across stores using PostgreSQL array intersection
+      operations on array_agg product sets.
+
+  - name: adv_top_n_products_per_store
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Top 3 best-selling products per store by revenue, found using a LATERAL join
+      that references the outer store row.
+
+  - name: adv_customers_never_used_coupon
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Customers who have never redeemed a coupon, identified using the NOT EXISTS
+      anti-join pattern against fct_coupon_redemptions. Includes a coupon
+      opportunity segment for targeted marketing.
+
+  - name: adv_products_never_wasted
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Products with zero waste events, identified using NOT EXISTS against
+      fct_waste_events. Useful for finding products with perfect inventory
+      management or high sell-through rates.
+
+  - name: adv_customer_health_matrix
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      27-segment customer health matrix crossing frequency (high/medium/low),
+      recency (active/cooling/dormant), and monetary (high/medium/low) dimensions
+      using complex nested CASE expressions over int_customer_rfm_scores.
+
+  - name: adv_dynamic_pricing_recommendation
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Business rule engine with 10+ pricing rules implemented as layered CASE
+      expressions. Evaluates margin tier and sales velocity to recommend pricing
+      actions such as discounts, increases, or discontinuation.
+
+  - name: adv_customer_order_pairs
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Each customer order paired with their previous order using LAG window
+      function. Outputs days between orders, amount change percentage, whether
+      the store changed, and whether the product mix changed.
+
+  - name: adv_store_affinity_network
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Store pairs that share customers, built via self-join on stg_orders.
+      Computes Jaccard similarity (shared/union) and overlap coefficient as
+      affinity scores for cannibalization and cross-promotion analysis.
+
+  - name: adv_calendar_with_events
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Annotated business calendar joining util_date_spine with campaign dates
+      and supplier contract dates via UNION ALL. Every calendar day shows
+      active business events and their categories.
+
+  - name: adv_missing_data_detector
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Store-date combinations with no orders, found by cross joining
+      util_date_spine with stg_locations and left joining against stg_orders.
+      Flags missing data with severity levels for data quality monitoring.
+
+  - name: adv_excluding_current_avg
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Per store-day average revenue of the 6 preceding days excluding the current
+      day, using the window frame `rows between 6 preceding and 1 preceding`.
+      Compares today's revenue against this peer average to flag anomalies.
+
+  - name: adv_cumulative_with_reset
+    config:
+      tags: ['type:advanced_sql']
+    description: >
+      Cumulative daily revenue that resets at the start of each fiscal quarter.
+      Uses util_fiscal_periods for quarter boundaries and partitions the window
+      by fiscal_year and fiscal_quarter.
