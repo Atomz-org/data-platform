@@ -1,0 +1,43 @@
+/* Platform overrides on top of Forge's tokens.
+ *
+ * Forge owns colour, spacing, radius and motion — see vendor/forge/DESIGN.md.
+ * What is set here is only what a data console needs and a general component
+ * library has no opinion about.
+ */
+
+:root {
+  /* Identifiers are read character by character — a schema name, a column, a
+     hash. Proportional type makes `main_marts` and `main_morts` look alike. */
+  --pf-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  /* Verdict colours are shared by the review table, the semantic-impact join
+     and the audit log, so a red dot means the same thing on every screen. */
+  --pf-changed: #d03b3b;
+  --pf-clean: #0ca30c;
+  --pf-warning: #fab219;
+  --pf-unknown: #ec835a;
+}
+
+html, body, #root { height: 100%; margin: 0; }
+
+/* Numbers that sit above each other in a column must align on the decimal, or
+   a column of row counts cannot be scanned for the one that changed. */
+.pf-num { font-variant-numeric: tabular-nums; font-family: var(--pf-mono); }
+.pf-mono { font-family: var(--pf-mono); font-size: 12.5px; }
+
+/* Wide tables scroll inside their own card rather than pushing the page
+   sideways; a horizontally scrolling page loses the sidebar. */
+.pf-scroll-x { overflow-x: auto; max-width: 100%; }
+
+.pf-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  flex: none; margin-right: 6px;
+}
+.pf-changed { background: var(--pf-changed); }
+.pf-clean { background: var(--pf-clean); }
+.pf-warning { background: var(--pf-warning); }
+.pf-unknown { background: var(--pf-unknown); }
+
+/* Status is never colour alone — the label travels with the dot so the table
+   survives greyscale printing and colour-blind readers. */
+.pf-verdict { display: inline-flex; align-items: center; white-space: nowrap; }

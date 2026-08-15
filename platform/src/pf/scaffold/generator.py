@@ -40,18 +40,41 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
     ctx = {"group": group, "domain": domain,
-           "classes_yaml": "\n".join(f"  - {c}" for c in classes)}
+           "classes_yaml": "\n".join(f"  - {c}" for c in classes),
+           "tools_yaml": _default_tools_yaml()}
     created = [
+        write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
         write(gdir / ".claude" / "skills" / "README.md", GROUP_SKILLS_README, ctx),
         write(gdir / "shared" / "transform" / "dbt_project.yml", GROUP_SHARED_DBT, ctx),
         write(gdir / "shared" / "transform" / "macros" / "normalize_currency.sql", GROUP_MACRO, ctx),
+        write(gdir / "evals" / "README.md", GROUP_EVALS, ctx),
     ]
     (gdir / "projects").mkdir(parents=True, exist_ok=True)
     (gdir / "kg").mkdir(parents=True, exist_ok=True)
     return created
+
+
+def _default_tools_yaml() -> str:
+    """The `tools:` block a new group starts with, read from the registry.
+
+    Asked of the installed tools rather than hardcoded, so registering a tool
+    stays the only step — the same reason `pf tool list` and the UI do not name
+    one either. A discovery failure yields an empty block: a group scaffolded
+    with nothing enabled is recoverable with `pf tool enable`, whereas a
+    scaffold that raises leaves half a group on disk.
+    """
+    try:
+        from pf.tools import all_tools
+        names = sorted(n for n, t in all_tools().items()
+                       if t.default_enabled and "group" in t.scope)
+    except Exception:  # noqa: BLE001 — a broken plugin must not block scaffolding
+        names = []
+    if not names:
+        return " {}"
+    return "\n" + "\n".join(f"  {n}:\n    enabled: true" for n in names)
 
 
 # ---------------------------------------------------------------- project --
@@ -110,6 +133,7 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / "decisions" / "README.md", PROJECT_DECISIONS, ctx),
         write(pdir / ".memory" / "notes" / "README.md", PROJECT_MEMORY, ctx),
         write(pdir / "kg" / "context_card.md", EMPTY_CARD, ctx),
+        write(pdir / "tools.yaml", PROJECT_TOOLS, ctx),
     ]
     for d in ("data", "kg", "contracts"):
         (pdir / d).mkdir(parents=True, exist_ok=True)
@@ -117,6 +141,40 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
 
 
 # ================================================================ templates ==
+GROUP_TOOLS = """\
+# Which platform tools this group runs. `pf tool list` shows what is available.
+#
+# Enabled here means enabled for **every sister project** in {{group}} — that is
+# the point of a group. Sisters share infrastructure and differ only in business
+# logic, so "we review dbt changes with Recce" is decided once for the family.
+# A project can override any key in its own tools.yaml, including turning a tool
+# off, which is the escape hatch for an entity the decision does not fit.
+#
+#   pf tool enable recce {{group}}              # the whole family
+#   pf tool enable recce {{group}} <project>    # one entity
+#
+# A tool that is enabled but not installed on this machine is skipped with a
+# note, never a failure: enabling is a decision about the project, installing is
+# a fact about the laptop.
+#
+# What is listed below is what the installed tools declare as a default for a
+# new family, not a fixed set. Turn any of it off; it is your file now.
+version: 1
+tools:{{tools_yaml}}
+"""
+
+PROJECT_TOOLS = """\
+# Tools for {{project}}, merged over groups/{{group}}/tools.yaml.
+#
+# Set `enabled: false` here to opt out of something the group turned on. Config
+# dicts deep-merge, so overriding one key (a port, say) keeps the rest.
+#
+#   pf tool list {{group}} {{project}}      # what is on, and where it came from
+#   pf tool doctor {{group}} {{project}}    # why a tool is not doing anything
+version: 1
+tools: {}
+"""
+
 GROUP_INSTANCE = """\
 # Ontology instance for {{group}} — which platform classes this group models.
 # Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
@@ -409,21 +467,96 @@ log_level = "WARNING"
 disable_compression = false
 """
 
-PROJECT_EVALS = """\
-# Evals for {{project}}
+GROUP_EVALS = """\
+# Evals for {{group}}
 
-Prompts are code; these are their tests. One JSON per case:
+Prompts are code; these are their tests. Cases here cover what the sisters
+**share and only share** — the group's ontology instance, its conformed
+dimensions, its group-level metrics.
+
+Three tiers run together, and each owns what only it can know:
+
+| Tier | Lives in | Owns |
+|---|---|---|
+| platform | `platform/toolkits/<toolkit>/evals/` | health checks, and templates |
+| **group** | **here** | what every sister in {{group}} agrees on |
+| project | `projects/<project>/evals/cases/` | one entity's business logic |
+
+A case belongs here when it would be *wrong for a sister to disagree with it*.
+If one sister could legitimately answer differently, it is a project case.
 
 ```json
 {
-  "name": "triage_recognises_stale_source",
-  "input": {"failing_test": "...", "rows": "...", "model_sql": "..."},
-  "expect": {"root_cause": "stale_source"}
+  "name": "conformed_customer_grain_is_respected",
+  "agent": "metric_gap_proposer",
+  "why": "Why this case exists — what breaks without it.",
+  "tags": ["conformed"],
+  "input": {"gaps": ["..."], "mart_detail": "..."},
+  "expect": {"proposals[].metric_type": {"any": {"equals": "ratio"}}}
 }
 ```
 
-Run with `pf evals {{group}} {{project}}`. Any change to an agent prompt must
-keep these green.
+    pf evals {{group}} <project>          # contract tier + load every case
+    pf evals {{group}} <project> --live   # grade against the real models
+
+Any change to an agent prompt must keep these green.
+"""
+
+PROJECT_EVALS = """\
+# Evals for {{project}}
+
+Prompts are code; these are their tests.
+
+## Two kinds of case live here
+
+**`generated/`** — written by `pf evals-gen {{group}} {{project}}`. Each toolkit
+ships eval *templates*: the shape of a correct judgement, with placeholders where
+the table names go. Generation resolves those against this project's knowledge
+graph, so the cases name **your** models and **your** columns.
+
+Regenerating overwrites that directory and deletes anything whose template is
+gone. Never hand-edit a file in it.
+
+**Everything else in `evals/cases/`** — yours. Cases that encode {{project}}'s own
+business rules, which no toolkit could have guessed. This is where the corpus
+earns its keep: a restraint case naming the bridge tables that should get no
+metric, a triage case for the settlement window only this entity has.
+
+Nothing here is read by a sister, and nothing a sister writes is read here.
+
+## Format
+
+```json
+{
+  "name": "triage_recognises_our_late_settlement_window",
+  "agent": "test_failure_triage",
+  "why": "Why this case exists — what breaks in production without it.",
+  "tags": ["triage"],
+  "input": {"failures": [], "lineage": "..."},
+  "expect": {"root_cause": "stale_source", "escalate": false}
+}
+```
+
+`agent` is one of `test_failure_triage`, `freshness_triage`,
+`metric_gap_proposer`. `why` is not decoration — without it a corpus decays into
+assertions nobody dares change because nobody remembers whether they were
+deliberate.
+
+Keep prose matchers weak (`contains_any`, not exact strings). A case that pins
+wording fails on a harmless rewrite, and a suite that cries wolf gets switched
+off — which costs more than the case was ever worth.
+
+## Commands
+
+    pf evals-gen {{group}} {{project}}      # (re)ground the toolkit templates
+    pf evals {{group}} {{project}}          # contract tier + load every case
+    pf evals {{group}} {{project}} --live   # grade against the real models
+
+`--samples N` runs each case N times. A case that passes 4 times in 5 is not
+passing and not failing — it is an unstable prompt, which is the most useful
+thing this suite can tell you before a prompt change ships.
+
+Any change to an agent prompt must keep these green.
 """
 
 PROJECT_DECISIONS = """\

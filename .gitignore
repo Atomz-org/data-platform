@@ -24,6 +24,10 @@ node_modules/
 **/data/*.duckdb
 **/data/*.duckdb.wal
 **/reporting/queries/metrics/
+# Rendered from toolkit templates by `pf evals-gen`, the same way the graph is
+# rendered by `pf kg build`. Hand-written project cases sit one level up, in
+# evals/cases/, and are committed.
+**/evals/cases/generated/
 data/pr/
 .dagster/history/
 .dagster/storage/
@@ -34,3 +38,16 @@ data/pr/
 **/.dlt/secrets.toml
 **/secrets.toml
 .dagster/.nux/
+
+
+#dbt
+dbt.log
+*.log
+
+#connection
+connection.json
+
+# The control-plane front end. `dist/` is `npm run build` output and node_modules
+# is 200MB of dependencies; both are reproducible from package-lock.json.
+**/ui/static/dist/
+**/ui/web/node_modules/

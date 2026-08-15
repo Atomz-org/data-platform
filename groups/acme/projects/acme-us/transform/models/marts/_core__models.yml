@@ -10,6 +10,15 @@ models:
         data_tests: [unique, not_null]
       - name: customer_segment
         description: Sales segment. Drives most reporting cuts.
+        meta: {role: status_enum}
+      - name: country_code
+        meta: {role: geo_country}
+      - name: created_at
+        meta: {role: event_time}
+      - name: subscription_count
+        meta: {role: quantity}
+      - name: active_subscriptions
+        meta: {role: quantity}
 
   - name: fct_payments
     description: Payment fact at attempt grain, enriched with customer and plan.
@@ -23,6 +32,17 @@ models:
         meta: {role: money_amount}
       - name: paid_at
         meta: {role: event_time}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: payment_status
+        description: Which statuses count as revenue is a semantic-layer policy.
+        meta: {role: status_enum}
+      - name: customer_segment
+        meta: {role: status_enum}
+      - name: country_code
+        meta: {role: geo_country}
+      - name: plan_tier
+        meta: {role: status_enum}
 
   - name: fct_revenue
     description: Daily revenue by segment and plan. Union-compatible across sisters.
@@ -34,6 +54,16 @@ models:
         data_tests: [not_null]
       - name: net_amount
         meta: {role: money_amount}
+      - name: gross_amount
+        meta: {role: money_amount}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: customer_segment
+        meta: {role: status_enum}
+      - name: plan_tier
+        meta: {role: status_enum}
+      - name: payment_count
+        meta: {role: quantity}
 
 exposures:
   - name: exec_weekly_dashboard

@@ -95,6 +95,31 @@ policies:
     enforced_by: [platform/hooks/pre_tool_use.py, platform/hooks/pre_commit.sh]
     evidence: [impact_reports, loop-ledger.json]
 
+  - id: change-verified-against-baseline
+    intent: >
+      A blast radius is a prediction made from lineage. Lineage cannot say
+      whether the numbers actually moved, so a change to a mart must also be
+      compared against a built baseline before it lands — otherwise "safe" means
+      "nothing downstream references it", not "nothing downstream changed".
+    applies_to: {artifact_glob: "**/transform/models/marts/**"}
+    constraint: diff_reported
+    severity: warning
+    enforced_by: [pf.tools.recce:dagster_assets, pf.tools.recce:register_commands]
+    evidence: [pf tool recce run]
+
+  - id: review-artifacts-exclude-pii
+    intent: >
+      A value-level diff writes the rows it compared into the review tool's state
+      file, which is durable and shared. Diffing a column whose role is PII
+      therefore persists real addresses into an artefact that gets committed and
+      passed around — the same failure `pii-not-in-consumption` prevents in the
+      warehouse, one layer further out.
+    applies_to: {artifact_glob: "**/transform/recce.yml"}
+    constraint: pii_excluded_from_review
+    severity: error
+    enforced_by: [pf.ontology.model:Role.review_intent, pf.tools.recce:generate_config]
+    evidence: [pf tool recce config]
+
   - id: secrets-never-in-context
     intent: >
       A credential placed in a prompt, a model file or a committed artefact is
@@ -115,3 +140,5 @@ evidence_kinds:
   - {id: "loop-ledger.json", produces: run history,   durable: true}
   - {id: "kg/context_card.md", produces: project index, durable: true}
   - {id: "pf loop run pii-audit", produces: PII findings, durable: false}
+  - {id: "pf tool recce run",    produces: data diff against baseline, durable: true}
+  - {id: "pf tool recce config", produces: derived review checks, durable: true}

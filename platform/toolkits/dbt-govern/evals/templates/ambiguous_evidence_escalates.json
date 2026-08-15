@@ -1,0 +1,21 @@
+{
+  "template": "ambiguous_evidence_escalates",
+  "agent": "test_failure_triage",
+  "why": "Calibration, half one. Two causes fit the evidence equally — the source changed shape and the model changed, on the same day — and the lineage does not record which came first. The correct behaviour is to decline to guess and hand it to a human. Paired with `confident_evidence_does_not_escalate` on purpose: either half alone is passed by a degenerate prompt that always escalates, or never does.",
+  "tags": ["triage", "calibration"],
+  "requires": {"src": "source", "mart": "mart"},
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.relationships_{{mart.name}}_{{mart.column}}",
+        "status": "fail",
+        "message": "Got 12,904 results, configured to fail if != 0. Values in {{mart.column}} with no match in the referenced table."
+      }
+    ],
+    "lineage": "source:{{src.name}} (loaded 4h ago; schema changed 4h ago — a key field was renamed upstream)\n  -> model:{{mart.name}} [grain: {{mart.grain}}] (sql modified 4h ago by a different author; the join key was changed in the same commit)\n\nThe source schema change and the model edit landed within the same hour. The build log does not record which ran first, and the last successful build predates both. Reverting either one alone would produce a consistent state, and the evidence does not say which was intended."
+  },
+  "expect": {
+    "escalate": true,
+    "confidence": {"one_of": ["low", "medium"]}
+  }
+}

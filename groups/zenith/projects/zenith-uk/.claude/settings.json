@@ -1,7 +1,15 @@
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "zenith": { "source": { "source": "../.." } }
+    "platform": {
+      "source": {
+        "source": "../../../../platform"
+      }
+    },
+    "zenith": {
+      "source": {
+        "source": "../.."
+      }
+    }
   },
   "enabledPlugins": [
     "platform-init@platform",
@@ -18,11 +26,26 @@
     "zenith-group@zenith"
   ],
   "permissions": {
-    "deny": ["Read(../*/src/**)", "Read(../../../*/projects/**)"],
+    "deny": [
+      "Read(../*/src/**)",
+      "Read(../../../*/projects/**)"
+    ],
     "allow": [
       "Bash(uv run pf:*)",
-      "Bash(dbt parse:*)", "Bash(dbt ls:*)", "Bash(dbt build:*)", "Bash(dbt test:*)",
-      "Bash(mf query:*)", "Bash(mf list:*)"
+      "Bash(dbt parse:*)",
+      "Bash(dbt ls:*)",
+      "Bash(dbt build:*)",
+      "Bash(dbt test:*)",
+      "Bash(mf query:*)",
+      "Bash(mf list:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)"
     ]
   },
   "hooks": {

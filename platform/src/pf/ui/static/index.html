@@ -117,42 +117,289 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
 .bar-track { background: var(--surface-2); border-radius: 4px; height: 14px; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
 .empty { color: var(--text-muted); padding: 24px; text-align: center; font-size: 13px; }
+
+/* ---------------------------------------------------------------- shell -- */
+/* Sidebar + content, rather than a 15-wide tab strip that wrapped onto two
+   lines and lost its selected state at the fold. */
+body { margin: 0; }
+.shell { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface-1); border-right: 1px solid var(--border);
+           display: flex; flex-direction: column; position: sticky; top: 0;
+           height: 100vh; overflow-y: auto; }
+.brand { display: flex; gap: 10px; align-items: center; padding: 16px 16px 14px; }
+.brand .mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent);
+               color: #fff; display: grid; place-items: center; font-weight: 700;
+               font-size: 13px; flex: none; }
+.brand b { font-size: 14px; display: block; line-height: 1.25; }
+.brand small { color: var(--text-muted); font-size: 12px; }
+.side-nav { padding: 4px 8px; display: flex; flex-direction: column; gap: 1px; }
+.side-nav .group-label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+                         color: var(--text-muted); padding: 14px 8px 5px; }
+.side-nav button { display: flex; align-items: center; gap: 10px; width: 100%;
+                   background: none; border: 0; text-align: left; cursor: pointer;
+                   padding: 7px 10px; border-radius: 8px; font-size: 13px;
+                   color: var(--text-secondary); font-family: inherit; }
+.side-nav button:hover { background: var(--surface-2); color: var(--text-primary); }
+.side-nav button[aria-selected="true"] { background: var(--surface-2);
+                   color: var(--text-primary); font-weight: 600; }
+.side-nav .ico { width: 16px; text-align: center; flex: none; opacity: .85; }
+.side-foot { margin-top: auto; padding: 12px 16px 16px; border-top: 1px solid var(--border);
+             font-size: 12px; color: var(--text-muted); }
+.side-foot .svc { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
+.content { display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; gap: 10px; padding: 14px 22px;
+          border-bottom: 1px solid var(--border); background: var(--surface-1);
+          position: sticky; top: 0; z-index: 20; }
+.topbar h1 { font-size: 17px; margin: 0; font-weight: 600; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+        border: 1px solid var(--border); border-radius: 999px; background: var(--surface-1);
+        font-size: 12px; color: var(--text-secondary); cursor: pointer;
+        font-family: inherit; }
+.chip:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.chip select { border: 0; background: none; font: inherit; color: inherit;
+               cursor: pointer; outline: none; }
+.counts { margin-left: auto; display: flex; gap: 16px; font-size: 12px;
+          color: var(--text-secondary); align-items: center; }
+main { padding: 20px 22px 40px; }
+
+/* ---------------------------------------------------------------- tiles -- */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+         gap: 12px; margin-bottom: 16px; }
+.tile { background: var(--surface-1); border: 1px solid var(--border);
+        border-radius: 12px; padding: 13px 15px; }
+.tile .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;
+               display: flex; align-items: center; gap: 6px; }
+.tile .value { font-size: 25px; font-weight: 600; letter-spacing: -.02em;
+               line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* --------------------------------------------------------------- charts -- */
+/* Two panels sharing an x-axis, never one plot with two y-scales: a percentage
+   and a count are different units and a dual axis makes their crossings mean
+   nothing. */
+.panelstack { display: grid; gap: 0; }
+.chart-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+.chart-head h3 { font-size: 13px; margin: 0; font-weight: 600; }
+.chart-head .unit { font-size: 11px; color: var(--text-muted); }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.gridline { stroke: var(--border); stroke-width: 1; }
+.axis-label { font-size: 10px; fill: var(--text-muted); }
+.hoverband { fill: transparent; cursor: crosshair; }
+.hoverband:hover { fill: var(--surface-2); opacity: .55; }
+.crosshair { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* ------------------------------------------------------------- activity -- */
+.split { display: grid; grid-template-columns: 1fr 372px; gap: 16px; align-items: start; }
+@media (max-width: 1180px) { .split { grid-template-columns: 1fr; } }
+.feed { display: flex; flex-direction: column; gap: 2px; max-height: 640px;
+        overflow-y: auto; }
+.feed-item { display: flex; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
+.feed-item:last-child { border-bottom: 0; }
+.feed-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; }
+.feed-body { min-width: 0; font-size: 12.5px; line-height: 1.45; }
+.feed-body .sub { color: var(--text-muted); font-size: 11.5px; }
+.feed-body code { font-size: 11.5px; }
+
+/* ------------------------------------------------------------ workspace -- */
+/* Main column plus a narrower rail, not two equal halves. The joined table is
+   the reason the tab exists and the review's own narrative is context beside
+   it; giving them equal width said they were equally important. */
+.ws-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px;
+           align-items: start; }
+@media (max-width: 1240px) { .ws-grid { grid-template-columns: minmax(0, 1fr); } }
+.ws-frame { width: 100%; height: 620px; border: 1px solid var(--border);
+            border-radius: 10px; background: var(--surface-1); }
+
+/* A legend that is also the filter. The counts have to be visible before you
+   can decide which subset to look at, so the count *is* the control rather
+   than sitting next to one. */
+.ws-legend { display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+             margin: 2px 0 12px; }
+.ws-key { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+          border: 1px solid var(--border); border-radius: 999px; font-size: 12px;
+          color: var(--text-secondary); background: var(--surface-1);
+          cursor: pointer; font-family: inherit; }
+.ws-key:hover { border-color: var(--text-muted); color: var(--text-primary); }
+.ws-key[aria-pressed="true"] { background: var(--surface-2);
+                               color: var(--text-primary); border-color: var(--text-muted); }
+.ws-key .n { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ws-key .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+/* Status is never carried by colour alone: each row also states the word, so
+   the table survives greyscale and colour-blind readers. */
+.ws-status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.delta { font-variant-numeric: tabular-nums; }
+.delta.up { color: var(--critical); }
+.delta.down { color: var(--serious); }
+.delta.flat { color: var(--text-muted); }
+.ws-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ws-head .counts { margin-left: auto; }
+/* Recce's summary is a markdown table and a mermaid graph. The global `pre`
+   wraps, which is right for prose and destroys both — a table whose rows fold
+   mid-cell is unreadable at any width. In this rail it scrolls instead. */
+#wsSummary pre { white-space: pre; }
+.roles { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+/* Only the roles cell may wrap. The others carry short fixed phrases — a check
+   count, a row delta — and letting "4 check(s)" fold onto two lines cost more
+   height than the column ever saved in width. */
+#wsJoin td, #wsJoin th { white-space: nowrap; vertical-align: top; }
+#wsJoin td:last-child { white-space: normal; }
+#wsJoin td .muted { display: block; margin-top: 2px; }
+.sqlbox { width: 100%; min-height: 76px; font-family: var(--mono); font-size: 12px;
+          padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+          background: var(--surface-1); color: var(--text-primary); resize: vertical; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Data Platform <span>· control plane</span></h1>
-  <select id="projectSel" aria-label="Active project"></select>
-  <span class="spacer"></span>
-  <span id="rootPath" class="muted mono"></span>
-  <button id="themeBtn" title="Toggle theme">◐</button>
-  <button id="refreshBtn" class="primary">Refresh</button>
-</header>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand">
+    <span class="mark">pf</span>
+    <span>
+      <b>Data Platform</b>
+      <small id="brandProject">control plane</small>
+    </span>
+  </div>
 
-<nav role="tablist">
-  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
-  <button role="tab" data-tab="lineage">Lineage</button>
-  <button role="tab" data-tab="models">Models</button>
-  <button role="tab" data-tab="metrics">Metrics</button>
-  <button role="tab" data-tab="ontology">Ontology</button>
-  <button role="tab" data-tab="topology">Topology</button>
-  <button role="tab" data-tab="mdl">MDL / BI</button>
-  <button role="tab" data-tab="impact">Impact</button>
-  <button role="tab" data-tab="agents">Agents &amp; Spend</button>
-  <button role="tab" data-tab="monitors">Monitors</button>
-  <button role="tab" data-tab="upstreams">Upstreams</button>
-  <button role="tab" data-tab="prs">Pull requests</button>
-  <button role="tab" data-tab="context">Context Card</button>
-</nav>
+  <nav class="side-nav" role="tablist">
+    <div class="group-label">Observe</div>
+    <button role="tab" data-tab="overview" aria-selected="true"><span class="ico">◎</span>Overview</button>
+    <button role="tab" data-tab="lineage"><span class="ico">⛓</span>Lineage</button>
+    <button role="tab" data-tab="models"><span class="ico">▤</span>Models</button>
+    <button role="tab" data-tab="metrics"><span class="ico">∑</span>Metrics</button>
+    <button role="tab" data-tab="monitors"><span class="ico">◇</span>Monitors</button>
+
+    <div class="group-label">Semantics</div>
+    <button role="tab" data-tab="semantics"><span class="ico">◈</span>Semantic layer</button>
+    <button role="tab" data-tab="ontology"><span class="ico">◕</span>Ontology</button>
+    <button role="tab" data-tab="topology"><span class="ico">⬡</span>Topology</button>
+    <button role="tab" data-tab="mdl"><span class="ico">▦</span>MDL / BI</button>
+
+    <div class="group-label">Change</div>
+    <button role="tab" data-tab="workspace"><span class="ico">◱</span>Workspace</button>
+    <button role="tab" data-tab="review"><span class="ico">⇄</span>Review</button>
+    <button role="tab" data-tab="impact"><span class="ico">◉</span>Impact</button>
+    <button role="tab" data-tab="prs"><span class="ico">⑂</span>Pull requests</button>
+
+    <div class="group-label">Platform</div>
+    <button role="tab" data-tab="tools"><span class="ico">⚿</span>Tools</button>
+    <button role="tab" data-tab="agents"><span class="ico">◔</span>Agents &amp; spend</button>
+    <button role="tab" data-tab="upstreams"><span class="ico">↥</span>Upstreams</button>
+    <button role="tab" data-tab="context"><span class="ico">▭</span>Context card</button>
+  </nav>
+
+  <div class="side-foot" id="healthBox"></div>
+</aside>
+
+<div class="content">
+<div class="topbar">
+  <h1 id="pageTitle">Overview</h1>
+  <span class="chip"><span class="ico">▧</span>
+    <select id="projectSel" aria-label="Active project"></select>
+  </span>
+  <span class="chip" id="rangeChip" title="Observability window">◷ Last 48h</span>
+  <span class="counts" id="topCounts"></span>
+  <button class="chip" id="themeBtn" title="Toggle theme">◐</button>
+  <button class="chip" id="refreshBtn" title="Reload everything">↻ Refresh</button>
+</div>
 
 <main>
   <section class="panel active" id="tab-overview">
-    <div class="kpis" id="kpis"></div>
-    <div class="grid2">
-      <div class="card"><h2>Groups &amp; projects</h2><div id="treeBox"></div></div>
-      <div class="card"><h2>Graph composition</h2><div id="compBox"></div></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="split">
+      <div>
+        <div class="card">
+          <!-- Two panels, one shared time axis. A success *rate* and a failure
+               *count* are different units; one plot with two y-scales would make
+               their crossings look meaningful when they are an artefact of the
+               scaling. -->
+          <div class="chart-head">
+            <h3>Pipeline health</h3>
+            <span class="unit">% of runs succeeding, by hour</span>
+          </div>
+          <div class="chart" id="chartRate"></div>
+          <div class="chart-head" style="margin-top:10px">
+            <h3>Failed runs</h3><span class="unit">count, same window</span>
+          </div>
+          <div class="chart" id="chartFail"></div>
+          <div id="tsTable" style="margin-top:10px"></div>
+          <button class="chip" id="tsTableBtn" style="margin-top:8px">Table view</button>
+        </div>
+        <div class="grid2" style="margin-top:16px">
+          <div class="card"><h2>Groups &amp; projects</h2><div id="treeBox"></div></div>
+          <div class="card"><h2>Graph composition</h2><div id="compBox"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px"><h2>Recent pipeline runs</h2>
+          <div class="scroll" id="runsBox"></div></div>
+      </div>
+      <div class="card">
+        <h2>Activity</h2>
+        <div class="feed" id="activityBox"></div>
+      </div>
     </div>
-    <div class="card"><h2>Recent pipeline runs</h2><div class="scroll" id="runsBox"></div></div>
+  </section>
+
+  <!-- The semantic layer as *we* render it. Wren ships no web UI any more —
+       `wren serve` is MCP — so there is nothing to iframe here; this reads the
+       same mdl/mdl.json an external consumer would receive. -->
+  <section class="panel" id="tab-semantics">
+    <div class="tiles" id="semTiles"></div>
+    <div class="split">
+      <div class="card">
+        <h2>MDL models</h2>
+        <div class="scroll" id="semModels"></div>
+      </div>
+      <div class="card">
+        <h2>Plan SQL through the MDL</h2>
+        <p class="muted" style="font-size:12px">Expands a query against the semantic
+        layer without touching the warehouse.</p>
+        <textarea class="sqlbox" id="semSql">select customer_segment, sum(net_amount) as net
+from fct_revenue group by 1</textarea>
+        <button class="chip" id="semPlanBtn" style="margin-top:8px">Plan</button>
+        <div id="semPlanOut" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- One place to see a change from both sides: what the graph predicts, and
+       what the diff measured — joined on the model, not left side by side for
+       the reader to correlate by eye. -->
+  <section class="panel" id="tab-workspace">
+    <div class="tiles" id="wsTiles"></div>
+    <div class="ws-grid">
+      <div>
+        <div class="card">
+          <div class="ws-head">
+            <h2>Semantic impact of the recorded diff</h2>
+            <span class="counts" id="wsJoinCounts"></span>
+          </div>
+          <p class="muted" style="font-size:12px">Every published semantic entity,
+          against what the review actually measured on the model behind it.</p>
+          <div class="ws-legend" id="wsLegend"></div>
+          <div class="scroll" id="wsJoin"></div>
+          <div id="wsUnpublished"></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h2>Recce</h2>
+          <div id="wsEmbed"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Review summary <span class="muted" id="wsRecceState"></span></h2>
+          <div class="scroll" id="wsSummary" style="max-height:320px"></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h2>Blast radius</h2>
+          <p class="muted" style="font-size:12px">Structural prediction from the graph.
+          The table on the left is what actually moved.</p>
+          <div class="row">
+            <input id="wsNode" placeholder="model:fct_revenue" style="flex:1" />
+            <button class="chip" id="wsImpactBtn">Analyse</button>
+          </div>
+          <div id="wsImpact"></div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="tab-lineage">
@@ -252,8 +499,46 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
     <div class="card"><h2>Recorded reports</h2><div class="scroll" id="prListBox"></div></div>
     <div class="card"><h2>Report body (as posted to GitHub)</h2><pre id="prBody" class="empty">No report yet.</pre></div>
   </section>
+  <!-- The single pane Dagster OSS cannot host: the tool's own UI beside the
+       lineage and impact this platform already tracks. Dagster's web app serves
+       a fixed bundle with no extension point for a custom tab, so a tool reaches
+       Dagster as a real asset plus run metadata, and reaches a combined view
+       here. Nothing below names a tool — it renders whatever /api/tools
+       reports has an embeddable surface. -->
+  <section class="panel" id="tab-review">
+    <div class="card">
+      <h2>Review <span class="muted" id="reviewTool"></span></h2>
+      <div id="reviewStatus"></div>
+    </div>
+    <div class="card">
+      <h2>Recorded diff</h2>
+      <div class="scroll" id="reviewSummary"></div>
+    </div>
+    <div class="card">
+      <h2>Tool UI</h2>
+      <div id="reviewEmbed"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="tab-tools">
+    <div class="card">
+      <h2>Tools</h2>
+      <p class="muted">A tool is a capability that also runs: it contributes
+      scaffolded files, gate rules, Dagster assets and a UI. Add one with a
+      <code>TOOL</code> object, or from outside this repo with a
+      <code>pf.tools</code> entry point.</p>
+      <div class="scroll" id="toolsBox"></div>
+    </div>
+    <div class="card">
+      <h2>Discovery errors</h2>
+      <div id="toolErrors"></div>
+    </div>
+  </section>
+
   <section class="panel" id="tab-context"><div class="card"><h2>Context card (what every session loads)</h2><div id="cardBox"></div></div></section>
 </main>
+</div><!-- /.content -->
+</div><!-- /.shell -->
 
 <div id="tip" role="tooltip"></div>
 
@@ -261,7 +546,7 @@ pre { background: var(--surface-2); padding: 12px; border-radius: 8px; overflow-
 const $ = s => document.querySelector(s);
 const tip = $('#tip');
 let STATE = { group: null, project: null, tree: null, graph: null,
-              vendor: null, prs: [] };
+              vendor: null, prs: [], tools: [] };
 
 const LAYER_ORDER = ['ontology','raw','staging','intermediate','marts','semantic','consumption','project','test'];
 const LAYER_BUCKET = { ontology:0, raw:1, staging:2, intermediate:2, marts:3, semantic:4, consumption:4, project:0, test:2 };
@@ -291,19 +576,27 @@ $('#themeBtn').onclick = () => {
   if (STATE.graph) drawGraph();
 };
 $('#refreshBtn').onclick = () => loadAll();
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach(x => x.setAttribute('aria-selected', 'false'));
+document.querySelectorAll('.side-nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.side-nav button').forEach(x => x.setAttribute('aria-selected', 'false'));
   b.setAttribute('aria-selected', 'true');
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   $('#tab-' + b.dataset.tab).classList.add('active');
+  $('#pageTitle').textContent = b.textContent.trim();
   if (b.dataset.tab === 'lineage' && STATE.graph) drawGraph();
+  // Re-probed on open: a tool's server is a separate process that may have been
+  // started since the page loaded, and a stale "server down" would send someone
+  // to debug a problem that no longer exists.
+  if (b.dataset.tab === 'review') loadReview();
+  if (b.dataset.tab === 'semantics') loadSemantics();
+  if (b.dataset.tab === 'workspace') loadWorkspace();
 });
 $('#projectSel').onchange = e => {
   const [g, p] = e.target.value.split('/');
   STATE.group = g; STATE.project = p;
   // MDL and the stack view are per project too; before this they kept showing
   // the previously selected project's manifest after a switch.
-  loadProject().then(() => Promise.all([loadMdl(), loadStack()]));
+  loadProject().then(() => Promise.all([loadMdl(), loadStack(), loadTools()]))
+               .then(loadReview);
 };
 ['showColumns','showConcepts'].forEach(id => $('#' + id).onchange = () => loadGraph());
 $('#tableViewBtn').onclick = () => {
@@ -321,22 +614,40 @@ function showTip(html, evt) {
 const hideTip = () => tip.style.opacity = '0';
 
 /* ------------------------------------------------------------- overview -- */
+/* A tile is the right form for a single number: no plot, no axis, no legend —
+   the label carries the identity and the value is read directly. */
+function tiles(el, items) {
+  $(el).innerHTML = items.map(([l, v, sub, status]) => {
+    const dot = status ? `<span class="feed-dot" style="background:${STATUS[status]};
+        width:8px;height:8px;margin:0"></span>` : '';
+    return `<div class="tile"><div class="label">${dot}${esc(l)}</div>
+      <div class="value">${typeof v === 'string' ? esc(v) : fmt(v)}</div>
+      <div class="sub">${esc(sub || '')}</div></div>`;
+  }).join('');
+}
+
 function renderKpis(s) {
-  const items = [
+  tiles('#tiles', [
     ['Groups', s.groups, ''],
     ['Projects', s.projects, 'sisters run in parallel'],
     ['Models', s.node_counts.Model || 0, ''],
     ['Metrics', s.node_counts.Metric || 0, 'governed definitions'],
-    ['Agent runs', s.agent_runs, money(s.cost_usd) + ' total'],
-    ['Open alerts', s.open_alerts, s.open_alerts ? 'needs triage' : 'all clear'],
-  ];
-  $('#kpis').innerHTML = items.map(([l, v, sub]) =>
-    `<div class="kpi"><div class="label">${l}</div><div class="value">${fmt(v)}</div>
-     <div class="sub">${esc(sub)}</div></div>`).join('');
+    ['Agent spend', money(s.cost_usd), s.agent_runs + ' run(s)'],
+    ['Open alerts', s.open_alerts, s.open_alerts ? 'needs triage' : 'all clear',
+     s.open_alerts ? 'critical' : 'good'],
+  ]);
+  $('#topCounts').innerHTML =
+    `<span>${fmt(s.projects)} projects</span><span>${fmt(s.node_counts.Model || 0)} models</span>` +
+    `<span>${fmt(s.node_counts.Metric || 0)} metrics</span>`;
 }
 
 function renderTree(tree) {
-  $('#rootPath').textContent = tree.root;
+  // `#rootPath` moved into the health card, which renders after this does, so
+  // it is legitimately absent on the first pass — `loadHealth` fills it in from
+  // STATE.tree. Unguarded, this threw before the project selector was ever
+  // populated and took the whole control plane down with it.
+  const rootEl = $('#rootPath');
+  if (rootEl) rootEl.textContent = tree.root;
   const sel = $('#projectSel');
   const opts = [];
   tree.groups.forEach(g => g.projects.forEach(p => opts.push(`${g.name}/${p.name}`)));
@@ -864,16 +1175,451 @@ $('#prRefreshBtn').onclick = async () => {
   await loadPrs();
 };
 
+/* ----------------------------------------------------------------- tools -- */
+async function loadTools() {
+  const r = await api('/api/tools', { group: STATE.group, project: STATE.project });
+  STATE.tools = r.tools || [];
+
+  $('#toolsBox').innerHTML = table(STATE.tools, [
+    ['Tool', t => `<code>${esc(t.name)}</code>`],
+    ['Scope', t => `<span class="muted">${esc((t.scope || []).join(', '))}</span>`],
+    ['Enabled', t => t.enabled
+      ? `<span class="pill ok">yes</span> <span class="muted">${esc(t.source)}</span>`
+      : '<span class="muted">no</span>'],
+    ['Installed', t => t.installed ? '<span class="pill ok">yes</span>'
+      : `<span class="pill warn">no</span> <span class="muted">${esc(t.hint)}</span>`],
+    ['Ready', t => t.ready ? '<span class="pill ok">✓</span>'
+      : `<span class="muted">${esc((t.blockers || []).join('; ') || '—')}</span>`],
+    ['Surface', t => t.surface ? `<a href="${esc(t.surface)}" target="_blank">${esc(t.surface)}</a>` : '—'],
+    ['What it is', t => esc(t.summary)],
+  ], 'No tools registered.');
+
+  $('#toolErrors').innerHTML = (r.errors || []).length
+    ? `<ul>${r.errors.map(e => `<li class="pill critical">${esc(e)}</li>`).join('')}</ul>`
+    : '<div class="empty">Every registered tool loaded.</div>';
+}
+
+/* Renders whichever enabled tool exposes an embeddable surface. The tool is
+   discovered, not hardcoded: today that is Recce, tomorrow it is whatever was
+   installed. */
+async function loadReview() {
+  if (!STATE.group) return;
+  const tools = STATE.tools || (await api('/api/tools',
+    { group: STATE.group, project: STATE.project })).tools || [];
+  const tool = tools.find(t => t.enabled && t.embeddable && t.surface)
+            || tools.find(t => t.embeddable && t.surface);
+
+  if (!tool) {
+    $('#reviewTool').textContent = '';
+    $('#reviewStatus').innerHTML =
+      '<div class="empty">No tool with a UI is enabled for this project. '
+      + 'Enable one with <code>pf tool enable &lt;tool&gt; '
+      + esc(STATE.group) + '</code>.</div>';
+    $('#reviewSummary').innerHTML = '';
+    $('#reviewEmbed').innerHTML = '';
+    return;
+  }
+
+  $('#reviewTool').textContent = '· ' + tool.title;
+  const s = await api('/api/tools/surface',
+    { tool: tool.name, group: STATE.group, project: STATE.project });
+
+  const bits = [];
+  bits.push(tool.enabled ? '<span class="pill ok">enabled</span>'
+                         : '<span class="pill warn">not enabled</span>');
+  bits.push(tool.installed ? '<span class="pill ok">installed</span>'
+                           : `<span class="pill critical">not installed</span>`);
+  bits.push(s.up ? '<span class="pill ok">server up</span>'
+                 : '<span class="pill warn">server down</span>');
+  (tool.blockers || []).forEach(b => bits.push(`<span class="pill warn">${esc(b)}</span>`));
+  $('#reviewStatus').innerHTML = bits.join(' ')
+    + `<p class="muted">Structural blast radius is the <b>Impact</b> tab. This is
+       what actually changed. Dagster shows the same run as the
+       <code>recce_review</code> asset — it has no custom-tab API, so the
+       combined view lives here.</p>`;
+
+  // The recorded diff, read from state rather than recomputed, so this page and
+  // the Dagster run can never disagree.
+  if (tool.name === 'recce') {
+    try {
+      const d = await api('/api/tools/recce', { group: STATE.group, project: STATE.project });
+      $('#reviewSummary').innerHTML = d.summary_markdown
+        ? `<pre>${esc(d.summary_markdown)}</pre>`
+        : `<div class="empty">No diff recorded yet.${d.has_baseline ? ''
+            : ' No baseline captured — <code>pf tool recce baseline '
+              + esc(STATE.group) + ' ' + esc(STATE.project) + '</code>.'}</div>`;
+    } catch (e) { $('#reviewSummary').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  } else {
+    $('#reviewSummary').innerHTML = '<div class="empty">—</div>';
+  }
+
+  $('#reviewEmbed').innerHTML = s.up
+    ? `<iframe src="${esc(s.surface)}" style="width:100%;height:70vh;border:1px solid var(--border);border-radius:6px"></iframe>`
+    : `<div class="empty">${esc(tool.title)} is not serving on ${esc(s.surface)}.
+        Start it with <code>${esc(s.start_hint)}</code>, then Refresh.</div>`;
+}
+
+/* ------------------------------------------------------------- charts -- */
+/* Status palette — fixed, never themed, never reused for a series. Both steps
+   clear 3:1 on either surface. They are deliberately NOT used as adjacent
+   segments of one stack: red vs green measures ΔE 4.1 under deuteranopia, far
+   below the floor where secondary encoding could rescue it, so the two
+   quantities get their own panels instead. */
+const STATUS = { good: '#0ca30c', warning: '#fab219', serious: '#ec835a', critical: '#d03b3b' };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const CH = { w: 720, h: 108, l: 34, r: 8, t: 8, b: 18 };
+
+function chartFrame(points) {
+  const iw = CH.w - CH.l - CH.r, ih = CH.h - CH.t - CH.b;
+  const x = i => CH.l + (points.length < 2 ? iw / 2 : (i / (points.length - 1)) * iw);
+  return { iw, ih, x };
+}
+
+function axisTimes(points) {
+  if (!points.length) return [];
+  const idx = [0, Math.floor(points.length / 2), points.length - 1];
+  return [...new Set(idx)].map(i => [i, points[i].t.slice(5, 16)]);
+}
+
+/* Line + crosshair. One series, so no legend box — the heading names it. */
+function lineChart(el, points, key, fmtVal, unitMax) {
+  const node = $(el);
+  if (!points.length) { node.innerHTML = '<div class="empty">No runs recorded yet.</div>'; return; }
+  const { ih, x } = chartFrame(points);
+  const max = unitMax || Math.max(1, ...points.map(p => p[key] ?? 0));
+  const y = v => CH.t + ih - (v / max) * ih;
+
+  // Nulls break the path rather than dropping it to zero: a bucket with no runs
+  // has no success rate, and drawing one invents a dip that never happened.
+  const segs = []; let cur = [];
+  points.forEach((p, i) => {
+    if (p[key] === null || p[key] === undefined) { if (cur.length) segs.push(cur); cur = []; }
+    else cur.push(`${x(i)},${y(p[key])}`);
+  });
+  if (cur.length) segs.push(cur);
+
+  const ticks = [0, max / 2, max];
+  node.innerHTML = `<svg viewBox="0 0 ${CH.w} ${CH.h}" role="img"
+      aria-label="${esc(key)} over time">
+    ${ticks.map(t => `<line class="gridline" x1="${CH.l}" x2="${CH.w - CH.r}"
+        y1="${y(t)}" y2="${y(t)}"/><text class="axis-label" x="2" y="${y(t) + 3}">${fmtVal(t)}</text>`).join('')}
+    ${segs.map(s => `<polyline fill="none" stroke="${css('--accent')}" stroke-width="2"
+        stroke-linejoin="round" stroke-linecap="round" points="${s.join(' ')}"/>`).join('')}
+    ${points.map((p, i) => p[key] == null ? '' :
+      `<circle cx="${x(i)}" cy="${y(p[key])}" r="3.5" fill="${css('--accent')}"
+         stroke="${css('--surface-1')}" stroke-width="2"/>`).join('')}
+    ${axisTimes(points).map(([i, lbl]) =>
+      `<text class="axis-label" x="${x(i)}" y="${CH.h - 4}" text-anchor="middle">${lbl}</text>`).join('')}
+    ${points.map((p, i) => `<rect class="hoverband" x="${x(i) - 9}" y="${CH.t}"
+        width="18" height="${ih}" data-i="${i}"/>`).join('')}
+  </svg>`;
+  node.querySelectorAll('.hoverband').forEach(b => {
+    b.onmousemove = e => { const p = points[+b.dataset.i];
+      showTip(`<b>${esc(p.t.slice(0, 16))}</b><br>${esc(key)}: ${p[key] == null ? '—' : fmtVal(p[key])}
+               <br><span class="muted">${p.total} run(s)</span>`, e); };
+    b.onmouseleave = hideTip;
+  });
+}
+
+/* Bars, anchored to the baseline with 4px rounded tops and a 2px gap. */
+function barChart(el, points, key, colour) {
+  const node = $(el);
+  if (!points.length) { node.innerHTML = '<div class="empty">Nothing to show.</div>'; return; }
+  const { iw, ih, x } = chartFrame(points);
+  const max = Math.max(1, ...points.map(p => p[key] || 0));
+  const bw = Math.max(3, Math.min(26, iw / points.length - 2));
+  node.innerHTML = `<svg viewBox="0 0 ${CH.w} ${CH.h}" role="img" aria-label="${esc(key)} by hour">
+    <line class="gridline" x1="${CH.l}" x2="${CH.w - CH.r}" y1="${CH.t + ih}" y2="${CH.t + ih}"/>
+    <text class="axis-label" x="2" y="${CH.t + 8}">${max}</text>
+    ${points.map((p, i) => {
+      const v = p[key] || 0; if (!v) return '';
+      const h = Math.max(2, (v / max) * ih);
+      return `<rect x="${x(i) - bw / 2}" y="${CH.t + ih - h}" width="${bw}" height="${h}"
+        rx="3" fill="${colour}" data-i="${i}"/>`; }).join('')}
+    ${axisTimes(points).map(([i, lbl]) =>
+      `<text class="axis-label" x="${x(i)}" y="${CH.h - 4}" text-anchor="middle">${lbl}</text>`).join('')}
+    ${points.map((p, i) => `<rect class="hoverband" x="${x(i) - 9}" y="${CH.t}"
+        width="18" height="${ih}" data-i="${i}"/>`).join('')}
+  </svg>`;
+  node.querySelectorAll('.hoverband').forEach(b => {
+    b.onmousemove = e => { const p = points[+b.dataset.i];
+      showTip(`<b>${esc(p.t.slice(0, 16))}</b><br>${p[key] || 0} failed of ${p.total}`, e); };
+    b.onmouseleave = hideTip;
+  });
+}
+
+async function loadTimeseries() {
+  const d = await api('/api/timeseries', { group: STATE.group, project: STATE.project });
+  STATE.ts = d.points || [];
+  lineChart('#chartRate', STATE.ts, 'rate', v => Math.round(v) + '%', 100);
+  barChart('#chartFail', STATE.ts, 'failed', STATUS.critical);
+  // The relief rule: a chart always has a text equivalent available.
+  $('#tsTable').innerHTML = '';
+  $('#tsTable').dataset.open = '';
+}
+$('#tsTableBtn').onclick = () => {
+  const box = $('#tsTable');
+  if (box.dataset.open) { box.innerHTML = ''; box.dataset.open = ''; return; }
+  box.dataset.open = '1';
+  box.innerHTML = table(STATE.ts || [], [
+    ['Hour', r => esc(r.t.slice(0, 16))],
+    ['Runs', r => fmt(r.total)],
+    ['Failed', r => fmt(r.failed)],
+    ['Success rate', r => r.rate == null ? '—' : r.rate + '%'],
+  ], 'No runs recorded.');
+};
+
+/* ----------------------------------------------------------- activity -- */
+const AGO = ts => {
+  const s = (Date.now() - new Date(ts.replace(' ', 'T')).getTime()) / 1000;
+  if (isNaN(s)) return '';
+  if (s < 90) return 'just now';
+  if (s < 5400) return Math.round(s / 60) + 'm ago';
+  if (s < 129600) return Math.round(s / 3600) + 'h ago';
+  return Math.round(s / 86400) + 'd ago';
+};
+
+async function loadActivity() {
+  const rows = await api('/api/activity', { group: STATE.group, project: STATE.project });
+  $('#activityBox').innerHTML = rows.length ? rows.map(r => {
+    const c = r.status === 'error' ? STATUS.critical
+            : r.status === 'warn' ? STATUS.warning
+            : r.status === 'noop' ? css('--text-muted') : STATUS.good;
+    return `<div class="feed-item">
+      <span class="feed-dot" style="background:${c}"></span>
+      <div class="feed-body">
+        <div>${esc(r.verb)} <code>${esc(r.subject)}</code></div>
+        <div class="sub">${esc(r.group)}/${esc(r.project)} · ${AGO(r.ts)}${
+          r.detail ? ' · ' + esc(r.detail) : ''}</div>
+      </div></div>`; }).join('')
+    : '<div class="empty">Nothing recorded yet. Run <code>pf seed</code>.</div>';
+}
+
+async function loadHealth() {
+  const h = await api('/api/health');
+  $('#healthBox').innerHTML = h.services.map(s =>
+    `<div class="svc"><span class="feed-dot" style="background:${
+      s.ok ? STATUS.good : STATUS.critical};margin:0"></span>
+     ${esc(s.name)} <span class="muted">${esc(s.detail)}</span></div>`).join('')
+    + `<div style="margin-top:8px" class="muted mono" id="rootPath"></div>`;
+  if (STATE.tree) $('#rootPath').textContent = STATE.tree.root;
+}
+
+/* ---------------------------------------------------------- semantics -- */
+async function loadSemantics() {
+  if (!STATE.group) return;
+  const m = await api('/api/wren/mdl', { group: STATE.group, project: STATE.project });
+  const eng = m.engine || {};
+  tiles('#semTiles', [
+    ['MDL models', (m.models || []).length, `${m.catalog || ''}.${m.schema || ''}`],
+    ['Relationships', (m.relationships || []).length, 'from the graph'],
+    ['Data source', m.data_source || '—', 'MDL dataSource'],
+    ['Wren engine', eng.ok ? 'usable' : 'unusable',
+     eng.ok ? 'plans MDL queries' : (eng.detail || '').slice(0, 46),
+     eng.ok ? 'good' : 'critical'],
+  ]);
+  $('#semModels').innerHTML = table(m.models || [], [
+    ['Model', r => `<code>${esc(r.name)}</code>`],
+    ['Relation', r => `<span class="muted">${esc(r.schema)}.${esc(r.table)}</span>`],
+    ['Cols', r => fmt(r.columns)],
+    ['Ontology roles', r => (r.roles || []).map(x => `<span class="pill">${esc(x)}</span>`).join(' ') || '—'],
+  ], 'No MDL yet — run <code>pf bootstrap</code>.');
+  return m;
+}
+
+$('#semPlanBtn').onclick = async () => {
+  const out = $('#semPlanOut');
+  out.innerHTML = '<div class="empty">Planning…</div>';
+  try {
+    const r = await fetch('/api/wren/plan?' + new URLSearchParams({
+      group: STATE.group, project: STATE.project, sql: $('#semSql').value }),
+      { method: 'POST' }).then(x => x.json());
+    out.innerHTML = r.ok
+      ? `<pre>${esc(r.sql)}</pre>`
+      : `<div class="pill critical">${esc(r.reason || 'failed')}</div>
+         <pre>${esc(r.message || '')}</pre>`;
+  } catch (e) { out.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+};
+
+/* ---------------------------------------------------------- workspace -- */
+/* Four states, not two. "held" means every check ran and came back empty;
+   "uncovered" means nothing was checked. Both look like "no differences" if you
+   only render the diff, and only one of them is reassuring. */
+const WS_STATUS = {
+  moved:      { label: 'moved',      status: 'critical', hint: 'the review measured a difference' },
+  held:       { label: 'held',       status: 'good',     hint: 'checked, nothing moved' },
+  uncovered:  { label: 'uncovered',  status: 'warning',  hint: 'published, but no check covers it' },
+  unreviewed: { label: 'unreviewed', status: 'serious',  hint: 'no review has been run' },
+};
+const WS_FILTER = { on: '' };
+
+async function loadWorkspace() {
+  if (!STATE.group) return;
+  const [tools, join] = await Promise.all([
+    api('/api/tools', { group: STATE.group, project: STATE.project }),
+    api('/api/workspace/semantic-diff', { group: STATE.group, project: STATE.project })
+      .catch(() => null),
+  ]);
+  const recce = (tools.tools || []).find(t => t.name === 'recce');
+
+  let diff = null;
+  try { diff = await api('/api/tools/recce', { group: STATE.group, project: STATE.project }); }
+  catch (e) { diff = null; }
+
+  const counts = (join && join.counts) || {};
+  const reviewed = !!(join && join.reviewed);
+  tiles('#wsTiles', [
+    ['Review checks', diff && diff.checks_total != null ? diff.checks_total : '—',
+     'derived from ontology roles'],
+    ['Baseline', diff && diff.has_baseline ? 'captured' : 'none',
+     diff && diff.has_baseline ? 'diffs are real' : 'pf tool recce baseline',
+     diff && diff.has_baseline ? 'good' : 'warning'],
+    // A zero only means "nothing moved" once something has been measured.
+    // Before that it is the absence of a number, and a green nought there is a
+    // clean bill of health nobody issued.
+    ['Entities moved', reviewed ? counts.moved : '—',
+     reviewed ? 'semantic layer affected' : 'nothing measured yet',
+     !reviewed ? 'serious' : counts.moved ? 'critical' : 'good'],
+    ['Uncovered', reviewed ? counts.uncovered : '—',
+     reviewed ? 'published with no check' : 'nothing measured yet',
+     !reviewed ? 'serious' : counts.uncovered ? 'warning' : 'good'],
+  ]);
+
+  $('#wsRecceState').textContent = diff && diff.generated_at ? '· ' + diff.generated_at.slice(0, 16) : '';
+  $('#wsSummary').innerHTML = diff && diff.summary_markdown
+    ? `<pre>${esc(diff.summary_markdown)}</pre>`
+    : `<div class="empty">No diff recorded. <code>pf tool recce run ${
+        esc(STATE.group)} ${esc(STATE.project)}</code></div>`;
+
+  const s = recce && recce.surface
+    ? await api('/api/tools/surface', { tool: 'recce', group: STATE.group, project: STATE.project })
+    : { up: false, surface: '', start_hint: '' };
+  $('#wsEmbed').innerHTML = s.up
+    ? `<iframe class="ws-frame" src="${esc(s.surface)}"></iframe>`
+    : `<div class="empty">Recce is not serving. <code>${esc(s.start_hint || '')}</code></div>`;
+
+  STATE.wsJoin = join;
+  renderWsJoin();
+}
+
+function renderWsJoin() {
+  const join = STATE.wsJoin;
+  if (!join) { $('#wsJoin').innerHTML = '<div class="empty">Unavailable.</div>'; return; }
+
+  // Say which half is missing rather than rendering an empty table as a result.
+  if (!join.wren_enabled || !join.recce_enabled) {
+    const off = [!join.wren_enabled && 'wren', !join.recce_enabled && 'recce'].filter(Boolean);
+    $('#wsLegend').innerHTML = '';
+    $('#wsJoinCounts').innerHTML = '';
+    $('#wsJoin').innerHTML = `<div class="empty">This view joins the review to the
+      semantic layer, and ${esc(off.join(' and '))} ${off.length > 1 ? 'are' : 'is'}
+      not enabled here. <code>pf tool enable ${esc(off[0])} ${esc(join.group)} ${esc(join.project)}</code></div>`;
+    $('#wsUnpublished').innerHTML = '';
+    return;
+  }
+
+  const counts = join.counts || {};
+  $('#wsLegend').innerHTML = Object.entries(WS_STATUS)
+    .filter(([k]) => counts[k])
+    .map(([k, v]) => `<button class="ws-key" data-ws-key="${k}" title="${esc(v.hint)}"
+        aria-pressed="${WS_FILTER.on === k}">
+        <span class="dot" style="background:${STATUS[v.status]}"></span>
+        <span class="n">${counts[k]}</span> ${esc(v.label)}</button>`).join('')
+    + (WS_FILTER.on ? `<button class="ws-key" data-ws-key="">clear</button>` : '');
+
+  document.querySelectorAll('[data-ws-key]').forEach(b => b.onclick = () => {
+    const k = b.dataset.wsKey;
+    WS_FILTER.on = (WS_FILTER.on === k) ? '' : k;
+    renderWsJoin();
+  });
+
+  $('#wsJoinCounts').innerHTML = `<span>${esc(join.catalog)}.${esc(join.schema)}</span>
+    <span>${(join.models || []).length} entities</span>`;
+
+  const rows = (join.models || []).filter(r => !WS_FILTER.on || r.status === WS_FILTER.on);
+  $('#wsJoin').innerHTML = table(rows, [
+    ['Semantic entity', r => `<code>${esc(r.name)}</code>
+       <div class="muted" style="font-size:11px">${esc(r.schema)}.${esc(r.table)}</div>`],
+    ['Review', r => {
+      const v = WS_STATUS[r.status] || WS_STATUS.uncovered;
+      return `<span class="ws-status"><span class="feed-dot" style="background:${
+        STATUS[v.status]};margin:0"></span>${esc(v.label)}</span>
+        <div class="muted" style="font-size:11px">${r.checks ? r.checks + ' check(s)' : '—'}</div>`;
+    }],
+    ['Rows', r => {
+      if (!r.row_count) return '<span class="muted">—</span>';
+      const d = r.row_count.delta;
+      const cls = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+      return `<span class="delta ${cls}">${d > 0 ? '+' : ''}${fmt(d)}</span>
+        <div class="muted" style="font-size:11px">${fmt(r.row_count.base)} → ${fmt(r.row_count.curr)}</div>`;
+    }],
+    ['What moved', r => {
+      const bits = [];
+      if (r.rows_added) bits.push(`<span class="pill critical">+${fmt(r.rows_added)} rows</span>`);
+      if (r.rows_removed) bits.push(`<span class="pill serious">−${fmt(r.rows_removed)} rows</span>`);
+      (r.categories_drifted || []).forEach(c =>
+        bits.push(`<span class="pill warning">${esc(c)} drift</span>`));
+      return bits.join(' ') || '<span class="muted">—</span>';
+    }],
+    // The roles are why this join is worth making: they name what the moved
+    // relation actually carries downstream. Capped at four, with the rest
+    // behind a count — a mart with nine roles otherwise sets the row height for
+    // the whole table and the statuses stop being scannable.
+    ['Ontology roles', r => {
+      const all = r.roles || [];
+      if (!all.length) return '<span class="muted">—</span>';
+      const shown = all.slice(0, 4).map(x => `<span class="pill">${esc(x)}</span>`);
+      if (all.length > 4) shown.push(`<span class="pill" title="${esc(all.slice(4).join(', '))}"
+        >+${all.length - 4}</span>`);
+      return `<div class="roles">${shown.join('')}</div>`;
+    }],
+  ], WS_FILTER.on
+      ? `Nothing ${esc(WS_FILTER.on)}.`
+      : 'No MDL yet — run <code>pf bootstrap</code>.');
+
+  const up = join.unpublished || [];
+  $('#wsUnpublished').innerHTML = up.length
+    ? `<p class="muted" style="font-size:12px;margin-top:14px">Also reviewed, not
+       published to the semantic layer: ${up.map(u =>
+         `<code>${esc(u.model)}</code>${u.moved ? ' <span class="pill critical">moved</span>' : ''}`
+       ).join(', ')}</p>`
+    : '';
+}
+
+$('#wsImpactBtn').onclick = async () => {
+  const node = $('#wsNode').value.trim(); if (!node) return;
+  $('#wsImpact').innerHTML = '<div class="empty">Analysing…</div>';
+  try {
+    const r = await api('/api/impact', { group: STATE.group, project: STATE.project, node });
+    $('#wsImpact').innerHTML = `<pre>${esc(r.rendered)}</pre>`;
+  } catch (e) { $('#wsImpact').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+};
+
 async function loadAll() {
   const [tree, summary] = await Promise.all([api('/api/tree'), api('/api/summary')]);
   STATE.tree = tree;
   renderTree(tree);
   renderKpis(summary);
-  await Promise.all([loadOntology(), loadTopology(), loadObs(), loadVendor(), loadPrs()]);
-  if (STATE.group) { await loadProject(); await loadMdl(); await loadStack(); }
+  await Promise.all([loadOntology(), loadTopology(), loadObs(), loadVendor(), loadPrs(),
+                     loadHealth()]);
+  if (STATE.group) {
+    await loadProject(); await loadMdl(); await loadStack();
+    await loadTools(); await loadReview();
+    await Promise.all([loadTimeseries(), loadActivity()]);
+  }
 }
 
-loadAll().catch(e => { $('#kpis').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+/* `#tiles`, not `#kpis` — there is no element by that name, so this handler
+   threw on its own null and every startup failure surfaced as a blank page with
+   one unrelated TypeError in the console. Logged as well as rendered: the tile
+   row is inside the overview panel, which is not what you are looking at when a
+   later tab is the thing that failed. */
+loadAll().catch(e => {
+  console.error('control plane failed to load', e);
+  const el = $('#tiles');
+  if (el) el.innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+});
 </script>
 </body>
 </html>

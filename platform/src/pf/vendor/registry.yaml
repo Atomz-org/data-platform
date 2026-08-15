@@ -514,3 +514,367 @@ upstreams:
       - what: packages/web-app
         why: >
           `pf ui` is the control plane, and it reads the same graph the agents do.
+
+  # ------------------------------------------------------------------ recce --
+  #
+  # Four repositories, one upstream family, pinned under `vendor/recce/`.
+  #
+  # The intent was "submodule them under DataRecce/recce". That is not ours to
+  # do: nesting a submodule *inside* recce means committing a .gitmodules to a
+  # repository we do not own. What is ours is the directory they sit in, so the
+  # family is grouped under `vendor/recce/<part>` and each part is pinned and
+  # synced independently. `pf vendor sync` fetches all four; a fork is the only
+  # way to get literal nesting, and a fork is a decision with an owner.
+  #
+  # This is also the reference implementation of `pf.tools`: recce is the first
+  # tool wired through the Tool contract rather than bolted on, and every
+  # borrowing below points at the one module that consumes it.
+  - id: recce
+    summary: "dbt PR review: the empirical half of impact analysis"
+    name: Recce
+    url: https://github.com/DataRecce/recce
+    path: vendor/recce/core
+    branch: main
+    licence: Apache-2.0
+    role: reference
+    why: >
+      The knowledge graph answers what *could* break when a model changes. Recce
+      answers what *did* change, by diffing the built warehouse against a
+      baseline. Those are different questions and the platform had only the
+      first: `pf impact` reports a blast radius from lineage, with no way to say
+      whether the numbers actually moved. Recce closes that, and it closes it
+      against dbt's own artefacts rather than a parallel model of them.
+    adopted:
+      - upstream: recce/cli.py
+        kind: data
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          We invoke the CLI as a subprocess — `recce run`, `recce server` — and
+          both the subcommands and their flags are part of that contract. A
+          renamed option is a silent behaviour change here, which is why this is
+          `data` and not `shape`.
+      - upstream: recce/constants.py
+        kind: data
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          RECCE_CONFIG_FILE ("recce.yml") is the filename our bootstrap step
+          writes. If upstream renames it, our generated config stops being read
+          and every check silently reports zero.
+      - upstream: recce/summary.py
+        kind: shape
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          `recce run --summary` emits the markdown we attach to the Dagster run
+          and to `pf pr`. We consume the file, not the function.
+      - upstream: recce/mcp_server.py
+        kind: shape
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          Recce serves its own MCP tools. Noted rather than adopted: `pf mcp`
+          already fronts the graph, and two MCP servers answering overlapping
+          questions is how an agent gets two different answers.
+    declined:
+      - what: recce_cloud/ and the `--cloud` flag
+        why: >
+          State would leave the machine. This platform is local-first and every
+          warehouse is a file on disk; a cloud round-trip for diff state is a
+          data-residency decision, not a convenience, and it is not one an agent
+          should make. `pf tool recce` never passes --cloud.
+      - what: "`top_k_diff` for category drift"
+        why: >
+          It cannot answer the question. The task returns parallel arrays
+          (`values`, `counts`) and recce compares results with
+          `DeepDiff(..., ignore_order=True)`, so renaming a category moves a
+          count between slots while both arrays stay equal as multisets — the
+          drift is invisible. Verified against a real rename: the check ran green
+          while `starter` had become `basic`. We emit a `query_diff` keyed on the
+          category instead, which returns one row per value and surfaces the same
+          rename as a row present on one side only. The interactive UI renders
+          the arrays side by side, so a human still sees it there; it is the
+          headless summary that goes quiet, and that is the one CI reads.
+      - what: "`recce init` for config generation"
+        why: >
+          It is interactive. Our recce.yml is generated from the ontology roles
+          we already have — a natural key is a primary key, a money_amount is
+          worth a value diff — so the config derives from the same declaration
+          everything else does rather than from a wizard.
+
+  - id: recce-ui
+    summary: "React component library behind the Recce review UI"
+    name: Recce UI
+    url: https://github.com/DataRecce/recce-ui
+    path: vendor/recce/ui
+    branch: main
+    licence: Apache-2.0
+    role: reference
+    why: >
+      Pinned so the embedded review pane can be built against a known version of
+      the components, and so a breaking change upstream is visible here rather
+      than as a blank iframe.
+    adopted:
+      - upstream: package.json
+        kind: parity
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          The version here and the `recce` package version must agree — the
+          server serves a bundle built from these components, and a mismatch
+          shows up as a UI that loads but cannot talk to its own API.
+    declined:
+      - what: Building our own review pane from the component library
+        why: >
+          `recce server` already serves a UI built from exactly these components.
+          Rebuilding it would add a pnpm toolchain to a Python platform to
+          reproduce something upstream ships working. We embed the server and
+          keep the library pinned so the option stays open.
+
+  - id: recce-claude-plugin
+    summary: "Recce's own agent skills, agents and MCP wiring"
+    name: Recce Claude Plugin
+    url: https://github.com/DataRecce/recce-claude-plugin
+    path: vendor/recce/claude-plugin
+    branch: main
+    licence: MIT
+    role: skills
+    why: >
+      Upstream has already written down how an agent should drive Recce — which
+      checks to run for a schema change, when a diff is inconclusive. That is the
+      same shape as `platform/toolkits/`, so it is a source for our toolkit
+      rather than something to invent.
+    adopted:
+      - upstream: plugins/recce/skills/recce-review
+        kind: port
+        ours: [platform/toolkits/recce-review/skills/recce-review/SKILL.md]
+        note: >
+          The review workflow — baseline, run, read the diff, decide — ported to
+          our toolkit format and to `pf tool recce` instead of bare `recce`.
+      - upstream: plugins/recce/agents/recce-reviewer.md
+        kind: shape
+        ours: [platform/toolkits/recce-review/skills/recce-review/SKILL.md]
+        note: >
+          The reviewer's stopping rule — a diff you cannot explain is a finding,
+          not noise.
+    declined:
+      - what: plugins/recce/hooks/ and settings/defaults.json
+        why: >
+          Session hooks and permissions are already the platform's: `gate.yaml`
+          and the PreToolUse hook decide what an agent may write. A second hook
+          system layered underneath is how a gate ends up with two answers.
+      - what: servers/recce-docs-mcp
+        why: Documentation search. `pf mcp` serves the graph; docs are a browser tab.
+
+  - id: recce-pr-update
+    summary: "Composite action keeping a PR branch merged with its base"
+    name: Recce PR-Update
+    url: https://github.com/DataRecce/PR-Update
+    path: vendor/recce/pr-update
+    branch: main
+    licence: MIT
+    role: spec
+    why: >
+      A dbt diff is only meaningful when the PR branch actually contains its
+      base. A stale branch produces a diff against code that was already
+      replaced, which reads as a regression that does not exist. This action is
+      the precondition for trusting anything Recce reports in CI.
+    adopted:
+      - upstream: action.yml
+        kind: data
+        ours: [platform/src/pf/tools/recce.py]
+        note: >
+          The generated workflow pins this action and passes `baseBranch` /
+          `prBranch` / `autoMerge`. Renamed inputs break the workflow at run
+          time, in CI, which is the worst place to find out — hence `data`.
+    declined:
+      - what: autoMerge defaulting to true
+        why: >
+          Upstream defaults to merging the base into the PR branch automatically.
+          We generate it with autoMerge false: a merge is a write to someone's
+          branch, and the platform's rule is that an agent reports and a human
+          merges. The reminder comment is enough to unblock the diff.
+
+  # -------------------------------------------------------------------- ui --
+  - id: forge
+    summary: "the control plane's component layer and design tokens"
+    name: Forge (wss3-forge)
+    url: https://github.com/Webba-Creative-Technologies/forge
+    path: vendor/forge
+    branch: main
+    licence: MIT
+    role: library
+    why: >
+      The control plane was one hand-written HTML file. That was the right call
+      while it was a diagnostic surface and the wrong one once data owners were
+      expected to edit governance in it: every table, dialog and form was bespoke,
+      and accessibility was whatever the last edit remembered. Forge supplies the
+      component layer and, unusually, ships its own Claude Code skill pack — so
+      the rules for using it are checked in rather than re-derived per session.
+    adopted:
+      - upstream: skills/forge
+        kind: data
+        ours:
+          - platform/toolkits/forge-ui/skills/forge-ui/SKILL.md
+        note: >
+          Registered as a platform skill and read verbatim at authoring time. If
+          upstream renames a component or changes a token, the skill is the thing
+          that goes stale, which is why this is `data` and not `shape`.
+      - upstream: package.json
+        kind: data
+        ours:
+          - platform/src/pf/ui/web/package.json
+        note: >
+          We install the published `wss3-forge` wheel-equivalent from npm and pin
+          the submodule for provenance, the same split the recce entry documents:
+          the registry is the contract, the package is the artefact we run.
+      - upstream: DESIGN.md
+        kind: shape
+        ours: [platform/src/pf/ui/web/src/theme.css]
+        note: Token names and the light/dark contract come from here.
+    declined:
+      - what: forge's motion primitives on data tables
+        why: >
+          Animated row entry on a table an operator is scanning for a changed
+          number costs reading time and gives nothing back. Motion is kept for
+          overlays and state transitions, where it explains what moved.
+
+  - id: shadcn-admin
+    summary: "dashboard shell and theme presets, reference only"
+    name: Next.js shadcn Admin Dashboard
+    url: https://github.com/arhamkhnz/next-shadcn-admin-dashboard-baseui
+    path: vendor/shadcn-admin
+    branch: main
+    licence: MIT
+    role: reference
+    why: >
+      Adopted for its layout and theming decisions, not its code: this is a
+      Next.js application and our control plane is a Vite SPA served by the
+      FastAPI that already owns the API. Copying the app would have meant a
+      second long-running server in a Python monorepo to gain screens we do not
+      need. What it is genuinely good at is the shell — collapsible sidebar,
+      grouped navigation, theme presets — and that is what was taken.
+    adopted:
+      - upstream: src/app
+        kind: shape
+        ours: [platform/src/pf/ui/web/src/App.tsx]
+        note: >
+          Sidebar-plus-topbar shell, navigation grouped by intent, and the
+          content column that scrolls independently of the rail.
+    declined:
+      - what: the Next.js application itself
+        why: >
+          App Router, SSR and a Node server buy nothing here — every screen reads
+          a local FastAPI endpoint on localhost. It would have added a second
+          runtime to deploy and a build story to a repo that had neither.
+      - what: the bundled auth flows and RBAC screens
+        why: >
+          The control plane binds to 127.0.0.1 and is single-operator. Shipping a
+          login form over no authentication would imply a boundary that is not
+          there.
+
+  # ------------------------------------------------------------- catalogue --
+  - id: openmetadata-standards
+    summary: "entity schemas our catalogue payloads validate against"
+    name: OpenMetadata Standards
+    url: https://github.com/open-metadata/OpenMetadataStandards
+    path: vendor/openmetadata-standards
+    branch: main
+    licence: Apache-2.0
+    role: spec
+    why: >
+      Pinned separately from the product, and this is the point of the split. The
+      server validates what it is sent; without these schemas we would find out
+      whether a payload was well-formed by watching an ingestion fail against a
+      live catalogue. Here the same JSON Schemas run in the test suite, so an
+      upstream field becoming required breaks the build at the pin bump instead.
+    adopted:
+      - upstream: schemas/api/data/createGlossary.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: The glossary payload is validated against this exact file.
+      - upstream: schemas/api/data/createGlossaryTerm.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: >
+          Every ontology class and policy becomes one of these. `glossary`,
+          `name` and `description` are required, which is why an undocumented
+          concept publishes an explicit "no description in the ontology" rather
+          than an empty string that would read as deliberate.
+      - upstream: schemas/api/classification/createClassification.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+      - upstream: schemas/api/classification/createTag.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: One tag per ontology role.
+      - upstream: schemas/api/data/createMetric.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+      - upstream: schemas/type/basic.json
+        kind: schema
+        ours: [platform/src/pf/projections/openmetadata.py]
+        note: >
+          `entityName` forbids `::` because that is the field separator in the
+          `entityLink` grammar. `_om_name` enforces it rather than trusting our
+          identifiers to be safe by luck.
+    declined:
+      - what: the RDF/OWL ontology and SHACL shapes
+        why: >
+          Tempting, because this platform already emits OWL. Declined for now:
+          aligning our OWL export to OpenMetadata's ontology is a modelling
+          decision about whose vocabulary wins, and making it silently inside a
+          catalogue integration is how an ontology acquires a second owner.
+      - what: the OpenAPI specification
+        why: >
+          We do not generate a client. `metadata` ships one, and a second
+          hand-rolled client is a second thing to keep in step with the server.
+
+  - id: openmetadata
+    summary: "catalogue ingestion, and the dbt connector for lineage"
+    name: OpenMetadata
+    url: https://github.com/open-metadata/OpenMetadata
+    path: vendor/openmetadata
+    branch: main
+    licence: Apache-2.0
+    role: engine
+    # Cloned shallow, and that is a real limitation rather than a preference.
+    # Full history did not fit — `git fetch --unshallow` exhausted the disk on a
+    # machine with 8 GB free. Consequences, so nobody is surprised:
+    #   - drift detection still works: it hashes the content of adopted files at
+    #     the current checkout, which a shallow clone has.
+    #   - `pf vendor sync` cannot report "N commit(s)" between two pins for this
+    #     upstream, because the range is not in the clone. Read the compare view
+    #     on GitHub instead when bumping it.
+    # `vendor/openmetadata-standards` is full-history — it is 8 MB and it is the
+    # one carrying the schemas our tests validate against, so its diffs matter
+    # most and cost least.
+    why: >
+      The catalogue is the surface for people who do not read YAML. What made it
+      worth integrating rather than reimplementing is the dbt connector: it reads
+      manifest.json and catalog.json and produces column-level lineage, which we
+      would otherwise be re-deriving from the knowledge graph, worse, and then
+      reconciling two answers.
+    adopted:
+      - upstream: ingestion/src/metadata/workflow/metadata.py
+        kind: shape
+        ours: [platform/src/pf/tools/openmetadata.py]
+        note: >
+          The workflow shape our generated `catalog/ingestion.yaml` conforms to —
+          source / sink / workflowConfig. Run through the `metadata` CLI rather
+          than by importing MetadataWorkflow, so the pinned wheel owns its own
+          execution and we own only the configuration.
+    declined:
+      - what: the Airflow-based ingestion scheduler
+        why: >
+          OpenMetadata schedules ingestion with its own Airflow. This platform
+          already orchestrates with Dagster, and the catalogue must describe the
+          build that just happened — so ingestion is a Dagster asset downstream
+          of the marts, not a separate timer that drifts from the warehouse
+          between runs.
+      - what: writing back from the catalogue to the ontology
+        why: >
+          The ontology is canonical in YAML, in git, judged by `pf check` and the
+          gate. A catalogue that can silently redefine a concept is a second
+          source of truth, and then neither side can say what `Customer` means.
+      - what: emitting tables and lineage from our own graph
+        why: >
+          `metadata ingest-dbt` already does it from the dbt artefacts. Two
+          descriptions of one table drift apart, and the catalogue shows whichever
+          ran last.

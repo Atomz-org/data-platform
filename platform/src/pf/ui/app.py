@@ -1,7 +1,17 @@
 """Control-plane API + dashboard. `pf ui` serves this.
 
-Every endpoint is read-only except /api/impact (which computes) — the UI is for
-tracking, not mutation.
+Read-only except for two deliberate exceptions: /api/impact computes, and
+/api/governance/* writes — an ontology a data owner cannot correct is one that
+drifts from the business until nobody trusts it. Every governance write leaves
+an audit row before it touches a file, and the file stays the canonical artefact
+that git and `pf check` still judge. See `pf.governance.store`.
+
+## Two front ends, on purpose, for now
+
+`/` serves the original single-file dashboard; `/app` serves the React build in
+`web/`. The old page keeps working while screens move across, because a rewrite
+that starts by deleting the working surface leaves the operator with nothing on
+the days it is half-finished. `/app` is the one being built on.
 """
 
 from __future__ import annotations
@@ -13,6 +23,7 @@ from typing import Any
 import yaml
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from pf import obs
 from pf.kg.impact import impact_of
@@ -45,6 +56,33 @@ def graph_path(group: str, project: str) -> Path:
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     return (UI_DIR / "static" / "index.html").read_text()
+
+
+DIST = UI_DIR / "static" / "dist"
+
+# Mounted *before* the /app catch-all below, and only when built.
+#
+# Order is load-bearing: routes match in declaration order, so a catch-all
+# declared first swallows `/app/assets/index.js` and answers it with the HTML
+# shell. The browser then refuses to execute a module served as text/html — and
+# does so silently, with no console error, leaving a blank page and no clue.
+# Mounting a missing directory raises at import time, which would take the API
+# down over an unbuilt front end, hence the guard.
+if (DIST / "assets").exists():
+    app.mount("/app/assets",
+              StaticFiles(directory=str(DIST / "assets")), name="assets")
+
+
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/app/{path:path}", response_class=HTMLResponse)
+def spa(path: str = "") -> str:
+    """The React control plane. Every route returns the shell; routing is client
+    side, so a deep link that the server has never heard of still resolves."""
+    entry = DIST / "index.html"
+    if not entry.exists():
+        raise HTTPException(
+            503, "UI not built — run `npm --prefix platform/src/pf/ui/web run build`")
+    return entry.read_text()
 
 
 # ---------------------------------------------------------------- topology --
@@ -445,8 +483,13 @@ def vendor_stack(group: str, project: str) -> dict[str, Any]:
     ups = {u.id: u for u in load_registry()}
     drifting = {r.upstream_id for r in vendor_drift(root_dir()) if r.needs_review}
 
+    # Tool-contributed layers append to the hand-written stack rather than being
+    # listed in it: a tool installed from outside this repo has to be able to
+    # appear here, and STACK_LAYERS is a file in this repo.
+    from pf.tools import stack_layers as tool_stack_layers
+
     layers = []
-    for spec in STACK_LAYERS:
+    for spec in [*STACK_LAYERS, *tool_stack_layers()]:
         u = ups.get(spec["upstream"])
         present = sum(counts.get(k, 0) for k in spec["node_kinds"])
         # Layers the graph does not model (the warehouse file, the Dagster
@@ -486,6 +529,423 @@ def otop(group: str = "", project: str = "") -> dict[str, Any]:
 
     d = project_dir(group, project) if group and project else None
     return build_manifest(root_dir(), group, project, d)
+
+
+# ------------------------------------------------------------- operations --
+@app.get("/api/health")
+def health() -> dict[str, Any]:
+    """Which parts of the platform are actually up, for the shell's footer.
+
+    Each row is probed, not assumed. "All services running" that is hardcoded is
+    worse than no indicator, because it is believed.
+    """
+    root = root_dir()
+    services: list[dict[str, Any]] = []
+
+    def add(name: str, ok: bool, detail: str = "") -> None:
+        services.append({"name": name, "ok": ok, "detail": detail})
+
+    try:
+        n = len(obs.query("SELECT 1 FROM pipeline_runs LIMIT 1"))
+        add("tracking db", True, "duckdb" if n >= 0 else "")
+    except Exception as exc:  # noqa: BLE001
+        add("tracking db", False, str(exc)[:80])
+
+    ws = root / "platform" / "workspace.yaml"
+    locations = ws.read_text().count("python_module:") if ws.exists() else 0
+    add("dagster workspace", ws.exists(), f"{locations} code location(s)")
+
+    gate = root / "gate.yaml"
+    add("safety gate", gate.exists(), "denylist present" if gate.exists() else "missing")
+
+    try:
+        from pf.tools import all_tools
+
+        tools = all_tools()
+        installed = [n for n, t in tools.items() if t.installed]
+        add("tools", True, f"{len(installed)}/{len(tools)} installed")
+    except Exception as exc:  # noqa: BLE001
+        add("tools", False, str(exc)[:80])
+
+    return {"ok": all(s["ok"] for s in services), "services": services}
+
+
+@app.get("/api/activity")
+def activity(group: str = "", project: str = "", limit: int = 40) -> list[dict[str, Any]]:
+    """One feed over every kind of thing that happened, newest first.
+
+    The obs tables are separate because they record different shapes, but an
+    operator does not think in tables — they think "what happened here lately".
+    Unioning at read time keeps the writers simple and the reading useful.
+    """
+    where = ""
+    params: list[Any] = []
+    if group and project:
+        where = ' WHERE "group" = ? AND project = ?'
+        params = [group, project]
+
+    def rows(sql: str, extra: list[Any] | None = None) -> list[dict[str, Any]]:
+        try:
+            return obs.query(sql, (params + (extra or [])) if params or extra else None)
+        except Exception:  # noqa: BLE001 — a missing table is an empty feed
+            return []
+
+    out: list[dict[str, Any]] = []
+    for r in rows(f'SELECT ts, "group", project, kind, name, status, message'
+                  f" FROM pipeline_runs{where} ORDER BY ts DESC LIMIT 25", []):
+        out.append({"ts": str(r["ts"]), "group": r["group"], "project": r["project"],
+                    "kind": "pipeline", "verb": f"ran {r['kind']}",
+                    "subject": r["name"], "status": r["status"],
+                    "detail": (r["message"] or "")[:120]})
+    for r in rows(f'SELECT ts, "group", project, root_node, severity, total'
+                  f" FROM impact_reports{where} ORDER BY ts DESC LIMIT 15", []):
+        out.append({"ts": str(r["ts"]), "group": r["group"], "project": r["project"],
+                    "kind": "impact", "verb": "assessed blast radius",
+                    "subject": r["root_node"],
+                    "status": {"breaking": "error", "review": "warn"}.get(
+                        r["severity"], "ok"),
+                    "detail": f"{r['total']} downstream object(s)"})
+    for r in rows(f'SELECT ts, "group", project, resource, column_name, monitor, status,'
+                  f" message FROM monitor_results{where}"
+                  f" AND status <> 'ok' ORDER BY ts DESC LIMIT 15"
+                  if where else
+                  "SELECT ts, \"group\", project, resource, column_name, monitor, status,"
+                  " message FROM monitor_results WHERE status <> 'ok'"
+                  " ORDER BY ts DESC LIMIT 15", []):
+        out.append({"ts": str(r["ts"]), "group": r["group"], "project": r["project"],
+                    "kind": "monitor", "verb": f"{r['monitor']} on",
+                    "subject": f"{r['resource']}.{r['column_name']}",
+                    "status": "error" if r["status"] == "critical" else "warn",
+                    "detail": (r["message"] or "")[:120]})
+    for r in rows(f'SELECT ts, "group", project, agent, model, status, cost_usd, summary'
+                  f" FROM agent_runs{where} ORDER BY ts DESC LIMIT 15", []):
+        out.append({"ts": str(r["ts"]), "group": r["group"], "project": r["project"],
+                    "kind": "agent", "verb": f"{r['agent']} ran",
+                    "subject": r["model"],
+                    "status": "ok" if r["status"] in ("ok", "success") else "warn",
+                    "detail": (r["summary"] or "")[:120]})
+
+    out.sort(key=lambda r: r["ts"], reverse=True)
+    return out[:limit]
+
+
+@app.get("/api/timeseries")
+def timeseries(group: str = "", project: str = "", hours: int = 48) -> dict[str, Any]:
+    """Pipeline outcomes bucketed by hour.
+
+    Two separate series returned, never combined into one plot: a success *rate*
+    (percent) and a failure *count* are different units, and putting them on one
+    pair of axes is the most common chart mistake there is. The UI renders them
+    as two panels sharing an x-axis.
+    """
+    where = ""
+    params: list[Any] = []
+    if group and project:
+        where = ' AND "group" = ? AND project = ?'
+        params = [group, project]
+    sql = (
+        "SELECT date_trunc('hour', ts) AS bucket,"
+        " count(*) AS total,"
+        " sum(CASE WHEN status = 'ok' THEN 1 ELSE 0 END) AS ok,"
+        " sum(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS failed"
+        " FROM pipeline_runs"
+        f" WHERE ts >= now() - INTERVAL '{int(hours)} hours'{where}"
+        " GROUP BY 1 ORDER BY 1"
+    )
+    try:
+        rows = obs.query(sql, params or None)
+    except Exception:  # noqa: BLE001
+        rows = []
+    points = []
+    for r in rows:
+        total = r["total"] or 0
+        ok = r["ok"] or 0
+        points.append({
+            "t": str(r["bucket"]),
+            "total": total,
+            "failed": r["failed"] or 0,
+            # A bucket with no runs has no rate; null makes the line break
+            # rather than drawing a dip to zero that never happened.
+            "rate": round(100.0 * ok / total, 1) if total else None,
+        })
+    return {"points": points, "hours": hours}
+
+
+# ------------------------------------------------------------------- wren --
+@app.get("/api/wren/mdl")
+def wren_mdl(group: str, project: str) -> dict[str, Any]:
+    """This project's semantic layer, read from the manifest we export."""
+    from pf.tools.wren import probe_engine, summarise_mdl
+
+    d = project_dir(group, project)
+    return {**summarise_mdl(d), "engine": probe_engine()}
+
+
+@app.post("/api/wren/plan")
+def wren_plan(group: str, project: str, sql: str = Query(...)) -> dict[str, Any]:
+    """Expand SQL through the MDL. No warehouse access, so it is safe to expose."""
+    from pf.tools.wren import plan
+
+    return plan(project_dir(group, project), sql)
+
+
+@app.post("/api/wren/query")
+def wren_query(group: str, project: str, sql: str = Query(...),
+               limit: int = 200) -> dict[str, Any]:
+    """Answer a question through the semantic layer.
+
+    Read-only by construction: the warehouse is opened `read_only=True` in
+    `pf.tools.wren.query`, so this endpoint cannot write whatever it is handed.
+    """
+    from pf.tools.wren import query
+
+    return query(project_dir(group, project), sql, limit=limit)
+
+
+# ------------------------------------------------------------------- tools --
+@app.get("/api/tools")
+def tools(group: str = "", project: str = "") -> dict[str, Any]:
+    """Every registered tool, with this project's enablement and readiness.
+
+    The UI never names a tool. This endpoint is the whole reason the Review tab
+    can show Recce today and something else tomorrow without a front-end change.
+    """
+    from pf.tools import discover, readiness, stack_layers
+
+    found, errors = discover()
+    rows: list[dict[str, Any]] = []
+    if group and project:
+        project_dir(group, project)  # 404s if the project does not exist
+        rows = readiness(root_dir(), group, project)
+    else:
+        rows = [{
+            "name": n, "title": t.title, "summary": t.summary, "url": t.url,
+            "scope": sorted(t.scope), "enabled": False, "source": "—",
+            "installed": t.installed,
+            "missing": [m.describe() for m in t.missing()],
+            "hint": next((m.hint for m in t.missing() if m.hint), ""),
+            "surface": t.surface.url() if t.surface else "",
+            "embeddable": bool(t.surface and t.surface.embeddable),
+            "blockers": [], "ready": False,
+        } for n, t in sorted(found.items())]
+
+    return {
+        "tools": rows,
+        "layers": stack_layers(),
+        "errors": [str(e) for e in errors],
+    }
+
+
+@app.get("/api/tools/surface")
+def tool_surface(tool: str, group: str = "", project: str = "") -> dict[str, Any]:
+    """Is this tool's own UI actually up, and may we embed it?
+
+    Probed rather than assumed. An iframe pointed at a server that is not
+    running renders an unexplained blank rectangle, and the operator has no way
+    to tell that apart from a tool that is broken. Knowing it is down lets the
+    page say so and print the command that starts it.
+    """
+    import socket
+    from urllib.parse import urlparse
+
+    from pf.tools import get as get_tool
+    from pf.tools.spec import InvalidTool
+
+    try:
+        t = get_tool(tool)
+    except InvalidTool as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if t.surface is None:
+        return {"tool": tool, "surface": "", "up": False, "embeddable": False,
+                "start_hint": ""}
+
+    url = t.surface.url()
+    parsed = urlparse(url)
+    up = False
+    try:
+        with socket.create_connection(
+                (parsed.hostname or "127.0.0.1", parsed.port or 80), timeout=0.4):
+            up = True
+    except OSError:
+        up = False
+    hint = (f"pf tool {tool} serve {group} {project}".rstrip()
+            if group and project else f"pf tool {tool} serve <group> <project>")
+    return {"tool": tool, "surface": url, "up": up,
+            "embeddable": t.surface.embeddable, "installed": t.installed,
+            "start_hint": hint}
+
+
+@app.get("/api/tools/recce")
+def recce_state(group: str, project: str) -> dict[str, Any]:
+    """The recorded diff for this project, if a review has been run.
+
+    Reads the state file rather than recomputing, for the same reason /api/prs
+    does: a dashboard that recomputes will eventually disagree with the run that
+    produced the number, and then neither is trusted.
+    """
+    from pf.tools.recce import (
+        has_baseline, has_manifest, read_state, summary_markdown,
+    )
+
+    d = project_dir(group, project)
+    return {
+        "group": group, "project": project,
+        "has_manifest": has_manifest(d),
+        "has_baseline": has_baseline(d),
+        "summary_markdown": summary_markdown(d),
+        **read_state(d),
+    }
+
+
+@app.get("/api/workspace/semantic-diff")
+def semantic_diff(group: str, project: str) -> dict[str, Any]:
+    """The review and the semantic layer as one table, joined on the relation.
+
+    Recce says a dbt model moved. Wren says which semantic entity that model
+    backs, and which ontology roles ride on it. Separately they are two panels
+    an operator reads and correlates by eye; the question actually being asked —
+    *does this change reach anything a consumer sees?* — is the join, so the
+    join is what gets served.
+
+    The control plane owns it because it is the only layer that knows both tools
+    are on. Putting it in either tool would make two independently installable
+    plugins import each other, which is the coupling `pf.tools` exists to avoid.
+    Either side may be absent: a project with no MDL still gets its diff rows,
+    and a project that has never been reviewed still gets its semantic layer,
+    each labelled with what is missing rather than rendered as a clean result.
+    """
+    from pf.tools import enabled_names
+    from pf.tools.recce import has_baseline, model_diffs
+    from pf.tools.wren import summarise_mdl
+
+    d = project_dir(group, project)
+    on = set(enabled_names(root_dir(), group, project))
+    mdl = summarise_mdl(d) if "wren" in on else {"models": []}
+    diffs = model_diffs(d) if "recce" in on else {}
+    reviewed = bool(diffs)
+
+    rows: list[dict[str, Any]] = []
+    for m in mdl.get("models") or []:
+        # Join on the dbt model name. `tableReference.table` is the same string
+        # for a dbt-built relation, but it is the *warehouse* name and a rename
+        # would break the join silently, so the semantic name leads and the
+        # table is the fallback.
+        d_row = diffs.get(m["name"]) or diffs.get(m.get("table") or "") or {}
+        rows.append({
+            **m,
+            "status": ("unreviewed" if not reviewed
+                       else "moved" if d_row.get("moved")
+                       else "held" if d_row else "uncovered"),
+            "checks": d_row.get("checks", 0),
+            "check_types": d_row.get("check_types", []),
+            "row_count": d_row.get("row_count"),
+            "rows_added": d_row.get("rows_added", 0),
+            "rows_removed": d_row.get("rows_removed", 0),
+            "categories_drifted": d_row.get("categories_drifted", []),
+        })
+
+    # A model recce measured that the semantic layer does not expose. Not an
+    # error — staging models are reviewed and deliberately not published — but
+    # worth showing, because the alternative is a changed model that silently
+    # appears in no list on this page.
+    named = {r["name"] for r in rows} | {r.get("table") for r in rows}
+    unpublished = [
+        {**v, "check_types": v.get("check_types", [])}
+        for k, v in sorted(diffs.items()) if k not in named
+    ]
+
+    counts = {s: sum(1 for r in rows if r["status"] == s)
+              for s in ("moved", "held", "uncovered", "unreviewed")}
+    return {
+        "group": group, "project": project,
+        "wren_enabled": "wren" in on, "recce_enabled": "recce" in on,
+        "reviewed": reviewed, "has_baseline": has_baseline(d) if "recce" in on else False,
+        "catalog": mdl.get("catalog", ""), "schema": mdl.get("schema", ""),
+        "models": rows, "unpublished": unpublished, "counts": counts,
+    }
+
+
+@app.get("/api/tools/recce/checks")
+def recce_checks(group: str, project: str) -> dict[str, Any]:
+    """Every recorded check and what it found.
+
+    The counts were always here; the findings were not, and lived only inside
+    Recce's own server. A review nobody can read without starting a second
+    process is a review that gets skipped.
+    """
+    from pf.tools.recce import check_results
+
+    rows = check_results(project_dir(group, project))
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+    return {"group": group, "project": project, "checks": rows, "counts": counts}
+
+
+# ------------------------------------------------------------- governance --
+@app.get("/api/governance/surfaces")
+def governance_surfaces() -> dict[str, Any]:
+    from pf.governance import surfaces
+
+    return {"surfaces": surfaces()}
+
+
+@app.get("/api/governance/document")
+def governance_document(surface: str, group: str = "") -> dict[str, Any]:
+    from pf.governance import EditRejected, current
+
+    try:
+        return current(surface, root_dir(), group)
+    except EditRejected as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/governance/history")
+def governance_history(surface: str = "", group: str = "",
+                       limit: int = 200) -> dict[str, Any]:
+    from pf.governance import history
+
+    return {"edits": history(root_dir(), surface, group, limit)}
+
+
+@app.post("/api/governance/edit")
+def governance_edit(surface: str = Query(...), key_path: str = Query(...),
+                    value: str = Query(...), actor: str = Query(...),
+                    reason: str = Query(""), group: str = Query(""),
+                    ) -> dict[str, Any]:
+    """Apply one owner edit: audit row first, then the YAML.
+
+    `actor` is required and not defaulted. An audit trail whose author column can
+    be blank records that something changed and nothing about who decided it,
+    which is the only part that matters when the definition is later disputed.
+    """
+    from pf.governance import EditRejected, apply_edit
+
+    parsed: Any = value
+    if value.lower() in {"true", "false"}:
+        parsed = value.lower() == "true"
+    else:
+        try:
+            parsed = int(value)
+        except ValueError:
+            pass
+
+    try:
+        return apply_edit(root_dir(), surface, key_path, parsed,
+                          actor=actor, reason=reason, group=group)
+    except EditRejected as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/api/governance/revert")
+def governance_revert(edit_id: str = Query(...),
+                      actor: str = Query(...)) -> dict[str, Any]:
+    from pf.governance import EditRejected, revert
+
+    try:
+        return revert(root_dir(), edit_id, actor=actor)
+    except EditRejected as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 # --------------------------------------------------------------------- prs --

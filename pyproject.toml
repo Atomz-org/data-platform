@@ -5,11 +5,47 @@ description = "Agentic data platform: shared infra, per-company projects"
 requires-python = ">=3.11,<3.13"
 dependencies = ["pf"]
 
+# Optional tools, one extra per `pf.tools` entry. Kept out of the base install so
+# a platform checkout stays light and every tool degrades to "not installed"
+# rather than failing — `pf tool doctor` is what reports the gap.
+#
+# Why PyPI and not the submodule: `vendor/recce/core` is pinned for provenance
+# and drift (see platform/src/pf/vendor/registry.yaml), but its `recce/data/`
+# directory — the built web frontend — is gitignored upstream, so a source
+# install yields a server that starts and serves nothing. The wheel ships the
+# bundle. The submodule remains the contract we check drift against; this is the
+# artefact we run. Keep the floor at the pinned submodule's last release.
+[project.optional-dependencies]
+recce = ["recce>=1.60,<2"]
+wren = [
+    "wrenai>=0.13,<1",
+]
+# The ingestion framework, not the server. The server is a deployment concern
+# (Docker/Helm, see vendor/openmetadata); this is the client that talks to it.
+openmetadata = ["openmetadata-ingestion>=1.13,<2"]
+
 [tool.uv.workspace]
 members = ["platform", "groups/*/projects/*"]
 
 [tool.uv.sources]
 pf = { workspace = true }
+
+# Drop the `rs` extra `dagster-dbt` asks for, which installs `sqlglotc` — the
+# Cython build of sqlglot.
+#
+# This is not a preference. Wren registers its own `wren` sqlglot dialect by
+# subclassing sqlglot's Parser in pure Python, and a compiled class cannot be
+# subclassed by an interpreted one. With sqlglotc present, every MDL query that
+# resolves a model died in `CTERewriter.rewrite` with
+# `[INVALID_SQL] interpreted classes cannot inherit from compiled`, which reads
+# like a SQL fault and is a packaging one. `select 1` planned fine, which is why
+# it looked like a broken engine rather than a broken environment.
+#
+# Cost of the override: sqlglot parses in Python rather than Cython, so dbt
+# manifest parsing is somewhat slower. dagster-dbt does not require the extra to
+# function. Removing it is what makes the semantic layer answerable at all.
+[tool.uv]
+override-dependencies = ["sqlglot>=30.17.0"]
 
 [dependency-groups]
 dev = [

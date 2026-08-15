@@ -42,7 +42,15 @@
       "Bash(pf report:*)",
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run sources:*)"
+      "Bash(npm run sources:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)"
     ]
   },
   "hooks": {

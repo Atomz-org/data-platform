@@ -1,0 +1,21 @@
+{
+  "template": "new_value_means_test_too_strict",
+  "agent": "test_failure_triage",
+  "why": "Holds the agent to the rule this toolkit's skill states outright: a test that fails because the test is wrong is a real outcome, and the agent must say so rather than contorting the model to satisfy a stale assumption. This is the case that guards against the most damaging habit an autofixing agent can develop — filtering out real rows to turn a test green, which destroys data and reports success.",
+  "tags": ["triage", "classification", "policy"],
+  "requires": {"stg": "staging_model"},
+  "input": {
+    "failures": [
+      {
+        "unique_id": "test.accepted_values_{{stg.name}}_{{stg.column}}",
+        "status": "fail",
+        "message": "Got 1 result, configured to fail if != 0. A value not in the test's accepted list was found in {{stg.column}}."
+      }
+    ],
+    "lineage": "source feeding {{stg.name}}: loaded 30m ago, on schedule, no schema change.\n  Distinct values of the tested field at source: three long-established values covering 99.8% of rows, plus one further value first seen 4 days ago and growing daily (now 2,209 rows).\n  -> model:{{stg.name}} (sql unchanged for 118 days; {{stg.column}} selected directly, no filter)\n\nRecent git activity on this lineage: none.\nThe accepted_values test was written 118 days ago and has not been edited since.\nOperational note: the new value corresponds to a capability the business enabled for all customers 4 days ago. The rows carrying it are valid and are being processed normally everywhere else."
+  },
+  "expect": {
+    "root_cause": "test_too_strict",
+    "suggested_fix": {"contains_any": ["accepted_values", "test", "expand", "add", "update"]}
+  }
+}

@@ -82,15 +82,58 @@ def build_definitions(
     if sisters:
         assets.append(_make_rollup_asset(wh, _resolve_sisters(root, sisters)))
 
+    # Tools contribute last, so a tool asset can depend on the dbt models above.
+    # Nothing here names a tool: which ones run comes from the project's
+    # tools.yaml, and a tool installed from outside this repo lands the same way.
+    asset_checks: list[Any] = []
+    tool_metadata: dict[str, Any] = {}
+    for contrib in _tool_contributions(root, group, project, wh):
+        assets.extend(contrib.assets)
+        asset_checks.extend(contrib.asset_checks)
+        resources.update(contrib.resources)
+        tool_metadata.update(contrib.metadata)
+
     job = define_asset_job(name=f"{project.replace('-', '_')}_all", selection="*")
 
     return Definitions(
         assets=assets,
+        asset_checks=asset_checks,
         jobs=[job],
         resources=resources,
         executor=multiprocess_executor.configured({"max_concurrent": 4}),
-        metadata={"group": group, "project": project, "warehouse": str(wh.path)},
+        # Tool metadata (a UI URL, say) rides on the Definitions so an operator
+        # can find a tool's own surface from Dagster. Dagster OSS has no
+        # custom-tab extension point — see pf.tools.__init__ for what that means
+        # and where the combined view actually lives.
+        metadata={"group": group, "project": project, "warehouse": str(wh.path),
+                  **tool_metadata},
     )
+
+
+def _tool_contributions(root: Path, group: str, project: str, wh: Any) -> list[Any]:
+    """Enabled tools' Dagster contributions, or nothing if the layer is absent.
+
+    Wrapped because a code location that raises on import disappears from
+    Dagster entirely. An optional tool must never be able to do that to a
+    project's real assets.
+    """
+    try:
+        from pf.tools import dagster_contributions
+    except Exception:  # noqa: BLE001 — platform without the tools layer
+        return []
+    # Repo root from the project path, not from cwd: a Dagster code location runs
+    # with cwd set to `<project>/src`, so anything cwd-derived resolves wrong.
+    # `groups/<group>/projects/<project>` puts the root four levels up.
+    repo_root = root.parents[3] if len(root.parents) >= 4 else root
+    try:
+        return dagster_contributions(
+            root=repo_root, group=group, project=project, project_dir=root,
+            dbt_dir=root / "transform", warehouse=wh)
+    except Exception as exc:  # noqa: BLE001
+        import warnings
+        warnings.warn(f"tool contributions skipped: {type(exc).__name__}: {exc}",
+                      stacklevel=2)
+        return []
 
 
 def _discover_source_modules(root: Path, project: str) -> list[str]:

@@ -5,6 +5,7 @@ zenith_uk:
       type: duckdb
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
       threads: 4
+      extensions: [httpfs, json]
     ci:
       type: duckdb
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
@@ -13,3 +14,17 @@ zenith_uk:
       type: duckdb
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
       threads: 8
+    # The comparison environment for a diff tool. Same database file, different
+    # schema prefix, so `base_marts.fct_revenue` and `main_marts.fct_revenue`
+    # both exist and can be queried against each other in one connection.
+    #
+    # This has to be a separate materialisation. Pointing a review tool at two
+    # sets of dbt *artefacts* that resolve to the same relation makes every
+    # value diff compare a table with itself and report clean — a false negative
+    # on every change, which is worse than having no review at all.
+    base:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      schema: base
+      threads: 4
+      extensions: [httpfs, json]

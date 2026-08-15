@@ -19,7 +19,14 @@ from pathlib import Path
 
 from pf.vendor.model import Upstream, load_registry
 
-VENDOR_CARD_BUDGET = 700
+#: Raised from 700 when the catalogue layer landed: four upstreams joined at once
+#: (openmetadata, openmetadata-standards, forge, shadcn-admin) and the card went
+#: to ~717. The budget is a guard against this file quietly becoming expensive to
+#: load, not a fixed constant — but it is only worth having if raising it is a
+#: deliberate act with a reason attached, so raise it the same way: recalibrate
+#: when the roster genuinely grows, and trim summaries when it is prose that grew.
+#: One row costs roughly 15 tokens, so this leaves room for about five more.
+VENDOR_CARD_BUDGET = 800
 
 ROLE_ORDER = {"spec": 0, "skills": 1, "shape": 2, "reference": 3}
 
