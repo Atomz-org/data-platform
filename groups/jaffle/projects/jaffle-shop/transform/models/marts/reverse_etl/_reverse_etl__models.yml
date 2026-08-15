@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: rev_etl_crm_customer_sync
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Customer data formatted for CRM sync including name, segment, LTV,
+      and churn risk with source system metadata.
+
+  - name: rev_etl_email_segment_high_value
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      High-value customer list for email marketing targeting based on
+      customer segment classification.
+
+  - name: rev_etl_email_segment_at_risk
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      At-risk customers for win-back email campaigns filtered by churn
+      propensity score above 70.
+
+  - name: rev_etl_email_segment_new
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      New customers (first order within 30 days) for onboarding email
+      automation.
+
+  - name: rev_etl_loyalty_sync
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Active loyalty member data for POS system sync including tier,
+      points balance, and status.
+
+  - name: rev_etl_inventory_reorder
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Items needing reorder for procurement system integration based on
+      stock alerts for stockout and low stock conditions.
+
+  - name: rev_etl_pos_menu_update
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Current active menu items with prices formatted for POS system
+      synchronization.
+
+  - name: rev_etl_pos_pricing_update
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Latest price changes per product for POS system update with
+      previous price and change percentage.
+
+  - name: rev_etl_hr_payroll_export
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Latest payroll period data formatted for external payroll system
+      integration.
+
+  - name: rev_etl_supplier_scorecard_export
+    config:
+      tags: ['type:reverse_etl']
+    description: >
+      Supplier performance data formatted for supplier portal sharing
+      with tier classification.

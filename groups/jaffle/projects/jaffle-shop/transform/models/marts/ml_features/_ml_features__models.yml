@@ -1,0 +1,164 @@
+version: 2
+
+models:
+  - name: ml_feature_customer_churn
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Customer-level feature table for churn prediction models. Includes recency,
+      frequency, monetary, loyalty, engagement, and trend features plus a proxy
+      churn label (no order in 90+ days). Grain: one row per customer.
+    columns:
+      - name: customer_id
+        description: Unique customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: days_since_last_order
+        description: Days since the customer's most recent order.
+      - name: lifetime_order_count
+        description: Total number of orders placed.
+      - name: lifetime_spend
+        description: Total customer spend across all orders.
+      - name: rfm_total_score
+        description: Combined RFM score (3-15).
+      - name: is_loyalty_member
+        description: Binary indicator for loyalty membership.
+      - name: order_trend_slope
+        description: Change rate in order frequency (recent 3m vs prior 3m).
+      - name: churn_label_proxy
+        description: Binary label (1 = no order in 90+ days).
+
+  - name: ml_feature_demand_forecast
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Product x store x week feature table for demand forecasting. Includes
+      trailing averages, prior-year comparisons, and seasonality indices.
+      Grain: product_id x store_id x week_start.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: store_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: week_start
+        description: Start of the week.
+        tests:
+          - not_null
+      - name: weekly_units
+        description: Units sold in this week.
+      - name: trailing_4w_avg_units
+        description: 4-week trailing average of units sold.
+      - name: trailing_8w_avg_units
+        description: 8-week trailing average of units sold.
+      - name: seasonality_index
+        description: Ratio of current week to 8-week trailing average.
+
+  - name: ml_feature_pricing_optimization
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Product-level features for price optimization including current price,
+      cost, margin, volume metrics, and estimated price elasticity from
+      historical price changes. Grain: one row per product.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: current_unit_price
+        description: Current selling price.
+      - name: unit_cost
+        description: Ingredient cost per unit.
+      - name: margin_pct
+        description: Gross margin percentage.
+      - name: avg_daily_volume
+        description: Average units sold per active day.
+      - name: estimated_price_elasticity
+        description: Estimated price elasticity from historical changes.
+
+  - name: ml_feature_employee_attrition
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Employee-level feature table for attrition prediction. Includes tenure,
+      productivity, overtime, training, and department features with a binary
+      attrition label. Grain: one row per employee.
+    columns:
+      - name: employee_id
+        description: Unique employee identifier.
+        tests:
+          - unique
+          - not_null
+      - name: tenure_days
+        description: Total days employed.
+      - name: avg_orders_per_hour
+        description: Average productivity in orders per hour.
+      - name: avg_weekly_overtime
+        description: Average weekly overtime hours.
+      - name: overtime_frequency_pct
+        description: Percentage of weeks with overtime.
+      - name: training_completion_pct
+        description: Required training completion percentage.
+      - name: attrition_label
+        description: Binary label (1 = departed, 0 = active).
+
+  - name: ml_feature_store_sales
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Store-level monthly features for sales forecasting including trailing
+      averages, prior-year comparison, growth rates, and structural store
+      attributes. Grain: store_id x month_start.
+    columns:
+      - name: store_id
+        description: Store identifier.
+        tests:
+          - not_null
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - not_null
+      - name: monthly_revenue
+        description: Total revenue for the month.
+      - name: trailing_3m_avg_revenue
+        description: 3-month trailing average revenue.
+      - name: trailing_6m_avg_revenue
+        description: 6-month trailing average revenue.
+      - name: same_month_prior_year
+        description: Revenue in the same month of the prior year.
+      - name: staff_count
+        description: Average employee count at the store.
+
+  - name: ml_feature_basket_size
+    config:
+      tags: ['type:ml_feature']
+    description: >
+      Order-level features for basket size prediction including customer
+      segment, loyalty tier, temporal features, and promotion indicators.
+      Grain: one row per order.
+    columns:
+      - name: order_id
+        description: Unique order identifier.
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Customer identifier.
+      - name: store_id
+        description: Store where the order was placed.
+      - name: customer_rfm_segment
+        description: Customer's RFM segment code.
+      - name: loyalty_tier
+        description: Customer's loyalty tier.
+      - name: is_weekend
+        description: Whether the order was placed on a weekend.
+      - name: promo_active
+        description: Whether a coupon was applied to this order.
+      - name: basket_size
+        description: Number of items in the order (target variable).
