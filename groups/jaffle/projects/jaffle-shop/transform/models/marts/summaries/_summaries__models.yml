@@ -1,0 +1,153 @@
+version: 2
+
+models:
+  - name: sum_annual_company_summary
+    config:
+      tags: ['type:summary']
+    description: >
+      Pre-computed summary of annual company summary for fast BI queries.
+  - name: sum_daily_category_totals
+    config:
+      tags: ['type:summary', 'cadence:daily']
+    description: >
+      Pre-computed summary of daily category totals for fast BI queries.
+  - name: sum_daily_company_totals
+    config:
+      tags: ['type:summary', 'cadence:daily']
+    description: >
+      Pre-computed summary of daily company totals for fast BI queries.
+  - name: sum_daily_product_totals
+    config:
+      tags: ['type:summary', 'cadence:daily']
+    description: >
+      Pre-computed summary of daily product totals for fast BI queries.
+  - name: sum_daily_store_totals
+    config:
+      tags: ['type:summary', 'cadence:daily']
+    description: >
+      Pre-computed summary of daily store totals for fast BI queries.
+  - name: sum_monthly_campaign_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly campaign totals for fast BI queries.
+  - name: sum_monthly_category_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly category totals for fast BI queries.
+  - name: sum_monthly_company_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly company totals for fast BI queries.
+  - name: sum_monthly_customer_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly customer totals for fast BI queries.
+  - name: sum_monthly_department_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly department totals for fast BI queries.
+  - name: sum_monthly_expense_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly expense totals for fast BI queries.
+  - name: sum_monthly_inventory_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly inventory totals for fast BI queries.
+  - name: sum_monthly_loyalty_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly loyalty totals for fast BI queries.
+  - name: sum_monthly_maintenance_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly maintenance totals for fast BI queries.
+  - name: sum_monthly_payroll_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly payroll totals for fast BI queries.
+  - name: sum_monthly_product_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly product totals for fast BI queries.
+  - name: sum_monthly_store_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly store totals for fast BI queries.
+  - name: sum_monthly_supplier_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly supplier totals for fast BI queries.
+  - name: sum_monthly_waste_totals
+    config:
+      tags: ['type:summary', 'cadence:monthly']
+    description: >
+      Pre-computed summary of monthly waste totals for fast BI queries.
+  - name: sum_quarterly_campaign_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly campaign totals for fast BI queries.
+  - name: sum_quarterly_customer_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly customer totals for fast BI queries.
+  - name: sum_quarterly_department_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly department totals for fast BI queries.
+  - name: sum_quarterly_expense_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly expense totals for fast BI queries.
+  - name: sum_quarterly_inventory_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly inventory totals for fast BI queries.
+  - name: sum_quarterly_loyalty_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly loyalty totals for fast BI queries.
+  - name: sum_quarterly_supplier_totals
+    config:
+      tags: ['type:summary', 'cadence:quarterly']
+    description: >
+      Pre-computed summary of quarterly supplier totals for fast BI queries.
+  - name: sum_weekly_company_totals
+    config:
+      tags: ['type:summary', 'cadence:weekly']
+    description: >
+      Pre-computed summary of weekly company totals for fast BI queries.
+  - name: sum_weekly_product_totals
+    config:
+      tags: ['type:summary', 'cadence:weekly']
+    description: >
+      Pre-computed summary of weekly product totals for fast BI queries.
+  - name: sum_weekly_store_totals
+    config:
+      tags: ['type:summary', 'cadence:weekly']
+    description: >
+      Pre-computed summary of weekly store totals for fast BI queries.
+  - name: sum_ytd_company_totals
+    config:
+      tags: ['type:summary']
+    description: >
+      Pre-computed summary of ytd company totals for fast BI queries.

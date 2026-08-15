@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: exec_company_kpis_daily
+    config:
+      tags: ['type:executive', 'audience:cfo', 'cadence:daily']
+    description: >
+      Company-wide daily KPIs: total revenue, orders, customers,
+      average ticket, and waste cost aggregated across all stores.
+    columns:
+      - name: kpi_date
+        description: Calendar date of the KPIs.
+        tests:
+          - unique
+          - not_null
+      - name: total_revenue
+        description: Company-wide total revenue for the day.
+      - name: total_orders
+        description: Company-wide total order count.
+      - name: active_customers
+        description: Number of unique customers who ordered.
+      - name: avg_ticket_size
+        description: Average order value across all stores.
+
+  - name: exec_company_kpis_monthly
+    config:
+      tags: ['type:executive', 'audience:cfo', 'cadence:monthly']
+    meta:
+      owner: executive
+      contains_pii: false
+      update_frequency: monthly
+    description: >
+      Monthly company KPIs with MoM and YoY growth rates.
+    columns:
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - unique
+          - not_null
+      - name: monthly_revenue
+        description: Total company revenue for the month.
+      - name: mom_revenue_growth
+        description: Month-over-month revenue growth rate.
+      - name: yoy_revenue_growth
+        description: Year-over-year revenue growth rate.
+
+  - name: exec_regional_summary
+    config:
+      tags: ['type:executive', 'audience:cfo']
+    description: >
+      Key metrics per store (revenue, profit, labor %, growth)
+      for executive regional comparison.
+    columns:
+      - name: location_id
+        description: Unique store identifier.
+        tests:
+          - unique
+          - not_null
+      - name: store_name
+        description: Store name.
+      - name: pnl_total_revenue
+        description: Total revenue from P&L data.
+      - name: net_profit_margin_pct
+        description: Net profit margin percentage.
+
+  - name: exec_financial_summary_monthly
+    config:
+      tags: ['type:executive', 'audience:cfo', 'cadence:monthly']
+    description: >
+      Monthly financial summary: revenue, COGS, gross profit,
+      operating expenses, and net profit with margins.
+    columns:
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - unique
+          - not_null
+      - name: total_revenue
+        description: Monthly revenue.
+      - name: gross_profit
+        description: Revenue minus COGS.
+      - name: gross_margin_pct
+        description: Gross margin percentage.
+      - name: net_profit
+        description: Revenue minus all expenses.
+      - name: net_profit_margin_pct
+        description: Net profit margin percentage.
+
+  - name: exec_customer_health_index
+    config:
+      tags: ['type:executive', 'audience:cfo']
+    description: >
+      Company-wide customer health snapshot: active %, churn rate,
+      churn propensity distribution, and composite health index.
+    columns:
+      - name: reporting_month
+        description: The month this snapshot represents.
+      - name: customer_health_index
+        description: Composite customer health index (0-100).
+      - name: active_pct
+        description: Percentage of tracked customers who are active.
+      - name: high_risk_pct
+        description: Percentage of customers with high churn propensity.
+
+  - name: exec_ops_scorecard
+    config:
+      tags: ['type:executive', 'audience:cfo']
+    description: >
+      Operations scorecard combining labor efficiency, inventory health,
+      waste control, and employee performance into a single view.
+    columns:
+      - name: reporting_month
+        description: The month this scorecard covers.
+      - name: ops_health_score
+        description: Composite operations health score (0-100).
+      - name: avg_orders_per_labor_hour
+        description: Average orders per labor hour across stores.
+      - name: waste_to_revenue_pct
+        description: Waste cost as percentage of revenue.
+      - name: avg_employee_performance_score
+        description: Average employee performance score.

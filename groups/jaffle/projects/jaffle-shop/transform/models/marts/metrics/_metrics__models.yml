@@ -1,0 +1,293 @@
+version: 2
+
+models:
+  - name: met_daily_revenue_by_store
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily revenue metrics per store with 7-day and 28-day rolling averages.
+      Sourced from int_daily_revenue joined with store locations.
+    columns:
+      - name: revenue_date
+        description: Calendar date of the revenue.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: store_name
+        description: Human-readable store name.
+      - name: total_revenue
+        description: Total revenue for the day at this store.
+      - name: revenue_7d_avg
+        description: 7-day rolling average of total revenue.
+      - name: revenue_28d_avg
+        description: 28-day rolling average of total revenue.
+
+  - name: met_weekly_revenue_by_store
+    config:
+      tags: ['type:metric', 'cadence:weekly']
+    description: >
+      Weekly revenue aggregation per store with week-over-week growth.
+    columns:
+      - name: week_start
+        description: Start date of the week.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: wow_revenue_growth
+        description: Week-over-week revenue growth rate.
+
+  - name: met_monthly_revenue_by_store
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly revenue per store with MoM and YoY growth rates,
+      mapped to fiscal periods.
+    columns:
+      - name: month_start
+        description: First day of the calendar month.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: mom_revenue_growth
+        description: Month-over-month revenue growth rate.
+      - name: yoy_revenue_growth
+        description: Year-over-year revenue growth rate.
+      - name: fiscal_year
+        description: Fiscal year from util_fiscal_periods.
+      - name: fiscal_quarter
+        description: Fiscal quarter from util_fiscal_periods.
+
+  - name: met_daily_product_sales
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily product sales combining units, revenue, and margin
+      from int_product_sales_daily and int_menu_item_margin.
+    columns:
+      - name: sale_date
+        description: Date of the sales.
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: daily_margin
+        description: Daily gross margin (units sold x unit margin).
+
+  - name: met_weekly_product_sales
+    config:
+      tags: ['type:metric', 'cadence:weekly']
+    description: >
+      Weekly product sales aggregation with WoW growth.
+    columns:
+      - name: week_start
+        description: Start of the week.
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: wow_revenue_growth
+        description: Week-over-week revenue growth.
+
+  - name: met_monthly_product_sales
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly product sales with MoM growth.
+    columns:
+      - name: month_start
+        description: First day of the month.
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: mom_revenue_growth
+        description: Month-over-month revenue growth.
+
+  - name: met_daily_labor_metrics
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily labor cost, hours, and efficiency per store.
+      Joins int_labor_cost_daily with int_daily_orders_by_store.
+    columns:
+      - name: work_date
+        description: Date of the labor metrics.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: orders_per_labor_hour
+        description: Number of orders per labor hour worked.
+      - name: labor_cost_pct_of_revenue
+        description: Labor cost as a percentage of daily revenue.
+
+  - name: met_weekly_labor_metrics
+    config:
+      tags: ['type:metric', 'cadence:weekly']
+    description: >
+      Weekly labor aggregation per store.
+    columns:
+      - name: week_start
+        description: Start of the week.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+
+  - name: met_monthly_labor_metrics
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly labor metrics per store with MoM change.
+    columns:
+      - name: month_start
+        description: First day of the month.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: mom_labor_cost_change
+        description: Month-over-month labor cost change rate.
+
+  - name: met_daily_inventory_metrics
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily inventory movement count and value per warehouse/location.
+    columns:
+      - name: movement_date
+        description: Date of inventory movements.
+      - name: location_id
+        description: Warehouse/location identifier.
+        tests:
+          - not_null
+      - name: total_movements
+        description: Number of inventory movements on this day.
+
+  - name: met_weekly_inventory_metrics
+    config:
+      tags: ['type:metric', 'cadence:weekly']
+    description: >
+      Weekly inventory metrics aggregation.
+    columns:
+      - name: week_start
+        description: Start of the week.
+      - name: location_id
+        description: Warehouse/location identifier.
+        tests:
+          - not_null
+
+  - name: met_monthly_inventory_metrics
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly inventory metrics with MoM movement change.
+    columns:
+      - name: month_start
+        description: First day of the month.
+      - name: location_id
+        description: Warehouse/location identifier.
+        tests:
+          - not_null
+      - name: mom_movement_change
+        description: Month-over-month change in movement count.
+
+  - name: met_daily_marketing_spend
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily marketing spend by channel with 7-day rolling averages.
+    columns:
+      - name: spend_date
+        description: Date of the marketing spend.
+      - name: spend_channel
+        description: Marketing channel name.
+        tests:
+          - not_null
+      - name: total_spend_7d_avg
+        description: 7-day rolling average of total daily spend across all channels.
+
+  - name: met_monthly_marketing_metrics
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly marketing spend, loyalty signups, and coupon redemptions.
+    columns:
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - unique
+          - not_null
+      - name: total_marketing_spend
+        description: Total marketing spend for the month.
+      - name: coupon_redemptions
+        description: Number of coupon redemptions in the month.
+
+  - name: met_daily_customer_metrics
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily new, active, and returning customer counts with rolling averages.
+    columns:
+      - name: activity_date
+        description: Date of customer activity.
+        tests:
+          - unique
+          - not_null
+      - name: active_customers
+        description: Unique customers who placed orders.
+      - name: new_customers
+        description: First-time customers.
+      - name: returning_customers
+        description: Repeat customers.
+
+  - name: met_monthly_customer_metrics
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly customer metrics with cohort counts and churn/active percentages.
+    columns:
+      - name: month_start
+        description: First day of the month.
+        tests:
+          - unique
+          - not_null
+      - name: active_pct
+        description: Percentage of tracked customers who are active.
+      - name: churn_pct
+        description: Percentage of tracked customers who have churned.
+
+  - name: met_daily_waste_metrics
+    config:
+      tags: ['type:metric', 'cadence:daily']
+    description: >
+      Daily waste events and cost per store.
+    columns:
+      - name: waste_date
+        description: Date of waste events.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: total_waste_cost
+        description: Total cost of waste for the day.
+
+  - name: met_monthly_waste_metrics
+    config:
+      tags: ['type:metric', 'cadence:monthly']
+    description: >
+      Monthly waste with MoM change and waste-to-revenue ratio.
+    columns:
+      - name: month_start
+        description: First day of the month.
+      - name: location_id
+        description: Store location identifier.
+        tests:
+          - not_null
+      - name: waste_to_revenue_pct
+        description: Waste cost as a percentage of monthly revenue.
+      - name: mom_waste_cost_change
+        description: Month-over-month waste cost change rate.
