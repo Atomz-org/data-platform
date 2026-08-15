@@ -1,0 +1,178 @@
+version: 2
+
+models:
+  - name: kpi_avg_basket_size
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for avg basket size.
+  - name: kpi_avg_customer_lifetime
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for avg customer lifetime.
+  - name: kpi_avg_order_value
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for avg order value.
+  - name: kpi_campaign_roi_avg
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for campaign roi avg.
+  - name: kpi_coupon_redemption_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for coupon redemption rate.
+  - name: kpi_customer_acquisition_cost
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for customer acquisition cost.
+  - name: kpi_customer_churn_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for customer churn rate.
+  - name: kpi_customer_retention_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for customer retention rate.
+  - name: kpi_email_conversion_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for email conversion rate.
+  - name: kpi_employee_productivity
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for employee productivity.
+  - name: kpi_employee_turnover_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for employee turnover rate.
+  - name: kpi_equipment_uptime
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for equipment uptime.
+  - name: kpi_food_cost_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for food cost ratio.
+  - name: kpi_gross_margin_by_product
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for gross margin by product.
+  - name: kpi_inventory_days_on_hand
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for inventory days on hand.
+  - name: kpi_inventory_turnover_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for inventory turnover ratio.
+  - name: kpi_labor_cost_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for labor cost ratio.
+  - name: kpi_loyalty_active_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for loyalty active rate.
+  - name: kpi_loyalty_enrollment_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for loyalty enrollment rate.
+  - name: kpi_loyalty_redemption_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for loyalty redemption rate.
+  - name: kpi_maintenance_cost_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for maintenance cost ratio.
+  - name: kpi_net_margin_monthly
+    config:
+      tags: ['type:kpi', 'cadence:monthly']
+    description: >
+      Key performance indicator for net margin monthly.
+  - name: kpi_overhead_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for overhead ratio.
+  - name: kpi_procurement_cycle_time
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for procurement cycle time.
+  - name: kpi_profit_margin_by_store
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for profit margin by store.
+  - name: kpi_refund_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for refund rate.
+  - name: kpi_revenue_per_customer
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for revenue per customer.
+  - name: kpi_revenue_per_employee
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for revenue per employee.
+  - name: kpi_revenue_per_order
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for revenue per order.
+  - name: kpi_revenue_per_store
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for revenue per store.
+  - name: kpi_stockout_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for stockout rate.
+  - name: kpi_supplier_defect_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for supplier defect rate.
+  - name: kpi_supplier_on_time_delivery
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for supplier on time delivery.
+  - name: kpi_training_completion_rate
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for training completion rate.
+  - name: kpi_waste_to_revenue_ratio
+    config:
+      tags: ['type:kpi']
+    description: >
+      Key performance indicator for waste to revenue ratio.

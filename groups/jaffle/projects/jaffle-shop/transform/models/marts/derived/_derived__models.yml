@@ -1,0 +1,93 @@
+version: 2
+
+models:
+  - name: stg_derived_budget_with_location
+    description: >
+      Derived staging view combining budget with location for downstream reuse.
+  - name: stg_derived_campaign_with_spend
+    description: >
+      Derived staging view combining campaign with spend for downstream reuse.
+  - name: stg_derived_coupon_with_campaign
+    description: >
+      Derived staging view combining coupon with campaign for downstream reuse.
+  - name: stg_derived_delivery_with_po
+    description: >
+      Derived staging view combining delivery with po for downstream reuse.
+  - name: stg_derived_email_with_campaign
+    description: >
+      Derived staging view combining email with campaign for downstream reuse.
+  - name: stg_derived_employee_with_department
+    description: >
+      Derived staging view combining employee with department for downstream reuse.
+  - name: stg_derived_employee_with_position
+    description: >
+      Derived staging view combining employee with position for downstream reuse.
+  - name: stg_derived_equipment_with_location
+    description: >
+      Derived staging view combining equipment with location for downstream reuse.
+  - name: stg_derived_expense_with_category
+    description: >
+      Derived staging view combining expense with category for downstream reuse.
+  - name: stg_derived_inventory_with_product
+    description: >
+      Derived staging view combining inventory with product for downstream reuse.
+  - name: stg_derived_invoice_with_customer
+    description: >
+      Derived staging view combining invoice with customer for downstream reuse.
+  - name: stg_derived_loyalty_with_tier
+    description: >
+      Derived staging view combining loyalty with tier for downstream reuse.
+  - name: stg_derived_maintenance_with_equipment
+    description: >
+      Derived staging view combining maintenance with equipment for downstream reuse.
+  - name: stg_derived_menu_item_with_category
+    description: >
+      Derived staging view combining menu item with category for downstream reuse.
+  - name: stg_derived_menu_item_with_nutrition
+    description: >
+      Derived staging view combining menu item with nutrition for downstream reuse.
+  - name: stg_derived_order_complete
+    description: >
+      Derived staging view combining order complete for downstream reuse.
+  - name: stg_derived_order_item_with_product
+    description: >
+      Derived staging view combining order item with product for downstream reuse.
+  - name: stg_derived_order_with_customer
+    description: >
+      Derived staging view combining order with customer for downstream reuse.
+  - name: stg_derived_order_with_location
+    description: >
+      Derived staging view combining order with location for downstream reuse.
+  - name: stg_derived_payment_with_order
+    description: >
+      Derived staging view combining payment with order for downstream reuse.
+  - name: stg_derived_payroll_with_employee
+    description: >
+      Derived staging view combining payroll with employee for downstream reuse.
+  - name: stg_derived_po_line_with_product
+    description: >
+      Derived staging view combining po line with product for downstream reuse.
+  - name: stg_derived_po_with_supplier
+    description: >
+      Derived staging view combining po with supplier for downstream reuse.
+  - name: stg_derived_recipe_with_ingredients
+    description: >
+      Derived staging view combining recipe with ingredients for downstream reuse.
+  - name: stg_derived_refund_with_order
+    description: >
+      Derived staging view combining refund with order for downstream reuse.
+  - name: stg_derived_review_with_product
+    description: >
+      Derived staging view combining review with product for downstream reuse.
+  - name: stg_derived_shift_with_employee
+    description: >
+      Derived staging view combining shift with employee for downstream reuse.
+  - name: stg_derived_timecard_with_employee
+    description: >
+      Derived staging view combining timecard with employee for downstream reuse.
+  - name: stg_derived_training_with_course
+    description: >
+      Derived staging view combining training with course for downstream reuse.
+  - name: stg_derived_waste_with_product
+    description: >
+      Derived staging view combining waste with product for downstream reuse.
