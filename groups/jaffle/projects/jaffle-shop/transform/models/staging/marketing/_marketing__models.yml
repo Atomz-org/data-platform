@@ -1,0 +1,204 @@
+models:
+  - name: stg_campaigns
+    description: Cleaned marketing campaigns with renamed columns, one row per campaign.
+    columns:
+      - name: campaign_id
+        description: The unique key for each campaign.
+        data_tests:
+          - not_null
+          - unique
+      - name: campaign_name
+        description: Human-readable campaign name.
+      - name: campaign_channel
+        description: The channel used for the campaign (email, social, in-store).
+      - name: campaign_status
+        description: Current status of the campaign (draft, active, paused, completed).
+      - name: budget
+        description: Total campaign budget in dollars.
+      - name: campaign_start_date
+        description: Date the campaign starts.
+      - name: campaign_end_date
+        description: Date the campaign ends.
+
+  - name: stg_campaign_spend
+    description: Daily campaign spend records by channel, one row per spend entry.
+    columns:
+      - name: campaign_spend_id
+        description: The unique key for each spend record.
+        data_tests:
+          - not_null
+          - unique
+      - name: campaign_id
+        description: Foreign key to campaigns.
+        data_tests:
+          - not_null
+      - name: spend_amount
+        description: Amount spent in dollars.
+      - name: spend_date
+        description: Date the spend occurred.
+
+  - name: stg_coupons
+    description: Coupon definitions with discount details and validity windows, one row per coupon.
+    columns:
+      - name: coupon_id
+        description: The unique key for each coupon.
+        data_tests:
+          - not_null
+          - unique
+      - name: coupon_code
+        description: The code customers enter to redeem the coupon.
+      - name: discount_type
+        description: Type of discount (percentage, fixed_amount).
+      - name: discount_amount
+        description: Fixed discount amount in dollars (null for percentage discounts).
+      - name: discount_percent
+        description: Percentage discount (null for fixed amount discounts).
+      - name: valid_from
+        description: Date the coupon becomes active.
+      - name: valid_until
+        description: Date the coupon expires.
+
+  - name: stg_coupon_redemptions
+    description: Coupon redemption events, one row per redemption.
+    columns:
+      - name: redemption_id
+        description: The unique key for each redemption.
+        data_tests:
+          - not_null
+          - unique
+      - name: coupon_id
+        description: Foreign key to coupons.
+        data_tests:
+          - not_null
+      - name: order_id
+        description: Foreign key to orders.
+        data_tests:
+          - not_null
+      - name: discount_applied
+        description: Actual discount amount applied in dollars.
+      - name: redeemed_at
+        description: Date the coupon was redeemed.
+
+  - name: stg_loyalty_members
+    description: Loyalty program membership records, one row per member.
+    columns:
+      - name: loyalty_member_id
+        description: The unique key for each loyalty member.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Foreign key to customers.
+        data_tests:
+          - not_null
+      - name: current_tier_id
+        description: Foreign key to the member's current loyalty tier.
+      - name: membership_status
+        description: Current membership status (active, inactive, suspended).
+      - name: lifetime_points
+        description: Total points earned over the lifetime of membership.
+      - name: enrolled_at
+        description: Date the customer enrolled in the loyalty program.
+
+  - name: stg_loyalty_transactions
+    description: Points earned and redeemed by loyalty members, one row per transaction.
+    columns:
+      - name: loyalty_transaction_id
+        description: The unique key for each loyalty transaction.
+        data_tests:
+          - not_null
+          - unique
+      - name: loyalty_member_id
+        description: Foreign key to loyalty members.
+        data_tests:
+          - not_null
+      - name: transaction_type
+        description: Type of transaction (earn, redeem, expire, bonus).
+      - name: points
+        description: Number of points (positive for earn, negative for redeem/expire).
+      - name: transacted_at
+        description: Date the transaction occurred.
+
+  - name: stg_loyalty_tiers
+    description: Loyalty tier definitions, one row per tier.
+    columns:
+      - name: tier_id
+        description: The unique key for each tier.
+        data_tests:
+          - not_null
+          - unique
+      - name: tier_name
+        description: Name of the tier (Bronze, Silver, Gold, Platinum).
+      - name: minimum_points
+        description: Minimum points required to reach this tier.
+      - name: maximum_points
+        description: Maximum points for this tier (null for top tier).
+      - name: points_multiplier
+        description: Points earning multiplier for this tier.
+      - name: annual_reward
+        description: Annual reward value in dollars for this tier.
+
+  - name: stg_email_events
+    description: Email interaction events, one row per event.
+    columns:
+      - name: email_event_id
+        description: The unique key for each email event.
+        data_tests:
+          - not_null
+          - unique
+      - name: campaign_id
+        description: Foreign key to campaigns.
+      - name: customer_id
+        description: Foreign key to customers.
+      - name: email_event_type
+        description: Type of email event (sent, opened, clicked, unsubscribed, bounced).
+      - name: event_date
+        description: Date the event occurred.
+
+  - name: stg_social_media_posts
+    description: Social media posts and engagement metrics, one row per post.
+    columns:
+      - name: post_id
+        description: The unique key for each social media post.
+        data_tests:
+          - not_null
+          - unique
+      - name: campaign_id
+        description: Foreign key to campaigns (null for organic posts).
+      - name: platform
+        description: Social media platform (instagram, twitter, facebook, tiktok).
+      - name: impressions
+        description: Number of times the post was displayed.
+      - name: reach
+        description: Number of unique users who saw the post.
+      - name: likes
+        description: Number of likes on the post.
+      - name: shares
+        description: Number of shares/retweets.
+      - name: posted_at
+        description: Date the post was published.
+
+  - name: stg_referrals
+    description: Customer referral records, one row per referral.
+    columns:
+      - name: referral_id
+        description: The unique key for each referral.
+        data_tests:
+          - not_null
+          - unique
+      - name: referrer_customer_id
+        description: Foreign key to the customer who made the referral.
+        data_tests:
+          - not_null
+      - name: referee_customer_id
+        description: Foreign key to the customer who was referred.
+        data_tests:
+          - not_null
+      - name: referral_status
+        description: Status of the referral (pending, converted, expired).
+      - name: reward_amount
+        description: Reward amount in dollars for a successful referral.
+      - name: referred_at
+        description: Date the referral was created.
+      - name: converted_at
+        description: Date the referral was converted (referee made a purchase).

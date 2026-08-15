@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: finance
+    schema: "{{ target.schema }}_raw"
+    description: Finance and payments data for the Jaffle Shop
+    tables:
+      - name: raw_invoices
+        description: One record per invoice generated from an order
+        loaded_at_field: issued_at
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+      - name: raw_invoice_line_items
+        description: Individual line items on each invoice
+      - name: raw_refunds
+        description: Refund requests and their resolution
+      - name: raw_tax_rates
+        description: Tax rate configuration by jurisdiction
+      - name: raw_gift_cards
+        description: Gift card issuance and balance tracking
+      - name: raw_payment_transactions
+        description: Individual payment transactions against orders
+        loaded_at_field: processed_at
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
+      - name: raw_accounts_receivable
+        description: Outstanding receivables from corporate/catering customers
+      - name: raw_expense_categories
+        description: Expense classification categories
+      - name: raw_expenses
+        description: Operating expenses by store
+      - name: raw_budgets
+        description: Monthly budget targets by store and category

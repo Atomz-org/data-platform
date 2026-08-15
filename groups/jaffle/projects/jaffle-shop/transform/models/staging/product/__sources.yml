@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: product
+    schema: "{{ target.schema }}_raw"
+    description: Product and menu analytics data for the Jaffle Shop
+    tables:
+      - name: raw_recipes
+        description: Recipe definitions linking menu items to required ingredients
+      - name: raw_recipe_ingredients
+        description: Ingredient quantities per recipe
+      - name: raw_ingredients
+        description: Master ingredient list (flour, coffee beans, milk, etc.)
+      - name: raw_ingredient_prices
+        description: Historical price records for each ingredient from suppliers
+      - name: raw_menu_items
+        description: Menu items (may differ from products — includes combos, seasonal)
+      - name: raw_menu_categories
+        description: Menu category hierarchy (hot drinks, cold drinks, food, pastries)
+      - name: raw_seasonal_menus
+        description: Seasonal and limited-time menu configurations
+      - name: raw_nutritional_info
+        description: Nutritional data per menu item (calories, fat, protein, etc.)
+      - name: raw_pricing_history
+        description: Historical price changes for products
+        loaded_at_field: changed_at
+        freshness:
+          warn_after: {count: 48, period: hour}
+          error_after: {count: 168, period: hour}
+      - name: raw_product_reviews
+        description: Customer reviews and ratings per product
+        loaded_at_field: reviewed_at
+        freshness:
+          warn_after: {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
