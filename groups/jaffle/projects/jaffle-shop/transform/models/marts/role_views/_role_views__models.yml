@@ -1,0 +1,212 @@
+version: 2
+
+models:
+  - name: view_cfo_revenue_summary
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Monthly revenue, margins, and growth metrics tailored for CFO review
+      including trailing 12-month revenue.
+
+  - name: view_cfo_expense_overview
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Expense breakdown by category and store with percentage of monthly
+      total for CFO cost management.
+
+  - name: view_cfo_cash_position
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Daily cash flow showing inflows, outflows, and cumulative cash
+      position over time.
+
+  - name: view_cfo_budget_status
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Budget vs actual comparison across stores and categories with
+      variance classification.
+
+  - name: view_cfo_ar_summary
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Accounts receivable aging summary with collection priority
+      classification based on aging buckets.
+
+  - name: view_cfo_profitability_matrix
+    config:
+      tags: ['type:role_view', 'audience:cfo']
+    description: >
+      Store profitability ranked by margin and revenue with 6-month
+      performance summary.
+
+  - name: view_coo_ops_dashboard
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Operational KPIs including throughput, labor utilization, equipment
+      uptime, and waste rate with ops rating.
+
+  - name: view_coo_store_performance
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Store rankings by operational health score with performance tier
+      classification.
+
+  - name: view_coo_staffing_overview
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Staffing levels and coverage gaps by store with staffing status
+      assessment.
+
+  - name: view_coo_equipment_status
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Equipment health showing uptime, downtime, and maintenance events
+      with condition assessment.
+
+  - name: view_coo_supply_chain_health
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Inventory, supplier, and delivery status with health and performance
+      classifications.
+
+  - name: view_coo_quality_metrics
+    config:
+      tags: ['type:role_view', 'audience:coo']
+    description: >
+      Waste rates, supplier quality, and food cost metrics with waste
+      status classification.
+
+  - name: view_cmo_campaign_dashboard
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Active campaigns with ROI, conversions, and performance tier for
+      CMO marketing review.
+
+  - name: view_cmo_customer_health
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Customer segments, churn risk, and LTV summary with overall
+      customer health assessment.
+
+  - name: view_cmo_loyalty_overview
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Loyalty program metrics including members, activity, redemption
+      rates, and engagement level.
+
+  - name: view_cmo_channel_performance
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Marketing channel comparison showing ROAS, cost per acquisition,
+      and channel ranking.
+
+  - name: view_cmo_acquisition_funnel
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Customer acquisition funnel with stage-to-stage conversion rates
+      and top-of-funnel percentages.
+
+  - name: view_cmo_social_dashboard
+    config:
+      tags: ['type:role_view', 'audience:cmo']
+    description: >
+      Social media engagement and ROI by platform with engagement rate
+      and cost per engagement.
+
+  - name: view_store_mgr_daily_report
+    config:
+      tags: ['type:role_view', 'audience:store_manager', 'cadence:daily']
+    description: >
+      Daily store report with revenue, orders, labor cost, waste, and
+      day assessment for store managers.
+
+  - name: view_store_mgr_staff_schedule
+    config:
+      tags: ['type:role_view', 'audience:store_manager']
+    description: >
+      Staff shift schedule with employee details, hours, and shift
+      status for store manager review.
+
+  - name: view_store_mgr_inventory_status
+    config:
+      tags: ['type:role_view', 'audience:store_manager']
+    description: >
+      Current inventory levels with reorder alerts and urgency
+      classification for store managers.
+
+  - name: view_store_mgr_product_performance
+    config:
+      tags: ['type:role_view', 'audience:store_manager']
+    description: >
+      Product sales at store level with monthly aggregation and
+      in-store product ranking.
+
+  - name: view_store_mgr_customer_insights
+    config:
+      tags: ['type:role_view', 'audience:store_manager']
+    description: >
+      Customer segment distribution per store with average LTV and
+      order frequency metrics.
+
+  - name: view_store_mgr_labor_summary
+    config:
+      tags: ['type:role_view', 'audience:store_manager']
+    description: >
+      Labor hours, overtime, and efficiency metrics per store per day
+      with overtime status classification.
+
+  - name: view_hr_headcount_dashboard
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Company headcount by department, position, and store with
+      active/inactive breakdown.
+
+  - name: view_hr_turnover_report
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Employee turnover rates and trends with severity classification
+      and rolling 6-month average.
+
+  - name: view_hr_training_status
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Training completion rates by department and course with
+      compliance status assessment.
+
+  - name: view_hr_payroll_summary
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Payroll costs by department with overtime percentage and
+      average gross pay per employee.
+
+  - name: view_hr_performance_overview
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Employee performance distribution with score bands and
+      percentile ranking.
+
+  - name: view_hr_compliance_dashboard
+    config:
+      tags: ['type:role_view', 'audience:hr']
+    description: >
+      Shift compliance, overtime compliance, break compliance, and
+      training requirements with overall compliance status.

@@ -1,0 +1,408 @@
+models:
+  - name: rpt_360_store_health_dashboard
+    config:
+      tags: ['type:report']
+    description: Comprehensive store dashboard combining health scores, PnL, and profile data.
+    columns:
+      - name: location_id
+        description: The unique store identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: health_score
+        description: Store health score from scoring model.
+      - name: health_tier
+        description: Store health classification.
+
+  - name: rpt_360_customer_health_dashboard
+    config:
+      tags: ['type:report']
+    description: Customer base health overview summarizing churn risk, LTV, and engagement.
+    columns:
+      - name: total_customers
+        description: Total number of customers.
+      - name: high_risk_customers
+        description: Customers with high churn risk.
+      - name: avg_churn_score
+        description: Average churn propensity score.
+
+  - name: rpt_360_product_portfolio_review
+    config:
+      tags: ['type:report']
+    description: Complete product portfolio analysis combining viability, sales, and margin data.
+    columns:
+      - name: product_id
+        description: The unique product identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: portfolio_quadrant
+        description: BCG-style classification (star, cash_cow, question_mark, dog).
+      - name: viability_tier
+        description: Product viability tier from scoring model.
+
+  - name: rpt_360_workforce_dashboard
+    config:
+      tags: ['type:report']
+    description: Workforce overview including headcount, cost, and turnover per store.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: active_employees
+        description: Number of active employees.
+      - name: turnover_rate_pct
+        description: Employee turnover rate percentage.
+
+  - name: rpt_360_supply_chain_dashboard
+    config:
+      tags: ['type:report']
+    description: Supply chain health summary combining supplier reliability and inventory status.
+    columns:
+      - name: total_suppliers
+        description: Number of active suppliers.
+      - name: avg_reliability_score
+        description: Average supplier reliability score.
+      - name: total_inventory_value
+        description: Total value of inventory on hand.
+
+  - name: rpt_weekly_business_review
+    config:
+      tags: ['type:report', 'cadence:weekly']
+    description: Weekly executive review with key metrics and week-over-week changes.
+    columns:
+      - name: week_start
+        description: Start of the business week.
+        data_tests:
+          - not_null
+          - unique
+      - name: weekly_revenue
+        description: Total revenue for the week.
+      - name: revenue_wow_pct
+        description: Week-over-week revenue change percentage.
+
+  - name: rpt_monthly_board_report
+    config:
+      tags: ['type:report', 'cadence:monthly']
+    description: Monthly board-level metrics including revenue, growth, and profitability.
+    columns:
+      - name: month_start
+        description: Start of the month.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_monthly_revenue
+        description: Total revenue for the month.
+      - name: revenue_yoy_growth_pct
+        description: Year-over-year revenue growth percentage.
+
+  - name: rpt_quarterly_strategic_review
+    config:
+      tags: ['type:report', 'cadence:quarterly']
+    description: Quarterly strategic metrics with year-over-year comparison.
+    columns:
+      - name: quarter_start
+        description: Start of the quarter.
+        data_tests:
+          - not_null
+          - unique
+      - name: quarterly_revenue
+        description: Total revenue for the quarter.
+      - name: revenue_yoy_pct
+        description: Year-over-year revenue change percentage.
+
+  - name: rpt_customer_value_migration
+    config:
+      tags: ['type:report']
+    description: Tracks customer value segment changes month over month.
+    columns:
+      - name: spend_month
+        description: The month of the migration analysis.
+      - name: prev_segment
+        description: Customer segment in the previous month.
+      - name: current_segment
+        description: Customer segment in the current month.
+      - name: customer_count
+        description: Number of customers migrating between segments.
+
+  - name: rpt_store_opening_playbook
+    config:
+      tags: ['type:report']
+    description: Performance template for new stores based on historical first-6-month patterns.
+    columns:
+      - name: store_id
+        description: The unique store identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_monthly_revenue_first_6m
+        description: Average monthly revenue in the first 6 months.
+
+  - name: rpt_competitive_positioning
+    config:
+      tags: ['type:report']
+    description: Internal benchmarks that proxy competitive position across stores.
+    columns:
+      - name: location_id
+        description: The unique store identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: competitive_position
+        description: Position classification (leader, revenue_strong, margin_strong, lagging).
+
+  - name: rpt_sustainability_metrics
+    config:
+      tags: ['type:report']
+    description: Waste reduction trends and sourcing diversity metrics over time.
+    columns:
+      - name: waste_month
+        description: The month of the sustainability analysis.
+      - name: total_waste_cost
+        description: Total waste cost for the month.
+      - name: waste_cost_mom_pct
+        description: Month-over-month waste cost change.
+
+  - name: rpt_risk_register
+    config:
+      tags: ['type:report']
+    description: Consolidated risk flags from supplier, store, and customer domains.
+    columns:
+      - name: risk_domain
+        description: Domain of the risk (supplier_reliability, store_health, customer_churn).
+      - name: risk_count
+        description: Number of entities flagged in this domain.
+      - name: risk_description
+        description: Description of the risk.
+
+  - name: rpt_innovation_pipeline
+    config:
+      tags: ['type:report']
+    description: New product and seasonal experiment performance results.
+    columns:
+      - name: season_name
+        description: Name of the season or promotion.
+      - name: total_units_sold
+        description: Total units sold for seasonal products.
+      - name: total_revenue
+        description: Total revenue from seasonal products.
+
+  - name: rpt_customer_effort_score_proxy
+    config:
+      tags: ['type:report']
+    description: Refund rate as a proxy for customer effort indicator per store per month.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: effort_month
+        description: The month of the analysis.
+      - name: refund_rate_pct
+        description: Orders with refunds as percentage of total orders.
+      - name: effort_tier
+        description: Effort classification (low_effort, moderate_effort, high_effort).
+
+  - name: rpt_unit_economics
+    config:
+      tags: ['type:report']
+    description: Revenue, COGS, gross profit, and contribution margin per product.
+    columns:
+      - name: product_id
+        description: The unique product identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: gross_margin_pct
+        description: Gross margin as percentage of revenue.
+      - name: contribution_tier
+        description: Contribution classification (high, moderate, low).
+
+  - name: rpt_loyalty_program_comprehensive
+    config:
+      tags: ['type:report']
+    description: Full loyalty program report covering enrollment, activity, and redemption rates.
+    columns:
+      - name: report_month
+        description: The month of the report.
+      - name: new_enrollments
+        description: New loyalty member enrollments.
+      - name: monthly_redemption_rate
+        description: Points redeemed as percentage of points earned.
+
+  - name: rpt_omnichannel_customer
+    config:
+      tags: ['type:report']
+    description: Customer behavior across stores identifying multi-store shoppers.
+    columns:
+      - name: customer_id
+        description: The unique customer identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: stores_visited
+        description: Number of distinct stores visited.
+      - name: store_engagement_tier
+        description: Engagement tier (single_store, dual_store, multi_store).
+
+  - name: rpt_employee_development_tracker
+    config:
+      tags: ['type:report']
+    description: Employee growth tracking across training, performance, and tenure milestones.
+    columns:
+      - name: employee_id
+        description: The unique employee identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: career_stage
+        description: Career stage classification (onboarding, first_year, developing, experienced).
+
+  - name: rpt_cost_optimization_opportunities
+    config:
+      tags: ['type:report']
+    description: Flagged areas for cost reduction including high expense ratios, waste, and overtime.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: optimization_area
+        description: Area of potential optimization.
+      - name: metric_value
+        description: Value of the metric triggering the flag.
+
+  - name: rpt_revenue_driver_decomposition
+    config:
+      tags: ['type:report']
+    description: Decomposes monthly revenue change into traffic, frequency, and ticket size components.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: revenue_month
+        description: The month of the analysis.
+      - name: traffic_change
+        description: Change in unique customer count.
+      - name: frequency_change
+        description: Change in orders per customer.
+      - name: ticket_change
+        description: Change in average order value.
+
+  - name: rpt_customer_satisfaction_composite
+    config:
+      tags: ['type:report']
+    description: Composite satisfaction proxy combining refund rate, reviews, and order frequency.
+    columns:
+      - name: customer_id
+        description: The unique customer identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: satisfaction_score
+        description: Composite satisfaction score.
+      - name: satisfaction_tier
+        description: Satisfaction tier (promoter, passive, detractor).
+
+  - name: rpt_market_basket_analysis
+    config:
+      tags: ['type:report']
+    description: Market basket analysis with top product pairs ranked by co-occurrence frequency.
+    columns:
+      - name: product_a_id
+        description: First product in the pair.
+      - name: product_b_id
+        description: Second product in the pair.
+      - name: pair_frequency
+        description: Number of orders containing both products.
+      - name: pair_rank
+        description: Rank by co-occurrence frequency.
+
+  - name: rpt_supply_demand_alignment
+    config:
+      tags: ['type:report']
+    description: Supply-demand alignment score by product comparing stock to demand.
+    columns:
+      - name: product_id
+        description: The unique product identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supply_demand_ratio
+        description: Current supply divided by total demand.
+      - name: alignment_status
+        description: Alignment classification (stockout, undersupplied, balanced, oversupplied, no_demand).
+
+  - name: rpt_operational_cost_per_order
+    config:
+      tags: ['type:report']
+    description: Total operating cost per order trend per store per month.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: order_month
+        description: The month of the analysis.
+      - name: cost_per_order
+        description: Operating expenses divided by order count.
+
+  - name: rpt_staff_to_revenue_ratio
+    config:
+      tags: ['type:report']
+    description: Staff count vs revenue trend per store per month.
+    columns:
+      - name: location_id
+        description: The store location identifier.
+      - name: month_start
+        description: The month of the analysis.
+      - name: revenue_per_employee
+        description: Monthly revenue divided by staff count.
+
+  - name: rpt_gift_card_program_summary
+    config:
+      tags: ['type:report']
+    description: Gift card program health including issuance, redemption, breakage, and liability.
+    columns:
+      - name: total_cards
+        description: Total gift cards issued.
+      - name: overall_redemption_rate_pct
+        description: Percentage of issued value that has been redeemed.
+      - name: breakage_value
+        description: Value of expired cards with remaining balance.
+
+  - name: rpt_training_investment_return
+    config:
+      tags: ['type:report']
+    description: Training spend vs employee retention and performance outcomes.
+    columns:
+      - name: employee_id
+        description: The unique employee identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: training_roi_tier
+        description: ROI classification (high_roi, moderate_roi, low_roi, no_training).
+
+  - name: rpt_vendor_management_summary
+    config:
+      tags: ['type:report']
+    description: Consolidated supplier management view with reliability and spend data.
+    columns:
+      - name: supplier_id
+        description: The unique supplier identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: vendor_classification
+        description: Vendor classification (strategic_partner, standard_vendor, at_risk_vendor, inactive).
+
+  - name: rpt_year_in_review
+    config:
+      tags: ['type:report']
+    description: Annual summary comparing key metrics year-over-year.
+    columns:
+      - name: fiscal_year
+        description: The fiscal year.
+        data_tests:
+          - not_null
+          - unique
+      - name: annual_revenue
+        description: Total annual revenue.
+      - name: revenue_yoy_growth_pct
+        description: Year-over-year revenue growth percentage.
