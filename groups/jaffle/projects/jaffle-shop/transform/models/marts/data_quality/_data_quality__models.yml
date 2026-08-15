@@ -1,0 +1,137 @@
+version: 2
+
+models:
+  - name: dq_orphan_orders
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Orders with no matching customer record. Flags referential
+      integrity issues between orders and customers.
+    columns:
+      - name: order_id
+        description: The orphan order identifier.
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: The customer_id that has no match in stg_customers.
+      - name: order_total
+        description: Total value of the orphan order.
+
+  - name: dq_duplicate_customers
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Potential duplicate customers identified by matching customer_name.
+      Each row is a customer record that shares a name with at least one other.
+    columns:
+      - name: customer_id
+        description: Customer identifier.
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: Name that appears more than once.
+      - name: name_occurrences
+        description: How many customers share this name.
+
+  - name: dq_missing_inventory_counts
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Product-location combinations with no inventory count in the last
+      30 days or that have never been counted.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - not_null
+      - name: location_id
+        description: Location identifier.
+        tests:
+          - not_null
+      - name: count_status
+        description: Whether the count is never_counted, stale_count, or recent.
+
+  - name: dq_stale_pricing
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Products whose price has not been updated in 180+ days.
+    columns:
+      - name: product_id
+        description: Product identifier.
+        tests:
+          - unique
+          - not_null
+      - name: days_since_last_change
+        description: Number of days since the last price change.
+      - name: staleness_level
+        description: Classification of staleness (stale, critically_stale, never_updated).
+
+  - name: dq_shift_overlap_check
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Employees with overlapping shifts on the same day, indicating
+      scheduling conflicts.
+    columns:
+      - name: shift_id_1
+        description: First shift in the overlap pair.
+        tests:
+          - not_null
+      - name: shift_id_2
+        description: Second shift in the overlap pair.
+        tests:
+          - not_null
+      - name: employee_id
+        description: Employee with conflicting shifts.
+
+  - name: dq_negative_balances
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Gift cards or loyalty accounts with negative balances,
+      indicating potential data or process errors.
+    columns:
+      - name: account_id
+        description: Gift card or loyalty member identifier.
+        tests:
+          - not_null
+      - name: current_balance
+        description: The negative balance amount.
+      - name: balance_type
+        description: Type of account (gift_card or loyalty_points_balance).
+
+  - name: dq_revenue_expense_mismatch
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Days where expenses exceed 2x revenue or expenses exist
+      without any revenue, flagging potential data anomalies.
+    columns:
+      - name: check_date
+        description: Date of the anomaly.
+        tests:
+          - not_null
+      - name: expense_to_revenue_ratio
+        description: Ratio of expenses to revenue.
+      - name: anomaly_type
+        description: Type of anomaly detected.
+
+  - name: dq_missing_invoices
+    config:
+      tags: ['type:data_quality']
+    description: >
+      Orders without corresponding invoices, indicating potential
+      billing gaps.
+    columns:
+      - name: order_id
+        description: Order with no matching invoice.
+        tests:
+          - unique
+          - not_null
+      - name: order_status
+        description: Status of the order.
+      - name: missing_invoice_type
+        description: Classification based on order status.

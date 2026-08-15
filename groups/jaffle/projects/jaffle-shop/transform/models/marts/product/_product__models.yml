@@ -1,0 +1,223 @@
+models:
+  - name: int_recipe_cost_breakdown
+    description: Cost per ingredient per recipe, using the latest ingredient prices. One row per recipe-ingredient combination.
+    columns:
+      - name: recipe_ingredient_id
+        description: The unique key for each recipe ingredient entry.
+        data_tests:
+          - not_null
+          - unique
+      - name: recipe_id
+        description: Foreign key to the recipe.
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+      - name: ingredient_name
+        description: Name of the ingredient.
+      - name: ingredient_category
+        description: Category of the ingredient.
+      - name: quantity
+        description: Quantity of the ingredient required.
+      - name: quantity_unit
+        description: Unit of measure for the quantity.
+      - name: ingredient_unit_cost
+        description: Current unit cost of the ingredient in USD.
+      - name: ingredient_line_cost
+        description: Total cost for this ingredient in this recipe (quantity x unit cost) in USD.
+
+  - name: int_recipe_total_cost
+    description: Total COGS per recipe based on all ingredient costs. One row per recipe.
+    columns:
+      - name: recipe_id
+        description: The unique key for each recipe.
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_count
+        description: Number of distinct ingredients in the recipe.
+      - name: total_ingredient_cost
+        description: Total ingredient cost for the recipe in USD.
+      - name: highest_ingredient_cost
+        description: Cost of the most expensive ingredient in the recipe in USD.
+      - name: lowest_ingredient_cost
+        description: Cost of the least expensive ingredient in the recipe in USD.
+
+  - name: int_menu_item_enriched
+    description: Menu items enriched with category, nutritional, and product data. One row per menu item.
+    columns:
+      - name: menu_item_id
+        description: The unique key for each menu item.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_id
+        description: Foreign key to the base product.
+      - name: menu_category_id
+        description: Foreign key to the menu category.
+      - name: menu_item_name
+        description: Display name of the menu item.
+      - name: menu_item_price
+        description: Current menu price in USD.
+      - name: category_name
+        description: Name of the menu category.
+      - name: product_type
+        description: Type of the base product.
+      - name: calories
+        description: Total calories per serving.
+      - name: sodium_mg
+        description: Sodium in milligrams per serving.
+      - name: protein_g
+        description: Protein in grams per serving.
+
+  - name: int_menu_item_margin
+    description: Menu item margins calculated as price minus ingredient cost. One row per menu item.
+    columns:
+      - name: menu_item_id
+        description: The unique key for each menu item.
+        data_tests:
+          - not_null
+          - unique
+      - name: menu_item_name
+        description: Display name of the menu item.
+      - name: menu_item_price
+        description: Current menu price in USD.
+      - name: total_ingredient_cost
+        description: Total ingredient cost based on recipe in USD.
+      - name: gross_margin
+        description: Gross margin in USD (price minus ingredient cost).
+      - name: gross_margin_pct
+        description: Gross margin as a percentage of price.
+
+  - name: int_ingredient_usage_daily
+    config:
+      tags: ['cadence:daily']
+    description: Daily ingredient consumption based on orders and recipes. One row per date, ingredient, and unit.
+    columns:
+      - name: order_date
+        description: The date of the orders.
+        data_tests:
+          - not_null
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+        data_tests:
+          - not_null
+      - name: quantity_unit
+        description: Unit of measure for the ingredient quantity.
+      - name: total_quantity_used
+        description: Total quantity of the ingredient consumed on this date.
+      - name: order_item_count
+        description: Number of order items that consumed this ingredient.
+
+  - name: int_ingredient_cost_trend
+    description: Monthly average cost per ingredient with month-over-month change. One row per ingredient per month.
+    columns:
+      - name: ingredient_id
+        description: Foreign key to the ingredient.
+        data_tests:
+          - not_null
+      - name: price_month
+        description: The month of the price records.
+        data_tests:
+          - not_null
+      - name: avg_unit_cost
+        description: Average unit cost for the month in USD.
+      - name: min_unit_cost
+        description: Minimum unit cost for the month in USD.
+      - name: max_unit_cost
+        description: Maximum unit cost for the month in USD.
+      - name: prev_month_avg_cost
+        description: Previous month average unit cost in USD.
+      - name: mom_cost_change_pct
+        description: Month-over-month cost change percentage.
+
+  - name: int_product_sales_daily
+    config:
+      tags: ['cadence:daily']
+    description: Daily sales volume and revenue per product. One row per product per day.
+    columns:
+      - name: sale_date
+        description: The date of the sales.
+        data_tests:
+          - not_null
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: product_type
+        description: Type of the product.
+      - name: units_sold
+        description: Number of units sold on this date.
+      - name: order_count
+        description: Number of distinct orders containing this product.
+      - name: daily_revenue
+        description: Total revenue for this product on this date in USD.
+
+  - name: int_product_affinity
+    description: Products frequently ordered together based on co-occurrence in the same order. One row per product pair.
+    columns:
+      - name: product_id_a
+        description: First product in the pair.
+        data_tests:
+          - not_null
+      - name: product_id_b
+        description: Second product in the pair.
+        data_tests:
+          - not_null
+      - name: co_occurrence_count
+        description: Number of orders containing both products.
+      - name: support_a
+        description: Proportion of product A orders that also contain product B.
+      - name: support_b
+        description: Proportion of product B orders that also contain product A.
+      - name: affinity_rank
+        description: Rank of this pair by co-occurrence count for product A.
+
+  - name: int_seasonal_sales_pattern
+    description: Sales patterns during seasonal promotions. One row per product, season, and promotion status.
+    columns:
+      - name: product_id
+        description: Foreign key to the product.
+        data_tests:
+          - not_null
+      - name: product_name
+        description: Name of the product.
+      - name: season_name
+        description: Name of the season.
+      - name: promotion_name
+        description: Name of the seasonal promotion.
+      - name: is_during_promotion
+        description: Whether these sales occurred during the promotion period.
+      - name: total_units_sold
+        description: Total units sold during this period.
+      - name: total_revenue
+        description: Total revenue during this period in USD.
+      - name: avg_daily_units
+        description: Average daily units sold during this period.
+
+  - name: int_product_review_summary
+    description: Aggregated review metrics per product. One row per product.
+    columns:
+      - name: product_id
+        description: The unique key for each product.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_review_count
+        description: Total number of reviews for this product.
+      - name: avg_rating
+        description: Average rating (1-5 scale).
+      - name: positive_review_count
+        description: Number of reviews with rating >= 4.
+      - name: neutral_review_count
+        description: Number of reviews with rating = 3.
+      - name: negative_review_count
+        description: Number of reviews with rating <= 2.
+      - name: positive_review_pct
+        description: Percentage of reviews that are positive.
+      - name: negative_review_pct
+        description: Percentage of reviews that are negative.
+      - name: first_review_date
+        description: Date of the earliest review.
+      - name: last_review_date
+        description: Date of the most recent review.

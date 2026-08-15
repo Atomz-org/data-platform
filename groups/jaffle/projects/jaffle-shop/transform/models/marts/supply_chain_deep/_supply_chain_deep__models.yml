@@ -1,0 +1,193 @@
+models:
+  - name: int_po_line_item_enriched
+    description: Purchase order line items enriched with supplier, product, and cost context.
+    columns:
+      - name: po_line_item_id
+        description: The unique PO line item identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_name
+        description: Name of the supplier for this PO.
+      - name: product_name
+        description: Name of the product ordered.
+
+  - name: int_receipt_quality_check
+    description: Quality pass/fail rate summary per purchase order from receipt records.
+    columns:
+      - name: purchase_order_id
+        description: The unique purchase order identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: quality_pass_rate_pct
+        description: Percentage of receipts that passed quality checks.
+
+  - name: int_inventory_movement_enriched
+    description: Inventory movements enriched with product and location context.
+    columns:
+      - name: movement_id
+        description: The unique movement identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: product_name
+        description: Name of the product moved.
+      - name: location_name
+        description: Name of the location.
+      - name: inbound_quantity
+        description: Quantity received (inbound movements only).
+      - name: outbound_quantity
+        description: Quantity dispatched (outbound movements only).
+
+  - name: int_waste_by_reason
+    description: Waste aggregated by reason category, location, and month.
+    columns:
+      - name: waste_reason
+        description: The reason for waste.
+      - name: total_quantity_wasted
+        description: Total units wasted.
+      - name: total_waste_cost
+        description: Total cost of wasted items.
+
+  - name: int_supplier_order_frequency
+    description: Order frequency and average order value per supplier.
+    columns:
+      - name: supplier_id
+        description: The unique supplier identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_days_between_orders
+        description: Average number of days between orders to this supplier.
+      - name: total_order_value
+        description: Total value of all orders to this supplier.
+
+  - name: int_delivery_cost_per_unit
+    description: Delivery cost divided by units delivered per shipment.
+    columns:
+      - name: shipment_id
+        description: The unique shipment identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: cost_per_unit_delivered
+        description: PO cost divided by units received.
+      - name: transit_days
+        description: Number of days in transit.
+
+  - name: int_inventory_weeks_of_supply
+    description: Weeks of supply remaining per product per location based on depletion rate.
+    columns:
+      - name: product_id
+        description: The unique product identifier.
+      - name: location_id
+        description: The unique location identifier.
+      - name: weeks_of_supply
+        description: Estimated weeks of remaining supply.
+      - name: supply_status
+        description: Supply health status (critical, low, healthy, overstocked, no_demand).
+
+  - name: int_supplier_payment_aging
+    description: Days payable outstanding per supplier with aging bucket breakdown.
+    columns:
+      - name: supplier_id
+        description: The unique supplier identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: avg_days_payable_outstanding
+        description: Average days since order for unpaid POs.
+      - name: total_outstanding
+        description: Total outstanding payable amount.
+
+  - name: int_warehouse_throughput
+    description: Daily inbound and outbound volume per warehouse.
+    columns:
+      - name: warehouse_id
+        description: The warehouse identifier.
+      - name: throughput_date
+        description: The date of warehouse activity.
+      - name: inbound_units
+        description: Total units received.
+      - name: outbound_units
+        description: Total units dispatched.
+      - name: net_flow
+        description: Net flow (outbound minus inbound).
+
+  - name: int_ingredient_sourcing_options
+    description: Available suppliers per product with price comparison and cost ranking.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: supplier_id
+        description: The supplier identifier.
+      - name: cost_rank
+        description: Rank of this supplier by average unit cost for this product.
+      - name: available_supplier_count
+        description: Number of suppliers available for this product.
+
+  - name: int_po_approval_time
+    description: Days from PO creation to approval/dispatch.
+    columns:
+      - name: purchase_order_id
+        description: The unique purchase order identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: days_to_approval
+        description: Number of days from creation to ordering.
+      - name: approval_speed
+        description: Approval speed tier (same_day, fast, normal, slow, pending).
+
+  - name: int_inventory_shrinkage
+    description: Difference between expected (system) and actual (counted) inventory per product per location.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: location_id
+        description: The location identifier.
+      - name: shrinkage_quantity
+        description: Expected minus counted quantity (positive = shortage).
+      - name: shrinkage_pct
+        description: Shrinkage as a percentage of expected inventory.
+      - name: shrinkage_status
+        description: Whether stock shows shortage, surplus, or match.
+
+  - name: int_supplier_contract_expiry
+    description: Supplier contracts with days until expiry and urgency classification.
+    columns:
+      - name: contract_id
+        description: The unique contract identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: days_until_expiry
+        description: Days remaining until contract expires.
+      - name: expiry_urgency
+        description: Urgency level (expired, critical, warning, upcoming, active).
+
+  - name: int_seasonal_inventory_needs
+    description: Monthly inventory needs based on seasonal demand pattern with seasonal index.
+    columns:
+      - name: product_id
+        description: The product identifier.
+      - name: demand_month
+        description: The month of the demand forecast.
+      - name: seasonal_index
+        description: Monthly demand divided by annual average (1.0 = average).
+      - name: season_classification
+        description: Season type (peak, normal, low).
+
+  - name: int_warehouse_cost_allocation
+    description: Warehouse operating cost allocated to products by space utilization.
+    columns:
+      - name: warehouse_id
+        description: The warehouse identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: capacity_utilization_pct
+        description: Percentage of warehouse capacity in use.
+      - name: total_inventory_value
+        description: Total value of inventory stored.

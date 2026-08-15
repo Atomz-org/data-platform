@@ -1,0 +1,162 @@
+models:
+  - name: int_daily_orders_by_store
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily order count and revenue per store. Foundation model for store-level
+      time-series analysis, aggregated from stg_orders.
+    columns:
+      - name: order_date
+        description: The date orders were placed.
+      - name: location_id
+        description: The store/location identifier.
+      - name: location_name
+        description: The name of the store.
+      - name: order_count
+        description: Number of orders placed on this date at this store.
+      - name: unique_customers
+        description: Distinct customers who ordered.
+      - name: total_revenue
+        description: Total order revenue for the day.
+      - name: avg_order_value
+        description: Average order value for the day.
+
+  - name: int_weekly_orders_by_store
+    config:
+      tags: ['cadence:weekly']
+    description: >
+      Weekly aggregation of store orders. Rolls up int_daily_orders_by_store
+      into weekly totals per location.
+    columns:
+      - name: week_start
+        description: The start of the week.
+      - name: location_id
+        description: The store/location identifier.
+      - name: order_count
+        description: Total orders for the week.
+      - name: total_revenue
+        description: Total revenue for the week.
+      - name: active_days_in_week
+        description: Number of days with at least one order.
+
+  - name: int_monthly_orders_by_store
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly store orders with month-over-month and year-over-year growth rates.
+      Aggregated from int_daily_orders_by_store.
+    columns:
+      - name: month_start
+        description: The first day of the month.
+      - name: location_id
+        description: The store/location identifier.
+      - name: order_count
+        description: Total orders for the month.
+      - name: total_revenue
+        description: Total revenue for the month.
+      - name: mom_revenue_growth
+        description: Month-over-month revenue growth rate.
+      - name: yoy_revenue_growth
+        description: Year-over-year revenue growth rate.
+
+  - name: int_daily_orders_by_product
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily order count per product. Foundation model for product-level
+      time-series analysis from stg_order_items and stg_orders.
+    columns:
+      - name: order_date
+        description: The date orders were placed.
+      - name: product_id
+        description: The product identifier.
+      - name: product_name
+        description: The name of the product.
+      - name: product_type
+        description: The type of product (jaffle, beverage, etc.).
+      - name: units_sold
+        description: Number of units sold on this date.
+      - name: order_count
+        description: Number of distinct orders containing this product.
+      - name: daily_revenue
+        description: Total revenue from this product on this date.
+
+  - name: int_weekly_product_sales
+    config:
+      tags: ['cadence:weekly']
+    description: >
+      Weekly product sales aggregation. Rolls up int_daily_orders_by_product
+      into weekly totals per product.
+    columns:
+      - name: week_start
+        description: The start of the week.
+      - name: product_id
+        description: The product identifier.
+      - name: product_name
+        description: The name of the product.
+      - name: units_sold
+        description: Total units sold during the week.
+      - name: weekly_revenue
+        description: Total revenue from this product for the week.
+      - name: avg_daily_units
+        description: Average daily units sold.
+
+  - name: int_monthly_product_sales
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly product sales with month-over-month revenue growth.
+      Aggregated from int_daily_orders_by_product.
+    columns:
+      - name: month_start
+        description: The first day of the month.
+      - name: product_id
+        description: The product identifier.
+      - name: product_name
+        description: The name of the product.
+      - name: units_sold
+        description: Total units sold during the month.
+      - name: monthly_revenue
+        description: Total revenue from this product for the month.
+      - name: mom_revenue_growth
+        description: Month-over-month revenue growth rate.
+
+  - name: int_daily_customer_activity
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily unique customers and new vs returning breakdown.
+      Combines stg_orders with customers mart to identify first-time buyers.
+    columns:
+      - name: activity_date
+        description: The date of customer activity.
+      - name: unique_customers
+        description: Total unique customers who ordered on this date.
+      - name: new_customers
+        description: Customers placing their first-ever order on this date.
+      - name: returning_customers
+        description: Customers who had previously ordered before this date.
+      - name: total_orders
+        description: Total orders placed on this date.
+      - name: total_revenue
+        description: Total revenue on this date.
+
+  - name: int_monthly_active_customers
+    config:
+      tags: ['cadence:monthly']
+    description: >
+      Monthly active customer count with month-over-month changes.
+      Aggregated from int_daily_customer_activity.
+    columns:
+      - name: month_start
+        description: The first day of the month.
+      - name: total_customer_visits
+        description: Sum of daily unique customer counts for the month.
+      - name: new_customers
+        description: Total new customers acquired in the month.
+      - name: returning_customer_visits
+        description: Sum of daily returning customer counts.
+      - name: mom_customer_visit_change
+        description: Month-over-month change in customer visits.
+      - name: mom_new_customer_change
+        description: Month-over-month change in new customer acquisition.
