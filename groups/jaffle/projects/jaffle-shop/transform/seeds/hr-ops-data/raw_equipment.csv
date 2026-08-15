@@ -1,0 +1,9 @@
+id,store_id,name,type,manufacturer,model_number,serial_number,status,purchase_cost,purchase_date,warranty_expiry,last_maintenance_date
+1,1,La Marzocco Linea,espresso_machine,La Marzocco,LM-LINEA-PB,SN-2022-001,operational,1500000,2022-01-10,2025-01-10,2024-06-15
+2,1,Mahlkonig EK43,grinder,Mahlkonig,EK43S,SN-2022-002,operational,280000,2022-01-10,2024-01-10,2024-07-01
+3,2,La Marzocco Linea,espresso_machine,La Marzocco,LM-LINEA-PB,SN-2022-003,operational,1500000,2022-03-15,2025-03-15,2024-05-20
+4,2,Vitamix Commercial,blender,Vitamix,VM-QUIET-ONE,SN-2022-004,needs_repair,85000,2022-03-15,2024-03-15,2024-01-10
+5,3,La Marzocco Linea,espresso_machine,La Marzocco,LM-LINEA-PB,SN-2022-005,operational,1500000,2022-06-01,2025-06-01,2024-08-01
+6,4,Nuova Simonelli,espresso_machine,Nuova Simonelli,NS-AURELIA,SN-2023-001,operational,1200000,2023-01-10,2026-01-10,2024-04-15
+7,5,Mahlkonig EK43,grinder,Mahlkonig,EK43S,SN-2023-002,operational,280000,2023-06-01,2025-06-01,2024-03-01
+8,1,Refrigerator Unit,refrigeration,True Manufacturing,T-49-HC,SN-2022-006,operational,350000,2022-01-10,2027-01-10,2024-02-15

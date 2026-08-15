@@ -1,0 +1,8 @@
+id,campaign_id,platform,post_type,content,url,impressions,reach,likes,shares,comments,clicks,posted_at
+1,2,instagram,image,Beat the heat with our new Cold Brew lineup!,https://instagram.com/p/abc123,15000,12000,1200,350,85,420,2023-06-01 12:00:00
+2,2,facebook,video,How we craft the perfect cold brew,https://facebook.com/posts/def456,22000,18000,800,500,120,680,2023-06-15 10:00:00
+3,2,tiktok,video,Cold brew ASMR - watch the pour,https://tiktok.com/@jaffle/ghi789,50000,45000,5000,2000,300,1500,2023-07-01 14:00:00
+4,5,instagram,carousel,Welcome to Jaffle Rewards! Earn points on every sip,https://instagram.com/p/jkl012,18000,15000,2200,600,150,900,2024-03-01 11:00:00
+5,5,twitter,text,Big news! Our loyalty program is live. Sign up today and get 500 bonus points,https://twitter.com/jaffle/mno345,8000,6500,400,200,45,350,2024-03-01 12:00:00
+6,6,tiktok,video,Back to school? Back to coffee! Student discounts all semester,https://tiktok.com/@jaffle/pqr678,35000,30000,3500,1500,200,1200,2024-08-15 15:00:00
+7,6,instagram,story,Show your student ID for 20% off any drink,https://instagram.com/stories/stu901,12000,10000,800,150,60,500,2024-08-20 09:00:00

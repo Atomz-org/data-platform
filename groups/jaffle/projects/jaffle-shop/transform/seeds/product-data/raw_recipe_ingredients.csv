@@ -1,0 +1,16 @@
+id,recipe_id,ingredient_id,quantity,unit
+1,1,1,18,grams
+2,1,2,340,ml
+3,2,1,85,grams
+4,2,2,475,ml
+5,3,1,18,grams
+6,3,3,300,ml
+7,3,4,30,ml
+8,4,1,18,grams
+9,4,3,300,ml
+10,4,4,15,ml
+11,4,5,15,ml
+12,5,6,240,grams
+13,5,7,150,grams
+14,6,8,60,ml
+15,6,3,300,ml

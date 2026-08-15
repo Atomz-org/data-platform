@@ -1,0 +1,11 @@
+id,invoice_id,product_id,description,quantity,unit_price,line_total
+1,1,1,House Blend Coffee - Large,3,450,1350
+2,1,3,Vanilla Latte,2,575,1150
+3,1,5,Blueberry Muffin,4,500,2000
+4,2,2,Cold Brew Coffee,5,500,2500
+5,3,4,Caramel Macchiato,8,625,5000
+6,3,1,House Blend Coffee - Medium,2,350,700
+7,4,6,Chai Tea Latte,4,525,2100
+8,4,3,Vanilla Latte,2,575,1150
+9,5,7,Espresso Shot,10,300,3000
+10,5,8,Chocolate Croissant,10,550,5500

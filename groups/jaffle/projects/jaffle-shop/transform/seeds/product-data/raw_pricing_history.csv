@@ -1,0 +1,9 @@
+id,product_id,old_price,new_price,change_reason,changed_at
+1,1,300,325,Annual price adjustment,2023-01-01 00:00:00
+2,1,325,350,Cost increase from supplier,2024-01-01 00:00:00
+3,2,450,475,Annual price adjustment,2023-01-01 00:00:00
+4,2,475,500,Cost increase from supplier,2024-01-01 00:00:00
+5,3,525,550,Annual price adjustment,2023-01-01 00:00:00
+6,3,550,575,Cost increase from supplier,2024-01-01 00:00:00
+7,5,400,425,Annual price adjustment,2023-01-01 00:00:00
+8,5,425,450,Cost increase from supplier,2024-01-01 00:00:00
