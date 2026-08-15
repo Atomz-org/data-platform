@@ -1,0 +1,3 @@
+-- source extract for int_loyalty_engagement_frequency (PII columns excluded by the MDL projection)
+select loyalty_member_id, avg_days_between_transactions, engagement_tier, total_transactions, min_days_between_transactions, max_days_between_transactions, first_transaction_date, last_transaction_date
+from main_marts.int_loyalty_engagement_frequency
