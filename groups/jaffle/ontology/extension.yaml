@@ -1,0 +1,1262 @@
+# Group ontology extension — approved additions only.
+#
+# Layers over the platform ontology; never replaces it. Terms here are
+# specific to this group, so another company never inherits a word that
+# means nothing to them. Written by `pf ontology approve`; hand edits are
+# expected and preserved.
+
+classes:
+  AccountReceivable:
+    label: AccountReceivable
+    description: Induced from `raw_accounts_receivable` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      invoice_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      amount_due:
+        datatype: integer
+        role: money_amount
+        required: true
+      amount_paid:
+        datatype: integer
+        role: money_amount
+        required: true
+      amount_outstanding:
+        datatype: integer
+        role: money_amount
+        required: true
+      due_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Budget:
+    label: Budget
+    description: Induced from `raw_budgets` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      category_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      budgeted_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      month_start:
+        datatype: date
+        role: event_time
+        required: true
+  CampaignSpend:
+    label: CampaignSpend
+    description: Induced from `raw_campaign_spend` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      campaign_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      spend_date:
+        datatype: date
+        role: event_time
+        required: true
+  Campaign:
+    label: Campaign
+    description: Induced from `raw_campaigns` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      start_date:
+        datatype: date
+        role: event_time
+        required: true
+      end_date:
+        datatype: date
+        role: event_time
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  CouponRedemption:
+    label: CouponRedemption
+    description: Induced from `raw_coupon_redemptions` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      coupon_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      redeemed_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Coupon:
+    label: Coupon
+    description: Induced from `raw_coupons` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      campaign_id:
+        datatype: integer
+        role: foreign_key
+      discount_amount:
+        datatype: integer
+        role: money_amount
+      minimum_order_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      valid_from:
+        datatype: date
+        role: event_time
+        required: true
+      valid_until:
+        datatype: date
+        role: event_time
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Customer:
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+  DeliveryShipment:
+    label: DeliveryShipment
+    description: Induced from `raw_delivery_shipments` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      purchase_order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      supplier_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      destination_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      shipped_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      estimated_arrival_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      actual_arrival_at:
+        datatype: timestamp
+        role: event_time
+  Department:
+    label: Department
+    description: Induced from `raw_departments` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+  EmailEvent:
+    label: EmailEvent
+    description: Induced from `raw_email_events` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      campaign_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      event_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Employee:
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      department_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      position_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      hire_date:
+        datatype: date
+        role: event_time
+        required: true
+      termination_date:
+        datatype: date
+        role: event_time
+  Equipment:
+    label: Equipment
+    description: Induced from `raw_equipment` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      purchase_cost:
+        datatype: integer
+        role: money_amount
+        required: true
+      purchase_date:
+        datatype: date
+        role: event_time
+        required: true
+      warranty_expiry:
+        datatype: date
+        role: event_time
+        required: true
+      last_maintenance_date:
+        datatype: date
+        role: event_time
+        required: true
+  ExpenseCategory:
+    label: ExpenseCategory
+    description: Induced from `raw_expense_categories` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+  Expense:
+    label: Expense
+    description: Induced from `raw_expenses` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      category_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      incurred_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  GiftCard:
+    label: GiftCard
+    description: Induced from `raw_gift_cards` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      initial_balance:
+        datatype: integer
+        role: money_amount
+        required: true
+      current_balance:
+        datatype: integer
+        role: money_amount
+        required: true
+      issued_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      expires_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  IngredientPrice:
+    label: IngredientPrice
+    description: Induced from `raw_ingredient_prices` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      ingredient_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      supplier_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      unit_cost:
+        datatype: integer
+        role: money_amount
+        required: true
+      effective_from:
+        datatype: date
+        role: event_time
+        required: true
+      effective_to:
+        datatype: date
+        role: event_time
+        required: true
+  Ingredient:
+    label: Ingredient
+    description: Induced from `raw_ingredients` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+  InventoryCount:
+    label: InventoryCount
+    description: Induced from `raw_inventory_counts` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      location_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      counted_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  InventoryMovement:
+    label: InventoryMovement
+    description: Induced from `raw_inventory_movements` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      location_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      reference_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      moved_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  InvoiceLineItem:
+    label: InvoiceLineItem
+    description: Induced from `raw_invoice_line_items` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      invoice_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      unit_price:
+        datatype: integer
+        role: money_amount
+        required: true
+      line_total:
+        datatype: integer
+        role: money_amount
+        required: true
+  Invoice:
+    label: Invoice
+    description: Induced from `raw_invoices` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      subtotal:
+        datatype: integer
+        role: money_amount
+        required: true
+      tax_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      total_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      amount_paid:
+        datatype: integer
+        role: money_amount
+        required: true
+      amount_due:
+        datatype: integer
+        role: money_amount
+        required: true
+      issued_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      due_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      paid_at:
+        datatype: timestamp
+        role: event_time
+  Item:
+    label: Item
+    description: Induced from `raw_items` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      order_id:
+        datatype: string
+        role: foreign_key
+        required: true
+  LoyaltyMember:
+    label: LoyaltyMember
+    description: Induced from `raw_loyalty_members` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      tier_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      enrolled_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      last_activity_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  LoyaltyTier:
+    label: LoyaltyTier
+    description: Induced from `raw_loyalty_tiers` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+  LoyaltyTransaction:
+    label: LoyaltyTransaction
+    description: Induced from `raw_loyalty_transactions` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      loyalty_member_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+      transacted_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  MaintenanceLog:
+    label: MaintenanceLog
+    description: Induced from `raw_maintenance_logs` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      equipment_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      cost:
+        datatype: integer
+        role: money_amount
+        required: true
+      scheduled_date:
+        datatype: date
+        role: event_time
+        required: true
+      completed_date:
+        datatype: date
+        role: event_time
+  MenuCategory:
+    label: MenuCategory
+    description: Induced from `raw_menu_categories` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      parent_category_id:
+        datatype: integer
+        role: foreign_key
+  MenuItem:
+    label: MenuItem
+    description: Induced from `raw_menu_items` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      category_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      price:
+        datatype: integer
+        role: money_amount
+        required: true
+  NutritionalInfo:
+    label: NutritionalInfo
+    description: Induced from `raw_nutritional_info` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      menu_item_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      total_fat_g:
+        datatype: integer
+        role: money_amount
+        required: true
+      total_carbs_g:
+        datatype: integer
+        role: money_amount
+        required: true
+      total_sugars_g:
+        datatype: integer
+        role: money_amount
+        required: true
+      updated_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Order:
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      ordered_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      store_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      subtotal:
+        datatype: integer
+        role: money_amount
+        required: true
+      order_total:
+        datatype: integer
+        role: money_amount
+        required: true
+  PaymentTransaction:
+    label: PaymentTransaction
+    description: Induced from `raw_payment_transactions` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      gift_card_id:
+        datatype: integer
+        role: foreign_key
+      amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      processed_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Payroll:
+    label: Payroll
+    description: Induced from `raw_payroll` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      employee_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      pay_period_start:
+        datatype: date
+        role: event_time
+        required: true
+      pay_period_end:
+        datatype: date
+        role: event_time
+        required: true
+      pay_date:
+        datatype: date
+        role: event_time
+        required: true
+  PerformanceReview:
+    label: PerformanceReview
+    description: Induced from `raw_performance_reviews` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      employee_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      reviewer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      review_date:
+        datatype: date
+        role: event_time
+        required: true
+  PoLineItem:
+    label: PoLineItem
+    description: Induced from `raw_po_line_items` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      purchase_order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      unit_cost:
+        datatype: integer
+        role: money_amount
+        required: true
+      line_total:
+        datatype: integer
+        role: money_amount
+        required: true
+  PoReceipt:
+    label: PoReceipt
+    description: Induced from `raw_po_receipts` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      purchase_order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      po_line_item_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      received_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Position:
+    label: Position
+    description: Induced from `raw_positions` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      department_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+  PricingHistory:
+    label: PricingHistory
+    description: Induced from `raw_pricing_history` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      old_price:
+        datatype: integer
+        role: money_amount
+        required: true
+      new_price:
+        datatype: integer
+        role: money_amount
+        required: true
+      changed_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  ProductReview:
+    label: ProductReview
+    description: Induced from `raw_product_reviews` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      reviewed_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Product:
+    properties:
+      sku:
+        datatype: string
+        role: natural_key
+        required: true
+      price:
+        datatype: integer
+        role: money_amount
+        required: true
+  PurchaseOrder:
+    label: PurchaseOrder
+    description: Induced from `raw_purchase_orders` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      supplier_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      warehouse_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      total_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      ordered_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      expected_delivery_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  RecipeIngredient:
+    label: RecipeIngredient
+    description: Induced from `raw_recipe_ingredients` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      recipe_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      ingredient_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+  Recipe:
+    label: Recipe
+    description: Induced from `raw_recipes` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      menu_item_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      updated_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Referral:
+    label: Referral
+    description: Induced from `raw_referrals` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      referrer_customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      referee_customer_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      campaign_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      reward_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      referred_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      converted_at:
+        datatype: timestamp
+        role: event_time
+  Refund:
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      order_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      invoice_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      refund_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      requested_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      resolved_at:
+        datatype: timestamp
+        role: event_time
+  SeasonalMenu:
+    label: SeasonalMenu
+    description: Induced from `raw_seasonal_menus` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      menu_item_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      start_date:
+        datatype: date
+        role: event_time
+        required: true
+      end_date:
+        datatype: date
+        role: event_time
+        required: true
+  Shift:
+    label: Shift
+    description: Induced from `raw_shifts` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      employee_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      shift_date:
+        datatype: date
+        role: event_time
+        required: true
+      scheduled_start:
+        datatype: timestamp
+        role: event_time
+        required: true
+      scheduled_end:
+        datatype: timestamp
+        role: event_time
+        required: true
+      actual_start:
+        datatype: timestamp
+        role: event_time
+      actual_end:
+        datatype: timestamp
+        role: event_time
+  SocialMediaPost:
+    label: SocialMediaPost
+    description: Induced from `raw_social_media_posts` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      campaign_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      posted_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  StoreHour:
+    label: StoreHour
+    description: Induced from `raw_store_hours` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+  Store:
+    label: Store
+    description: Induced from `raw_stores` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: string
+        role: natural_key
+        required: true
+      opened_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  SupplierContract:
+    label: SupplierContract
+    description: Induced from `raw_supplier_contracts` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      supplier_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      minimum_order_amount:
+        datatype: integer
+        role: money_amount
+        required: true
+      effective_date:
+        datatype: date
+        role: event_time
+        required: true
+      expiration_date:
+        datatype: date
+        role: event_time
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  Supplier:
+    label: Supplier
+    description: Induced from `raw_suppliers` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      created_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  TaxRate:
+    label: TaxRate
+    description: Induced from `raw_tax_rates` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      effective_from:
+        datatype: date
+        role: event_time
+        required: true
+      effective_to:
+        datatype: date
+        role: event_time
+        required: true
+  Timecard:
+    label: Timecard
+    description: Induced from `raw_timecards` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      employee_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      store_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      work_date:
+        datatype: date
+        role: event_time
+        required: true
+      clock_in:
+        datatype: timestamp
+        role: event_time
+        required: true
+      clock_out:
+        datatype: timestamp
+        role: event_time
+        required: true
+  TrainingCompletion:
+    label: TrainingCompletion
+    description: Induced from `raw_training_completions` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      employee_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      course_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      started_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      completed_at:
+        datatype: timestamp
+        role: event_time
+  TrainingCourse:
+    label: TrainingCourse
+    description: Induced from `raw_training_courses` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+  Warehouse:
+    label: Warehouse
+    description: Induced from `raw_warehouses` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      opened_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+  WasteLog:
+    label: WasteLog
+    description: Induced from `raw_waste_logs` and approved by onboarding-ladder.
+    identity: id
+    properties:
+      id:
+        datatype: integer
+        role: natural_key
+        required: true
+      product_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      location_id:
+        datatype: integer
+        role: foreign_key
+        required: true
+      cost_of_waste:
+        datatype: integer
+        role: money_amount
+        required: true
+      wasted_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+relations: []
+version: 1

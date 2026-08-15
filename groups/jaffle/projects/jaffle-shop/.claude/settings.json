@@ -1,0 +1,66 @@
+{
+  "extraKnownMarketplaces": {
+    "platform": {
+      "source": {
+        "source": "../../../../platform"
+      }
+    },
+    "jaffle": {
+      "source": {
+        "source": "../.."
+      }
+    }
+  },
+  "enabledPlugins": [
+    "platform-init@platform",
+    "dlt-ingest@platform",
+    "dlt-quality@platform",
+    "dlt-explore@platform",
+    "duckdb-ops@platform",
+    "dbt-modeling@platform",
+    "dbt-semantic@platform",
+    "dbt-testing@platform",
+    "dbt-govern@platform",
+    "dagster-orchestrate@platform",
+    "python-standards@platform",
+    "jaffle-group@jaffle",
+    "evidence-bi@platform",
+    "dbt-snowflake@platform"
+  ],
+  "permissions": {
+    "deny": [
+      "Read(../*/src/**)",
+      "Read(../../../*/projects/**)"
+    ],
+    "allow": [
+      "Bash(uv run pf:*)",
+      "Bash(dbt parse:*)",
+      "Bash(dbt ls:*)",
+      "Bash(dbt build:*)",
+      "Bash(dbt test:*)",
+      "Bash(mf query:*)",
+      "Bash(mf list:*)",
+      "Bash(pf report:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run sources:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(pf align:*)",
+      "Bash(pf dialect:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python ../../../../platform/hooks/pre_tool_use.py"
+          }
+        ]
+      }
+    ]
+  }
+}
