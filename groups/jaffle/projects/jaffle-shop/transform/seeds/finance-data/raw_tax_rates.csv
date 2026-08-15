@@ -1,0 +1,7 @@
+id,jurisdiction,tax_type,rate,effective_from,effective_to
+1,California,state_sales,0.0725,2023-01-01,2025-12-31
+2,San Francisco,local_sales,0.0125,2023-01-01,2025-12-31
+3,New York,state_sales,0.0800,2023-01-01,2025-12-31
+4,New York City,local_sales,0.0450,2023-01-01,2025-12-31
+5,Texas,state_sales,0.0625,2023-01-01,2025-12-31
+6,Oregon,state_sales,0.0000,2023-01-01,2025-12-31

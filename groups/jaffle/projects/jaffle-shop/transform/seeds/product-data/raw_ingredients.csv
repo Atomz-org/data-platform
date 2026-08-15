@@ -1,0 +1,11 @@
+id,name,category,unit,is_perishable,is_allergen
+1,Arabica Coffee Beans,coffee,grams,false,false
+2,Filtered Water,water,ml,false,false
+3,Whole Milk,dairy,ml,true,true
+4,Vanilla Syrup,syrup,ml,false,false
+5,Caramel Sauce,sauce,ml,false,false
+6,All-Purpose Flour,baking,grams,false,true
+7,Fresh Blueberries,fruit,grams,true,false
+8,Chai Concentrate,tea,ml,false,false
+9,Oat Milk,dairy_alternative,ml,true,false
+10,Dark Chocolate,baking,grams,false,true

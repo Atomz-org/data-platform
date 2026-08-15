@@ -1,0 +1,8 @@
+id,purchase_order_id,po_line_item_id,quantity_received,quality_status,received_at
+1,1,1,500,accepted,2023-03-07 14:00:00
+2,1,2,498,accepted,2023-03-07 14:30:00
+3,2,3,200,accepted,2023-03-07 10:00:00
+4,3,4,300,accepted,2023-06-10 11:00:00
+5,4,5,550,accepted,2023-09-07 15:00:00
+6,4,6,540,partial_reject,2023-09-07 15:30:00
+7,5,7,380,accepted,2024-01-28 09:00:00

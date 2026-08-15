@@ -1,0 +1,9 @@
+id,name,description,is_operating,is_cogs
+1,Coffee Beans,Raw coffee bean purchases,false,true
+2,Dairy & Milk,Milk and dairy product purchases,false,true
+3,Bakery Supplies,Ingredients for baked goods,false,true
+4,Rent,Store and warehouse rent,true,false
+5,Utilities,Electricity water and gas,true,false
+6,Equipment Maintenance,Repair and maintenance of equipment,true,false
+7,Marketing,Advertising and promotional expenses,true,false
+8,Payroll,Employee wages and benefits,true,false

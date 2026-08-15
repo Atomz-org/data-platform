@@ -1,0 +1,7 @@
+id,menu_item_id,season_name,promotion_name,start_date,end_date,is_active
+1,10,fall,Pumpkin Spice Season,2024-09-01,2024-11-30,true
+2,10,fall,Pumpkin Spice Season,2023-09-01,2023-11-30,false
+3,3,winter,Winter Warmer Special,2024-12-01,2025-02-28,true
+4,6,winter,Chai Holiday Collection,2024-11-15,2025-01-15,true
+5,2,summer,Summer Chill Collection,2024-06-01,2024-08-31,false
+6,4,spring,Spring Sip Specials,2025-03-01,2025-05-31,true

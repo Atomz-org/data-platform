@@ -1,0 +1,9 @@
+id,store_id,category_id,description,vendor,amount,incurred_at
+1,1,1,Monthly coffee bean order,Bean Brothers Roasters,250000,2023-03-01 08:00:00
+2,1,2,Weekly milk delivery,Local Dairy Co,35000,2023-03-05 07:00:00
+3,2,4,March rent payment,Downtown Properties LLC,450000,2023-03-01 00:00:00
+4,3,5,March utilities,Pacific Gas & Electric,18500,2023-03-15 00:00:00
+5,1,6,Espresso machine repair,CoffeeTech Services,12000,2023-04-10 14:00:00
+6,4,7,Social media campaign,Digital Marketing Agency,75000,2023-05-01 10:00:00
+7,2,3,Bakery flour and sugar order,Wholesale Baking Supply,42000,2023-06-01 08:00:00
+8,5,8,Biweekly payroll,Internal,385000,2023-03-15 00:00:00
