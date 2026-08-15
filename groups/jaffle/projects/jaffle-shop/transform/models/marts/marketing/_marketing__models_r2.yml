@@ -1,0 +1,116 @@
+models:
+  - name: int_campaign_reach_by_channel
+    description: >
+      Campaign reach and impressions aggregated by channel (email, social, in-store).
+      Estimated impressions derived from spend using channel-specific CPM proxies.
+      One row per campaign-channel combination.
+    columns:
+      - name: campaign_id
+        description: Foreign key to campaigns.
+        data_tests:
+          - not_null
+      - name: spend_channel
+        description: The marketing channel (email, social, in-store, etc.).
+        data_tests:
+          - not_null
+      - name: channel_spend
+        description: Total spend in this channel for the campaign in dollars.
+      - name: estimated_impressions
+        description: Estimated impressions based on channel-specific CPM rates.
+      - name: channel_spend_share
+        description: This channel's share of the campaign's total spend.
+
+  - name: int_coupon_usage_by_customer_segment
+    description: >
+      Coupon usage patterns broken down by customer value segments
+      (high, medium, low, minimal) based on lifetime spend.
+      One row per customer segment.
+    columns:
+      - name: customer_segment
+        description: Customer value segment based on lifetime spend.
+        data_tests:
+          - not_null
+          - unique
+      - name: total_redemptions
+        description: Total coupon redemptions in this segment.
+      - name: unique_customers
+        description: Number of distinct customers who redeemed coupons in this segment.
+      - name: redemptions_per_customer
+        description: Average coupon redemptions per customer in this segment.
+
+  - name: int_loyalty_churn_risk
+    description: >
+      Loyalty members with declining activity and churn risk scoring.
+      Members are classified as critical, high, medium, low, or healthy
+      based on inactivity days and declining points earned.
+      One row per loyalty member.
+    columns:
+      - name: loyalty_member_id
+        description: The unique key for each loyalty member.
+        data_tests:
+          - not_null
+          - unique
+      - name: days_since_last_transaction
+        description: Number of days since the member's last loyalty transaction.
+      - name: churn_risk_level
+        description: Risk classification (critical, high, medium, low, healthy).
+        data_tests:
+          - not_null
+      - name: is_declining_activity
+        description: Whether points earned in last 90 days are less than the prior 90 days.
+
+  - name: int_email_send_time_analysis
+    description: >
+      Email engagement rates (open, click) aggregated by hour-of-day
+      and day-of-week to identify optimal send times.
+      One row per hour-day combination.
+    columns:
+      - name: hour_of_day
+        description: Hour of day (0-23) when emails were sent.
+        data_tests:
+          - not_null
+      - name: day_of_week
+        description: Day of week (0=Sunday through 6=Saturday) when emails were sent.
+        data_tests:
+          - not_null
+      - name: open_rate
+        description: Proportion of sent emails that were opened in this time slot.
+      - name: click_rate
+        description: Proportion of opened emails that were clicked in this time slot.
+
+  - name: int_referral_conversion_rate
+    description: >
+      Referral program conversion rate analysis showing status conversion,
+      purchase conversion, and overall program ROI.
+      Single summary row.
+    columns:
+      - name: total_referrals
+        description: Total number of referrals made.
+      - name: status_conversion_rate
+        description: Rate of referrals that reached 'converted' status.
+      - name: purchase_conversion_rate
+        description: Rate of converted referees who made actual purchases.
+      - name: referral_program_roi
+        description: ROI of referral program (referee revenue - rewards) / rewards.
+
+  - name: int_marketing_spend_daily
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily marketing spend across all channels with rolling averages.
+      One row per spend date and channel combination.
+    columns:
+      - name: spend_date
+        description: The date of the marketing spend.
+        data_tests:
+          - not_null
+      - name: spend_channel
+        description: The marketing channel.
+        data_tests:
+          - not_null
+      - name: channel_spend
+        description: Total spend for this channel on this date in dollars.
+      - name: total_daily_spend
+        description: Total spend across all channels on this date.
+      - name: channel_spend_7d_avg
+        description: 7-day rolling average of channel spend.

@@ -1,0 +1,106 @@
+models:
+  - name: int_employee_enriched
+    description: >
+      Fully enriched employee profile joining employee records with their
+      department and position details.
+    columns:
+      - name: employee_id
+        description: The unique key for each employee.
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_shift_coverage
+    description: >
+      Scheduled staff coverage per store per day, compared against store
+      operating hours to identify coverage gaps.
+    columns:
+      - name: location_id
+        description: Store location identifier.
+        data_tests:
+          - not_null
+
+  - name: int_labor_hours_actual
+    description: >
+      Actual hours worked per employee per day, aggregated from approved
+      timecard entries.
+    columns:
+      - name: employee_id
+        description: Employee identifier.
+        data_tests:
+          - not_null
+
+  - name: int_labor_cost_daily
+    config:
+      tags: ['cadence:daily']
+    description: >
+      Daily labor cost per store, calculated by multiplying actual hours
+      worked by the employee's position pay rate.
+    columns:
+      - name: location_id
+        description: Store location identifier.
+        data_tests:
+          - not_null
+
+  - name: int_overtime_hours
+    description: >
+      Weekly overtime hours per employee, computed as hours exceeding
+      8 per day or 40 per week thresholds.
+    columns:
+      - name: employee_id
+        description: Employee identifier.
+        data_tests:
+          - not_null
+
+  - name: int_employee_tenure
+    description: >
+      Employee tenure calculations with bucket classification
+      (under 6 months, 6-12 months, 1-2 years, 2-5 years, 5+ years).
+    columns:
+      - name: employee_id
+        description: The unique key for each employee.
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_training_progress
+    description: >
+      Training completion progress per employee, including required course
+      completion rate and average scores.
+    columns:
+      - name: employee_id
+        description: The unique key for each employee.
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_performance_trend
+    description: >
+      Performance review history with rolling average score and trend
+      direction (improving, declining, stable) per employee.
+    columns:
+      - name: review_id
+        description: The unique key for each performance review.
+        data_tests:
+          - not_null
+          - unique
+
+  - name: int_equipment_downtime
+    description: >
+      Monthly equipment downtime aggregation per piece of equipment,
+      including maintenance event counts and costs.
+    columns:
+      - name: equipment_id
+        description: Equipment identifier.
+        data_tests:
+          - not_null
+
+  - name: int_store_staffing_ratio
+    description: >
+      Staff hours per order ratio by store and day, combining shift
+      coverage with order volume data.
+    columns:
+      - name: location_id
+        description: Store location identifier.
+        data_tests:
+          - not_null

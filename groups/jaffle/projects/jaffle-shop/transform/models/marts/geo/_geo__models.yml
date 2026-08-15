@@ -1,0 +1,177 @@
+version: 2
+
+models:
+  - name: geo_store_trade_area
+    config:
+      tags: ['type:geo']
+    description: >
+      Store profile with surrounding context including nearest store distance
+      (using location_id as proxy) and trade area overlap risk classification.
+
+  - name: geo_store_cannibalization
+    config:
+      tags: ['type:geo']
+    description: >
+      Identifies pairs of stores that may cannibalize each other based on
+      overlapping customer base from order history.
+
+  - name: geo_customer_store_distance
+    config:
+      tags: ['type:geo']
+    description: >
+      Customer-store affinity analysis showing primary, secondary, and tertiary
+      store relationships based on order history.
+
+  - name: geo_delivery_zone_performance
+    config:
+      tags: ['type:geo']
+    description: >
+      Performance metrics per delivery zone (proxied by store) including
+      monthly revenue, active days, and revenue variability.
+
+  - name: geo_regional_revenue_comparison
+    config:
+      tags: ['type:geo']
+    description: >
+      Compares revenue across store groups (top half vs bottom half by revenue)
+      with group-level statistics.
+
+  - name: geo_store_density_analysis
+    config:
+      tags: ['type:geo']
+    description: >
+      Store count per region (proxied by name prefix) with revenue per store
+      density metrics.
+
+  - name: geo_weather_impact_proxy
+    config:
+      tags: ['type:geo']
+    description: >
+      Monthly revenue seasonality as weather proxy showing deviation from
+      annual average by calendar month per store.
+
+  - name: geo_store_expansion_candidates
+    config:
+      tags: ['type:geo']
+    description: >
+      Identifies high-performing store profiles that suggest geographic
+      expansion opportunity based on health and growth scores.
+
+  - name: geo_market_penetration
+    config:
+      tags: ['type:geo']
+    description: >
+      Customer count vs estimated market size (proxy based on store age)
+      with penetration stage classification.
+
+  - name: geo_store_cluster_analysis
+    config:
+      tags: ['type:geo']
+    description: >
+      Clusters stores by performance profile using revenue level and margin
+      tiers into descriptive segments.
+
+  - name: geo_cross_store_shopping
+    config:
+      tags: ['type:geo']
+    description: >
+      Customers who shop at multiple stores with shopping pattern
+      classification and cross-store metrics.
+
+  - name: geo_store_opening_impact
+    config:
+      tags: ['type:geo']
+    description: >
+      Measures impact of new store openings on nearby existing stores by
+      comparing 3-month pre/post revenue.
+
+  - name: geo_regional_product_preference
+    config:
+      tags: ['type:geo']
+    description: >
+      Product sales mix differences by store showing top 10 products per
+      location ranked by sales contribution.
+
+  - name: geo_store_maturity_curve
+    config:
+      tags: ['type:geo']
+    description: >
+      Revenue trajectory by store age (months since opening) showing
+      average, median, min, and max revenue curves.
+
+  - name: geo_customer_migration
+    config:
+      tags: ['type:geo']
+    description: >
+      Tracks customers who switched their primary store over time with
+      monthly migration status counts.
+
+  - name: geo_local_marketing_effectiveness
+    config:
+      tags: ['type:geo']
+    description: >
+      Campaign effectiveness by store location with ROI-based effectiveness
+      rating.
+
+  - name: geo_store_saturation_index
+    config:
+      tags: ['type:geo']
+    description: >
+      Revenue per store in each area vs optimal threshold with saturation
+      status classification.
+
+  - name: geo_commute_pattern_proxy
+    config:
+      tags: ['type:geo']
+    description: >
+      Order time-of-day distribution by store as commute pattern proxy
+      with time period classification.
+
+  - name: geo_store_lifecycle_stage
+    config:
+      tags: ['type:geo']
+    description: >
+      Classifies stores as new, growing, mature, or declining based on
+      data availability and revenue growth trends.
+
+  - name: geo_regional_labor_cost
+    config:
+      tags: ['type:geo']
+    description: >
+      Labor cost comparison across stores showing cost per hour vs fleet
+      average by month.
+
+  - name: geo_store_competition_proxy
+    config:
+      tags: ['type:geo']
+    description: >
+      Revenue growth slowdown detection as competition proxy using rolling
+      6-month and 12-month average growth comparison.
+
+  - name: geo_foot_traffic_proxy
+    config:
+      tags: ['type:geo']
+    description: >
+      Order count by hour as foot traffic proxy per store with traffic
+      level classification.
+
+  - name: geo_store_revenue_potential
+    config:
+      tags: ['type:geo']
+    description: >
+      Gap between current and potential revenue based on comparable stores
+      using fleet percentile benchmarks.
+
+  - name: geo_customer_density_by_store
+    config:
+      tags: ['type:geo']
+    description: >
+      Unique customers per store with month-over-month growth trend and
+      customer trend classification.
+
+  - name: geo_store_risk_assessment
+    config:
+      tags: ['type:geo']
+    description: >
+      Combines declining revenue, high labor cost, low health score, and
+      low margin into composite risk flags and risk level classification.
