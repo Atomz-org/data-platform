@@ -1167,6 +1167,11 @@ def register_commands(app: Any) -> None:
             raise typer.Exit(1)
 
         result = run(d, skip_query=not data)
+        # Same as `pf tool recce run`: a missing recce is a broken environment,
+        # not a failed review, and "0 check(s), ok=False" says neither.
+        if result.get("reason") == "not_installed":
+            console.print(f"[red]{result['message']}[/]")
+            raise typer.Exit(1)
         # Parenthesised, not bracketed: Rich reads `[...]` as a style tag and
         # would swallow the scope instead of printing it.
         scope = "full" if data else "structural only — no warehouse"
