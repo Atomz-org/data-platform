@@ -166,6 +166,17 @@ class Ontology:
     def pii_roles(self) -> set[str]:
         return {n for n, r in self.roles.items() if r.pii}
 
+    def has_currency(self, code: str) -> bool:
+        """Whether a string is a plausible ISO 4217 code.
+
+        Shape rather than a list. Enumerating all 180 codes here would mean the
+        ontology owns a table that changes for reasons that have nothing to do
+        with this platform, and rejecting a real currency because the list is a
+        year old is worse than accepting a typo — the typo shows up as an empty
+        join on the Currency dimension, which is visible.
+        """
+        return len(code) == 3 and code.isalpha() and code.isupper()
+
     def identity_of(self, name: str) -> str | None:
         """Identity property, inherited from the nearest ancestor that has one."""
         for cls in [name, *self.ancestors(name)]:
