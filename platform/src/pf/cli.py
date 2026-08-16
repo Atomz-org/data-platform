@@ -17,7 +17,8 @@ from pf import obs
 from pf.agents.base import AGENTS, validate_routing
 from pf.agents.models import MODELS
 from pf.capabilities import (
-    CAPABILITIES, UnknownCapability, apply as apply_capability, gate_additions,
+    CAPABILITIES, UnknownCapability, apply as apply_capability,
+    defaults as capability_defaults, gate_additions,
     missing_env, resolve as resolve_capabilities,
 )
 from pf.kg.build import build_graph
@@ -98,8 +99,11 @@ def cmd_new_project(
     project: str,
     rollup: bool = typer.Option(False, "--rollup", help="cross-entity roll-up project"),
     sisters: str = typer.Option("", help="comma-separated sister projects (roll-up only)"),
-    with_: str = typer.Option("", "--with", help="comma-separated capabilities "
+    with_: str = typer.Option("", "--with", help="comma-separated capabilities to add "
+                                                 "on top of the defaults "
                                                  "(see `pf capabilities`)"),
+    without: str = typer.Option("", "--without", help="comma-separated default "
+                                                      "capabilities to skip"),
 ) -> None:
     """Create a project (one legal entity) inside a group.
 
@@ -109,7 +113,14 @@ def cmd_new_project(
     gate ends up inert.
     """
     sister_list = [s.strip() for s in sisters.split(",") if s.strip()]
-    names = [c.strip() for c in with_.split(",") if c.strip()]
+    # Defaults first, `--with` on top, `--without` removed. A project that has to
+    # be asked for its capabilities gets the ones whoever typed the command
+    # remembered — which is how seven projects ended up with no CI merge gate
+    # while the eighth had one. Opting out stays possible and stays explicit.
+    skip = {c.strip() for c in without.split(",") if c.strip()}
+    names = [n for n in capability_defaults() if n not in skip]
+    names += [c.strip() for c in with_.split(",")
+              if c.strip() and c.strip() not in names]
     try:
         caps = resolve_capabilities(names)
     except (UnknownCapability, ValueError) as exc:
