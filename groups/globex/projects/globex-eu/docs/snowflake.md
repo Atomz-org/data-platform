@@ -1,10 +1,10 @@
 # Production warehouse — Snowflake
 
-**jaffle/jaffle-shop** develops on DuckDB and runs production on
+**globex/globex-eu** develops on DuckDB and runs production on
 Snowflake. One set of models serves both: the `sf_*` macros in
 `platform/toolkits/dbt-snowflake` dispatch per adapter, so a model is written
 once and compiles to whatever the *target* understands. `pf dialect` lists what
-is covered, and `pf align validate jaffle jaffle-shop --stage dialect` is the
+is covered, and `pf align validate globex globex-eu --stage dialect` is the
 gate that says whether this project is actually portable or merely untested.
 
 Declaring this target does not make the models run on Snowflake. That
@@ -38,7 +38,7 @@ file, or this repository.
 
 ```bash
 DBT_TARGET=prod dbt build          # explicit, every time
-pf align validate jaffle jaffle-shop --stage dialect
+pf align validate globex globex-eu --stage dialect
 ```
 
 There is deliberately no shortcut. The target is named on every invocation
@@ -50,7 +50,7 @@ than the typing.
 ## Switching
 
 ```bash
-pf capability-add <warehouse> jaffle jaffle-shop
+pf capability-add <warehouse> globex globex-eu
 ```
 
 `prod` is replaced in place; the DuckDB targets beside it, and anything you
