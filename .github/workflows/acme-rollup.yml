@@ -115,10 +115,20 @@ jobs:
   #
   # autoMerge is deliberately false. A merge is a write to someone's branch, and
   # the platform's rule is that automation reports while a human merges.
+  #
+  # The baseline is *pulled*, not checked out. It used to travel in the repo;
+  # that stopped scaling at 30 MB per project, so `pf tool recce ci` fetches it
+  # from the artefact store, keyed by this PR's base branch, and pushes the
+  # recorded review back under the head branch. Without the two secrets below
+  # the job still runs — it just cannot find a baseline, and reports the review
+  # as not exercised rather than failing.
   recce:
     needs: changes
     if: needs.changes.outputs.transform == 'true'
     runs-on: ubuntu-latest
+    env:
+      PF_ARTIFACTS_ACCESS_KEY_ID: ${{ secrets.PF_ARTIFACTS_ACCESS_KEY_ID }}
+      PF_ARTIFACTS_SECRET_ACCESS_KEY: ${{ secrets.PF_ARTIFACTS_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -130,7 +140,7 @@ jobs:
           autoMerge: 'false'
 
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --extra recce
+      - run: uv sync --extra recce --extra artifacts
 
       - name: Diff against the base build
         run: uv run pf tool recce ci acme acme-rollup
