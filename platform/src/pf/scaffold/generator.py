@@ -295,10 +295,15 @@ PROJECT_SETTINGS = """\
     "dbt-govern@platform",
     "dagster-orchestrate@platform",
     "python-standards@platform",
+    "power-tools@platform",
     "{{group}}-group@{{group}}"
   ],
   "permissions": {
-    "deny": [{{deny_siblings}}, "Read(../../../*/projects/**)"],
+    "deny": [{{deny_siblings}}, "Read(../../../*/projects/**)",
+      "Read(./.env)", "Read(./.env.*)",
+      "Read(**/secrets.toml)", "Read(**/.dlt/secrets.toml)",
+      "Read(**/credentials/**)"],
+    "ask": ["Bash(git push:*)", "Bash(gh pr create:*)"],
     "allow": [
       "Bash(uv run pf:*)",
       "Bash(dbt parse:*)", "Bash(dbt ls:*)", "Bash(dbt build:*)", "Bash(dbt test:*)",
