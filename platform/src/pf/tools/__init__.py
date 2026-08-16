@@ -78,6 +78,38 @@ def _project_dir(root: Path, group: str, project: str) -> Path:
 
 
 # -------------------------------------------------------------- bootstrap --
+def bootstrap_order(enabled_cfg: dict[str, Any],
+                    tools: dict[str, Any]) -> list[tuple[str, Any]]:
+    """Enabled tools in dependency order — every `Tool.after` before its dependant.
+
+    Alphabetical within a level, so the order is stable and a diff of bootstrap
+    output does not move when an unrelated tool is installed.
+
+    A cycle cannot deadlock the scaffolder: when nothing is left that has all
+    its predecessors satisfied, the remainder is emitted alphabetically. A tool
+    graph is three or four nodes declared in this repository, so a cycle is a
+    bug to notice rather than a condition to handle gracefully — but it must not
+    be the reason `pf new-project` hangs.
+    """
+    pending = dict(sorted(enabled_cfg.items()))
+    done: set[str] = set()
+    out: list[tuple[str, Any]] = []
+    while pending:
+        ready = [
+            n for n in pending
+            # An `after` naming a tool that is not enabled here is satisfied:
+            # ordering behind something absent is not a reason to refuse to run.
+            if all(dep in done or dep not in pending
+                   for dep in getattr(tools.get(n), "after", ()) or ())
+        ]
+        if not ready:
+            ready = list(pending)
+        for n in ready:
+            out.append((n, pending.pop(n)))
+            done.add(n)
+    return out
+
+
 def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     """Run every enabled tool's bootstrap hook. Idempotent, never raises.
 
@@ -96,7 +128,7 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     tools = all_tools()
     d = _project_dir(root, group, project)
 
-    for name, cfg in sorted(enabled(root, group, project).items()):
+    for name, cfg in bootstrap_order(enabled(root, group, project), tools):
         tool = tools.get(name)
         if tool is None:
             results.append(StepResult(f"tool:{name}", "failed",

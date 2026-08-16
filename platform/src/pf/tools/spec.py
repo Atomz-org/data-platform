@@ -178,6 +178,18 @@ class Tool:
     #: hook is called with the requirement genuinely absent.
     offline_bootstrap: bool = False
     requires: tuple[Requirement, ...] = ()
+    #: Tools whose bootstrap must have run before this one's. Names, not
+    #: objects, so a tool can order itself behind one that is not installed —
+    #: an absent name is simply satisfied.
+    #:
+    #: Bootstrap used to run tools in `sorted()` order, which is alphabetical
+    #: and therefore an accident. It put `openmetadata` before `recce`, and the
+    #: catalogue reads recce's recorded checks to publish them as test cases —
+    #: so on a fresh scaffold the catalogue was built from state recce had not
+    #: written yet, and came out correct-looking and empty. The mirror of
+    #: `Capability.requires`, and for the same reason: ordering should be a
+    #: declared fact rather than dict-insertion luck.
+    after: tuple[str, ...] = ()
     dbt: DbtBinding | None = None
     surface: Surface | None = None
 
