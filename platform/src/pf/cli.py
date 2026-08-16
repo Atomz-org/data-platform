@@ -1928,6 +1928,20 @@ def _targets(group: str, project: str) -> list[tuple[str, str, Path]]:
     return all_projects()
 
 
+def _store_or_exit(art):  # `art` is the pf.artifacts module
+    """A configured store, or a one-line exit.
+
+    Unconfigured is the *expected* first state of these commands, not a bug, so
+    it gets the setup hint rather than a NotConfigured traceback with the
+    hint buried at the bottom of it.
+    """
+    store = art.Store.from_env()
+    if store is None:
+        console.print(f"[yellow]{art.SETUP_HINT}[/]")
+        raise typer.Exit(1)
+    return store
+
+
 @artifacts_app.command("status")
 def cmd_artifacts_status() -> None:
     """Is a store configured, and can we reach it?"""
@@ -1964,7 +1978,7 @@ def cmd_artifacts_push(group: str = typer.Argument(""), project: str = typer.Arg
     """Upload a project's recce artefacts. No arguments → every project."""
     from pf import artifacts as art
 
-    store = art.Store.required()
+    store = _store_or_exit(art)
     recce = _recce_or_exit()
     moved = 0
     for g, p, d in _targets(group, project):
@@ -1997,7 +2011,7 @@ def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Arg
     """
     from pf import artifacts as art
 
-    store = art.Store.required()
+    store = _store_or_exit(art)
     recce = _recce_or_exit()
     got = missed = 0
     for g, p, d in _targets(group, project):
@@ -2030,7 +2044,7 @@ def cmd_artifacts_ls(group: str = typer.Argument(""), project: str = typer.Argum
     """What is in the bucket."""
     from pf import artifacts as art
 
-    store = art.Store.required()
+    store = _store_or_exit(art)
     if prefix:
         pfx = prefix
     elif group and project:
@@ -2066,7 +2080,7 @@ def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.
     """
     from pf import artifacts as art
 
-    store = art.Store.required()
+    store = _store_or_exit(art)
     recce = _recce_or_exit()
     rel = root()
     plan: list[tuple[str, str, list[tuple[str, Path]]]] = []
