@@ -5,33 +5,33 @@
 load_from:
   - python_module:
       module_name: acme_eu.definitions
-      working_directory: /Users/suresh/data-platform/groups/acme/projects/acme-eu/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-eu/src
       location_name: acme__acme-eu
   - python_module:
       module_name: acme_rollup.definitions
-      working_directory: /Users/suresh/data-platform/groups/acme/projects/acme-rollup/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-rollup/src
       location_name: acme__acme-rollup
   - python_module:
       module_name: acme_us.definitions
-      working_directory: /Users/suresh/data-platform/groups/acme/projects/acme-us/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-us/src
       location_name: acme__acme-us
   - python_module:
       module_name: globex_core.definitions
-      working_directory: /Users/suresh/data-platform/groups/globex/projects/globex-core/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/globex/projects/globex-core/src
       location_name: globex__globex-core
   - python_module:
       module_name: globex_eu.definitions
-      working_directory: /Users/suresh/data-platform/groups/globex/projects/globex-eu/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/globex/projects/globex-eu/src
       location_name: globex__globex-eu
   - python_module:
       module_name: jaffle_shop.definitions
-      working_directory: /Users/suresh/data-platform/groups/jaffle/projects/jaffle-shop/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/jaffle/projects/jaffle-shop/src
       location_name: jaffle__jaffle-shop
   - python_module:
       module_name: zenith_de.definitions
-      working_directory: /Users/suresh/data-platform/groups/zenith/projects/zenith-de/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/zenith/projects/zenith-de/src
       location_name: zenith__zenith-de
   - python_module:
       module_name: zenith_uk.definitions
-      working_directory: /Users/suresh/data-platform/groups/zenith/projects/zenith-uk/src
+      working_directory: /Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/zenith/projects/zenith-uk/src
       location_name: zenith__zenith-uk
