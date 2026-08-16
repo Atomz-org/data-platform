@@ -89,6 +89,17 @@ denylist_except:
   - "**/catalog/ingestion.yaml"
   - "**/catalog/openmetadata.json"
 
+  # CI workflows. `pf.capabilities.github` denies `**/.github/workflows/**` so an
+  # agent cannot hand-edit the gate that judges it, and that intent is unchanged.
+  # But a workflow is now *generated*: `pf bootstrap` composes one per project
+  # from the `ci_jobs` each capability declares, and GitHub only runs what is
+  # committed. Denied and untrackable meant the merge gate could be regenerated
+  # and never actually run — a control that exists on disk and nowhere else.
+  #
+  # Hand-editing one is still wrong, and still pointless: the next bootstrap
+  # overwrites it. Change the capability that contributes the job.
+  - ".github/workflows/**"
+
 # Paths a *project* session may not write. Platform infra is shared: a change
 # made while working on one company silently affects every other.
 platform_denylist:
