@@ -93,6 +93,37 @@ def build_glossary(onto: Ontology) -> dict[str, Any]:
     }
 
 
+def _term_fqn(onto: Ontology, name: str) -> str:
+    """A glossary term's fully-qualified name, parents included.
+
+    OpenMetadata nests a term under its parent, so `Customer` — a `Party` —
+    lives at `Platform Ontology.Party.Customer`, not `Platform Ontology.Customer`.
+    Every reference to a term has to use that full path or the server 404s on it.
+
+    This was flat, and the flaw was invisible because nothing ever sent the
+    payload: the glossary was built, written to `catalog/openmetadata.json`, and
+    never published. The first real publish rejected 13 of 26 terms' relations
+    with "glossaryTerm instance for Platform Ontology.Customer not found" — the
+    term existed, one level deeper than the reference claimed.
+
+    `parent` had the same defect and got away with it, because every parent in
+    the current ontology is top-level, so one hop and the full path agree. A
+    three-level hierarchy would have broken it the same way.
+
+    The walk is guarded against a cycle in the parent chain. A class that is its
+    own ancestor is a broken ontology, but it should surface as a validation
+    error from `pf check`, not as an infinite loop inside a projection.
+    """
+    chain: list[str] = []
+    seen: set[str] = set()
+    current: str | None = name
+    while current and current not in seen and onto.has_class(current):
+        seen.add(current)
+        chain.append(_om_name(current))
+        current = onto.classes[current].parent
+    return ".".join([_om_name(GLOSSARY_NAME), *reversed(chain)])
+
+
 def build_glossary_terms(onto: Ontology) -> list[dict[str, Any]]:
     """One term per ontology class, carrying its identity, properties and relations.
 
@@ -135,15 +166,13 @@ def build_glossary_terms(onto: Ontology) -> list[dict[str, Any]]:
             "provider": "user",
         }
         if cls.parent:
-            # `parent` is a fullyQualifiedName within the glossary.
-            term["parent"] = f"{_om_name(GLOSSARY_NAME)}.{_om_name(cls.parent)}"
+            term["parent"] = _term_fqn(onto, cls.parent)
 
         related = sorted({r.range for r in rels if r.range != name}
                          | {r.domain for r in rels if r.domain != name})
         if related:
             term["relatedTerms"] = [
-                f"{_om_name(GLOSSARY_NAME)}.{_om_name(x)}"
-                for x in related if onto.has_class(x)]
+                _term_fqn(onto, x) for x in related if onto.has_class(x)]
         terms.append(term)
     return terms
 

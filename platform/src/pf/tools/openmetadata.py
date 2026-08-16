@@ -434,6 +434,122 @@ def _ingest_one(wf: Path, project_dir: Path, timeout: int) -> dict[str, Any]:
             "message": (proc.stderr or proc.stdout or "")[-2000:]}
 
 
+# ------------------------------------------------------------- publish --
+#: PUT endpoint per payload section, in dependency order.
+#:
+#: Order is not cosmetic. A tag cannot be created before the classification it
+#: belongs to, and a glossary term cannot be created before its glossary — the
+#: server rejects both with a 404 on the parent, which reads like a bad URL.
+PUBLISH_ORDER: tuple[tuple[str, str, bool], ...] = (
+    # (payload key, API path, is_list)
+    ("classification", "classifications", False),
+    ("tags", "tags", True),
+    ("glossary", "glossaries", False),
+    ("glossary_terms", "glossaryTerms", True),
+    ("metrics", "metrics", True),
+)
+
+
+def publish_payload(project_dir: Path, group: str, project: str,
+                    config: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Send the projected vocabulary to OpenMetadata.
+
+    This is the half that was missing. `build_payload` has always produced a
+    correct, API-shaped glossary — terms, role tags, the classification, the
+    metrics — and `write_payload` has always written it to
+    `catalog/openmetadata.json`. Nothing ever sent it. The tool's own docs said
+    "This project publishes into it automatically" and `payload` was described
+    as "what *would* be published", which was accurate in a way nobody noticed:
+    there was no publisher. A catalogue that had ingested every table still had
+    none of this platform's vocabulary laid over it.
+
+    Deliberately independent of the ingestion workflows. The vocabulary
+    describes concepts, not tables, so it needs no database service and no
+    warehouse credentials — which means it publishes on a laptop against a local
+    OpenMetadata, and it publishes even when the production warehouse is
+    unreachable. Those are the two situations someone actually wants to see the
+    glossary in.
+
+    PUT, not POST: OpenMetadata's PUT is create-or-update for these entities, so
+    re-publishing an unchanged ontology is a no-op rather than a conflict. That
+    is what makes this safe to run from a bootstrap hook.
+    """
+    s = settings(config, group, project)
+    payload = build_payload(Path(project_dir), group, project)
+    result: dict[str, Any] = {"ok": True, "host": s["host_port"], "sent": {},
+                              "failed": []}
+
+    for key, path, is_list in PUBLISH_ORDER:
+        items = payload.get(key)
+        if not items:
+            continue
+        rows = items if is_list else [items]
+        ok = 0
+
+        # Glossary terms are written twice: once bare, then again with their
+        # `relatedTerms`. A related term is a reference to another term by FQN,
+        # and the server 404s if that term does not exist yet — so *any* single
+        # ordering fails as soon as the ontology has a cycle, and an ontology
+        # that relates Customer to Order and Order to Customer has one by
+        # design. Creating the nodes first and the edges second is the only
+        # ordering that always works, and it costs one extra PUT per term.
+        deferred: list[dict[str, Any]] = []
+        for row in rows:
+            body = dict(row)
+            if key == "glossary_terms":
+                body.setdefault("glossary", payload["glossary"]["name"])
+                if body.get("relatedTerms"):
+                    deferred.append(dict(body))
+                    body.pop("relatedTerms", None)
+            try:
+                _api_write(s["host_port"], path, body)
+                ok += 1
+            except RuntimeError as exc:
+                result["failed"].append(f"{key}/{row.get('name', '?')}: {exc}")
+
+        for body in deferred:
+            try:
+                _api_write(s["host_port"], path, body)
+            except RuntimeError as exc:
+                # The term itself is already published; only its edges are
+                # missing, so this degrades the graph rather than losing a
+                # definition. Reported separately so that distinction survives.
+                result["failed"].append(
+                    f"{key}/{body.get('name', '?')} relatedTerms: {exc}")
+        result["sent"][key] = ok
+
+    result["ok"] = not result["failed"]
+    return result
+
+
+def _api_write(host_port: str, path: str, body: dict[str, Any],
+               timeout: int = 60) -> Any:
+    """One authenticated PUT against the OpenMetadata API."""
+    import urllib.error
+    import urllib.request
+
+    jwt = token()
+    if not jwt:
+        raise RuntimeError(f"{ENV_TOKEN} is not set")
+    req = urllib.request.Request(
+        f"{host_port}/api/v1/{path.lstrip('/')}",
+        data=json.dumps(body).encode(),
+        method="PUT",
+        headers={"Authorization": f"Bearer {jwt}",
+                 "Content-Type": "application/json",
+                 "Accept": "application/json"},
+    )
+    try:
+        # Fixed scheme, operator-configured host; not user input.
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode() or "{}")
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"HTTP {exc.code}: "
+                           f"{exc.read()[:200].decode(errors='replace')}") from exc
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        raise RuntimeError(f"cannot reach {host_port}: {exc}") from exc
+
+
 # ----------------------------------------------------------- owner edits --
 EDITS_REL = "catalog/owner-edits.yaml"
 
@@ -895,6 +1011,25 @@ def register_commands(app: Any) -> None:
                      f"{str(r.get('message', ''))[:400]}")
         if not all(r["ok"] for r in results):
             raise typer.Exit(1)
+
+    @om.command("publish")
+    def cmd_publish(group: str, project: str) -> None:
+        """Send the glossary, role tags and metrics to OpenMetadata.
+
+        Needs no database service and no warehouse credentials — this is
+        vocabulary, not tables — so it works against a local server and while
+        the production warehouse is unreachable.
+        """
+        d = _pdir(group, project)
+        result = publish_payload(d, group, project, None)
+        for key, n in result["sent"].items():
+            console.print(f"  [green]↑[/] {key}: {n}")
+        for f in result["failed"][:10]:
+            console.print(f"  [red]✗[/] {f}")
+        if result["failed"]:
+            console.print(f"[red]{len(result['failed'])} failed[/] → {result['host']}")
+            raise typer.Exit(1)
+        console.print(f"[green]✓[/] published to {result['host']}")
 
     @om.command("pull")
     def cmd_pull(group: str, project: str) -> None:
