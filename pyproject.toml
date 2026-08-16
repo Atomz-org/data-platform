@@ -17,6 +17,12 @@ dependencies = ["pf"]
 # artefact we run. Keep the floor at the pinned submodule's last release.
 [project.optional-dependencies]
 recce = ["recce>=1.60,<2"]
+# The artefact store. Not a tool — it is where the tools' output goes — but it
+# gets an extra for the same reason they do: a checkout that never publishes
+# anything should not carry botocore. `uv sync --extra recce --extra artifacts`
+# is what CI runs, because a runner has no warehouse and must pull the baseline
+# rather than build one.
+artifacts = ["pf[artifacts]"]
 wren = [
     "wrenai>=0.13,<1",
 ]
