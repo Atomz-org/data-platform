@@ -31,3 +31,5 @@ renamed as (
 )
 
 select * from renamed
+
+-- Throwaway: touched to check the gate reports this model's blast radius.
