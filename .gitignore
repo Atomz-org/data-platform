@@ -12,9 +12,23 @@ node_modules/
 # and 1,622 regenerable files ended up committed.
 **/target/
 # `target-base/` is where the `base` dbt target's artefacts land — the second
-# state Recce diffs against. Same class of output as `target/`, and just as
-# regenerable; the pattern is separate because `**/target/` does not match it.
+# state Recce diffs against. The pattern is separate because `**/target/` does
+# not match it.
 **/target-*/
+# …except the two artefacts the diff is actually measured against. They were
+# called "just as regenerable as target/", and on a developer's machine they
+# are. In CI they are not: capturing a baseline is a *build*, and a runner has
+# code and no warehouse, so a checkout without these is a checkout whose review
+# cannot run at all — which is the state six of seven projects were in. That
+# makes them inputs, not output, and worth ~700 KB each.
+#
+# Only these two. Everything else `dbt build --target base` writes stays
+# ignored, and the exception is narrow so a future artefact does not join by
+# accident.
+!**/target-base/
+**/target-base/*
+!**/target-base/manifest.json
+!**/target-base/catalog.json
 **/logs/
 **/dbt_packages/
 **/.duckdb-skills/

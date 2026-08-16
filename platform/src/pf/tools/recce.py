@@ -407,6 +407,11 @@ def capture_baseline(project_dir: Path, rebuild: bool = True) -> tuple[Path, lis
 
     src = dbt_dir(project_dir) / "target"
     if rebuild:
+        # Here rather than only in the CI command: this is the function that
+        # runs dbt, and `pf tool recce baseline` reaches it without passing
+        # through `ci`. A checkout with packages declared and none installed
+        # cannot compile, so the build fails before it materialises anything.
+        ensure_packages(project_dir)
         env = dbt_env(project_dir)
         wh = env["PF_DUCKDB_PATH"]
         build = dbt(project_dir, "build", target="base", duckdb_path=wh)
@@ -459,10 +464,8 @@ def dbt_env(project_dir: Path) -> dict[str, str]:
     env.setdefault("DBT_TARGET", "dev")
     env["PF_DUCKDB_PATH"] = str(wh.path)
     # dbt's duckdb adapter opens the file but will not create the directory
-    # holding it. `Warehouse.connect` does that for our own queries; dbt never
-    # goes through it, so on a fresh checkout every invocation here died with
-    # `IO Error: Cannot open file`.
-    wh.path.parent.mkdir(parents=True, exist_ok=True)
+    # holding it, and it never goes through `Warehouse.connect`, which would.
+    wh.ensure_dir()
     return env
 
 

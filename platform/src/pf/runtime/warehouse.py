@@ -50,9 +50,21 @@ class Warehouse:
         behind each other."""
         return f"duckdb_writer_{self.project.replace('-', '_')}"
 
+    def ensure_dir(self) -> Path:
+        """Create `data/` so something else can open the file inside it.
+
+        DuckDB creates the database but not the directory holding it, and
+        `data/` is generated — gitignored, absent from every fresh checkout. Any
+        writer that does not go through `connect()` has to call this first or it
+        dies with `IO Error: Cannot open file`, which reads like a permissions
+        or credentials fault and is neither. dbt and dlt are both such writers.
+        """
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        return self.path
+
     @contextmanager
     def connect(self, read_only: bool = False) -> Iterator[duckdb.DuckDBPyConnection]:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.ensure_dir()
         if read_only and not self.path.exists():
             read_only = False
         con = duckdb.connect(self.dsn, read_only=read_only)

@@ -37,6 +37,10 @@ def run_source(
     contract: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Run one annotated source and return a compact load summary."""
+    # dlt opens the duckdb file directly rather than through `Warehouse.connect`,
+    # so on a checkout that has never been seeded it fails in `_sync_destination`
+    # with a DestinationConnectionError blaming credentials for a missing `data/`.
+    warehouse.ensure_dir()
     pipeline = build_pipeline(warehouse, source_name, dataset)
     info = pipeline.run(source, schema_contract=contract or DEFAULT_CONTRACT)
     return {
