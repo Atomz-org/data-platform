@@ -66,29 +66,144 @@ branch's.
 
 ## Setup
 
-The endpoint and bucket ship as defaults and need no configuration. An R2
-endpoint carries the account id, which every client needs and none can act on
-alone, so it is not a credential — override both with `PF_ARTIFACTS_ENDPOINT`
-and `PF_ARTIFACTS_BUCKET` for a fork or a second environment.
+### What is a credential here, and what is not
 
-Credentials are never in a file. Create an **R2 API token** scoped to *Object
-Read & Write* on this bucket, then:
+| | Secret? | Where it lives |
+|---|---|---|
+| Endpoint (`https://<account-id>.r2.cloudflarestorage.com`) | **No** | committed default in `pf/artifacts.py` |
+| Bucket (`data-platform`) | **No** | committed default |
+| Access Key ID | **Yes** | environment only |
+| Secret Access Key | **Yes** | environment only |
+
+The account id inside the endpoint is not a credential. Every S3 client needs
+it, it appears in every request URL, and it grants nothing on its own — the same
+way an AWS account number is not a secret. It is committed so `pf` works with no
+configuration. Override it with `PF_ARTIFACTS_ENDPOINT` / `PF_ARTIFACTS_BUCKET`
+for a fork or a second environment.
+
+The two keys are credentials and are read **from the environment only**. No
+`pf` command writes them to a file, and none is written into a generated file.
+
+### Creating the token
+
+Cloudflare dashboard → **R2** → *Manage R2 API Tokens* → **Create API token**.
+
+- **Permission: `Object Read & Write`.** Not *Admin Read & Write* — that one can
+  create and delete buckets, which nothing here does.
+- **Scope it to the `data-platform` bucket**, not "all buckets".
+- **One token per consumer.** A laptop token and a CI token, separately, so a
+  laptop that walks out of the building is one revocation and not an outage. Add
+  a third for Dagster if it publishes.
+- Give CI's token a TTL and a calendar reminder, or accept that it is permanent.
+
+You get an **Access Key ID**, a **Secret Access Key** and the S3 endpoint. The
+secret is shown **once**. If you lose it, roll the token; there is no recovery,
+and that is a feature.
+
+Never paste the secret into a chat, a ticket, a commit message, or a code
+review — including a conversation with an AI assistant. Nothing in this platform
+ever needs to see its value.
+
+### On your machine
+
+Ranked. All three set the same two variables; they differ in what is left at
+rest on the disk.
+
+**1. Keychain (macOS) — nothing in plaintext.** Store once:
 
 ```bash
-export PF_ARTIFACTS_ACCESS_KEY_ID=...
-export PF_ARTIFACTS_SECRET_ACCESS_KEY=...
-uv run pf artifacts status          # configured, and reachable?
+security add-generic-password -a "$USER" -s pf-artifacts-key    -w   # paste key id
+security add-generic-password -a "$USER" -s pf-artifacts-secret -w   # paste secret
 ```
 
-`R2_*` and `AWS_*` are read as fallbacks so a shell that already holds S3
-credentials for this bucket does not need a second copy under a third name. A
-machine that talks to **both** AWS and R2 must set the `PF_` pair — otherwise
-the `AWS_` fallback points this at the wrong endpoint's credentials and every
-call 403s.
+Then in `~/.zshrc`, a function rather than an export, so the secret is only in
+the environment of commands that need it:
 
-For CI, add the same two as **repository secrets** under exactly those names.
-The generated per-project workflow passes them to the `recce` job, and
-`uv sync --extra recce --extra artifacts` installs boto3 for it.
+```bash
+pfa() {
+  PF_ARTIFACTS_ACCESS_KEY_ID=$(security find-generic-password -a "$USER" -s pf-artifacts-key -w) \
+  PF_ARTIFACTS_SECRET_ACCESS_KEY=$(security find-generic-password -a "$USER" -s pf-artifacts-secret -w) \
+  "$@"
+}
+# pfa uv run pf artifacts status
+```
+
+Prompted at first use, never written to a dotfile, never in shell history.
+
+**2. `.env` + an explicit loader.** Plaintext at rest, but well defended: `.env`
+is gitignored, denied by `gate.yaml`, and denied to Claude Code sessions by
+`permissions.deny`.
+
+```bash
+chmod 600 .env      # do this first; the default is world-readable
+```
+
+**`.env` is not loaded automatically.** `pf` reads `os.environ` and nothing
+else, and `uv run` does not read `.env` unless told. Point it at the file:
+
+```bash
+export UV_ENV_FILE=.env       # in ~/.zshrc, or per-command with `uv run --env-file .env`
+```
+
+Without that, `pf artifacts status` reports *not configured* while the file sits
+there looking correct — the most common way this goes wrong. `direnv` with a
+`.envrc` works equally well and scopes the variables to the directory.
+
+**3. Bare `export` in `~/.zshrc`.** Works, and is last for a reason: the secret
+is in a plaintext dotfile that gets synced, backed up, and screen-shared.
+
+### In CI
+
+**Settings → Secrets and variables → Actions → New repository secret**, under
+exactly these names — the generated workflows already reference them:
+
+```
+PF_ARTIFACTS_ACCESS_KEY_ID
+PF_ARTIFACTS_SECRET_ACCESS_KEY
+```
+
+Nothing else to wire: `pf bootstrap` puts them in each project's `recce` job as
+`env:`, and `uv sync --extra recce --extra artifacts` installs boto3.
+
+Two things worth knowing:
+
+- **Pull requests from forks get no secrets.** That is GitHub's design and it is
+  correct — a fork PR can change workflow code. Those runs report the review as
+  *not exercised* rather than failing.
+- Secrets are masked in logs, but only exact matches. Never `echo` one, and
+  never `base64` one "to make it safe to print" — that defeats the masking.
+
+For a stricter setup, put the CI token in a GitHub **Environment** with required
+reviewers, so publishing needs an approval.
+
+### Checking it worked, without printing anything
+
+```bash
+uv run pf artifacts status
+```
+
+prints the endpoint, the bucket, a **four-character prefix** of the key id, and
+which variable it came from — never the secret. `Store` keeps both credentials
+out of `repr()` as well, because `repr` is what a traceback prints, Rich renders
+tracebacks with local variables, and typer renders exceptions with Rich. Before
+that was fixed, one unhandled error below `Store.required()` would have put the
+secret access key on screen and into whatever CI captured it.
+
+### Fallback variable names, and the one trap
+
+`R2_*` and `AWS_*` are read as fallbacks so a shell that already holds S3
+credentials for this bucket does not need a second copy under a third name.
+
+A machine that talks to **both** AWS and R2 must set the `PF_` pair. Otherwise
+the `AWS_` fallback hands this module AWS credentials aimed at an R2 endpoint,
+and every call 403s in a way that reads like a broken token.
+
+### If a key leaks
+
+Roll it first, investigate second. Cloudflare dashboard → R2 → the token →
+**Revoke**, then issue a new one and update the two places above. Revoking is
+instant and this platform degrades to local-only, so the cost of over-reacting
+is one failed CI review.
 
 ## Use
 
