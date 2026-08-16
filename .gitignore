@@ -59,6 +59,18 @@ node_modules/
 groups/jaffle/projects/jaffle-shop/transform/recce_state.json
 groups/jaffle/projects/jaffle-shop/transform/target-base/
 
+# A proposal pulled from a live OpenMetadata server by `pf tool openmetadata
+# pull` — what data owners changed in the catalogue that this repo does not say
+# yet. Transient by nature: it reflects whatever the server held at the moment
+# it was fetched, and it is regenerated on every pull.
+#
+# Not committed, and not because it is unimportant — it is the input to a real
+# pull request. But the *output* is an edit to contracts/annotations.yaml, and
+# carrying the proposal alongside would leave two files claiming to say what a
+# column means, which is the exact ambiguity this tool's one-direction rule
+# exists to prevent.
+**/catalog/owner-edits.yaml
+
 **/reporting/queries/metrics/
 # Rendered from toolkit templates by `pf evals-gen`, the same way the graph is
 # rendered by `pf kg build`. Hand-written project cases sit one level up, in

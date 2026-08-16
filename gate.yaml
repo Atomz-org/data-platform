@@ -85,7 +85,14 @@ denylist_except:
   # request that changes a concept then shows exactly what the catalogue will
   # say about it, before anyone publishes. Both are small and deterministic —
   # no timestamps — so they diff cleanly, unlike the recce artefacts above.
-  # The ingestion workflow holds an env-var reference, never the JWT.
+  #
+  # The ingestion workflows hold env-var references, never a JWT and never a
+  # warehouse password. That is worth carrying in review rather than hiding:
+  # `catalog/ingestion/database.yaml` names the production warehouse this
+  # project catalogues, and a change to it is a change to what an entire company
+  # can see about its own data. `**/catalog/ingestion.yaml` stays listed because
+  # projects predating the split still have one until `pf bootstrap` removes it.
+  - "**/catalog/ingestion/**"
   - "**/catalog/ingestion.yaml"
   - "**/catalog/openmetadata.json"
 

@@ -69,6 +69,17 @@ class ProductionWarehouse:
     default_enabled: bool = False
     #: Anything an operator has to know that is neither credentials nor auth.
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    #: OpenMetadata's connection `type` for this engine, and the config it
+    #: expects. Declared beside the dbt target on purpose: a warehouse the
+    #: platform can deploy to but not catalogue is half a warehouse, and keeping
+    #: the two definitions apart is how they drift.
+    #:
+    #: The catalogue points at **production**, never at a developer's DuckDB
+    #: file. That is not a limitation to work around — a catalogue of somebody's
+    #: laptop is not a catalogue — and it is why these have no DuckDB
+    #: counterpart.
+    om_type: str = ""
+    om_connection: dict[str, object] = field(default_factory=dict)
 
 
 # `type` is dbt's adapter name and must match the installed dbt-<x> package.
@@ -100,6 +111,16 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "if key-pair is not available to you; dbt uses whichever is present."
         ),
         default_enabled=True,
+        om_type="Snowflake",
+        om_connection={
+            "type": "Snowflake",
+            "account": "${SNOWFLAKE_ACCOUNT}",
+            "username": "${SNOWFLAKE_USER}",
+            "password": "${SNOWFLAKE_PASSWORD}",
+            "role": "${SNOWFLAKE_ROLE}",
+            "warehouse": "${SNOWFLAKE_WAREHOUSE}",
+            "database": "${SNOWFLAKE_DATABASE}",
+        },
     ),
     "bigquery": ProductionWarehouse(
         name="bigquery",
@@ -130,6 +151,14 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
              "roles, so a model that hardcodes a three-part name will not "
              "compile here."),
         ),
+        om_type="BigQuery",
+        om_connection={
+            "type": "BigQuery",
+            "credentials": {
+                "gcpConfig": {"path": "${BIGQUERY_KEYFILE}"},
+            },
+            "billingProjectId": "${BIGQUERY_PROJECT}",
+        },
     ),
     "redshift": ProductionWarehouse(
         name="redshift",
@@ -158,6 +187,14 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
              "a model relying on a quoted mixed-case column will resolve "
              "differently here than on DuckDB."),
         ),
+        om_type="Redshift",
+        om_connection={
+            "type": "Redshift",
+            "hostPort": "${REDSHIFT_HOST}:${REDSHIFT_PORT}",
+            "username": "${REDSHIFT_USER}",
+            "password": "${REDSHIFT_PASSWORD}",
+            "database": "${REDSHIFT_DATABASE}",
+        },
     ),
     "clickhouse": ProductionWarehouse(
         name="clickhouse",
@@ -190,6 +227,16 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
              "ClickHouse database, which is why there is no separate "
              "`database` key."),
         ),
+        om_type="Clickhouse",
+        om_connection={
+            "type": "Clickhouse",
+            "hostPort": "${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}",
+            "username": "${CLICKHOUSE_USER}",
+            "password": "${CLICKHOUSE_PASSWORD}",
+            "databaseSchema": "${CLICKHOUSE_DATABASE}",
+            "https": True,
+            "secure": True,
+        },
     ),
 }
 
