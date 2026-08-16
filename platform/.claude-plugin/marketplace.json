@@ -1,87 +1,96 @@
 {
   "name": "platform",
-  "owner": {
-    "name": "data-platform"
-  },
+  "owner": { "name": "data-platform" },
+  "description": "Shared toolkits for the agentic data platform: ingestion, modelling, semantics, orchestration, review and the power-user command layer.",
   "plugins": [
     {
       "name": "platform-init",
-      "source": "../platform/toolkits/platform-init",
+      "source": "./toolkits/platform-init",
       "description": "Workspace rules, secrets handling, routing"
     },
     {
       "name": "dlt-ingest",
-      "source": "../platform/toolkits/dlt-ingest",
+      "source": "./toolkits/dlt-ingest",
       "description": "Find sources and build dlt pipelines"
     },
     {
       "name": "dlt-quality",
-      "source": "../platform/toolkits/dlt-quality",
+      "source": "./toolkits/dlt-quality",
       "description": "Schema contracts and data quality checks"
     },
     {
       "name": "dlt-performance",
-      "source": "../platform/toolkits/dlt-performance",
+      "source": "./toolkits/dlt-performance",
       "description": "Pipeline tuning"
     },
     {
       "name": "dlt-explore",
-      "source": "../platform/toolkits/dlt-explore",
+      "source": "./toolkits/dlt-explore",
       "description": "Explore loaded data, build marimo dashboards"
     },
     {
       "name": "dbt-modeling",
-      "source": "../platform/toolkits/dbt-modeling",
+      "source": "./toolkits/dbt-modeling",
       "description": "Build and debug dbt models"
     },
     {
       "name": "dbt-semantic",
-      "source": "../platform/toolkits/dbt-semantic",
+      "source": "./toolkits/dbt-semantic",
       "description": "MetricFlow semantic models and metrics"
     },
     {
       "name": "dbt-testing",
-      "source": "../platform/toolkits/dbt-testing",
+      "source": "./toolkits/dbt-testing",
       "description": "Data tests and unit tests"
     },
     {
       "name": "dbt-govern",
-      "source": "../platform/toolkits/dbt-govern",
+      "source": "./toolkits/dbt-govern",
       "description": "Contracts, access, versions, run troubleshooting"
     },
     {
       "name": "dbt-migrate",
-      "source": "../platform/toolkits/dbt-migrate",
+      "source": "./toolkits/dbt-migrate",
       "description": "Version and platform migrations"
     },
     {
+      "name": "dbt-snowflake",
+      "source": "./toolkits/dbt-snowflake",
+      "description": "Cross-database macros so one model runs on DuckDB and Snowflake"
+    },
+    {
       "name": "duckdb-ops",
-      "source": "../platform/toolkits/duckdb-ops",
+      "source": "./toolkits/duckdb-ops",
       "description": "Attach, query, read files, docs, memories, extensions"
     },
     {
       "name": "dagster-orchestrate",
-      "source": "../platform/toolkits/dagster-orchestrate",
+      "source": "./toolkits/dagster-orchestrate",
       "description": "Assets, schedules, sensors, partitions (factory-constrained)"
     },
     {
-      "name": "python-standards",
-      "source": "../platform/toolkits/python-standards",
-      "description": "Production Python conventions"
+      "name": "recce-review",
+      "source": "./toolkits/recce-review",
+      "description": "Review what a dbt change did to the data, using Recce"
     },
     {
       "name": "evidence-bi",
-      "source": "../platform/toolkits/evidence-bi",
+      "source": "./toolkits/evidence-bi",
       "description": "Evidence BI reporting layer, metric-first"
     },
     {
-      "name": "dbt-snowflake",
-      "source": "../platform/toolkits/dbt-snowflake",
-      "description": "Cross-database macros so one model runs on DuckDB and Snowflake"
+      "name": "forge-ui",
+      "source": "./toolkits/forge-ui",
+      "description": "Control-plane React UI under platform/src/pf/ui/web"
+    },
+    {
+      "name": "python-standards",
+      "source": "./toolkits/python-standards",
+      "description": "Production Python conventions"
     },
     {
       "name": "project-onboarding",
-      "source": "../platform/toolkits/project-onboarding",
+      "source": "./toolkits/project-onboarding",
       "description": "Adopt a repository and align it with the platform, stage by stage"
     }
   ]
