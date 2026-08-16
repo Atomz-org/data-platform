@@ -60,4 +60,13 @@ dev = [
   "dagster-dbt>=0.26",
   "anthropic>=0.40",
   "dbt-metricflow[duckdb]>=0.13.0",
+  # Runs `pf-mcp`, the stdio server every project session talks to. In the dev
+  # group rather than a base dependency: a CI job that only builds dbt has no
+  # reason to carry it, but a developer session is useless without it — the
+  # project CLAUDE.md tells the agent to call `kg_search` and `impact_analysis`
+  # before touching a model, and those are MCP tools.
+  "mcp>=1.2",
+  # Formats dbt SQL after an agent edit (power-tools PostToolUse hook). The hook
+  # skips silently when it is absent, so this is what turns SQL formatting on.
+  "sqlfluff>=3.2",
 ]
