@@ -11,8 +11,15 @@ globex_eu:
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
       threads: 8
     prod:
-      type: duckdb
-      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}"
       threads: 8
     # The comparison environment for a diff tool. Same database file, different
     # schema prefix, so `base_marts.fct_revenue` and `main_marts.fct_revenue`
