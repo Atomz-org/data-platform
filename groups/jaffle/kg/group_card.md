@@ -1,4 +1,4 @@
-## jaffle — group index (generated 2026-08-15)
+## jaffle — group index (generated 2026-08-16)
 
 **Sister projects (1):** `jaffle-shop`
 **Ontology classes in scope:** Customer, Order, Payment, Refund, Product, Location
