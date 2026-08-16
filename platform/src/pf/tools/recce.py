@@ -25,13 +25,26 @@ comparison state has to come from somewhere, and every option is a trade:
   * **`target-base/` captured from a known-good build** — what we do. `pf tool
     recce baseline` copies the current artefacts aside after a green run, so the
     baseline is a state this machine actually produced.
-  * Fetching production artefacts — better, and unavailable here: the platform
-    is local-first and there is no artefact registry to fetch from.
+  * Fetching it from an artefact registry — better, and now what we also do.
+    `pf.artifacts` publishes the captured baseline to a bucket keyed by the ref
+    it was built from, so a CI runner with code and no warehouse pulls the
+    baseline main produced instead of failing to build one.
 
 A baseline that was never captured is a *distinct state* from a project with no
 manifest, which is why `DbtBinding.needs_baseline` exists rather than folding
 both into "not ready". The first is one command away; the second means the
 project has never been built.
+
+## Where the artefacts live
+
+Not in git. `recce_state.json` and `target-base/` were committed once, for a
+good reason — a reviewer on another machine cannot reproduce a summary's numbers
+without the baseline it was measured against — and the reason did not survive
+contact with a project that has 996 marts and 30 MB of them, rewritten whole on
+every run. They now go to the bucket `pf.artifacts` describes, under keys that
+mirror this repository's own layout, and the commands below push and pull them
+without the caller thinking about it. With no bucket configured, everything
+here behaves exactly as it did when the files were local-only.
 """
 
 from __future__ import annotations
@@ -44,6 +57,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pf import artifacts
 from pf.capabilities import Capability
 from pf.tools.spec import (
     DbtBinding, Requirement, Surface, Tool, ToolContext, ToolContribution,
@@ -57,6 +71,12 @@ STATE_FILE = "recce_state.json"
 SUMMARY_FILE = "recce_summary.md"
 BASELINE_DIR = "target-base"
 DEFAULT_PORT = 8000
+
+#: Key segment holding recorded reviews in the artefact bucket. It has no local
+#: counterpart — on disk a review is two files sitting in `transform/`, because
+#: a checkout only ever holds one. The bucket holds every branch's at once, so
+#: it needs somewhere to put them.
+REVIEWS_DIR = "reviews"
 
 # Artefacts dbt writes that Recce compares. `catalog.json` only exists after
 # `dbt docs generate`; the column-level checks need it, the structural ones do
@@ -438,6 +458,105 @@ def capture_baseline(project_dir: Path, rebuild: bool = True) -> tuple[Path, lis
     return dst, captured
 
 
+# ---------------------------------------------------------------- remote --
+# Recce's half of the artefact store: which key an artefact belongs under, and
+# why. `pf.artifacts` moves bytes and knows nothing about baselines; everything
+# below is the semantics it deliberately does not have.
+def baseline_prefix(group: str, project: str, ref: str = "") -> str:
+    """Where a captured baseline lives, keyed by the ref it was built from."""
+    base = artifacts.project_prefix(group, project)
+    return f"{base}/transform/{BASELINE_DIR}/{artifacts.sanitize_ref(ref) if ref else artifacts.base_ref()}"
+
+
+def review_prefix(group: str, project: str, ref: str = "") -> str:
+    """Where a recorded review lives, keyed by the branch under review."""
+    base = artifacts.project_prefix(group, project)
+    return f"{base}/transform/{REVIEWS_DIR}/{artifacts.sanitize_ref(ref) if ref else artifacts.head_ref()}"
+
+
+def baseline_pairs(project_dir: Path, group: str, project: str,
+                   ref: str = "") -> list[tuple[str, Path]]:
+    p = baseline_prefix(group, project, ref)
+    return [(f"{p}/{name}", baseline_dir(project_dir) / name)
+            for name in BASELINE_ARTEFACTS]
+
+
+def review_pairs(project_dir: Path, group: str, project: str,
+                 ref: str = "") -> list[tuple[str, Path]]:
+    p = review_prefix(group, project, ref)
+    return [(f"{p}/{STATE_FILE}", state_file(project_dir)),
+            (f"{p}/{SUMMARY_FILE}", summary_file(project_dir))]
+
+
+def _store(store: artifacts.Store | None) -> artifacts.Store | None:
+    return store if store is not None else artifacts.Store.from_env()
+
+
+def publish_baseline(project_dir: Path, group: str, project: str, ref: str = "",
+                     store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+    """Push the captured baseline. No store configured → nothing happens.
+
+    Silent no-op rather than an error, in every publish and fetch below: a
+    developer diffing against a baseline they built ten seconds ago has no use
+    for a bucket, and making them configure one to run `pf tool recce baseline`
+    would be a tax on the local-first path this platform is built around.
+    """
+    s = _store(store)
+    return artifacts.push_files(s, baseline_pairs(project_dir, group, project, ref)) if s else []
+
+
+def fetch_baseline(project_dir: Path, group: str, project: str, ref: str = "",
+                   store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+    """Pull the baseline for this ref into `transform/target-base/`."""
+    s = _store(store)
+    return artifacts.pull_files(s, baseline_pairs(project_dir, group, project, ref)) if s else []
+
+
+def publish_review(project_dir: Path, group: str, project: str, ref: str = "",
+                   store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+    """Push the recorded review — the state file and the human-readable summary."""
+    s = _store(store)
+    return artifacts.push_files(s, review_pairs(project_dir, group, project, ref)) if s else []
+
+
+def fetch_review(project_dir: Path, group: str, project: str, ref: str = "",
+                 store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+    """Pull a recorded review so `pf ui` and `recce server` have one to render."""
+    s = _store(store)
+    return artifacts.pull_files(s, review_pairs(project_dir, group, project, ref)) if s else []
+
+
+def ensure_baseline(project_dir: Path, group: str, project: str,
+                    ref: str = "") -> str:
+    """Get a baseline onto disk however possible. Returns how, for printing.
+
+    Order matters and is not arbitrary. A baseline already on disk is used
+    as-is — re-pulling would overwrite a developer's local capture with main's,
+    silently changing what their next diff is measured against. Only when there
+    is nothing local do we go to the bucket.
+    """
+    if has_baseline(project_dir):
+        return "local"
+    got = fetch_baseline(project_dir, group, project, ref)
+    if not got:
+        return ""
+    if has_baseline(project_dir):
+        names = ", ".join(t.path.name for t in got if t.ok)
+        return f"pulled {baseline_prefix(group, project, ref)} ({names})"
+    return ""
+
+
+def project_ids(project_dir: Path) -> tuple[str, str]:
+    """(group, project) from the path layout `groups/<group>/projects/<project>`.
+
+    The Dagster asset and the UI reach these functions holding a directory and
+    no ids, and re-deriving the convention at each call site is how one of them
+    ends up disagreeing with the others.
+    """
+    d = Path(project_dir)
+    return (d.parents[1].name if len(d.parents) >= 2 else ""), d.name
+
+
 # -------------------------------------------------------------------- run --
 def dbt_env(project_dir: Path) -> dict[str, str]:
     """Environment recce's embedded dbt needs to resolve this project's profile.
@@ -454,10 +573,7 @@ def dbt_env(project_dir: Path) -> dict[str, str]:
     from pf.runtime.warehouse import Warehouse
 
     d = Path(project_dir)
-    # `groups/<group>/projects/<project>` — the project slug is the directory
-    # name and the group is two levels up.
-    project = d.name
-    group = d.parents[1].name if len(d.parents) >= 2 else ""
+    group, project = project_ids(d)
     wh = Warehouse.for_project(d, group, project)
 
     env = dict(os.environ)
@@ -852,11 +968,20 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
         metadata={"dagster/kind": "recce", "tool": "recce"},
     )
     def _recce_review(context) -> None:  # noqa: ANN001 — see dagster_runtime note
+        try:
+            source = ensure_baseline(project_dir, ctx.group, ctx.project)
+        except artifacts.ArtifactStoreError as exc:
+            context.log.warning("artefact store unreachable: %s", exc)
+            source = ""
+        if source and source != "local":
+            context.log.info("baseline %s", source)
+
         if not has_baseline(project_dir):
             context.log.warning(
-                "no baseline captured — run `pf tool recce baseline %s %s` after a "
-                "known-good build. Skipping the diff rather than comparing against "
-                "nothing.", ctx.group, ctx.project)
+                "no baseline on disk or in the artefact store — run "
+                "`pf tool recce baseline %s %s` after a known-good build. "
+                "Skipping the diff rather than comparing against nothing.",
+                ctx.group, ctx.project)
             context.add_output_metadata({"status": "no_baseline"})
             return
 
@@ -874,6 +999,15 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
         }
         if not result.get("ok") and result.get("reason") == "not_installed":
             context.log.warning(result.get("message", ""))
+        # Published, not committed: the state file is where every reader of this
+        # run looks next, and a Dagster run that leaves it on the daemon's disk
+        # is a review nobody else can open.
+        try:
+            keys = [t.key for t in publish_review(project_dir, ctx.group, ctx.project)]
+            if keys:
+                meta["published"] = ", ".join(keys)
+        except artifacts.ArtifactStoreError as exc:
+            context.log.warning("review not published: %s", exc)
         context.add_output_metadata(meta)
 
     return ToolContribution(
@@ -925,6 +1059,25 @@ profile diff. **Edit the roles, not the config**; `pf bootstrap` regenerates it.
 Both are gate-denied for the same reason `target/` is: hand-editing a recorded
 diff makes the review lie.
 
+## Where the artefacts live
+
+Not in git — in the artefact store (`docs/ARTIFACTS.md`). The baseline is
+published under the ref it was built from and pulled by anything diffing
+against that ref; the recorded review is published under the branch under
+review. The commands above do both without being asked.
+
+```bash
+pf artifacts status                          # is a store configured, and reachable
+pf artifacts pull {{group}} {{project}}      # baseline + review onto this machine
+pf artifacts ls {{group}} {{project}}        # what has been published
+```
+
+With no store configured everything stays local, which is the right behaviour
+on a laptop that built its own baseline ten seconds ago. In CI it is not: a
+runner has code and no warehouse, so an unconfigured store there means the
+review reports *not exercised* rather than green. Set the two secrets named in
+`docs/ARTIFACTS.md`.
+
 ## In Dagster
 
 The `recce_review` asset runs downstream of this project's marts and attaches the
@@ -951,10 +1104,20 @@ RECCE_JOB = """\
   #
   # autoMerge is deliberately false. A merge is a write to someone's branch, and
   # the platform's rule is that automation reports while a human merges.
+  #
+  # The baseline is *pulled*, not checked out. It used to travel in the repo;
+  # that stopped scaling at 30 MB per project, so `pf tool recce ci` fetches it
+  # from the artefact store, keyed by this PR's base branch, and pushes the
+  # recorded review back under the head branch. Without the two secrets below
+  # the job still runs — it just cannot find a baseline, and reports the review
+  # as not exercised rather than failing.
   recce:
     needs: changes
     if: needs.changes.outputs.transform == 'true'
     runs-on: ubuntu-latest
+    env:
+      PF_ARTIFACTS_ACCESS_KEY_ID: ${{ secrets.PF_ARTIFACTS_ACCESS_KEY_ID }}
+      PF_ARTIFACTS_SECRET_ACCESS_KEY: ${{ secrets.PF_ARTIFACTS_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -966,7 +1129,7 @@ RECCE_JOB = """\
           autoMerge: 'false'
 
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync --extra recce
+      - run: uv sync --extra recce --extra artifacts
 
       - name: Diff against the base build
         run: uv run pf tool recce ci {{group}} {{project}}
@@ -978,14 +1141,34 @@ RECCE_JOB = """\
           [ -f "$F" ] && cat "$F" >> $GITHUB_STEP_SUMMARY || echo "no summary" >> $GITHUB_STEP_SUMMARY
 """
 
+# Refreshing a published baseline is deliberately *not* a CI job here. It wants
+# a `push` trigger, and the generated workflow is `pull_request`-only: its
+# `changes` job diffs against `github.base_ref`, which a push does not have, so
+# adding the trigger means reworking the guard every other job depends on. That
+# is a change to `pf.scaffold.ci`, not to this tool.
+#
+# Nothing regresses by leaving it out. A baseline is refreshed by running
+# `pf tool recce baseline` on the trunk, which now publishes instead of asking
+# for a commit — the same manual cadence as before, one step shorter. The
+# staleness that cadence allows is worth naming though: a baseline pulled by
+# every PR and refreshed by nobody drifts one commit further from main on each
+# merge, and the diffs stay green because the comparison state no longer exists
+# rather than because nothing moved. That was equally true of the committed
+# baselines; the store does not fix it and does not worsen it.
+
 CAPABILITY = Capability(
     name="recce",
     description="dbt PR review: diff a change against a captured baseline.",
     files={"docs/recce.md": RECCE_DOCS},
     ci_jobs={"recce": RECCE_JOB},
+    # The artefact store's credentials. Declared here rather than on a store
+    # capability of its own because recce is what needs them: `pf capability`
+    # lists the pair as missing on a machine that has not set them, which is the
+    # question someone asks after their first "review not exercised".
+    env=("PF_ARTIFACTS_ACCESS_KEY_ID", "PF_ARTIFACTS_SECRET_ACCESS_KEY"),
     settings={
         "permissions": {"allow": [
-            "Bash(pf tool recce:*)",
+            "Bash(pf tool recce:*)", "Bash(pf artifacts:*)",
             "Bash(recce run:*)", "Bash(recce server:*)", "Bash(recce debug:*)",
         ]},
     },
@@ -1060,9 +1243,38 @@ def register_commands(app: Any) -> None:
         from pf.cli import pdir
         return pdir(group, project)
 
+    def _baseline(d: Path, group: str, project: str) -> None:
+        """Report where the baseline came from, and never fail the command over it.
+
+        Every caller below can still do something useful without the store —
+        diff against a local capture, serve a review that is already on disk —
+        so a store that is configured but unreachable is a warning here. The one
+        exception is `cmd_ci`, which handles it itself because there the
+        fallback silently changes what the diff is measured against.
+        """
+        try:
+            source = ensure_baseline(d, group, project)
+        except artifacts.ArtifactStoreError as exc:
+            console.print(f"[yellow]![/] artefact store: {exc}")
+            return
+        if source and source != "local":
+            console.print(f"[dim]{source}[/]")
+
+    def _published(kind: str, moved: list[artifacts.Transfer]) -> None:
+        """Report what went to the bucket, or say nothing if there is no bucket."""
+        for t in moved:
+            console.print(f"  [dim]↑ {t.key} ({artifacts.human(t.size)})[/]")
+        if not moved and artifacts.Store.from_env() is None:
+            console.print(f"  [dim]{kind} kept local — no artefact store "
+                          f"configured (`pf artifacts status`)[/]")
+
     @recce_app.command("baseline")
-    def cmd_baseline(group: str, project: str) -> None:
-        """Capture the current dbt build as the comparison baseline."""
+    def cmd_baseline(group: str, project: str,
+                     ref: str = typer.Option("", "--ref",
+                                             help="publish under this ref instead of the base branch"),
+                     no_publish: bool = typer.Option(False, "--no-publish",
+                                                     help="capture locally, do not upload")) -> None:
+        """Capture the current dbt build as the comparison baseline, and publish it."""
         d = _pdir(group, project)
         try:
             dst, captured = capture_baseline(d)
@@ -1074,6 +1286,15 @@ def register_commands(app: Any) -> None:
         if "catalog.json" not in captured:
             console.print("  [yellow]![/] no catalog.json — column-level checks "
                           "need `dbt docs generate`")
+        if no_publish:
+            return
+        try:
+            _published("baseline", publish_baseline(d, group, project, ref))
+        except artifacts.ArtifactStoreError as exc:
+            # A captured baseline that failed to upload is still a captured
+            # baseline. Warn and exit 0 — failing here would make a network
+            # blip look like a failed build.
+            console.print(f"  [yellow]![/] not published: {exc}")
 
     @recce_app.command("config")
     def cmd_config(group: str, project: str) -> None:
@@ -1090,9 +1311,11 @@ def register_commands(app: Any) -> None:
                                             help="exit non-zero if a check fails")) -> None:
         """Run the preset checks against the baseline."""
         d = _pdir(group, project)
+        _baseline(d, group, project)
         if not has_baseline(d):
             console.print("[red]no baseline[/] — run `pf tool recce baseline` "
-                          "after a known-good build")
+                          "after a known-good build, or `pf artifacts pull "
+                          f"{group} {project}` if one was published")
             raise typer.Exit(1)
         result = run(d)
         if result.get("reason") == "not_installed":
@@ -1101,6 +1324,10 @@ def register_commands(app: Any) -> None:
         mark = "[green]✓[/]" if result.get("ok") else "[yellow]![/]"
         console.print(f"{mark} {result.get('checks_total', 0)} check(s) — "
                       f"{result.get('state_file', '')}")
+        try:
+            _published("review", publish_review(d, group, project))
+        except artifacts.ArtifactStoreError as exc:
+            console.print(f"  [yellow]![/] not published: {exc}")
         if result.get("summary_markdown"):
             console.print(result["summary_markdown"][:4000])
         raise typer.Exit(1 if strict and not result.get("ok") else 0)
@@ -1111,6 +1338,21 @@ def register_commands(app: Any) -> None:
         """Serve the Recce UI for this project."""
         import os
         d = _pdir(group, project)
+        # The server renders artefacts; it does not produce them. A checkout
+        # that has never run a review has neither, and since neither is in git
+        # any more, "no bucket and nothing local" is the state to be loud about
+        # rather than to serve an empty UI over.
+        _baseline(d, group, project)
+        if not state_file(d).exists():
+            try:
+                for t in fetch_review(d, group, project):
+                    if t.ok:
+                        console.print(f"[dim]↓ {t.key} ({artifacts.human(t.size)})[/]")
+            except artifacts.ArtifactStoreError as exc:
+                console.print(f"[yellow]![/] could not fetch the review: {exc}")
+        if not state_file(d).exists():
+            console.print("[yellow]![/] no recorded review on disk or in the "
+                          f"store — `pf tool recce run {group} {project}` first")
         argv = server_argv(d, port=port)
         console.print(f"[dim]{' '.join(argv)}  (cwd={dbt_dir(d)})[/]")
         console.print(f"[green]→[/] http://127.0.0.1:{port}/")
@@ -1119,20 +1361,47 @@ def register_commands(app: Any) -> None:
         os.chdir(dbt_dir(d))
         os.execvpe(argv[0], argv, dbt_env(d))
 
+    def _publish_ci_review(d: Path, group: str, project: str) -> None:
+        """Upload the review, and never change the job's verdict by doing so.
+
+        Called on both of `cmd_ci`'s exits, including the "not exercised" one —
+        a review that could not run is still the record of this branch, and a
+        reader looking for it in the bucket should find that sentence rather
+        than the previous branch's numbers.
+        """
+        try:
+            for t in publish_review(d, group, project):
+                console.print(f"[dim]↑ {t.key} ({artifacts.human(t.size)})[/]")
+        except artifacts.ArtifactStoreError as exc:
+            console.print(f"[yellow]![/] review not published: {exc}")
+
     @recce_app.command("ci")
     def cmd_ci(group: str, project: str) -> None:
         """Baseline if absent, then diff. What the generated workflow runs.
 
         A CI checkout is code with no warehouse behind it, so this degrades in
-        two steps rather than failing: without data the value-level checks are
-        skipped and the structural ones still run; without a baseline *and*
-        without data there is nothing to compare and the run says so. A review
-        that could not be exercised is a finding for the reader, not a red
-        cross on a branch that did nothing wrong.
+        three steps rather than failing: the baseline is pulled from the
+        artefact store, since it is no longer in the checkout; without data the
+        value-level checks are skipped and the structural ones still run;
+        without a baseline *and* without data there is nothing to compare and
+        the run says so. A review that could not be exercised is a finding for
+        the reader, not a red cross on a branch that did nothing wrong.
         """
         d = _pdir(group, project)
         ensure_packages(d)
         data = has_data(d)
+
+        try:
+            source = ensure_baseline(d, group, project)
+        except artifacts.ArtifactStoreError as exc:
+            # Reachable store, unusable answer. Say so plainly: the fallback
+            # below builds a baseline from *this branch*, and a diff against
+            # yourself reports clean, so an unexplained pull failure would read
+            # as a green review.
+            console.print(f"[yellow]![/] artefact store unreachable: {exc}")
+            source = ""
+        if source and source != "local":
+            console.print(f"[dim]{source}[/]")
 
         if not has_baseline(d):
             if not data:
@@ -1140,14 +1409,16 @@ def register_commands(app: Any) -> None:
                               "one from — review not exercised[/]")
                 summary_file(d).write_text(
                     f"## recce — {group}/{project}\n\n"
-                    "**Not exercised.** This project has no committed baseline "
-                    f"(`transform/{BASELINE_DIR}/manifest.json`) and no warehouse "
-                    "to build one from, so there was nothing to compare this "
-                    "branch against.\n\n"
+                    "**Not exercised.** No baseline was found for this project — "
+                    f"neither on disk (`transform/{BASELINE_DIR}/manifest.json`) "
+                    f"nor in the artefact store under `{baseline_prefix(group, project)}` "
+                    "— and there is no warehouse here to build one from, so there "
+                    "was nothing to compare this branch against.\n\n"
                     "Run `pf seed` and then `pf tool recce baseline "
-                    f"{group} {project}` on a known-good build, and commit the "
-                    "captured artefacts.\n"
+                    f"{group} {project}` on a known-good build of the base "
+                    "branch. That publishes the baseline this job pulls.\n"
                 )
+                _publish_ci_review(d, group, project)
                 raise typer.Exit(0)
             console.print("[yellow]no baseline — capturing the current build[/]")
             try:
@@ -1172,6 +1443,7 @@ def register_commands(app: Any) -> None:
         scope = "full" if data else "structural only — no warehouse"
         console.print(f"{result.get('checks_total', 0)} check(s) ({scope}), "
                       f"ok={result.get('ok')}")
+        _publish_ci_review(d, group, project)
         raise typer.Exit(0 if result.get("ok") else 1)
 
     app.add_typer(recce_app, name="recce")

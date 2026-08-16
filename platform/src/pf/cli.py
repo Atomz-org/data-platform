@@ -1896,6 +1896,239 @@ def mcp() -> None:
     main()
 
 
+# -------------------------------------------------------------- artefacts --
+# Build output that is too big, too binary or too churn-heavy for git, in an
+# S3-compatible bucket instead. See pf/artifacts.py for the layout and why, and
+# docs/ARTIFACTS.md for the operator's side.
+#
+# The commands here are recce-shaped because recce is the only producer today.
+# They are not recce-specific by accident of naming: `pf.artifacts` knows
+# nothing about baselines, and a second producer adds its own key semantics
+# there the same way `pf.tools.recce` did.
+artifacts_app = typer.Typer(help="Publish and fetch build artefacts (R2/S3).")
+app.add_typer(artifacts_app, name="artifacts")
+
+
+def _recce_or_exit():  # the pf.tools.recce module, for its key semantics
+    try:
+        from pf.tools import recce
+    except ImportError as exc:  # pragma: no cover - recce ships with pf
+        console.print(f"[red]recce tool unavailable: {exc}[/]")
+        raise typer.Exit(1)
+    return recce
+
+
+def _targets(group: str, project: str) -> list[tuple[str, str, Path]]:
+    """One project, or every project when neither argument is given."""
+    if group and project:
+        return [(group, project, pdir(group, project))]
+    if group or project:
+        console.print("[red]give both group and project, or neither[/]")
+        raise typer.Exit(1)
+    return all_projects()
+
+
+@artifacts_app.command("status")
+def cmd_artifacts_status() -> None:
+    """Is a store configured, and can we reach it?"""
+    from pf import artifacts as art
+
+    store = art.Store.from_env()
+    if store is None:
+        console.print("[yellow]not configured[/]")
+        console.print(f"  {art.SETUP_HINT}")
+        console.print(f"  [dim]endpoint would be {art.DEFAULT_ENDPOINT}[/]")
+        console.print(f"  [dim]bucket   would be {art.DEFAULT_BUCKET}[/]")
+        raise typer.Exit(1)
+
+    d = store.describe()
+    t = Table("field", "value", title="artefact store")
+    for k in ("endpoint", "bucket", "key_id", "source"):
+        t.add_row(k, d[k])
+    t.add_row("base ref", art.base_ref())
+    t.add_row("head ref", art.head_ref(root()))
+    console.print(t)
+
+    why = store.check()
+    if why:
+        console.print(f"[red]unreachable:[/] {why}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] reachable")
+
+
+@artifacts_app.command("push")
+def cmd_artifacts_push(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+    """Upload a project's recce artefacts. No arguments → every project."""
+    from pf import artifacts as art
+
+    store = art.Store.required()
+    recce = _recce_or_exit()
+    moved = 0
+    for g, p, d in _targets(group, project):
+        rows = []
+        if baseline:
+            rows += art.push_files(store, recce.baseline_pairs(d, g, p, ref))
+        if review:
+            rows += art.push_files(store, recce.review_pairs(d, g, p, ref))
+        if not rows:
+            console.print(f"[dim]{g}/{p} — nothing on disk to publish[/]")
+            continue
+        console.print(f"[green]✓[/] {g}/{p}")
+        for t in rows:
+            console.print(f"  ↑ {t.key} [dim]({art.human(t.size)})[/]")
+        moved += len(rows)
+    console.print(f"[dim]{moved} object(s)[/]")
+
+
+@artifacts_app.command("pull")
+def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+    """Download a project's recce artefacts. No arguments → every project.
+
+    Overwrites what is on disk. That is the point — this is how a fresh clone
+    gets a baseline — but it means a locally captured baseline you have not
+    published is replaced by whatever the trunk published. `--no-baseline` when
+    you only want the review.
+    """
+    from pf import artifacts as art
+
+    store = art.Store.required()
+    recce = _recce_or_exit()
+    got = missed = 0
+    for g, p, d in _targets(group, project):
+        pairs = []
+        if baseline:
+            pairs += recce.baseline_pairs(d, g, p, ref)
+        if review:
+            pairs += recce.review_pairs(d, g, p, ref)
+        try:
+            rows = art.pull_files(store, pairs)
+        except art.ArtifactStoreError as exc:
+            console.print(f"[red]{exc}[/]")
+            raise typer.Exit(1)
+        console.print(f"[green]✓[/] {g}/{p}" if any(t.ok for t in rows)
+                      else f"[yellow]·[/] {g}/{p} [dim]nothing published[/]")
+        for t in rows:
+            if t.ok:
+                console.print(f"  ↓ {t.path} [dim]({art.human(t.size)})[/]")
+                got += 1
+            else:
+                console.print(f"  [dim]· {t.key} — absent[/]")
+                missed += 1
+    console.print(f"[dim]{got} fetched, {missed} absent[/]")
+
+
+@artifacts_app.command("ls")
+def cmd_artifacts_ls(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                     prefix: str = typer.Option("", "--prefix",
+                                                help="raw key prefix, instead of a project")) -> None:
+    """What is in the bucket."""
+    from pf import artifacts as art
+
+    store = art.Store.required()
+    if prefix:
+        pfx = prefix
+    elif group and project:
+        pfx = art.project_prefix(group, project)
+    else:
+        pfx = ""
+
+    rows = store.ls(pfx)
+    if not rows:
+        console.print(f"[yellow]nothing under[/] {store.url(pfx)}")
+        return
+    t = Table("key", "size", "modified", title=store.url(pfx))
+    for r in sorted(rows, key=lambda r: str(r["key"])):
+        t.add_row(str(r["key"]), art.human(int(r["size"])), str(r["modified"])[:19])
+    console.print(t)
+    console.print(f"[dim]{len(rows)} object(s), "
+                  f"{art.human(sum(int(r['size']) for r in rows))}[/]")
+
+
+@artifacts_app.command("migrate")
+def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                          apply: bool = typer.Option(False, "--apply",
+                                                     help="actually push and untrack")) -> None:
+    """Move committed recce artefacts out of git and into the store.
+
+    Push, verify every key landed, and only then `git rm --cached`. The order is
+    the whole safety of this command: untracking first and uploading second
+    would, on a failed upload, leave the artefacts nowhere. They would still be
+    in git history and recoverable, but "recoverable from history" is not a
+    state to leave a merge gate in.
+
+    Dry by default. `--apply` does it.
+    """
+    from pf import artifacts as art
+
+    store = art.Store.required()
+    recce = _recce_or_exit()
+    rel = root()
+    plan: list[tuple[str, str, list[tuple[str, Path]]]] = []
+
+    for g, p, d in _targets(group, project):
+        pairs = [(k, f) for k, f in
+                 recce.baseline_pairs(d, g, p) + recce.review_pairs(d, g, p)
+                 if f.is_file()]
+        tracked = [(k, f) for k, f in pairs if _git_tracked(f, rel)]
+        if tracked:
+            plan.append((g, p, tracked))
+
+    if not plan:
+        console.print("[green]nothing to migrate[/] — no tracked recce artefacts")
+        return
+
+    total = sum(f.stat().st_size for _, _, ts in plan for _, f in ts)
+    for g, p, tracked in plan:
+        console.print(f"[bold]{g}/{p}[/]")
+        for k, f in tracked:
+            console.print(f"  {f.relative_to(rel)} [dim]({art.human(f.stat().st_size)})"
+                          f" → {store.url(k)}[/]")
+    console.print(f"[dim]{sum(len(t) for _, _, t in plan)} file(s), "
+                  f"{art.human(total)}[/]")
+
+    if not apply:
+        console.print("\n[yellow]dry run[/] — re-run with --apply to push and untrack")
+        return
+
+    for g, p, tracked in plan:
+        for k, f in tracked:
+            store.put(k, f)
+        # Verify before removing. `put` raising is the common failure; a silent
+        # partial write is the one that would cost data, so the check is a
+        # round trip to the bucket rather than trust in the call that returned.
+        absent = [k for k, _ in tracked if not store.exists(k)]
+        if absent:
+            console.print(f"[red]{g}/{p}: not in the bucket after upload — "
+                          f"{', '.join(absent)}. Left tracked.[/]")
+            raise typer.Exit(1)
+        paths = [str(f.relative_to(rel)) for _, f in tracked]
+        proc = subprocess.run(["git", "rm", "--cached", "-q", "--", *paths],
+                              cwd=str(rel), capture_output=True, text=True,
+                              check=False)
+        if proc.returncode != 0:
+            console.print(f"[red]{g}/{p}: git rm --cached failed: "
+                          f"{proc.stderr.strip()}[/]")
+            raise typer.Exit(1)
+        console.print(f"[green]✓[/] {g}/{p} — {len(tracked)} published and untracked")
+
+    console.print("\n[bold]Next:[/] add the ignore rules, drop the "
+                  "`denylist_except` entries for these paths in gate.yaml, and "
+                  "commit the removals. `pf check` will flag any that are still "
+                  "tracked.")
+
+
+def _git_tracked(path: Path, cwd: Path) -> bool:
+    proc = subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(path)],
+                          cwd=str(cwd), capture_output=True, text=True, check=False)
+    return proc.returncode == 0
+
+
 # ------------------------------------------------------------------ tools --
 # Tools are capabilities that also *run*. The sub-app below knows about tools in
 # general and about no tool in particular: every row comes from the registry, so
