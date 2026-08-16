@@ -117,7 +117,7 @@ def probe_engine() -> dict[str, Any]:
         proc = subprocess.run(["metadata", "--version"], capture_output=True,
                               text=True, timeout=30)
     except FileNotFoundError:
-        return {"ok": False, "detail": "metadata CLI not on PATH — `uv sync --extra openmetadata`"}
+        return {"ok": False, "detail": "metadata CLI not on PATH — `uv tool install openmetadata-ingestion`"}
     except subprocess.TimeoutExpired:
         return {"ok": False, "detail": "metadata --version timed out"}
     if proc.returncode != 0:
@@ -256,7 +256,7 @@ def ingest_dbt(project_dir: Path, timeout: int = 900) -> dict[str, Any]:
                               capture_output=True, text=True, timeout=timeout)
     except FileNotFoundError:
         return {"ok": False, "reason": "not_installed",
-                "message": "metadata CLI not on PATH — `uv sync --extra openmetadata`"}
+                "message": "metadata CLI not on PATH — `uv tool install openmetadata-ingestion`"}
     except subprocess.TimeoutExpired:
         return {"ok": False, "reason": "timeout", "message": "ingestion timed out"}
     return {"ok": proc.returncode == 0,
@@ -439,9 +439,15 @@ TOOL = Tool(
     default_enabled=True,
     # The projection needs no client; only ingestion does. See spec.Tool.
     offline_bootstrap=True,
+    # Binary only. There was a `python:metadata` requirement beside this one,
+    # and it was never true of anything: this module shells out to `metadata
+    # ingest` and does not import a line of the package. Now that ingestion is
+    # installed isolated — because its antlr4 pin was breaking Dagster, see the
+    # note in the root pyproject.toml — an import check would be permanently
+    # unsatisfiable, and would report a correctly installed tool as missing.
     requires=(
-        Requirement("python", "metadata", "uv sync --extra openmetadata"),
-        Requirement("binary", "metadata", "uv sync --extra openmetadata"),
+        Requirement("binary", "metadata",
+                    "uv tool install 'openmetadata-ingestion[datalake,snowflake]'"),
     ),
     dbt=DbtBinding(needs_manifest=True, artefacts=(WORKFLOW_REL, PAYLOAD_REL)),
     # Not embeddable: OpenMetadata serves its UI with a frame-denying policy, so

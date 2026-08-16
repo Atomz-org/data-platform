@@ -26,9 +26,24 @@ artifacts = ["pf[artifacts]"]
 wren = [
     "wrenai>=0.13,<1",
 ]
-# The ingestion framework, not the server. The server is a deployment concern
-# (Docker/Helm, see vendor/openmetadata); this is the client that talks to it.
-openmetadata = ["openmetadata-ingestion>=1.13,<2"]
+# openmetadata-ingestion is deliberately NOT an extra here. Install it isolated:
+#
+#     uv tool install 'openmetadata-ingestion[datalake,snowflake]'
+#
+# It is a *command*, not a library. `pf.tools.openmetadata` shells out to
+# `metadata ingest` and never imports a line of it, so putting it in this
+# workspace bought nothing and cost something specific:
+#
+#   openmetadata-ingestion pins antlr4-python3-runtime==4.9.2. dagster needs
+#   4.13 for its asset-selection lexer and declares only `<4.14`, so uv — which
+#   resolves one version per package for the whole workspace — picked 4.9.2 and
+#   every Dagster code location died in ATNDeserializer with
+#   `ord() expected string of length 1, but int found`.
+#
+# A lockfile is shared even when an extra is not: `uv sync` without
+# `--extra openmetadata` still installed the pinned antlr4, so the catalogue
+# tool nobody had enabled was breaking the orchestrator everybody uses. An
+# isolated tool install gives it its own environment and its own antlr4.
 
 [tool.uv.workspace]
 members = ["platform", "groups/*/projects/*"]
