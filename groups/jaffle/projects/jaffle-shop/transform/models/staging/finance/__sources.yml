@@ -2,7 +2,12 @@ version: 2
 
 sources:
   - name: finance
-    schema: "{{ target.schema }}_raw"
+    # The raw layer is *ingested*, not built by dbt: dlt loads it once, into
+    # main_raw. Deriving the schema from target.schema made every non-default
+    # target look for a raw layer that was never created — `--target base`,
+    # which recce uses to capture its comparison build, resolved to base_raw
+    # and failed all 58 sources. Only dbt-built models carry the target prefix.
+    schema: "{{ var('raw_schema', 'main_raw') }}"
     description: Finance and payments data for the Jaffle Shop
     tables:
       - name: raw_invoices
