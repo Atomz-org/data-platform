@@ -75,16 +75,41 @@ jobs:
           fetch-depth: 0          # impact needs the merge base, not a shallow clone
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
-      # The graph is a build artefact, not a commit: rebuild before gating or the
-      # gate reports the blast radius of whatever the last committer had locally.
-      - run: uv run pf kg build {{group}} {{project}}
-      - name: Blast radius of changed models
+
+      - name: Models this PR touches
+        id: changed
         run: |
           CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \\
             -- 'groups/{{group}}/projects/{{project}}/transform/models/**/*.sql' \\
             | xargs -r -n1 basename | sed 's/\\.sql$//' | sed 's/^/model:/' | paste -sd, -)
-          [ -z "$CHANGED" ] && echo "no model changes" && exit 0
-          uv run pf impact-gate {{group}} {{project}} "$CHANGED"
+          [ -z "$CHANGED" ] && echo "no model changes"
+          echo "models=$CHANGED" >> "$GITHUB_OUTPUT"
+
+      # Gate against the *base*, not the branch. The question a merge gate
+      # answers is "what does this break in {{group}}/{{project}} as it stands",
+      # and only the base graph can answer it:
+      #
+      #   a model this PR adds is not in the base graph, so it has no blast
+      #     radius and does not block — gated against the branch instead, every
+      #     new model blocks on the new models added beside it, which makes the
+      #     gate unusable for exactly the changes that need reviewing most
+      #   a model this PR deletes still is in the base graph, so its consumers
+      #     are found — gated against the branch it resolves to nothing and the
+      #     most dangerous change there is passes silently
+      #
+      # `pf kg build` parses the dbt project first. Without a manifest the graph
+      # holds no models, every blast-radius query comes back empty, and the gate
+      # passes because it found nothing rather than because there is nothing.
+      - name: Blast radius against the base
+        if: steps.changed.outputs.models != ''
+        run: |
+          git checkout --detach origin/${{ github.base_ref }}
+          if [ ! -f "groups/{{group}}/projects/{{project}}/transform/dbt_project.yml" ]; then
+            echo "{{group}}/{{project}} does not exist on ${{ github.base_ref }} yet — nothing there to break"
+            exit 0
+          fi
+          uv run pf kg build {{group}} {{project}}
+          uv run pf impact-gate {{group}} {{project}} "${{ steps.changed.outputs.models }}"
 """
 
 GITHUB_README = """\

@@ -86,6 +86,40 @@ def parse(project_dir: str | Path, duckdb_path: str | Path | None = None) -> sub
     return dbt(project_dir, "parse", duckdb_path=duckdb_path)
 
 
+def ensure_manifest(project_dir: str | Path,
+                    duckdb_path: str | Path | None = None) -> bool:
+    """Produce `target/manifest.json` if it is not already there.
+
+    The manifest is where the models, their columns and their lineage come
+    from. Everything that reads it treats it as optional and degrades when it is
+    missing — which is right for a card and wrong for a gate, because a gate
+    with no models in front of it reports "nothing downstream" and passes.
+
+    Installs packages first: dbt refuses to parse at all when `packages.yml`
+    names packages that `dbt_packages/` does not hold, which is the state of
+    every fresh checkout.
+
+    Returns whether a manifest exists afterwards. Never raises — a project with
+    no dbt project underneath it is a legitimate caller, and the old degraded
+    behaviour is the right answer there.
+    """
+    transform = Path(project_dir) / "transform"
+    if (transform / "target" / "manifest.json").exists():
+        return True
+    if not (transform / "dbt_project.yml").exists():
+        return False
+
+    declared = any((transform / f).exists() for f in ("packages.yml", "dependencies.yml"))
+    installed = transform / "dbt_packages"
+    try:
+        if declared and not (installed.is_dir() and any(installed.iterdir())):
+            deps(project_dir, duckdb_path=duckdb_path)
+        parse(project_dir, duckdb_path=duckdb_path)
+    except FileNotFoundError:
+        return False  # dbt is not installed — the caller degrades as it always did
+    return (transform / "target" / "manifest.json").exists()
+
+
 def manifest(project_dir: str | Path) -> dict[str, Any]:
     p = Path(project_dir) / "transform" / "target" / "manifest.json"
     return json.loads(p.read_text()) if p.exists() else {}

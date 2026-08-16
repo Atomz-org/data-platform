@@ -25,7 +25,9 @@ from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, 
     render_group_card, render_project_card
 # Aliased: the `gate` command below is a *path* gate and would otherwise shadow
 # this import at module level, so `pf impact-gate` would call the wrong one.
-from pf.kg.impact import gate as impact_gate, impact_of, impact_of_many
+from pf.kg.impact import (
+    GateNotExercised, gate as impact_gate, impact_of, impact_of_many,
+)
 from pf.kg.query import kg_neighbors, kg_search
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
@@ -634,9 +636,19 @@ def work(group: str, project: str) -> None:
 
 # ------------------------------------------------------------ graph & card --
 @kg_app.command("build")
-def cmd_kg_build(group: str, project: str) -> None:
+def cmd_kg_build(group: str, project: str,
+                 parse: bool = typer.Option(
+                     True, help="parse the dbt project first if it has no manifest")) -> None:
     """Rebuild a project's knowledge graph from annotations + dbt manifests."""
     d = pdir(group, project)
+    # The builder treats the manifest as optional and degrades without it. That
+    # is the right default for a source of documentation and the wrong one for
+    # the graph CI gates against: no manifest means no Model, Metric or Exposure
+    # nodes, and a blast-radius query over that graph finds nothing and says so.
+    if parse:
+        from pf.runtime.dbt_runtime import ensure_manifest
+        from pf.runtime.warehouse import Warehouse
+        ensure_manifest(d, duckdb_path=Warehouse.for_project(d, group, project).path)
     counts = build_graph(d, group=group, project=project)
     t = Table("kind", "nodes", title=f"{group}/{project} graph")
     for k, v in sorted(counts.items()):
@@ -692,7 +704,11 @@ def impact(group: str, project: str, node: str,
 def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
     """CI gate over a comma-separated set of changed nodes."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
-    code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
+    try:
+        code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
+    except GateNotExercised as exc:
+        console.print(f"[red]✗[/] gate not exercised — {exc}")
+        raise typer.Exit(1) from exc
     console.print(rendered)
     raise typer.Exit(code)
 
