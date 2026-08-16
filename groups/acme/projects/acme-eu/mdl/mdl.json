@@ -7,7 +7,7 @@
     {
       "name": "dim_customers",
       "tableReference": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "table": "dim_customers"
       },
       "columns": [
@@ -106,7 +106,7 @@
     {
       "name": "fct_payments",
       "tableReference": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "table": "fct_payments"
       },
       "columns": [
@@ -213,7 +213,7 @@
     {
       "name": "fct_revenue",
       "tableReference": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "table": "fct_revenue"
       },
       "columns": [

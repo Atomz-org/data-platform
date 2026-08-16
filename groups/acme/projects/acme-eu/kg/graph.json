@@ -1434,7 +1434,7 @@
       "layer": "marts",
       "label": "Customer dimension with subscription rollups.",
       "props": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "materialized": "table",
         "grain": "one customer",
         "tags": []
@@ -1447,7 +1447,7 @@
       "layer": "marts",
       "label": "Payment fact at attempt grain, enriched with customer and plan.",
       "props": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "materialized": "table",
         "grain": "one payment attempt",
         "tags": []
@@ -1460,7 +1460,7 @@
       "layer": "marts",
       "label": "Daily revenue by segment and plan. Union-compatible across sisters.",
       "props": {
-        "schema": "main_marts",
+        "schema": "base_marts",
         "materialized": "table",
         "grain": "one day x segment x plan",
         "tags": []
@@ -1473,7 +1473,7 @@
       "layer": "utils",
       "label": "Daily time spine required by MetricFlow.",
       "props": {
-        "schema": "main",
+        "schema": "base",
         "materialized": "table",
         "grain": "",
         "tags": []
@@ -1486,7 +1486,7 @@
       "layer": "staging",
       "label": "Stripe charge events \u2014 the revenue source of record. Cleaned 1:1 from `stripe.charges`; grain: one payment attempt.",
       "props": {
-        "schema": "main_staging",
+        "schema": "base_staging",
         "materialized": "view",
         "grain": "one payment attempt",
         "tags": []
@@ -1499,7 +1499,7 @@
       "layer": "staging",
       "label": "Stripe customers for the EU entity. Cleaned 1:1 from `stripe.customers`; grain: one customer account.",
       "props": {
-        "schema": "main_staging",
+        "schema": "base_staging",
         "materialized": "view",
         "grain": "one customer account",
         "tags": []
@@ -1512,7 +1512,7 @@
       "layer": "staging",
       "label": "Active and churned subscriptions. Cleaned 1:1 from `stripe.subscriptions`; grain: one subscription.",
       "props": {
-        "schema": "main_staging",
+        "schema": "base_staging",
         "materialized": "view",
         "grain": "one subscription",
         "tags": []
@@ -1751,7 +1751,7 @@
       "label": "acme/acme-eu",
       "props": {
         "group": "acme",
-        "path": "/Users/suresh/data-platform/groups/acme/projects/acme-eu"
+        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-eu"
       }
     },
     {
