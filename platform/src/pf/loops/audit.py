@@ -10,6 +10,7 @@ Score >= 80 means L2 is defensible. L3 needs a track record in the ledger too.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -78,6 +79,54 @@ def project_readiness(root: Path) -> list[ProjectReadiness]:
     return out
 
 
+def _marketplace_resolves(root: Path) -> tuple[bool, str]:
+    """Does every plugin the marketplace advertises actually exist on disk?
+
+    Checks what `claude plugin validate` checks, without shelling out to a CLI
+    that may not be installed wherever the audit runs: sources are relative to
+    the marketplace root (the directory holding `.claude-plugin/`), must not
+    escape it, and must land on a directory containing a plugin manifest.
+    """
+    manifest = root / "platform" / ".claude-plugin" / "marketplace.json"
+    if not manifest.exists():
+        return False, "platform/.claude-plugin/marketplace.json missing — no toolkit loads"
+    try:
+        entries = (json.loads(manifest.read_text()) or {}).get("plugins") or []
+    except json.JSONDecodeError as exc:
+        return False, f"marketplace.json does not parse: {exc}"
+    if not entries:
+        return False, "marketplace lists no plugins"
+
+    market_root = manifest.parent.parent
+    broken = []
+    for e in entries:
+        src = str(e.get("source", ""))
+        if src.startswith("..") or "/../" in src:
+            broken.append(f"{e.get('name')} (escapes marketplace root)")
+            continue
+        if not (market_root / src / ".claude-plugin" / "plugin.json").exists():
+            broken.append(f"{e.get('name')} (no plugin.json at {src})")
+    if broken:
+        return False, f"{len(broken)}/{len(entries)} unresolvable: {', '.join(broken[:3])}"
+    return True, f"{len(entries)} plugin(s) resolve"
+
+
+def _mcp_wired(root: Path, projects: list[ProjectReadiness]) -> tuple[bool, str]:
+    """Can a project session actually call the graph tools its CLAUDE.md names?"""
+    server = root / "platform" / "toolkits" / "power-tools" / ".mcp.json"
+    if not server.exists():
+        return False, "no toolkit ships .mcp.json — kg_search/impact_analysis unavailable"
+
+    missing = []
+    for p in projects:
+        settings = root / "groups" / p.group / "projects" / p.project / ".claude" / "settings.json"
+        if not settings.exists() or "power-tools@platform" not in settings.read_text():
+            missing.append(f"{p.group}/{p.project}")
+    if missing:
+        return False, f"not enabled in {len(missing)} project(s): {', '.join(missing[:3])}"
+    return True, f"enabled in {len(projects)}/{len(projects)} project(s)"
+
+
 def audit(root: Path) -> tuple[int, list[Check]]:
     from pf.loops.runner import Ledger
 
@@ -113,6 +162,22 @@ def audit(root: Path) -> tuple[int, list[Check]]:
     add("PreToolUse hook wired", 10, root_hook and len(hooked) == n,
         f"root + {len(hooked)}/{n} project(s)" if root_hook
         else "root settings.json has no PreToolUse block")
+
+    # The toolkits are only capabilities if a session can actually load them.
+    # They were all individually valid and none of them resolved for months: the
+    # marketplace listed each source as `../platform/toolkits/<x>`, which walks
+    # out of the repo, and the marketplace projects point at did not exist. That
+    # failure is completely silent — plugins simply do not appear — so it needs a
+    # check rather than a convention.
+    ok_market, market_detail = _marketplace_resolves(root)
+    add("plugin marketplace resolves", 10, ok_market, market_detail)
+
+    # `pf mcp` exposes kg_search, kg_neighbors, kg_path and impact_analysis. Every
+    # project CLAUDE.md instructs the agent to call them before reading files or
+    # changing a column. Without a plugin shipping `.mcp.json`, those tools do not
+    # exist in the session and the instruction is a dead letter.
+    ok_mcp, mcp_detail = _mcp_wired(root, projects)
+    add("MCP tools available to projects", 10, ok_mcp, mcp_detail)
 
     # -- platform-specific readiness ---------------------------------------
     graphed = [p for p in projects if p.graph]
