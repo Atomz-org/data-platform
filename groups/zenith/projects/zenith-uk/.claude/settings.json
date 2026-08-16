@@ -23,12 +23,19 @@
     "dbt-govern@platform",
     "dagster-orchestrate@platform",
     "python-standards@platform",
-    "zenith-group@zenith"
+    "zenith-group@zenith",
+    "power-tools@platform",
+    "evidence-bi@platform"
   ],
   "permissions": {
     "deny": [
       "Read(../*/src/**)",
-      "Read(../../../*/projects/**)"
+      "Read(../../../*/projects/**)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets.toml)",
+      "Read(**/.dlt/secrets.toml)",
+      "Read(**/credentials/**)"
     ],
     "allow": [
       "Bash(uv run pf:*)",
@@ -45,7 +52,17 @@
       "Bash(pf tool wren:*)",
       "Bash(wren:*)",
       "Bash(pf tool openmetadata:*)",
-      "Bash(metadata:*)"
+      "Bash(metadata:*)",
+      "Bash(pf report:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run sources:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ]
   },
   "hooks": {
