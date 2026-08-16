@@ -68,7 +68,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # The bucket this platform publishes to. Overridable, so a fork or a staging
@@ -179,14 +179,21 @@ def project_prefix(group: str, project: str) -> str:
 class Store:
     """One bucket, and the credentials to reach it.
 
-    Frozen and credential-carrying: never log or repr an instance. `describe()`
-    below is the safe rendering, and it is what the CLI prints.
+    Credential-carrying, so the credentials are kept out of `repr`. That is not
+    tidiness: `repr` is what a traceback prints, Rich renders tracebacks with
+    locals, and typer renders exceptions with Rich — so an unhandled error
+    anywhere below `Store.required()` would have put the secret access key on
+    screen and into whatever CI captured it. It did, until this was checked.
+
+    `describe()` is the safe rendering and is what the CLI prints: endpoint,
+    bucket, a four-character prefix of the key id, and which env var it came
+    from. Never the secret, in any form.
     """
 
     endpoint: str
     bucket: str
-    key_id: str
-    secret: str
+    key_id: str = field(repr=False)
+    secret: str = field(repr=False)
 
     # -- construction --
     @classmethod
