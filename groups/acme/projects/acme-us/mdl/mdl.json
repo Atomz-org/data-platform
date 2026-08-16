@@ -71,34 +71,6 @@
           "properties": {
             "pf.role": "quantity"
           }
-        },
-        {
-          "name": "organization_id",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {
-            "pf.role": "foreign_key"
-          }
-        },
-        {
-          "name": "first_subscribed_at",
-          "type": "TIMESTAMP",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {
-            "pf.role": "event_time"
-          }
-        },
-        {
-          "name": "is_active",
-          "type": "BOOLEAN",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
         }
       ],
       "primaryKey": "customer_id",
@@ -196,26 +168,6 @@
           "isHidden": false,
           "properties": {
             "pf.role": "status_enum"
-          }
-        },
-        {
-          "name": "customer_id",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {
-            "pf.role": "foreign_key"
-          }
-        },
-        {
-          "name": "subscription_id",
-          "type": "VARCHAR",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {
-            "pf.role": "foreign_key"
           }
         }
       ],
@@ -315,38 +267,7 @@
       }
     }
   ],
-  "relationships": [
-    {
-      "name": "fct_payments_dim_customers",
-      "models": [
-        "fct_payments",
-        "dim_customers"
-      ],
-      "joinType": "MANY_TO_ONE",
-      "condition": "fct_payments.customer_id = dim_customers.customer_id",
-      "properties": {
-        "pf.relation": "customer_pays_payment",
-        "pf.label": "pays",
-        "pf.inverse": "paid by",
-        "pf.description": ""
-      }
-    },
-    {
-      "name": "fct_payments_dim_customers",
-      "models": [
-        "fct_payments",
-        "dim_customers"
-      ],
-      "joinType": "MANY_TO_ONE",
-      "condition": "fct_payments.subscription_id = dim_customers.customer_id",
-      "properties": {
-        "pf.relation": "subscription_settled_by_payment",
-        "pf.label": "settled by",
-        "pf.inverse": "settles",
-        "pf.description": ""
-      }
-    }
-  ],
+  "relationships": [],
   "views": [],
   "cubes": [
     {
