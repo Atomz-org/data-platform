@@ -20,6 +20,11 @@ dependencies = [
 data = ["dlt[duckdb]>=1.4", "dbt-core>=1.9", "dbt-duckdb>=1.9"]
 orchestration = ["dagster>=1.9", "dagster-webserver>=1.9", "dagster-dbt>=0.25"]
 agents = ["anthropic>=0.40"]
+# `pf mcp` imports FastMCP lazily inside main(), so the package still installs
+# and every other command still works without it. Without the extra, `pf mcp`
+# fails at startup with a plain ImportError rather than the server silently
+# serving nothing.
+mcp = ["mcp>=1.2"]
 
 [project.scripts]
 pf = "pf.cli:app"
