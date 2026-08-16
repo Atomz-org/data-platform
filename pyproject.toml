@@ -66,4 +66,7 @@ dev = [
   # project CLAUDE.md tells the agent to call `kg_search` and `impact_analysis`
   # before touching a model, and those are MCP tools.
   "mcp>=1.2",
+  # Formats dbt SQL after an agent edit (power-tools PostToolUse hook). The hook
+  # skips silently when it is absent, so this is what turns SQL formatting on.
+  "sqlfluff>=3.2",
 ]

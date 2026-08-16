@@ -1,0 +1,50 @@
+# SQL formatting for dbt models. Read by the power-tools PostToolUse hook and by
+# `just fmt`; both no-op when sqlfluff is not installed.
+#
+# Why the `jinja` templater and not `dbt`: the dbt templater needs a working
+# profile and a parsed manifest, so it turns a 200 ms format into a multi-second
+# one that fails on any project whose warehouse is not up. `apply_dbt_builtins`
+# gives us stubbed `ref`, `source`, `config`, `var` and `is_incremental`, which is
+# all that is needed to *parse* a model. It cannot resolve a custom macro — those
+# files fail to template and the hook skips them silently rather than mangling
+# them.
+#
+# Dialect is duckdb because that is what every project runs locally. Models that
+# must also run on Snowflake go through the cross-database macros in
+# platform/toolkits/dbt-snowflake, so they parse under duckdb too.
+[sqlfluff]
+dialect = duckdb
+templater = jinja
+max_line_length = 120
+# Layout-only rules are what we want the hook to enforce. Rules about naming and
+# structure belong in review, where a human can disagree with them — a formatter
+# that silently renames a column is a formatter nobody trusts.
+exclude_rules = RF01, RF02, RF03, RF04, ST06, AM05, CV02
+
+[sqlfluff:indentation]
+tab_space_size = 4
+indent_unit = space
+indented_joins = False
+indented_ctes = False
+implicit_indents = allow
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:aliasing.table]
+aliasing = explicit
+
+[sqlfluff:rules:aliasing.column]
+aliasing = explicit
