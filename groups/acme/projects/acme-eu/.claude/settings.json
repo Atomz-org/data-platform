@@ -61,7 +61,8 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
       "Bash(pf align:*)",
-      "Bash(pf dialect:*)"
+      "Bash(pf dialect:*)",
+      "Bash(pf artifacts:*)"
     ],
     "ask": [
       "Bash(git push:*)",

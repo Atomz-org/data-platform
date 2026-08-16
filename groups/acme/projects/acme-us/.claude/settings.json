@@ -58,7 +58,8 @@
       "Bash(pf tool openmetadata:*)",
       "Bash(metadata:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr diff:*)"
+      "Bash(gh pr diff:*)",
+      "Bash(pf artifacts:*)"
     ],
     "ask": [
       "Bash(git push:*)",
