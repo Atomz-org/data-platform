@@ -37,6 +37,28 @@ node_modules/
 **/kg/context_card.md
 **/data/*.duckdb
 **/data/*.duckdb.wal
+
+# jaffle-shop's recce artefacts, and only jaffle-shop's. Every other project
+# carries its own, because they are ~1.4 MB and a reviewer on another machine
+# can then reproduce the numbers without rebuilding.
+#
+# jaffle-shop has 996 marts, so the same three files come to 30 MB — larger than
+# this entire repository's history — and every review run rewrites all of them
+# with fresh timestamps. gate.yaml anticipated exactly this: "If that becomes the
+# dominant noise in reviews, the fix is to drop these four lines and untrack
+# them, not to hand-edit them." This is that case, scoped to the one project that
+# hits it.
+#
+# Nothing is lost that cannot be recomputed: `pf tool recce ci` baselines if
+# absent, then diffs, so CI rebuilds both. The human-readable
+# `transform/recce_summary.md` stays committed.
+#
+# The trade: `pf ui` and the control plane read recce_state.json rather than
+# recomputing it, so jaffle-shop's review will not render there from a fresh
+# clone until a review has been run locally or in CI.
+groups/jaffle/projects/jaffle-shop/transform/recce_state.json
+groups/jaffle/projects/jaffle-shop/transform/target-base/
+
 **/reporting/queries/metrics/
 # Rendered from toolkit templates by `pf evals-gen`, the same way the graph is
 # rendered by `pf kg build`. Hand-written project cases sit one level up, in
