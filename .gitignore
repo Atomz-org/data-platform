@@ -15,20 +15,10 @@ node_modules/
 # state Recce diffs against. The pattern is separate because `**/target/` does
 # not match it.
 **/target-*/
-# …except the two artefacts the diff is actually measured against. They were
-# called "just as regenerable as target/", and on a developer's machine they
-# are. In CI they are not: capturing a baseline is a *build*, and a runner has
-# code and no warehouse, so a checkout without these is a checkout whose review
-# cannot run at all — which is the state six of seven projects were in. That
-# makes them inputs, not output, and worth ~700 KB each.
-#
-# Only these two. Everything else `dbt build --target base` writes stays
-# ignored, and the exception is narrow so a future artefact does not join by
-# accident.
-!**/target-base/
-**/target-base/*
-!**/target-base/manifest.json
-!**/target-base/catalog.json
+# `target-base/` used to carry two exceptions — manifest.json and catalog.json —
+# so a baseline travelled with the branch. It travels through the artefact store
+# now, so the exceptions are gone and the whole directory is ignored like every
+# other build output.
 **/logs/
 **/dbt_packages/
 **/.duckdb-skills/
@@ -38,26 +28,29 @@ node_modules/
 **/data/*.duckdb
 **/data/*.duckdb.wal
 
-# jaffle-shop's recce artefacts, and only jaffle-shop's. Every other project
-# carries its own, because they are ~1.4 MB and a reviewer on another machine
-# can then reproduce the numbers without rebuilding.
+# Recce's recorded reviews and captured baselines, for every project.
 #
-# jaffle-shop has 996 marts, so the same three files come to 30 MB — larger than
-# this entire repository's history — and every review run rewrites all of them
-# with fresh timestamps. gate.yaml anticipated exactly this: "If that becomes the
-# dominant noise in reviews, the fix is to drop these four lines and untrack
-# them, not to hand-edit them." This is that case, scoped to the one project that
-# hits it.
+# These were committed on purpose and the reasoning held for a while: a reviewer
+# on another machine cannot reproduce a summary's numbers without the baseline
+# they were measured against, and a CI runner has code and no warehouse. So they
+# were inputs, not output, and worth ~1.4 MB each.
 #
-# Nothing is lost that cannot be recomputed: `pf tool recce ci` baselines if
-# absent, then diffs, so CI rebuilds both. The human-readable
-# `transform/recce_summary.md` stays committed.
+# It stopped holding at jaffle-shop, whose 996 marts make the same files 30 MB —
+# larger than this repository's entire history — rewritten whole on every review
+# run. gate.yaml anticipated exactly this: "If that becomes the dominant noise in
+# reviews, the fix is to drop these four lines and untrack them."
 #
-# The trade: `pf ui` and the control plane read recce_state.json rather than
-# recomputing it, so jaffle-shop's review will not render there from a fresh
-# clone until a review has been run locally or in CI.
-groups/jaffle/projects/jaffle-shop/transform/recce_state.json
-groups/jaffle/projects/jaffle-shop/transform/target-base/
+# Ignoring them alone would have been the other half of a bad trade, since CI and
+# the control plane both read these files. They now live in the artefact store
+# (docs/ARTIFACTS.md): the producer pushes, every consumer pulls, and a 20 MB
+# file never passes through a diff. `pf tool recce ci` fetches the baseline for
+# the PR's base branch and publishes the review back under the head branch.
+#
+# Untracked by `pf artifacts migrate --apply`, which pushes and verifies every
+# key before it removes anything.
+**/transform/recce_state.json
+**/transform/recce_summary.md
+**/transform/target-base/
 
 # A proposal pulled from a live OpenMetadata server by `pf tool openmetadata
 # pull` — what data owners changed in the catalogue that this repo does not say
