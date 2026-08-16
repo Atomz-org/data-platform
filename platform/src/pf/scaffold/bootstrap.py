@@ -338,7 +338,10 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     import yaml
 
     from pf.onboard.dialect import TOOLKITS
-    from pf.scaffold.generator import PROJECT_TARGETS, render_target
+    from pf.runtime.targets import default_warehouse
+    from pf.scaffold.generator import (
+        PROJECT_TARGETS, render_target, replace_target, target_type,
+    )
 
     d = _pdir(root, group, project)
     changed: list[str] = []
@@ -382,10 +385,36 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         # job is to fill gaps.
         absent = [n for n in PROJECT_TARGETS if outputs and n not in outputs]
         if absent:
-            profiles.write_text(text.rstrip("\n") + "\n"
-                                + "".join(render_target(n, PROJECT_TARGETS[n])
-                                          for n in absent))
+            text = (text.rstrip("\n") + "\n"
+                    + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent))
+            profiles.write_text(text)
             changed.append(f"profiles += {', '.join(absent)}")
+
+        # Point `prod` at the production warehouse, if it is still the DuckDB
+        # placeholder.
+        #
+        # The placeholder exists so a scaffolded project builds before anyone has
+        # decided where production lives. Left there it is a quiet lie: `prod`
+        # names a target that is a local file, so `DBT_TARGET=prod dbt build`
+        # succeeds, writes nothing anyone can see, and reports success. Seven of
+        # eight projects were in that state.
+        #
+        # Guarded on the *current* type, not on whether we have written here
+        # before. Anything already pointing at a real engine — Snowflake set by
+        # hand, BigQuery from `pf capability-add` — is left exactly alone, so
+        # this can never take a project off its own warehouse. And only the
+        # `prod` block is touched: `replace_target` is text-level precisely so
+        # hand-added keys on the DuckDB targets beside it survive.
+        wh = default_warehouse()
+        if wh is not None and outputs:
+            current = target_type(text, "prod")
+            if current == "duckdb":
+                new_text, swapped = replace_target(text, "prod", wh.output)
+                if swapped:
+                    profiles.write_text(new_text)
+                    changed.append(f"prod -> {wh.name}")
+            elif current and current != wh.name:
+                changed.append(f"prod already on {current}, left alone")
 
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")

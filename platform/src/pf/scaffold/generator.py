@@ -445,9 +445,78 @@ def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> s
     """One dbt output block. The unit `pf align` checks and bootstrap appends."""
     lines = [f"{indent}{name}:"]
     for key, value in spec.items():
-        rendered = f'"{value}"' if isinstance(value, str) and "{{" in value else value
+        if isinstance(value, bool):
+            # Before booleans appeared here every value was a string or an int,
+            # and Python's `True` reached the file verbatim. YAML 1.1 does read
+            # it as a boolean, so nothing was broken — but a generated file that
+            # nobody can copy an idiom from is a generated file people edit by
+            # hand, and `secure: True` beside `threads: 8` reads as a mistake.
+            rendered: object = "true" if value else "false"
+        elif isinstance(value, str) and "{{" in value:
+            rendered = f'"{value}"'
+        else:
+            rendered = value
         lines.append(f"{indent}  {key}: {rendered}")
     return "\n".join(lines) + "\n"
+
+
+def replace_target(text: str, name: str, spec: dict[str, object]) -> tuple[str, bool]:
+    """Swap one output block in an existing profiles.yml. Returns (text, changed).
+
+    Text-level, and deliberately not a YAML round-trip. `yaml.safe_dump` of a
+    parsed profile is a *different file*: it loses every comment, and the
+    comments in these files are load-bearing — acme-eu's `base` target carries
+    six lines explaining why a diff needs a second materialisation, which is the
+    kind of thing that gets deleted once and re-learned expensively.
+
+    It is also not a whole-file regeneration. That was tried: rewriting
+    acme-eu's profiles.yml from the template silently dropped
+    `extensions: [httpfs, json]` from two targets, because the template has no
+    `extensions` key and never did. Anything a project added by hand to a target
+    this function is not replacing survives untouched, byte for byte.
+
+    The block is bounded by indentation: everything more-indented than the
+    `<name>:` line belongs to it, and the first line at or above that indent
+    ends it. A comment sitting at the parent indent — the usual place to put one
+    — therefore belongs to the *next* target and is left where it is.
+    """
+    lines = text.splitlines()
+    head = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped == f"{name}:" and line != stripped:
+            head, indent = i, line[: len(line) - len(line.lstrip())]
+            break
+    if head is None:
+        return text, False
+
+    end = head + 1
+    while end < len(lines):
+        line = lines[end]
+        if line.strip() and len(line) - len(line.lstrip()) <= len(indent):
+            break
+        end += 1
+
+    block = render_target(name, spec, indent).rstrip("\n").splitlines()
+    if lines[head:end] == block:
+        return text, False
+    return "\n".join(lines[:head] + block + lines[end:]) + "\n", True
+
+
+def target_type(text: str, name: str) -> str:
+    """The `type:` of one output, or "" if the profile has no such target."""
+    import yaml
+
+    try:
+        doc = yaml.safe_load(text) or {}
+    except yaml.YAMLError:
+        return ""
+    for value in doc.values():
+        if isinstance(value, dict) and isinstance(value.get("outputs"), dict):
+            spec = value["outputs"].get(name)
+            if isinstance(spec, dict):
+                return str(spec.get("type") or "")
+    return ""
 
 
 def render_profiles(module: str, targets: dict[str, dict[str, object]] | None = None) -> str:

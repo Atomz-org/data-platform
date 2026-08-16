@@ -23,10 +23,12 @@ inside the thing that enforces the safety gate is a way around the safety gate.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from pf.runtime.targets import WAREHOUSES, ProductionWarehouse
 from pf.scaffold.generator import PROJECT_TARGETS, render, render_profiles
 
 
@@ -197,15 +199,26 @@ static/data/
 
 
 # ------------------------------------------------------------ warehouses ----
-SNOWFLAKE_README = """\
-# Production warehouse — Snowflake
+#: The generated README, shared by every production warehouse.
+#:
+#: One skeleton rather than one file per engine. The parts that vary — the
+#: engine's name, its credentials, how it authenticates, what it does
+#: differently from DuckDB — are filled from the `ProductionWarehouse` entry;
+#: everything else is the same sentence in every project, which is the point.
+#: Five hand-written copies of "development stays on DuckDB" is five chances for
+#: the one nobody is reading to be wrong.
+WAREHOUSE_README = """\
+# Production warehouse — {{warehouse_title}}
 
-**{{group}}/{{project}}** develops on DuckDB and runs production on Snowflake.
-One set of models serves both: the `sf_*` macros in
+**{{group}}/{{project}}** develops on DuckDB and runs production on
+{{warehouse_title}}. One set of models serves both: the `sf_*` macros in
 `platform/toolkits/dbt-snowflake` dispatch per adapter, so a model is written
 once and compiles to whatever the *target* understands. `pf dialect` lists what
 is covered, and `pf align validate {{group}} {{project}} --stage dialect` is the
 gate that says whether this project is actually portable or merely untested.
+
+Declaring this target does not make the models run on {{warehouse_title}}. That
+gate passing is what does.
 
 ## Why development stays on DuckDB
 
@@ -214,21 +227,30 @@ project. Every target but `prod` is a local DuckDB file, so `dbt build` works on
 a laptop, offline, with no credentials, in seconds — and `base` exists so Recce
 has a second state to diff against.
 
+Only `prod` points at {{warehouse_title}}. Nothing in this capability can move
+`dev`, `ci` or `base`, by construction.
+
 ## Credentials
 
-Read from the environment at run time and **never written to a file here**:
+Read from the environment at run time and **never written to a file here** —
+`transform/profiles.yml` holds `env_var` calls, not values, because it is
+committed:
 
-    SNOWFLAKE_ACCOUNT   SNOWFLAKE_USER    SNOWFLAKE_ROLE
-    SNOWFLAKE_WAREHOUSE SNOWFLAKE_DATABASE SNOWFLAKE_SCHEMA
+{{env_block}}
 
-Authentication is key-pair by default — set `SNOWFLAKE_PRIVATE_KEY_PATH`. Set
-`SNOWFLAKE_PASSWORD` instead only if key-pair is not available to you; dbt uses
-whichever is present. `pf doctor` reports which are missing. Never paste one into
-a chat, a model file, or this repository.
+{{auth_note}}
+
+`pf doctor` reports which are missing. Never paste one into a chat, a model
+file, or this repository.
 
 ## Running against it
 
+The adapter is an optional extra — nothing on a laptop needs it, because every
+target but `prod` is DuckDB and dbt only loads the adapter the selected target
+names.
+
 ```bash
+uv sync --extra {{warehouse_extra}}    # installs {{warehouse_adapter}}
 DBT_TARGET=prod dbt build          # explicit, every time
 pf align validate {{group}} {{project}} --stage dialect
 ```
@@ -236,27 +258,80 @@ pf align validate {{group}} {{project}} --stage dialect
 There is deliberately no shortcut. The target is named on every invocation
 because the failure mode — believing you are on dev and being on prod — is worse
 than the typing.
+
+{{caveats}}
+
+## Switching
+
+```bash
+pf capability-add <warehouse> {{group}} {{project}}
+```
+
+`prod` is replaced in place; the DuckDB targets beside it, and anything you
+hand-added to them, are left alone.
 """
 
-#: The whole profiles.yml with `prod` retargeted, built from the same target
-#: table the scaffold uses. Derived rather than written out, so dev/ci/base stay
-#: identical to every other project's — a capability that quietly changed the
-#: development target would move the thing it was asked to leave alone.
-SNOWFLAKE_PROFILES = render_profiles("{{module}}", {
-    **PROJECT_TARGETS,
-    "prod": {
-        "type": "snowflake",
-        "account": "{{ env_var('SNOWFLAKE_ACCOUNT') }}",
-        "user": "{{ env_var('SNOWFLAKE_USER') }}",
-        "private_key_path": "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') }}",
-        "password": "{{ env_var('SNOWFLAKE_PASSWORD', '') }}",
-        "role": "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}",
-        "warehouse": "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}",
-        "database": "{{ env_var('SNOWFLAKE_DATABASE') }}",
-        "schema": "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}",
-        "threads": 8,
-    },
-})
+
+def _env_block(wh: ProductionWarehouse) -> str:
+    """Required credentials first, then the ones with defaults.
+
+    Split because the distinction is the whole question an operator has when
+    they read this: "what do I have to go and get" versus "what can I leave".
+    Derived from the target rather than restated — a two-argument `env_var` has
+    a default and is therefore optional, so the two lists cannot disagree with
+    the profile they document.
+    """
+    referenced: list[str] = []
+    optional: list[str] = []
+    for value in wh.output.values():
+        m = re.search(r"env_var\(\s*'([^']+)'(\s*,)?", str(value))
+        if not m:
+            continue
+        (optional if m.group(2) else referenced).append(m.group(1))
+    lines = ["    required:  " + ("  ".join(sorted(set(referenced))) or "—")]
+    if optional:
+        lines.append("    optional:  " + "  ".join(sorted(set(optional))))
+    return "\n".join(lines)
+
+
+def _caveats(wh: ProductionWarehouse) -> str:
+    if not wh.caveats:
+        return ""
+    return "## What differs from DuckDB\n\n" + "\n".join(f"- {c}" for c in wh.caveats)
+
+
+def warehouse_capability(wh: ProductionWarehouse) -> Capability:
+    """Everything a production warehouse contributes, built from its declaration.
+
+    The profile is `render_profiles` over the standard targets with **only**
+    `prod` swapped, so enabling one strictly retargets production rather than
+    replacing anyone's dbt config. Nothing reads `prod` until `DBT_TARGET`
+    selects it, so a project carries it un-credentialed and inert.
+    """
+    docs = (WAREHOUSE_README
+            .replace("{{warehouse_title}}", wh.title)
+            .replace("{{warehouse_extra}}", wh.name)
+            .replace("{{warehouse_adapter}}", wh.adapter)
+            .replace("{{env_block}}", _env_block(wh))
+            .replace("{{auth_note}}", wh.auth_note)
+            .replace("{{caveats}}", _caveats(wh)))
+    return Capability(
+        name=wh.name,
+        description=f"Run production on {wh.title} while development stays on DuckDB.",
+        files={
+            "transform/profiles.yml": render_profiles(
+                "{{module}}", {**PROJECT_TARGETS, "prod": wh.output}),
+            f"docs/{wh.name}.md": docs,
+        },
+        settings={
+            "permissions": {"allow": ["Bash(pf align:*)", "Bash(pf dialect:*)"]},
+            **({"enabledPlugins": list(wh.plugins)} if wh.plugins else {}),
+        },
+        env=wh.env,
+        warehouse=wh.name,
+        default_enabled=wh.default_enabled,
+    )
+
 
 CAPABILITIES: dict[str, Capability] = {
     "evidence": Capability(
@@ -287,30 +362,6 @@ CAPABILITIES: dict[str, Capability] = {
         },
         default_enabled=True,
     ),
-    "snowflake": Capability(
-        name="snowflake",
-        description="Run production on Snowflake while development stays on DuckDB.",
-        files={
-            "transform/profiles.yml": SNOWFLAKE_PROFILES,
-            "docs/snowflake.md": SNOWFLAKE_README,
-        },
-        settings={
-            "permissions": {"allow": ["Bash(pf align:*)", "Bash(pf dialect:*)"]},
-            "enabledPlugins": ["dbt-snowflake@platform"],
-        },
-        # Only `prod` reads these, so a developer needs none of them. `pf doctor`
-        # reports what is unset rather than the scaffold refusing to write the
-        # target — a project is configured for Snowflake long before anyone has
-        # an account for it.
-        env=("SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_DATABASE"),
-        warehouse="snowflake",
-        # The written profile is `render_profiles` over the standard targets plus
-        # `prod`, so backfilling it strictly adds a target rather than replacing
-        # anyone's dbt config. Nothing reads the prod target until DBT_TARGET
-        # selects it, so a project carries it un-credentialed and inert; `pf
-        # doctor` reports the unset env vars.
-        default_enabled=True,
-    ),
     "github": Capability(
         name="github",
         description="Run the impact gate on every pull request touching this project.",
@@ -327,6 +378,15 @@ CAPABILITIES: dict[str, Capability] = {
         default_enabled=True,
     ),
 }
+
+# One capability per production warehouse, generated from `pf.runtime.targets`.
+# Registered here rather than written above because the whole point of the
+# registry is that adding ClickHouse is an entry in a table, not a fifth
+# near-identical block in this file that has to be kept in agreement with four
+# others. `pf capabilities` and `pf new-project --with` see them exactly as if
+# they had been written by hand.
+CAPABILITIES.update({name: warehouse_capability(wh) for name, wh in WAREHOUSES.items()})
+
 
 
 class UnknownCapability(KeyError):
