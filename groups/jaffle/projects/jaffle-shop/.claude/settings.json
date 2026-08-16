@@ -61,7 +61,8 @@
       "Bash(pf tool wren:*)",
       "Bash(wren:*)",
       "Bash(pf tool openmetadata:*)",
-      "Bash(metadata:*)"
+      "Bash(metadata:*)",
+      "Bash(pf artifacts:*)"
     ],
     "ask": [
       "Bash(git push:*)",

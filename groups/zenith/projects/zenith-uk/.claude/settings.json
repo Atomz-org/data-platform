@@ -58,7 +58,8 @@
       "Bash(npm run build:*)",
       "Bash(npm run sources:*)",
       "Bash(gh pr view:*)",
-      "Bash(gh pr diff:*)"
+      "Bash(gh pr diff:*)",
+      "Bash(pf artifacts:*)"
     ],
     "ask": [
       "Bash(git push:*)",
