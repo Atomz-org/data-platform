@@ -71,6 +71,10 @@ Precedence between toolkits is in `ROUTING.md`.
   `quick-start`
   - Follow the path source → annotate → model → metric; skipping annotation costs that work several times over later.
 
+## power-tools — Auditing, shipping or reviewing a change, and the session hooks that run alongside it.
+  - Commands audit (security, performance, architecture, tech debt) and ship; the subagents that back them are read-only by construction.
+  - Formatting and notification run as hooks, so the cost of a well-formed turn is paid by the harness rather than by the agent.
+
 ## python-standards — Writing or reviewing Python in this repository.
   `dignified-python`
   - Match the surrounding code's naming, comment density and idiom rather than importing a personal style.

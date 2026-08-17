@@ -1,0 +1,65 @@
+# Dagster for this platform, on the current versions.
+#
+# The image that was running before this one was `dagster-sandbox-example`:
+# Python 3.8.12 and dagster 0.14.16rc2, against a repo that needs >=3.11 and
+# runs 1.13. That is four years and the whole asset API apart — no Definitions,
+# no @dbt_assets, no asset checks — so it could not have loaded a single code
+# location, and it had neither the repo mounted nor a port published.
+#
+# ## The repo is mounted, not copied
+#
+# COPY would bake a snapshot: every edit needs a rebuild, and the DuckDB files
+# the assets write would live inside the container and vanish with it. A bind
+# mount keeps one source of truth on the host, which is what makes `dagster dev`
+# in the container and `pf seed` on the host agree about the warehouse.
+#
+# The mount path matches the host path exactly (see the run command below).
+# Dagster's workspace.yaml holds *absolute* working_directory paths — generated
+# by `pf dagster-workspace`, deliberately absolute because Dagster resolves a
+# relative one against the process cwd — so a container that mounts the repo
+# somewhere else silently loads zero code locations.
+#
+# ## Build
+#
+#   podman build -f platform/Containerfile.dagster -t pf-dagster:latest .
+#
+# ## Run
+#
+#   podman run -d --name pf-dagster -p 3000:3000 \
+#     -v "$PWD":"$PWD":Z -w "$PWD" \
+#     -e DAGSTER_HOME="$PWD/.dagster" \
+#     --env-file .env \
+#     pf-dagster:latest
+#
+# `:Z` relabels for SELinux and is a no-op on macOS. `--env-file .env` is how
+# the warehouse and artefact-store credentials reach the assets; nothing is
+# baked into the image.
+
+FROM python:3.12-slim-bookworm
+
+# git: the artefact store reads the current branch to key a review, and dbt
+# packages resolve over git. Without it both fail in ways that read like
+# application bugs.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Dependencies are resolved at run time against the mounted repo's uv.lock
+# rather than baked here. Baking them would pin the image to the lockfile as it
+# stood at build time, and the first `uv sync` after a dependency change would
+# silently disagree with what the host is running — the exact drift a container
+# is supposed to remove.
+ENV UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    DAGSTER_HOME=/workspace/.dagster
+
+EXPOSE 3000
+
+COPY platform/scripts/dagster-entrypoint.sh /usr/local/bin/dagster-entrypoint
+RUN chmod +x /usr/local/bin/dagster-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/dagster-entrypoint"]

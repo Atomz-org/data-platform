@@ -1,0 +1,7 @@
+# DuckDB connector for this project's warehouse.
+# One warehouse file per project is what lets sister companies run in parallel;
+# the reporting layer only ever reads.
+name: zenith_uk
+type: duckdb
+options:
+  filename: ../../../data/zenith_uk.duckdb

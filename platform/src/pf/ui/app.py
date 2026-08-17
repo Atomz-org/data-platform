@@ -784,20 +784,41 @@ def recce_state(group: str, project: str) -> dict[str, Any]:
     Reads the state file rather than recomputing, for the same reason /api/prs
     does: a dashboard that recomputes will eventually disagree with the run that
     produced the number, and then neither is trusted.
+
+    Fetches it once if it is not there. The state file is no longer in git, so
+    on a fresh clone "not there" is the *normal* state of a project that has
+    been reviewed — and a panel that renders empty because nobody ran
+    `pf artifacts pull` looks exactly like a panel that renders empty because
+    the review found nothing. Recomputing is still refused; downloading the
+    recorded answer is not recomputing it.
     """
+    from pf import artifacts
     from pf.tools.recce import (
+        fetch_review,
         has_baseline,
         has_manifest,
         read_state,
+        state_file,
         summary_markdown,
     )
 
     d = project_dir(group, project)
+    fetched = ""
+    if not state_file(d).exists() and artifacts.Store.from_env() is not None:
+        try:
+            if any(t.ok for t in fetch_review(d, group, project)):
+                fetched = "store"
+        except artifacts.ArtifactStoreError as exc:
+            # A dashboard panel is not the place to fail a request over a
+            # bucket. Report it in the payload so the UI can say why the panel
+            # is empty instead of implying the review was clean.
+            fetched = f"error: {exc}"
     return {
         "group": group, "project": project,
         "has_manifest": has_manifest(d),
         "has_baseline": has_baseline(d),
         "summary_markdown": summary_markdown(d),
+        "fetched_from": fetched,
         **read_state(d),
     }
 

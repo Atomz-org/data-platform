@@ -60,9 +60,24 @@ def _authored(root: Path, rel: str) -> str:
 
     Object `created_at` tracks the policy, not the export. Using `now()` here
     would make every export churn and drown a real policy change in noise.
+
+    `%cI` and convert, not `--date=format-local`. `format-local` renders the
+    commit in *the exporting machine's* timezone, and TS_FMT then appends a
+    literal `Z` — so the value claimed UTC while holding local time, and the
+    same commit exported to two different stamps depending on where the export
+    ran:
+
+        host, TZ=+02:00     2026-08-13T22:01:06Z     <- wrong, and churned
+        container, TZ=UTC   2026-08-13T20:01:06Z     <- the real instant
+        git's own answer    2026-08-13T22:01:06+02:00
+
+    Which defeated the whole point of not using `now()`: the manifest still
+    churned, 42 entries at a time, whenever it was regenerated somewhere else.
+    `%cI` is the committer date with its true offset, and `_as_ts` normalises
+    it — the same conversion the ledger timestamps already go through.
     """
-    out = _git(root, "log", "-1", f"--date=format-local:{TS_FMT}", "--format=%cd", "--", rel)
-    return out or _now()
+    out = _git(root, "log", "-1", "--format=%cI", "--", rel)
+    return _as_ts(out) or _now()
 
 
 def _digest(root: Path, rel: str) -> str:

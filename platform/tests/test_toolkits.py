@@ -30,7 +30,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLKITS = ROOT / "platform" / "toolkits"
-MARKETPLACE = ROOT / ".claude-plugin" / "marketplace.json"
+MARKETPLACE = ROOT / "platform" / ".claude-plugin" / "marketplace.json"
 
 #: Toolkits that exist on disk but are not yet in marketplace.json. Shrink me.
 UNREGISTERED = {"forge-ui", "recce-review"}
@@ -87,9 +87,12 @@ def test_marketplace_points_at_real_toolkits():
 
 
 def test_marketplace_sources_resolve():
+    # A marketplace source is relative to the marketplace root — the directory
+    # holding `.claude-plugin/`, i.e. platform/ — not to `.claude-plugin/` itself.
+    root = MARKETPLACE.parent.parent
     for name, source in registered().items():
-        assert source == f"../platform/toolkits/{name}", f"{name}: odd source {source}"
-        assert (MARKETPLACE.parent / source).is_dir(), f"{name}: {source} does not exist"
+        assert source == f"./toolkits/{name}", f"{name}: odd source {source}"
+        assert (root / source).is_dir(), f"{name}: {source} does not exist"
 
 
 def test_no_new_unregistered_toolkit():

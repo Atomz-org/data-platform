@@ -26,6 +26,9 @@ from pf.capabilities import (
     apply as apply_capability,
 )
 from pf.capabilities import (
+    defaults as capability_defaults,
+)
+from pf.capabilities import (
     resolve as resolve_capabilities,
 )
 from pf.kg.build import build_graph
@@ -52,6 +55,7 @@ from pf.ontology.validate import validate_instance, validate_project, validate_t
 from pf.runtime.staging import generate as generate_staging
 from pf.scaffold.bootstrap import STEPS, bootstrap
 from pf.scaffold.generator import new_group, new_project
+from pf.stack import frontdoor, storage, token
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
 kg_app = typer.Typer(help="Knowledge graph operations.")
@@ -112,8 +116,11 @@ def cmd_new_project(
     project: str,
     rollup: bool = typer.Option(False, "--rollup", help="cross-entity roll-up project"),
     sisters: str = typer.Option("", help="comma-separated sister projects (roll-up only)"),
-    with_: str = typer.Option("", "--with", help="comma-separated capabilities "
+    with_: str = typer.Option("", "--with", help="comma-separated capabilities to add "
+                                                 "on top of the defaults "
                                                  "(see `pf capabilities`)"),
+    without: str = typer.Option("", "--without", help="comma-separated default "
+                                                      "capabilities to skip"),
 ) -> None:
     """Create a project (one legal entity) inside a group.
 
@@ -123,7 +130,14 @@ def cmd_new_project(
     gate ends up inert.
     """
     sister_list = [s.strip() for s in sisters.split(",") if s.strip()]
-    names = [c.strip() for c in with_.split(",") if c.strip()]
+    # Defaults first, `--with` on top, `--without` removed. A project that has to
+    # be asked for its capabilities gets the ones whoever typed the command
+    # remembered — which is how seven projects ended up with no CI merge gate
+    # while the eighth had one. Opting out stays possible and stays explicit.
+    skip = {c.strip() for c in without.split(",") if c.strip()}
+    names = [n for n in capability_defaults() if n not in skip]
+    names += [c.strip() for c in with_.split(",")
+              if c.strip() and c.strip() not in names]
     try:
         caps = resolve_capabilities(names)
     except (UnknownCapability, ValueError) as exc:
@@ -1154,6 +1168,221 @@ def cmd_dagster_workspace() -> None:
                   f"-w platform/workspace.yaml[/]")
 
 
+# ------------------------------------------------------------------ stack --
+stack_app = typer.Typer(
+    help="The control plane: one Postgres, one origin, one image.")
+app.add_typer(stack_app, name="stack")
+
+
+def _stack_dir() -> Path:
+    return root() / "platform" / "stack"
+
+
+@stack_app.command("render")
+def cmd_stack_render(
+    listen: int = typer.Option(frontdoor.LISTEN, help="Front-door port."),
+    static: str = typer.Option("", help="Path nginx serves /pf/ from. Defaults "
+                                       "to the generated www/ in this repo."),
+) -> None:
+    """Generate nginx, supervisor and the Dagster storage block.
+
+    Everything here is derived from the project roster, so it is regenerated
+    rather than edited: adding a sister shifts recce's port assignments, and a
+    hand-edited nginx.conf would keep pointing at the old ones.
+    """
+    r = root()
+    out = _stack_dir()
+    (out / "www").mkdir(parents=True, exist_ok=True)
+
+    roster = all_projects()
+    svcs = frontdoor.services(roster)
+    locs = frontdoor.code_locations(roster)
+    www = static or str(out / "www")
+
+    files = {
+        out / "nginx.conf": frontdoor.nginx_conf(svcs, listen=listen, static=www),
+        out / "supervisord.conf": frontdoor.supervisor_conf(
+            svcs, locs, repo=r, nginx_conf_path=str(out / "nginx.conf")),
+        out / "workspace.yaml": frontdoor.workspace_yaml(locs),
+        out / "www" / "index.html": frontdoor.landing_html(svcs, listen=listen),
+        out / "www" / "recce-down.html": frontdoor.recce_down_html(),
+        out / "www" / "bar.css": frontdoor.bar_css(),
+        out / "www" / "bar.js": frontdoor.bar_js(),
+    }
+    for path, text in files.items():
+        path.write_text(text)
+        console.print(f"[green]✓[/] {path.relative_to(r)}")
+
+    s = storage.settings()
+    # DAGSTER_HOME wins: the container sets it, and writing the storage block
+    # into a `.dagster` the instance is not reading is a silent no-op that looks
+    # exactly like success.
+    home = Path(os.environ.get("DAGSTER_HOME") or (r / ".dagster"))
+    path, changed = storage.write(home, s, base=r / ".dagster" / "dagster.yaml")
+    where = (f"postgres {s.host}:{s.port}/{s.db} schema={s.schema}" if s
+             else f"sqlite (set {storage.ENV_HOST} for postgres)")
+    shown = path.relative_to(r) if path.is_relative_to(r) else path
+    console.print(f"[green]✓[/] {shown}  "
+                  f"{'updated' if changed else 'unchanged'} — {where}")
+
+    ports = {x.project: x.port for x in locs}
+    t = Table("project", "group", "code server", "recce", "on boot",
+              title=f"{len(locs)} code location(s), {len(svcs)} review server(s)")
+    for x in svcs:
+        t.add_row(x.project, x.group, str(ports.get(x.project, "—")),
+                  str(x.port),
+                  "recce" if x.reviewed else "[dim]code only[/]")
+    if svcs:
+        console.print(t)
+
+
+@stack_app.command("db-init")
+def cmd_stack_db_init() -> None:
+    """Create Dagster's role and schema in OpenMetadata's database.
+
+    Run once, as an admin. Dagster's own role cannot do this and should not be
+    able to — it has no rights in `public`, which is the entire point of putting
+    the two products in one database.
+    """
+    s = storage.settings()
+    if s is None:
+        console.print(f"[red]{storage.ENV_HOST} is not set[/] — nothing to "
+                      "initialise. See docs/STACK.md.")
+        raise typer.Exit(1)
+    admin = storage.admin_settings(s)
+    try:
+        for line in storage.ensure_schema(s, admin):
+            console.print(f"[green]✓[/] {line}")
+    except ImportError:
+        console.print("[red]psycopg2 is not installed[/] — "
+                      "[cyan]uv sync --extra stack[/]")
+        raise typer.Exit(1) from None
+    except Exception as exc:  # noqa: BLE001 - the driver raises many types
+        console.print(f"[red]✗[/] {type(exc).__name__}: {exc}")
+        raise typer.Exit(1) from None
+
+
+@stack_app.command("token")
+def cmd_stack_token() -> None:
+    """Print the catalogue's ingestion-bot JWT, for `export`.
+
+    Prints a credential to stdout — that is the whole job:
+
+        export OPENMETADATA_JWT_TOKEN="$(pf stack token)"
+
+    Echoes `OPENMETADATA_JWT_TOKEN` when it is already set, so the command is
+    safe to use unconditionally and never overrides a deliberate choice.
+    """
+    s = storage.settings()
+    admin = storage.admin_settings(s) if s else None
+    try:
+        value, _ = token.resolve(dict(os.environ), admin)
+    except token.TokenUnavailable as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from None
+    # print, not console.print: rich wraps at the terminal width, and a JWT
+    # folded across three lines is a JWT that fails to authenticate.
+    print(value)
+
+
+@stack_app.command("status")
+def cmd_stack_status() -> None:
+    """What the stack is configured to be, and what is actually answering."""
+    import urllib.error
+    import urllib.request
+
+    r = root()
+    s = storage.settings()
+    console.print(f"[bold]storage[/]  "
+                  f"{'postgres ' + s.host + ':' + str(s.port) + '/' + s.db if s else 'sqlite (local files)'}")
+    if s is None:
+        # This shell's configuration, not the container's. Saying so matters:
+        # the stack can be serving happily off Postgres while the host that
+        # asked reads "sqlite", and that is not a disagreement.
+        console.print(f"  [dim]this shell only — the stack sets "
+                      f"{storage.ENV_HOST} for itself. Set it here too to "
+                      f"point host-side `dagster dev` at the same database.[/]")
+    if s:
+        try:
+            counts = storage.table_counts(s)
+            for schema, n in sorted(counts.items()):
+                mark = "[green]✓[/]" if schema in (s.schema, "public") else " "
+                console.print(f"  {mark} schema {schema}: {n} table(s)")
+            if counts.get(s.schema, 0) == 0:
+                console.print(f"  [yellow]![/] schema {s.schema} is empty — "
+                              "Dagster has not migrated into it yet")
+        except ImportError:
+            console.print("  [yellow]![/] psycopg2 missing; cannot inspect")
+        except Exception as exc:  # noqa: BLE001
+            console.print(f"  [red]✗[/] {type(exc).__name__}: {exc}")
+
+    conf = _stack_dir() / "nginx.conf"
+    console.print(f"[bold]front door[/]  "
+                  f"{'rendered' if conf.exists() else '[yellow]not rendered[/]'}"
+                  f" — {conf.relative_to(r) if conf.exists() else 'pf stack render'}")
+
+    # Every probe goes through the front door, including the recce ones. Their
+    # own ports are bound to loopback *inside* the container and are not
+    # published, so probing them directly reports a connection error for a
+    # server that is running perfectly — the cookie is how you address one.
+    base = f"http://127.0.0.1:{frontdoor.LISTEN}"
+
+    # The version that is *answering*, not the tag someone meant to build. An
+    # upgrade that failed to take leaves a stack running the previous
+    # distribution and reporting nothing wrong.
+    try:
+        with urllib.request.urlopen(  # noqa: S310
+                f"{base}/api/v1/system/version", timeout=5) as resp:
+            v = json.load(resp)
+        console.print(f"[bold]openmetadata[/]  {v.get('version', '?')}"
+                      f"  [dim]{str(v.get('revision', ''))[:8]}[/]")
+    except Exception:  # noqa: BLE001 - not answering is reported by the table
+        console.print("[bold]openmetadata[/]  [dim]not answering[/]")
+
+    # Whether `catalog_sync` can publish, which is the difference between a
+    # green Dagster run and 75 rejected writes. Reports where the credential
+    # came from and never what it is.
+    try:
+        _, source = token.resolve(dict(os.environ),
+                                  storage.admin_settings(s) if s else None)
+        console.print(f"[bold]catalogue auth[/]  [green]✓[/] "
+                      f"resolved from the {source}")
+    except token.TokenUnavailable as exc:
+        console.print(f"[bold]catalogue auth[/]  [yellow]![/] {exc}")
+
+    svcs = frontdoor.services(all_projects())
+    t = Table("what", "url", "state")
+    probes: list[tuple[str, str, str]] = [
+        ("catalogue", f"{base}/api/v1/system/version", ""),
+        ("dagster", f"{base}/dagster/server_info", ""),
+        ("launcher", f"{base}/pf/", ""),
+    ]
+    probes += [(f"recce/{x.project}", f"{base}/api/health", x.project)
+               for x in svcs]
+    for name, url, project in probes:
+        req = urllib.request.Request(url)  # noqa: S310
+        if project:
+            req.add_header("Cookie", f"pf_recce={project}")
+        try:
+            with urllib.request.urlopen(req, timeout=5) as resp:  # noqa: S310
+                # The front door answers a stopped review server with the
+                # explanatory page, not an error, so 200 alone is not "up".
+                body = resp.read(400)
+                state = ("[dim]stopped[/]" if b"not running" in body
+                         else f"[green]{resp.status}[/]")
+        except urllib.error.HTTPError as exc:
+            # `^~ /api/` deliberately does not serve the explanatory HTML — a
+            # JSON client should get a status, not a page — so a refused
+            # upstream arrives here as 502, and for a review server that is the
+            # normal resting state rather than a fault.
+            state = ("[dim]stopped[/]" if project and exc.code == 502
+                     else f"[yellow]{exc.code}[/]")
+        except Exception as exc:  # noqa: BLE001
+            state = f"[red]{type(exc).__name__}[/]"
+        t.add_row(name, url, state)
+    console.print(t)
+
+
 # ------------------------------------------------------------------ loops --
 loop_app = typer.Typer(help="Loop engineering: scheduled, gated, budgeted agent work.")
 app.add_typer(loop_app, name="loop")
@@ -1904,6 +2133,253 @@ def mcp() -> None:
     """Run the MCP server over stdio."""
     from pf.mcp.server import main
     main()
+
+
+# -------------------------------------------------------------- artefacts --
+# Build output that is too big, too binary or too churn-heavy for git, in an
+# S3-compatible bucket instead. See pf/artifacts.py for the layout and why, and
+# docs/ARTIFACTS.md for the operator's side.
+#
+# The commands here are recce-shaped because recce is the only producer today.
+# They are not recce-specific by accident of naming: `pf.artifacts` knows
+# nothing about baselines, and a second producer adds its own key semantics
+# there the same way `pf.tools.recce` did.
+artifacts_app = typer.Typer(help="Publish and fetch build artefacts (R2/S3).")
+app.add_typer(artifacts_app, name="artifacts")
+
+
+def _recce_or_exit():  # the pf.tools.recce module, for its key semantics
+    try:
+        from pf.tools import recce
+    except ImportError as exc:  # pragma: no cover - recce ships with pf
+        console.print(f"[red]recce tool unavailable: {exc}[/]")
+        raise typer.Exit(1)
+    return recce
+
+
+def _targets(group: str, project: str) -> list[tuple[str, str, Path]]:
+    """One project, or every project when neither argument is given."""
+    if group and project:
+        return [(group, project, pdir(group, project))]
+    if group or project:
+        console.print("[red]give both group and project, or neither[/]")
+        raise typer.Exit(1)
+    return all_projects()
+
+
+def _store_or_exit(art):  # `art` is the pf.artifacts module
+    """A configured store, or a one-line exit.
+
+    Unconfigured is the *expected* first state of these commands, not a bug, so
+    it gets the setup hint rather than a NotConfigured traceback with the
+    hint buried at the bottom of it.
+    """
+    store = art.Store.from_env()
+    if store is None:
+        console.print(f"[yellow]{art.SETUP_HINT}[/]")
+        raise typer.Exit(1)
+    return store
+
+
+@artifacts_app.command("status")
+def cmd_artifacts_status() -> None:
+    """Is a store configured, and can we reach it?"""
+    from pf import artifacts as art
+
+    store = art.Store.from_env()
+    if store is None:
+        console.print("[yellow]not configured[/]")
+        console.print(f"  {art.SETUP_HINT}")
+        console.print(f"  [dim]endpoint would be {art.DEFAULT_ENDPOINT}[/]")
+        console.print(f"  [dim]bucket   would be {art.DEFAULT_BUCKET}[/]")
+        raise typer.Exit(1)
+
+    d = store.describe()
+    t = Table("field", "value", title="artefact store")
+    for k in ("endpoint", "bucket", "key_id", "source"):
+        t.add_row(k, d[k])
+    t.add_row("base ref", art.base_ref())
+    t.add_row("head ref", art.head_ref(root()))
+    console.print(t)
+
+    why = store.check()
+    if why:
+        console.print(f"[red]unreachable:[/] {why}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] reachable")
+
+
+@artifacts_app.command("push")
+def cmd_artifacts_push(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+    """Upload a project's recce artefacts. No arguments → every project."""
+    from pf import artifacts as art
+
+    store = _store_or_exit(art)
+    recce = _recce_or_exit()
+    moved = 0
+    for g, p, d in _targets(group, project):
+        rows = []
+        if baseline:
+            rows += art.push_files(store, recce.baseline_pairs(d, g, p, ref))
+        if review:
+            rows += art.push_files(store, recce.review_pairs(d, g, p, ref))
+        if not rows:
+            console.print(f"[dim]{g}/{p} — nothing on disk to publish[/]")
+            continue
+        console.print(f"[green]✓[/] {g}/{p}")
+        for t in rows:
+            console.print(f"  ↑ {t.key} [dim]({art.human(t.size)})[/]")
+        moved += len(rows)
+    console.print(f"[dim]{moved} object(s)[/]")
+
+
+@artifacts_app.command("pull")
+def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+    """Download a project's recce artefacts. No arguments → every project.
+
+    Overwrites what is on disk. That is the point — this is how a fresh clone
+    gets a baseline — but it means a locally captured baseline you have not
+    published is replaced by whatever the trunk published. `--no-baseline` when
+    you only want the review.
+    """
+    from pf import artifacts as art
+
+    store = _store_or_exit(art)
+    recce = _recce_or_exit()
+    got = missed = 0
+    for g, p, d in _targets(group, project):
+        pairs = []
+        if baseline:
+            pairs += recce.baseline_pairs(d, g, p, ref)
+        if review:
+            pairs += recce.review_pairs(d, g, p, ref)
+        try:
+            rows = art.pull_files(store, pairs)
+        except art.ArtifactStoreError as exc:
+            console.print(f"[red]{exc}[/]")
+            raise typer.Exit(1)
+        console.print(f"[green]✓[/] {g}/{p}" if any(t.ok for t in rows)
+                      else f"[yellow]·[/] {g}/{p} [dim]nothing published[/]")
+        for t in rows:
+            if t.ok:
+                console.print(f"  ↓ {t.path} [dim]({art.human(t.size)})[/]")
+                got += 1
+            else:
+                console.print(f"  [dim]· {t.key} — absent[/]")
+                missed += 1
+    console.print(f"[dim]{got} fetched, {missed} absent[/]")
+
+
+@artifacts_app.command("ls")
+def cmd_artifacts_ls(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                     prefix: str = typer.Option("", "--prefix",
+                                                help="raw key prefix, instead of a project")) -> None:
+    """What is in the bucket."""
+    from pf import artifacts as art
+
+    store = _store_or_exit(art)
+    if prefix:
+        pfx = prefix
+    elif group and project:
+        pfx = art.project_prefix(group, project)
+    else:
+        pfx = ""
+
+    rows = store.ls(pfx)
+    if not rows:
+        console.print(f"[yellow]nothing under[/] {store.url(pfx)}")
+        return
+    t = Table("key", "size", "modified", title=store.url(pfx))
+    for r in sorted(rows, key=lambda r: str(r["key"])):
+        t.add_row(str(r["key"]), art.human(int(r["size"])), str(r["modified"])[:19])
+    console.print(t)
+    console.print(f"[dim]{len(rows)} object(s), "
+                  f"{art.human(sum(int(r['size']) for r in rows))}[/]")
+
+
+@artifacts_app.command("migrate")
+def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                          apply: bool = typer.Option(False, "--apply",
+                                                     help="actually push and untrack")) -> None:
+    """Move committed recce artefacts out of git and into the store.
+
+    Push, verify every key landed, and only then `git rm --cached`. The order is
+    the whole safety of this command: untracking first and uploading second
+    would, on a failed upload, leave the artefacts nowhere. They would still be
+    in git history and recoverable, but "recoverable from history" is not a
+    state to leave a merge gate in.
+
+    Dry by default. `--apply` does it.
+    """
+    from pf import artifacts as art
+
+    store = _store_or_exit(art)
+    recce = _recce_or_exit()
+    rel = root()
+    plan: list[tuple[str, str, list[tuple[str, Path]]]] = []
+
+    for g, p, d in _targets(group, project):
+        pairs = [(k, f) for k, f in
+                 recce.baseline_pairs(d, g, p) + recce.review_pairs(d, g, p)
+                 if f.is_file()]
+        tracked = [(k, f) for k, f in pairs if _git_tracked(f, rel)]
+        if tracked:
+            plan.append((g, p, tracked))
+
+    if not plan:
+        console.print("[green]nothing to migrate[/] — no tracked recce artefacts")
+        return
+
+    total = sum(f.stat().st_size for _, _, ts in plan for _, f in ts)
+    for g, p, tracked in plan:
+        console.print(f"[bold]{g}/{p}[/]")
+        for k, f in tracked:
+            console.print(f"  {f.relative_to(rel)} [dim]({art.human(f.stat().st_size)})"
+                          f" → {store.url(k)}[/]")
+    console.print(f"[dim]{sum(len(t) for _, _, t in plan)} file(s), "
+                  f"{art.human(total)}[/]")
+
+    if not apply:
+        console.print("\n[yellow]dry run[/] — re-run with --apply to push and untrack")
+        return
+
+    for g, p, tracked in plan:
+        for k, f in tracked:
+            store.put(k, f)
+        # Verify before removing. `put` raising is the common failure; a silent
+        # partial write is the one that would cost data, so the check is a
+        # round trip to the bucket rather than trust in the call that returned.
+        absent = [k for k, _ in tracked if not store.exists(k)]
+        if absent:
+            console.print(f"[red]{g}/{p}: not in the bucket after upload — "
+                          f"{', '.join(absent)}. Left tracked.[/]")
+            raise typer.Exit(1)
+        paths = [str(f.relative_to(rel)) for _, f in tracked]
+        proc = subprocess.run(["git", "rm", "--cached", "-q", "--", *paths],
+                              cwd=str(rel), capture_output=True, text=True,
+                              check=False)
+        if proc.returncode != 0:
+            console.print(f"[red]{g}/{p}: git rm --cached failed: "
+                          f"{proc.stderr.strip()}[/]")
+            raise typer.Exit(1)
+        console.print(f"[green]✓[/] {g}/{p} — {len(tracked)} published and untracked")
+
+    console.print("\n[bold]Next:[/] add the ignore rules, drop the "
+                  "`denylist_except` entries for these paths in gate.yaml, and "
+                  "commit the removals. `pf check` will flag any that are still "
+                  "tracked.")
+
+
+def _git_tracked(path: Path, cwd: Path) -> bool:
+    proc = subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(path)],
+                          cwd=str(cwd), capture_output=True, text=True, check=False)
+    return proc.returncode == 0
 
 
 # ------------------------------------------------------------------ tools --

@@ -231,10 +231,17 @@ def test_bootstrap_writes_the_artefacts_without_the_client(tmp_path: Path) -> No
     assert payload_path(tmp_path).exists()
 
 
-def test_the_tool_declares_offline_bootstrap_and_a_non_embeddable_surface() -> None:
-    """Both are load-bearing; see the module docstring and Surface.embeddable."""
+def test_the_tool_declares_offline_and_a_non_embeddable_surface() -> None:
+    """Both are load-bearing; see the module docstring and Surface.embeddable.
+
+    `offline`, not the `offline_bootstrap` this asserted before: the flag was
+    widened to cover the Dagster hook as well as the scaffold one, because
+    neither needs the `metadata` binary — the projections are local and
+    publishing is REST — and gating only the bootstrap half left the container
+    serving eight code locations with the catalogue asset silently absent.
+    """
     from pf.tools.openmetadata import TOOL
 
-    assert TOOL.offline_bootstrap is True
+    assert TOOL.offline is True
     assert TOOL.default_enabled is True
     assert TOOL.surface is not None and TOOL.surface.embeddable is False

@@ -20,6 +20,25 @@ dependencies = [
 data = ["dlt[duckdb]>=1.4", "dbt-core>=1.9", "dbt-duckdb>=1.9"]
 orchestration = ["dagster>=1.9", "dagster-webserver>=1.9", "dagster-dbt>=0.25"]
 agents = ["anthropic>=0.40"]
+# `pf mcp` imports FastMCP lazily inside main(), so the package still installs
+# and every other command still works without it. Without the extra, `pf mcp`
+# fails at startup with a plain ImportError rather than the server silently
+# serving nothing.
+mcp = ["mcp>=1.2"]
+# The artefact store (`pf artifacts`, pf/artifacts.py). boto3 is already present
+# transitively via dlt, which is exactly why it is declared here: `pf artifacts`
+# working today by accident of someone else's dependency tree is not the same as
+# it being supported, and the day dlt drops it the failure would land on recce.
+artifacts = ["boto3>=1.34"]
+# The control plane (`pf stack`, pf/stack/). Dagster's run and event storage on
+# OpenMetadata's Postgres instead of a SQLite file. Optional because a laptop
+# with no stack running keeps the SQLite instance and needs neither package —
+# `pf stack render` writes no storage block when PF_STACK_PG_HOST is unset.
+#
+# dagster-postgres tracks dagster's library numbering, not dagster's: 0.29.x
+# pairs with dagster 1.13.x. A floor on the wrong series resolves to a release
+# built against a different event-log schema.
+stack = ["dagster-postgres>=0.29,<1", "psycopg2-binary>=2.9"]
 
 [project.scripts]
 pf = "pf.cli:app"
