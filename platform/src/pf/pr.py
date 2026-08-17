@@ -405,7 +405,7 @@ def mermaid(r: PRReport) -> str:
         out.append("    PR --> PLAT")
 
     shown = r.projects[:MM_MAX_PROJECTS]
-    numbered = list(enumerate(shown))
+    numbered = sorted(enumerate(shown), key=lambda np: np[1].group)
     for gi, (gname, members) in enumerate(groupby(numbered, key=lambda np: np[1].group)):
         out.append(f'    subgraph G{gi}["{_mm(gname)}"]')
         out.append("        direction LR")
