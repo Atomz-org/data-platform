@@ -1334,7 +1334,12 @@ def register_commands(app: Any) -> None:
 
     @recce_app.command("serve")
     def cmd_serve(group: str, project: str,
-                  port: int = typer.Option(DEFAULT_PORT)) -> None:
+                  port: int = typer.Option(DEFAULT_PORT),
+                  host: str = typer.Option(
+                      "127.0.0.1",
+                      help="Bind address. The stack's front door proxies to "
+                           "127.0.0.1; a container that publishes the port "
+                           "directly needs 0.0.0.0.")) -> None:
         """Serve the Recce UI for this project."""
         import os
         d = _pdir(group, project)
@@ -1353,9 +1358,9 @@ def register_commands(app: Any) -> None:
         if not state_file(d).exists():
             console.print("[yellow]![/] no recorded review on disk or in the "
                           f"store — `pf tool recce run {group} {project}` first")
-        argv = server_argv(d, port=port)
+        argv = server_argv(d, port=port, host=host)
         console.print(f"[dim]{' '.join(argv)}  (cwd={dbt_dir(d)})[/]")
-        console.print(f"[green]→[/] http://127.0.0.1:{port}/")
+        console.print(f"[green]→[/] http://{host}:{port}/")
         # execvpe, not execvp: the server loads dbt's config in process and needs
         # the same warehouse env every other recce invocation does.
         os.chdir(dbt_dir(d))

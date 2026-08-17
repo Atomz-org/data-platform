@@ -618,6 +618,19 @@ wheels = [
 ]
 
 [[package]]
+name = "dagster-postgres"
+version = "0.29.17"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+    { name = "psycopg2-binary" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fe/aa/e23de6a56b5e12a49775303925c9e03894a1c54516085913b1827a322be4/dagster_postgres-0.29.17.tar.gz", hash = "sha256:f7969f4039509f9c9fb0a061e56c9b9a93bb5949ad849f1cc45d0b19a68ca2c8", size = 406341, upload-time = "2026-08-07T18:44:16.875Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/a9/aef0f74b1064d8a022ed6bc313f5c623cd65da4498f7edf4820e6e491bad/dagster_postgres-0.29.17-py3-none-any.whl", hash = "sha256:3cc07e4ad4929bd6c5eda0a98889427e74810a09a2158d0a932f1396fdc15a1e", size = 25560, upload-time = "2026-08-07T18:44:15.656Z" },
+]
+
+[[package]]
 name = "dagster-shared"
 version = "1.13.17"
 source = { registry = "https://pypi.org/simple" }
@@ -677,6 +690,9 @@ redshift = [
 snowflake = [
     { name = "dbt-snowflake" },
 ]
+stack = [
+    { name = "pf", extra = ["stack"] },
+]
 wren = [
     { name = "wrenai" },
 ]
@@ -705,10 +721,11 @@ requires-dist = [
     { name = "dbt-snowflake", marker = "extra == 'snowflake'", specifier = ">=1.9,<2" },
     { name = "pf", editable = "platform" },
     { name = "pf", extras = ["artifacts"], marker = "extra == 'artifacts'", editable = "platform" },
+    { name = "pf", extras = ["stack"], marker = "extra == 'stack'", editable = "platform" },
     { name = "recce", marker = "extra == 'recce'", specifier = ">=1.60,<2" },
     { name = "wrenai", marker = "extra == 'wren'", specifier = ">=0.13,<1" },
 ]
-provides-extras = ["recce", "artifacts", "snowflake", "bigquery", "redshift", "clickhouse", "wren"]
+provides-extras = ["recce", "artifacts", "stack", "snowflake", "bigquery", "redshift", "clickhouse", "wren"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2621,6 +2638,10 @@ orchestration = [
     { name = "dagster-dbt" },
     { name = "dagster-webserver" },
 ]
+stack = [
+    { name = "dagster-postgres" },
+    { name = "psycopg2-binary" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -2628,6 +2649,7 @@ requires-dist = [
     { name = "boto3", marker = "extra == 'artifacts'", specifier = ">=1.34" },
     { name = "dagster", marker = "extra == 'orchestration'", specifier = ">=1.9" },
     { name = "dagster-dbt", marker = "extra == 'orchestration'", specifier = ">=0.25" },
+    { name = "dagster-postgres", marker = "extra == 'stack'", specifier = ">=0.29,<1" },
     { name = "dagster-webserver", marker = "extra == 'orchestration'", specifier = ">=1.9" },
     { name = "dbt-core", marker = "extra == 'data'", specifier = ">=1.9" },
     { name = "dbt-duckdb", marker = "extra == 'data'", specifier = ">=1.9" },
@@ -2636,13 +2658,14 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "jsonschema", specifier = ">=4.20" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.2" },
+    { name = "psycopg2-binary", marker = "extra == 'stack'", specifier = ">=2.9" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pyyaml", specifier = ">=6" },
     { name = "rich", specifier = ">=13" },
     { name = "typer", specifier = ">=0.12" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
 ]
-provides-extras = ["data", "orchestration", "agents", "mcp", "artifacts"]
+provides-extras = ["data", "orchestration", "agents", "mcp", "artifacts", "stack"]
 
 [[package]]
 name = "platformdirs"

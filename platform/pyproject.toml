@@ -30,6 +30,15 @@ mcp = ["mcp>=1.2"]
 # working today by accident of someone else's dependency tree is not the same as
 # it being supported, and the day dlt drops it the failure would land on recce.
 artifacts = ["boto3>=1.34"]
+# The control plane (`pf stack`, pf/stack/). Dagster's run and event storage on
+# OpenMetadata's Postgres instead of a SQLite file. Optional because a laptop
+# with no stack running keeps the SQLite instance and needs neither package —
+# `pf stack render` writes no storage block when PF_STACK_PG_HOST is unset.
+#
+# dagster-postgres tracks dagster's library numbering, not dagster's: 0.29.x
+# pairs with dagster 1.13.x. A floor on the wrong series resolves to a release
+# built against a different event-log schema.
+stack = ["dagster-postgres>=0.29,<1", "psycopg2-binary>=2.9"]
 
 [project.scripts]
 pf = "pf.cli:app"

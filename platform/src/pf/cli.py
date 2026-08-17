@@ -39,6 +39,7 @@ from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
 from pf.scaffold.bootstrap import STEPS, bootstrap
 from pf.scaffold.generator import new_group, new_project
+from pf.stack import frontdoor, storage
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
 kg_app = typer.Typer(help="Knowledge graph operations.")
@@ -1147,6 +1148,148 @@ def cmd_dagster_workspace() -> None:
     console.print(f"[green]✓[/] {out}  ({n} code location(s))")
     console.print(f"  run: [cyan]DAGSTER_HOME={r}/.dagster uv run dagster dev "
                   f"-w platform/workspace.yaml[/]")
+
+
+# ------------------------------------------------------------------ stack --
+stack_app = typer.Typer(
+    help="The control plane: one Postgres, one origin, one image.")
+app.add_typer(stack_app, name="stack")
+
+
+def _stack_dir() -> Path:
+    return root() / "platform" / "stack"
+
+
+@stack_app.command("render")
+def cmd_stack_render(
+    listen: int = typer.Option(frontdoor.LISTEN, help="Front-door port."),
+    static: str = typer.Option("", help="Path nginx serves /pf/ from. Defaults "
+                                       "to the generated www/ in this repo."),
+) -> None:
+    """Generate nginx, supervisor and the Dagster storage block.
+
+    Everything here is derived from the project roster, so it is regenerated
+    rather than edited: adding a sister shifts recce's port assignments, and a
+    hand-edited nginx.conf would keep pointing at the old ones.
+    """
+    r = root()
+    out = _stack_dir()
+    (out / "www").mkdir(parents=True, exist_ok=True)
+
+    roster = all_projects()
+    svcs = frontdoor.services(roster)
+    locs = frontdoor.code_locations(roster)
+    www = static or str(out / "www")
+
+    files = {
+        out / "nginx.conf": frontdoor.nginx_conf(svcs, listen=listen, static=www),
+        out / "supervisord.conf": frontdoor.supervisor_conf(
+            svcs, locs, repo=r, nginx_conf_path=str(out / "nginx.conf")),
+        out / "workspace.yaml": frontdoor.workspace_yaml(locs),
+        out / "www" / "index.html": frontdoor.landing_html(svcs, listen=listen),
+        out / "www" / "recce-down.html": frontdoor.recce_down_html(),
+        out / "www" / "bar.css": frontdoor.bar_css(),
+        out / "www" / "bar.js": frontdoor.bar_js(),
+    }
+    for path, text in files.items():
+        path.write_text(text)
+        console.print(f"[green]✓[/] {path.relative_to(r)}")
+
+    s = storage.settings()
+    # DAGSTER_HOME wins: the container sets it, and writing the storage block
+    # into a `.dagster` the instance is not reading is a silent no-op that looks
+    # exactly like success.
+    home = Path(os.environ.get("DAGSTER_HOME") or (r / ".dagster"))
+    path, changed = storage.write(home, s, base=r / ".dagster" / "dagster.yaml")
+    where = (f"postgres {s.host}:{s.port}/{s.db} schema={s.schema}" if s
+             else f"sqlite (set {storage.ENV_HOST} for postgres)")
+    shown = path.relative_to(r) if path.is_relative_to(r) else path
+    console.print(f"[green]✓[/] {shown}  "
+                  f"{'updated' if changed else 'unchanged'} — {where}")
+
+    ports = {x.project: x.port for x in locs}
+    t = Table("project", "group", "code server", "recce", "on boot",
+              title=f"{len(locs)} code location(s), {len(svcs)} review server(s)")
+    for x in svcs:
+        t.add_row(x.project, x.group, str(ports.get(x.project, "—")),
+                  str(x.port),
+                  "recce" if x.reviewed else "[dim]code only[/]")
+    if svcs:
+        console.print(t)
+
+
+@stack_app.command("db-init")
+def cmd_stack_db_init() -> None:
+    """Create Dagster's role and schema in OpenMetadata's database.
+
+    Run once, as an admin. Dagster's own role cannot do this and should not be
+    able to — it has no rights in `public`, which is the entire point of putting
+    the two products in one database.
+    """
+    s = storage.settings()
+    if s is None:
+        console.print(f"[red]{storage.ENV_HOST} is not set[/] — nothing to "
+                      "initialise. See docs/STACK.md.")
+        raise typer.Exit(1)
+    admin = storage.admin_settings(s)
+    try:
+        for line in storage.ensure_schema(s, admin):
+            console.print(f"[green]✓[/] {line}")
+    except ImportError:
+        console.print("[red]psycopg2 is not installed[/] — "
+                      "[cyan]uv sync --extra stack[/]")
+        raise typer.Exit(1) from None
+    except Exception as exc:  # noqa: BLE001 - the driver raises many types
+        console.print(f"[red]✗[/] {type(exc).__name__}: {exc}")
+        raise typer.Exit(1) from None
+
+
+@stack_app.command("status")
+def cmd_stack_status() -> None:
+    """What the stack is configured to be, and what is actually answering."""
+    import urllib.error
+    import urllib.request
+
+    r = root()
+    s = storage.settings()
+    console.print(f"[bold]storage[/]  "
+                  f"{'postgres ' + s.host + ':' + str(s.port) + '/' + s.db if s else 'sqlite (local files)'}")
+    if s:
+        try:
+            counts = storage.table_counts(s)
+            for schema, n in sorted(counts.items()):
+                mark = "[green]✓[/]" if schema in (s.schema, "public") else " "
+                console.print(f"  {mark} schema {schema}: {n} table(s)")
+            if counts.get(s.schema, 0) == 0:
+                console.print(f"  [yellow]![/] schema {s.schema} is empty — "
+                              "Dagster has not migrated into it yet")
+        except ImportError:
+            console.print("  [yellow]![/] psycopg2 missing; cannot inspect")
+        except Exception as exc:  # noqa: BLE001
+            console.print(f"  [red]✗[/] {type(exc).__name__}: {exc}")
+
+    conf = _stack_dir() / "nginx.conf"
+    console.print(f"[bold]front door[/]  "
+                  f"{'rendered' if conf.exists() else '[yellow]not rendered[/]'}"
+                  f" — {conf.relative_to(r) if conf.exists() else 'pf stack render'}")
+
+    svcs = frontdoor.services(all_projects())
+    t = Table("what", "url", "state")
+    probes = [("catalogue", f"http://127.0.0.1:{frontdoor.LISTEN}/api/v1/system/version"),
+              ("dagster", f"http://127.0.0.1:{frontdoor.LISTEN}/dagster/server_info"),
+              ("launcher", f"http://127.0.0.1:{frontdoor.LISTEN}/pf/")]
+    probes += [(f"recce/{x.project}", f"http://127.0.0.1:{x.port}/api/health")
+               for x in svcs]
+    for name, url in probes:
+        try:
+            with urllib.request.urlopen(url, timeout=3) as resp:  # noqa: S310
+                state = f"[green]{resp.status}[/]"
+        except urllib.error.HTTPError as exc:
+            state = f"[yellow]{exc.code}[/]"
+        except Exception as exc:  # noqa: BLE001
+            state = f"[red]{type(exc).__name__}[/]"
+        t.add_row(name, url, state)
+    console.print(t)
 
 
 # ------------------------------------------------------------------ loops --
