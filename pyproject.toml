@@ -23,6 +23,9 @@ recce = ["recce>=1.60,<2"]
 # is what CI runs, because a runner has no warehouse and must pull the baseline
 # rather than build one.
 artifacts = ["pf[artifacts]"]
+# The control plane: Dagster's storage on OpenMetadata's Postgres. What
+# `platform/Containerfile.stack` syncs, and what `pf stack db-init` needs.
+stack = ["pf[stack]"]
 
 # Production warehouse adapters, one extra per `pf.runtime.targets` entry.
 #
