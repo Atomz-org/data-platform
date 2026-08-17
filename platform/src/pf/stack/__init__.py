@@ -8,12 +8,14 @@ one image.
   onto OpenMetadata's Postgres, in its own schema.
 - `pf.stack.frontdoor` generates the nginx and supervisor configuration that
   puts all three UIs on one port.
+- `pf.stack.token` resolves the catalogue's own bot credential, so publishing
+  from inside the stack is not gated on a secret someone pasted.
 
-Both are pure renderers: they take the project roster and return text. What
-writes the files is `pf stack render`, and what runs them is
+The first two are pure renderers: they take the project roster and return text.
+What writes the files is `pf stack render`, and what runs them is
 `platform/Containerfile.stack`.
 """
 
-from pf.stack import frontdoor, storage
+from pf.stack import frontdoor, storage, token
 
-__all__ = ["frontdoor", "storage"]
+__all__ = ["frontdoor", "storage", "token"]

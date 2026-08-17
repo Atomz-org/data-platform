@@ -16,7 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from pf.stack import frontdoor, storage
+from pf.stack import frontdoor, storage, token
 
 BASE_YAML = """\
 # Dagster instance config.
@@ -234,6 +234,63 @@ def test_the_webserver_is_told_the_prefix_nginx_does_not_strip(
     conf = frontdoor.supervisor_conf([], [], repo=tmp_path,
                                      nginx_conf_path="/x/nginx.conf")
     assert f"--path-prefix {frontdoor.DAGSTER_PREFIX}" in conf
+
+
+# ------------------------------------------------------------------ token --
+def test_an_explicit_token_is_never_second_guessed() -> None:
+    """It may name a narrower bot, or another catalogue entirely."""
+    got, source = token.resolve({token.ENV_TOKEN: "eyJ.given"}, None)
+
+    assert got == "eyJ.given"
+    assert source == "environment"
+
+
+def test_no_token_and_no_database_says_which_of_the_two_to_fix() -> None:
+    with pytest.raises(token.TokenUnavailable) as exc:
+        token.resolve({}, None)
+    assert token.ENV_TOKEN in str(exc.value)
+
+
+def test_the_bot_flag_is_read_from_the_json_not_the_column() -> None:
+    """OpenMetadata 1.13.3 generates `isbot` from `deleted`; see the query.
+
+    Asserted on the SQL text because the alternative is a live catalogue: the
+    wrong spelling returns zero rows and reports a missing bot, which reads as
+    "OpenMetadata has not started yet" rather than as a bad query.
+    """
+    assert "json::jsonb ->> 'isBot' = 'true'" in token._QUERY
+    assert "isBot = true" not in token._QUERY
+
+
+def test_a_plaintext_token_is_returned_as_is() -> None:
+    assert token.decrypt_stored("eyJ.plain", "") == "eyJ.plain"
+
+
+def test_an_encrypted_token_needs_the_key_that_wrote_it() -> None:
+    from cryptography.fernet import Fernet
+
+    key, other = Fernet.generate_key(), Fernet.generate_key()
+    stored = token.FERNET_PREFIX + Fernet(key).encrypt(b"eyJ.secret").decode()
+
+    assert token.decrypt_stored(stored, key.decode()) == "eyJ.secret"
+
+    with pytest.raises(token.TokenUnavailable) as exc:
+        token.decrypt_stored(stored, other.decode())
+    assert "orphans every stored credential" in str(exc.value)
+
+    with pytest.raises(token.TokenUnavailable) as exc:
+        token.decrypt_stored(stored, "")
+    assert token.ENV_FERNET in str(exc.value)
+
+
+def test_a_malformed_key_is_reported_as_one() -> None:
+    from cryptography.fernet import Fernet
+
+    stored = (token.FERNET_PREFIX
+              + Fernet(Fernet.generate_key()).encrypt(b"x").decode())
+    with pytest.raises(token.TokenUnavailable) as exc:
+        token.decrypt_stored(stored, "not-a-fernet-key")
+    assert "not a valid Fernet key" in str(exc.value)
 
 
 @pytest.mark.parametrize("html", ["landing", "down"])
