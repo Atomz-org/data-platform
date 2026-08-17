@@ -183,7 +183,7 @@
       "parent": "Platform Ontology.Agreement",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Organization"
+        "Platform Ontology.Party.Organization"
       ]
     },
     {
@@ -193,7 +193,7 @@
       "name": "Currency",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Payment"
+        "Platform Ontology.Event.Payment"
       ]
     },
     {
@@ -204,12 +204,12 @@
       "parent": "Platform Ontology.Party",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Interaction",
+        "Platform Ontology.Event.Interaction",
         "Platform Ontology.Location",
-        "Platform Ontology.Order",
-        "Platform Ontology.Organization",
-        "Platform Ontology.Payment",
-        "Platform Ontology.Subscription"
+        "Platform Ontology.Agreement.Order",
+        "Platform Ontology.Party.Organization",
+        "Platform Ontology.Event.Payment",
+        "Platform Ontology.Agreement.Subscription"
       ]
     },
     {
@@ -235,7 +235,7 @@
       "parent": "Platform Ontology.Event",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Customer"
+        "Platform Ontology.Party.Customer"
       ]
     },
     {
@@ -245,7 +245,7 @@
       "name": "Location",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Customer"
+        "Platform Ontology.Party.Customer"
       ]
     },
     {
@@ -256,8 +256,8 @@
       "parent": "Platform Ontology.Agreement",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Customer",
-        "Platform Ontology.Payment",
+        "Platform Ontology.Party.Customer",
+        "Platform Ontology.Event.Payment",
         "Platform Ontology.Product"
       ]
     },
@@ -269,8 +269,8 @@
       "parent": "Platform Ontology.Party",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Contract",
-        "Platform Ontology.Customer"
+        "Platform Ontology.Agreement.Contract",
+        "Platform Ontology.Party.Customer"
       ]
     },
     {
@@ -289,10 +289,10 @@
       "provider": "user",
       "relatedTerms": [
         "Platform Ontology.Currency",
-        "Platform Ontology.Customer",
-        "Platform Ontology.Order",
-        "Platform Ontology.Refund",
-        "Platform Ontology.Subscription"
+        "Platform Ontology.Party.Customer",
+        "Platform Ontology.Agreement.Order",
+        "Platform Ontology.Event.Refund",
+        "Platform Ontology.Agreement.Subscription"
       ]
     },
     {
@@ -302,8 +302,8 @@
       "name": "Product",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Order",
-        "Platform Ontology.Subscription"
+        "Platform Ontology.Agreement.Order",
+        "Platform Ontology.Agreement.Subscription"
       ]
     },
     {
@@ -314,7 +314,7 @@
       "parent": "Platform Ontology.Event",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Payment"
+        "Platform Ontology.Event.Payment"
       ]
     },
     {
@@ -325,10 +325,10 @@
       "parent": "Platform Ontology.Agreement",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Customer",
-        "Platform Ontology.Payment",
+        "Platform Ontology.Party.Customer",
+        "Platform Ontology.Event.Payment",
         "Platform Ontology.Product",
-        "Platform Ontology.Usage"
+        "Platform Ontology.Event.Usage"
       ]
     },
     {
@@ -339,7 +339,7 @@
       "parent": "Platform Ontology.Event",
       "provider": "user",
       "relatedTerms": [
-        "Platform Ontology.Subscription"
+        "Platform Ontology.Agreement.Subscription"
       ]
     },
     {
