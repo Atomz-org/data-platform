@@ -136,5 +136,35 @@ if [ -n "${om_reindex_args:-}" ]; then
   fi
 fi
 
+# ---------------------------------------------------------- catalogue auth --
+# `catalog_sync` publishes the ontology, the glossary and every table to the
+# server in this same container, and it authenticates with the ingestion bot's
+# JWT. OpenMetadata's documented way to obtain that is to open the UI and copy
+# it out of Settings → Bots, which is how eight Dagster code locations ended up
+# failing with "OPENMETADATA_JWT_TOKEN is not set" against a catalogue eighty
+# milliseconds away.
+#
+# Here the token does not need carrying: same database, same FERNET_KEY. Resolve
+# it once and export it, so every process supervisord starts inherits it.
+# Exported rather than written anywhere — it lives in the process environment
+# for the life of the container and nowhere else.
+#
+# After the migrations above, deliberately: OpenMetadata creates the bot on its
+# first migration, so resolving earlier finds nothing on a fresh database.
+if [ -z "${OPENMETADATA_JWT_TOKEN:-}" ] && [ -n "${PF_STACK_PG_HOST:-}" ]; then
+  if OPENMETADATA_JWT_TOKEN="$(uv run pf stack token 2>/dev/null)" \
+     && [ -n "$OPENMETADATA_JWT_TOKEN" ]; then
+    export OPENMETADATA_JWT_TOKEN
+    log "catalogue auth resolved from the database"
+  else
+    unset OPENMETADATA_JWT_TOKEN
+    # Not fatal. Everything except publishing to the catalogue works without
+    # it, and stopping the stack over one asset would be the wrong trade.
+    echo "!! could not resolve the ingestion-bot token — catalog_sync will" \
+         "fail to publish. Diagnose with: podman exec pf_stack" \
+         "bash -c 'cd \"\$PF_REPO\" && uv run pf stack status'" >&2
+  fi
+fi
+
 log "supervisord"
 exec /usr/bin/supervisord -c "$REPO/platform/stack/supervisord.conf"

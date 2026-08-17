@@ -39,7 +39,7 @@ from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
 from pf.scaffold.bootstrap import STEPS, bootstrap
 from pf.scaffold.generator import new_group, new_project
-from pf.stack import frontdoor, storage
+from pf.stack import frontdoor, storage, token
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
 kg_app = typer.Typer(help="Knowledge graph operations.")
@@ -1244,6 +1244,29 @@ def cmd_stack_db_init() -> None:
         raise typer.Exit(1) from None
 
 
+@stack_app.command("token")
+def cmd_stack_token() -> None:
+    """Print the catalogue's ingestion-bot JWT, for `export`.
+
+    Prints a credential to stdout — that is the whole job:
+
+        export OPENMETADATA_JWT_TOKEN="$(pf stack token)"
+
+    Echoes `OPENMETADATA_JWT_TOKEN` when it is already set, so the command is
+    safe to use unconditionally and never overrides a deliberate choice.
+    """
+    s = storage.settings()
+    admin = storage.admin_settings(s) if s else None
+    try:
+        value, _ = token.resolve(dict(os.environ), admin)
+    except token.TokenUnavailable as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from None
+    # print, not console.print: rich wraps at the terminal width, and a JWT
+    # folded across three lines is a JWT that fails to authenticate.
+    print(value)
+
+
 @stack_app.command("status")
 def cmd_stack_status() -> None:
     """What the stack is configured to be, and what is actually answering."""
@@ -1297,6 +1320,17 @@ def cmd_stack_status() -> None:
                       f"  [dim]{str(v.get('revision', ''))[:8]}[/]")
     except Exception:  # noqa: BLE001 - not answering is reported by the table
         console.print("[bold]openmetadata[/]  [dim]not answering[/]")
+
+    # Whether `catalog_sync` can publish, which is the difference between a
+    # green Dagster run and 75 rejected writes. Reports where the credential
+    # came from and never what it is.
+    try:
+        _, source = token.resolve(dict(os.environ),
+                                  storage.admin_settings(s) if s else None)
+        console.print(f"[bold]catalogue auth[/]  [green]✓[/] "
+                      f"resolved from the {source}")
+    except token.TokenUnavailable as exc:
+        console.print(f"[bold]catalogue auth[/]  [yellow]![/] {exc}")
 
     svcs = frontdoor.services(all_projects())
     t = Table("what", "url", "state")
