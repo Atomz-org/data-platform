@@ -1,0 +1,110 @@
+# The control plane as one image: OpenMetadata, Dagster and recce.
+#
+# ## What is in here and what is not
+#
+# In: the OpenMetadata server (a plain Java distribution), a JRE to run it,
+# Python for Dagster and recce, nginx for the shared origin, and supervisord to
+# hold the five-or-more processes up.
+#
+# Not in: Postgres and Elasticsearch. Both are stateful services with their own
+# upgrade cycles and their own backup story, and folding a database into the
+# application image is how you lose the database. They stay beside this
+# container — see `platform/deploy/compose.yaml`.
+#
+# ## Why the OpenMetadata distribution is copied rather than inherited
+#
+# The obvious build is `FROM openmetadata/server`. That image is Alpine, so it
+# is musl, and the wheels this platform needs — duckdb, pydantic-core,
+# psycopg2 — publish manylinux and not musllinux. Adding Python to it means
+# compiling them, including a Rust toolchain for pydantic-core.
+#
+# The other direction is cheap: `/opt/openmetadata` is jars, shell scripts and
+# YAML, none of it libc-linked, so it copies onto a glibc base unchanged. The
+# JRE cannot be copied from that image for the same musl reason, so it comes
+# from Temurin's jammy build — glibc 2.35, older than bookworm's 2.36, which is
+# the direction that works.
+#
+# ## Build
+#
+#   podman build -f platform/Containerfile.stack -t pf-stack:latest .
+#
+# ## Run
+#
+#   See platform/deploy/compose.yaml, or docs/STACK.md for the podman commands.
+#   The repo is bind-mounted at its host path, exactly as Containerfile.dagster
+#   describes: workspace.yaml holds absolute working_directory entries.
+
+FROM eclipse-temurin:21-jre-jammy AS jre
+FROM docker.getcollate.io/openmetadata/server:1.13.3 AS openmetadata
+
+FROM python:3.12-slim-bookworm
+
+# git: the artefact store reads the current branch to key a review, and dbt
+# packages resolve over git.
+# nginx: the shared origin. Debian's build carries ngx_http_sub_module, which
+# the injected navigation bar needs — the build below asserts it rather than
+# assuming it, because a missing module is a config that fails to load at run
+# time, hours after the build that dropped it.
+# supervisor: pulls Debian's python3.11 for itself. Deliberate — running it on
+# the image's 3.12 would put a process manager in the same environment as the
+# code it manages, and a broken `uv sync` would take the supervisor with it.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      git ca-certificates curl nginx supervisor procps \
+ && nginx -V 2>&1 | grep -q http_sub_module \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=jre /opt/java/openjdk /opt/java/openjdk
+COPY --from=openmetadata /opt/openmetadata /opt/openmetadata
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+ENV JAVA_HOME=/opt/java/openjdk \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/java/openjdk/bin:/opt/venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1
+
+# Ten-odd Python processes in one container, each threaded. glibc gives every
+# thread its own malloc arena and never returns them, so RSS grows with thread
+# count rather than with live data — visible here as a few hundred megabytes
+# across the code servers. Two arenas trades a little allocator contention for
+# memory this container does not have to spare.
+ENV MALLOC_ARENA_MAX=2
+
+# OpenMetadata's config resolves every value from the environment and every
+# value has a default — the defaults are MySQL's. These are the ones that make
+# it Postgres, and they are the same database Dagster uses, one schema over.
+ENV DB_SCHEME=postgresql \
+    DB_DRIVER_CLASS=org.postgresql.Driver \
+    DB_HOST=postgresql \
+    DB_PORT=5432 \
+    DB_USER=openmetadata_user \
+    DB_USER_PASSWORD=openmetadata_password \
+    OM_DATABASE=openmetadata_db \
+    DB_PARAMS=allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC \
+    ELASTICSEARCH_HOST=elasticsearch \
+    ELASTICSEARCH_PORT=9200 \
+    ELASTICSEARCH_SCHEME=http \
+    SEARCH_TYPE=elasticsearch \
+    SERVER_HOST_API_URL=http://localhost:8585/api
+
+# No Airflow here: ingestion is Dagster's job in this platform. Left on, the
+# server retries a pipeline client that does not exist and fills the log with
+# connection failures that read like a broken catalogue.
+ENV PIPELINE_SERVICE_CLIENT_ENABLED=false
+
+# Encrypts service credentials *in the database*. It must match whatever wrote
+# the rows already there; a fresh key does not error, it silently fails to
+# decrypt every stored connection. This is OpenMetadata's published compose
+# default, which is what the existing volume was written with.
+ENV FERNET_KEY=jJ/9sz0g0OHxsfxOoSfdFdmk3ysNmPRnH3TUAbz3IHA=
+
+# 8080 front door (all three UIs) · 8585 OpenMetadata direct · 3000 Dagster
+# direct. The direct ports are published for debugging; the front door is the
+# one to use.
+EXPOSE 8080 8585 3000
+
+COPY platform/scripts/stack-entrypoint.sh /usr/local/bin/pf-stack
+RUN chmod +x /usr/local/bin/pf-stack
+
+ENTRYPOINT ["/usr/local/bin/pf-stack"]
