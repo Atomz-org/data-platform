@@ -83,6 +83,11 @@
       "name": "project-onboarding",
       "source": "../platform/toolkits/project-onboarding",
       "description": "Adopt a repository and align it with the platform, stage by stage"
+    },
+    {
+      "name": "viz-standards",
+      "source": "../platform/toolkits/viz-standards",
+      "description": "Chart and diagram conventions: form, colour, mermaid"
     }
   ]
 }
