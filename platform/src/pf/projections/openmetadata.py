@@ -19,14 +19,31 @@ So the flow is one-way and idempotent:
     annotations    ->  tagLabels on columns
     metrics        ->  Metric entities
 
-## What this does NOT emit, on purpose
+## Tables: excluded on principle until the principle stopped holding
 
-**Tables, columns and lineage.** `metadata ingest-dbt` already ingests those
-from the dbt artefacts, including column-level lineage, far better than a
-re-derivation from our graph could. Emitting them here would produce two
-descriptions of the same table that drift apart, and the catalogue would show
-whichever ran last. The division is: dbt owns physical assets, this module owns
-the *meaning* laid over them.
+This module used to end with "what this does NOT emit, on purpose: tables,
+columns and lineage", because `metadata ingest-dbt` ingests those from the dbt
+artefacts, column-level lineage included, better than a re-derivation could.
+Emitting from both sides would give the catalogue two descriptions of one table,
+drifting apart, showing whichever ran last. That argument is still correct and
+still governs — where the dbt connector can run.
+
+It cannot run here. OpenMetadata's dbt ingestion *enriches* tables a database
+service already catalogued, and cataloguing them needs a live warehouse
+connection. This platform develops on DuckDB, for which OpenMetadata 1.13 ships
+no connector at all: the plugin list is clickhouse, postgres, snowflake, dbt and
+datalake-*. So a developer with 2,176 real tables on their laptop could put none
+of them in the catalogue and had to wait on production credentials to look at
+their own project.
+
+`build_database_entities` closes that gap and is careful not to reopen the one
+the old rule guarded. It reads the same two files the dbt connector reads —
+`manifest.json` for models, schemas, descriptions and column docs,
+`catalog.json` for the types the warehouse actually produced — so there is one
+source, not two. And it publishes under a **CustomDatabase** service, which is
+OpenMetadata's own type for metadata pushed by its owner rather than crawled:
+the catalogue never claims a connection it does not have, and a real connector
+pointed at the same service later supersedes it rather than fighting it.
 
 ## Conformance
 
@@ -320,4 +337,151 @@ def build_all(onto: Ontology,
         "tags": build_tags(onto),
         "column_tag_labels": pii_tag_labels(onto),
         "metrics": build_metrics(metrics or []),
+    }
+
+
+# ---------------------------------------------------------------- tables --
+#: Warehouse column types mapped onto OpenMetadata's `dataType` enum. Longest
+#: prefixes first, so DOUBLE is not matched by DATE and TIMESTAMP not by TIME.
+#: Anything unmatched becomes UNKNOWN and keeps its original spelling in
+#: `dataTypeDisplay` — a type this table has not met is then visible in the
+#: catalogue rather than silently recorded as a string.
+COLUMN_TYPES: tuple[tuple[str, str], ...] = (
+    ("TIMESTAMP", "TIMESTAMP"), ("DATETIME", "DATETIME"), ("DATE", "DATE"),
+    ("TIME", "TIME"), ("INTERVAL", "INTERVAL"),
+    ("BIGINT", "BIGINT"), ("HUGEINT", "BIGINT"), ("SMALLINT", "SMALLINT"),
+    ("TINYINT", "TINYINT"), ("INTEGER", "INT"), ("INT", "INT"),
+    ("DOUBLE", "DOUBLE"), ("FLOAT", "FLOAT"), ("REAL", "FLOAT"),
+    ("DECIMAL", "DECIMAL"), ("NUMERIC", "NUMERIC"),
+    ("BOOLEAN", "BOOLEAN"), ("BOOL", "BOOLEAN"),
+    ("JSON", "JSON"), ("UUID", "UUID"), ("BLOB", "BINARY"),
+    ("STRUCT", "STRUCT"), ("MAP", "MAP"), ("ARRAY", "ARRAY"), ("LIST", "ARRAY"),
+    ("VARCHAR", "VARCHAR"), ("CHAR", "CHAR"), ("TEXT", "TEXT"), ("STRING", "STRING"),
+)
+
+#: dbt resource types that become a catalogue table. A source is `External`
+#: because dbt does not build it — dlt or a seed lands it — and the catalogue
+#: should not imply this project owns its production.
+TABLE_TYPES: dict[str, str] = {
+    "model": "Regular", "snapshot": "Regular", "seed": "Regular",
+    "source": "External",
+}
+
+
+#: Types OpenMetadata refuses without a `dataLength`:
+#: "For column data types char, varchar, binary, varbinary dataLength must not
+#: be null". DuckDB's VARCHAR is unbounded and carries no length at all, so
+#: there is nothing true to send and one has to be chosen.
+LENGTH_REQUIRED = frozenset({"CHAR", "VARCHAR", "BINARY", "VARBINARY"})
+
+#: Used only when the warehouse states no length. Deliberately large: it is a
+#: declared "unbounded" rather than a guess at the data, and a reader who sees
+#: 65535 on every string column can tell it is a convention. A small number
+#: would look measured and be wrong.
+UNBOUNDED_LENGTH = 65535
+
+
+def column_type(raw: str) -> tuple[str, str, int | None]:
+    """(dataType, dataTypeDisplay, dataLength) for one warehouse type string.
+
+    The length is parsed out of the declaration when the warehouse gives one —
+    `VARCHAR(50)` — and falls back to `UNBOUNDED_LENGTH` for the types
+    OpenMetadata insists on a length for. `None` for everything else, so an
+    INTEGER is not given a meaningless width.
+    """
+    up = (raw or "").upper().strip()
+    for needle, mapped in COLUMN_TYPES:
+        if not up.startswith(needle):
+            continue
+        length: int | None = None
+        if mapped in LENGTH_REQUIRED:
+            declared = re.search(r"\((\d+)", up)
+            length = int(declared.group(1)) if declared else UNBOUNDED_LENGTH
+        return mapped, raw or mapped, length
+    return "UNKNOWN", raw or "UNKNOWN", None
+
+
+def build_database_entities(
+    manifest: dict[str, Any],
+    catalog: dict[str, Any],
+    *,
+    service: str,
+    fallback_database: str,
+    column_roles: dict[str, str] | None = None,
+    column_tag_labels: dict[str, list[dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    """dbt artefacts -> the database / schema / table entities OpenMetadata wants.
+
+    Pure: takes parsed JSON, returns entity dictionaries, touches no network and
+    no filesystem. That is what makes it testable without a server, and it is
+    why the HTTP half lives in `pf.tools.openmetadata` instead.
+
+    `column_roles` maps a column name to its ontology role and
+    `column_tag_labels` maps a role to the tag labels for it. Together they put
+    `PlatformRole.pii_email` on the column, which is the join the catalogue
+    exists for: "where is personal data" gets answered from the ontology rather
+    than from a naming convention.
+
+    A table with no columns is returned anyway, with an empty list. The API
+    rejects it, and the caller decides whether that is a skip or a failure — a
+    model that has been parsed but never built genuinely has no columns, and
+    inventing one to satisfy a schema would put a fiction in the catalogue.
+    """
+    roles = column_roles or {}
+    labels = column_tag_labels or {}
+    nodes = {**(manifest.get("nodes") or {}), **(manifest.get("sources") or {})}
+    cat_nodes = {**(catalog.get("nodes") or {}), **(catalog.get("sources") or {})}
+
+    database = ""
+    schemas: set[str] = set()
+    tables: list[dict[str, Any]] = []
+
+    for key, node in sorted(nodes.items()):
+        table_type = TABLE_TYPES.get(str(node.get("resource_type")))
+        name = str(node.get("name") or "")
+        if not table_type or not name:
+            continue
+        database = database or str(node.get("database") or fallback_database)
+        schema = str(node.get("schema") or "main")
+        schemas.add(schema)
+
+        # catalog.json is authoritative for types and ordering because it is
+        # read back from the built warehouse; manifest.json is authoritative for
+        # documentation. A model that is parsed but not built appears only in
+        # the manifest, so fall back to its documented columns.
+        built = (cat_nodes.get(key) or {}).get("columns") or {}
+        documented = node.get("columns") or {}
+        columns = []
+        for i, cname in enumerate(built or documented):
+            dtype, display, length = column_type(
+                str((built.get(cname) or {}).get("type") or ""))
+            col: dict[str, Any] = {
+                "name": cname,
+                "dataType": dtype,
+                "dataTypeDisplay": display,
+                "ordinalPosition": i + 1,
+            }
+            if length is not None:
+                col["dataLength"] = length
+            described = (documented.get(cname) or {}).get("description")
+            if described:
+                col["description"] = described
+            tag_labels = labels.get(roles.get(cname, ""))
+            if tag_labels:
+                col["tags"] = tag_labels
+            columns.append(col)
+
+        tables.append({
+            "name": name,
+            "databaseSchema": f"{service}.{database}.{schema}",
+            "tableType": table_type,
+            "description": node.get("description") or "",
+            "columns": columns,
+        })
+
+    return {
+        "service": service,
+        "database": database or fallback_database,
+        "schemas": sorted(schemas),
+        "tables": tables,
     }

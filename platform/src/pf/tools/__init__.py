@@ -117,7 +117,7 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     a tool is a decision about the project, installing it is a fact about the
     machine, and a laptop without the extra should not turn every project red.
 
-    Unless it declares `offline_bootstrap`, in which case the hook runs anyway.
+    Unless it declares `offline`, in which case the hook runs anyway.
     A bootstrap that only projects the project into a file needs nothing
     installed, and skipping it made the artefacts depend on which machine ran
     the scaffolder — the one thing scaffolding must not do.
@@ -135,7 +135,7 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
                                       "enabled but not registered"))
             continue
         missing = tool.missing()
-        if missing and not tool.offline_bootstrap:
+        if missing and not tool.offline:
             results.append(StepResult(
                 f"tool:{name}", "skipped",
                 "not installed — " + ", ".join(
@@ -179,7 +179,11 @@ def dagster_contributions(root: Path, group: str, project: str,
 
     for name, cfg in sorted(enabled(root, group, project).items()):
         tool = tools.get(name)
-        if tool is None or tool.missing():
+        # `offline` tools contribute even with a requirement missing: their
+        # assets do not drive the binary. Gating on `missing()` alone made a
+        # container without the `metadata` CLI serve every code location with
+        # the catalogue asset quietly gone, which reads as "the tool is off".
+        if tool is None or (tool.missing() and not tool.offline):
             continue
         try:
             hook = tool.hook("dagster")

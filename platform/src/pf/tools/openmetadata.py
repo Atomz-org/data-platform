@@ -550,6 +550,99 @@ def _api_write(host_port: str, path: str, body: dict[str, Any],
         raise RuntimeError(f"cannot reach {host_port}: {exc}") from exc
 
 
+# -------------------------------------------------------------- tables --
+def column_roles(project_dir: Path) -> dict[str, str]:
+    """column name -> ontology role, from `contracts/annotations.yaml`.
+
+    Renames are followed: a column annotated as `created` and renamed to
+    `paid_at` is catalogued under `paid_at`, because that is what the warehouse
+    holds and what a data owner will search for.
+    """
+    p = Path(project_dir) / "contracts" / "annotations.yaml"
+    if not p.exists():
+        return {}
+    try:
+        doc = yaml.safe_load(p.read_text()) or {}
+    except yaml.YAMLError:
+        return {}
+    out: dict[str, str] = {}
+    for res in doc.get("resources") or []:
+        if not isinstance(res, dict):
+            continue
+        for col, role in (res.get("roles") or {}).items():
+            out[str(col)] = str(role)
+        for src, dst in (res.get("rename") or {}).items():
+            if str(src) in out:
+                out[str(dst)] = out[str(src)]
+    return out
+
+
+def publish_tables(project_dir: Path, group: str, project: str,
+                   config: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Create the service, database, schemas and tables in OpenMetadata.
+
+    The projection is pure and lives in `pf.projections.openmetadata`; this is
+    only the HTTP half. See that module for why tables are emitted here at all,
+    given the dbt connector exists.
+
+    Order is a dependency chain the server enforces — service, database, schema,
+    then tables — and each is a PUT, so re-running after an unchanged build is a
+    no-op rather than a conflict.
+    """
+    from pf.projections.openmetadata import build_database_entities
+    from pf.runtime.dbt_runtime import manifest as load_manifest
+
+    d = Path(project_dir)
+    man = load_manifest(d)
+    if not man:
+        return {"ok": False, "reason": "no_manifest",
+                "message": "no dbt manifest — run `pf seed` first"}
+    cat_path = dbt_dir(d) / "target" / "catalog.json"
+    catalog = json.loads(cat_path.read_text()) if cat_path.exists() else {}
+
+    s = settings(config, group, project)
+    built = build_database_entities(
+        man, catalog,
+        service=s["service_name"],
+        fallback_database=project.replace("-", "_"),
+        column_roles=column_roles(d),
+        column_tag_labels=build_payload(d, group, project).get("column_tag_labels"),
+    )
+
+    host, service, database = s["host_port"], built["service"], built["database"]
+    _api_write(host, "services/databaseServices", {
+        "name": service, "serviceType": "CustomDatabase",
+        "description": f"{group}/{project} — projected from its dbt manifest by "
+                       "`pf.projections.openmetadata`. Metadata is pushed, not "
+                       "crawled; this service holds no live connection.",
+        "connection": {"config": {"type": "CustomDatabase",
+                                  "sourcePythonClass": "pf.projections.openmetadata"}},
+    })
+    _api_write(host, "databases", {"name": database, "service": service})
+    for schema in built["schemas"]:
+        _api_write(host, "databaseSchemas",
+                   {"name": schema, "database": f"{service}.{database}"})
+
+    ok, skipped, failed = 0, 0, []
+    for table in built["tables"]:
+        # A parsed-but-never-built model has no columns and the API rejects it.
+        # Skipped and counted rather than failed: it is a true statement about
+        # the project, and inventing a placeholder column would put a fiction in
+        # the catalogue.
+        if not table["columns"]:
+            skipped += 1
+            continue
+        try:
+            _api_write(host, "tables", table)
+            ok += 1
+        except RuntimeError as exc:
+            failed.append(f"{table['name']}: {exc}")
+
+    return {"ok": not failed, "service": service, "database": database,
+            "schemas": len(built["schemas"]), "tables": ok, "skipped": skipped,
+            "failed": failed}
+
+
 # ----------------------------------------------------------- owner edits --
 EDITS_REL = "catalog/owner-edits.yaml"
 
@@ -771,60 +864,113 @@ def bootstrap_project(root: Path, group: str, project: str,
 
 # ----------------------------------------------------------------- dagster --
 def dagster_assets(ctx: ToolContext) -> ToolContribution:
-    """Publish to the catalogue after the marts are built, not on a timer.
+    """The catalogue refresh, as an asset, a job and a schedule.
 
-    Downstream of this project's models, so the catalogue describes the build
-    that just happened. A scheduled catalogue job drifts from the warehouse
-    between runs and nobody can tell which state they are looking at.
+    **Asset**, downstream of this project's marts, so the catalogue describes
+    the build that just happened. That is the whole point of hanging it off the
+    models rather than off a timer: a catalogue refreshed independently of the
+    warehouse drifts between runs and nobody can tell which state they are
+    looking at.
+
+    **Job**, so an operator can re-run just the catalogue without rebuilding the
+    warehouse behind it — the common case when the OpenMetadata server was down
+    or a token had expired.
+
+    **Schedule**, off by default, for the case the asset dependency cannot
+    cover: the ontology is edited without any model changing. Nothing upstream
+    moves, so nothing triggers, and the glossary silently lags the YAML until
+    someone next runs dbt.
+
+    All three call `pf.scripts.catalog_sync`, which is also what `pf
+    catalog sync` and a bare `python catalog_sync.py` call. One implementation
+    on purpose: a scheduled job that has drifted from what a developer runs by
+    hand is a job nobody trusts the morning it goes red.
     """
-    from dagster import AssetKey, MetadataValue, asset
+    from dagster import (
+        AssetKey, DefaultScheduleStatus, MetadataValue, ScheduleDefinition,
+        asset, define_asset_job,
+    )
 
     project_dir = Path(ctx.project_dir)
     prefix = ctx.project.replace("-", "_")
     s = settings(ctx.config, ctx.group, ctx.project)
+    asset_name = "catalog_sync"
+    key = AssetKey([prefix, asset_name])
 
     @asset(
-        name="openmetadata_catalog",
+        name=asset_name,
         key_prefix=[prefix],
         group_name="catalog",
-        description="Publish this project's vocabulary and dbt metadata to OpenMetadata.",
+        # Marts, not the whole dbt graph: the catalogue is about what people
+        # read, and hanging it off staging would refresh it on every raw-column
+        # rename. Empty deps for a project with no manifest yet, which is a
+        # scaffolded project — it still gets the asset, so the graph shows what
+        # will happen rather than hiding it until the first build.
+        deps=[AssetKey([prefix, m]) for m in _mart_models(project_dir)],
+        description="Refresh graph, topology projections and OpenMetadata after a build.",
         compute_kind="openmetadata",
+        metadata={"dagster/kind": "openmetadata", "tool": "openmetadata"},
     )
-    def _catalog(context) -> None:  # see dagster_runtime note on lazy imports
-        write_workflows(project_dir, ctx.group, ctx.project, ctx.config)
-        write_payload(project_dir, ctx.group, ctx.project)
-        payload = build_payload(project_dir, ctx.group, ctx.project)
-        results = ingest(project_dir)
-        # The run's verdict is every workflow's: a green database pass followed
-        # by a failed dbt pass is a catalogue with tables and no lineage, which
-        # is not a success anyone should read as one.
-        result = {
-            "ok": all(r["ok"] for r in results),
-            "reason": next((r.get("reason") for r in results if not r["ok"]), ""),
-            "message": "; ".join(
-                f"{r['workflow']}: {r.get('message') or 'ok'}" for r in results),
-        }
-        cases = recce_test_cases(project_dir, s["service_name"])
+    def _catalog_sync(context) -> None:  # see dagster_runtime note on lazy imports
+        from pf.scripts.catalog_sync import sync
+
+        result = sync(Path(ctx.root), ctx.group, ctx.project)
+        for stage in result.stages:
+            log = context.log.info if stage.ok else context.log.error
+            log("%s %s (%.2fs) %s", "ok" if stage.ok else "FAILED",
+                stage.name, stage.seconds, stage.detail)
 
         context.add_output_metadata({
             "service": MetadataValue.text(s["service_name"]),
-            "glossary_terms": MetadataValue.int(len(payload["glossary_terms"])),
-            "tags": MetadataValue.int(len(payload["tags"])),
-            "metrics": MetadataValue.int(len(payload["metrics"])),
-            "review_findings": MetadataValue.int(
-                sum(1 for c in cases if c.get("_verdict") == "changed")),
-            "ingested": MetadataValue.bool(bool(result.get("ok"))),
-            # The reason, not just the boolean. "ingested: false" with no cause
-            # sends whoever is on call to read logs this asset already has.
-            "detail": MetadataValue.text(
-                str(result.get("message") or result.get("reason") or "ok")[:900]),
-            "workflow": MetadataValue.path(str(workflow_path(project_dir))),
+            "catalogue": MetadataValue.url(s["host_port"]),
+            "stages_ok": MetadataValue.int(sum(1 for x in result.stages if x.ok)),
+            "stages_failed": MetadataValue.int(sum(1 for x in result.stages if not x.ok)),
+            "detail": MetadataValue.md(
+                "\n".join(f"- `{x.name}` — {'ok' if x.ok else 'FAILED'} — {x.detail}"
+                           for x in result.stages)),
         })
+        if not result.ok:
+            # Raised, not warned. A catalogue that silently half-published is
+            # how a data owner ends up reading last week's glossary against this
+            # week's tables.
+            raise RuntimeError("catalog sync failed: "
+                               + ", ".join(result.as_dict()["failed"]))
 
-    return ToolContribution(assets=[_catalog])
+    job = define_asset_job(name=f"{prefix}_catalog_sync", selection=[key])
+    schedule = ScheduleDefinition(
+        name=f"{prefix}_catalog_sync_daily",
+        job=job,
+        cron_schedule="0 6 * * *",
+        # Off until someone turns it on. A schedule that starts running the
+        # moment a code location loads is a schedule that surprises whoever
+        # deployed it, and this one talks to an external server.
+        default_status=DefaultScheduleStatus.STOPPED,
+        description="Catch ontology edits that changed no model, so triggered nothing.",
+    )
+
+    return ToolContribution(
+        assets=[_catalog_sync],
+        jobs=[job],
+        schedules=[schedule],
+        metadata={"openmetadata_url": s["host_port"]},
+    )
 
 
-# ------------------------------------------------------------- capability --
+def _mart_models(project_dir: Path) -> list[str]:
+    """Mart model names from the dbt manifest, or none if it has not been built."""
+    from pf.runtime.dbt_runtime import manifest as load_manifest
+
+    man = load_manifest(project_dir)
+    if not man:
+        return []
+    return sorted({
+        str(n.get("name"))
+        for n in (man.get("nodes") or {}).values()
+        if n.get("resource_type") == "model"
+        and "marts" in str(n.get("path") or "").split("/")[:1]
+    })
+
+
 DOCS = """\
 # OpenMetadata — the catalogue for {{group}}/{{project}}
 
@@ -912,8 +1058,9 @@ TOOL = Tool(
     scope=frozenset({"project", "group"}),
     capability=CAPABILITY,
     default_enabled=True,
-    # The projection needs no client; only ingestion does. See spec.Tool.
-    offline_bootstrap=True,
+    # The projection and the REST publish need no client; only `ingest` does,
+    # and it reports the CLI's absence itself. See spec.Tool.offline.
+    offline=True,
     # The catalogue is downstream of everything it publishes, so it is
     # bootstrapped last. `recce` writes the recorded checks this turns into
     # OpenMetadata test cases, and `wren` writes the MDL manifest that names
