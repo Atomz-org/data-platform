@@ -1254,6 +1254,13 @@ def cmd_stack_status() -> None:
     s = storage.settings()
     console.print(f"[bold]storage[/]  "
                   f"{'postgres ' + s.host + ':' + str(s.port) + '/' + s.db if s else 'sqlite (local files)'}")
+    if s is None:
+        # This shell's configuration, not the container's. Saying so matters:
+        # the stack can be serving happily off Postgres while the host that
+        # asked reads "sqlite", and that is not a disagreement.
+        console.print(f"  [dim]this shell only — the stack sets "
+                      f"{storage.ENV_HOST} for itself. Set it here too to "
+                      f"point host-side `dagster dev` at the same database.[/]")
     if s:
         try:
             counts = storage.table_counts(s)
@@ -1273,19 +1280,38 @@ def cmd_stack_status() -> None:
                   f"{'rendered' if conf.exists() else '[yellow]not rendered[/]'}"
                   f" — {conf.relative_to(r) if conf.exists() else 'pf stack render'}")
 
+    # Every probe goes through the front door, including the recce ones. Their
+    # own ports are bound to loopback *inside* the container and are not
+    # published, so probing them directly reports a connection error for a
+    # server that is running perfectly — the cookie is how you address one.
+    base = f"http://127.0.0.1:{frontdoor.LISTEN}"
     svcs = frontdoor.services(all_projects())
     t = Table("what", "url", "state")
-    probes = [("catalogue", f"http://127.0.0.1:{frontdoor.LISTEN}/api/v1/system/version"),
-              ("dagster", f"http://127.0.0.1:{frontdoor.LISTEN}/dagster/server_info"),
-              ("launcher", f"http://127.0.0.1:{frontdoor.LISTEN}/pf/")]
-    probes += [(f"recce/{x.project}", f"http://127.0.0.1:{x.port}/api/health")
+    probes: list[tuple[str, str, str]] = [
+        ("catalogue", f"{base}/api/v1/system/version", ""),
+        ("dagster", f"{base}/dagster/server_info", ""),
+        ("launcher", f"{base}/pf/", ""),
+    ]
+    probes += [(f"recce/{x.project}", f"{base}/api/health", x.project)
                for x in svcs]
-    for name, url in probes:
+    for name, url, project in probes:
+        req = urllib.request.Request(url)  # noqa: S310
+        if project:
+            req.add_header("Cookie", f"pf_recce={project}")
         try:
-            with urllib.request.urlopen(url, timeout=3) as resp:  # noqa: S310
-                state = f"[green]{resp.status}[/]"
+            with urllib.request.urlopen(req, timeout=5) as resp:  # noqa: S310
+                # The front door answers a stopped review server with the
+                # explanatory page, not an error, so 200 alone is not "up".
+                body = resp.read(400)
+                state = ("[dim]stopped[/]" if b"not running" in body
+                         else f"[green]{resp.status}[/]")
         except urllib.error.HTTPError as exc:
-            state = f"[yellow]{exc.code}[/]"
+            # `^~ /api/` deliberately does not serve the explanatory HTML — a
+            # JSON client should get a status, not a page — so a refused
+            # upstream arrives here as 502, and for a review server that is the
+            # normal resting state rather than a fault.
+            state = ("[dim]stopped[/]" if project and exc.code == 502
+                     else f"[yellow]{exc.code}[/]")
         except Exception as exc:  # noqa: BLE001
             state = f"[red]{type(exc).__name__}[/]"
         t.add_row(name, url, state)
