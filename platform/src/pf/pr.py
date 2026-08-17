@@ -27,6 +27,7 @@ import os
 import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from itertools import groupby
 from pathlib import Path
 from typing import Any
 
@@ -257,6 +258,192 @@ def _vendor_slice(root: Path) -> list[dict[str, Any]]:
     return out
 
 
+# ---------------------------------------------------------------- mermaid ----
+# The same report as an architecture chart, rendered by GitHub inside the comment.
+#
+# WHY IT EXISTS ALONGSIDE THE TABLE. The table answers "how bad", one project per
+# row. It cannot show the *shape* — that a platform edit lands in three sisters at
+# once, or that one staging model is what reaches the finance exposure. A reviewer
+# reconstructs that shape in their head from the rows; drawing it is cheaper and
+# does not vary with how carefully they read.
+#
+# WHY THE COLOURS ARE HARD-CODED PALE FILLS. GitHub renders one mermaid source on
+# both a light and a dark page and does not recolour an explicit `classDef` fill.
+# A saturated fill that reads on white is unreadable on black, so every node is a
+# pale fill + a saturated stroke of the same hue + near-black ink: the fill is
+# theme-invariant, so one palette stays legible in both (worst measured 14.4:1).
+#
+# Hue carries the *layer* — blue change, violet platform, yellow touched node,
+# aqua model, magenta metric, orange exposure. The four reserved status hues carry
+# severity and never a layer, so a red node always means danger and never "the
+# fourth thing". Both are spelled out in the label too; the chart never leans on
+# colour alone, which is also what makes it survive a colourblind reviewer and a
+# greyscale print.
+MM_MAX_PROJECTS = 6
+
+# fill / stroke, keyed by the job the node does.
+#
+# The container fills at the bottom are deliberately weaker than the node fills.
+# They are styled at all because mermaid's *default* subgraph fill is a yellow
+# that reads as "warning" — a neutral group box has to be asked for, or every
+# group on every PR looks like it is flagging something. Severity keeps a tint
+# here (it is the box's whole point) but a pale one, so the layer-coloured nodes
+# sitting inside still separate from their background.
+MM_CLASSDEF = (
+    ("pr", "#cde2fb", "#2a78d6"),
+    ("platform", "#ded9f7", "#4a3aa7"),
+    ("project", "#e3eefc", "#2a78d6"),
+    ("node", "#fbe8bd", "#eda100"),
+    ("model", "#d6f2e6", "#1baf7a"),
+    ("metric", "#fadfe8", "#e87ba4"),
+    ("exposure", "#fbdccf", "#eb6834"),
+    ("vendor", "#e8e7e2", "#898781"),
+    ("good", "#d5f2d5", "#0ca30c"),
+    ("warning", "#fdeccb", "#fab219"),
+    ("critical", "#f6d8d8", "#d03b3b"),
+    ("grp", "#f6f6f4", "#898781"),
+    ("sevBreaking", "#fdefef", "#d03b3b"),
+    ("sevReview", "#fef7e8", "#fab219"),
+    ("sevSafe", "#eef9ee", "#0ca30c"),
+)
+
+MM_VERDICT = {"block": ("critical", "BLOCK"), "review": ("warning", "REVIEW"),
+              "clear": ("good", "CLEAR")}
+MM_SEV = {"breaking": ("sevBreaking", "breaking"), "review": ("sevReview", "review"),
+          "safe": ("sevSafe", "safe")}
+
+
+def _mm(text: Any, limit: int = 46) -> str:
+    """Make `text` safe to sit inside a double-quoted mermaid label.
+
+    `#` opens a mermaid entity reference and `"` ends the label early — an
+    unescaped one in a dbt node name or a branch name turns the whole diagram
+    into a parse error, which on GitHub renders as a red box where the
+    architecture should be. `<` matters for a subtler reason: GitHub renders
+    mermaid with `htmlLabels` on, so an exposure owner written
+    `Data Science <ds@jaffle.test>` has its address parsed as a tag and silently
+    swallowed — the label loses the very name the reviewer needs to notify.
+
+    Callers pass *fragments*; the deliberate `<br/>` separators are concatenated
+    outside, so escaping here never eats a line break. Order matters: `#` goes
+    first, so the `#` this introduces for the others is not escaped twice.
+    """
+    t = " ".join(str(text).split())
+    if len(t) > limit:
+        t = t[: limit - 1] + "…"
+    for a, b in (("#", "#35;"), ('"', "#quot;"), ("<", "#lt;"), (">", "#gt;")):
+        t = t.replace(a, b)
+    return t
+
+
+def _mm_project(out: list[str], n: int, p: ProjectSlice) -> None:
+    """One project as a left-to-right chain: what changed → what it reaches."""
+    cls, word = MM_SEV.get(p.severity, ("good", p.severity))
+    out.append(f'        subgraph P{n}["{_mm(p.project)} · {word}"]')
+    out.append("            direction LR")
+
+    chain = [f"P{n}F"]
+    out.append(f'            P{n}F["{len(p.files)} file(s) changed"]:::project')
+
+    if p.nodes:
+        # Leaf name only: ids arrive as `model:stg_stripe__charges`, and the kind
+        # prefix repeats on every node in a box already labelled "dbt node(s)".
+        sample = ", ".join(x.rsplit(":", 1)[-1].rsplit(".", 1)[-1] for x in p.nodes[:2])
+        if len(p.nodes) > 2:
+            sample += f" +{len(p.nodes) - 2}"
+        chain.append(f"P{n}N")
+        out.append(f'            P{n}N["{len(p.nodes)} dbt node(s)<br/>'
+                   f'{_mm(sample, 40)}"]:::node')
+
+    for key, sfx, cls_, label in (("models", "MD", "model", "models"),
+                                  ("metrics", "MT", "metric", "metrics"),
+                                  ("exposures", "EX", "exposure", "exposures")):
+        items = p.impact.get(key) or []
+        if not items:
+            continue
+        extra = ""
+        # The owners hang off the exposure box because that is the one layer a
+        # reviewer has to *act* on before merging — a name in the picture beats
+        # a name in a table nobody scrolled to.
+        if key == "exposures" and p.owners:
+            extra = "<br/>" + _mm(", ".join(p.owners[:2]), 34)
+        chain.append(f"P{n}{sfx}")
+        out.append(f'            P{n}{sfx}["{label} · {len(items)}{extra}"]:::{cls_}')
+
+    out.append("            " + " --> ".join(chain))
+
+    # A stale graph is neither safe nor breaking, and the chart has to say which
+    # of the two it is failing to tell you.
+    if p.impact.get("note"):
+        out.append(f'            P{n}Q["graph stale<br/>run pf kg build"]:::warning')
+        out.append(f"            P{n}F --> P{n}Q")
+    if p.conformance_errors:
+        out.append(f'            P{n}C["{len(p.conformance_errors)} conformance '
+                   f'error(s)"]:::critical')
+        out.append(f"            P{n}F --> P{n}C")
+
+    out.append("        end")
+    out.append(f"        class P{n} {cls}")
+
+
+def mermaid(r: PRReport) -> str:
+    """The report as a fenced mermaid block, ready to paste into the comment."""
+    v_cls, v_word = MM_VERDICT[r.verdict]
+    head = f"PR {r.number}" if r.number else r.branch
+    out = ["```mermaid", "flowchart LR",
+           f'    PR(["{_mm(head, 30)}<br/>{len(r.files)} file(s) · '
+           f'{v_word}"]):::{v_cls}']
+
+    if r.gate_denied:
+        out.append(f'    GATE["path gate denied<br/>{len(r.gate_denied)} path(s)'
+                   f'"]:::critical')
+        out.append("    PR --> GATE")
+
+    if r.platform_touched:
+        out.append(f'    PLAT["platform/ · {len(r.platform_touched)} file(s)<br/>'
+                   f'shared by every project"]:::platform')
+        out.append("    PR --> PLAT")
+
+    shown = r.projects[:MM_MAX_PROJECTS]
+    numbered = sorted(enumerate(shown), key=lambda np: np[1].group)
+    for gi, (gname, members) in enumerate(groupby(numbered, key=lambda np: np[1].group)):
+        out.append(f'    subgraph G{gi}["{_mm(gname)}"]')
+        out.append("        direction LR")
+        for n, p in members:
+            _mm_project(out, n, p)
+        out.append("    end")
+        out.append(f"    class G{gi} grp")
+
+    for n, _ in numbered:
+        out.append(f"    PR --> P{n}F")
+    if r.platform_touched:
+        # Dotted, and labelled once: the platform edit is not *in* these projects,
+        # it arrives in them.
+        for i, (n, _) in enumerate(numbered):
+            arrow = "-.->|lands in|" if i == 0 else "-.->"
+            out.append(f"    PLAT {arrow} P{n}F")
+
+    if not r.projects:
+        out.append('    NONE["no project files touched"]:::vendor')
+        out.append("    PR --> NONE")
+    elif len(r.projects) > MM_MAX_PROJECTS:
+        rest = len(r.projects) - MM_MAX_PROJECTS
+        out.append(f'    MORE["+{rest} more project(s)<br/>see the table below"]:::vendor')
+        out.append("    PR --> MORE")
+
+    if r.vendor:
+        need = sum(1 for x in r.vendor if x.get("needs_review"))
+        out.append(f'    VEN["vendor · {len(r.vendor)} upstream(s) moved<br/>'
+                   f'{need} need review"]:::{"warning" if need else "vendor"}')
+        out.append("    PR --> VEN")
+
+    for name, fill, stroke in MM_CLASSDEF:
+        out.append(f"    classDef {name} fill:{fill},stroke:{stroke},"
+                   f"stroke-width:2px,color:#0b0b0b")
+    out.append("```")
+    return "\n".join(out)
+
+
 # --------------------------------------------------------------- markdown ----
 BADGE = {"block": "🔴 **BLOCK**", "review": "🟡 **REVIEW**", "clear": "🟢 **CLEAR**"}
 SEV = {"breaking": "🔴 breaking", "review": "🟡 review", "safe": "🟢 safe"}
@@ -278,6 +465,10 @@ def markdown(r: PRReport) -> str:
         out.append("Landable, but a human should look at the items below before "
                    "merging.")
     out.append("")
+
+    # Above the tables, not inside a <details>: a collapsed diagram is a diagram
+    # nobody looks at, and orientation is only useful before the detail.
+    out += [mermaid(r), ""]
 
     if r.gate_denied:
         out += ["### 🚫 Path gate", ""]
