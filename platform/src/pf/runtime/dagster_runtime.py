@@ -88,18 +88,23 @@ def build_definitions(
     # tools.yaml, and a tool installed from outside this repo lands the same way.
     asset_checks: list[Any] = []
     tool_metadata: dict[str, Any] = {}
+    tool_jobs: list[Any] = []
+    tool_schedules: list[Any] = []
     for contrib in _tool_contributions(root, group, project, wh):
         assets.extend(contrib.assets)
         asset_checks.extend(contrib.asset_checks)
         resources.update(contrib.resources)
         tool_metadata.update(contrib.metadata)
+        tool_jobs.extend(contrib.jobs)
+        tool_schedules.extend(contrib.schedules)
 
     job = define_asset_job(name=f"{project.replace('-', '_')}_all", selection="*")
 
     return Definitions(
         assets=assets,
         asset_checks=asset_checks,
-        jobs=[job],
+        jobs=[job, *tool_jobs],
+        schedules=tool_schedules,
         resources=resources,
         executor=multiprocess_executor.configured({"max_concurrent": 4}),
         # Tool metadata (a UI URL, say) rides on the Definitions so an operator
