@@ -64,6 +64,9 @@ LISTEN = 8080
 OM_ADDR = "127.0.0.1:8585"
 DAGSTER_ADDR = "127.0.0.1:3000"
 DAGSTER_PREFIX = "/dagster"
+#: What `Definitions` names the repository inside a code location. Dagster's own
+#: URLs are `<repo>@<location>`, so the launcher has to spell it out.
+DAGSTER_REPO = "__repository__"
 
 #: Root paths that belong to recce's static export. Derived from the wheel's
 #: `recce/data/` directory; if a recce upgrade adds a route it must be added
@@ -476,9 +479,16 @@ def supervisor_conf(svcs: list[Recce], locations: list[CodeLocation], *,
             f"--location-name {loc.name} --max-workers 2",
             directory=str(loc.working_dir), priority=15)
 
+    # 0.0.0.0, unlike everything else here. The compose file publishes
+    # 127.0.0.1:3000 so `dagster` CLI clients on the host can reach the
+    # webserver directly, and a container-loopback bind makes that publish a
+    # dead port: podman forwards to the container's external interface, nothing
+    # is listening there, and the host gets connection refused for a process
+    # that is running perfectly. Loopback-only exposure is the *host* side's
+    # job, and it is already doing it.
     lines += program(
         "dagster-webserver",
-        f"{bin_dir}/dagster-webserver -w {workspace} -h 127.0.0.1 "
+        f"{bin_dir}/dagster-webserver -w {workspace} -h 0.0.0.0 "
         f"-p {dagster_port} --path-prefix {DAGSTER_PREFIX}",
         directory=str(repo), priority=20)
 
@@ -517,12 +527,18 @@ def landing_html(svcs: list[Recce], *, listen: int = LISTEN) -> str:
         service = f"{s.group}_{s.project}".replace("-", "_")
         review = ("review" if s.reviewed
                   else "<span class='muted'>no recorded review</span>")
+        # Dagster addresses a code location as `<repo>@<location>`, and
+        # `Definitions` always yields the repository name `__repository__`. The
+        # bare `/locations/<location>/…` spelling looks right, renders, and
+        # resolves to nothing.
+        at = f"{DAGSTER_REPO}@{s.group}__{s.project}"
+        job = f"{s.project.replace('-', '_')}_catalog_sync"
         rows.append(f"""      <tr>
         <td><strong>{s.project}</strong><div class="muted">{s.group}</div></td>
         <td><a href="/databaseService/{service}">catalogue</a></td>
-        <td><a href="{DAGSTER_PREFIX}/locations/{s.group}__{s.project}/assets">assets</a></td>
+        <td><a href="{DAGSTER_PREFIX}/locations/{at}/asset-groups">assets</a></td>
         <td><a href="{s.location}">{review}</a></td>
-        <td><a href="{DAGSTER_PREFIX}/jobs/{s.group}__{s.project}/{s.project.replace('-', '_')}_catalog_sync">catalog sync</a></td>
+        <td><a href="{DAGSTER_PREFIX}/locations/{at}/jobs/{job}">catalog sync</a></td>
       </tr>""")
 
     return f"""<!doctype html>

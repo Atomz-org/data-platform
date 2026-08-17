@@ -1285,6 +1285,19 @@ def cmd_stack_status() -> None:
     # published, so probing them directly reports a connection error for a
     # server that is running perfectly — the cookie is how you address one.
     base = f"http://127.0.0.1:{frontdoor.LISTEN}"
+
+    # The version that is *answering*, not the tag someone meant to build. An
+    # upgrade that failed to take leaves a stack running the previous
+    # distribution and reporting nothing wrong.
+    try:
+        with urllib.request.urlopen(  # noqa: S310
+                f"{base}/api/v1/system/version", timeout=5) as resp:
+            v = json.load(resp)
+        console.print(f"[bold]openmetadata[/]  {v.get('version', '?')}"
+                      f"  [dim]{str(v.get('revision', ''))[:8]}[/]")
+    except Exception:  # noqa: BLE001 - not answering is reported by the table
+        console.print("[bold]openmetadata[/]  [dim]not answering[/]")
+
     svcs = frontdoor.services(all_projects())
     t = Table("what", "url", "state")
     probes: list[tuple[str, str, str]] = [

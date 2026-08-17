@@ -34,10 +34,46 @@
 #   The repo is bind-mounted at its host path, exactly as Containerfile.dagster
 #   describes: workspace.yaml holds absolute working_directory entries.
 
-FROM eclipse-temurin:21-jre-jammy AS jre
-FROM docker.getcollate.io/openmetadata/server:1.13.3 AS openmetadata
+# ## Upgrading OpenMetadata
+#
+#   podman build -f platform/Containerfile.stack \
+#     --build-arg OM_VERSION=1.14.0 -t pf-stack:latest .
+#
+# That is the whole edit. The distribution is pulled by tag and copied, so a
+# version bump touches no line of this file, and `PF_OM_VERSION` inside the
+# image records what was actually built — `podman inspect` and
+# `pf stack status` both read it back rather than trusting the tag on disk.
+#
+# What a bump does *not* carry with it, deliberately:
+#
+#   - Postgres. Its image is pinned separately in compose.yaml, not to
+#     OM_VERSION, because getcollate ships a postgresql image per release and
+#     following it blindly is how a Postgres 16 server meets a Postgres 15 data
+#     directory and refuses to start — taking Dagster's run history down with
+#     it, since they now share the instance.
+#   - The search index. Set PF_OM_REINDEX=1 for the upgrade run; the entrypoint
+#     then rebuilds it from Postgres before anything starts serving.
+#   - FERNET_KEY. Changing it does not error, it silently fails to decrypt
+#     every stored service connection.
+#
+# JRE_IMAGE is an arg for the same reason: OpenMetadata 1.13 wants Java 21, and
+# a future release wanting something else should not need this file edited.
+
+ARG OM_VERSION=1.13.3
+ARG JRE_IMAGE=eclipse-temurin:21-jre-jammy
+
+FROM ${JRE_IMAGE} AS jre
+FROM docker.getcollate.io/openmetadata/server:${OM_VERSION} AS openmetadata
 
 FROM python:3.12-slim-bookworm
+
+# Re-declared: an ARG before the first FROM is global to the FROM lines only,
+# and goes out of scope inside a stage unless it is asked for again. Without
+# this the ENV below silently records an empty version.
+ARG OM_VERSION
+ENV PF_OM_VERSION=${OM_VERSION}
+LABEL org.opencontainers.image.title="pf-stack" \
+      io.openmetadata.version="${OM_VERSION}"
 
 # git: the artefact store reads the current branch to key a review, and dbt
 # packages resolve over git.

@@ -82,8 +82,58 @@ fi
 # Idempotent: a database already at this version is a no-op. Skippable because a
 # second stack pointed at the same database must not race the first one.
 if [ "${PF_OM_MIGRATE:-1}" = "1" ]; then
-  log "openmetadata migrate"
+  log "openmetadata ${PF_OM_VERSION:-?} migrate"
   ( cd /opt/openmetadata && ./bootstrap/openmetadata-ops.sh migrate ) 2>&1 | tail -5
+fi
+
+# The half of an upgrade that `migrate` does not do. Entity rows live in
+# Postgres; the search index is a projection of them in Elasticsearch, and a
+# release that changes an index mapping leaves search returning stale shapes —
+# or nothing — while every table is still perfectly present in the catalogue.
+# That is a confusing failure to meet cold, so it gets a switch rather than a
+# runbook step to remember.
+#
+# Off by default: this reads every entity and rewrites the index, which is
+# minutes on a real catalogue and pure waste on an ordinary restart.
+#
+#   PF_OM_REINDEX=1         rebuild only where the mapping actually changed
+#   PF_OM_REINDEX=force     rebuild regardless — after a restore, or when the
+#                           index and the database have drifted for any reason
+#   PF_OM_REINDEX=recreate  drop the indexes first. The heaviest option and the
+#                           safe one across a major version, since Postgres
+#                           remains the source of truth either way.
+#
+# Before supervisord, not after: reindexing under a serving server would have
+# the UI answering searches from an index being rewritten underneath it.
+case "${PF_OM_REINDEX:-}" in
+  "") ;;
+  1|true|yes)  om_reindex_args="--auto-tune" ;;
+  force)       om_reindex_args="--auto-tune --force" ;;
+  recreate)    om_reindex_args="--auto-tune --force --recreate-indexes" ;;
+  *)
+    echo "PF_OM_REINDEX=${PF_OM_REINDEX} is not one of 1|force|recreate" >&2
+    exit 1
+    ;;
+esac
+
+if [ -n "${om_reindex_args:-}" ]; then
+  log "openmetadata reindex ${om_reindex_args}"
+  # Said plainly because it is the surprising part: nothing in this container is
+  # serving yet, so Dagster and the review servers are down for the duration
+  # too, not just the catalogue. That is the price of not racing OpenMetadata's
+  # own index bootstrap, and it is why this is off by default.
+  echo "    the whole stack stays down until this finishes"
+  # Not fatal. A failed reindex is a degraded search over an intact catalogue,
+  # and refusing to start the stack over it would turn a partial outage into a
+  # total one. It is loud in the log and `pf stack status` reports the version
+  # that is actually serving.
+  if ! ( cd /opt/openmetadata \
+         && ./bootstrap/openmetadata-ops.sh reindex ${om_reindex_args} ) 2>&1 \
+       | tail -15; then
+    echo "!! reindex failed — the catalogue is intact, search may be stale." \
+         "Re-run with: podman exec pf_stack bash -c" \
+         "'cd /opt/openmetadata && ./bootstrap/openmetadata-ops.sh reindex --auto-tune --force'" >&2
+  fi
 fi
 
 log "supervisord"
