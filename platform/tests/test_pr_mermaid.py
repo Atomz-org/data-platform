@@ -75,7 +75,7 @@ def test_hostile_characters_cannot_close_a_label():
     `Name <addr@host>`, so it reaches the diagram on any PR touching an exposure.
     """
     r = report(
-        branch='feat/a"b#c<d>',
+        number=0, branch='feat/a"b#c<d>',
         projects=[slice_(nodes=['model:x"y', "model:b#c"],
                          owners=["Data Science <ds@jaffle.test>"],
                          impact={"exposures": [{"name": "dash"}]})])
