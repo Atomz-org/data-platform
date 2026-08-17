@@ -28,7 +28,13 @@ name: pf
 
 services:
   postgresql:
-    image: docker.getcollate.io/openmetadata/postgresql:1.13.3
+    # Pinned on its own, NOT to OM_VERSION. getcollate publishes a postgresql
+    # image per OpenMetadata release, so following the same tag looks tidy and
+    # is a trap: the day one of those bumps the Postgres major, the new server
+    # meets the old data directory and refuses to start — and since Dagster's
+    # run history now lives in the same instance, that is both products down.
+    # Move this deliberately, with a dump and restore.
+    image: ${PF_POSTGRES_IMAGE:-docker.getcollate.io/openmetadata/postgresql:1.13.3}
     container_name: pf_postgresql
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -48,7 +54,11 @@ services:
     restart: unless-stopped
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.0
+    # Also independent of OM_VERSION, but for the opposite reason: OpenMetadata
+    # constrains which Elasticsearch majors it will talk to, so this is the one
+    # that may genuinely need to move *with* an upgrade. Change it and the
+    # index, together — PF_OM_REINDEX=recreate on the first run after.
+    image: ${PF_ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:9.3.0}
     container_name: pf_elasticsearch
     environment:
       discovery.type: single-node
@@ -71,7 +81,10 @@ services:
     build:
       context: ../..
       dockerfile: platform/Containerfile.stack
-    image: pf-stack:latest
+      args:
+        # OM_VERSION=1.14.0 podman compose ... up -d --build
+        OM_VERSION: ${OM_VERSION:-1.13.3}
+    image: pf-stack:${OM_VERSION:-1.13.3}
     container_name: pf_stack
     depends_on:
       postgresql:
@@ -93,6 +106,9 @@ services:
       PF_STACK_PG_SCHEMA: dagster
       PF_STACK_PG_ADMIN_USER: ${POSTGRES_USER:-postgres}
       PF_STACK_PG_ADMIN_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      # Empty on an ordinary restart; 1 | force | recreate on an upgrade run.
+      # See the entrypoint for what each does.
+      PF_OM_REINDEX: ${PF_OM_REINDEX:-}
       # The catalogue publisher talks to the server in this same container.
       OPENMETADATA_HOST_PORT: http://127.0.0.1:8585
       # Its own DAGSTER_HOME, not the repo's `.dagster`. The tracked
