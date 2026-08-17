@@ -389,7 +389,7 @@ def _mm_project(out: list[str], n: int, p: ProjectSlice) -> None:
 def mermaid(r: PRReport) -> str:
     """The report as a fenced mermaid block, ready to paste into the comment."""
     v_cls, v_word = MM_VERDICT[r.verdict]
-    head = f"PR {r.number}" if r.number else _mm(r.branch, 28)
+    head = f"PR {r.number}" if r.number else r.branch
     out = ["```mermaid", "flowchart LR",
            f'    PR(["{_mm(head, 30)}<br/>{len(r.files)} file(s) · '
            f'{v_word}"]):::{v_cls}']
