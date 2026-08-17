@@ -12,12 +12,16 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from pf.capabilities import Capability
 from pf.tools import config as tool_config
 from pf.tools import registry
 from pf.tools.spec import (
-    DbtBinding, InvalidTool, Requirement, Surface, Tool, ToolContext,
+    DbtBinding,
+    InvalidTool,
+    Requirement,
+    Surface,
+    Tool,
+    ToolContext,
 )
 
 
@@ -504,7 +508,6 @@ def test_unparseable_state_is_not_an_exception(tmp_path: Path) -> None:
 def test_a_new_group_enables_the_tools_that_declare_a_default() -> None:
     """Registering a tool has to be the only step — see `default_enabled`."""
     import yaml
-
     from pf.scaffold.generator import _default_tools_yaml
     from pf.tools import all_tools
 

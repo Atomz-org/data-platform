@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from pf.ontology.model import load_ontology
 from pf.projections.openmetadata import (
     GLOSSARY_NAME,

@@ -336,7 +336,7 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
     that just happened. A scheduled catalogue job drifts from the warehouse
     between runs and nobody can tell which state they are looking at.
     """
-    from dagster import AssetKey, MetadataValue, asset
+    from dagster import MetadataValue, asset
 
     project_dir = Path(ctx.project_dir)
     prefix = ctx.project.replace("-", "_")
@@ -497,8 +497,8 @@ def register_commands(app: Any) -> None:
     def cmd_ingest(group: str, project: str) -> None:
         """Run the dbt ingestion workflow against the configured server."""
         r = ingest_dbt(_pdir(group, project))
-        console.print(("[green]✓[/] ingested" if r["ok"]
-                       else f"[red]✗[/] {r.get('reason')}: {r.get('message', '')[:400]}"))
+        console.print("[green]✓[/] ingested" if r["ok"]
+                       else f"[red]✗[/] {r.get('reason')}: {r.get('message', '')[:400]}")
         if not r["ok"]:
             raise typer.Exit(1)
 

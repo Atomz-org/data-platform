@@ -18,9 +18,10 @@ has no sources, no models and no warehouse, and bootstrapping it must still work
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 Status = Literal["ok", "skipped", "failed"]
 
@@ -43,7 +44,7 @@ class Step:
     #: May return several results. A step that fans out over a variable number of
     #: things — one entry per enabled tool — would otherwise have to flatten
     #: itself into a single line, and "3 tools ok" hides which one is broken.
-    run: Callable[[Path, str, str], "StepResult | list[StepResult]"]
+    run: Callable[[Path, str, str], StepResult | list[StepResult]]
 
 
 # ------------------------------------------------------------------ steps --
@@ -98,7 +99,8 @@ def _export_mdl(root: Path, group: str, project: str) -> StepResult:
 
 def _export_owl(root: Path, group: str, project: str) -> StepResult:
     """Platform-level and shared, so it is written once rather than per project."""
-    from pf.projections.owl import export as export_owl, stats
+    from pf.projections.owl import export as export_owl
+    from pf.projections.owl import stats
 
     export_owl(root / "platform" / "src" / "pf" / "ontology" / "ontology.owl")
     s = stats()
@@ -131,7 +133,8 @@ def _export_otop(root: Path, group: str, project: str) -> StepResult:
     evidence is not: the same rule passes in one project and fails in another,
     and a manifest that averaged them would be true of nowhere.
     """
-    from pf.projections.otop import build_manifest, export as export_otop, stats
+    from pf.projections.otop import build_manifest, stats
+    from pf.projections.otop import export as export_otop
 
     d = _pdir(root, group, project)
     export_otop(root, group, project, d)

@@ -11,7 +11,6 @@ L3, because nothing has a track record yet. That ordering is the point.
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from pf.loops.runner import LoopRun, LoopSpec
@@ -195,8 +194,8 @@ def impact_sentinel(root: Path, group: str, project: str, run: LoopRun) -> list[
     if not report.total:
         return []
     owners = ", ".join(report.owners) or "no owner declared"
-    return [f"{report.severity.upper()}: {', '.join(sorted(set(nodes)))} affects "
-            f"{report.total} object(s); notify {owners}"]
+    return [(f"{report.severity.upper()}: {', '.join(sorted(set(nodes)))} affects "
+            f"{report.total} object(s); notify {owners}")]
 
 
 def pii_audit(root: Path, group: str, project: str, run: LoopRun) -> list[str]:

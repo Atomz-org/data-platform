@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import importlib
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from pf.runtime.warehouse import Warehouse
 
@@ -173,7 +174,7 @@ def _prefix(project: str) -> str:
 def _make_ingest_asset(name: str, resource: Any, wh: Warehouse, mod_path: str):
     from dagster import MetadataValue, asset
 
-    ann = getattr(resource, "__pf_annotation__")
+    ann = resource.__pf_annotation__
     source = ann.source or "raw"
 
     @asset(

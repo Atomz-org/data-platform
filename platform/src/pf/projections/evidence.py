@@ -164,7 +164,7 @@ def _metric_name(v: Any) -> str:
 # --------------------------------------------------------------- writing ----
 def _metric_sql(spec: MetricSpec, schema: str) -> str:
     where = f"\nwhere {spec.filter_sql}" if spec.filter_sql else ""
-    dims = [d for d in spec.dimensions][:3]
+    dims = list(spec.dimensions)[:3]
     dim_sql = "".join(f",\n    {d}" for d in dims)
     group_by = ", ".join(str(i + 1) for i in range(1 + len(dims)))
 
@@ -173,12 +173,12 @@ def _metric_sql(spec: MetricSpec, schema: str) -> str:
             "-- Do not edit. Change the metric in transform/models/semantic/, then rerun."]
     if spec.kind == "ratio":
         head += [
-            f"-- Ratio rule: re-divide at the display grain —",
+            "-- Ratio rule: re-divide at the display grain —",
             f"--   sum({spec.numerator}) / sum({spec.denominator})",
             f"-- NEVER avg({spec.name}). Components are carried for exactly that.",
         ]
 
-    body = [f"select",
+    body = ["select",
             f"    {spec.time_column} as metric_time{dim_sql},"]
     if spec.kind == "ratio":
         body.append(f"    {_num_expr(spec)} as {spec.numerator},")
@@ -215,10 +215,10 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
         q,
         "---",
         "",
-        f"Every number on this page is a governed metric compiled from the dbt",
-        f"semantic layer into `queries/metrics/`. Nothing here restates business",
-        f"logic — if a figure you need is missing, the fix is a metric definition,",
-        f"not SQL in this page.",
+        "Every number on this page is a governed metric compiled from the dbt",
+        "semantic layer into `queries/metrics/`. Nothing here restates business",
+        "logic — if a figure you need is missing, the fix is a metric definition,",
+        "not SQL in this page.",
         "",
     ]
 
@@ -262,13 +262,13 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
         lines += [
             f"## {trend.label} over time",
             "",
-            f"```sql trend",
+            "```sql trend",
             f"select metric_time, sum({trend.name}) as {trend.name}",
             f"from ${{metrics_{trend.name}}}",
-            f"group by 1 order by 1",
+            "group by 1 order by 1",
             "```",
-            f"<LineChart data={{trend}} x=metric_time y={trend.name} "
-            f"yFmt={'usd0' if _is_money(trend) else 'num0'}/>",
+            (f"<LineChart data={{trend}} x=metric_time y={trend.name} "
+            f"yFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
             "",
         ]
 
@@ -276,18 +276,18 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
         lines += [
             f"## {trend.label} by {dim.replace('_', ' ')}",
             "",
-            f"```sql breakdown",
+            "```sql breakdown",
             f"select {dim}, sum({trend.name}) as {trend.name}",
             f"from ${{metrics_{trend.name}}}",
             f"where {dim} is not null",
-            f"group by 1 order by 2 desc",
+            "group by 1 order by 2 desc",
             "```",
-            f"<BarChart data={{breakdown}} x={dim} y={trend.name} swapXY=true "
-            f"xFmt={'usd0' if _is_money(trend) else 'num0'}/>",
+            (f"<BarChart data={{breakdown}} x={dim} y={trend.name} swapXY=true "
+            f"xFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
             "",
             "## Detail",
             "",
-            f"<DataTable data={{breakdown}} rows=15/>",
+            "<DataTable data={breakdown} rows=15/>",
             "",
         ]
 
@@ -311,9 +311,9 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
     ]
     if spec.kind == "ratio":
         lines += [
-            f"> **Ratio metric.** Aggregated as `sum({spec.numerator}) / "
+            (f"> **Ratio metric.** Aggregated as `sum({spec.numerator}) / "
             f"sum({spec.denominator})` at whatever grain you group by. "
-            f"Averaging the ratio itself gives a different — and wrong — answer.",
+            f"Averaging the ratio itself gives a different — and wrong — answer."),
             "",
         ]
     lines += [
@@ -332,7 +332,7 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
     if dim:
         lines += [
             f"## By {dim.replace('_', ' ')}", "",
-            f"```sql by_dim",
+            "```sql by_dim",
             f"select {dim}, "
             + (f"sum({spec.numerator}) / nullif(sum({spec.denominator}), 0) as {spec.name}"
                if spec.kind == "ratio" else f"sum({spec.name}) as {spec.name}"),

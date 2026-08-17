@@ -52,14 +52,29 @@ from pathlib import Path
 from typing import Any
 
 from pf.tools.config import (
-    ToolConfig, config_path, enabled, enabled_names, resolve, write,
+    ToolConfig,
+    config_path,
+    enabled,
+    enabled_names,
+    resolve,
+    write,
 )
 from pf.tools.registry import (
-    DiscoveryError, all_tools, discover, for_scope, get, register_capabilities,
+    DiscoveryError,
+    all_tools,
+    discover,
+    for_scope,
+    get,
+    register_capabilities,
     tool_capabilities,
 )
 from pf.tools.spec import (
-    DbtBinding, InvalidTool, Requirement, Surface, Tool, ToolContext,
+    DbtBinding,
+    InvalidTool,
+    Requirement,
+    Surface,
+    Tool,
+    ToolContext,
     ToolContribution,
 )
 

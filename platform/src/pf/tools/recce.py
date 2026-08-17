@@ -46,7 +46,12 @@ from typing import Any
 
 from pf.capabilities import Capability
 from pf.tools.spec import (
-    DbtBinding, Requirement, Surface, Tool, ToolContext, ToolContribution,
+    DbtBinding,
+    Requirement,
+    Surface,
+    Tool,
+    ToolContext,
+    ToolContribution,
 )
 
 # Recce's own constants, mirrored here so a rename upstream shows up as a vendor

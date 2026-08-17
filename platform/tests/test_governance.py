@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from pf.governance import EditRejected, apply_edit, current, history, revert
 
 

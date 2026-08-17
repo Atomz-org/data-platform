@@ -17,25 +17,39 @@ from pf import obs
 from pf.agents.base import AGENTS, validate_routing
 from pf.agents.models import MODELS
 from pf.capabilities import (
-    CAPABILITIES, UnknownCapability, apply as apply_capability, gate_additions,
-    missing_env, resolve as resolve_capabilities,
+    CAPABILITIES,
+    UnknownCapability,
+    gate_additions,
+    missing_env,
+)
+from pf.capabilities import (
+    apply as apply_capability,
+)
+from pf.capabilities import (
+    resolve as resolve_capabilities,
 )
 from pf.kg.build import build_graph
-from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, \
-    render_group_card, render_project_card
+from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, render_group_card, render_project_card
+
 # Aliased: the `gate` command below is a *path* gate and would otherwise shadow
 # this import at module level, so `pf impact-gate` would call the wrong one.
 from pf.kg.impact import (
-    GateNotExercised, gate as impact_gate, impact_of, impact_of_many,
+    GateNotExercised,
+    impact_of,
+    impact_of_many,
+)
+from pf.kg.impact import (
+    gate as impact_gate,
 )
 from pf.kg.query import kg_neighbors, kg_search
-from pf.ontology.model import load_ontology
-from pf.ontology.validate import validate_instance, validate_project, validate_topology
-from pf.runtime.staging import generate as generate_staging
-from pf.loops.audit import audit as loop_audit, project_readiness, recommended_level
+from pf.loops.audit import audit as loop_audit
+from pf.loops.audit import project_readiness, recommended_level
 from pf.loops.gate import GateResult, check_paths, nodes_for, project_for, tracked_denied
 from pf.loops.registry import BODIES, SPECS
 from pf.loops.runner import Ledger, run_loop, update_state
+from pf.ontology.model import load_ontology
+from pf.ontology.validate import validate_instance, validate_project, validate_topology
+from pf.runtime.staging import generate as generate_staging
 from pf.scaffold.bootstrap import STEPS, bootstrap
 from pf.scaffold.generator import new_group, new_project
 
@@ -251,7 +265,9 @@ def cmd_onboard(
     and merges dependency files — the moment to find out where `intermediate/`
     landed is before it happens.
     """
-    from pf.onboard import apply as apply_plan, plan as make_plan, resolve_source
+    from pf.onboard import apply as apply_plan
+    from pf.onboard import plan as make_plan
+    from pf.onboard import resolve_source
 
     scratch = root() / "data" / "onboard" / f"{group}-{project}"
     try:
@@ -1059,7 +1075,7 @@ def run_all(group: str) -> None:
     sisters = [(g, p, d) for g, p, d in all_projects() if g == group and not p.endswith("-rollup")]
     rollups = [(g, p, d) for g, p, d in all_projects() if g == group and p.endswith("-rollup")]
     procs = []
-    for g, p, d in sisters:
+    for g, p, _d in sisters:
         console.print(f"[cyan]▸[/] launching {g}/{p}")
         procs.append((p, subprocess.Popen(
             [sys.executable, "-m", "pf.cli", "seed", g, p], cwd=str(root()))))
@@ -1068,7 +1084,7 @@ def run_all(group: str) -> None:
         rc = proc.wait()
         console.print(f"  {'[green]✓[/]' if rc == 0 else '[red]✗[/]'} {name}")
         failed = failed or rc != 0
-    for g, p, d in rollups:
+    for g, p, _d in rollups:
         console.print(f"[cyan]▸[/] roll-up {g}/{p}")
         seed(g, p)
     raise typer.Exit(1 if failed else 0)
@@ -1164,7 +1180,7 @@ def cmd_loop_run(loop: str, group: str, project: str,
     if spec is None:
         console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
         raise typer.Exit(1)
-    d = pdir(group, project)
+    pdir(group, project)
     r = root()
     run = run_loop(spec, lambda run: BODIES[loop](r, group, project, run),
                    root=r, group=group, project=project, dry_run=dry_run)
@@ -1339,7 +1355,7 @@ def cmd_onto_scan(group: str, project: str,
     console.print(f"[green]✓[/] proposal [bold]{p.pid}[/] "
                   f"({len(tables)} table(s) scanned across {', '.join(schemas)})")
     console.print(f"  [dim]{proposal.path_for(root(), group, p.pid)}[/]")
-    console.print(f"  Nothing is in effect yet. Review, edit, then approve:")
+    console.print("  Nothing is in effect yet. Review, edit, then approve:")
     console.print(f"    [cyan]pf semantic review {group} {p.pid}[/]")
     console.print(f"    [cyan]pf semantic approve {group} {p.pid}[/]")
 
@@ -1502,7 +1518,7 @@ def cmd_onto_annotate(
     if not linked:
         console.print("[yellow]![/] no links — the proposal's relations are still "
                       "placeholders. Name them after the business verb in the "
-                      f"proposal, approve, then re-run.")
+                      "proposal, approve, then re-run.")
 
 
 @sem_app.command("topology")
@@ -1554,7 +1570,8 @@ def cmd_mdl(group: str, project: str,
 @sem_app.command("owl")
 def cmd_owl(out: str = typer.Option("", help="output path")) -> None:
     """Export the ontology as OWL / RDF-XML."""
-    from pf.projections.owl import export as export_owl, stats
+    from pf.projections.owl import export as export_owl
+    from pf.projections.owl import stats
 
     path = export_owl(out or (root() / "platform" / "src" / "pf" / "ontology" / "ontology.owl"))
     s = stats()
@@ -1568,7 +1585,8 @@ def cmd_otop(group: str = typer.Argument("", help="omit for a platform-wide expo
              project: str = typer.Argument(""),
              out: str = typer.Option("", help="output path")) -> None:
     """Export the policy layer as an OpenTopology (otop-core 0.2) manifest."""
-    from pf.projections.otop import export as export_otop, build_manifest, stats
+    from pf.projections.otop import build_manifest, stats
+    from pf.projections.otop import export as export_otop
 
     d = pdir(group, project) if group and project else None
     path = export_otop(root(), group, project, d, out or None)
@@ -1618,7 +1636,7 @@ def cmd_vendor_list(verbose: bool = typer.Option(False, "--verbose", "-v",
     console.print(t)
     flagged = [u for u in ups if u.needs_licence_review]
     if flagged:
-        console.print(f"\n[yellow]![/] licence review outstanding: "
+        console.print("\n[yellow]![/] licence review outstanding: "
                       + ", ".join(u.id for u in flagged)
                       + "  →  `pf vendor licences`")
     if verbose:
@@ -1677,7 +1695,8 @@ def cmd_vendor_sync(only: str = typer.Option("", help="one upstream id"),
                         help="record the new state as reviewed (only when nothing "
                              "adopted changed)")) -> None:
     """Fetch each upstream's tracking branch, then report what it means for us."""
-    from pf.vendor.model import approve as approve_lock, sync as vendor_sync
+    from pf.vendor.model import approve as approve_lock
+    from pf.vendor.model import sync as vendor_sync
 
     reports, errors = vendor_sync(root(), only=only)
     for e in errors:
@@ -1819,7 +1838,7 @@ def cmd_report_dev(group: str, project: str) -> None:
     if not (d / "node_modules").exists():
         console.print("[yellow]installing dependencies (first run)…[/]")
         subprocess.run(["npm", "install"], cwd=str(d), check=False)
-    console.print(f"[green]→[/] http://localhost:3000")
+    console.print("[green]→[/] http://localhost:3000")
     subprocess.run(["npm", "run", "dev"], cwd=str(d), check=False)
 
 
@@ -1837,7 +1856,9 @@ def cmd_pr_report(number: int = typer.Option(0, help="PR number (defaults to $GI
                   fail: bool = typer.Option(False, "--fail",
                                             help="exit 1 when the verdict is `block`")) -> None:
     """Blast radius, conformance, readiness and vendor drift for this change."""
-    from pf.pr import build as build_pr, markdown as pr_markdown, pr_number_from_env, save
+    from pf.pr import build as build_pr
+    from pf.pr import markdown as pr_markdown
+    from pf.pr import pr_number_from_env, save
 
     r = build_pr(root(), number or pr_number_from_env(), base, title)
     body = pr_markdown(r)
@@ -1909,7 +1930,7 @@ def cmd_tool_list(group: str = typer.Argument("", help="show enablement for a pr
                 r["name"],
                 "[green]yes[/]" if r["enabled"] else "[dim]no[/]",
                 r["source"] if r["enabled"] else "—",
-                "[green]yes[/]" if r["installed"] else f"[yellow]no[/]",
+                "[green]yes[/]" if r["installed"] else "[yellow]no[/]",
                 "[green]✓[/]" if r["ready"] else "[dim]·[/]",
                 "; ".join(r["blockers"]) or (r["hint"] if not r["installed"] else ""),
             )
@@ -1933,7 +1954,8 @@ def cmd_tool_enable(tool: str, group: str,
                     project: str = typer.Argument("", help="omit to enable for the whole group"),
                     scaffold: bool = typer.Option(True, help="apply the capability and bootstrap")) -> None:
     """Turn a tool on for a group (every sister) or one project."""
-    from pf.tools import get as get_tool, write as write_tool_config
+    from pf.tools import get as get_tool
+    from pf.tools import write as write_tool_config
     from pf.tools.spec import InvalidTool
 
     try:

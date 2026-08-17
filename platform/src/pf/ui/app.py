@@ -16,13 +16,13 @@ the days it is half-finished. `/app` is the one being built on.
 
 from __future__ import annotations
 
-import json
+import contextlib
 from pathlib import Path
 from typing import Any
 
 import yaml
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from pf import obs
@@ -431,7 +431,8 @@ STACK_LAYERS: list[dict[str, Any]] = [
 @app.get("/api/vendor")
 def vendor() -> dict[str, Any]:
     """Every vendored upstream, what we took, and whether it has drifted."""
-    from pf.vendor.model import drift as vendor_drift, load_registry
+    from pf.vendor.model import drift as vendor_drift
+    from pf.vendor.model import load_registry
 
     root = root_dir()
     ups = load_registry()
@@ -471,7 +472,8 @@ def vendor_stack(group: str, project: str) -> dict[str, Any]:
     every layer it runs on descends from one, and the counts come from that
     project's own graph rather than from the platform.
     """
-    from pf.vendor.model import drift as vendor_drift, load_registry
+    from pf.vendor.model import drift as vendor_drift
+    from pf.vendor.model import load_registry
 
     d = project_dir(group, project)
     gp = d / "kg" / "graph.duckdb"
@@ -784,7 +786,10 @@ def recce_state(group: str, project: str) -> dict[str, Any]:
     produced the number, and then neither is trusted.
     """
     from pf.tools.recce import (
-        has_baseline, has_manifest, read_state, summary_markdown,
+        has_baseline,
+        has_manifest,
+        read_state,
+        summary_markdown,
     )
 
     d = project_dir(group, project)
@@ -925,10 +930,8 @@ def governance_edit(surface: str = Query(...), key_path: str = Query(...),
     if value.lower() in {"true", "false"}:
         parsed = value.lower() == "true"
     else:
-        try:
+        with contextlib.suppress(ValueError):
             parsed = int(value)
-        except ValueError:
-            pass
 
     try:
         return apply_edit(root_dir(), surface, key_path, parsed,
@@ -969,7 +972,9 @@ def pr_refresh(number: int = 0, base: str = "") -> dict[str, Any]:
     Exists so the local dashboard is useful before a PR is opened — same code
     path CI runs, so what you see locally is what CI will post.
     """
-    from pf.pr import build as build_pr, markdown as pr_markdown, save
+    from pf.pr import build as build_pr
+    from pf.pr import markdown as pr_markdown
+    from pf.pr import save
 
     r = build_pr(root_dir(), number, base)
     save(root_dir(), r)

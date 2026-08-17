@@ -271,9 +271,7 @@ class Ontology:
         out = []
         for p in self.policies:
             target = p.applies_to
-            if target.get("role") == role:
-                out.append(p)
-            elif "role_glob" in target and fnmatch.fnmatch(role, target["role_glob"]):
+            if target.get("role") == role or ("role_glob" in target and fnmatch.fnmatch(role, target["role_glob"])):
                 out.append(p)
         return out
 

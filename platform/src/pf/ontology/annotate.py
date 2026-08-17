@@ -7,9 +7,11 @@ YAML) *and* recorded in a process-local registry so they can be exported to
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 import yaml
 
@@ -108,15 +110,14 @@ def annotate(
 
         apply_hints = getattr(resource, "apply_hints", None)
         if callable(apply_hints):  # real dlt resource
-            try:
+            # older/newer dlt signature — annotations still registered
+            with suppress(TypeError):
                 apply_hints(columns=columns)
-            except TypeError:  # older/newer dlt signature — annotations still registered
-                pass
             table_meta = getattr(resource, "_hints", None)
             if isinstance(table_meta, dict):
                 table_meta.setdefault("x-annotations", {})[X_CLASS] = concept
 
-        setattr(resource, "__pf_annotation__", ann)
+        resource.__pf_annotation__ = ann
         return resource
 
     return wrap

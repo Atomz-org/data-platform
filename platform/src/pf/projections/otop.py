@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +43,7 @@ TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime(TS_FMT)
+    return datetime.now(UTC).strftime(TS_FMT)
 
 
 def _git(root: Path, *args: str) -> str:
@@ -168,7 +168,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
             p = config_file(project_dir)
             if not p.exists():
                 return Observation("unknown", now, "recce.yml not generated yet")
-            ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+            ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
             return Observation("pass", ts, str(p.relative_to(root)))
 
         p = state_file(project_dir)
@@ -176,7 +176,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
             return Observation(
                 "unknown", now,
                 "no diff recorded" if has_baseline(project_dir) else "no baseline captured")
-        ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+        ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
         return Observation("pass", ts, str(p.relative_to(root)))
 
     if kind == "impact_reports":
@@ -194,7 +194,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
     for base in ([project_dir] if project_dir else []) + [root]:
         p = base / rel
         if p.exists():
-            ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+            ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
             return Observation("pass", ts, str(p.relative_to(root)))
     return Observation("unknown", now, f"{rel} not produced yet")
 
@@ -253,7 +253,7 @@ def _as_ts(value: str) -> str:
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(value).astimezone(timezone.utc).strftime(TS_FMT)
+        return datetime.fromisoformat(value).astimezone(UTC).strftime(TS_FMT)
     except ValueError:
         return ""
 

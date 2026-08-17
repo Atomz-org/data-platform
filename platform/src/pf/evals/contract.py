@@ -15,9 +15,9 @@ CI over it is not.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Callable
 from typing import Any, Literal
 
 from pf.agents.base import AGENTS, cached_prefix
@@ -220,8 +220,8 @@ def _output_schemas_are_gradeable(root: Path, group: str, project: str) -> Contr
     """
     from typing import get_args, get_origin
 
-    from pf.evals.case import AGENT_INPUTS
     from pf.agents import loops as loop_agents
+    from pf.evals.case import AGENT_INPUTS
 
     schemas = {
         "test_failure_triage": loop_agents.Diagnosis,

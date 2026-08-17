@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import getpass
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
@@ -83,7 +83,7 @@ class Proposal:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def proposals_dir(root: Path, group: str) -> Path:
@@ -314,8 +314,7 @@ def diff_against(root: Path, group: str, p: Proposal) -> dict[str, list[str]]:
             cls, prop = a["subject"].split(".", 1)
             if prop not in onto.properties_of(cls):
                 new_props.append(a["subject"])
-        elif a["kind"] == "relation":
-            if not onto.relation(a["subject"]):
-                new_rels.append(f"{a['domain']} → {a['range']} [{a['cardinality']}]")
+        elif a["kind"] == "relation" and not onto.relation(a["subject"]):
+            new_rels.append(f"{a['domain']} → {a['range']} [{a['cardinality']}]")
     return {"new_classes": new_classes, "reused_classes": reused,
             "new_properties": new_props, "new_relations": new_rels}

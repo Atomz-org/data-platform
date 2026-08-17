@@ -140,7 +140,7 @@ def built(tmp_path_factory) -> dict:
     con = duckdb.connect(str(db), read_only=True)
     try:
         result = con.sql("select * from probe")
-        return dict(zip([c[0] for c in result.description], result.fetchone()))
+        return dict(zip([c[0] for c in result.description], result.fetchone(), strict=False))
     finally:
         con.close()
 

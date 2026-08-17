@@ -21,7 +21,6 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Any
 
 from pf import obs
 from pf.kg.impact import impact_of
@@ -122,7 +121,7 @@ def display_schema(table: str) -> str:
 
 def get_local_pipeline_state() -> str:
     """dlt pipeline state for this project (last load ids, schema versions)."""
-    _, project, root = active_project()
+    _, project, _root = active_project()
     states = sorted(Path.home().joinpath(".dlt", "pipelines").glob(f"{project}_*"))
     if not states:
         return "No local dlt pipeline state found. Run the ingest assets first."
@@ -197,7 +196,7 @@ def get_model_details(model: str) -> str:
     from pf.runtime.dbt_runtime import manifest
     _, _, root = active_project()
     m = manifest(root)
-    for uid, node in (m.get("nodes") or {}).items():
+    for _uid, node in (m.get("nodes") or {}).items():
         if node.get("resource_type") == "model" and node.get("name") == model:
             cols = ", ".join((node.get("columns") or {}).keys())
             return (f"{model} ({node.get('config', {}).get('materialized')})\n"
@@ -225,7 +224,6 @@ def list_metrics() -> str:
 
 def get_dimensions(metrics: list[str]) -> str:
     """Dimensions available for the given metrics."""
-    from pf.runtime.dbt_runtime import mf_query
     _, _, root = active_project()
     proc = subprocess.run(
         ["mf", "list", "dimensions", "--metrics", ",".join(metrics)],

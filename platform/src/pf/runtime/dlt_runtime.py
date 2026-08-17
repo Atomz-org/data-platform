@@ -4,8 +4,9 @@ destination wiring, naming, schema contracts and annotation export.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from pf.ontology.annotate import export_annotations
 from pf.runtime.warehouse import Warehouse
