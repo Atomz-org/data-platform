@@ -2531,6 +2531,270 @@ def _register_tool_commands() -> None:
                           f"{type(exc).__name__}[/]", highlight=False)
 
 
+prov_app = typer.Typer(
+    help="Agent action provenance: intent, decision, execution, chain, timestamp.")
+app.add_typer(prov_app, name="provenance")
+
+_STAGE_COLOUR = {"intent": "cyan", "decision": "yellow", "execution": "green"}
+_LEVEL_COLOUR = {"ok": "green", "warn": "yellow", "fail": "red"}
+
+
+@prov_app.command("log")
+def cmd_prov_log(limit: int = typer.Option(20, "--limit", "-n"),
+                 action: str = typer.Option("", "--action",
+                                            help="show one action id in full"),
+                 stage: str = typer.Option("", "--stage",
+                                           help="intent | decision | execution"),
+                 ) -> None:
+    """Recent agent actions, newest last, as the chain recorded them."""
+    from pf.provenance import read_all
+
+    records = read_all(root())
+    if action:
+        records = [r for r in records if r.action_id.startswith(action)]
+    if stage:
+        records = [r for r in records if r.stage == stage]
+    if not records:
+        console.print("[dim]no records — the ledger is empty[/]")
+        return
+
+    t = Table(box=None, pad_edge=False)
+    for c in ("seq", "stage", "action", "actor", "tool", "target", "outcome"):
+        t.add_column(c)
+    for r in records[-limit:]:
+        p = r.payload
+        outcome = p.get("verdict") or p.get("status") or p.get("summary", "")
+        colour = _STAGE_COLOUR.get(r.stage, "white")
+        t.add_row(str(r.seq), f"[{colour}]{r.stage}[/]", r.action_id[:8],
+                  r.actor, r.tool, r.target[:40], str(outcome)[:40])
+    console.print(t)
+    console.print(f"\n[dim]{len(records)} record(s); showing {min(limit, len(records))}[/]")
+
+
+@prov_app.command("verify")
+def cmd_prov_verify(
+    anchors: bool = typer.Option(False, "--anchors",
+                                 help="also check timestamp tokens (needs openssl/ots)"),
+) -> None:
+    """Audit the ledger: integrity, completeness, anchor coverage, oversight.
+
+    Exits non-zero on a failure, so CI can gate a merge on it.
+    """
+    from pf.provenance import report
+
+    rep = report(root(), check_anchors=anchors)
+    console.print(f"[bold]Provenance audit[/]  {rep.records} records, "
+                  f"{rep.actions_total} actions, head seq {rep.head_seq}")
+    if rep.unanchored:
+        console.print(f"[yellow]{rep.unanchored} record(s) written since the "
+                      f"last anchor[/]")
+    console.print()
+    for f in rep.findings:
+        console.print(f"  [{_LEVEL_COLOUR[f.level]}]{f.level.upper():<5}[/] "
+                      f"{f.code:<26} {f.detail}")
+    if rep.breaks:
+        console.print("\n[red]chain breaks[/]")
+        for b in rep.breaks[:20]:
+            console.print(f"  seq {b.seq:<8} {b.kind:<10} {b.detail}")
+    console.print(f"\n[{'green' if rep.ok else 'red'}]"
+                  f"{'PASS' if rep.ok else 'FAIL'}[/]")
+    raise typer.Exit(rep.exit_code)
+
+
+@prov_app.command("anchor")
+def cmd_prov_anchor(
+    kind: str = typer.Option("rfc3161", "--kind",
+                             help="rfc3161 | opentimestamps | both"),
+    url: str = typer.Option("", "--tsa", help="override the TSA endpoint"),
+) -> None:
+    """Timestamp the current chain head with a party outside this repository."""
+    from pf.provenance import anchor as anchor_mod
+
+    picked = ("rfc3161", "opentimestamps") if kind == "both" else (kind,)
+    failed = False
+    for k in picked:
+        if k == "rfc3161":
+            a = anchor_mod.stamp_rfc3161(
+                root(), url=url or anchor_mod.DEFAULT_TSA)
+        elif k == "opentimestamps":
+            a = anchor_mod.stamp_ots(root())
+        else:
+            console.print(f"[red]unknown anchor kind: {k}[/]")
+            raise typer.Exit(2)
+        colour = {"ok": "green", "pending": "yellow"}.get(a.status, "red")
+        console.print(f"[{colour}]{a.status:<8}[/] {a.kind:<15} seq {a.seq}  "
+                      f"{a.path or '-'}")
+        if a.detail:
+            console.print(f"          [dim]{a.detail}[/]")
+        failed = failed or a.status == "failed"
+    raise typer.Exit(1 if failed else 0)
+
+
+@prov_app.command("upgrade")
+def cmd_prov_upgrade() -> None:
+    """Fetch confirmed Bitcoin attestations for pending OpenTimestamps receipts."""
+    from pf.provenance import anchor as anchor_mod
+
+    pending = [a for a in anchor_mod.anchors(root())
+               if a.kind == "opentimestamps" and a.status == "pending"]
+    if not pending:
+        console.print("[dim]no pending OpenTimestamps receipts[/]")
+        return
+    for a in pending:
+        ok, detail = anchor_mod.upgrade_ots(root(), a)
+        console.print(f"[{'green' if ok else 'yellow'}]seq {a.seq}[/] {detail}")
+
+
+@prov_app.command("status")
+def cmd_prov_status() -> None:
+    """Head, anchor coverage, kill-switch state — the one-screen summary."""
+    from pf.provenance import anchors, head, is_revoked
+    from pf.provenance.ledger import enforcing
+
+    h = head(root())
+    console.print(f"[bold]head[/]        seq {h.seq}  {h.hash[:24]}…")
+    mode = ("yes (unrecordable actions are denied)" if enforcing()
+            else "no (fail-open)")
+    console.print(f"[bold]enforcing[/]   {mode}")
+    stopped, why = is_revoked(root())
+    console.print("[bold]kill switch[/] "
+                  + (f"[red]ENGAGED[/] — {why}" if stopped else "clear"))
+    good = [a for a in anchors(root()) if a.status in ("ok", "pending")]
+    if good:
+        last = max(good, key=lambda a: a.seq)
+        lag = h.seq - last.seq
+        console.print(f"[bold]anchored[/]    through seq {last.seq} "
+                      f"({last.kind}, {last.status})"
+                      + (f"  [yellow]{lag} record(s) behind[/]" if lag > 0 else ""))
+    else:
+        console.print("[bold]anchored[/]    [yellow]never[/]")
+
+
+@prov_app.command("revoke")
+def cmd_prov_revoke(
+    actor: str = typer.Argument("*", help="actor to stop, or * for all"),
+    reason: str = typer.Option("", "--reason", "-r"),
+) -> None:
+    """Kill switch. A revoked actor is refused at INTENT, before the gate runs."""
+    from pf.provenance import revoke
+
+    revoke(root(), actor=actor, reason=reason)
+    console.print(f"[red]revoked[/] {actor} — agent actions will be refused. "
+                  f"Undo with `pf provenance reinstate {actor}`.")
+
+
+@prov_app.command("reinstate")
+def cmd_prov_reinstate(actor: str = typer.Argument("*")) -> None:
+    """Release the kill switch for an actor."""
+    from pf.provenance import reinstate
+
+    reinstate(root(), actor=actor)
+    console.print(f"[green]reinstated[/] {actor}")
+
+
+@prov_app.command("approve")
+def cmd_prov_approve(action_id: str = typer.Argument(...),
+                     note: str = typer.Option("", "--note", "-m")) -> None:
+    """Record human approval for an action held for oversight."""
+    from pf.provenance import approve
+
+    entry = approve(root(), action_id, note=note)
+    console.print(f"[green]approved[/] {action_id[:12]}… by {entry['approver']}")
+
+
+@prov_app.command("export")
+def cmd_prov_export(
+    dest: Path = typer.Argument(..., help="directory to write the bundle to"),
+) -> None:
+    """Write a self-contained evidence bundle: chain, anchors, and a verifier.
+
+    What an auditor receives. The verifier is stdlib-only and does not import
+    this platform, so checking the evidence never requires trusting the system
+    that produced it.
+    """
+    import shutil
+
+    from pf.provenance.chain import chain_dir
+
+    src = chain_dir(root())
+    if not src.exists():
+        console.print("[red]no ledger to export[/]")
+        raise typer.Exit(1)
+    dest.mkdir(parents=True, exist_ok=True)
+
+    copied = []
+    for name in ("chain.jsonl", "anchors.jsonl", "approvals.jsonl", "revoked.json"):
+        p = src / name
+        if p.exists():
+            shutil.copy2(p, dest / name)
+            copied.append(name)
+    if (src / "anchors").is_dir():
+        shutil.copytree(src / "anchors", dest / "anchors", dirs_exist_ok=True)
+        copied.append("anchors/")
+
+    verifier = root() / "platform" / "scripts" / "verify_provenance.py"
+    if verifier.exists():
+        shutil.copy2(verifier, dest / "verify_provenance.py")
+        copied.append("verify_provenance.py")
+
+    (dest / "README.md").write_text(
+        "# Agent action provenance — evidence bundle\n\n"
+        "Every action an AI agent took, in five stages: what it intended, what\n"
+        "the policy gate decided, what it executed, how the records are linked,\n"
+        "and who attested to when they existed.\n\n"
+        "## Check it yourself\n\n"
+        "```\npython3 verify_provenance.py .\n```\n\n"
+        "Stdlib only. It does not import the platform that produced this bundle:\n"
+        "recompute the SHA-256 of each record's canonical JSON, confirm each\n"
+        "`prev` matches the previous record's `hash`, and the chain is proved\n"
+        "internally consistent without trusting us.\n\n"
+        "## Check the timestamps\n\n"
+        "The chain alone proves nobody edited the middle. The anchors in\n"
+        "`anchors/` prove when the end existed, signed by a party with no stake\n"
+        "in this record:\n\n"
+        "```\nopenssl ts -verify -digest <head-hash> -in anchors/<n>.tsr "
+        "-CAfile <tsa-ca.pem>\nots verify anchors/<n>.head.ots\n```\n\n"
+        "`anchors.jsonl` names the head hash each token covers.\n",
+        encoding="utf-8")
+    copied.append("README.md")
+
+    console.print(f"[green]exported[/] {len(copied)} item(s) to {dest}")
+    for c in copied:
+        console.print(f"  {c}")
+
+
+@prov_app.command("sync")
+def cmd_prov_sync() -> None:
+    """Replay the chain into DuckDB so the UI and SQL can query it.
+
+    The chain is the record; this is a mirror. It is rebuilt from scratch every
+    time rather than appended to, because a mirror that has drifted from the
+    chain should be replaced by the chain, not reconciled with it.
+    """
+    from pf import obs
+    from pf.provenance import read_all
+
+    records = read_all(root())
+    with obs.connect() as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS provenance_records (
+                seq BIGINT PRIMARY KEY, action_id TEXT, stage TEXT,
+                ts TIMESTAMP, actor TEXT, session TEXT, "group" TEXT,
+                project TEXT, tool TEXT, target TEXT, verdict TEXT,
+                status TEXT, payload JSON, prev TEXT, hash TEXT
+            );
+        """)
+        con.execute("DELETE FROM provenance_records")
+        for r in records:
+            con.execute(
+                "INSERT INTO provenance_records VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [r.seq, r.action_id, r.stage, r.ts, r.actor, r.session, r.group,
+                 r.project, r.tool, r.target, r.payload.get("verdict"),
+                 r.payload.get("status"), json.dumps(r.payload), r.prev, r.hash])
+    console.print(f"[green]synced[/] {len(records)} record(s) into "
+                  f"provenance_records")
+
+
 _register_tool_commands()
 
 

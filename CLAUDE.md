@@ -24,6 +24,14 @@ Multi-tenant agentic data platform. Infra is shared; business logic is not.
 **Never read another group or another sister project.** Business logic does not
 transfer between entities — an assumption carried across is a bug.
 
+- **Agent actions are recorded, not assumed.** Every action runs through five
+  stages — intent (before), decision (the gate), execution (after), a SHA-256
+  chain linking them, and an RFC 3161 + OpenTimestamps anchor over the head.
+  The hooks write stages 01–03 for tool calls, `pf.agents.base` for LLM calls,
+  `pf.provenance.action()` for everything else. `provenance/**` is denied to
+  every agent: you may not edit the record of what you did. `pf provenance
+  verify` is the audit and blocks CI; `docs/GOVERNANCE.md` is the reference.
+
 - **The session layer** ships as the `power-tools` toolkit: audit and shipping
   commands, read-only verification subagents, format/notify hooks, and the `pf`
   MCP server. That server is what makes `kg_search`, `kg_neighbors`, `kg_path`

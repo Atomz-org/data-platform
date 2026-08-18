@@ -105,3 +105,20 @@ connection.json
 # is 200MB of dependencies; both are reproducible from package-lock.json.
 **/ui/static/dist/
 **/ui/web/node_modules/
+
+# The provenance ledger (pf.provenance). Runtime evidence, not source: it is
+# append-only and machine-written, so every branch would conflict on it and a
+# merge would silently reorder a hash chain into an invalid one.
+#
+# Not committing it is deliberate, and the durability story is elsewhere:
+# `pf provenance anchor` puts the head hash beyond this repository (a TSA
+# signature, a Bitcoin attestation), and `pf provenance export` produces the
+# evidence bundle that gets archived. What git would add is merge conflicts on
+# a file whose whole value is that nobody edited it.
+#
+# The anchor tokens are the exception — they are small, immutable proofs, and
+# an auditor needs them alongside the chain.
+# (`/provenance/*` rather than `/provenance/`: git does not descend into an
+# excluded directory, so a negation under one can never re-include anything.)
+/provenance/*
+!/provenance/anchors/
