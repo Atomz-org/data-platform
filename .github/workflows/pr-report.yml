@@ -44,16 +44,6 @@ jobs:
         id: report
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          # Feeds gate.yaml's `agent_pr` label signal. Without it the label
-          # branch of that policy is dead in CI — only the branch-prefix and
-          # trailer signals would ever fire, and a reviewer who added
-          # `agent-run` to a PR would watch it do nothing.
-          PF_PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-          # The branch signal must be read from the PR head, not from the ref
-          # checked out. Actions checks a PR out onto a detached
-          # `refs/pull/N/merge`, so `git rev-parse --abbrev-ref HEAD` reports
-          # `HEAD` and every `loop/`-prefixed PR would score as human.
-          PF_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           uv run pf pr report \
             --number "$PR_NUMBER" \

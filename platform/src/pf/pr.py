@@ -81,98 +81,6 @@ def changed_files(root: Path, base: str = "", exclude_deleted: bool = False) -> 
             if ln[3:].strip() and not (exclude_deleted and ln[:2].strip() == "D")]
 
 
-# ------------------------------------------------------- agent authorship ----
-#
-# `maxFiles` caps an agent *run*. Pull requests were exempted wholesale, which
-# quietly exempted agent-opened PRs too — the exact case the cap was written
-# for. These functions decide, per PR, whether the run cap applies.
-#
-# The signals live in gate.yaml's `agent_pr` block. Nothing is inferred here
-# beyond reading them, so adding a new kind of bot is a policy edit rather than
-# a code change.
-
-def _pr_labels() -> list[str]:
-    """Labels on this PR, from whatever CI put in the environment.
-
-    `PF_PR_LABELS` is the explicit input. `GITHUB_PR_LABELS` is accepted because
-    a workflow that already extracts them for something else should not have to
-    set a second variable with the same content.
-    """
-    raw = os.environ.get("PF_PR_LABELS") or os.environ.get("GITHUB_PR_LABELS") or ""
-    return [x.strip().lower() for x in raw.replace(",", "\n").splitlines() if x.strip()]
-
-
-def _pr_branch(root: Path, branch: str = "") -> str:
-    """The PR's own branch name, which is not what git reports in CI.
-
-    GitHub Actions checks a pull request out onto a detached
-    `refs/pull/N/merge`, so `git rev-parse --abbrev-ref HEAD` returns the string
-    "HEAD". Matching branch prefixes against that silently scores every
-    `loop/`-prefixed PR as human — the policy would look configured and enforce
-    nothing, which is the same class of failure as the uninstalled pre-commit
-    hook this whole change came from.
-
-    `GITHUB_HEAD_REF` is set automatically by Actions on `pull_request` events,
-    so this works even in a workflow that sets no variables of ours.
-    """
-    for candidate in (branch,
-                      os.environ.get("PF_PR_BRANCH", ""),
-                      os.environ.get("GITHUB_HEAD_REF", "")):
-        if candidate and candidate != "HEAD":
-            return candidate
-    detected = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
-    return "" if detected == "HEAD" else detected
-
-
-def agent_authored(root: Path, base: str = "", branch: str = "") -> tuple[bool, str]:
-    """Is this PR an agent's work? Returns (verdict, the signal that decided it).
-
-    The reason string is returned rather than logged because the report has to
-    say *why* the cap applied. "BLOCKED: 21 files" invites an argument; "BLOCKED:
-    21 files, and this PR is agent-authored (branch starts with `loop/`)" names
-    the rule and the evidence, so the answer is either "correct" or "fix the
-    label" instead of "the gate is broken again".
-    """
-    from pf.loops.gate import load_policy
-
-    # An explicit instruction wins over every heuristic, in both directions. A
-    # workflow that *knows* what it is gets to say so, and a human who needs to
-    # land a large reviewed change gets an escape hatch that is visible in the
-    # workflow file rather than a `--no-verify` nobody sees.
-    override = os.environ.get("PF_PR_AGENT", "").strip().lower()
-    if override in ("1", "true", "yes"):
-        return True, "PF_PR_AGENT is set"
-    if override in ("0", "false", "no"):
-        return False, "PF_PR_AGENT explicitly disables the agent cap"
-
-    policy = (load_policy(root) or {}).get("agent_pr") or {}
-    if not policy:
-        return False, "gate.yaml declares no `agent_pr` signals"
-
-    labels = _pr_labels()
-    for want in (x.lower() for x in policy.get("labels", [])):
-        if want in labels:
-            return True, f"PR carries the `{want}` label"
-
-    branch = _pr_branch(root, branch)
-    for prefix in policy.get("branch_prefixes", []):
-        if branch and branch.startswith(prefix):
-            return True, f"branch `{branch}` starts with `{prefix}`"
-
-    trailers = policy.get("trailers", [])
-    if trailers:
-        # Only the PR's own commits, not all of history — otherwise one
-        # agent-authored commit anywhere behind the branch point marks every
-        # later PR as agent work.
-        rng = f"{base}..HEAD" if base else "origin/main..HEAD"
-        body = _git(root, "log", "--format=%B", rng)
-        for t in trailers:
-            if t.lower() in body.lower():
-                return True, f"a commit in this PR carries `{t}`"
-
-    return False, "no agent signal matched — human PR, run cap not applied"
-
-
 # ------------------------------------------------------------------ model ----
 @dataclass
 class ProjectSlice:
@@ -214,11 +122,6 @@ class PRReport:
     vendor: list[dict[str, Any]] = field(default_factory=list)
     platform_touched: list[str] = field(default_factory=list)
     readiness_score: int = 0
-    #: Whether the per-run `maxFiles` cap applied to this PR, and the signal that
-    #: decided it. Recorded even when it did not apply, so the report can say
-    #: which rule was in force rather than leaving its absence to be inferred.
-    agent_authored: bool = False
-    agent_signal: str = ""
 
     @property
     def verdict(self) -> str:
@@ -240,8 +143,6 @@ class PRReport:
             "gate_denied": self.gate_denied, "vendor": self.vendor,
             "platform_touched": self.platform_touched,
             "readiness_score": self.readiness_score,
-            "agent_authored": self.agent_authored,
-            "agent_signal": self.agent_signal,
         }
 
 
@@ -249,7 +150,7 @@ class PRReport:
 def build(root: str | Path, number: int = 0, base: str = "", title: str = "") -> PRReport:
     from pf.loops.audit import audit as loop_audit
     from pf.loops.audit import project_readiness
-    from pf.loops.gate import check_path, load_policy, nodes_for, project_for
+    from pf.loops.gate import check_path, nodes_for, project_for
 
     root = Path(root)
     files = [f for f in changed_files(root, base) if f]
@@ -262,23 +163,10 @@ def build(root: str | Path, number: int = 0, base: str = "", title: str = "") ->
     # per-run `maxFiles` cap, which exists to keep one *agent run* small. A pull
     # request legitimately touches more files than an agent should in one go, and
     # conflating the two makes every real PR report BLOCK for the wrong reason.
-    gated = changed_files(root, base, exclude_deleted=True)
     denied = [f"{g.path}: {g.message}"
-              for g in (check_path(f, root) for f in gated)
+              for g in (check_path(f, root)
+                        for f in changed_files(root, base, exclude_deleted=True))
               if g.blocked]
-
-    # …with one exception. That reasoning holds for a *human* PR. An agent that
-    # opens a pull request instead of committing in a loop run was, until this
-    # branch, exempt from the very cap written to constrain it — the enforcement
-    # point moved and the rule did not follow. So the cap is applied here when
-    # the PR is agent-authored, per gate.yaml's `agent_pr` signals.
-    is_agent, signal = agent_authored(root, base, branch)
-    if is_agent:
-        limit = int((load_policy(root) or {}).get("maxFiles", 0) or 0)
-        if limit and len(gated) > limit:
-            denied.append(
-                f"maxFiles:{limit}: {len(gated)} files — this PR is agent-authored "
-                f"({signal}), so the per-run cap applies; split the change")
 
     readiness = {(r.group, r.project): r for r in project_readiness(root)}
 
@@ -311,7 +199,6 @@ def build(root: str | Path, number: int = 0, base: str = "", title: str = "") ->
         files=files, projects=slices, gate_denied=denied,
         vendor=_vendor_slice(root), platform_touched=platform_touched,
         readiness_score=score,
-        agent_authored=is_agent, agent_signal=signal,
     )
 
 
@@ -588,16 +475,6 @@ def markdown(r: PRReport) -> str:
         out += ["### 🚫 Path gate", ""]
         out += [f"- `{d}`" for d in r.gate_denied]
         out.append("")
-
-    # State the authorship verdict even when nothing fired. A reader who
-    # knows `maxFiles` exists and sees a 30-file PR pass should be able to
-    # tell that the cap was deliberately not applied, rather than assume it
-    # was applied and broken — which is the question that started this.
-    if r.agent_signal:
-        verdict = ("agent-authored — the `maxFiles` run cap applies"
-                   if r.agent_authored else
-                   "human-authored — the `maxFiles` run cap does not apply")
-        out += [f"<sub>{verdict} ({r.agent_signal}).</sub>", ""]
 
     if r.projects:
         out += ["### Projects touched", "",
