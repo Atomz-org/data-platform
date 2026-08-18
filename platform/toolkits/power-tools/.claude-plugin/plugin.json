@@ -1,0 +1,8 @@
+{
+  "name": "power-tools",
+  "displayName": "Platform power tools",
+  "version": "0.1.0",
+  "description": "Audit and shipping commands, verification subagents, format/notify hooks, and the pf MCP server",
+  "author": { "name": "data-platform" },
+  "keywords": ["audit", "review", "impact", "mcp", "hooks"]
+}

@@ -51,7 +51,7 @@ def _target_name(col: str, role: str, rename: dict[str, str]) -> str:
 
 def render_staging_sql(ann: Annotation, prefix: str = "stg") -> str:
     """Render one staging model. Deterministic, so regeneration is a no-op diff."""
-    onto = load_ontology()
+    load_ontology()
     src, table = ann.source or "raw", ann.resource
     lines = [HEADER.format(source=src, table=table, concept=ann.concept,
                            grain=ann.grain or "undeclared")]
@@ -105,14 +105,14 @@ def render_staging_yml(anns: list[Annotation], prefix: str = "stg") -> str:
         src = ann.source or "raw"
         name = f"{prefix}_{src}__{ann.resource}"
         out.append(f"  - name: {name}")
-        out.append(f"    description: >")
+        out.append("    description: >")
         out.append(f"      {ann.description or ann.resource}. Cleaned 1:1 from "
                    f"`{src}.{ann.resource}`; grain: {ann.grain or 'undeclared'}.")
-        out.append(f"    meta:")
+        out.append("    meta:")
         out.append(f"      concept: {ann.concept}")
         out.append(f"      grain: {ann.grain or 'undeclared'}")
-        out.append(f"      layer: staging")
-        out.append(f"    columns:")
+        out.append("      layer: staging")
+        out.append("    columns:")
         for col, role in ann.roles.items():
             target = _target_name(col, role, ann.rename)
             out.append(f"      - name: {target}")

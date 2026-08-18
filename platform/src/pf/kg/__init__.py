@@ -1,22 +1,22 @@
 """Knowledge graph: build, query, render context cards, compute blast radius."""
 
-from pf.kg.store import Edge, Graph, Node, open_graph
 from pf.kg.build import build_graph
-from pf.kg.query import kg_search, kg_neighbors, kg_path
-from pf.kg.card import render_project_card, render_group_card
+from pf.kg.card import render_group_card, render_project_card
 from pf.kg.impact import ImpactReport, impact_of
+from pf.kg.query import kg_neighbors, kg_path, kg_search
+from pf.kg.store import Edge, Graph, Node, open_graph
 
 __all__ = [
-    "Node",
     "Edge",
     "Graph",
-    "open_graph",
+    "ImpactReport",
+    "Node",
     "build_graph",
-    "kg_search",
+    "impact_of",
     "kg_neighbors",
     "kg_path",
-    "render_project_card",
+    "kg_search",
+    "open_graph",
     "render_group_card",
-    "ImpactReport",
-    "impact_of",
+    "render_project_card",
 ]

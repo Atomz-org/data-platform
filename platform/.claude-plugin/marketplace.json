@@ -9,6 +9,11 @@
       "description": "Workspace rules, secrets handling, routing"
     },
     {
+      "name": "power-tools",
+      "source": "./toolkits/power-tools",
+      "description": "Audit and shipping commands, verification subagents, format/notify hooks, and the pf MCP server"
+    },
+    {
       "name": "dlt-ingest",
       "source": "./toolkits/dlt-ingest",
       "description": "Find sources and build dlt pipelines"
@@ -92,6 +97,11 @@
       "name": "project-onboarding",
       "source": "./toolkits/project-onboarding",
       "description": "Adopt a repository and align it with the platform, stage by stage"
+    },
+    {
+      "name": "viz-standards",
+      "source": "./toolkits/viz-standards",
+      "description": "Chart and diagram conventions: form, colour, mermaid"
     }
   ]
 }

@@ -31,10 +31,11 @@ two of them.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from importlib import import_module
 from importlib.metadata import entry_points
-from typing import Any, Iterable
+from typing import Any
 
 from pf.capabilities import Capability
 from pf.tools.spec import InvalidTool, Tool
@@ -94,7 +95,7 @@ def discover() -> tuple[dict[str, Tool], list[DiscoveryError]]:
     for mod_name in BUILTIN_MODULES:
         try:
             mod = import_module(mod_name)
-            add(_coerce(getattr(mod, "TOOL"), mod_name), mod_name)
+            add(_coerce(mod.TOOL, mod_name), mod_name)
         except Exception as exc:  # noqa: BLE001 — a broken built-in is still data
             errors.append(DiscoveryError(mod_name, f"{type(exc).__name__}: {exc}"))
 

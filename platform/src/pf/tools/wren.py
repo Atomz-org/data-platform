@@ -201,7 +201,7 @@ def query(project_dir: Path, sql: str, limit: int = 200) -> dict[str, Any]:
         try:
             rel = con.sql(statement)
             columns = list(rel.columns)
-            rows = [dict(zip(columns, r)) for r in rel.fetchmany(limit)]
+            rows = [dict(zip(columns, r, strict=False)) for r in rel.fetchmany(limit)]
         finally:
             con.close()
     except Exception as exc:  # noqa: BLE001 — a failed query is a result, not a crash

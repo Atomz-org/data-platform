@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +43,7 @@ TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime(TS_FMT)
+    return datetime.now(UTC).strftime(TS_FMT)
 
 
 def _git(root: Path, *args: str) -> str:
@@ -60,9 +60,24 @@ def _authored(root: Path, rel: str) -> str:
 
     Object `created_at` tracks the policy, not the export. Using `now()` here
     would make every export churn and drown a real policy change in noise.
+
+    `%cI` and convert, not `--date=format-local`. `format-local` renders the
+    commit in *the exporting machine's* timezone, and TS_FMT then appends a
+    literal `Z` — so the value claimed UTC while holding local time, and the
+    same commit exported to two different stamps depending on where the export
+    ran:
+
+        host, TZ=+02:00     2026-08-13T22:01:06Z     <- wrong, and churned
+        container, TZ=UTC   2026-08-13T20:01:06Z     <- the real instant
+        git's own answer    2026-08-13T22:01:06+02:00
+
+    Which defeated the whole point of not using `now()`: the manifest still
+    churned, 42 entries at a time, whenever it was regenerated somewhere else.
+    `%cI` is the committer date with its true offset, and `_as_ts` normalises
+    it — the same conversion the ledger timestamps already go through.
     """
-    out = _git(root, "log", "-1", f"--date=format-local:{TS_FMT}", "--format=%cd", "--", rel)
-    return out or _now()
+    out = _git(root, "log", "-1", "--format=%cI", "--", rel)
+    return _as_ts(out) or _now()
 
 
 def _digest(root: Path, rel: str) -> str:
@@ -168,7 +183,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
             p = config_file(project_dir)
             if not p.exists():
                 return Observation("unknown", now, "recce.yml not generated yet")
-            ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+            ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
             return Observation("pass", ts, str(p.relative_to(root)))
 
         p = state_file(project_dir)
@@ -176,7 +191,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
             return Observation(
                 "unknown", now,
                 "no diff recorded" if has_baseline(project_dir) else "no baseline captured")
-        ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+        ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
         return Observation("pass", ts, str(p.relative_to(root)))
 
     if kind == "impact_reports":
@@ -194,7 +209,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
     for base in ([project_dir] if project_dir else []) + [root]:
         p = base / rel
         if p.exists():
-            ts = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).strftime(TS_FMT)
+            ts = datetime.fromtimestamp(p.stat().st_mtime, UTC).strftime(TS_FMT)
             return Observation("pass", ts, str(p.relative_to(root)))
     return Observation("unknown", now, f"{rel} not produced yet")
 
@@ -253,7 +268,7 @@ def _as_ts(value: str) -> str:
     if not value:
         return ""
     try:
-        return datetime.fromisoformat(value).astimezone(timezone.utc).strftime(TS_FMT)
+        return datetime.fromisoformat(value).astimezone(UTC).strftime(TS_FMT)
     except ValueError:
         return ""
 

@@ -8,10 +8,10 @@ READ_ONLY so a roll-up can never corrupt a sister.
 from __future__ import annotations
 
 import os
-from contextlib import contextmanager
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
 import duckdb
 
@@ -28,7 +28,7 @@ class Warehouse:
     motherduck: str | None = None
 
     @classmethod
-    def for_project(cls, project_dir: str | Path, group: str, project: str) -> "Warehouse":
+    def for_project(cls, project_dir: str | Path, group: str, project: str) -> Warehouse:
         root = Path(project_dir)
         md = os.environ.get("PF_MOTHERDUCK_DB")
         return cls(
@@ -70,10 +70,9 @@ class Warehouse:
         con = duckdb.connect(self.dsn, read_only=read_only)
         try:
             for ext in EXTENSIONS:
-                try:
+                # offline or already present — not fatal
+                with suppress(duckdb.Error):
                     con.execute(f"INSTALL {ext}; LOAD {ext};")
-                except duckdb.Error:
-                    pass  # offline or already present — not fatal
             yield con
         finally:
             con.close()
@@ -94,10 +93,8 @@ class Warehouse:
                 yield con
             finally:
                 for alias in sisters:
-                    try:
+                    with suppress(duckdb.Error):
                         con.execute(f"DETACH {alias}")
-                    except duckdb.Error:
-                        pass
 
 
 def preview(con: duckdb.DuckDBPyConnection, table: str, limit: int = 5) -> dict:

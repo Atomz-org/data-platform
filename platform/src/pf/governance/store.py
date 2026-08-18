@@ -35,7 +35,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -152,7 +152,7 @@ def history(root: Path, surface: str = "", group: str = "",
             cols = [d[0] for d in con.description]
     except Exception:  # noqa: BLE001 — an unwritten audit table is "no history"
         return []
-    return [dict(zip(cols, r)) for r in rows]
+    return [dict(zip(cols, r, strict=False)) for r in rows]
 
 
 # ------------------------------------------------------------------ write --
@@ -231,7 +231,7 @@ def apply_edit(root: Path, surface: str, key_path: str, after: Any, *,
         raise EditRejected(f"{key_path} is already {after!r}")
 
     row = {
-        "id": str(uuid.uuid4()), "ts": datetime.now(timezone.utc),
+        "id": str(uuid.uuid4()), "ts": datetime.now(UTC),
         "actor": actor or "unknown", "surface": surface, "scope": group,
         "key_path": key_path, "before": json.dumps(before),
         "after": json.dumps(after), "reason": reason, "applied": False,

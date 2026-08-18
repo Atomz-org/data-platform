@@ -12,9 +12,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from pf.kg.store import Edge, Node, open_graph
 from pf.ontology.annotate import load_annotations
 from pf.ontology.model import load_group_ontology, load_ontology
-from pf.kg.store import Edge, Graph, Node, open_graph
 
 
 def cid(name: str) -> str: return f"concept:{name}"

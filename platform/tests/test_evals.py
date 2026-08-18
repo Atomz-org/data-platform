@@ -13,13 +13,15 @@ import json
 from pathlib import Path
 
 import pytest
-from pydantic import BaseModel
-
 from pf.evals.case import AGENT_INPUTS, CaseError, discover, load_case, validate_case
 from pf.evals.grade import MISSING, grade, resolve
 from pf.evals.template import (
-    Binding, TemplateError, load_template, render,
+    Binding,
+    TemplateError,
+    load_template,
+    render,
 )
+from pydantic import BaseModel
 
 
 # ------------------------------------------------------------- fixtures ----

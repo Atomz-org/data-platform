@@ -52,14 +52,29 @@ from pathlib import Path
 from typing import Any
 
 from pf.tools.config import (
-    ToolConfig, config_path, enabled, enabled_names, resolve, write,
+    ToolConfig,
+    config_path,
+    enabled,
+    enabled_names,
+    resolve,
+    write,
 )
 from pf.tools.registry import (
-    DiscoveryError, all_tools, discover, for_scope, get, register_capabilities,
+    DiscoveryError,
+    all_tools,
+    discover,
+    for_scope,
+    get,
+    register_capabilities,
     tool_capabilities,
 )
 from pf.tools.spec import (
-    DbtBinding, InvalidTool, Requirement, Surface, Tool, ToolContext,
+    DbtBinding,
+    InvalidTool,
+    Requirement,
+    Surface,
+    Tool,
+    ToolContext,
     ToolContribution,
 )
 
@@ -78,6 +93,38 @@ def _project_dir(root: Path, group: str, project: str) -> Path:
 
 
 # -------------------------------------------------------------- bootstrap --
+def bootstrap_order(enabled_cfg: dict[str, Any],
+                    tools: dict[str, Any]) -> list[tuple[str, Any]]:
+    """Enabled tools in dependency order — every `Tool.after` before its dependant.
+
+    Alphabetical within a level, so the order is stable and a diff of bootstrap
+    output does not move when an unrelated tool is installed.
+
+    A cycle cannot deadlock the scaffolder: when nothing is left that has all
+    its predecessors satisfied, the remainder is emitted alphabetically. A tool
+    graph is three or four nodes declared in this repository, so a cycle is a
+    bug to notice rather than a condition to handle gracefully — but it must not
+    be the reason `pf new-project` hangs.
+    """
+    pending = dict(sorted(enabled_cfg.items()))
+    done: set[str] = set()
+    out: list[tuple[str, Any]] = []
+    while pending:
+        ready = [
+            n for n in pending
+            # An `after` naming a tool that is not enabled here is satisfied:
+            # ordering behind something absent is not a reason to refuse to run.
+            if all(dep in done or dep not in pending
+                   for dep in getattr(tools.get(n), "after", ()) or ())
+        ]
+        if not ready:
+            ready = list(pending)
+        for n in ready:
+            out.append((n, pending.pop(n)))
+            done.add(n)
+    return out
+
+
 def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     """Run every enabled tool's bootstrap hook. Idempotent, never raises.
 
@@ -85,7 +132,7 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     a tool is a decision about the project, installing it is a fact about the
     machine, and a laptop without the extra should not turn every project red.
 
-    Unless it declares `offline_bootstrap`, in which case the hook runs anyway.
+    Unless it declares `offline`, in which case the hook runs anyway.
     A bootstrap that only projects the project into a file needs nothing
     installed, and skipping it made the artefacts depend on which machine ran
     the scaffolder — the one thing scaffolding must not do.
@@ -96,14 +143,14 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     tools = all_tools()
     d = _project_dir(root, group, project)
 
-    for name, cfg in sorted(enabled(root, group, project).items()):
+    for name, cfg in bootstrap_order(enabled(root, group, project), tools):
         tool = tools.get(name)
         if tool is None:
             results.append(StepResult(f"tool:{name}", "failed",
                                       "enabled but not registered"))
             continue
         missing = tool.missing()
-        if missing and not tool.offline_bootstrap:
+        if missing and not tool.offline:
             results.append(StepResult(
                 f"tool:{name}", "skipped",
                 "not installed — " + ", ".join(
@@ -147,7 +194,11 @@ def dagster_contributions(root: Path, group: str, project: str,
 
     for name, cfg in sorted(enabled(root, group, project).items()):
         tool = tools.get(name)
-        if tool is None or tool.missing():
+        # `offline` tools contribute even with a requirement missing: their
+        # assets do not drive the binary. Gating on `missing()` alone made a
+        # container without the `metadata` CLI serve every code location with
+        # the catalogue asset quietly gone, which reads as "the tool is off".
+        if tool is None or (tool.missing() and not tool.offline):
             continue
         try:
             hook = tool.hook("dagster")

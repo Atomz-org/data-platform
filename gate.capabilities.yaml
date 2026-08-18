@@ -12,6 +12,7 @@ denylist:
 - '**/mdl/connection.json'
 - '**/catalog/ingestion.yaml'
 - '**/catalog/openmetadata.json'
+- '**/.github/workflows/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'

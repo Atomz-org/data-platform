@@ -23,6 +23,25 @@ profile diff. **Edit the roles, not the config**; `pf bootstrap` regenerates it.
 Both are gate-denied for the same reason `target/` is: hand-editing a recorded
 diff makes the review lie.
 
+## Where the artefacts live
+
+Not in git — in the artefact store (`docs/ARTIFACTS.md`). The baseline is
+published under the ref it was built from and pulled by anything diffing
+against that ref; the recorded review is published under the branch under
+review. The commands above do both without being asked.
+
+```bash
+pf artifacts status                          # is a store configured, and reachable
+pf artifacts pull acme acme-rollup      # baseline + review onto this machine
+pf artifacts ls acme acme-rollup        # what has been published
+```
+
+With no store configured everything stays local, which is the right behaviour
+on a laptop that built its own baseline ten seconds ago. In CI it is not: a
+runner has code and no warehouse, so an unconfigured store there means the
+review reports *not exercised* rather than green. Set the two secrets named in
+`docs/ARTIFACTS.md`.
+
 ## In Dagster
 
 The `recce_review` asset runs downstream of this project's marts and attaches the

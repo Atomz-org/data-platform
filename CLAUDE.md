@@ -24,5 +24,13 @@ Multi-tenant agentic data platform. Infra is shared; business logic is not.
 **Never read another group or another sister project.** Business logic does not
 transfer between entities — an assumption carried across is a bug.
 
+- **The session layer** ships as the `power-tools` toolkit: audit and shipping
+  commands, read-only verification subagents, format/notify hooks, and the `pf`
+  MCP server. That server is what makes `kg_search`, `kg_neighbors`, `kg_path`
+  and `impact_analysis` exist — ask the graph before reading files, and run
+  `impact_analysis` before changing a column, a model or a metric.
+  `docs/CLAUDE-CODE.md` is the runbook; read it when changing that layer, not
+  while working.
+
 To work on a project: `uv run pf work <group> <project>` (launches with that cwd).
 Everything else: `uv run pf --help`.

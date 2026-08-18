@@ -10,10 +10,11 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import duckdb
 
@@ -97,7 +98,7 @@ def connect(root: str | Path | None = None, read_only: bool = False) -> Iterator
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def estimate_cost(model: str, input_tokens: int, output_tokens: int,
@@ -185,4 +186,4 @@ def query(sql: str, params: list | None = None, root: str | Path | None = None) 
     with connect(root, read_only=True) as con:
         cur = con.execute(sql, params or [])
         cols = [d[0] for d in cur.description]
-        return [dict(zip(cols, row)) for row in cur.fetchall()]
+        return [dict(zip(cols, row, strict=False)) for row in cur.fetchall()]

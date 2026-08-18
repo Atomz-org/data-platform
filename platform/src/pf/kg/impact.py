@@ -12,12 +12,11 @@ ontology, not a graph. Cross-entity blast radius has to be assessed in the
 
 from __future__ import annotations
 
-import json
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from pf.kg.store import Graph, Node, open_graph
+from pf.kg.store import Node, open_graph
 
 # Edges that carry impact downstream. `has_column` is walked upward instead, so
 # that changing a column implicates its parent model.
@@ -61,8 +60,8 @@ class ImpactReport:
 
         icon = {"breaking": "⛔", "review": "⚠️ ", "safe": "✅"}[self.severity]
         lines = [
-            f"{icon} Changing `{self.root}` ({self.root_kind}) affects "
-            f"{self.total} downstream object(s) — severity: {self.severity.upper()}",
+            (f"{icon} Changing `{self.root}` ({self.root_kind}) affects "
+            f"{self.total} downstream object(s) — severity: {self.severity.upper()}"),
             "",
         ]
         def section(title: str, ns: list[Node]) -> None:

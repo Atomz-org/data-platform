@@ -390,7 +390,7 @@ def _merge_dbt_project(s: Survey, target: Path) -> str:
         current = block.get(our_name)
         # Unrecognised directories were filed under marts/, so their config has
         # to follow them there too.
-        mapping = {**s.layer_mapping, **{u: "marts" for u in s.unmapped_layers}}
+        mapping = {**s.layer_mapping, **dict.fromkeys(s.unmapped_layers, "marts")}
         merged = _remap_layers(incoming, mapping)
         # Ours last, so the platform's materialisation and schema settings win
         # any key the source also sets.

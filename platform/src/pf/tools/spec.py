@@ -45,8 +45,9 @@ from __future__ import annotations
 import importlib
 import os
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pf.capabilities import Capability
 
@@ -166,18 +167,38 @@ class Tool:
     #: a tool nobody discovers, and the alternative was a hardcoded list in the
     #: scaffolder that every new tool had to remember to edit.
     default_enabled: bool = False
-    #: Whether this tool's `bootstrap` hook runs even when its requirements are
-    #: missing. Off by default, because most bootstraps drive the binary.
+    #: Whether this tool's hooks run even when its requirements are missing.
+    #: Off by default, because most hooks drive the binary.
     #:
-    #: It exists for tools whose bootstrap is a pure *projection* — it reads the
-    #: project and writes a file, and the client is only needed later to send
-    #: that file somewhere. OpenMetadata is the case: skipping its bootstrap on
-    #: a laptop with no `metadata` CLI meant a project scaffolded there had no
-    #: catalogue artefacts at all, so the integration silently depended on who
-    #: ran the scaffolder. A tool setting this must degrade on its own — the
-    #: hook is called with the requirement genuinely absent.
-    offline_bootstrap: bool = False
+    #: It exists for tools whose work is a pure *projection* — read the project,
+    #: write a file or call an HTTP API — where the declared binary is needed
+    #: only by one command. OpenMetadata is the case twice over:
+    #:
+    #:   bootstrap  skipping it on a laptop with no `metadata` CLI meant a
+    #:              project scaffolded there had no catalogue artefacts at all,
+    #:              so the integration depended on who ran the scaffolder.
+    #:   dagster    the `catalog_sync` asset regenerates local projections and
+    #:              publishes over REST. It needs no CLI, but the contribution
+    #:              was gated on `missing()`, so a container without the CLI
+    #:              served 8 code locations with the asset silently absent —
+    #:              which looks like the tool is off rather than unavailable.
+    #:
+    #: A tool setting this must degrade on its own: the hook is called with the
+    #: requirement genuinely absent, and has to say so rather than crash.
+    offline: bool = False
     requires: tuple[Requirement, ...] = ()
+    #: Tools whose bootstrap must have run before this one's. Names, not
+    #: objects, so a tool can order itself behind one that is not installed —
+    #: an absent name is simply satisfied.
+    #:
+    #: Bootstrap used to run tools in `sorted()` order, which is alphabetical
+    #: and therefore an accident. It put `openmetadata` before `recce`, and the
+    #: catalogue reads recce's recorded checks to publish them as test cases —
+    #: so on a fresh scaffold the catalogue was built from state recce had not
+    #: written yet, and came out correct-looking and empty. The mirror of
+    #: `Capability.requires`, and for the same reason: ordering should be a
+    #: declared fact rather than dict-insertion luck.
+    after: tuple[str, ...] = ()
     dbt: DbtBinding | None = None
     surface: Surface | None = None
 
@@ -304,6 +325,15 @@ class ToolContribution:
     assets: list[Any] = field(default_factory=list)
     asset_checks: list[Any] = field(default_factory=list)
     resources: dict[str, Any] = field(default_factory=dict)
+    #: Jobs and schedules a tool wants in the Dagster UI.
+    #:
+    #: A tool asset already runs when its upstream does. These exist for the
+    #: other two things an operator needs: to *re-run* just that tool without
+    #: rebuilding the warehouse behind it, and to have it run on a timer when
+    #: nothing upstream moved. Both are one click in the UI once a job exists
+    #: and are otherwise a CLI invocation on somebody's laptop.
+    jobs: list[Any] = field(default_factory=list)
+    schedules: list[Any] = field(default_factory=list)
     #: Surfaced on the project's Definitions metadata, so a tool's UI is
     #: reachable from Dagster without the operator knowing which port it chose.
     metadata: dict[str, Any] = field(default_factory=dict)

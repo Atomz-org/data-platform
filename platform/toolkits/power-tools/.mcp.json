@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pf": {
+      "command": "uv",
+      "args": ["run", "pf", "mcp"],
+      "env": {
+        "PF_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+      }
+    }
+  }
+}

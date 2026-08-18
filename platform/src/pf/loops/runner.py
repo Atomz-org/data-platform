@@ -18,10 +18,11 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 Autonomy = Literal["L1", "L2", "L3"]
 Outcome = Literal["ok", "noop", "escalated", "circuit_open", "gate_blocked", "error"]
@@ -67,7 +68,7 @@ class LoopRun:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 class Ledger:

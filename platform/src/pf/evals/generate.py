@@ -22,7 +22,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pf.evals.template import (
-    Template, discover_templates, render, resolve_bindings, validate_rendered,
+    Template,
+    discover_templates,
+    render,
+    resolve_bindings,
+    validate_rendered,
 )
 
 GENERATED_DIR = "generated"

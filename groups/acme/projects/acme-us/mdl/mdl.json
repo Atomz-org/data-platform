@@ -328,22 +328,8 @@
         "pf.relation": "customer_pays_payment",
         "pf.label": "pays",
         "pf.inverse": "paid by",
-        "pf.description": ""
-      }
-    },
-    {
-      "name": "fct_payments_dim_customers",
-      "models": [
-        "fct_payments",
-        "dim_customers"
-      ],
-      "joinType": "MANY_TO_ONE",
-      "condition": "fct_payments.subscription_id = dim_customers.customer_id",
-      "properties": {
-        "pf.relation": "subscription_settled_by_payment",
-        "pf.label": "settled by",
-        "pf.inverse": "settles",
-        "pf.description": ""
+        "pf.description": "",
+        "pf.also_realises": "customer_holds_subscription"
       }
     }
   ],

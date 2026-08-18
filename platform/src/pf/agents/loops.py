@@ -13,7 +13,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from pf.agents.base import AGENTS, call, cached_prefix
+from pf.agents.base import AGENTS, cached_prefix, call
 
 
 # ------------------------------------------------------------- schemas -----

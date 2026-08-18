@@ -18,9 +18,10 @@ has no sources, no models and no warehouse, and bootstrapping it must still work
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 Status = Literal["ok", "skipped", "failed"]
 
@@ -43,7 +44,7 @@ class Step:
     #: May return several results. A step that fans out over a variable number of
     #: things — one entry per enabled tool — would otherwise have to flatten
     #: itself into a single line, and "3 tools ok" hides which one is broken.
-    run: Callable[[Path, str, str], "StepResult | list[StepResult]"]
+    run: Callable[[Path, str, str], StepResult | list[StepResult]]
 
 
 # ------------------------------------------------------------------ steps --
@@ -98,7 +99,8 @@ def _export_mdl(root: Path, group: str, project: str) -> StepResult:
 
 def _export_owl(root: Path, group: str, project: str) -> StepResult:
     """Platform-level and shared, so it is written once rather than per project."""
-    from pf.projections.owl import export as export_owl, stats
+    from pf.projections.owl import export as export_owl
+    from pf.projections.owl import stats
 
     export_owl(root / "platform" / "src" / "pf" / "ontology" / "ontology.owl")
     s = stats()
@@ -131,7 +133,8 @@ def _export_otop(root: Path, group: str, project: str) -> StepResult:
     evidence is not: the same rule passes in one project and fails in another,
     and a manifest that averaged them would be true of nowhere.
     """
-    from pf.projections.otop import build_manifest, export as export_otop, stats
+    from pf.projections.otop import build_manifest, stats
+    from pf.projections.otop import export as export_otop
 
     d = _pdir(root, group, project)
     export_otop(root, group, project, d)
@@ -176,6 +179,128 @@ def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
     return bootstrap_tools(root, group, project)
 
 
+def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepResult]:
+    """Every default-enabled capability, applied to this project if it is missing.
+
+    The sibling of `_bootstrap_tools`, and it exists for the same failure: a
+    capability used to reach only the projects whose author passed `--with`, so
+    the impact-gate workflow existed for one project out of eight and nobody
+    could see that from inside the other seven.
+
+    Backfill applies a capability only when **every** file it writes is absent,
+    never when some already exist. `pf.capabilities.apply` rewrites each target
+    wholesale, and not every target is fully generated: `transform/profiles.yml`
+    is seeded once and then hand-maintained — projects carry `extensions:` and
+    per-target comments that `PROJECT_TARGETS` does not know about, and
+    `_dbt_wiring` deliberately only *appends* absent targets rather than
+    regenerating it. A partial backfill would silently delete that.
+
+    So a partially-present capability is reported, not applied: switching it on
+    rewrites a file someone edited, and that is a decision to take deliberately
+    with `pf capability-add`. A fresh project has none of the files, so
+    `pf new-project` still gets the whole default set.
+    """
+    from pf.capabilities import CAPABILITIES, defaults, render
+    from pf.capabilities import apply as apply_capability
+
+    d = _pdir(root, group, project)
+    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
+    out: list[StepResult] = []
+
+    for name in defaults():
+        cap = CAPABILITIES[name]
+        # `.github/**` belongs to the repository, not the project — the same
+        # split `pf.capabilities.apply` makes when writing.
+        targets = [
+            (root if rel.startswith(".github/") else d) / rel
+            for rel in (render(r, ctx) for r in cap.files)
+        ]
+        present = [t for t in targets if t.exists()]
+        if len(present) == len(targets):
+            out.append(StepResult(f"capability:{name}", "ok", "present"))
+            continue
+        if present:
+            out.append(StepResult(
+                f"capability:{name}", "skipped",
+                f"{len(present)}/{len(targets)} file(s) already exist "
+                f"(would rewrite {present[0].name}) — "
+                f"`pf capability-add {name} {group} {project}` to apply deliberately"))
+            continue
+        try:
+            written = apply_capability(cap, root, d, ctx)
+            # `apply` writes files and merges settings; the gate half is a
+            # separate call in `pf new-project`. Backfilling the files without it
+            # would leave a project whose generated artefacts nothing denies —
+            # the capability present, its guard rail absent.
+            from pf.capabilities import gate_additions
+            from pf.cli import _merge_gate_rules
+
+            _merge_gate_rules(gate_additions([cap]))
+        except Exception as exc:  # noqa: BLE001 — one capability must not stop the rest
+            out.append(StepResult(f"capability:{name}", "failed", str(exc)))
+            continue
+        out.append(StepResult(f"capability:{name}", "ok",
+                              f"added {len(written)} file(s)"))
+
+    if not out:
+        return [StepResult("capabilities", "skipped", "none default-enabled")]
+    return out
+
+
+def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
+    """One workflow per project, composed from every job its capabilities declare.
+
+    Replaces the file-per-capability arrangement, where each capability shipped a
+    whole `.github/workflows/<thing>-<project>.yml`. Sixteen files for eight
+    projects, each with its own trigger, its own path filter and its own
+    checkout, and no single place that answered "what does CI do for this
+    project". The per-capability files this supersedes are removed here rather
+    than left behind, because leaving them means every PR runs both.
+
+    Which jobs apply is asked, not assumed: a tool switched off in this project's
+    `tools.yaml` does not contribute its job, so opting out of recce removes the
+    review job rather than leaving a job that fails.
+    """
+    from pf.capabilities import CAPABILITIES, defaults
+    from pf.scaffold.ci import legacy_paths, render_project_workflow, workflow_path
+    from pf.tools import enabled_names
+
+    try:
+        names = set(defaults()) | set(enabled_names(root, group, project))
+    except Exception:  # noqa: BLE001 — a broken tool registry must not stop bootstrap
+        names = set(defaults())
+
+    jobs: dict[str, str] = {}
+    for name in sorted(names):
+        cap = CAPABILITIES.get(name)
+        if cap is not None:
+            jobs.update(cap.ci_jobs)
+
+    target = root / workflow_path(project)
+    if not jobs:
+        return StepResult("ci workflow", "skipped", "no capability contributes a job")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = render_project_workflow(group, project, jobs)
+    changed = not target.exists() or target.read_text() != content
+    if changed:
+        target.write_text(content)
+
+    removed = []
+    for rel in legacy_paths(project):
+        old = root / rel
+        if old.exists():
+            old.unlink()
+            removed.append(Path(rel).name)
+
+    detail = f"{len(jobs)} job(s): {', '.join(sorted(jobs))}"
+    if removed:
+        detail += f" · superseded {', '.join(removed)}"
+    elif not changed:
+        detail += " · current"
+    return StepResult("ci workflow", "ok", detail)
+
+
 def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
@@ -217,7 +342,13 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     import yaml
 
     from pf.onboard.dialect import TOOLKITS
-    from pf.scaffold.generator import PROJECT_TARGETS, render_target
+    from pf.runtime.targets import default_warehouse
+    from pf.scaffold.generator import (
+        PROJECT_TARGETS,
+        render_target,
+        replace_target,
+        target_type,
+    )
 
     d = _pdir(root, group, project)
     changed: list[str] = []
@@ -261,10 +392,36 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         # job is to fill gaps.
         absent = [n for n in PROJECT_TARGETS if outputs and n not in outputs]
         if absent:
-            profiles.write_text(text.rstrip("\n") + "\n"
-                                + "".join(render_target(n, PROJECT_TARGETS[n])
-                                          for n in absent))
+            text = (text.rstrip("\n") + "\n"
+                    + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent))
+            profiles.write_text(text)
             changed.append(f"profiles += {', '.join(absent)}")
+
+        # Point `prod` at the production warehouse, if it is still the DuckDB
+        # placeholder.
+        #
+        # The placeholder exists so a scaffolded project builds before anyone has
+        # decided where production lives. Left there it is a quiet lie: `prod`
+        # names a target that is a local file, so `DBT_TARGET=prod dbt build`
+        # succeeds, writes nothing anyone can see, and reports success. Seven of
+        # eight projects were in that state.
+        #
+        # Guarded on the *current* type, not on whether we have written here
+        # before. Anything already pointing at a real engine — Snowflake set by
+        # hand, BigQuery from `pf capability-add` — is left exactly alone, so
+        # this can never take a project off its own warehouse. And only the
+        # `prod` block is touched: `replace_target` is text-level precisely so
+        # hand-added keys on the DuckDB targets beside it survive.
+        wh = default_warehouse()
+        if wh is not None and outputs:
+            current = target_type(text, "prod")
+            if current == "duckdb":
+                new_text, swapped = replace_target(text, "prod", wh.output)
+                if swapped:
+                    profiles.write_text(new_text)
+                    changed.append(f"prod -> {wh.name}")
+            elif current and current != wh.name:
+                changed.append(f"prod already on {current}, left alone")
 
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")
@@ -301,6 +458,12 @@ STEPS: list[Step] = [
                       "rather than hand-maintained", _build_reporting),
     Step("tools", "a tool enabled for the group must reach every sister, "
                   "including projects created before it existed", _bootstrap_tools),
+    Step("capabilities", "a default-enabled capability must reach every project, "
+                         "including ones scaffolded before it was a default",
+         _bootstrap_capabilities),
+    Step("ci workflow", "one workflow per project, composed from the jobs its "
+                        "capabilities declare, so CI is readable in one place",
+         _ci_workflow),
     Step("dagster code location", "an unregistered project never runs",
          _register_code_location),
     Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
