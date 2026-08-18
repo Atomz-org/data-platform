@@ -946,3 +946,74 @@ upstreams:
           it `disable_agent` scores as missing it. Useful as a prompt to go and
           look; wrong as a merge gate. `pf provenance verify` blocks instead,
           because it tests behaviour.
+
+  - id: public-sector-ai-playbook
+    summary: "the governance artefacts a regulated deployment has to produce"
+    name: Public Sector AI Playbook
+    url: https://github.com/PackMaaan/public-sector-ai-playbook
+    path: vendor/public-sector-ai-playbook
+    branch: main
+    licence: CC BY 4.0
+    licence_review: >
+      Creative Commons Attribution 4.0 — the most permissive licence in this
+      registry. Use, adaptation and redistribution are all allowed, commercially
+      included, on one condition: attribution. Any template we derive from must
+      credit the author (Linda Oraegbunam) and state that changes were made.
+      That obligation travels with the *derived artefact*, not with this
+      repository, so a model card or risk register generated for a company and
+      handed to its regulator carries the credit line — which is why nothing
+      here is copied into the platform silently.
+    role: reference
+    why: >
+      It closes the third side of the governance question. `pf.provenance` is
+      runtime evidence — what an agent actually did, hash-linked and anchored.
+      `asqav-compliance` is static analysis — whether the controls exist in the
+      code. Neither says what the controls should *be*, and for a regulated
+      deployment that is the part someone external judges: a model card, a bias
+      audit, a risk register, a supplier due-diligence trail, mapped to the UK
+      AI Playbook (2025) and the EU AI Act.
+
+      Carried rather than copied because these are templates for a *deployment*,
+      and this platform is multi-tenant: the risk register belongs to a company,
+      not to the shared infra. The submodule is the reference a project fills in
+      from, pinned so the version a regulator was shown is the version we still
+      have.
+    adopted:
+      - upstream: 05-deployment/model-card-template.md
+        kind: shape
+        ours: [platform/src/pf/provenance/audit.py]
+        note: >
+          The audit's four questions — integrity, completeness, coverage,
+          oversight — are the evidence half of what a model card asks for. Ours
+          answers them from the ledger rather than from a form, which is the
+          difference between a document that asserts human oversight and a chain
+          that shows the approval.
+      - upstream: 04-governance/ai-risk-register-template.md
+        kind: shape
+        ours: [gate.yaml]
+        note: >
+          A risk register names the controls; gate.yaml is the subset that is
+          machine-enforced. Drift between the two is the thing to watch — a
+          register entry with no gate rule is a control that exists only on
+          paper, and that comparison is the reason to carry the template at all.
+    declined:
+      - what: tools/readiness_scorer.py
+        why: >
+          It is an interactive CLI that prompts for 25 answers and crashes on a
+          non-TTY (no `--help`, no flags), so it cannot run in CI or from a
+          loop. `pf.loops.audit` already scores readiness from the repository
+          itself — hook present, graph built, card current — which is a measure
+          nobody can talk up in an interview with themselves.
+      - what: tools/governance_report_generator.py
+        why: >
+          Verified working (it generates a governance pack from a project JSON),
+          and still not adopted: it reads a hand-written config, so the report
+          says whatever the config claims. Ours would have to read the ontology
+          and the ledger, and at that point it shares no code with this — only
+          the output shape, which is what `adopted` above records.
+      - what: the sector playbooks (healthcare, local government)
+        why: >
+          NHS DSPT, DCB0129 and MHRA/SaMD classification are real obligations
+          for a healthcare deployment and noise for every other tenant. They
+          belong to a project that has that regulator, not to shared infra —
+          the same reason business logic never lives in platform/.

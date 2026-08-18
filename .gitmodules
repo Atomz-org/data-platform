@@ -79,3 +79,7 @@
 	url = https://github.com/jagmarques/asqav-compliance
 	branch = main
 	shallow = true
+[submodule "vendor/public-sector-ai-playbook"]
+	path = vendor/public-sector-ai-playbook
+	url = https://github.com/PackMaaan/public-sector-ai-playbook
+	branch = main
