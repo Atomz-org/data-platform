@@ -472,6 +472,17 @@ def wait_for_checks(pr: int, budget: int = 900) -> None:
 
 
 # ------------------------------------------------------------------ board ----
+def gql_options(opts: list[tuple[str, str]]) -> str:
+    """Render select options as a GraphQL literal.
+
+    Not json.dumps: GraphQL object keys are bare names, not strings, and `color`
+    is an enum. JSON quotes both and the server rejects it with
+    `Expected NAME, actual: STRING`.
+    """
+    return "[" + ", ".join(
+        f'{{name: {json.dumps(n)}, color: {c}, description: ""}}' for n, c in opts) + "]"
+
+
 def ensure_board():
     if not PROJECT_TOKEN:
         print("::warning::PROJECTS_TOKEN not set — issues tracked, board skipped")
@@ -501,7 +512,7 @@ def ensure_board():
                         ("Source", SOURCES)):
         if fname in have:
             continue
-        payload = json.dumps([{"name": n, "color": c, "description": ""} for n, c in opts])
+        payload = gql_options(opts)
         made = gql('mutation($p:ID!,$n:String!){createProjectV2Field(input:{projectId:$p,'
                    'dataType:SINGLE_SELECT,name:$n,singleSelectOptions:' + payload + '}){'
                    'projectV2Field{... on ProjectV2SingleSelectField{id name options{id name}}}}}',
