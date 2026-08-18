@@ -140,5 +140,35 @@ autoMergeAllowlist:
 # A single loop run may not touch more than this many files.
 maxFiles: 12
 
+# Who `maxFiles` applies to.
+#
+# The cap exists to keep one *agent run* small, and `pf pr report` deliberately
+# did not apply it to pull requests: a human PR legitimately touches more files
+# than an agent should in one go, and capping every PR at 12 makes the report
+# BLOCK for the wrong reason (see the comment in pf/pr.py).
+#
+# That exemption was doing too much work. It exempted *every* PR, including ones
+# an agent opened — so the one case the cap was written for was the case it
+# stopped covering the moment the work arrived as a pull request instead of a
+# loop run. The enforcement point moved; the rule did not follow it.
+#
+# So the exemption is now conditional: a PR that matches any signal below is
+# treated as agent-authored, and the run cap applies to it. Everything else is
+# still exempt, exactly as before.
+#
+# Declared here rather than inferred in code because "what counts as an agent"
+# is policy, and policy belongs somewhere a reviewer looks. Add a signal here,
+# not a regex in pr.py.
+agent_pr:
+  # GitHub labels on the PR. The explicit, deliberate signal.
+  labels: ["agent-run", "loop", "automated"]
+  # Branch name prefixes. `vendor/` is listed because vendor-sync opens its PR
+  # from `vendor/sync` and is exactly the kind of unattended change this caps.
+  branch_prefixes: ["loop/", "agent/", "vendor/", "bot/"]
+  # Commit trailers anywhere in the PR's commit range. Note this repo's history
+  # currently carries none, so it is a supplementary signal rather than the
+  # primary one — do not rely on it alone.
+  trailers: ["Co-Authored-By: suresh", "Generated-By: pf-loop"]
+
 # Severity at which a change is blocked rather than warned.
 blockOn: breaking
