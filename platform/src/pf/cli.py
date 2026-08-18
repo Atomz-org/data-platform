@@ -62,6 +62,46 @@ kg_app = typer.Typer(help="Knowledge graph operations.")
 app.add_typer(kg_app, name="kg")
 console = Console()
 
+
+@app.callback()
+def _bootstrap_commit_gate() -> None:
+    """Runs before every command. Installs the commit gate if its slot is empty.
+
+    The gate is enforced only by `.git/hooks/pre-commit`, and a git hook cannot
+    be committed — so every clone starts ungated and stays that way until
+    somebody runs a setup step. `pf check` reporting the gap only helps the
+    person who runs `pf check`; the person who does not is exactly the one
+    committing 21 files unchecked.
+
+    So it self-heals here instead. Anyone doing real work in this repo runs some
+    `pf` command long before their first commit, which makes this the widest net
+    git actually permits. It is not total — a clone where nobody ever runs `pf`
+    is still ungated, and no amount of code fixes that.
+
+    Deliberately quiet and unfailable:
+
+      * it only ever fills an *empty* slot. `install_hook` refuses a hook it did
+        not write, so someone's own pre-commit script is never touched, and the
+        refusal is not reported here — nagging on every command trains people to
+        ignore output. `pf check` is where that surfaces.
+      * the notice goes to stderr, once, on the run that installs. A line on
+        stdout would corrupt piped output like `pf pr report --markdown`.
+      * every failure is swallowed. Not being able to install a hook must never
+        stop the command the user actually asked for.
+
+    `PF_NO_HOOK_INSTALL=1` opts out.
+    """
+    if os.environ.get("PF_NO_HOOK_INSTALL"):
+        return
+    try:
+        from pf.loops.gate import install_hook
+
+        changed, detail = install_hook(root())
+        if changed:
+            print(f"· commit gate installed — {detail}", file=sys.stderr)
+    except Exception:  # noqa: BLE001 — never block the real command
+        pass
+
 # A tool's scaffold-time half *is* a capability, so it is merged into the same
 # registry `pf new-project --with` and `pf capability-add` read. One scaffolder,
 # one gate merge — a tool is not a second way to write files into a project.
@@ -1539,7 +1579,7 @@ def cmd_install_hook(
     """
     from pf.loops.gate import hook_status, install_hook
 
-    changed, detail = install_hook(root(), force=force)
+    _, detail = install_hook(root(), force=force)
     state, _ = hook_status(root())
     if state == "ok":
         console.print(f"[green]✓[/] {detail}")

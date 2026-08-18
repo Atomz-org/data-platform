@@ -51,4 +51,14 @@ fi
 dirty="$(git -C "$root" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
 [ "${dirty:-0}" -gt 0 ] && echo "- working tree: ${dirty} uncommitted path(s) — \`git status\` before assuming a clean base"
 
+# The commit gate, reported ONLY when it is missing. Same reasoning as the graph
+# line above: a gate that is absent rather than merely quiet is worth knowing on
+# turn one, not on the turn a 21-file commit lands. Silent when installed, so a
+# healthy repo pays nothing for this line.
+if [ -d "$root/.git" ] && [ ! -e "$root/.git/hooks/pre-commit" ]; then
+  echo "- ⚠ NO COMMIT GATE (.git/hooks/pre-commit missing). gate.yaml's denylist"
+  echo "  and maxFiles are enforced there and nowhere else — commits are unchecked."
+  echo "  Install it: \`pf install-hook\`"
+fi
+
 exit 0
