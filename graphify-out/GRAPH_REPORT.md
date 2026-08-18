@@ -1,16 +1,16 @@
 # Graph Report - data-platform  (2026-08-18)
 
 ## Corpus Check
-- 2596 files · ~1,233,622 words
+- 2615 files · ~1,253,988 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6108 nodes · 7220 edges · 2505 communities (2357 shown, 148 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 186 edges (avg confidence: 0.6)
+- 6466 nodes · 7997 edges · 2523 communities (2375 shown, 148 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 248 edges (avg confidence: 0.65)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `594c6662`
+- Built from commit: `00d1c87a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -43,15 +43,15 @@
 - Settings
 - run.py
 - Ledger
-- template.py
+- evals/__init__.py
 - kg/card.py
 - test_openmetadata.py
 - api.ts
 - web/package.json
 - build.py
-- projections/openmetadata.py
+- Ontology
 - bootstrap.py
-- Store
+- artifacts.py
 - test_ladder.py
 - annotate.py
 - pr.py
@@ -59,26 +59,26 @@
 - check_path
 - ladder.py
 - wren.py
-- Ontology
+- Relation
 - frontdoor.py
 - datetime
 - dlt_runtime.py
 - dbt
-- Survey
+- survey.py
 - publish_tables
-- artifacts.py
-- Capability
+- command
+- capabilities.py
 - load_ontology
 - induct.py
 - Node
 - test_ontology_governance.py
 - Ctx
-- onboard/audit.py
+- Survey
 - grade
 - proposal.py
 - test_pr_mermaid.py
 - orchestrator.py
-- evals/__init__.py
+- CaseError
 - compilerOptions
 - test_toolkits.py
 - cached_prefix
@@ -102,21 +102,21 @@
 - loops/registry.py
 - open_graph
 - Graph
-- Path
+- test_provenance.py
 - Claude Code, as configured here
 - cmd_artifacts_migrate
-- load_annotations
-- ReviewModel
+- ledger.py
+- Capability
 - test_toolkit_macros.py
 - format_edit.py
 - Agentic Data Platform
 - dialect.py
 - call_sites
 - toolkit_macros
-- staging.py
+- test_pr_agent_cap.py
 - pf
 - analyse
-- check_ontology
+- asqav-compliance/package.json
 - settings
 - Ship
 - Stage 4 — staging, marts, semantic
@@ -148,7 +148,7 @@
 - Recce — dbt review for zenith/zenith-uk
 - Reporting — Evidence BI
 - Loop Constraints — data platform
-- audit
+- chain_dir
 - dbt-snowflake — Snowflake's function surface, portably
 - Control-plane UI
 - Context budget
@@ -170,7 +170,7 @@
 - Production warehouse — Snowflake
 - Production warehouse — Snowflake
 - LOOP.md — loop definitions
-- apply
+- Record
 - Blast radius
 - Reviewing a dbt change with Recce
 - OpenMetadata — the catalogue for acme/acme-eu
@@ -192,7 +192,7 @@
 - OpenMetadata — the catalogue for zenith/zenith-uk
 - Evals for zenith-uk
 - cmd_vendor_drift
-- ToolContribution
+- provenance/__init__.py
 - Dagster in this platform
 - Stewarding an induced ontology
 - Building a dashboard
@@ -263,7 +263,7 @@
 - GitHub integration — zenith/zenith-uk
 - Loop Budget
 - stack-entrypoint.sh
-- _is_nested_model
+- _output_schemas_are_gradeable
 - Using dbt
 - Find and scaffold a source
 - Reporting rules
@@ -367,10 +367,10 @@
 - zenith_uk/sources/__init__.py
 - pre_commit.sh
 - dagster-entrypoint.sh
-- missing_env
+- bootstrap
 - scripts/__init__.py
 - ui/__init__.py
-- test_contract_checks_run_without_a_credential
+- run_contract
 - contracts-and-access/SKILL.md
 - troubleshoot-runs/SKILL.md
 - upgrade-and-migrate/SKILL.md
@@ -398,9 +398,27 @@
 - session_start.sh
 - project-onboarding/RULES.md
 - dignified-python/SKILL.md
+- scanner.ts
+- Compliance Scanner
+- chain.py
+- compilerOptions
+- test_otop.py
+- pull_edits
+- Agent action provenance
+- _merge_packages
+- Contributing to asqav-compliance
+- owl.py
+- verify_provenance.py
+- build_payload
+- main
+- Property
+- main
+- Security Policy
+- _stable
+- .clamp_effort
 
 ## God Nodes (most connected - your core abstractions)
-1. `root()` - 55 edges
+1. `root()` - 65 edges
 2. `load_ontology()` - 54 edges
 3. `Ctx` - 43 edges
 4. `Ontology` - 40 edges
@@ -416,41 +434,41 @@
   groups/acme/projects/acme-eu/pyproject.toml → platform/pyproject.toml
 - `main()` --calls--> `load_annotations()`  [EXTRACTED]
   groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/ontology/annotate.py
-- `main()` --calls--> `export_project_annotations()`  [EXTRACTED]
-  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/dlt_runtime.py
-- `main()` --calls--> `run_source()`  [EXTRACTED]
-  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/dlt_runtime.py
-- `_run_monitors()` --references--> `Warehouse`  [EXTRACTED]
-  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/warehouse.py
+- `main()` --calls--> `dbt()`  [EXTRACTED]
+  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/dbt_runtime.py
+- `main()` --calls--> `deps()`  [EXTRACTED]
+  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/dbt_runtime.py
+- `main()` --calls--> `parse()`  [EXTRACTED]
+  groups/acme/projects/acme-eu/src/acme_eu/seed.py → platform/src/pf/runtime/dbt_runtime.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (2505 total, 148 thin omitted)
+## Communities (2523 total, 148 thin omitted)
 
 ### Community 0 - "cli.py"
-Cohesion: 0.04
-Nodes (84): command, capabilities(), cmd_align_stages(), cmd_artifacts_status(), cmd_bootstrap_steps(), cmd_gen_staging(), cmd_impact_gate(), cmd_kg_build() (+76 more)
+Cohesion: 0.06
+Nodes (54): cmd_evals_gen(), cmd_gen_staging(), cmd_impact_gate(), cmd_kg_build(), cmd_kg_card(), cmd_kg_neighbors(), cmd_kg_search(), cmd_loop_reset() (+46 more)
 
 ### Community 1 - "tools/__init__.py"
-Cohesion: 0.05
-Nodes (58): Let each tool attach its own subcommands under `pf tool <name>`. Hooks are…, _register_tool_commands(), bootstrap_order(), bootstrap_tools(), dagster_contributions(), _project_dir(), Any, Path (+50 more)
+Cohesion: 0.07
+Nodes (45): Let each tool attach its own subcommands under `pf tool <name>`. Hooks are…, _register_tool_commands(), bootstrap_order(), bootstrap_tools(), dagster_contributions(), _project_dir(), Any, Path (+37 more)
 
 ### Community 2 - "app.py"
 Cohesion: 0.08
-Nodes (69): get, query(), Read-only query against the tracking DB. Opened read_only so a dashboard…, activity(), agent_runs(), annotations(), api_impact(), api_neighbors() (+61 more)
+Nodes (70): get, query(), Read-only query against the tracking DB. Opened read_only so a dashboard…, activity(), agent_runs(), api_impact(), api_neighbors(), api_path() (+62 more)
 
 ### Community 3 - "drift"
 Cohesion: 0.07
 Nodes (53): _purpose(), Path, Two documents from one registry. `docs/VENDOR.md` is the long form: every…, The long form: every adoption and every decline, with the reasoning., The always-loadable index: what each upstream is for, in one line., The hand-written one-liner, falling back to the first sentence of `why`.…, render_card(), render_doc() (+45 more)
 
 ### Community 4 - "test_onboard.py"
-Cohesion: 0.08
-Nodes (58): _merge_dbt_project(), Fold the source's dbt config into the scaffolded one. Three classes of key, and…, _big_repo(), Path, Tests for onboarding an external repository. The failures worth pinning are the…, A project that is present but unannotated contributes nothing to the graph, the…, Ours is pinned against the dbt version this platform is tested with; taking the…, A project that keeps tests in `data-tests/` still has real tests. Assuming… (+50 more)
+Cohesion: 0.09
+Nodes (52): audit(), Every risk in importing this survey's repository, worst first., _merge_dbt_project(), Fold the source's dbt config into the scaffolded one. Three classes of key, and…, _big_repo(), Path, Tests for onboarding an external repository. The failures worth pinning are the…, `a << b` means b runs first. Reading it as `a then b` produces a graph that… (+44 more)
 
 ### Community 5 - "root"
-Cohesion: 0.06
-Nodes (56): gate_additions(), Union of the gate rules a set of capabilities contributes., all_projects(), bootstrap_cmd(), _changed_nodes(), check(), cmd_capability_add(), cmd_dagster_workspace() (+48 more)
+Cohesion: 0.08
+Nodes (36): all_projects(), _changed_nodes(), check(), cmd_dagster_workspace(), cmd_dialect(), cmd_onto_proposals(), cmd_pr_list(), cmd_pr_report() (+28 more)
 
 ### Community 6 - "server.py"
 Cohesion: 0.06
@@ -458,15 +476,15 @@ Nodes (53): Consolidated MCP server for the active project., active_project(), _
 
 ### Community 7 - "test_tools.py"
 Cohesion: 0.06
-Nodes (51): model_diffs(), What the recorded review measured, per dbt model. `read_state` counts checks;…, _model(), Path, Tests for the pluggable tool layer. The properties worth pinning down are the…, Overriding one key must not drop the rest, or a port change would silently…, A freshly scaffolded project has no models. Emitting checks against nothing…, The correctness of every value diff rests on this. Copying `target/` aside… (+43 more)
+Nodes (52): model_diffs(), What the recorded review measured, per dbt model. `read_state` counts checks;…, _model(), Path, Tests for the pluggable tool layer. The properties worth pinning down are the…, Overriding one key must not drop the rest, or a port change would silently…, A freshly scaffolded project has no models. Emitting checks against nothing…, The correctness of every value diff rests on this. Copying `target/` aside… (+44 more)
 
 ### Community 8 - "recce.py"
-Cohesion: 0.09
-Nodes (51): Assign a port to every project that has a dbt project to review. A project with…, services(), baseline_dir(), baseline_pairs(), capture_baseline(), config_file(), dagster_assets(), dbt_dir() (+43 more)
+Cohesion: 0.07
+Nodes (66): project_prefix(), Repo-relative path of a project, which is also its key prefix., Assign a port to every project that has a dbt project to review. A project with…, services(), baseline_dir(), baseline_pairs(), baseline_prefix(), bootstrap_project() (+58 more)
 
 ### Community 9 - "tools/openmetadata.py"
-Cohesion: 0.08
-Nodes (51): _api(), bootstrap_project(), build_database_workflow(), build_payload(), build_workflows(), catalog_dir(), dbt_dir(), edits_path() (+43 more)
+Cohesion: 0.12
+Nodes (36): bootstrap_project(), build_database_workflow(), build_workflow(), build_workflows(), catalog_dir(), dbt_dir(), edits_path(), ingest() (+28 more)
 
 ### Community 10 - "dependencies"
 Cohesion: 0.04
@@ -505,12 +523,12 @@ Cohesion: 0.06
 Nodes (40): parametrize, Path, The control plane's generated configuration. Everything `pf stack render`…, It has to create it; a search_path naming it would not resolve., Not copied once: the pool limits stay tracked to the file that has them., `^~` is what holds two apps that both own `/api` apart., A prefix would 404 in the SPA; see the module docstring., sub_filter cannot substitute inside a gzipped response. (+32 more)
 
 ### Community 19 - "otop.py"
-Cohesion: 0.09
-Nodes (44): Policy, _artifact(), ArtifactRef, _as_ts(), _assertion(), _authored(), build_manifest(), _commit() (+36 more)
+Cohesion: 0.13
+Nodes (30): Policy, _artifact(), ArtifactRef, _as_ts(), _assertion(), _authored(), build_manifest(), _commit() (+22 more)
 
 ### Community 20 - "contract.py"
-Cohesion: 0.08
-Nodes (41): cache_ttl(), caches(), estimate_usd(), ModelSpec, Any, Model capability registry — what each model actually accepts. Routing a step to…, Render intent into a payload the target model accepts. Everything this drops,…, Whether a prefix of this size will actually cache on this model. (+33 more)
+Cohesion: 0.10
+Nodes (34): cache_ttl(), caches(), estimate_usd(), ModelSpec, Any, Model capability registry — what each model actually accepts. Routing a step to…, Render intent into a payload the target model accepts. Everything this drops,…, Whether a prefix of this size will actually cache on this model. (+26 more)
 
 ### Community 21 - "dagster_runtime.py"
 Cohesion: 0.07
@@ -518,7 +536,7 @@ Nodes (35): Dagster entry point. The platform factory assembles everything — n
 
 ### Community 22 - "allow"
 Cohesion: 0.05
-Nodes (41): enabledPlugins, env, PF_NOTIFY, PF_NOTIFY_VOICE, extraKnownMarketplaces, platform, hooks, PreToolUse (+33 more)
+Nodes (42): enabledPlugins, env, PF_NOTIFY, PF_NOTIFY_VOICE, extraKnownMarketplaces, platform, hooks, PostToolUse (+34 more)
 
 ### Community 23 - "apply_edit"
 Cohesion: 0.10
@@ -533,24 +551,24 @@ Cohesion: 0.08
 Nodes (33): cmd_stack_db_init(), cmd_stack_token(), Create Dagster's role and schema in OpenMetadata's database. Run once, as an…, Print the catalogue's ingestion-bot JWT, for `export`. Prints a credential to…, The control plane as one deployable: Postgres, OpenMetadata, Dagster, recce.…, admin_settings(), ensure_schema(), merge_storage() (+25 more)
 
 ### Community 26 - "run.py"
-Cohesion: 0.10
-Nodes (33): Resolve names to capabilities, dependencies first, each applied once., resolve(), Adopt an existing data repository as a project in this platform. Onboarding…, Pipeline, Emit one Dagster module mirroring the incoming task graphs., One incoming DAG or flow., Tasks whose logic has been carried across. Always zero at generation — the…, render() (+25 more)
+Cohesion: 0.11
+Nodes (31): Resolve names to capabilities, dependencies first, each applied once., resolve(), Adopt an existing data repository as a project in this platform. Onboarding…, Pipeline, Emit one Dagster module mirroring the incoming task graphs., One incoming DAG or flow., Tasks whose logic has been carried across. Always zero at generation — the…, render() (+23 more)
 
 ### Community 27 - "Ledger"
-Cohesion: 0.09
-Nodes (24): cmd_loop_reset(), cmd_loop_run(), cmd_loop_run_all(), cmd_loop_status(), Run one loop against one project., Run every read-only (L1) loop and refresh STATE.md., Recent loop runs from the ledger., Clear a latched circuit breaker after resolving the underlying finding. (+16 more)
+Cohesion: 0.15
+Nodes (9): Ledger, LoopSpec, _now(), Any, Path, Clear a latched breaker by appending a clean marker. The ledger is append-only…, A loop definition. The declarative half of LOOP.md., Append-only run history. The circuit breaker reads it. (+1 more)
 
-### Community 28 - "template.py"
-Cohesion: 0.12
-Nodes (32): generate(), Generated, Path, Rendering toolkit templates into a project's own cases. The output goes to…, Render every groundable template into the project's generated cases. A template…, Binding, discover_templates(), load_template() (+24 more)
+### Community 28 - "evals/__init__.py"
+Cohesion: 0.11
+Nodes (36): generate(), Generated, Path, Rendering toolkit templates into a project's own cases. The output goes to…, Render every groundable template into the project's generated cases. A template…, Evals — the tests for the parts of this platform that are prompts. Every other…, Binding, discover_templates() (+28 more)
 
 ### Community 29 - "kg/card.py"
 Cohesion: 0.11
 Nodes (33): _bullets(), _capped(), Counter, Path, Render context cards — the always-in-context index. These are token-budgeted by…, Join a list, saying how many were left out rather than dropping them. Every…, Raw tables from which no Metric is reachable. This walks the graph rather than…, What the models that did not fit are, rather than only how many. The truncation… (+25 more)
 
 ### Community 30 - "test_openmetadata.py"
-Cohesion: 0.10
-Nodes (34): build_workflow(), The dbt ingestion workflow, as OpenMetadata's own schema expects it.…, _load(), payload(), Any, fixture, MonkeyPatch, Path (+26 more)
+Cohesion: 0.11
+Nodes (30): _load(), payload(), Any, fixture, MonkeyPatch, Path, The OpenMetadata projection, checked against the vendored schemas.…, Proves the validator is wired to the real schema. `description` is required on… (+22 more)
 
 ### Community 31 - "api.ts"
 Cohesion: 0.12
@@ -564,49 +582,45 @@ Nodes (30): @fluentui/react-icons, allowScripts, esbuild@0.25.12, dependencies, 
 Cohesion: 0.14
 Nodes (30): _add_annotations(), _add_dbt(), _add_ontology(), _add_physical_columns(), _add_policy(), _add_semantic(), build_graph(), cid() (+22 more)
 
-### Community 34 - "projections/openmetadata.py"
-Cohesion: 0.13
-Nodes (30): build_all(), build_classification(), build_database_entities(), build_glossary(), build_glossary_terms(), build_metrics(), build_policy_terms(), build_tags() (+22 more)
+### Community 34 - "Ontology"
+Cohesion: 0.09
+Nodes (33): Ontology, Whether a string is a plausible ISO 4217 code. Shape rather than a list.…, Identity property, inherited from the nearest ancestor that has one., The relation connecting two classes, in either direction., True if a link src -> dst is declared in the topology., build_all(), build_classification(), build_database_entities() (+25 more)
 
 ### Community 35 - "bootstrap.py"
-Cohesion: 0.15
-Nodes (29): stats(), _bootstrap_capabilities(), _bootstrap_tools(), _build_graph(), _build_reporting(), _dbt_wiring(), _ensure_dirs(), _export_mdl() (+21 more)
+Cohesion: 0.13
+Nodes (33): gate_additions(), Union of the gate rules a set of capabilities contributes., stats(), _bootstrap_capabilities(), _bootstrap_tools(), _build_graph(), _build_reporting(), _dbt_wiring() (+25 more)
 
-### Community 36 - "Store"
-Cohesion: 0.11
-Nodes (18): ArtifactStoreError, _first_env(), _is_missing(), NotConfigured, Exception, RuntimeError, No credentials in the environment. Raised only where a bucket is required., One bucket, and the credentials to reach it. Credential-carrying, so the… (+10 more)
+### Community 36 - "artifacts.py"
+Cohesion: 0.08
+Nodes (33): ArtifactStoreError, base_ref(), _first_env(), _git(), head_ref(), _is_missing(), NotConfigured, pull_files() (+25 more)
 
 ### Community 37 - "test_ladder.py"
-Cohesion: 0.11
-Nodes (26): eval_layers(), _project(), parametrize, Path, Tests for the onboarding ladder. What is worth pinning here is not that the…, Staging is 1:1 with a raw table. A join there hides a business decision in a…, A CTE that reads the same upstream twice is not a join. Counting call sites…, Without a block it builds with dbt's defaults instead of the platform's… (+18 more)
+Cohesion: 0.10
+Nodes (28): eval_layers(), Distinct `ref`/`source` targets a model reads, by textual scan. Textual rather…, _upstreams(), _project(), parametrize, Path, Tests for the onboarding ladder. What is worth pinning here is not that the…, Staging is 1:1 with a raw table. A join there hides a business decision in a… (+20 more)
 
 ### Community 38 - "annotate.py"
-Cohesion: 0.13
-Nodes (24): Annotation, concept_of(), links_of(), Any, Attach ontology meaning to dlt resources. Annotations are applied as dlt `x-`…, registry(), roles_of(), Shared business ontology: concepts, topology, column roles, dlt annotations. (+16 more)
+Cohesion: 0.09
+Nodes (38): Annotation, concept_of(), export_annotations(), links_of(), load_annotations(), load_unmodelled(), merge_annotations(), Any (+30 more)
 
 ### Community 39 - "pr.py"
-Cohesion: 0.16
-Nodes (25): _add_conformance(), _add_impact(), build(), changed_files(), _default_base(), _git(), load_all(), markdown() (+17 more)
+Cohesion: 0.13
+Nodes (31): _add_conformance(), _add_impact(), agent_authored(), build(), changed_files(), _default_base(), _git(), load_all() (+23 more)
 
 ### Community 40 - "evidence.py"
 Cohesion: 0.15
 Nodes (27): build(), collect_metrics(), _config(), _context_sentence(), _den_expr(), _fence_spacing(), _filter_text(), _index_page() (+19 more)
 
 ### Community 41 - "check_path"
-Cohesion: 0.15
-Nodes (24): main(), Path, repo_root(), _applicable(), check_path(), check_paths(), GateResult, _is_name_heuristic() (+16 more)
+Cohesion: 0.17
+Nodes (21): _applicable(), check_path(), check_paths(), GateResult, _is_name_heuristic(), load_policy(), _match(), nodes_for() (+13 more)
 
 ### Community 42 - "ladder.py"
-Cohesion: 0.18
-Nodes (26): changed(), Check, check_dialect(), check_import(), check_layers(), check_metrics(), check_review(), _comprehension_check() (+18 more)
+Cohesion: 0.16
+Nodes (31): Check, check_dialect(), check_import(), check_layers(), check_metrics(), check_ontology(), check_review(), _comprehension_check() (+23 more)
 
 ### Community 43 - "wren.py"
-Cohesion: 0.16
-Nodes (26): ask(), bootstrap_project(), connection_path(), dagster_assets(), has_mdl(), mdl_path(), plan(), probe_engine() (+18 more)
-
-### Community 44 - "Ontology"
-Cohesion: 0.10
-Nodes (8): Ontology, A named object property. Directional: domain -> range., Whether a string is a plausible ISO 4217 code. Shape rather than a list.…, Identity property, inherited from the nearest ancestor that has one., Own properties merged over inherited ones., The relation connecting two classes, in either direction., True if a link src -> dst is declared in the topology., Relation
+Cohesion: 0.19
+Nodes (24): ask(), bootstrap_project(), connection_path(), dagster_assets(), has_mdl(), mdl_path(), plan(), probe_engine() (+16 more)
 
 ### Community 45 - "frontdoor.py"
 Cohesion: 0.10
@@ -617,60 +631,60 @@ Cohesion: 0.18
 Nodes (24): datetime, charges(), customers(), Any, Random, resource, source, Stripe source for acme-us. Synthetic generator so the project runs offline.… (+16 more)
 
 ### Community 47 - "dlt_runtime.py"
-Cohesion: 0.10
-Nodes (21): Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results., _run_monitors(), main(), Cross-entity roll-up. Attaches every sister warehouse READ_ONLY. This is the…, main(), Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results. (+13 more)
+Cohesion: 0.12
+Nodes (19): main(), Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results., _run_monitors(), main(), Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results., _run_monitors() (+11 more)
 
 ### Community 48 - "dbt"
-Cohesion: 0.15
-Nodes (24): main(), main(), Load this project end to end: seeds → DuckDB → dbt → manifests. `pf seed jaffle…, _run(), dbt(), deps(), ensure_manifest(), failed_nodes() (+16 more)
+Cohesion: 0.18
+Nodes (21): dbt(), deps(), ensure_manifest(), failed_nodes(), manifest(), mf_query(), modified_nodes(), parse() (+13 more)
 
-### Community 49 - "Survey"
-Cohesion: 0.13
-Nodes (21): _collect(), _detect_capabilities(), _dirs_for(), is_build_artifact(), _package_namespaces(), Path, Read an existing repository and report what it is made of. Everything here is…, What an incoming repository contains. (+13 more)
+### Community 49 - "survey.py"
+Cohesion: 0.16
+Nodes (18): _collect(), _detect_capabilities(), _dirs_for(), is_build_artifact(), _package_namespaces(), Path, Read an existing repository and report what it is made of. Everything here is…, Every SQL file whose dialect has to survive the move. (+10 more)
 
 ### Community 50 - "publish_tables"
 Cohesion: 0.14
 Nodes (22): main(), _project_dir(), _publish_tables(), _publish_vocabulary(), Any, Path, Refresh the projections, then publish to OpenMetadata. `catalogue=False`…, Run one bootstrap step and turn its result into a detail string. (+14 more)
 
-### Community 51 - "artifacts.py"
-Cohesion: 0.13
-Nodes (23): base_ref(), _git(), head_ref(), project_prefix(), pull_files(), push_files(), Path, Remote artefact store — where build artefacts live instead of in git.… (+15 more)
+### Community 51 - "command"
+Cohesion: 0.04
+Nodes (53): command, capabilities(), cmd_align_stages(), cmd_artifacts_status(), cmd_bootstrap_steps(), cmd_loop_audit(), cmd_loop_list(), cmd_loop_status() (+45 more)
 
-### Community 52 - "Capability"
-Cohesion: 0.12
-Nodes (22): Capability, _caveats(), _env_block(), KeyError, Capability registry — how a new feature reaches every project. The platform…, Required credentials first, then the ones with defaults. Split because the…, Everything a production warehouse contributes, built from its declaration. The…, One optional feature a project can be scaffolded with. (+14 more)
+### Community 52 - "capabilities.py"
+Cohesion: 0.11
+Nodes (23): apply(), _caveats(), _env_block(), _merge(), Any, KeyError, Path, Capability registry — how a new feature reaches every project. The platform… (+15 more)
 
 ### Community 53 - "load_ontology"
-Cohesion: 0.13
-Nodes (20): load_group_ontology(), load_ontology(), OntologyClass, _parse_properties(), Property, Any, Path, Load and query the platform ontology, topology and policy. Three files, three… (+12 more)
+Cohesion: 0.11
+Nodes (25): load_group_ontology(), load_ontology(), OntologyClass, _parse_properties(), Any, Path, Load and query the platform ontology, topology and policy. Three files, three…, What a review tool should ask of this column. PII wins over everything,… (+17 more)
 
 ### Community 54 - "induct.py"
 Cohesion: 0.12
 Nodes (18): Confidence, Axiom, _class_name(), ColumnProfile, _identity_of(), induce(), Any, Path (+10 more)
 
 ### Community 55 - "Node"
-Cohesion: 0.16
-Nodes (19): Node, DuckDB-backed graph store. Two tables is enough. EDGE DIRECTION IS A CONTRACT:…, _row_to_node(), Projections of the knowledge graph into external semantic formats. The graph is…, build_manifest(), _busiest_model(), _column_properties(), export() (+11 more)
+Cohesion: 0.17
+Nodes (18): Node, _row_to_node(), Projections of the knowledge graph into external semantic formats. The graph is…, build_manifest(), _busiest_model(), _column_properties(), export(), _identity_column() (+10 more)
 
 ### Community 56 - "test_ontology_governance.py"
 Cohesion: 0.17
-Nodes (23): from_proposal(), Annotations implied by the **accepted** axioms of an ontology proposal. `pf…, _cls(), _prop(), _proposal(), Path, Tests for the parts of the ontology flow that decide what is allowed to land.…, A relation still called `refers_to` is a placeholder. Links fill in as they are… (+15 more)
+Nodes (24): from_proposal(), Annotations implied by the **accepted** axioms of an ontology proposal. `pf…, apply_to_extension(), Merge accepted axioms into the group extension. Additive by design: an approved…, _cls(), _prop(), _proposal(), Path (+16 more)
 
 ### Community 57 - "Ctx"
-Cohesion: 0.11
-Nodes (12): Ctx, eval_dialect(), eval_review(), _manifest_at(), CompletedProcess, Path, Everything a stage reads, computed once. The dialect scan alone reads every SQL…, target name -> its output block, for this project's own profile. (+4 more)
+Cohesion: 0.10
+Nodes (14): changed(), Ctx, eval_review(), _ever_committed(), _manifest_at(), _owned(), CompletedProcess, Path (+6 more)
 
-### Community 58 - "onboard/audit.py"
-Cohesion: 0.18
-Nodes (19): audit(), _collision_risks(), _dialect_risks(), _fmt(), _has_rollup_tags(), _layout_risks(), _macro_risks(), _package_risks() (+11 more)
+### Community 58 - "Survey"
+Cohesion: 0.14
+Nodes (20): _collision_risks(), _dialect_risks(), _fmt(), _has_rollup_tags(), _layout_risks(), _macro_risks(), _package_risks(), Counter (+12 more)
 
 ### Community 59 - "grade"
 Cohesion: 0.20
 Nodes (18): _apply(), _attr(), _check(), _count(), _elementwise(), grade(), GradeFailure, _Missing (+10 more)
 
 ### Community 60 - "proposal.py"
-Cohesion: 0.23
-Nodes (18): apply_to_extension(), approve(), create(), _default_accept(), diff_against(), listing(), _now(), path_for() (+10 more)
+Cohesion: 0.26
+Nodes (16): approve(), create(), _default_accept(), diff_against(), listing(), _now(), path_for(), Proposal (+8 more)
 
 ### Community 61 - "test_pr_mermaid.py"
 Cohesion: 0.22
@@ -680,9 +694,9 @@ Nodes (20): body(), parametrize, Tests for the PR architecture chart. The chart 
 Cohesion: 0.21
 Nodes (19): AST, Call, FunctionDef, _callee(), _chain(), _edges(), _has_decorator(), _identifier() (+11 more)
 
-### Community 63 - "evals/__init__.py"
-Cohesion: 0.19
-Nodes (17): Case, CaseError, discover(), load_case(), Any, Path, ValueError, Loading eval cases off disk. The on-disk shape is the one every scaffolded… (+9 more)
+### Community 63 - "CaseError"
+Cohesion: 0.12
+Nodes (23): CaseError, discover(), load_case(), Any, Path, ValueError, Loading eval cases off disk. The on-disk shape is the one every scaffolded…, Collect cases from the three tiers, outermost first. **platform** —… (+15 more)
 
 ### Community 64 - "compilerOptions"
 Cohesion: 0.10
@@ -697,32 +711,32 @@ Cohesion: 0.22
 Nodes (17): cached_prefix(), Path, The stable system prefix. Identical bytes across every run — that is the whole…, LLM-backed agents. Deterministic evidence in, typed verdict out., AnomalyReport, assess_anomaly(), Diagnosis, MetricProposal (+9 more)
 
 ### Community 67 - "evals/runner.py"
-Cohesion: 0.17
-Nodes (12): reset_spend(), spend(), CaseResult, Path, The live tier: call the real models and grade what comes back. Two things make…, Cost of this suite, from the same ledger every agent run is recorded in. Best-…, Passed sometimes. Distinct from failing — the prompt is unstable, not wrong,…, Run every case against the real models and grade the responses. (+4 more)
+Cohesion: 0.11
+Nodes (22): NoCredentials, RuntimeError, Raised when no Anthropic credential is resolvable., reset_spend(), spend(), Case, One eval case: an input to an agent and what must be true of the output., CaseResult (+14 more)
 
 ### Community 68 - "Report"
 Cohesion: 0.12
 Nodes (11): What a repository's SQL asks for, against what the target provides., Report, Append this validation to the loop ledger, and report the breaker. The three-…, A `LoopSpec` for driving one stage through the loop runner. Deliberately not…, Whether the next stage may be entered., Whether every condition was actually exercised and passed., record(), spec_for() (+3 more)
 
 ### Community 69 - "Warehouse"
-Cohesion: 0.15
-Nodes (12): Shared runtime: warehouse, dlt, dbt and Dagster factories., preview(), DuckDBPyConnection, Path, Warehouse access. One DuckDB file per project — that is what makes sister…, Truncation policy in one place: schema + n rows + counts. Never a raw dump., Resolved warehouse handle for one project., Dagster concurrency pool — scoped per project so sisters never queue behind… (+4 more)
+Cohesion: 0.10
+Nodes (18): main(), Cross-entity roll-up. Attaches every sister warehouse READ_ONLY. This is the…, main(), Load this project end to end: seeds → DuckDB → dbt → manifests. `pf seed jaffle…, _run(), pf — the shared platform: ontology, knowledge graph, runtime, MCP, UI., Shared runtime: warehouse, dlt, dbt and Dagster factories., preview() (+10 more)
 
 ### Community 70 - "test_evals.py"
-Cohesion: 0.18
-Nodes (17): Proposal, Proposals, BaseModel, Tests for the eval layer. The properties worth pinning are the ones whose…, A typo'd matcher silently passing is how a case stops testing anything., The failure that would make the whole suite worthless. An expectation on a…, A refusal arrives as None. Passing it would hide a prompt that has become…, The hallucination check. A schema-valid metric over a column that does not… (+9 more)
+Cohesion: 0.16
+Nodes (19): Proposal, Proposals, BaseModel, Tests for the eval layer. The properties worth pinning are the ones whose…, A typo'd matcher silently passing is how a case stops testing anything., A template carries `{{bindings}}` and is not runnable. Loading one as a case…, The failure that would make the whole suite worthless. An expectation on a…, A refusal arrives as None. Passing it would hide a prompt that has become… (+11 more)
 
 ### Community 71 - "base.py"
-Cohesion: 0.16
-Nodes (17): AgentConfig, call(), client(), NoCredentials, Any, RuntimeError, T, The LLM call layer for loops. Three things are centralised here because getting… (+9 more)
+Cohesion: 0.23
+Nodes (12): AgentConfig, call(), client(), Any, T, The LLM call layer for loops. Three things are centralised here because getting…, One structured call. Returns (parsed, usage). Records the run either way.…, Model routing for one step. See loop-budget.md for the rationale. `purpose` is… (+4 more)
 
 ### Community 72 - "config.py"
 Cohesion: 0.22
 Nodes (17): config_path(), enabled(), enabled_names(), load(), _merge(), Any, Path, Which tools a project actually runs — declared at the group, refined per… (+9 more)
 
 ### Community 73 - "check_results"
-Cohesion: 0.14
-Nodes (18): bootstrap_project(), check_results(), ensure_base_target(), generate_config(), Any, Attach `pf tool recce ...`. Imported lazily by the CLI, never at startup., Build recce.yml from what the ontology already says about this project.…, Write recce.yml if it would change. Returns (path, changed). Idempotent because… (+10 more)
+Cohesion: 0.32
+Nodes (8): check_results(), Any, Attach `pf tool recce ...`. Imported lazily by the CLI, never at startup., Every recorded check with its verdict — the validation itself, not a count.…, Turn one recorded result into (verdict, human detail)., register_commands(), _run_model(), _verdict()
 
 ### Community 74 - "Toolkits — what exists, and the rules for using it"
 Cohesion: 0.11
@@ -737,8 +751,8 @@ Cohesion: 0.27
 Nodes (16): connect(), db_path(), estimate_cost(), _now(), Any, DuckDBPyConnection, Path, Platform observability store — one DuckDB file at the repo root that records… (+8 more)
 
 ### Community 77 - "generator.py"
-Cohesion: 0.18
-Nodes (15): _default_tools_yaml(), new_group(), new_project(), Path, Scaffold groups and projects. No external template engine — templates are plain…, One dbt output block. The unit `pf align` checks and bootstrap appends., Swap one output block in an existing profiles.yml. Returns (text, changed).…, The `type:` of one output, or "" if the profile has no such target. (+7 more)
+Cohesion: 0.16
+Nodes (17): _default_tools_yaml(), new_group(), new_project(), Any, Path, Scaffold groups and projects. No external template engine — templates are plain…, One dbt output block. The unit `pf align` checks and bootstrap appends., Swap one output block in an existing profiles.yml. Returns (text, changed).… (+9 more)
 
 ### Community 78 - "test_gate.py"
 Cohesion: 0.14
@@ -749,12 +763,12 @@ Cohesion: 0.12
 Nodes (15): Checking it worked, without printing anything, Creating the token, Fallback variable names, and the one trap, If a key leaks, In CI, Known gap: baseline staleness, Layout, Migration (+7 more)
 
 ### Community 80 - "_ci_workflow"
-Cohesion: 0.17
-Nodes (15): defaults(), Capability names a project gets without asking. Read from the registry rather…, _ci_workflow(), One workflow per project, composed from every job its capabilities declare.…, legacy_paths(), One CI workflow per project, composed from what its capabilities declare. Why a…, The whole workflow file for one project. `jobs` maps a job id to its YAML…, Repo-relative path of a project's master workflow. (+7 more)
+Cohesion: 0.19
+Nodes (13): defaults(), Capability names a project gets without asking. Read from the registry rather…, _ci_workflow(), One workflow per project, composed from every job its capabilities declare.…, legacy_paths(), One CI workflow per project, composed from what its capabilities declare. Why a…, The whole workflow file for one project. `jobs` maps a job id to its YAML…, Repo-relative path of a project's master workflow. (+5 more)
 
 ### Community 81 - "ladder"
-Cohesion: 0.15
-Nodes (16): cmd_align_evaluate(), cmd_align_status(), cmd_align_validate(), cmd_align_verify(), _print_risks(), _print_verdict(), Which rung of the onboarding ladder this project is on. Every verdict is re-…, Phase one of a stage: what is wrong, and what to do about it. Read-only and… (+8 more)
+Cohesion: 0.12
+Nodes (20): cmd_align_evaluate(), cmd_align_status(), cmd_align_validate(), cmd_align_verify(), cmd_loop_run_all(), _print_risks(), _print_verdict(), Run every read-only (L1) loop and refresh STATE.md. (+12 more)
 
 ### Community 82 - "loops/audit.py"
 Cohesion: 0.21
@@ -765,36 +779,36 @@ Cohesion: 0.13
 Nodes (14): Environment, `FERNET_KEY`, One database, two schemas, One origin, two root-anchored SPAs, `PF_OM_REINDEX`, Processes, Run it, Startup order (+6 more)
 
 ### Community 84 - "loops/registry.py"
-Cohesion: 0.30
-Nodes (14): have_credentials(), dashboard_coverage(), freshness_triage(), impact_sentinel(), index_refresher(), metric_gap_harvester(), pii_audit(), Path (+6 more)
+Cohesion: 0.18
+Nodes (19): have_credentials(), dashboard_coverage(), freshness_triage(), impact_sentinel(), index_refresher(), metric_gap_harvester(), pii_audit(), Path (+11 more)
 
 ### Community 85 - "open_graph"
-Cohesion: 0.27
-Nodes (13): Knowledge graph: build, query, render context cards, compute blast radius., _fmt(), kg_neighbors(), kg_path(), kg_search(), Path, Graph queries. These back the MCP tools an agent calls *before* reading files.…, Find nodes by name, label or business term. The vague-question entry point. (+5 more)
+Cohesion: 0.24
+Nodes (14): Knowledge graph: build, query, render context cards, compute blast radius., _fmt(), kg_neighbors(), kg_path(), kg_search(), Path, Graph queries. These back the MCP tools an agent calls *before* reading files.…, Find nodes by name, label or business term. The vague-question entry point. (+6 more)
 
 ### Community 86 - "Graph"
 Cohesion: 0.18
 Nodes (5): Edge, Graph, DuckDBPyConnection, Insert edges, de-duplicated on (src, dst, kind). kg_edges has no primary key,…, Thin wrapper over a DuckDB connection holding kg_nodes / kg_edges.
 
-### Community 87 - "Path"
-Cohesion: 0.18
-Nodes (14): _case(), Path, A case missing `lineage` would run with an empty neighbourhood and grade a…, Catches the typo that would otherwise be silently dropped at call time., The rule the whole repository is organised around. Discovery is given one group…, A template carries `{{bindings}}` and is not runnable. Loading one as a case…, Without this the template renders `{{other.name}}` into the case verbatim, and…, test_a_case_missing_an_input_key_is_rejected() (+6 more)
+### Community 87 - "test_provenance.py"
+Cohesion: 0.12
+Nodes (37): verify_chain(), action(), execution(), Stage 03 — written after the action, success or failure alike., Record all three stages around a block of work. The preferred entry point,…, _chain(), _lines(), fixture (+29 more)
 
 ### Community 88 - "Claude Code, as configured here"
 Cohesion: 0.15
 Nodes (12): 1. Memory: CLAUDE.md, 2. Context management, 3. Tools: the MCP server, 4. Commands, 5. Subagents, 6. Hooks, 7. Permissions, 8. Enforcement outside the session (+4 more)
 
 ### Community 89 - "cmd_artifacts_migrate"
-Cohesion: 0.22
-Nodes (13): human(), cmd_artifacts_ls(), cmd_artifacts_migrate(), cmd_artifacts_pull(), cmd_artifacts_push(), _git_tracked(), A configured store, or a one-line exit. Unconfigured is the *expected* first…, Upload a project's recce artefacts. No arguments → every project. (+5 more)
+Cohesion: 0.20
+Nodes (15): human(), cmd_artifacts_ls(), cmd_artifacts_migrate(), cmd_artifacts_pull(), cmd_artifacts_push(), _git_tracked(), One project, or every project when neither argument is given., A configured store, or a one-line exit. Unconfigured is the *expected* first… (+7 more)
 
-### Community 90 - "load_annotations"
-Cohesion: 0.21
-Nodes (12): export_annotations(), load_annotations(), load_unmodelled(), merge_annotations(), Path, Write every registered annotation to YAML for the knowledge graph., Write annotations, never overwriting one that is already there. An existing…, Raw resources deliberately left without a concept, and why. Not every table is… (+4 more)
+### Community 90 - "ledger.py"
+Cohesion: 0.12
+Nodes (36): cmd_prov_status(), Head, anchor coverage, kill-switch state — the one-screen summary., _actor(), approvals(), approve(), claim_action(), correlation_key(), decision() (+28 more)
 
-### Community 91 - "ReviewModel"
-Cohesion: 0.17
-Nodes (7): One model, described in the ontology's terms rather than the warehouse's., First identity column that is safe to key on, or empty., Columns a value diff may materialise — everything except PII., ReviewModel, A web UI the tool serves. `embeddable` is load-bearing. A tool that sends…, Surface, test_surface_url()
+### Community 91 - "Capability"
+Cohesion: 0.08
+Nodes (27): Capability, One optional feature a project can be scaffolded with., One model, described in the ontology's terms rather than the warehouse's., Columns a value diff may materialise — everything except PII., Every mart, described by ontology role and review intent. Reads the knowledge…, _reviewable_models(), ReviewColumn, ReviewModel (+19 more)
 
 ### Community 92 - "test_toolkit_macros.py"
 Cohesion: 0.17
@@ -820,9 +834,9 @@ Nodes (11): call_sites(), Counter, Count raw SQL function calls across files. Le
 Cohesion: 0.18
 Nodes (11): Path, Every macro the dialect toolkits actually define. Read from the toolkit rather…, toolkit_macros(), A remedy pointing at a macro nobody wrote is worse than no remedy., Adding a `dbt-bigquery` sibling should need no change here., `default__sf_iff` is dispatch plumbing, not something to call., test_adapter_variants_are_not_reported_as_public_macros(), test_every_registered_replacement_macro_exists() (+3 more)
 
-### Community 98 - "staging.py"
-Cohesion: 0.25
-Nodes (10): generate(), Path, Generate staging models from ontology annotations. Staging contract, enforced…, Schema yml with tests generated from the same roles., Write staging models + schema yml for every annotated resource., Warehouse column name: an explicit rename wins, else a role-driven default., Render one staging model. Deterministic, so regeneration is a no-op diff., render_staging_sql() (+2 more)
+### Community 98 - "test_pr_agent_cap.py"
+Cohesion: 0.11
+Nodes (35): _clean_env(), fixture, parametrize, Path, Who the `maxFiles` run cap applies to. The cap was written to keep one agent…, The signal this repo's own policy leans on hardest., One agent commit behind the branch point must not mark later PRs. Otherwise the…, The escape hatch, and it must beat every heuristic. A human landing a large… (+27 more)
 
 ### Community 99 - "pf"
 Cohesion: 0.20
@@ -832,13 +846,13 @@ Nodes (10): acme_eu, acme_rollup, acme_us, data-platform, globex_core, globex_eu
 Cohesion: 0.31
 Nodes (8): analyse(), Resolve every call site against DuckDB, the project's macros and dbt., Report, Path, test_a_projects_own_macros_resolve(), test_analyse_separates_the_three_outcomes(), test_generated_staging_sql_scans_clean(), test_the_report_names_the_macro_to_use()
 
-### Community 101 - "check_ontology"
-Cohesion: 0.36
-Nodes (9): check_ontology(), eval_import(), eval_ontology(), _fmt(), Counter, Every raw table the project loads, from seeds and declared dbt sources. These…, _raw_resources(), Check the ontology and topology are internally coherent. Enforces the policies… (+1 more)
+### Community 101 - "asqav-compliance/package.json"
+Cohesion: 0.06
+Nodes (34): @actions/core, @actions/github, agent, ai-governance, audit, compliance, github-action, tsx (+26 more)
 
 ### Community 102 - "settings"
-Cohesion: 0.22
-Nodes (9): manifest(), dagster_assets(), _mart_models(), Resolve connection settings: tools.yaml first, then environment, then a…, The catalogue refresh, as an asset, a job and a schedule. **Asset**, downstream…, Mart model names from the dbt manifest, or none if it has not been built., settings(), Sisters have identically named marts by design — that is conformance. (+1 more)
+Cohesion: 0.25
+Nodes (8): dagster_assets(), _mart_models(), Resolve connection settings: tools.yaml first, then environment, then a…, The catalogue refresh, as an asset, a job and a schedule. **Asset**, downstream…, Mart model names from the dbt manifest, or none if it has not been built., settings(), Sisters have identically named marts by design — that is conformance., test_the_service_name_keeps_sisters_apart()
 
 ### Community 103 - "Ship"
 Cohesion: 0.22
@@ -857,8 +871,8 @@ Cohesion: 0.25
 Nodes (7): ADR-0003 — What the base/current diff found, Decision, `mega_wide_daily_flash` — 2 rows, last decimal digit, Result, `scr_customer_churn_propensity` — 308 rows, and **not our doing**, What was compared, Why this is worth writing down
 
 ### Community 107 - "parse"
-Cohesion: 0.25
-Nodes (8): parse(), Extract every pipeline declared in one file., `a << b` means b runs first. Reading it as `a then b` produces a graph that…, The core honesty property. Translating a task body would produce code that…, Prefect orders work through ordinary calls, so there is no reliable static edge…, test_generated_assets_raise_rather_than_guess(), test_left_shift_is_normalised_to_run_order(), test_prefect_tasks_are_listed_without_invented_edges()
+Cohesion: 0.22
+Nodes (9): parse(), Extract every pipeline declared in one file., The core honesty property. Translating a task body would produce code that…, Prefect orders work through ordinary calls, so there is no reliable static edge…, test_generated_assets_raise_rather_than_guess(), test_prefect_tasks_are_listed_without_invented_edges(), test_set_upstream_and_downstream_are_read(), test_task_ids_and_chain_order_survive() (+1 more)
 
 ### Community 108 - "test_dialect.py"
 Cohesion: 0.25
@@ -960,9 +974,9 @@ Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The
 Cohesion: 0.29
 Nodes (6): Communication, Data changes, Loop behaviour, Loop Constraints — data platform, Scope, Secrets
 
-### Community 133 - "audit"
-Cohesion: 0.33
-Nodes (5): audit(), Finding, Path, Mechanical quality score for the reporting layer. The dashboard loop terminates…, Score 0-100 and the findings behind it.
+### Community 133 - "chain_dir"
+Cohesion: 0.15
+Nodes (26): Anchor, anchors(), build_request(), _der_len(), _int(), Path, Stage 05 — TIMESTAMP. RFC 3161 for minutes, OpenTimestamps for decades. A hash…, PKIStatus from a TimeStampResp. 0 granted, 1 granted-with-mods. Walks only as… (+18 more)
 
 ### Community 134 - "dbt-snowflake — Snowflake's function surface, portably"
 Cohesion: 0.29
@@ -1048,9 +1062,9 @@ Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, 
 Cohesion: 0.33
 Nodes (5): Anatomy of a run, Autonomy ladder, Failure modes catalogued, LOOP.md — loop definitions, Loops
 
-### Community 155 - "apply"
-Cohesion: 0.40
-Nodes (6): apply(), _merge(), Any, Path, Write one capability's files and merge its settings. Returns what changed.…, Deep-merge, appending lists rather than replacing them. Replacing would let a…
+### Community 155 - "Record"
+Cohesion: 0.12
+Nodes (20): canonical_bytes(), _check(), digest(), NonCanonical, Any, ValueError, The five stages of an agent action, and the bytes they hash to. An action is…, One stage of one action, linked to the stage before it. `action_id` is what… (+12 more)
 
 ### Community 156 - "Blast radius"
 Cohesion: 0.33
@@ -1136,9 +1150,9 @@ Nodes (4): Commands, Evals for zenith-uk, Format, Two kinds of case live here
 Cohesion: 0.40
 Nodes (5): cmd_vendor_drift(), cmd_vendor_sync(), What moved since a human last reviewed it. Local only — never fetches., Fetch each upstream's tracking branch, then report what it means for us., _render_drift()
 
-### Community 177 - "ToolContribution"
-Cohesion: 0.40
-Nodes (5): Every mart, described by ontology role and review intent. Reads the knowledge…, _reviewable_models(), ReviewColumn, What a tool adds to a project's Dagster definitions. Plain lists and dicts…, ToolContribution
+### Community 177 - "provenance/__init__.py"
+Cohesion: 0.15
+Nodes (18): Finding, format_report(), Path, The audit: does the ledger say what it claims, and does anyone else agree. Four…, Plain text, for CI logs and for anyone without the CLI., Records written since the last successful anchor., Full audit. `check_anchors` shells out to openssl/ots and needs network., Report (+10 more)
 
 ### Community 178 - "Dagster in this platform"
 Cohesion: 0.40
@@ -1364,29 +1378,105 @@ Nodes (3): Adopted (9), dbt Agent Skills, Deliberately not taken (5)
 Cohesion: 0.67
 Nodes (3): `dlthub-ai-workbench` — dltHub License (proprietary), `evidence-bi` — not stated upstream, Licence review outstanding
 
-### Community 248 - "_is_nested_model"
-Cohesion: 0.67
-Nodes (3): _is_nested_model(), Any, A field carrying another schema, directly or in a collection.…
+### Community 248 - "_output_schemas_are_gradeable"
+Cohesion: 0.40
+Nodes (5): _is_nested_model(), _output_schemas_are_gradeable(), Any, Every field an eval can assert on must be either a closed set or documented. A…, A field carrying another schema, directly or in a collection.…
+
+### Community 352 - "bootstrap"
+Cohesion: 0.15
+Nodes (19): missing_env(), Credentials each capability declares that are not set. For `pf doctor`., bootstrap_cmd(), cmd_capability_add(), cmd_new_project(), cmd_onboard(), cmd_onto_approve(), cmd_tool_enable() (+11 more)
+
+### Community 355 - "run_contract"
+Cohesion: 0.50
+Nodes (4): Run every contract check. Never calls a model; never needs a credential., run_contract(), The whole point of the tier: it must be runnable in CI, on a machine with no…, test_contract_checks_run_without_a_credential()
+
+### Community 2505 - "scanner.ts"
+Cohesion: 0.15
+Nodes (18): run(), AGENT_FRAMEWORK_PATTERNS, AnalysisResult, analyzeFile(), AUDIT_TRAIL_PATTERNS, CategoryDef, CategoryKey, CategoryTotal (+10 more)
+
+### Community 2506 - "Compliance Scanner"
+Cohesion: 0.12
+Nodes (16): Advanced Usage, Block PRs that fail compliance, Compliance Scanner, Contributing, Data handling, Inputs, License, Outputs (+8 more)
+
+### Community 2507 - "chain.py"
+Cohesion: 0.23
+Nodes (14): append(), Head, _locked(), Path, Stage 04 — CHAIN. Append-only, tamper-evident, SHA-256 linked. The file is…, Write the sidecar atomically. A torn head file is recoverable (the scan above),…, The current tip, without taking the write lock., Seal `record` onto the chain and return it with `seq`, `prev` and `hash`. The… (+6 more)
+
+### Community 2508 - "compilerOptions"
+Cohesion: 0.12
+Nodes (15): dist, node_modules, src/**/*.ts, compilerOptions, declaration, esModuleInterop, forceConsistentCasingInFileNames, module (+7 more)
+
+### Community 2509 - "test_otop.py"
+Cohesion: 0.18
+Nodes (14): fixture, MonkeyPatch, parametrize, Path, The otop manifest's timestamps. `created_at` and `implemented_at` come from git…, A one-commit repository, committed at a known non-UTC offset., The property the manifest depends on, and the one that was broken., A `Z` on a local reading is wrong even when nothing else disagrees. (+6 more)
+
+### Community 2510 - "pull_edits"
+Cohesion: 0.17
+Nodes (12): _api(), fetch_tables(), probe_engine(), _published_descriptions(), pull_edits(), The JWT, from the environment only. Never read from `tools.yaml`: that file is…, Is the `metadata` CLI usable? Installed and usable are not the same claim., One authenticated GET against the OpenMetadata API. urllib rather than a client… (+4 more)
+
+### Community 2511 - "Agent action provenance"
+Cohesion: 0.18
+Nodes (10): Agent action provenance, Anchoring, Commands, Fail-open or fail-closed, The ledger is not editable, The second opinion: ASQAV, Verifiable by anyone, What the audit checks (+2 more)
+
+### Community 2512 - "_merge_packages"
+Cohesion: 0.18
+Nodes (10): _merge_packages(), Union the two package lists, keeping ours on a conflict. Ours wins because the…, First identity column that is safe to key on, or empty., Ours is pinned against the dbt version this platform is tested with; taking the…, Either condition alone is only worth reporting. Together they mean a dependency…, The namespace is guessed, so usage is the check that stops a heuristic from…, test_a_pinned_unused_package_is_kept(), test_an_unpinned_but_used_package_is_kept() (+2 more)
+
+### Community 2513 - "Contributing to asqav-compliance"
+Cohesion: 0.20
+Nodes (9): Adding a New Governance Category, Adding a New Pattern, Contributing to asqav-compliance, How to Add New Compliance Rules, Local Development with Pre-commit Hooks, Questions?, Submitting Your Contribution, Testing Your Changes (+1 more)
+
+### Community 2514 - "owl.py"
+Cohesion: 0.36
+Nodes (7): export(), _inverse_id(), Path, Project the ontology into OWL / RDF-XML. Microsoft's Ontology-Playground…, stats(), to_rdf_xml(), _uri()
+
+### Community 2515 - "verify_provenance.py"
+Cohesion: 0.38
+Nodes (6): canonical_bytes(), check_completeness(), digest(), main(), Path, An EXECUTION with no DECISION is work that never passed the gate.
+
+### Community 2516 - "build_payload"
+Cohesion: 0.29
+Nodes (7): build_payload(), payload_path(), The vocabulary this project publishes: glossary, tags, metrics. Metrics are…, Write the projected vocabulary. Returns (path, changed)., write_payload(), `offline_bootstrap`: scaffolding must not depend on who ran it., test_bootstrap_writes_the_artefacts_without_the_client()
+
+### Community 2517 - "main"
+Cohesion: 0.53
+Nodes (5): main(), _outcome(), Path, Read success or failure out of the tool response. The shape of `tool_response`…, repo_root()
+
+### Community 2518 - "Property"
+Cohesion: 0.33
+Nodes (3): Property, Own properties merged over inherited ones., A datatype property on a class (OWL DatatypeProperty).
+
+### Community 2519 - "main"
+Cohesion: 0.70
+Nodes (4): main(), Path, repo_root(), _target()
+
+### Community 2520 - "Security Policy"
+Cohesion: 0.40
+Nodes (4): Reporting Vulnerabilities, Scope, Security Policy, Supported Versions
+
+### Community 2521 - "_stable"
+Cohesion: 0.50
+Nodes (4): Strip the card's generation date. The card legitimately changes when the…, _stable(), _card_regeneration_does_not_bust_the_cache(), The context card carries a generation date. The card legitimately changes when…
 
 ## Knowledge Gaps
-- **886 isolated node(s):** `$schema`, `source`, `path`, `platform-init@platform`, `power-tools@platform` (+881 more)
+- **964 isolated node(s):** `$schema`, `source`, `path`, `platform-init@platform`, `power-tools@platform` (+959 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **148 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `load_ontology()` connect `load_ontology` to `cli.py`, `app.py`, `server.py`, `test_tools.py`, `recce.py`, `tools/openmetadata.py`, `otop.py`, `test_openmetadata.py`, `build.py`, `projections/openmetadata.py`, `annotate.py`, `Ontology`, `ToolContribution`, `Node`, `test_ontology_governance.py`, `proposal.py`, `load_annotations`, `staging.py`, `check_ontology`?**
+- **Why does `load_ontology()` connect `load_ontology` to `cli.py`, `app.py`, `server.py`, `recce.py`, `tools/openmetadata.py`, `otop.py`, `test_openmetadata.py`, `build.py`, `Ontology`, `annotate.py`, `ladder.py`, `Relation`, `command`, `Node`, `test_ontology_governance.py`, `proposal.py`, `owl.py`, `build_payload`, `Capability`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+- **Why does `read_all()` connect `provenance/__init__.py` to `cli.py`, `chain_dir`, `chain.py`, `command`, `test_provenance.py`, `ledger.py`, `Record`?**
   _High betweenness centrality (0.005) - this node is a cross-community bridge._
-- **Why does `analyse()` connect `analyse` to `cli.py`, `call_sites`, `toolkit_macros`, `run.py`, `Report`, `root`, `ladder.py`, `onboard/audit.py`, `dialect.py`?**
-  _High betweenness centrality (0.005) - this node is a cross-community bridge._
-- **Why does `Ontology` connect `Ontology` to `check_ontology`, `projections/openmetadata.py`, `load_ontology`, `annotate.py`?**
+- **Why does `Warehouse` connect `Warehouse` to `cli.py`, `server.py`, `recce.py`, `wren.py`, `dlt_runtime.py`, `dagster_runtime.py`, `Capability`?**
   _High betweenness centrality (0.005) - this node is a cross-community bridge._
 - **What connects `$schema`, `source`, `path` to the rest of the system?**
-  _886 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _964 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `cli.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.03697478991596639 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05589225589225589 - nodes in this community are weakly interconnected._
 - **Should `tools/__init__.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.05271629778672032 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0726764500349406 - nodes in this community are weakly interconnected._
 - **Should `app.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.07701863354037267 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07525150905432595 - nodes in this community are weakly interconnected._
