@@ -1,0 +1,85 @@
+# Review findings outlive their pull request.
+#
+# CodeRabbit and Gitar write findings as review comments, and a review comment
+# dies with its PR — merged, folded away, never read again. This workflow turns
+# each finding into an issue on the findings board, and closes that issue again
+# once the review thread is resolved, citing the commit that did it.
+#
+# Two speeds, on purpose:
+#
+#   as it lands   a new bot comment is tracked immediately, so nothing is lost
+#                 if the reconcile pass never runs
+#   at the end    once every other pipeline on the PR has finished, re-read the
+#                 whole PR: file whatever is new, close whatever is now fixed
+#
+# The reconcile pass is the one that matters for closing. It runs on the
+# completion of every other workflow in this repo, and then waits for any check
+# still running, so "is this finding fixed" is asked once the PR has settled
+# rather than mid-flight.
+name: bot findings
+
+on:
+  # As it lands.
+  pull_request_review_comment:
+    types: [created, edited]
+  issue_comment:
+    types: [created, edited]
+
+  # At the end — after every other pipeline here has completed.
+  workflow_run:
+    workflows:
+      - "impact-gate (jaffle-shop)"
+      - "PR impact report"
+      - "recce (acme-eu)"
+      - "recce (acme-rollup)"
+      - "recce (acme-us)"
+      - "recce (globex-core)"
+      - "recce (globex-eu)"
+      - "recce (zenith-de)"
+      - "recce (zenith-uk)"
+    types: [completed]
+
+  # A merge or close is the last chance to reconcile that PR.
+  pull_request:
+    types: [closed]
+
+  # Backfill: a PR number, "all", or empty for every open PR.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number, or "all" for every PR (default: open PRs)'
+        required: false
+        default: ""
+
+# Findings from several workflows finishing at once would otherwise race to
+# create the same issue. Serialise per PR; the fingerprint makes a late run a
+# no-op rather than a duplicate.
+concurrency:
+  group: bot-findings-${{ github.event.workflow_run.head_sha || github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read          # read commits, to name the one that fixed a finding
+  issues: write           # file, relabel and close the tracked issues
+  pull-requests: read     # read review threads and their resolved state
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Track findings, close what is fixed
+        env:
+          # GITHUB_TOKEN covers issues and PR reads. Writing to a ProjectV2
+          # needs `project` scope, which it does not have — set PROJECTS_TOKEN
+          # to a PAT with that scope to enable the board. Without it the issues
+          # are still filed and closed, and only the board step is skipped.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          PROJECT_TITLE: ${{ vars.BOT_FINDINGS_PROJECT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR: ${{ github.event.inputs.pr }}
+        run: python3 .github/scripts/bot_findings.py
