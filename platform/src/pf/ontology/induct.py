@@ -161,7 +161,7 @@ def _class_name(table: str) -> str:
     for w in words:
         if w.endswith("ies"):
             w = w[:-3] + "y"
-        elif w.endswith("sses") or w.endswith("shes") or w.endswith("ches"):
+        elif w.endswith(("sses", "shes", "ches")):
             w = w[:-2]
         elif w.endswith("s") and not w.endswith("ss"):
             w = w[:-1]
@@ -176,9 +176,9 @@ def _role_for(col: ColumnProfile, table_key: str | None) -> tuple[str, Confidenc
     for role, pattern in PII_PATTERNS.items():
         if pattern.search(n):
             return (role, "medium", f"column name matches /{pattern.pattern}/",
-                    "Name suggests personal data. Proposed, never auto-applied — a "
+                    ("Name suggests personal data. Proposed, never auto-applied — a "
                     "wrong PII tag carries authority it did not earn, and a missing "
-                    "one fails the mart policy loudly.")
+                    "one fails the mart policy loudly."))
 
     if col.name == table_key:
         return ("natural_key", "high",
@@ -188,8 +188,8 @@ def _role_for(col: ColumnProfile, table_key: str | None) -> tuple[str, Confidenc
     if n.endswith("_id") or n == "id":
         return ("foreign_key", "high",
                 f"name ends in _id, distinct={col.distinct} of {col.rows} rows",
-                "Repeats across rows, so it points at another entity rather than "
-                "identifying this one.")
+                ("Repeats across rows, so it points at another entity rather than "
+                "identifying this one."))
 
     if CURRENCY.search(n):
         return ("currency_code", "high", "name matches /currency/",
@@ -216,8 +216,8 @@ def _role_for(col: ColumnProfile, table_key: str | None) -> tuple[str, Confidenc
     if col.datatype == "string" and col.low_cardinality and STATUSISH.search(n):
         return ("status_enum", "high",
                 f"{col.distinct} distinct values over {col.rows} rows",
-                "Low cardinality and named for a lifecycle state: a dimension, and a "
-                "candidate for category-drift monitoring.")
+                ("Low cardinality and named for a lifecycle state: a dimension, and a "
+                "candidate for category-drift monitoring."))
 
     if col.datatype == "string" and col.low_cardinality:
         return ("status_enum", "medium", f"{col.distinct} distinct values over {col.rows} rows",

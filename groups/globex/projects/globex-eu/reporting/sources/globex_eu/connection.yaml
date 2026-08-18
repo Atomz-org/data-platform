@@ -1,0 +1,7 @@
+# DuckDB connector for this project's warehouse.
+# One warehouse file per project is what lets sister companies run in parallel;
+# the reporting layer only ever reads.
+name: globex_eu
+type: duckdb
+options:
+  filename: ../../../data/globex_eu.duckdb

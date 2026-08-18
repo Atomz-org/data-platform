@@ -23,8 +23,10 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from pf.runtime.warehouse import Warehouse
 
@@ -87,18 +89,23 @@ def build_definitions(
     # tools.yaml, and a tool installed from outside this repo lands the same way.
     asset_checks: list[Any] = []
     tool_metadata: dict[str, Any] = {}
+    tool_jobs: list[Any] = []
+    tool_schedules: list[Any] = []
     for contrib in _tool_contributions(root, group, project, wh):
         assets.extend(contrib.assets)
         asset_checks.extend(contrib.asset_checks)
         resources.update(contrib.resources)
         tool_metadata.update(contrib.metadata)
+        tool_jobs.extend(contrib.jobs)
+        tool_schedules.extend(contrib.schedules)
 
     job = define_asset_job(name=f"{project.replace('-', '_')}_all", selection="*")
 
     return Definitions(
         assets=assets,
         asset_checks=asset_checks,
-        jobs=[job],
+        jobs=[job, *tool_jobs],
+        schedules=tool_schedules,
         resources=resources,
         executor=multiprocess_executor.configured({"max_concurrent": 4}),
         # Tool metadata (a UI URL, say) rides on the Definitions so an operator
@@ -173,7 +180,7 @@ def _prefix(project: str) -> str:
 def _make_ingest_asset(name: str, resource: Any, wh: Warehouse, mod_path: str):
     from dagster import MetadataValue, asset
 
-    ann = getattr(resource, "__pf_annotation__")
+    ann = resource.__pf_annotation__
     source = ann.source or "raw"
 
     @asset(
@@ -206,6 +213,71 @@ def _make_ingest_asset(name: str, resource: Any, wh: Warehouse, mod_path: str):
 
 
 # --------------------------------------------------------------------- dbt --
+#: Dagster's rule for an asset group name, enforced in `validate_group_name`.
+_GROUP_OK = re.compile(r"[A-Za-z0-9_]+")
+
+#: Where a dbt resource goes when its own path gives us no directory to use.
+#: Keyed by dbt `resource_type`; anything unlisted lands in "transform".
+_DEFAULT_GROUP: dict[str, str] = {
+    "snapshot": "snapshots",
+    "seed": "seeds",
+    "test": "tests",
+    "unit_test": "tests",
+    "source": "ingest",
+    "model": "transform",
+}
+
+
+def _group_name(props: dict[str, Any]) -> str:
+    """Which Dagster asset group a dbt node belongs to.
+
+    This used to be `path.split("/")[0]`, which is the *first path segment* —
+    correct for `staging/stg_orders.sql` and wrong for anything living at the
+    root of its own directory, where the first segment is the file itself.
+    Dagster then rejects the group name and the **whole code location fails to
+    load**: jaffle-shop has two snapshots and 532 tests at their respective
+    roots, and it raised
+
+        "snp_dim_employees.sql" is not a valid asset group name
+
+    before a single asset was built. Not a jaffle-shop quirk — `snapshots/` and
+    `tests/` are flat in most dbt projects, so this was waiting for the first
+    project to have either.
+
+    The directory chain comes from `path` with the filename dropped, not from
+    `fqn`. `fqn` looks like the tidier source — dbt documents it as
+    `[project, ...directories, name]` — but it is not that for every resource
+    type, and snapshots are the counter-example that matters here:
+
+        path 'snp_dim_menu_items.sql'
+        fqn  ['jaffle_shop', 'snp_dim_menu_items', 'snp_dim_menu_items']
+
+    The snapshot's own name occupies the directory slot, so `fqn[1:-1]` yields
+    a group named after the node. That is not a crash — it is worse, a plausible
+    group per snapshot that quietly shreds the asset graph — and it is what an
+    fqn-first version of this function actually produced. `path` never contains
+    that ambiguity: everything before the last `/` is a directory and there is
+    never anything else in it.
+
+    An empty chain is normal, not a fallback for broken input: `snapshots/` and
+    `tests/` are flat in most dbt projects. Those land on `_DEFAULT_GROUP`.
+
+    Sanitised at the end regardless. A directory named `01_staging` or
+    `my-models` is legal on disk and illegal as a group name, and a loader that
+    dies over a hyphen is not one anybody can scaffold against.
+    """
+    dirs = [p for p in (props.get("path") or "").split("/")[:-1] if p]
+    raw = dirs[0] if dirs else _DEFAULT_GROUP.get(
+        str(props.get("resource_type") or ""), "transform")
+    return _sanitise_group(raw)
+
+
+def _sanitise_group(raw: str) -> str:
+    """A legal Dagster group name, or "transform" if nothing legal survives."""
+    kept = "_".join(_GROUP_OK.findall(str(raw)))
+    return kept or "transform"
+
+
 def _translator(project: str):
     """Map dbt nodes onto platform asset keys.
 
@@ -226,8 +298,7 @@ def _translator(project: str):
             return AssetKey([prefix, dbt_resource_props["name"]])
 
         def get_group_name(self, dbt_resource_props: dict[str, Any]) -> str | None:
-            path = (dbt_resource_props.get("path") or "").split("/")
-            return path[0] if path and path[0] else "transform"
+            return _group_name(dbt_resource_props)
 
         def get_description(self, dbt_resource_props: dict[str, Any]) -> str:
             return dbt_resource_props.get("description") or ""

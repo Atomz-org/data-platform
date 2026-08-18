@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 
 import pytest
-from pf.pr import MM_CLASSDEF, MM_MAX_PROJECTS, PRReport, ProjectSlice, markdown, mermaid
+from pf.pr import MM_CLASSDEF, MM_MAX_PROJECTS, ProjectSlice, PRReport, markdown, mermaid
 
 LABEL = re.compile(r'\["(.*?)"\]')
 USED_CLASS = re.compile(r":::(\w+)|^\s*class \w+ (\w+)$", re.M)
@@ -25,13 +25,13 @@ DECLARED = re.compile(r"^\s{4,}([A-Za-z]\w*)[\[(]", re.M)
 
 
 def report(**kw) -> PRReport:
-    base = dict(number=1, title="t", branch="b", base="origin/main", commit="c0ffee",
-                generated_at="now", files=["a.sql"])
+    base = {'number': 1, 'title': "t", 'branch': "b", 'base': "origin/main", 'commit': "c0ffee",
+                'generated_at': "now", 'files': ["a.sql"]}
     return PRReport(**{**base, **kw})
 
 
 def slice_(**kw) -> ProjectSlice:
-    base = dict(group="acme", project="acme-us", files=["a.sql"], nodes=["model:stg_a"])
+    base = {'group': "acme", 'project': "acme-us", 'files': ["a.sql"], 'nodes': ["model:stg_a"]}
     return ProjectSlice(**{**base, **kw})
 
 

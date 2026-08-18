@@ -1,0 +1,141 @@
+# The control plane: three containers where there were five.
+#
+#   postgresql       one database, `openmetadata_db`, two schemas
+#   elasticsearch    OpenMetadata's search index
+#   stack            OpenMetadata + Dagster + recce + nginx, one image
+#
+# Run it:
+#
+#   PF_REPO="$PWD" podman compose -f platform/deploy/compose.yaml up -d --build
+#
+# PF_REPO is not a convenience. Dagster's workspace.yaml holds absolute
+# working_directory paths, so the repository has to appear inside the container
+# at the same path it occupies on the host — mount it anywhere else and every
+# code location loads zero assets while reporting no error.
+#
+# ## The volumes are external on purpose
+#
+# They are the volumes the previous, hand-started OpenMetadata stack wrote:
+# 1205 catalogued tables and an Elasticsearch index. A compose project that
+# declares its own would silently start on an empty database, and the first
+# sign would be an empty catalogue. `external: true` fails loudly instead if
+# they are missing — create them with:
+#
+#   podman volume create openmetadata_openmetadata_db_data
+#   podman volume create openmetadata_es-data
+
+name: pf
+
+services:
+  postgresql:
+    # Pinned on its own, NOT to OM_VERSION. getcollate publishes a postgresql
+    # image per OpenMetadata release, so following the same tag looks tidy and
+    # is a trap: the day one of those bumps the Postgres major, the new server
+    # meets the old data directory and refuses to start — and since Dagster's
+    # run history now lives in the same instance, that is both products down.
+    # Move this deliberately, with a dump and restore.
+    image: ${PF_POSTGRES_IMAGE:-docker.getcollate.io/openmetadata/postgresql:1.13.3}
+    container_name: pf_postgresql
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - openmetadata_db_data:/var/lib/postgresql/data
+    # Published so the host can run `pf stack status`, `dagster dev` or psql
+    # against the same instance the container uses. Bound to loopback: this is
+    # a development database with a published default password.
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  elasticsearch:
+    # Also independent of OM_VERSION, but for the opposite reason: OpenMetadata
+    # constrains which Elasticsearch majors it will talk to, so this is the one
+    # that may genuinely need to move *with* an upgrade. Change it and the
+    # index, together — PF_OM_REINDEX=recreate on the first run after.
+    image: ${PF_ES_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:9.3.0}
+    container_name: pf_elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      # 512m, not the 1g OpenMetadata's own compose ships. This index holds
+      # ~1200 tables and a glossary; the extra half gigabyte was going to a JVM
+      # that never used it while the stack beside it was being squeezed until
+      # Elasticsearch started refusing connections.
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms512m -Xmx512m}
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    restart: unless-stopped
+
+  stack:
+    build:
+      context: ../..
+      dockerfile: platform/Containerfile.stack
+      args:
+        # OM_VERSION=1.14.0 podman compose ... up -d --build
+        OM_VERSION: ${OM_VERSION:-1.13.3}
+    image: pf-stack:${OM_VERSION:-1.13.3}
+    container_name: pf_stack
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      # OpenMetadata -> public schema
+      DB_HOST: postgresql
+      DB_USER: ${OM_DB_USER:-openmetadata_user}
+      DB_USER_PASSWORD: ${OM_DB_PASSWORD:-openmetadata_password}
+      ELASTICSEARCH_HOST: elasticsearch
+      # Dagster -> dagster schema, same database
+      PF_STACK_PG_HOST: postgresql
+      PF_STACK_PG_PORT: "5432"
+      PF_STACK_PG_DB: openmetadata_db
+      PF_STACK_PG_USER: ${PF_STACK_PG_USER:-dagster}
+      PF_STACK_PG_PASSWORD: ${PF_STACK_PG_PASSWORD:-dagster}
+      PF_STACK_PG_SCHEMA: dagster
+      PF_STACK_PG_ADMIN_USER: ${POSTGRES_USER:-postgres}
+      PF_STACK_PG_ADMIN_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      # Empty on an ordinary restart; 1 | force | recreate on an upgrade run.
+      # See the entrypoint for what each does.
+      PF_OM_REINDEX: ${PF_OM_REINDEX:-}
+      # The catalogue publisher talks to the server in this same container.
+      OPENMETADATA_HOST_PORT: http://127.0.0.1:8585
+      # Its own DAGSTER_HOME, not the repo's `.dagster`. The tracked
+      # dagster.yaml is the base `pf stack render` starts from; writing the
+      # Postgres block back into it would leave the host — which has no stack
+      # — with an instance config naming a database it cannot reach.
+      DAGSTER_HOME: ${PF_REPO:?set PF_REPO to the repository root}/.dagster-stack
+      PF_REPO: ${PF_REPO:?}
+    env_file:
+      # Warehouse and artefact-store credentials. Nothing is baked into the
+      # image; a missing .env leaves the assets unable to reach R2 or Snowflake
+      # and everything else working.
+      - path: ${PF_REPO:?}/.env
+        required: false
+    volumes:
+      - ${PF_REPO:?}:${PF_REPO:?}:Z
+    working_dir: ${PF_REPO:?}
+    ports:
+      - "127.0.0.1:8080:8080"   # front door: catalogue, /dagster/, /recce/…
+      - "127.0.0.1:8585:8585"   # OpenMetadata direct, for the ingestion CLI
+      - "127.0.0.1:3000:3000"   # Dagster direct, for `dagster` CLI clients
+    restart: unless-stopped
+
+volumes:
+  openmetadata_db_data:
+    external: true
+    name: openmetadata_openmetadata_db_data
+  es_data:
+    external: true
+    name: openmetadata_es-data

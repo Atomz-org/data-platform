@@ -16,13 +16,13 @@ the days it is half-finished. `/app` is the one being built on.
 
 from __future__ import annotations
 
-import json
+import contextlib
 from pathlib import Path
 from typing import Any
 
 import yaml
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from pf import obs
@@ -431,7 +431,8 @@ STACK_LAYERS: list[dict[str, Any]] = [
 @app.get("/api/vendor")
 def vendor() -> dict[str, Any]:
     """Every vendored upstream, what we took, and whether it has drifted."""
-    from pf.vendor.model import drift as vendor_drift, load_registry
+    from pf.vendor.model import drift as vendor_drift
+    from pf.vendor.model import load_registry
 
     root = root_dir()
     ups = load_registry()
@@ -471,7 +472,8 @@ def vendor_stack(group: str, project: str) -> dict[str, Any]:
     every layer it runs on descends from one, and the counts come from that
     project's own graph rather than from the platform.
     """
-    from pf.vendor.model import drift as vendor_drift, load_registry
+    from pf.vendor.model import drift as vendor_drift
+    from pf.vendor.model import load_registry
 
     d = project_dir(group, project)
     gp = d / "kg" / "graph.duckdb"
@@ -782,17 +784,41 @@ def recce_state(group: str, project: str) -> dict[str, Any]:
     Reads the state file rather than recomputing, for the same reason /api/prs
     does: a dashboard that recomputes will eventually disagree with the run that
     produced the number, and then neither is trusted.
+
+    Fetches it once if it is not there. The state file is no longer in git, so
+    on a fresh clone "not there" is the *normal* state of a project that has
+    been reviewed — and a panel that renders empty because nobody ran
+    `pf artifacts pull` looks exactly like a panel that renders empty because
+    the review found nothing. Recomputing is still refused; downloading the
+    recorded answer is not recomputing it.
     """
+    from pf import artifacts
     from pf.tools.recce import (
-        has_baseline, has_manifest, read_state, summary_markdown,
+        fetch_review,
+        has_baseline,
+        has_manifest,
+        read_state,
+        state_file,
+        summary_markdown,
     )
 
     d = project_dir(group, project)
+    fetched = ""
+    if not state_file(d).exists() and artifacts.Store.from_env() is not None:
+        try:
+            if any(t.ok for t in fetch_review(d, group, project)):
+                fetched = "store"
+        except artifacts.ArtifactStoreError as exc:
+            # A dashboard panel is not the place to fail a request over a
+            # bucket. Report it in the payload so the UI can say why the panel
+            # is empty instead of implying the review was clean.
+            fetched = f"error: {exc}"
     return {
         "group": group, "project": project,
         "has_manifest": has_manifest(d),
         "has_baseline": has_baseline(d),
         "summary_markdown": summary_markdown(d),
+        "fetched_from": fetched,
         **read_state(d),
     }
 
@@ -925,10 +951,8 @@ def governance_edit(surface: str = Query(...), key_path: str = Query(...),
     if value.lower() in {"true", "false"}:
         parsed = value.lower() == "true"
     else:
-        try:
+        with contextlib.suppress(ValueError):
             parsed = int(value)
-        except ValueError:
-            pass
 
     try:
         return apply_edit(root_dir(), surface, key_path, parsed,
@@ -969,7 +993,9 @@ def pr_refresh(number: int = 0, base: str = "") -> dict[str, Any]:
     Exists so the local dashboard is useful before a PR is opened — same code
     path CI runs, so what you see locally is what CI will post.
     """
-    from pf.pr import build as build_pr, markdown as pr_markdown, save
+    from pf.pr import build as build_pr
+    from pf.pr import markdown as pr_markdown
+    from pf.pr import save
 
     r = build_pr(root_dir(), number, base)
     save(root_dir(), r)

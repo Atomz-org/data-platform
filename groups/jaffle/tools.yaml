@@ -1,0 +1,15 @@
+# Which platform tools this group runs.
+#
+# Managed by `pf tool enable/disable`, but hand-editing is fine — it is read, not
+# generated. A tool enabled here is scaffolded and bootstrapped by
+# `pf bootstrap`, and contributes its assets to Dagster.
+# Enabled here means enabled for every sister project in this group. A project
+# can override any key in its own tools.yaml, including `enabled: false`.
+version: 1
+tools:
+  recce:
+    enabled: true
+  wren:
+    enabled: true
+  openmetadata:
+    enabled: true

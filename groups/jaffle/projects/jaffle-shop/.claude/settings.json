@@ -25,12 +25,18 @@
     "python-standards@platform",
     "jaffle-group@jaffle",
     "evidence-bi@platform",
-    "dbt-snowflake@platform"
+    "dbt-snowflake@platform",
+    "power-tools@platform"
   ],
   "permissions": {
     "deny": [
       "Read(../*/src/**)",
-      "Read(../../../*/projects/**)"
+      "Read(../../../*/projects/**)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets.toml)",
+      "Read(**/.dlt/secrets.toml)",
+      "Read(**/credentials/**)"
     ],
     "allow": [
       "Bash(uv run pf:*)",
@@ -47,7 +53,20 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
       "Bash(pf align:*)",
-      "Bash(pf dialect:*)"
+      "Bash(pf dialect:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)",
+      "Bash(pf artifacts:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
     ]
   },
   "hooks": {

@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections import deque
 from pathlib import Path
 
-from pf.kg.store import Graph, Node, open_graph
+from pf.kg.store import Node, open_graph
 
 MAX_ROWS = 40
 

@@ -17,12 +17,50 @@ dependencies = ["pf"]
 # artefact we run. Keep the floor at the pinned submodule's last release.
 [project.optional-dependencies]
 recce = ["recce>=1.60,<2"]
+# The artefact store. Not a tool — it is where the tools' output goes — but it
+# gets an extra for the same reason they do: a checkout that never publishes
+# anything should not carry botocore. `uv sync --extra recce --extra artifacts`
+# is what CI runs, because a runner has no warehouse and must pull the baseline
+# rather than build one.
+artifacts = ["pf[artifacts]"]
+# The control plane: Dagster's storage on OpenMetadata's Postgres. What
+# `platform/Containerfile.stack` syncs, and what `pf stack db-init` needs.
+stack = ["pf[stack]"]
+
+# Production warehouse adapters, one extra per `pf.runtime.targets` entry.
+#
+# None is installed by default and that is the design: `dev`, `ci` and `base`
+# are DuckDB for every project, so a laptop build needs none of these, and
+# dbt only loads the adapter the *selected* target names. A project carries a
+# `prod:` block for a warehouse it cannot yet reach, inert until
+# `DBT_TARGET=prod` asks for it.
+#
+# Install the one you deploy with:  uv sync --extra snowflake
+snowflake = ["dbt-snowflake>=1.9,<2"]
+bigquery = ["dbt-bigquery>=1.9,<2"]
+redshift = ["dbt-redshift>=1.9,<2"]
+clickhouse = ["dbt-clickhouse>=1.8,<2"]
 wren = [
     "wrenai>=0.13,<1",
 ]
-# The ingestion framework, not the server. The server is a deployment concern
-# (Docker/Helm, see vendor/openmetadata); this is the client that talks to it.
-openmetadata = ["openmetadata-ingestion>=1.13,<2"]
+# openmetadata-ingestion is deliberately NOT an extra here. Install it isolated:
+#
+#     uv tool install 'openmetadata-ingestion[datalake,snowflake]'
+#
+# It is a *command*, not a library. `pf.tools.openmetadata` shells out to
+# `metadata ingest` and never imports a line of it, so putting it in this
+# workspace bought nothing and cost something specific:
+#
+#   openmetadata-ingestion pins antlr4-python3-runtime==4.9.2. dagster needs
+#   4.13 for its asset-selection lexer and declares only `<4.14`, so uv — which
+#   resolves one version per package for the whole workspace — picked 4.9.2 and
+#   every Dagster code location died in ATNDeserializer with
+#   `ord() expected string of length 1, but int found`.
+#
+# A lockfile is shared even when an extra is not: `uv sync` without
+# `--extra openmetadata` still installed the pinned antlr4, so the catalogue
+# tool nobody had enabled was breaking the orchestrator everybody uses. An
+# isolated tool install gives it its own environment and its own antlr4.
 
 [tool.uv.workspace]
 members = ["platform", "groups/*/projects/*"]
@@ -70,3 +108,49 @@ dev = [
   # skips silently when it is absent, so this is what turns SQL formatting on.
   "sqlfluff>=3.2",
 ]
+
+# Lint configuration, committed so the result does not depend on whose machine
+# ran it. Without this section `ruff check .` reported 2554 problems, 2375 of
+# them inside `vendor/` — an upstream nobody is allowed to edit.
+[tool.ruff]
+target-version = "py311"
+# A ceiling that catches a runaway line, not a house style. The code wraps at
+# ~88 by hand and should keep doing so; 120 is set here only so that adopting
+# this config does not reformat 17 files it has no business touching.
+line-length = 120
+extend-exclude = ["vendor", "node_modules", "**/target", "**/dbt_packages", "**/logs", "**/.evidence"]
+
+[tool.ruff.lint]
+# Explicit, never `ALL`. `ALL` silently adopts every rule a future ruff release
+# adds, so a routine upgrade fails the repo for reasons unrelated to any change.
+select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM", "RUF", "BLE", "DTZ", "ISC", "PIE", "PTH"]
+ignore = [
+  # dlt, dagster and dbt are lazy-imported inside functions and after runtime
+  # setup on purpose, so the platform core works without them installed.
+  "E402",
+  # `typer.Argument(...)` / `Depends(...)` in a default IS the typer and FastAPI
+  # idiom; B008 cannot tell it from the mutable-default bug it is aimed at.
+  "B008",
+  # `case "Model":  report.models.append(n)` — a match statement written as an
+  # aligned dispatch table. Splitting each arm onto its own line to satisfy E701
+  # turns five readable lines into ten and loses the alignment that is the point.
+  "E701",
+  # This repo writes real typography — `·` separators, `—` in prose, `×` in
+  # "OKLab ×100". RUF001-003 read every one of them as a homoglyph typo.
+  "RUF001", "RUF002", "RUF003",
+  # Never enable: a `# noqa` is only "unused" relative to the current select
+  # list, so autofixing RUF100 silently deletes annotations — including their
+  # explanatory trailing comments — the moment a rule family is narrowed.
+  "RUF100",
+  # Off for now, and named rather than silently dropped. Each site needs a
+  # judgement about whether the broad catch is intended, and this repo already
+  # marks the deliberate ones with `# noqa: BLE001`:
+  #   BLE001  15 blind `except Exception` sites in platform/
+  #   B904     8 re-raises inside `except` wanting `from err` / `from None`
+  # Turning either on is its own change, not a side effect of adopting this file.
+  "BLE001",
+  "B904",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"platform/tests/*" = ["E501"]

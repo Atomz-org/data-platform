@@ -102,19 +102,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__customers.country_code",
-      "kind": "Column",
-      "name": "country_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "geo_country",
-        "pii": false,
-        "model": "stg_stripe__customers",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_payments.country_code",
       "kind": "Column",
       "name": "country_code",
@@ -124,6 +111,19 @@
         "role": "geo_country",
         "pii": false,
         "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.country_code",
+      "kind": "Column",
+      "name": "country_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "geo_country",
+        "pii": false,
+        "model": "stg_stripe__customers",
         "data_type": null
       }
     },
@@ -152,19 +152,6 @@
       }
     },
     {
-      "id": "col:model:dim_customers.created_at",
-      "kind": "Column",
-      "name": "created_at",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "dim_customers",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_stripe__customers.created_at",
       "kind": "Column",
       "name": "created_at",
@@ -178,15 +165,16 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.currency",
+      "id": "col:model:dim_customers.created_at",
       "kind": "Column",
-      "name": "currency",
-      "layer": "raw",
-      "label": "currency_code",
+      "name": "created_at",
+      "layer": "marts",
+      "label": "",
       "props": {
-        "role": "currency_code",
+        "role": "event_time",
         "pii": false,
-        "table": "charges"
+        "model": "dim_customers",
+        "data_type": null
       }
     },
     {
@@ -202,29 +190,15 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.currency_code",
+      "id": "col:table:stripe.charges.currency",
       "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
       "props": {
         "role": "currency_code",
         "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__subscriptions.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
+        "table": "charges"
       }
     },
     {
@@ -254,6 +228,32 @@
       }
     },
     {
+      "id": "col:model:stg_stripe__subscriptions.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.customer_email",
       "kind": "Column",
       "name": "customer_email",
@@ -267,16 +267,17 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__customers.customer_id",
+      "id": "col:model:fct_payments.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "staging",
+      "layer": "marts",
       "label": "",
       "props": {
-        "role": "natural_key",
+        "role": "foreign_key",
         "pii": false,
-        "model": "stg_stripe__customers",
-        "data_type": null
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -290,6 +291,45 @@
         "pii": false,
         "table": "subscriptions",
         "links_to": "Customer"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "charges",
+        "links_to": "Customer"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__customers",
+        "data_type": null
       }
     },
     {
@@ -319,46 +359,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "charges",
-        "links_to": "Customer"
-      }
-    },
-    {
-      "id": "col:model:fct_payments.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__subscriptions.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_stripe__customers.customer_name",
       "kind": "Column",
       "name": "customer_name",
@@ -368,19 +368,6 @@
         "role": "pii_name",
         "pii": true,
         "model": "stg_stripe__customers",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_payments.customer_segment",
-      "kind": "Column",
-      "name": "customer_segment",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "fct_payments",
         "data_type": null
       }
     },
@@ -407,6 +394,19 @@
         "role": "status_enum",
         "pii": false,
         "model": "fct_revenue",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.customer_segment",
+      "kind": "Column",
+      "name": "customer_segment",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "fct_payments",
         "data_type": null
       }
     },
@@ -526,6 +526,18 @@
       }
     },
     {
+      "id": "col:table:stripe.subscriptions.mrr_amount",
+      "kind": "Column",
+      "name": "mrr_amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
       "id": "col:model:stg_stripe__subscriptions.mrr_amount",
       "kind": "Column",
       "name": "mrr_amount",
@@ -536,18 +548,6 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.subscriptions.mrr_amount",
-      "kind": "Column",
-      "name": "mrr_amount",
-      "layer": "raw",
-      "label": "money_amount",
-      "props": {
-        "role": "money_amount",
-        "pii": false,
-        "table": "subscriptions"
       }
     },
     {
@@ -576,20 +576,6 @@
       }
     },
     {
-      "id": "col:model:dim_customers.organization_id",
-      "kind": "Column",
-      "name": "organization_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "dim_customers",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
       "id": "col:table:stripe.customers.organization_id",
       "kind": "Column",
       "name": "organization_id",
@@ -613,6 +599,20 @@
         "pii": false,
         "model": "stg_stripe__customers",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dim_customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -655,19 +655,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.payment_id",
-      "kind": "Column",
-      "name": "payment_id",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_payments.payment_id",
       "kind": "Column",
       "name": "payment_id",
@@ -677,6 +664,19 @@
         "role": "natural_key",
         "pii": false,
         "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.payment_id",
+      "kind": "Column",
+      "name": "payment_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
         "data_type": null
       }
     },
@@ -719,6 +719,19 @@
       }
     },
     {
+      "id": "col:model:fct_payments.plan_tier",
+      "kind": "Column",
+      "name": "plan_tier",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_revenue.plan_tier",
       "kind": "Column",
       "name": "plan_tier",
@@ -745,16 +758,15 @@
       }
     },
     {
-      "id": "col:model:fct_payments.plan_tier",
+      "id": "col:table:stripe.charges.receipt_email",
       "kind": "Column",
-      "name": "plan_tier",
-      "layer": "marts",
-      "label": "",
+      "name": "receipt_email",
+      "layer": "raw",
+      "label": "pii_email",
       "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": null
+        "role": "pii_email",
+        "pii": true,
+        "table": "charges"
       }
     },
     {
@@ -768,18 +780,6 @@
         "pii": true,
         "model": "stg_stripe__charges",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.charges.receipt_email",
-      "kind": "Column",
-      "name": "receipt_email",
-      "layer": "raw",
-      "label": "pii_email",
-      "props": {
-        "role": "pii_email",
-        "pii": true,
-        "table": "charges"
       }
     },
     {
@@ -808,6 +808,18 @@
       }
     },
     {
+      "id": "col:table:stripe.subscriptions.started_at",
+      "kind": "Column",
+      "name": "started_at",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "subscriptions"
+      }
+    },
+    {
       "id": "col:model:stg_stripe__subscriptions.started_at",
       "kind": "Column",
       "name": "started_at",
@@ -821,13 +833,13 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.started_at",
+      "id": "col:table:stripe.subscriptions.status",
       "kind": "Column",
-      "name": "started_at",
+      "name": "status",
       "layer": "raw",
-      "label": "event_time",
+      "label": "status_enum",
       "props": {
-        "role": "event_time",
+        "role": "status_enum",
         "pii": false,
         "table": "subscriptions"
       }
@@ -842,18 +854,6 @@
         "role": "status_enum",
         "pii": false,
         "table": "charges"
-      }
-    },
-    {
-      "id": "col:table:stripe.subscriptions.status",
-      "kind": "Column",
-      "name": "status",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "subscriptions"
       }
     },
     {
@@ -1737,7 +1737,7 @@
       "label": "acme/acme-us",
       "props": {
         "group": "acme",
-        "path": "/Users/suresh/data-platform/groups/acme/projects/acme-us"
+        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-us"
       }
     },
     {
@@ -4296,6 +4296,54 @@
       "props": {}
     },
     {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.payment_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.paid_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.currency_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.payment_status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.customer_segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.country_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.plan_tier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
       "src": "model:fct_revenue",
       "dst": "col:model:fct_revenue.revenue_date",
       "kind": "has_column",
@@ -4380,54 +4428,6 @@
       "props": {}
     },
     {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.payment_id",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.amount",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.paid_at",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.currency_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.payment_status",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.customer_segment",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.country_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.plan_tier",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
       "src": "table:stripe.charges",
       "dst": "model:stg_stripe__charges",
       "kind": "feeds",
@@ -4442,6 +4442,24 @@
     {
       "src": "table:stripe.customers",
       "dst": "model:stg_stripe__customers",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__charges",
+      "dst": "model:fct_payments",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__customers",
+      "dst": "model:fct_payments",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:stg_stripe__subscriptions",
+      "dst": "model:fct_payments",
       "kind": "feeds",
       "props": {}
     },
@@ -4542,6 +4560,18 @@
       "props": {}
     },
     {
+      "src": "model:fct_payments",
+      "dst": "test:test.acme_us.unique_fct_payments_payment_id.4572b82d46",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "test:test.acme_us.not_null_fct_payments_payment_id.f8fe414166",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
       "src": "model:fct_revenue",
       "dst": "test:test.acme_us.not_null_fct_revenue_revenue_date.ce66a8b3bb",
       "kind": "tested_by",
@@ -4556,36 +4586,6 @@
     {
       "src": "model:metricflow_time_spine",
       "dst": "test:test.acme_us.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_stripe__charges",
-      "dst": "model:fct_payments",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "model:stg_stripe__customers",
-      "dst": "model:fct_payments",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "model:stg_stripe__subscriptions",
-      "dst": "model:fct_payments",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "test:test.acme_us.unique_fct_payments_payment_id.4572b82d46",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "test:test.acme_us.not_null_fct_payments_payment_id.f8fe414166",
       "kind": "tested_by",
       "props": {}
     },

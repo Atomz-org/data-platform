@@ -85,7 +85,7 @@ def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
                                     "dual-axis chart; use two charts or index to a "
                                     "common base"))
 
-        stray = [h for h in HEX.findall(text)]
+        stray = list(HEX.findall(text))
         if stray:
             findings.append(Finding("warning", "unvalidated-colour", rel,
                                     f"hard-coded hex {stray[:3]} — the theme palette "

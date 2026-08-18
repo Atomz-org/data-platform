@@ -25,3 +25,5 @@ Raw SQL that recomputes a defined metric is a bug, not a shortcut.
   Lineage says what could break; only a diff says what did.
 - Every data-returning tool is truncated by policy (schema + <=20 rows + counts).
   If you need more, aggregate in SQL — do not raise the limit.
+- Any chart or diagram → `viz-standards`. Form first, colour last; the status
+  colours stay reserved.

@@ -1,0 +1,113 @@
+# Opt-in Claude review of a pull request.
+#
+# Deliberately label-gated rather than running on every PR. This job calls the
+# Anthropic API and is billed per run, and the checks that must always happen —
+# gate policy, blast radius, recce diff — already run unconditionally in
+# pr-report.yml and the per-project recce workflows. This one is for the reviews
+# that need judgement rather than a rule, and it costs nothing until asked for.
+#
+# To use it: add the `claude-review` label to the PR. Re-add it to re-run.
+#
+# Requires the ANTHROPIC_API_KEY repository secret. Without it the job exits
+# early with an explanation rather than failing red, so an unconfigured fork
+# does not look broken.
+name: Claude review
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.label.name == 'claude-review'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for API key
+        id: guard
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "ANTHROPIC_API_KEY is not set — skipping. Add the repository"
+            echo "secret to enable /claude-review."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.ready == 'true'
+        with:
+          # The review reasons about what changed against the merge base, so a
+          # shallow checkout would present the whole repo as new.
+          fetch-depth: 0
+
+      - name: Install uv
+        if: steps.guard.outputs.ready == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync
+        if: steps.guard.outputs.ready == 'true'
+        run: uv sync --frozen
+
+      # The platform's own verdicts go into the prompt as evidence. Claude is
+      # asked to review what a rule cannot decide, not to re-derive what `pf`
+      # already computed — and disagreeing with the gate is itself a finding.
+      - name: Collect platform context
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          {
+            echo "## Changed paths"
+            git diff --name-only "origin/${{ github.event.pull_request.base.ref }}...HEAD"
+            echo
+            echo "## pf gate"
+            uv run pf gate --paths "$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}...HEAD" | tr '\n' ',')" 2>&1 | tail -40 || true
+            echo
+            echo "## pf check"
+            uv run pf check 2>&1 | tail -60 || true
+          } > platform-context.md
+          cat platform-context.md
+
+      - name: Review
+        if: steps.guard.outputs.ready == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request as a senior data-platform engineer.
+
+            Read `platform-context.md` first — it carries the gate verdict, the
+            conformance result and the changed paths. Do not re-derive those.
+
+            Judge the things a rule cannot:
+
+            1. **Correctness of SQL semantics.** Grain, fanout in joins, null
+               handling, incremental predicates, type mismatches. Report the
+               wrong *answer* a fault produces, not that it "may cause issues".
+            2. **Semantics.** Undeclared joins, annotations that no longer match
+               the models, a mart that pre-aggregates what a metric aggregates.
+            3. **Blast radius the author did not mention.** Metrics and published
+               contracts (`mdl/mdl.json`, `catalog/openmetadata.json`) change
+               value silently; that is the class worth catching in review.
+            4. **Entity isolation.** Anything reading across groups or sister
+               projects is a defect regardless of how well it is written.
+            5. **Secrets and PII**, especially anything landing in a committed
+               artefact such as `transform/recce_state.json`.
+
+            Post one comment containing a marker line `<!-- claude-review -->`
+            so it can be updated in place on the next run. Lead with a one-line
+            verdict, then findings ranked by consequence, each with file:line
+            and a concrete fix. If you find nothing, say what you checked.
+
+            Do not modify files. This is review only.
+          claude_args: "--allowed-tools Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(uv run pf:*)"
