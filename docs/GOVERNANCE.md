@@ -193,3 +193,37 @@ our compliance cannot change without a commit here. Its licence is
 **Elastic-2.0**, stricter than the platform's other upstreams: internal CI use is
 well within scope, but exposing scanning as a tenant-facing feature is the
 managed service the licence excludes. See `pf vendor licences`.
+
+## The fourth side: a published control catalogue
+
+The five stages above prove what an agent did. ASQAV asks whether the controls
+exist in the source. Neither says **which controls there should be**, and for a
+regulated deployment that is the part somebody external judges.
+
+`vendor/ai-governance-framework` is the FINOS AI Governance Framework — 23 risks
+and 23 controls, cross-walked to the EU AI Act, ISO/IEC 42001, NIST SP 800-53r5,
+OWASP LLM/ML/ASI, FFIEC, SR 11-7, IOSCO and the UK and Canada regimes. Unlike the
+other two upstreams it is machine-readable, so `pf.air` reads it rather than
+citing it, and each `policy.yaml` entry now names the controls it discharges:
+
+```yaml
+    enforced_by: [pf.provenance.ledger:decision, platform/hooks/pre_tool_use.py]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-21, AIR-DET-4]
+```
+
+That single field is what lets the ledger described above answer a question it
+could not answer before. `pf air crosswalk eu-ai-act` walks Article 12
+(record-keeping) to `agent-decisions-are-recorded` and
+`evidence-chain-is-tamper-evident`, and from there to the chain and the anchor —
+so "how do you satisfy Article 12" is a path through this repository rather than
+a paragraph about it.
+
+Coverage is **derived on every run and never stored**, for the same reason the
+onboarding ladder derives its verdicts: a recorded pass survives the change that
+invalidated it. Only `fail` blocks a merge, and only for controls an entity
+committed to in its own `air.yaml`. Everything else is reported — the platform
+ships with eight controls it has not built and one that two policies claim while
+naming enforcement that does not exist, and the report says so.
+
+`docs/AIR.md` is the reference.
