@@ -1,1 +1,9 @@
-{ "name": "dlt-performance", "version": "0.1.0", "description": "Platform toolkit: dlt-performance" }
+{
+  "name": "dlt-performance",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dlt-performance",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

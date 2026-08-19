@@ -1,1 +1,9 @@
-{ "name": "dbt-modeling", "version": "0.1.0", "description": "Platform toolkit: dbt-modeling" }
+{
+  "name": "dbt-modeling",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-modeling",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}
