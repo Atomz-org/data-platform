@@ -1,1 +1,9 @@
-{ "name": "python-standards", "version": "0.1.0", "description": "Platform toolkit: python-standards" }
+{
+  "name": "python-standards",
+  "version": "0.1.0",
+  "description": "Platform toolkit: python-standards",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}
