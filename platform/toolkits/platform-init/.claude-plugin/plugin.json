@@ -1,1 +1,9 @@
-{ "name": "platform-init", "version": "0.1.0", "description": "Platform toolkit: platform-init" }
+{
+  "name": "platform-init",
+  "version": "0.1.0",
+  "description": "Platform toolkit: platform-init",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

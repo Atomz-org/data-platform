@@ -1,1 +1,9 @@
-{ "name": "dbt-govern", "version": "0.1.0", "description": "Platform toolkit: dbt-govern" }
+{
+  "name": "dbt-govern",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-govern",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

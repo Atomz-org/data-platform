@@ -2,6 +2,7 @@
 name: dignified-python
 description: Production Python conventions for this repo.
 ---
+<!-- Adapted from dagster-io/skills dignified-python (vendor/dagster-skills, Apache-2.0) — see registry.yaml. -->
 # Python standards
 
 - Target 3.11–3.12. Contemporary typing: `list[str]`, `str | None`, `Protocol`,

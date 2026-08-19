@@ -1,1 +1,9 @@
-{ "name": "dagster-orchestrate", "version": "0.1.0", "description": "Platform toolkit: dagster-orchestrate" }
+{
+  "name": "dagster-orchestrate",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dagster-orchestrate",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}
