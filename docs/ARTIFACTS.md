@@ -70,16 +70,17 @@ branch's.
 
 | | Secret? | Where it lives |
 |---|---|---|
-| Endpoint (`https://<account-id>.r2.cloudflarestorage.com`) | **No** | committed default in `pf/artifacts.py` |
-| Bucket (`data-platform`) | **No** | committed default |
+| Endpoint (`https://<account-id>.r2.cloudflarestorage.com`) | **No** | `PF_ARTIFACTS_ENDPOINT`, environment only |
+| Bucket (`data-platform`) | **No** | committed default, `PF_ARTIFACTS_BUCKET` overrides |
 | Access Key ID | **Yes** | environment only |
 | Secret Access Key | **Yes** | environment only |
 
 The account id inside the endpoint is not a credential. Every S3 client needs
 it, it appears in every request URL, and it grants nothing on its own — the same
-way an AWS account number is not a secret. It is committed so `pf` works with no
-configuration. Override it with `PF_ARTIFACTS_ENDPOINT` / `PF_ARTIFACTS_BUCKET`
-for a fork or a second environment.
+way an AWS account number is not a secret. It still lives in the environment
+rather than in code: it identifies whose infrastructure this is, and an
+open-source checkout should not ship anyone's. Each environment — laptop, CI,
+fork — sets `PF_ARTIFACTS_ENDPOINT` beside the two keys.
 
 The two keys are credentials and are read **from the environment only**. No
 `pf` command writes them to a file, and none is written into a generated file.
