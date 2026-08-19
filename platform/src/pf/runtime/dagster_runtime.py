@@ -84,6 +84,10 @@ def build_definitions(
     if sisters:
         assets.append(_make_rollup_asset(wh, _resolve_sisters(root, sisters)))
 
+    hk = _make_housekeeping_asset(root, group, project, wh)
+    if hk is not None:
+        assets.append(hk)
+
     # Tools contribute last, so a tool asset can depend on the dbt models above.
     # Nothing here names a tool: which ones run comes from the project's
     # tools.yaml, and a tool installed from outside this repo lands the same way.
@@ -332,6 +336,54 @@ def _make_dbt_assets(dbt_dir: Path, wh: Warehouse):
         yield from context.resources.dbt.cli(["build"], context=context).stream()
 
     return _dbt, resource
+
+
+# ------------------------------------------------------------ housekeeping --
+def _make_housekeeping_asset(root: Path, group: str, project: str, wh: Any):
+    """Lakehouse maintenance as an asset — only where the committed prod is one.
+
+    The decision is read from profiles.yml the same way `pf housekeeping`
+    reads it, so the asset exists exactly for the projects the command would
+    act on and for no others. Each materialisation plans; it applies the
+    automated tasks only when `PF_HOUSEKEEPING_APPLY=1`, because a schedule
+    that silently expires snapshots is a schedule nobody remembers arming —
+    the flag is the operator saying "yes, on this deployment, retention runs
+    unattended".
+    """
+    from pf.housekeeping import detect, plan_for_project
+    from pf.housekeeping import run as hk_run
+
+    profiles = root / "transform" / "profiles.yml"
+    engine = detect(profiles.read_text()) if profiles.exists() else None
+    if engine is None:
+        return None
+
+    from dagster import MetadataValue, asset
+
+    @asset(
+        name="lakehouse_housekeeping",
+        key_prefix=[_prefix(project)],
+        group_name="housekeeping",
+        pool=wh.writer_pool,  # it mutates the lake; never beside another writer
+        description=f"Plan (and with PF_HOUSEKEEPING_APPLY=1, run) {engine} "
+                    f"maintenance: compaction, snapshot expiry, file cleanup.",
+        compute_kind="duckdb",
+    )
+    def _housekeeping(context) -> None:  # noqa: ANN001
+        report = plan_for_project(group, project, root)
+        applied: tuple[str, ...] = ()
+        if os.environ.get("PF_HOUSEKEEPING_APPLY") == "1":
+            applied = hk_run(report).applied
+        context.add_output_metadata({
+            "engine": report.engine,
+            "tasks": MetadataValue.json(
+                [{"name": t.name, "automated": t.automated, "reason": t.reason}
+                 for t in report.tasks]),
+            "applied": MetadataValue.json(list(applied)),
+            "mode": "apply" if applied else "plan-only",
+        })
+
+    return _housekeeping
 
 
 # ------------------------------------------------------------------ rollup --
