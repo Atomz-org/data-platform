@@ -1,7 +1,7 @@
-# AI agent governance: prove the provenance chain, then scan for the gaps it
-# cannot see.
+# AI agent governance: prove the provenance chain, scan for the gaps it cannot
+# see, then check both against a published control catalogue.
 #
-# Two checks that fail in opposite directions, which is why both run:
+# Three checks that fail in different directions, which is why all three run:
 #
 #   `pf provenance verify` is *runtime* evidence. It reads the ledger this
 #   platform actually wrote and asks whether it holds together — every record
@@ -13,6 +13,12 @@
 #   — audit trail, policy enforcement, revocation, human oversight, error
 #   handling — and maps them to EU AI Act, DORA and ISO 42001. It says nothing
 #   about whether any of it ran.
+#
+#   `pf air` is the *catalogue*. The other two ask whether our controls work;
+#   this one asks whether they are the right controls, against 23 risks and 23
+#   mitigations published by FINOS and cross-walked to the EU AI Act, ISO
+#   42001, NIST SP 800-53r5, OWASP and the rest. It is the only one of the
+#   three that can report a control we never thought to build.
 #
 # A clean scan with a broken chain means the controls exist and are not working.
 # A clean chain with a failing scan means the paths that are instrumented are
@@ -113,3 +119,51 @@ jobs:
           echo "| Compliance score | ${{ steps.scan.outputs.score }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Agent files | ${{ steps.scan.outputs.agent-files }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Gaps | ${{ steps.scan.outputs.gaps }} |" >> "$GITHUB_STEP_SUMMARY"
+
+  air-baseline:
+    name: AI control baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Load-bearing, and unique to this job: the control catalogue is
+          # vendored. Without it every control assesses as `unexercised` and the
+          # gate passes for the wrong reason.
+          submodules: true
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      - name: Unit tests for the catalogue
+        run: uv run pytest platform/tests/test_air.py -q
+
+      - name: Verify the vendored corpus
+        # Fails when a pin bump renamed a control, retired a risk something still
+        # cites, or changed a `type:` letter — which silently renames the derived
+        # id every air.yaml baseline refers to. This is what makes the registry's
+        # `kind: data` coupling a claim the build can check.
+        run: uv run pf air verify
+
+      - name: Coverage
+        # Reported, never enforced. The platform ships with controls it has not
+        # built, and the honest thing is a summary that says which.
+        run: uv run pf air coverage --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Committed baselines
+        # The blocking check. Each entity declares in its air.yaml which controls
+        # it commits to; only those fail the merge, and only when a claiming
+        # policy names enforcement that does not resolve. `unexercised` warns.
+        run: |
+          set -e
+          for g in groups/*/; do
+            group=$(basename "$g")
+            [ -f "$g/air.yaml" ] || continue
+            for p in "$g"projects/*/; do
+              [ -d "$p" ] || continue
+              uv run pf air gate "$group" "$(basename "$p")"
+            done
+          done
