@@ -1,5 +1,17 @@
 {
   "upstreams": {
+    "ai-governance-framework": {
+      "adopted": {
+        "docs/_data/ai_deployment_model.yml": "54bcc6bddad6b98f23b2f88290531c0752ee10f2",
+        "docs/_data/references": "44a15fc2b6a13b1d05ca7da69568441aeeadfee6",
+        "docs/_mitigations": "23c9caf25c5e22ac80cef66e23484d31799e2a0b",
+        "docs/_risks": "165b2a008c1bfc55996e45ef6bcadc0e9db81d20",
+        "docs/heuristic-assessment.md": "bd54d5a0b80bb7bd5e0a21363672ed0733abd61f",
+        "templates-for-ri-md/mi-template.md": "aded3deffcf969671be40e39d782c24c0d522de2"
+      },
+      "branch": "main",
+      "commit": "274760ccd058da1f1cb12cdbd72e50dfd1258122"
+    },
     "context-ontology-accelerator": {
       "adopted": {
         "packages/context-manager": "292696066e6b4800fa5705d1a7cf99e26b30db1c",

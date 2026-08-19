@@ -191,12 +191,41 @@ def _is_timed(cadence: str) -> bool:
 
 
 # ------------------------------------------------------------------ all ----
+def check_air_corpus(root: Path) -> list[Finding]:
+    """The FINOS catalogue's own frontmatter contract.
+
+    `registry.yaml` pins `docs/_mitigations`, `docs/_risks` and
+    `docs/_data/references` as `kind: data`, whose severity is `error`. This is
+    what makes that pin a claim the build checks rather than a label: a bump that
+    renames a control, retires a risk something still cites, or flips a `type:`
+    letter — which silently renames the derived id every `air.yaml` baseline
+    refers to — fails here.
+
+    Delegated to `pf.air.verify` rather than reimplemented, because the module
+    that parses the corpus is the one that knows what a well-formed one looks
+    like. An absent submodule is a warning, matching every other contract here.
+    """
+    from pf.air.verify import verify as air_verify
+
+    rep = air_verify(root)
+    if not rep.vendored:
+        return [Finding("warning", "contract:air", "vendor/ai-governance-framework",
+                        "not exercised: submodule not checked out")]
+    out = [
+        Finding("error" if f.level == "fail" else "warning",
+                "contract:air", "vendor/ai-governance-framework", f.detail)
+        for f in rep.findings if f.level != "ok"
+    ]
+    return out
+
+
 def verify(root: str | Path, project: tuple[str, str, Path] | None = None) -> Result:
     root = Path(root)
     ups = load_registry()
     findings = check_paths(root, ups)
     findings += check_otop(root, project[2] if project else None)
     findings += check_loop_parity(root)
+    findings += check_air_corpus(root)
     if project:
         g, p, d = project
         findings += check_mdl(root, d, g, p)
@@ -209,5 +238,5 @@ def verify(root: str | Path, project: tuple[str, str, Path] | None = None) -> Re
             "warning", "contract:mdl", "-",
             "not exercised: no project has a built graph. Run `pf seed <g> <p>` "
             "or `pf kg build` first, or pass a project explicitly"))
-    n = sum(len(u.adopted) for u in ups) + 3
+    n = sum(len(u.adopted) for u in ups) + 4
     return Result(findings=findings, checked=n)
