@@ -1,19 +1,6 @@
 {
   "nodes": [
     {
-      "id": "col:model:metricflow_time_spine.date_day",
-      "kind": "Column",
-      "name": "date_day",
-      "layer": "utils",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "metricflow_time_spine",
-        "data_type": null
-      }
-    },
-    {
       "id": "concept:Agreement",
       "kind": "Concept",
       "name": "Agreement",
@@ -232,6 +219,16 @@
       }
     },
     {
+      "id": "evidence:governance/air-register.md",
+      "kind": "Evidence",
+      "name": "governance/air-register.md",
+      "layer": "governance",
+      "label": "per-entity risk register",
+      "props": {
+        "durable": true
+      }
+    },
+    {
       "id": "evidence:impact_reports",
       "kind": "Evidence",
       "name": "impact_reports",
@@ -259,6 +256,16 @@
       "label": "run history",
       "props": {
         "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf air coverage",
+      "kind": "Evidence",
+      "name": "pf air coverage",
+      "layer": "governance",
+      "label": "control coverage verdicts",
+      "props": {
+        "durable": false
       }
     },
     {
@@ -292,6 +299,36 @@
       }
     },
     {
+      "id": "evidence:pf provenance verify",
+      "kind": "Evidence",
+      "name": "pf provenance verify",
+      "layer": "governance",
+      "label": "ledger audit",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool elementary report",
+      "kind": "Evidence",
+      "name": "pf tool elementary report",
+      "layer": "governance",
+      "label": "observability report over recorded history",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool expectations run",
+      "kind": "Evidence",
+      "name": "pf tool expectations run",
+      "layer": "governance",
+      "label": "quality floor verdicts",
+      "props": {
+        "durable": false
+      }
+    },
+    {
       "id": "evidence:pf tool recce config",
       "kind": "Evidence",
       "name": "pf tool recce config",
@@ -312,16 +349,95 @@
       }
     },
     {
-      "id": "model:metricflow_time_spine",
-      "kind": "Model",
-      "name": "metricflow_time_spine",
-      "layer": "utils",
-      "label": "Daily time spine required by MetricFlow.",
+      "id": "policy:agent-authority-is-least-privilege",
+      "kind": "Policy",
+      "name": "agent-authority-is-least-privilege",
+      "layer": "governance",
+      "label": "An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a pro",
       "props": {
-        "schema": "base",
-        "materialized": "table",
-        "grain": "",
-        "tags": []
+        "constraint": "path_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:denylist",
+          "gate.yaml:platform_denylist",
+          "pf.loops.gate:check_path"
+        ],
+        "enforced": true,
+        "intent": "An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a prompt is a request; in a denylist it is a control."
+      }
+    },
+    {
+      "id": "policy:agent-authority-is-revocable",
+      "kind": "Policy",
+      "name": "agent-authority-is-revocable",
+      "layer": "governance",
+      "label": "A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreadable",
+      "props": {
+        "constraint": "revocable",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.ledger:revoke",
+          "pf.provenance.ledger:is_revoked"
+        ],
+        "enforced": true,
+        "intent": "A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreadable revocation file fails closed."
+      }
+    },
+    {
+      "id": "policy:agent-decisions-are-recorded",
+      "kind": "Policy",
+      "name": "agent-decisions-are-recorded",
+      "layer": "governance",
+      "label": "Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No rule",
+      "props": {
+        "constraint": "action_recorded",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {
+          "stages": [
+            "intent",
+            "decision",
+            "execution"
+          ]
+        },
+        "enforced_by": [
+          "pf.provenance.ledger:decision",
+          "platform/hooks/pre_tool_use.py",
+          "platform/hooks/post_tool_use.py"
+        ],
+        "enforced": true,
+        "intent": "Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No rule applied\" and \"a rule allowed it\" are different facts, and only a record that carries both can answer what an agent was permitted to do."
+      }
+    },
+    {
+      "id": "policy:builds-record-observability",
+      "kind": "Policy",
+      "name": "builds-record-observability",
+      "layer": "governance",
+      "label": "A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run an",
+      "props": {
+        "constraint": "observability_recorded",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/packages.yml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.elementary:bootstrap_project",
+          "pf.tools.elementary:ensure_package"
+        ],
+        "enforced": true,
+        "intent": "A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run and test results into the warehouse with history \u2014 for every test framework at once \u2014 so \"is this new, recurring, or flaky?\" is a query, not an archaeology dig."
       }
     },
     {
@@ -367,6 +483,27 @@
       }
     },
     {
+      "id": "policy:control-baseline-is-declared",
+      "kind": "Policy",
+      "name": "control-baseline-is-declared",
+      "layer": "governance",
+      "label": "A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from the r",
+      "props": {
+        "constraint": "baseline_declared",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/air.yaml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.air.coverage:assess",
+          "pf.air.register:render_register"
+        ],
+        "enforced": true,
+        "intent": "A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from the repository on every run and block the merge when they fail, while everything outside the baseline is reported and does not."
+      }
+    },
+    {
       "id": "policy:entity-requires-identity",
       "kind": "Policy",
       "name": "entity-requires-identity",
@@ -386,6 +523,49 @@
         ],
         "enforced": true,
         "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+      }
+    },
+    {
+      "id": "policy:evidence-chain-is-tamper-evident",
+      "kind": "Policy",
+      "name": "evidence-chain-is-tamper-evident",
+      "layer": "governance",
+      "label": "A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake in w",
+      "props": {
+        "constraint": "hash_chained",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "provenance/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.chain:verify",
+          "pf.provenance.anchor:stamp_rfc3161",
+          "gate.yaml:denylist"
+        ],
+        "enforced": true,
+        "intent": "A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake in what it says \u2014 so editing the middle requires editing the end, and the end is countersigned."
+      }
+    },
+    {
+      "id": "policy:high-impact-actions-need-a-human",
+      "kind": "Policy",
+      "name": "high-impact-actions-need-a-human",
+      "layer": "governance",
+      "label": "Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an actor",
+      "props": {
+        "constraint": "approval_recorded",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.ledger:approve",
+          "pf.provenance.audit:report"
+        ],
+        "enforced": true,
+        "intent": "Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an actor approving their own action is a finding rather than an approval."
       }
     },
     {
@@ -459,6 +639,26 @@
       }
     },
     {
+      "id": "policy:model-routing-is-declared",
+      "kind": "Policy",
+      "name": "model-routing-is-declared",
+      "layer": "governance",
+      "label": "Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matches w",
+      "props": {
+        "constraint": "routing_declared",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/agents/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.agents.base:AGENTS"
+        ],
+        "enforced": true,
+        "intent": "Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matches what actually happened rather than what policy would have preferred."
+      }
+    },
+    {
       "id": "policy:money-requires-currency",
       "kind": "Policy",
       "name": "money-requires-currency",
@@ -508,6 +708,27 @@
       }
     },
     {
+      "id": "policy:quality-floor-derived-from-ontology",
+      "kind": "Policy",
+      "name": "quality-floor-derived-from-ontology",
+      "layer": "governance",
+      "label": "Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must be",
+      "props": {
+        "constraint": "tests_derived_from_roles",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/tests/expectations/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.expectations:write_tests",
+          "pf.tools.expectations:bootstrap_project"
+        ],
+        "enforced": true,
+        "intent": "Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must be derived from the ontology roles, so coverage is a function of annotation rather than of memory, and a wrong test is a wrong role rather than a stale file."
+      }
+    },
+    {
       "id": "policy:review-artifacts-exclude-pii",
       "kind": "Policy",
       "name": "review-artifacts-exclude-pii",
@@ -547,6 +768,74 @@
         ],
         "enforced": true,
         "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+      }
+    },
+    {
+      "id": "policy:sister-projects-are-isolated",
+      "kind": "Policy",
+      "name": "sister-projects-are-isolated",
+      "layer": "governance",
+      "label": "Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session may",
+      "props": {
+        "constraint": "cross_tenant_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "groups/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:platform_denylist",
+          "pf.loops.gate:project_for"
+        ],
+        "enforced": true,
+        "intent": "Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session may not read or write another project, and may not write shared infra at all."
+      }
+    },
+    {
+      "id": "policy:tool-contribution-may-only-tighten",
+      "kind": "Policy",
+      "name": "tool-contribution-may-only-tighten",
+      "layer": "governance",
+      "label": "A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any lo",
+      "props": {
+        "constraint": "tightening_only",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "gate.capabilities.yaml"
+        },
+        "params": {
+          "sections": [
+            "denylist",
+            "platform_denylist",
+            "impact_required"
+          ]
+        },
+        "enforced_by": [
+          "pf.tools.spec:Tool.gate_sections"
+        ],
+        "enforced": true,
+        "intent": "A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any loosening section at construction, so an unsafe tool fails at import rather than silently permitting more."
+      }
+    },
+    {
+      "id": "policy:upstream-licences-are-reviewed",
+      "kind": "Policy",
+      "name": "upstream-licences-are-reviewed",
+      "layer": "governance",
+      "label": "Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfaced ",
+      "props": {
+        "constraint": "licence_reviewed",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "vendor/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.vendor.model:load_registry",
+          "pf.vendor.verify:verify"
+        ],
+        "enforced": true,
+        "intent": "Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfaced in the listing, so a constraint is a fact in the registry rather than something someone once checked."
       }
     },
     {
@@ -673,7 +962,7 @@
       }
     },
     {
-      "id": "property:Organization.country",
+      "id": "property:Location.country",
       "kind": "Property",
       "name": "country",
       "layer": "ontology",
@@ -682,7 +971,7 @@
         "datatype": "string",
         "role": "geo_country",
         "required": false,
-        "concept": "Organization",
+        "concept": "Location",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -705,7 +994,7 @@
       }
     },
     {
-      "id": "property:Location.country",
+      "id": "property:Organization.country",
       "kind": "Property",
       "name": "country",
       "layer": "ontology",
@@ -714,7 +1003,7 @@
         "datatype": "string",
         "role": "geo_country",
         "required": false,
-        "concept": "Location",
+        "concept": "Organization",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -737,22 +1026,6 @@
       }
     },
     {
-      "id": "property:Subscription.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": false,
-        "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
@@ -763,6 +1036,22 @@
         "role": "currency_code",
         "required": true,
         "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Order",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -785,7 +1074,7 @@
       }
     },
     {
-      "id": "property:Order.currency",
+      "id": "property:Subscription.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -794,7 +1083,7 @@
         "datatype": "string",
         "role": "currency_code",
         "required": false,
-        "concept": "Order",
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -945,7 +1234,7 @@
       }
     },
     {
-      "id": "property:Product.name",
+      "id": "property:Organization.name",
       "kind": "Property",
       "name": "name",
       "layer": "ontology",
@@ -954,7 +1243,7 @@
         "datatype": "string",
         "role": "free_text",
         "required": false,
-        "concept": "Product",
+        "concept": "Organization",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -977,7 +1266,7 @@
       }
     },
     {
-      "id": "property:Organization.name",
+      "id": "property:Product.name",
       "kind": "Property",
       "name": "name",
       "layer": "ontology",
@@ -986,25 +1275,9 @@
         "datatype": "string",
         "role": "free_text",
         "required": false,
-        "concept": "Organization",
+        "concept": "Product",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Event.occurred_at",
-      "kind": "Property",
-      "name": "occurred_at",
-      "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
-      "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Event",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
         "is_identity": false
       }
     },
@@ -1019,6 +1292,22 @@
         "role": "event_time",
         "required": false,
         "concept": "Interaction",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Event.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Event",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -1265,22 +1554,6 @@
       }
     },
     {
-      "id": "property:Agreement.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": false,
-        "concept": "Agreement",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.status",
       "kind": "Property",
       "name": "status",
@@ -1307,6 +1580,22 @@
         "role": "status_enum",
         "required": false,
         "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Agreement.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1580,26 +1869,6 @@
         "inverse": "settles",
         "description": "",
         "reverse_label": "Payment settles Subscription"
-      }
-    },
-    {
-      "id": "test:test.globex_core.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "Test",
-      "name": "not_null_metricflow_time_spine_date_day",
-      "layer": "test",
-      "label": "not_null",
-      "props": {
-        "severity": "ERROR"
-      }
-    },
-    {
-      "id": "test:test.globex_core.unique_metricflow_time_spine_date_day.ddb41ceac8",
-      "kind": "Test",
-      "name": "unique_metricflow_time_spine_date_day",
-      "layer": "test",
-      "label": "unique",
-      "props": {
-        "severity": "ERROR"
       }
     }
   ],
@@ -2211,27 +2480,93 @@
       "props": {}
     },
     {
+      "src": "policy:builds-record-observability",
+      "dst": "evidence:pf tool elementary report",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:builds-record-observability",
+      "dst": "evidence:loop-ledger.json",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:quality-floor-derived-from-ontology",
+      "dst": "evidence:pf tool expectations run",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
       "src": "policy:secrets-never-in-context",
       "dst": "evidence:pf gate",
       "kind": "evidenced_by",
       "props": {}
     },
     {
-      "src": "model:metricflow_time_spine",
-      "dst": "col:model:metricflow_time_spine.date_day",
-      "kind": "has_column",
+      "src": "policy:agent-authority-is-least-privilege",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
       "props": {}
     },
     {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.globex_core.unique_metricflow_time_spine_date_day.ddb41ceac8",
-      "kind": "tested_by",
+      "src": "policy:tool-contribution-may-only-tighten",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
       "props": {}
     },
     {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.globex_core.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "tested_by",
+      "src": "policy:agent-decisions-are-recorded",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:evidence-chain-is-tamper-evident",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:sister-projects-are-isolated",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:agent-authority-is-revocable",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:high-impact-actions-need-a-human",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:model-routing-is-declared",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:upstream-licences-are-reviewed",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:control-baseline-is-declared",
+      "dst": "evidence:pf air coverage",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:control-baseline-is-declared",
+      "dst": "evidence:governance/air-register.md",
+      "kind": "evidenced_by",
       "props": {}
     }
   ]

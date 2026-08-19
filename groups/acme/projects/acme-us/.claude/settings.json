@@ -11,22 +11,23 @@
       }
     }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "dlt-ingest@platform",
-    "dlt-quality@platform",
-    "dlt-explore@platform",
-    "duckdb-ops@platform",
-    "dbt-modeling@platform",
-    "dbt-semantic@platform",
-    "dbt-testing@platform",
-    "dbt-govern@platform",
-    "dagster-orchestrate@platform",
-    "python-standards@platform",
-    "acme-group@acme",
-    "evidence-bi@platform",
-    "power-tools@platform"
-  ],
+  "enabledPlugins": {
+    "platform-init@platform": true,
+    "dlt-ingest@platform": true,
+    "dlt-quality@platform": true,
+    "dlt-explore@platform": true,
+    "duckdb-ops@platform": true,
+    "dbt-modeling@platform": true,
+    "dbt-semantic@platform": true,
+    "dbt-testing@platform": true,
+    "dbt-govern@platform": true,
+    "dagster-orchestrate@platform": true,
+    "python-standards@platform": true,
+    "acme-group@acme": true,
+    "evidence-bi@platform": true,
+    "power-tools@platform": true,
+    "elementary-observe@platform": true
+  },
   "permissions": {
     "deny": [
       "Read(../*/src/**)",
@@ -59,7 +60,12 @@
       "Bash(metadata:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
-      "Bash(pf artifacts:*)"
+      "Bash(pf artifacts:*)",
+      "Bash(pf tool expectations:*)",
+      "Bash(pf air:*)",
+      "Bash(pf tool elementary:*)",
+      "Bash(edr report:*)",
+      "Bash(edr monitor:*)"
     ],
     "ask": [
       "Bash(git push:*)",

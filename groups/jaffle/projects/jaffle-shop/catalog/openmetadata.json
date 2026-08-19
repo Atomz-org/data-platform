@@ -406,10 +406,94 @@
       "provider": "user"
     },
     {
+      "description": "**Intent:** A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run and test results into the warehouse with history \u2014 for every test framework at once \u2014 so \"is this new, recurring, or flaky?\" is a query, not an archaeology dig.\n\n**Constraint:** `observability_recorded`\n\n**Severity:** warning\n\n**Enforced by:** pf.tools.elementary:bootstrap_project, pf.tools.elementary:ensure_package\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: builds-record-observability",
+      "glossary": "Platform Ontology",
+      "name": "policy_builds-record-observability",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must be derived from the ontology roles, so coverage is a function of annotation rather than of memory, and a wrong test is a wrong role rather than a stale file.\n\n**Constraint:** `tests_derived_from_roles`\n\n**Severity:** warning\n\n**Enforced by:** pf.tools.expectations:write_tests, pf.tools.expectations:bootstrap_project\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: quality-floor-derived-from-ontology",
+      "glossary": "Platform Ontology",
+      "name": "policy_quality-floor-derived-from-ontology",
+      "provider": "user"
+    },
+    {
       "description": "**Intent:** A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.\n\n**Constraint:** `path_denied`\n\n**Severity:** error\n\n**Enforced by:** gate.yaml:denylist, platform/hooks/pre_tool_use.py\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
       "displayName": "Policy: secrets-never-in-context",
       "glossary": "Platform Ontology",
       "name": "policy_secrets-never-in-context",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a prompt is a request; in a denylist it is a control.\n\n**Constraint:** `path_denied`\n\n**Severity:** error\n\n**Enforced by:** gate.yaml:denylist, gate.yaml:platform_denylist, pf.loops.gate:check_path\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: agent-authority-is-least-privilege",
+      "glossary": "Platform Ontology",
+      "name": "policy_agent-authority-is-least-privilege",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any loosening section at construction, so an unsafe tool fails at import rather than silently permitting more.\n\n**Constraint:** `tightening_only`\n\n**Severity:** error\n\n**Enforced by:** pf.tools.spec:Tool.gate_sections\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: tool-contribution-may-only-tighten",
+      "glossary": "Platform Ontology",
+      "name": "policy_tool-contribution-may-only-tighten",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No rule applied\" and \"a rule allowed it\" are different facts, and only a record that carries both can answer what an agent was permitted to do.\n\n**Constraint:** `action_recorded`\n\n**Severity:** error\n\n**Enforced by:** pf.provenance.ledger:decision, platform/hooks/pre_tool_use.py, platform/hooks/post_tool_use.py\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: agent-decisions-are-recorded",
+      "glossary": "Platform Ontology",
+      "name": "policy_agent-decisions-are-recorded",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake in what it says \u2014 so editing the middle requires editing the end, and the end is countersigned.\n\n**Constraint:** `hash_chained`\n\n**Severity:** error\n\n**Enforced by:** pf.provenance.chain:verify, pf.provenance.anchor:stamp_rfc3161, gate.yaml:denylist\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: evidence-chain-is-tamper-evident",
+      "glossary": "Platform Ontology",
+      "name": "policy_evidence-chain-is-tamper-evident",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session may not read or write another project, and may not write shared infra at all.\n\n**Constraint:** `cross_tenant_denied`\n\n**Severity:** error\n\n**Enforced by:** gate.yaml:platform_denylist, pf.loops.gate:project_for\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: sister-projects-are-isolated",
+      "glossary": "Platform Ontology",
+      "name": "policy_sister-projects-are-isolated",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreadable revocation file fails closed.\n\n**Constraint:** `revocable`\n\n**Severity:** error\n\n**Enforced by:** pf.provenance.ledger:revoke, pf.provenance.ledger:is_revoked\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: agent-authority-is-revocable",
+      "glossary": "Platform Ontology",
+      "name": "policy_agent-authority-is-revocable",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an actor approving their own action is a finding rather than an approval.\n\n**Constraint:** `approval_recorded`\n\n**Severity:** error\n\n**Enforced by:** pf.provenance.ledger:approve, pf.provenance.audit:report\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: high-impact-actions-need-a-human",
+      "glossary": "Platform Ontology",
+      "name": "policy_high-impact-actions-need-a-human",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matches what actually happened rather than what policy would have preferred.\n\n**Constraint:** `routing_declared`\n\n**Severity:** warning\n\n**Enforced by:** pf.agents.base:AGENTS\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: model-routing-is-declared",
+      "glossary": "Platform Ontology",
+      "name": "policy_model-routing-is-declared",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfaced in the listing, so a constraint is a fact in the registry rather than something someone once checked.\n\n**Constraint:** `licence_reviewed`\n\n**Severity:** warning\n\n**Enforced by:** pf.vendor.model:load_registry, pf.vendor.verify:verify\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: upstream-licences-are-reviewed",
+      "glossary": "Platform Ontology",
+      "name": "policy_upstream-licences-are-reviewed",
+      "provider": "user"
+    },
+    {
+      "description": "**Intent:** A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from the repository on every run and block the merge when they fail, while everything outside the baseline is reported and does not.\n\n**Constraint:** `baseline_declared`\n\n**Severity:** error\n\n**Enforced by:** pf.air.coverage:assess, pf.air.register:render_register\n\n_This is a data constraint from the platform's policy layer, not an OpenMetadata access-control policy._",
+      "displayName": "Policy: control-baseline-is-declared",
+      "glossary": "Platform Ontology",
+      "name": "policy_control-baseline-is-declared",
       "provider": "user"
     }
   ],
