@@ -190,7 +190,7 @@ def validate_instance(instance_path: str | Path, ontology: Ontology | None = Non
 
 
 def _ontology_for(project_dir: Path) -> Ontology:
-    """The platform ontology plus this project's group extension.
+    """The platform ontology plus this project's group extension and own policy.
 
     Loading only the platform ontology here was a real failure, not a
     simplification: every concept a group had legitimately added through
@@ -199,16 +199,28 @@ def _ontology_for(project_dir: Path) -> Ontology:
     on the same annotations. The group is derivable from the path — a project
     lives at `<root>/groups/<group>/projects/<project>` — so there is no reason
     to validate against a vocabulary the project does not actually use.
+
+    The same argument extends to policy, one layer further in: checking acme-eu
+    against a policy set that cannot express GDPR is the same mistake as checking
+    it against a vocabulary it does not use.
     """
-    from pf.ontology.model import load_group_ontology
+    from pf.ontology.model import PolicyRelaxation, load_group_ontology, load_project_ontology
 
     parts = project_dir.resolve().parts
     if "groups" in parts and "projects" in parts:
         i = parts.index("groups")
         root = Path(*parts[:i]) if i else Path("/")
         group = parts[i + 1]
+        j = parts.index("projects")
+        project = parts[j + 1] if j + 1 < len(parts) else ""
         try:
+            if project:
+                return load_project_ontology(root, group, project)
             return load_group_ontology(root, group)
+        except PolicyRelaxation:
+            # A relaxation is a finding, not a fallback. Swallowing it here would
+            # validate against the very policy set the project tried to weaken.
+            raise
         except (OSError, ValueError):
             pass
     return load_ontology()

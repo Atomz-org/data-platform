@@ -1762,12 +1762,30 @@ def cmd_topology() -> None:
 
 
 @sem_app.command("policy")
-def cmd_policy() -> None:
-    """Policy chain: intent → constraint → artifact → evidence."""
-    o = load_ontology()
-    t = Table("policy", "severity", "constraint", "enforced by", "evidence")
+def cmd_policy(group: str = typer.Argument("", help="resolve at this group's scope"),
+               project: str = typer.Argument("", help="resolve at this project's scope")) -> None:
+    """Policy chain: intent → constraint → artifact → evidence.
+
+    With no argument this prints the platform floor. Naming a group, or a group
+    and a project, resolves the layers over it — which is the only way to answer
+    "what actually binds acme-eu", since a layer may tighten a policy the
+    platform set and the platform file will not show it.
+    """
+    from pf.ontology.model import load_group_ontology, load_project_ontology
+
+    if group and project:
+        o, scope = load_project_ontology(root(), group, project), f"{group}/{project}"
+    elif group:
+        o, scope = load_group_ontology(root(), group), group
+    else:
+        o, scope = load_ontology(), "platform"
+    console.print(f"[dim]scope:[/] {scope}")
+
+    t = Table("policy", "severity", "set by", "constraint", "enforced by", "evidence")
     for p in o.policies:
-        t.add_row(p.id, p.severity, p.constraint,
+        # Anything the local layers moved is the interesting row on this table.
+        sev = p.severity if p.scope == "platform" else f"[yellow]{p.severity}[/]"
+        t.add_row(p.id, sev, p.scope, p.constraint,
                   "\n".join(p.enforced_by) or "[red]NOTHING[/]",
                   "\n".join(p.evidence) or "—")
     console.print(t)

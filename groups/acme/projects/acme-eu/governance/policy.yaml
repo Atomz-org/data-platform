@@ -1,0 +1,31 @@
+# Policy layer for acme-eu.
+#
+# acme-eu operates under GDPR and acme-us does not. That difference is not a
+# vocabulary difference — both sisters mean the same thing by `Payment`, and the
+# roll-up depends on it — so it belongs here rather than in the group ontology.
+#
+# This layers over platform/src/pf/ontology/policy.yaml and may only tighten it:
+# raise a severity, add a policy, name another enforcing artifact. Lowering a
+# severity raises PolicyRelaxation at load time. See pf.ontology.model.
+
+policies:
+  # The platform ships this as a warning. Here a mart with no declared grain
+  # blocks the merge: an undeclared grain is how a join silently fans out, and a
+  # fan-out on personal data is a reportable breach rather than a bad number.
+  - id: mart-declares-grain
+    severity: error
+
+  # Deliberately names no `enforced_by`. There is no erasure checker yet, and
+  # claiming one would make `pf semantic policy` report this as enforced — the
+  # exact dishonesty pf.projections.otop refuses ("an unenforced policy that
+  # reports pass is worse than no policy at all, because it ends the
+  # conversation"). Listed unenforced, it shows up in the unenforced count until
+  # somebody builds the check. That is the finding, and it is meant to be seen.
+  - id: gdpr-erasure-path
+    intent: >
+      A subject access or erasure request must have a declared path to every
+      copy of the subject's data — marts and review artefacts included, not only
+      the raw tables it landed in.
+    applies_to: {role_glob: "pii_*"}
+    constraint: erasure_declared
+    severity: error
