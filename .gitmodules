@@ -89,3 +89,4 @@
 	path = vendor/ai-governance-framework
 	url = https://github.com/Atomz-org/ai-governance-framework
 	branch = main
+	shallow = true
