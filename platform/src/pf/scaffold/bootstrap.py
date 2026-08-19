@@ -376,7 +376,6 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         PROJECT_TARGETS,
         render_target,
         replace_target,
-        target_type,
     )
 
     d = _pdir(root, group, project)
@@ -435,22 +434,34 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         # succeeds, writes nothing anyone can see, and reports success. Seven of
         # eight projects were in that state.
         #
-        # Guarded on the *current* type, not on whether we have written here
-        # before. Anything already pointing at a real engine — Snowflake set by
-        # hand, BigQuery from `pf capability-add` — is left exactly alone, so
-        # this can never take a project off its own warehouse. And only the
-        # `prod` block is touched: `replace_target` is text-level precisely so
+        # Guarded on the placeholder's *path*, not on the adapter type. The type
+        # alone cannot tell the scaffold's local file from a deliberate DuckLake
+        # target — both are `type: duckdb` — and guarding on type is how
+        # `pf capability-add ducklake` got silently reverted to Snowflake by the
+        # very next bootstrap. Only the `PF_DUCKDB_PATH` local file is the
+        # placeholder; anything else — Snowflake set by hand, BigQuery from
+        # `pf capability-add`, a `ducklake:` catalog — is a decision, and this
+        # step must never take a project off its own warehouse. Only the `prod`
+        # block is touched: `replace_target` is text-level precisely so
         # hand-added keys on the DuckDB targets beside it survive.
         wh = default_warehouse()
         if wh is not None and outputs:
-            current = target_type(text, "prod")
-            if current == "duckdb":
+            prod = outputs.get("prod") or {}
+            placeholder = (prod.get("type") == "duckdb"
+                           and "PF_DUCKDB_PATH" in str(prod.get("path", "")))
+            if placeholder:
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
                     profiles.write_text(new_text)
                     changed.append(f"prod -> {wh.name}")
-            elif current and current != wh.name:
-                changed.append(f"prod already on {current}, left alone")
+            elif prod:
+                # Name the engine the way an operator would. DuckLake reports as
+                # itself, not as the `duckdb` adapter that happens to drive it.
+                engine = ("ducklake"
+                          if str(prod.get("path", "")).startswith("ducklake:")
+                          else str(prod.get("type") or "?"))
+                if engine != wh.name:
+                    changed.append(f"prod already on {engine}, left alone")
 
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")
