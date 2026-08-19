@@ -2795,6 +2795,16 @@ def cmd_prov_sync() -> None:
                   f"provenance_records")
 
 
+# ------------------------------------------------------------------- AIR --
+# The command group lives in `pf.air.cli`, not here. This module is already the
+# longest in the package, and the AIR surface grows with the catalogue layer
+# rather than with the CLI — keeping it beside the code it drives means adding a
+# command is one file, the same property `Tool.commands` gives a tool.
+from pf.air.cli import air_app  # noqa: E402 — registered after `app` exists
+
+app.add_typer(air_app, name="air")
+
+
 _register_tool_commands()
 
 
