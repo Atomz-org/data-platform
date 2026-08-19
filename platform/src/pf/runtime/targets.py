@@ -295,6 +295,82 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
              "not catalogued; `om_type` is empty on purpose."),
         ),
     ),
+    "iceberg": ProductionWarehouse(
+        name="iceberg",
+        title="Apache Iceberg on Cloudflare R2",
+        adapter="dbt-duckdb",
+        output={
+            "type": "duckdb",
+            # Scratch only — every model lands in the attached Iceberg catalog;
+            # this is where seeds and run-scoped state live. Deliberately NOT
+            # `PF_DUCKDB_PATH`: bootstrap detects the scaffold placeholder by
+            # that path, and reusing it here would get an Iceberg project
+            # silently retrofitted back onto the default warehouse — the exact
+            # regression DuckLake hit via `type == "duckdb"`.
+            "path": "{{ env_var('PF_ICEBERG_SCRATCH', ':memory:') }}",
+            "extensions": "[iceberg, httpfs]",
+            # DuckDB's `iceberg` secret is the bearer token the REST catalog
+            # expects; the data files under the tables are reached through the
+            # catalog's credential vending, so no S3-style keys appear here.
+            "secrets": [
+                {
+                    "type": "iceberg",
+                    "token": "{{ env_var('R2_CATALOG_TOKEN') }}",
+                },
+            ],
+            # Renders as `ATTACH '<warehouse>' (TYPE iceberg, ENDPOINT ...)`.
+            # Both values are printed on the bucket's Data Catalog page:
+            # warehouse `<account_id>_<bucket>`, endpoint
+            # `https://catalog.cloudflarestorage.com/<account_id>/<bucket>`.
+            "attach": [
+                {
+                    "path": "{{ env_var('R2_CATALOG_WAREHOUSE') }}",
+                    "alias": "lake",
+                    "options": {
+                        "type": "iceberg",
+                        "endpoint": "{{ env_var('R2_CATALOG_ENDPOINT') }}",
+                    },
+                },
+            ],
+            # Build into the attached catalog, never the scratch database.
+            "database": "lake",
+            "schema": "{{ env_var('R2_CATALOG_NAMESPACE', 'analytics') }}",
+            # Every model is one optimistic-concurrency commit against the REST
+            # catalog; commits to *different* tables never conflict, so dbt's
+            # parallelism is safe — kept below the in-warehouse engines' 8
+            # because each commit is also an HTTP round-trip.
+            "threads": "{{ env_var('R2_ICEBERG_THREADS', '4') | int }}",
+        },
+        env=("R2_CATALOG_WAREHOUSE", "R2_CATALOG_ENDPOINT", "R2_CATALOG_TOKEN"),
+        auth_note=(
+            "`R2_CATALOG_TOKEN` is a Cloudflare R2 API token with Data Catalog "
+            "read/write and Object read/write on the bucket. DuckDB presents it "
+            "to the REST catalog as a bearer token via the `iceberg` secret; "
+            "reads and writes of the data files under the tables ride the "
+            "catalog's credential vending, so it is the only credential."
+        ),
+        caveats=(
+            ("Same engine and dialect as dev, so the `pf align` dialect gate "
+             "passes by construction, exactly as with DuckLake. What changes is "
+             "the table format: every model becomes an Iceberg table with "
+             "snapshot history, readable in place by any Iceberg engine — and "
+             "R2 charges no egress, so that external read is free."),
+            ("Writes need the `iceberg` extension of DuckDB ≥ 1.4 and cover "
+             "CREATE, CREATE OR REPLACE and INSERT — table materialisations "
+             "and `append` incrementals. UPDATE/DELETE/MERGE are not there "
+             "yet, so `merge` and `delete+insert` incremental models must "
+             "switch strategy before this target builds them."),
+            ("dbt schemas map to catalog namespaces (`analytics`, "
+             "`analytics_staging`, …), created on first build."),
+            ("Enable managed compaction on the catalog: a dbt rebuild is many "
+             "small commits, and compaction is what keeps scan performance "
+             "flat. Old snapshots are retained per the catalog's policy — a "
+             "rebuild is time-travelable, not free."),
+            ("OpenMetadata has an Iceberg REST connector, but the payload is "
+             "not wired here until it is verified against the vendored schema "
+             "— `om_type` is empty on purpose, like DuckLake's."),
+        ),
+    ),
     "clickhouse": ProductionWarehouse(
         name="clickhouse",
         title="ClickHouse Cloud",

@@ -58,6 +58,11 @@ postgres = ["dbt-postgres>=1.9,<2"]
 # production install that syncs nothing but its warehouse extra still works,
 # and so "one extra per `pf.runtime.targets` entry" stays true.
 ducklake = ["dbt-duckdb>=1.9,<2"]
+# Iceberg on Cloudflare R2 is DuckDB attached to R2 Data Catalog's REST
+# endpoint (`ATTACH ... TYPE iceberg`), so its adapter is dbt-duckdb too —
+# same reasoning as ducklake above. Writing Iceberg needs the extension that
+# ships with DuckDB >= 1.4; the profile's `extensions:` loads it.
+iceberg = ["dbt-duckdb>=1.9,<2"]
 wren = [
     "wrenai>=0.13,<1",
 ]
