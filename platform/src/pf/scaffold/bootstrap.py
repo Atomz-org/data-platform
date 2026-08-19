@@ -247,6 +247,35 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
     return out
 
 
+def _group_air(root: Path, group: str, project: str) -> list[StepResult]:
+    """The group's `air.yaml`, if it has none.
+
+    The sibling of `_bootstrap_capabilities`, one level up. A capability reaches
+    a *project*; the family-level declaration has no capability to carry it, and
+    a group scaffolded before `pf.air` existed would otherwise have no baseline
+    for its sisters to inherit — so `pf air gate` would pass for the whole family
+    by finding nothing to check.
+
+    Written only when absent, never rewritten. It is hand-maintained: the whole
+    point of the file is that a human decided what the family commits to, and a
+    bootstrap that regenerated it would erase that decision on every run.
+
+    The scaffolded baseline is empty, exactly as `pf new-group` writes it.
+    `pf air baseline <group> --suggest` proposes what already passes; accepting
+    the proposal stays a person's act.
+    """
+    from pf.scaffold.generator import GROUP_AIR, write
+
+    path = root / "groups" / group / "air.yaml"
+    if path.exists():
+        return [StepResult("group air.yaml", "ok", f"{path.relative_to(root)} present")]
+    write(path, GROUP_AIR, {"group": group})
+    return [StepResult(
+        "group air.yaml", "created",
+        f"{path.relative_to(root)} — empty baseline; "
+        f"`pf air baseline {group} --suggest` proposes one")]
+
+
 def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
     """One workflow per project, composed from every job its capabilities declare.
 
@@ -461,6 +490,8 @@ STEPS: list[Step] = [
     Step("capabilities", "a default-enabled capability must reach every project, "
                          "including ones scaffolded before it was a default",
          _bootstrap_capabilities),
+    Step("group air.yaml", "a family with no control declaration has a gate that "
+                           "passes by finding nothing to check", _group_air),
     Step("ci workflow", "one workflow per project, composed from the jobs its "
                         "capabilities declare, so CI is readable in one place",
          _ci_workflow),
