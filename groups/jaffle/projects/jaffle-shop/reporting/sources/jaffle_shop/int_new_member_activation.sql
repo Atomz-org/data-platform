@@ -1,3 +1,8 @@
 -- source extract for int_new_member_activation (PII columns excluded by the MDL projection)
-select loyalty_member_id, days_to_first_transaction, activation_speed, customer_id, enrolled_at, first_transaction_date
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    loyalty_member_id,
+    days_to_first_transaction,
+    activation_speed
 from main_marts.int_new_member_activation

@@ -449,12 +449,27 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(
         _source_conn(project, warehouse))
 
+    extracted = 0
     for model in mdl.get("models", []):
         name = model["name"]
-        cols = ", ".join(c["name"] for c in model["columns"] if not c.get("isHidden"))
-        (out / "sources" / project.replace("-", "_") / f"{name}.sql").write_text(
+        visible = [c["name"] for c in model["columns"] if not c.get("isHidden")]
+        target = out / "sources" / project.replace("-", "_") / f"{name}.sql"
+        if not visible:
+            # Never `select *`. The old fallback did exactly that when the MDL
+            # carried no visible columns — which made the comment below a lie:
+            # the star re-includes every column the projection hid, PII first.
+            # A model the MDL cannot enumerate gets no extract at all, and a
+            # stale extract from a previous generation is removed with it.
+            target.unlink(missing_ok=True)
+            continue
+        target.write_text(
             f"-- source extract for {name} (PII columns excluded by the MDL projection)\n"
-            f"select {cols or '*'}\nfrom {model['tableReference']['schema']}.{name}\n")
+            f"-- Columns are enumerated, never `select *`: the extract's shape is a\n"
+            f"-- contract with the pages reading it, and a star changes shape silently.\n"
+            f"select\n"
+            + ",\n".join(f"    {c}" for c in visible)
+            + f"\nfrom {model['tableReference']['schema']}.{name}\n")
+        extracted += 1
 
     # Dependency set is evidence-dev/template's package.json verbatim, not a
     # hand-assembled subset. Two earlier attempts failed here: pinning
@@ -523,7 +538,9 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     return {
         "metrics": len(specs),
         "pages": len(specs) + 1,
-        "sources": len(mdl.get("models", [])),
+        # What was actually written, not what the MDL listed — the two differ
+        # by exactly the models whose extract was refused above.
+        "sources": extracted,
         "path": out,
         "unbacked": [s.name for s in specs if not s.time_column],
     }
