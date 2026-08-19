@@ -325,7 +325,7 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
         },
         settings={
             "permissions": {"allow": ["Bash(pf align:*)", "Bash(pf dialect:*)"]},
-            **({"enabledPlugins": list(wh.plugins)} if wh.plugins else {}),
+            **({"enabledPlugins": dict.fromkeys(wh.plugins, True)} if wh.plugins else {}),
         },
         env=wh.env,
         warehouse=wh.name,
@@ -496,7 +496,7 @@ CAPABILITIES: dict[str, Capability] = {
                 "Bash(npm run dev:*)", "Bash(npm run build:*)",
                 "Bash(npm run sources:*)",
             ]},
-            "enabledPlugins": ["evidence-bi@platform"],
+            "enabledPlugins": {"evidence-bi@platform": True},
         },
         gate={
             # Generated artefacts and build output. Editing a compiled metric
@@ -601,6 +601,9 @@ def apply(cap: Capability, root: Path, project_dir: Path,
         settings_path = project_dir / ".claude" / "settings.json"
         if settings_path.exists():
             settings = json.loads(settings_path.read_text())
+            if isinstance(settings.get("enabledPlugins"), list):
+                # Legacy scaffold form; Claude Code expects a record.
+                settings["enabledPlugins"] = dict.fromkeys(settings["enabledPlugins"], True)
             _merge(settings, cap.settings)
             settings_path.write_text(json.dumps(settings, indent=2) + "\n")
             written.append(settings_path)
