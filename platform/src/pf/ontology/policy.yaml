@@ -28,6 +28,7 @@ policies:
     severity: error
     enforced_by: [pf.ontology.validate:money-without-currency]
     evidence: [pf check]
+    controls: [AIR-PREV-6]
 
   - id: entity-requires-identity
     intent: >
@@ -39,6 +40,7 @@ policies:
     severity: error
     enforced_by: [pf.ontology.validate:class-without-identity]
     evidence: [pf check]
+    controls: [AIR-PREV-6]
 
   - id: link-must-be-in-topology
     intent: >
@@ -50,6 +52,7 @@ policies:
     severity: error
     enforced_by: [pf.ontology.validate:illegal-edge]
     evidence: [pf check]
+    controls: [AIR-PREV-6]
 
   - id: pii-not-in-consumption
     intent: >
@@ -61,6 +64,7 @@ policies:
     severity: error
     enforced_by: [pf.loops.registry:pii_audit]
     evidence: [pf loop run pii-audit, STATE.md]
+    controls: [AIR-DET-16, AIR-PREV-12]
 
   - id: mart-declares-grain
     intent: >
@@ -72,6 +76,7 @@ policies:
     severity: warning
     enforced_by: [pf.kg.build:model-grain]
     evidence: [kg/context_card.md]
+    controls: [AIR-DET-13]
 
   - id: metric-owns-aggregation
     intent: >
@@ -84,6 +89,7 @@ policies:
     severity: warning
     enforced_by: [pf.ontology.validate:metric-shaped-column]
     evidence: [pf check]
+    controls: [AIR-DET-13]
 
   - id: change-declares-blast-radius
     intent: >
@@ -94,6 +100,7 @@ policies:
     severity: error
     enforced_by: [platform/hooks/pre_tool_use.py, platform/hooks/pre_commit.sh]
     evidence: [impact_reports, loop-ledger.json]
+    controls: [AIR-DET-21, AIR-PREV-18]
 
   - id: change-verified-against-baseline
     intent: >
@@ -106,6 +113,7 @@ policies:
     severity: warning
     enforced_by: [pf.tools.recce:dagster_assets, pf.tools.recce:register_commands]
     evidence: [pf tool recce run]
+    controls: [AIR-PREV-5]
 
   - id: review-artifacts-exclude-pii
     intent: >
@@ -119,6 +127,7 @@ policies:
     severity: error
     enforced_by: [pf.ontology.model:Role.review_intent, pf.tools.recce:generate_config]
     evidence: [pf tool recce config]
+    controls: [AIR-DET-1, AIR-PREV-12]
 
   - id: secrets-never-in-context
     intent: >
@@ -129,6 +138,152 @@ policies:
     severity: error
     enforced_by: [gate.yaml:denylist, platform/hooks/pre_tool_use.py]
     evidence: [pf gate]
+    controls: [AIR-PREV-23, AIR-DET-16]
+
+  # --- agent governance ------------------------------------------------------
+  #
+  # These ten were added when the FINOS catalogue was vendored (`pf.air`), and
+  # none of them is new enforcement. Every `enforced_by` below names something
+  # that was already running — the gate, the ledger, the tool contract — and had
+  # simply never been written down as a policy, because the rule lived in a
+  # docstring next to the code that implemented it.
+  #
+  # That is the whole value of having an external catalogue: it asks "where is
+  # your least-privilege control?" and the answer has to be a path, not a
+  # paragraph. Where the answer was already a path, this is bookkeeping. Where
+  # there was no answer, `pf air coverage` reports the control as failing and we
+  # left it failing rather than writing a policy that names nothing.
+
+  - id: agent-authority-is-least-privilege
+    intent: >
+      An agent reaches the filesystem through one path gate, and the paths it may
+      never write are declared rather than remembered. Least privilege that lives
+      in a prompt is a request; in a denylist it is a control.
+    applies_to: {artifact_glob: "**"}
+    constraint: path_denied
+    severity: error
+    enforced_by: [gate.yaml:denylist, gate.yaml:platform_denylist, pf.loops.gate:check_path]
+    evidence: [pf gate]
+    controls: [AIR-PREV-18]
+
+  - id: tool-contribution-may-only-tighten
+    intent: >
+      A tool contributes gate rules, and a plugin system that can widen the policy
+      judging it is not a policy. `Tool.gate_sections()` rejects a contribution to
+      any loosening section at construction, so an unsafe tool fails at import
+      rather than silently permitting more.
+    applies_to: {artifact_glob: "gate.capabilities.yaml"}
+    constraint: tightening_only
+    params: {sections: [denylist, platform_denylist, impact_required]}
+    severity: error
+    enforced_by: [pf.tools.spec:Tool.gate_sections]
+    evidence: [pf check]
+    controls: [AIR-PREV-19]
+
+  - id: agent-decisions-are-recorded
+    intent: >
+      Every tool call an agent makes is written down before it happens and after
+      it happens, and the gate's verdict is recorded for allows as well as denies.
+      "No rule applied" and "a rule allowed it" are different facts, and only a
+      record that carries both can answer what an agent was permitted to do.
+    applies_to: {artifact_glob: "**"}
+    constraint: action_recorded
+    params: {stages: [intent, decision, execution]}
+    severity: error
+    enforced_by: [pf.provenance.ledger:decision, platform/hooks/pre_tool_use.py, platform/hooks/post_tool_use.py]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-21, AIR-DET-4]
+
+  - id: evidence-chain-is-tamper-evident
+    intent: >
+      A log an agent can edit is not evidence. Each record carries the hash of the
+      one before it, and the head is anchored to a timestamp authority with no
+      stake in what it says — so editing the middle requires editing the end, and
+      the end is countersigned.
+    applies_to: {artifact_glob: "provenance/**"}
+    constraint: hash_chained
+    severity: error
+    enforced_by: [pf.provenance.chain:verify, pf.provenance.anchor:stamp_rfc3161, gate.yaml:denylist]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-21]
+
+  - id: sister-projects-are-isolated
+    intent: >
+      Business logic does not transfer between entities, so an assumption carried
+      from one sister company into another is a bug by construction. A project
+      session may not read or write another project, and may not write shared
+      infra at all.
+    applies_to: {artifact_glob: "groups/**"}
+    constraint: cross_tenant_denied
+    severity: error
+    enforced_by: [gate.yaml:platform_denylist, pf.loops.gate:project_for]
+    evidence: [pf gate]
+    controls: [AIR-PREV-22]
+
+  - id: agent-authority-is-revocable
+    intent: >
+      A control that cannot be switched off mid-incident is a control you find out
+      about afterwards. Revocation is checked before intent is written, and an
+      unreadable revocation file fails closed.
+    applies_to: {artifact_glob: "**"}
+    constraint: revocable
+    severity: error
+    enforced_by: [pf.provenance.ledger:revoke, pf.provenance.ledger:is_revoked]
+    evidence: [pf provenance verify]
+    controls: [AIR-PREV-18]
+
+  - id: high-impact-actions-need-a-human
+    intent: >
+      Human oversight is a chain that shows the approval, not a document that
+      asserts it. Approvals are append-only and bound to the action they approve,
+      and an actor approving their own action is a finding rather than an
+      approval.
+    applies_to: {artifact_glob: "**"}
+    constraint: approval_recorded
+    severity: error
+    enforced_by: [pf.provenance.ledger:approve, pf.provenance.audit:report]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-11]
+
+  - id: model-routing-is-declared
+    intent: >
+      Which model answers which step is a declared table, not whatever the caller
+      passed. An unregistered step is recorded as such, and the recorded verdict
+      matches what actually happened rather than what policy would have preferred.
+    applies_to: {artifact_glob: "**/agents/**"}
+    constraint: routing_declared
+    severity: warning
+    enforced_by: [pf.agents.base:AGENTS]
+    evidence: [pf provenance verify]
+    controls: [AIR-PREV-10]
+
+  - id: upstream-licences-are-reviewed
+    intent: >
+      Every upstream this platform borrowed from carries a licence, and some of
+      them constrain what we may ship. The review is written down per upstream and
+      surfaced in the listing, so a constraint is a fact in the registry rather
+      than something someone once checked.
+    applies_to: {artifact_glob: "vendor/**"}
+    constraint: licence_reviewed
+    severity: warning
+    enforced_by: [pf.vendor.model:load_registry, pf.vendor.verify:verify]
+    evidence: [pf check]
+    controls: [AIR-PREV-7]
+
+  - id: control-baseline-is-declared
+    intent: >
+      A risk register that names controls nobody enforces is a document. Each
+      entity declares in `air.yaml` which controls it commits to; those are
+      derived from the repository on every run and block the merge when they
+      fail, while everything outside the baseline is reported and does not.
+    applies_to: {artifact_glob: "**/air.yaml"}
+    constraint: baseline_declared
+    severity: error
+    enforced_by: [pf.air.coverage:assess, pf.air.register:render_register]
+    evidence: [pf air coverage, governance/air-register.md]
+    # No `controls:` — this is our rule about how controls are declared, not
+    # one of the framework's controls. Mapping it to AIR-RC-22 (a *risk*, not
+    # a mitigation) would be the category error the catalogue exists to stop.
 
 # Evidence kinds the chain may reference. An evidence entry naming something not
 # listed here is itself a finding — that is how the chain stays honest.
@@ -142,3 +297,10 @@ evidence_kinds:
   - {id: "pf loop run pii-audit", produces: PII findings, durable: false}
   - {id: "pf tool recce run",    produces: data diff against baseline, durable: true}
   - {id: "pf tool recce config", produces: derived review checks, durable: true}
+  # Added with the agent-governance policies above. `pf provenance verify` is
+  # durable because the thing it audits is: the ledger is append-only and
+  # anchored, so re-running the audit next year reads the same records. The
+  # other two are re-derived on every call and deliberately store nothing.
+  - {id: "pf provenance verify", produces: ledger audit, durable: true}
+  - {id: "pf air coverage", produces: control coverage verdicts, durable: false}
+  - {id: "governance/air-register.md", produces: per-entity risk register, durable: true}
