@@ -95,6 +95,7 @@ def verify(root: Path | str) -> VerifyReport:
     _types(cat, out)
     _cross_references(cat, out)
     _citations(cat, out)
+    _our_mapping(root, cat, out)
 
     refs = sum(len(d.references) for d in (*cat.sorted_risks, *cat.sorted_controls))
     if not out:
@@ -171,6 +172,74 @@ def _cross_references(cat: Catalogue, out: list[Finding]) -> None:
                         "control.dangling_mitigates",
                         f"{c.id} ({c.path}) mitigates '{target}', which is not a risk "
                         f"in this corpus",
+                    )
+                )
+
+
+def _our_mapping(root: Path, cat: Catalogue, out: list[Finding]) -> None:
+    """Every control id *we* name must exist in the corpus we pinned.
+
+    This is the check that actually fires on a bad pin bump, and the reason it
+    belongs in `verify` rather than only in the test suite: the failure mode is
+    silent. A control retired or renamed upstream — `AIR-PREV-16` becoming
+    `AIR-DET-16` because a `type:` letter changed — leaves `policy.yaml` mapping
+    an id nothing answers to and leaves every `air.yaml` baseline naming a
+    control the gate can no longer find. Coverage would report one fewer row and
+    the gate would pass, because a baseline entry that matches no control is
+    skipped rather than failed. Nothing goes red; the control just stops being
+    checked.
+
+    So it is checked here, where CI looks first, and named as an error.
+    """
+    # Read the ontology *at this root*, not the packaged one. `verify()` is
+    # called against tmp_path corpora in tests and could be called against an
+    # export elsewhere; cross-checking a synthetic corpus against the installed
+    # platform's policies would report failures about a repository that is not
+    # the one being verified. No ontology at this root means nothing to check.
+    onto_dir = root / "platform" / "src" / "pf" / "ontology"
+    if not (onto_dir / "policy.yaml").exists():
+        return
+    try:
+        from pf.ontology.model import load_ontology
+
+        onto = load_ontology(onto_dir)
+    except Exception:  # noqa: BLE001 — an unreadable ontology is not a corpus failure
+        return
+
+    known = set(cat.controls)
+    for cid in onto.mapped_controls():
+        if cid not in known:
+            out.append(
+                Finding(
+                    "fail",
+                    "mapping.unknown_control",
+                    f"policy.yaml maps {cid}, which no longer exists in the pinned "
+                    f"catalogue. A control retired or renamed upstream stops being "
+                    f"checked silently — re-point the policy, or drop the mapping.",
+                )
+            )
+
+    # The same question for what each entity committed to.
+    groups = root / "groups"
+    if not groups.is_dir():
+        return
+    for air in sorted(groups.glob("*/air.yaml")):
+        try:
+            import yaml
+
+            doc = yaml.safe_load(air.read_text(encoding="utf-8")) or {}
+        except Exception as exc:  # noqa: BLE001
+            out.append(Finding("fail", "baseline.unreadable",
+                               f"{air.relative_to(root)}: {exc}"))
+            continue
+        for cid in (str(c).upper() for c in (doc.get("baseline") or [])):
+            if cid not in known:
+                out.append(
+                    Finding(
+                        "fail",
+                        "baseline.unknown_control",
+                        f"{air.relative_to(root)} commits to {cid}, which is not in "
+                        f"the pinned catalogue — that baseline entry gates nothing",
                     )
                 )
 
