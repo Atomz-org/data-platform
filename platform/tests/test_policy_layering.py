@@ -148,3 +148,72 @@ def test_a_group_with_no_extension_still_gets_its_policy(tmp_path: Path) -> None
     onto = load_group_ontology(tmp_path, "solo")
     assert _by_id(onto, "mart-declares-grain").severity == "error"
     assert _by_id(load_ontology(), "mart-declares-grain").severity == "warning"
+
+
+# ------------------------------------------------------- scaffold seam ----
+def test_the_governance_capability_is_on_by_default() -> None:
+    """A policy overlay that only reached projects whose author remembered a
+    flag is how one project ends up governed and seven do not."""
+    from pf.capabilities import CAPABILITIES, defaults
+
+    assert "governance" in defaults()
+    assert "governance/policy.yaml" in CAPABILITIES["governance"].files
+
+
+def test_the_seeded_overlay_changes_no_verdict(tmp_path: Path) -> None:
+    """Scaffolding a project, or backfilling this into eight existing ones, must
+    not move a single severity. The stub exists to be found, not to take effect
+    on arrival."""
+    from pf.capabilities import CAPABILITIES
+    from pf.capabilities import apply as apply_capability
+
+    pdir = tmp_path / "groups" / "acme" / "projects" / "acme-us"
+    pdir.mkdir(parents=True)
+    apply_capability(CAPABILITIES["governance"], tmp_path, pdir,
+                     {"group": "acme", "project": "acme-us", "module": "acme_us"})
+
+    seeded = pdir / "governance" / "policy.yaml"
+    assert seeded.exists()
+    assert (yaml.safe_load(seeded.read_text()) or {}).get("policies") == []
+
+    resolved = load_project_ontology(tmp_path, "acme", "acme-us")
+    assert [(p.id, p.severity) for p in resolved.policies] == \
+           [(p.id, p.severity) for p in load_ontology().policies]
+
+
+def test_reapplying_the_capability_preserves_an_edited_overlay(tmp_path: Path) -> None:
+    """`pf capability-add` bypasses the backfill's all-or-nothing guard, so the
+    only thing standing between a re-apply and someone's policy file is
+    `Capability.preserve`."""
+    from pf.capabilities import CAPABILITIES
+    from pf.capabilities import apply as apply_capability
+
+    pdir = tmp_path / "groups" / "acme" / "projects" / "acme-eu"
+    ctx = {"group": "acme", "project": "acme-eu", "module": "acme_eu"}
+    pdir.mkdir(parents=True)
+    apply_capability(CAPABILITIES["governance"], tmp_path, pdir, ctx)
+
+    mine = pdir / "governance" / "policy.yaml"
+    mine.write_text(yaml.safe_dump(
+        {"policies": [{"id": "mart-declares-grain", "severity": "error"}]}))
+
+    apply_capability(CAPABILITIES["governance"], tmp_path, pdir, ctx)
+
+    assert _by_id(load_project_ontology(tmp_path, "acme", "acme-eu"),
+                  "mart-declares-grain").severity == "error"
+
+
+def test_a_new_project_is_scaffolded_with_the_overlay(tmp_path: Path) -> None:
+    from pf.capabilities import CAPABILITIES, defaults, resolve
+    from pf.capabilities import apply as apply_capability
+
+    pdir = tmp_path / "groups" / "acme" / "projects" / "acme-new"
+    pdir.mkdir(parents=True)
+    for cap in resolve(defaults()):
+        if cap.name != "governance":
+            continue
+        apply_capability(cap, tmp_path, pdir,
+                         {"group": "acme", "project": "acme-new", "module": "acme_new"})
+    assert (pdir / "governance" / "policy.yaml").exists()
+    assert CAPABILITIES["governance"].gate["impact_required"] == \
+           ["**/governance/policy.yaml"]
