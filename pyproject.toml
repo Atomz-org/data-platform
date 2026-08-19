@@ -52,6 +52,12 @@ snowflake = ["dbt-snowflake>=1.9,<2"]
 bigquery = ["dbt-bigquery>=1.9,<2"]
 redshift = ["dbt-redshift>=1.9,<2"]
 clickhouse = ["dbt-clickhouse>=1.8,<2"]
+postgres = ["dbt-postgres>=1.9,<2"]
+# DuckLake is DuckDB pointed at a lakehouse catalog (`ducklake:` path), so its
+# adapter is dbt-duckdb — already in the dev group. The extra exists so a
+# production install that syncs nothing but its warehouse extra still works,
+# and so "one extra per `pf.runtime.targets` entry" stays true.
+ducklake = ["dbt-duckdb>=1.9,<2"]
 wren = [
     "wrenai>=0.13,<1",
 ]

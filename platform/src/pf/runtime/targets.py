@@ -196,6 +196,105 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "database": "${REDSHIFT_DATABASE}",
         },
     ),
+    "postgres": ProductionWarehouse(
+        name="postgres",
+        title="PostgreSQL",
+        adapter="dbt-postgres",
+        output={
+            "type": "postgres",
+            "host": "{{ env_var('POSTGRES_HOST') }}",
+            "port": "{{ env_var('POSTGRES_PORT', '5432') | int }}",
+            "user": "{{ env_var('POSTGRES_USER') }}",
+            "password": "{{ env_var('POSTGRES_PASSWORD', '') }}",
+            "dbname": "{{ env_var('POSTGRES_DATABASE') }}",
+            "schema": "{{ env_var('POSTGRES_SCHEMA', 'analytics') }}",
+            # `prefer` connects plain locally and TLS where offered; managed
+            # providers (Neon, RDS) want an explicit `require`.
+            "sslmode": "{{ env_var('POSTGRES_SSLMODE', 'prefer') }}",
+            "threads": 8,
+        },
+        env=("POSTGRES_HOST", "POSTGRES_USER", "POSTGRES_DATABASE"),
+        auth_note=(
+            "Password auth via `POSTGRES_PASSWORD`; leaving it unset uses "
+            "whatever libpq can do without one (peer auth locally, `.pgpass`). "
+            "Against a managed provider also set `POSTGRES_SSLMODE=require`."
+        ),
+        caveats=(
+            ("Postgres is an OLTP engine serving OLAP here. It is the "
+             "right-sized production target up to tens of GB of marts; beyond "
+             "that, vacuum pressure and sequential scans become the pipeline's "
+             "problem and a columnar target earns its keep."),
+            ("Unquoted identifiers fold to lower case, like Redshift — a model "
+             "relying on a quoted mixed-case column resolves differently here "
+             "than on DuckDB."),
+            ("The whole quality stack runs natively on this target: "
+             "dbt-expectations and the Elementary package both list Postgres "
+             "support, and the `edr` CLI ships a `postgres` extra."),
+        ),
+        om_type="Postgres",
+        om_connection={
+            "type": "Postgres",
+            "hostPort": "${POSTGRES_HOST}:${POSTGRES_PORT}",
+            "username": "${POSTGRES_USER}",
+            "authType": {"password": "${POSTGRES_PASSWORD}"},
+            "database": "${POSTGRES_DATABASE}",
+        },
+    ),
+    "ducklake": ProductionWarehouse(
+        name="ducklake",
+        title="DuckLake",
+        adapter="dbt-duckdb",
+        output={
+            "type": "duckdb",
+            # DuckDB opens a DuckLake catalog directly from a `ducklake:` path:
+            # a metadata catalog (file or server) plus parquet data files. The
+            # value is the *metadata* location — a `.ducklake` file for a
+            # single-writer lake, or `postgres:dbname=... host=...` for a
+            # multi-writer one. Where the parquet lands (DATA_PATH) is stored
+            # in the metadata when the lake is first created, so it is not
+            # repeated here — see the generated docs.
+            "path": "ducklake:{{ env_var('DUCKLAKE_METADATA') }}",
+            "schema": "{{ env_var('DUCKLAKE_SCHEMA', 'analytics') }}",
+            # A literal string, not a list, so it renders as flow YAML the same
+            # way the dev target writes it. httpfs rides along for lakes whose
+            # DATA_PATH is object storage.
+            "extensions": "[ducklake, httpfs]",
+            # One thread is the correct default, not a timid one. Every dbt
+            # model is DDL, DuckLake runs each cursor as its own catalog
+            # transaction, and a file-backed catalog resolves concurrent DDL by
+            # failing one side — measured here as 3–9 models flaking per
+            # 35-model build at dbt's usual 8 threads, and 35/35 green at one.
+            # A Postgres-backed catalog serializes properly; raise the var
+            # there, not in this file.
+            "threads": "{{ env_var('DUCKLAKE_THREADS', '1') | int }}",
+        },
+        env=("DUCKLAKE_METADATA",),
+        auth_note=(
+            "`DUCKLAKE_METADATA` is the catalog: a path like "
+            "`/lake/analytics.ducklake` (single writer), or a connection string "
+            "like `postgres:dbname=lake host=...` (concurrent writers; DuckDB "
+            "autoloads the postgres extension). Object-storage DATA_PATHs "
+            "authenticate through DuckDB secrets or the standard AWS/GCS "
+            "environment variables via httpfs — never a literal here."
+        ),
+        caveats=(
+            ("Same engine and dialect as dev, so the `pf align` dialect gate "
+             "passes by construction — this is the one production target with "
+             "zero portability distance from the laptop build."),
+            ("The parquet DATA_PATH is fixed when the lake is first created "
+             "(`ATTACH 'ducklake:...' (DATA_PATH 's3://...')`, once, by an "
+             "operator). Connecting afterwards reads it from the metadata; "
+             "moving it is a data migration, not a config change. With no "
+             "DATA_PATH given, files land in `<metadata>.files/` beside the "
+             "catalog."),
+            ("A `.ducklake` file catalog resolves concurrent DDL by failing "
+             "one side, and every dbt model is DDL — so `threads` defaults to "
+             "1 and the build is serial. With the metadata in Postgres, set "
+             "`DUCKLAKE_THREADS` up; with a file catalog, leave it."),
+            ("OpenMetadata has no DuckLake connector yet, so this target is "
+             "not catalogued; `om_type` is empty on purpose."),
+        ),
+    ),
     "clickhouse": ProductionWarehouse(
         name="clickhouse",
         title="ClickHouse Cloud",
@@ -226,6 +325,12 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             ("ClickHouse calls a schema a database. `schema:` above is the "
              "ClickHouse database, which is why there is no separate "
              "`database` key."),
+            ("Quality stack, honestly: the Elementary package and `edr` CLI "
+             "both ship ClickHouse support (extra `clickhouse`), but "
+             "dbt-expectations depends on dbt_date, which does not declare "
+             "this adapter — the generated floor (row counts, uniqueness, "
+             "not-null) is dialect-safe, while date-windowed expectations "
+             "added by hand may error at runtime here."),
         ),
         om_type="Clickhouse",
         om_connection={
