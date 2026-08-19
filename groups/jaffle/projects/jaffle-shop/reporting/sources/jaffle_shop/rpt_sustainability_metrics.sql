@@ -1,3 +1,8 @@
 -- source extract for rpt_sustainability_metrics (PII columns excluded by the MDL projection)
-select waste_month, total_waste_cost, waste_cost_mom_pct, total_waste_quantity, waste_events, total_active_suppliers, supplier_cities, supplier_states
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    waste_month,
+    total_waste_cost,
+    waste_cost_mom_pct
 from main_marts.rpt_sustainability_metrics

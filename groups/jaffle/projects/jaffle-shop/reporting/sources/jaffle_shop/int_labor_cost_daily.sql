@@ -1,3 +1,6 @@
 -- source extract for int_labor_cost_daily (PII columns excluded by the MDL projection)
-select location_id, work_date, total_hours, total_labor_cost, employee_count
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    location_id
 from main_marts.int_labor_cost_daily

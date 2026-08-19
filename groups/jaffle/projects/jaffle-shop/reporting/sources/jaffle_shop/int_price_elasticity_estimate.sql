@@ -1,3 +1,8 @@
 -- source extract for int_price_elasticity_estimate (PII columns excluded by the MDL projection)
-select product_id, price_changed_date, estimated_elasticity, old_price, new_price, price_change_pct, avg_daily_sales_before, avg_daily_sales_after, volume_change_pct
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    product_id,
+    price_changed_date,
+    estimated_elasticity
 from main_marts.int_price_elasticity_estimate
