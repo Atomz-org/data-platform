@@ -169,6 +169,13 @@ class Policy:
     params: dict[str, Any] = field(default_factory=dict)
     enforced_by: list[str] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
+    #: External control ids this policy discharges — `AIR-PREV-18`, `AIR-DET-21`,
+    #: from the vendored FINOS catalogue (`pf.air`). Optional and defaulted: a
+    #: policy is a rule of this platform first, and mapping it to somebody's
+    #: framework is a second, separable claim. Empty means "we have not mapped
+    #: this one", which `pf air coverage` reports as an uncovered control rather
+    #: than silently treating our rule as satisfying a standard it never named.
+    controls: list[str] = field(default_factory=list)
 
     @property
     def enforced(self) -> bool:
@@ -278,6 +285,22 @@ class Ontology:
     def unenforced_policies(self) -> list[Policy]:
         return [p for p in self.policies if not p.enforced]
 
+    def policies_for_control(self, control_id: str) -> list[Policy]:
+        """Every policy claiming to discharge an external control (`AIR-DET-21`).
+
+        Many-to-many on purpose. One control can need several of our rules —
+        `AIR-DET-21` is answered by the recorded decision *and* by the chain that
+        makes the record tamper-evident — and one rule can discharge several
+        controls. Collapsing either direction would force a policy to be renamed
+        every time somebody else's framework reorganised.
+        """
+        target = control_id.strip().upper()
+        return [p for p in self.policies if target in (c.upper() for c in p.controls)]
+
+    def mapped_controls(self) -> list[str]:
+        """Every external control id any policy names, deduplicated and sorted."""
+        return sorted({c.upper() for p in self.policies for c in p.controls})
+
 
 def _parse_properties(spec: dict[str, Any]) -> dict[str, Property]:
     out: dict[str, Property] = {}
@@ -340,6 +363,7 @@ def load_ontology(directory: str | Path | None = None) -> Ontology:
             constraint=p.get("constraint", ""), severity=p.get("severity", "error"),
             applies_to=p.get("applies_to") or {}, params=p.get("params") or {},
             enforced_by=p.get("enforced_by") or [], evidence=p.get("evidence") or [],
+            controls=[str(c) for c in (p.get("controls") or [])],
         )
         for p in (policy_doc.get("policies") or [])
     ]
