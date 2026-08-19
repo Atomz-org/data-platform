@@ -613,6 +613,54 @@ def cmd_align_stages() -> None:
                   "is code; only the middle phase is an agent's.[/]")
 
 
+@app.command("housekeeping")
+def cmd_housekeeping(
+    group: str,
+    project: str,
+    apply: bool = typer.Option(False, "--apply",
+                               help="Execute the automated tasks; default is plan only."),
+    retention: int = typer.Option(None, "--retention-days",
+                                  help="Snapshot retention override (default: "
+                                       "PF_LAKE_RETENTION_DAYS or 7)."),
+) -> None:
+    """Plan (and with --apply run) lakehouse maintenance on the prod target.
+
+    DuckLake tasks execute: merge adjacent files, expire snapshots past
+    retention, delete the unreferenced files — in that order, which is the
+    only safe one. Iceberg-on-R2 tasks report: the catalog compacts itself
+    once told to, and expiry needs an engine with delete rights, so the plan
+    says exactly what to enable and where. Anything else exits 1: its engine
+    does its own housekeeping.
+    """
+    from pf.housekeeping import plan_for_project, run
+
+    report = plan_for_project(group, project, pdir(group, project), retention)
+    for note in report.notes:
+        console.print(f"[dim]{note}[/]")
+    if not report.engine:
+        raise typer.Exit(1)
+
+    console.print(f"[bold]{group}/{project}[/] · {report.engine}")
+    fragmented = [t for t in report.tables if t.get("files")]
+    for t in sorted(fragmented, key=lambda t: -t["files"])[:10]:
+        console.print(f"  [dim]{t['table']}: {t['files']} file(s), "
+                      f"{t['bytes'] / 1e6:,.0f} MB[/]")
+    for task in report.tasks:
+        mark = "[green]auto[/]" if task.automated else "[yellow]manual[/]"
+        console.print(f"  {mark} {task.name:24} {task.reason}")
+        if task.manual:
+            console.print(f"       [dim]{task.manual}[/]")
+
+    if apply:
+        done = run(report)
+        for name in done.applied:
+            console.print(f"  [green]✓[/] applied {name}")
+        if not done.applied:
+            console.print("  [dim]nothing automated to apply[/]")
+    elif any(t.automated for t in report.tasks):
+        console.print("[dim]plan only — re-run with --apply to execute[/]")
+
+
 @app.command("bootstrap")
 def bootstrap_cmd(
     group: str = typer.Argument("", help="group (omit with --all)"),
@@ -2190,7 +2238,8 @@ def cmd_artifacts_status() -> None:
     if store is None:
         console.print("[yellow]not configured[/]")
         console.print(f"  {art.SETUP_HINT}")
-        console.print(f"  [dim]endpoint would be {art.DEFAULT_ENDPOINT}[/]")
+        console.print("  [dim]endpoint comes from PF_ARTIFACTS_ENDPOINT — "
+                      "https://<account-id>.r2.cloudflarestorage.com[/]")
         console.print(f"  [dim]bucket   would be {art.DEFAULT_BUCKET}[/]")
         raise typer.Exit(1)
 
