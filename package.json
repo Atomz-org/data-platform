@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "blume": "^1.5.1",
+    "commet": "^5.1.1",
     "graphify": "^1.0.0"
+  },
+  "allowScripts": {
+    "@scarf/scarf@1.4.0": true,
+    "esbuild@0.27.7": true
   }
 }
