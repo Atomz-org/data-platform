@@ -38,6 +38,20 @@ def _by_id(onto, pid: str):
     return next(p for p in onto.policies if p.id == pid)
 
 
+def _fake_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Make `tmp_path` look like a repo root, and stand inside it.
+
+    `pf.obs.repo_root` walks up from cwd for a directory holding both
+    `platform/` and `groups/`, so anything that resolves the root itself —
+    rather than using the one it was passed — lands here instead of in the real
+    checkout.
+    """
+    (tmp_path / "platform").mkdir(exist_ok=True)
+    (tmp_path / "groups").mkdir(exist_ok=True)
+    monkeypatch.chdir(tmp_path)
+    return tmp_path
+
+
 def test_a_project_may_add_a_policy_of_its_own(tmp_path: Path) -> None:
     _policy_file(_project(tmp_path, "acme", "acme-eu"), [{
         "id": "gdpr-erasure-path",
@@ -217,3 +231,42 @@ def test_a_new_project_is_scaffolded_with_the_overlay(tmp_path: Path) -> None:
     assert (pdir / "governance" / "policy.yaml").exists()
     assert CAPABILITIES["governance"].gate["impact_required"] == \
            ["**/governance/policy.yaml"]
+
+
+def test_bootstrap_backfills_the_overlay_into_a_project_without_one(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The path that reaches projects that already existed when this shipped.
+
+    `pf new-project` covers new ones; every project older than the capability
+    depends on this step, which is exactly the hole `pf bootstrap` was built to
+    close for platform steps.
+
+    `_fake_root` is not ceremony: the backfill merges gate rules through
+    `pf.cli._merge_gate_rules`, which resolves the repo from *cwd* rather than
+    from the `root` it was handed. Without the chdir this test writes into the
+    real gate.capabilities.yaml.
+    """
+    from pf.scaffold.bootstrap import _bootstrap_capabilities
+
+    pdir = _fake_root(tmp_path, monkeypatch) / "groups" / "acme" / "projects" / "acme-us"
+    pdir.mkdir(parents=True)
+    results = {r.name: r for r in _bootstrap_capabilities(tmp_path, "acme", "acme-us")}
+
+    assert "capability:governance" in results
+    assert (pdir / "governance" / "policy.yaml").exists()
+
+
+def test_bootstrap_leaves_an_existing_overlay_alone(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Backfill must never rewrite a policy file someone has written into."""
+    from pf.scaffold.bootstrap import _bootstrap_capabilities
+
+    pdir = _fake_root(tmp_path, monkeypatch) / "groups" / "acme" / "projects" / "acme-eu"
+    (pdir / "governance").mkdir(parents=True)
+    mine = pdir / "governance" / "policy.yaml"
+    _policy_file(mine, [{"id": "mart-declares-grain", "severity": "error"}])
+
+    _bootstrap_capabilities(tmp_path, "acme", "acme-eu")
+
+    assert _by_id(load_project_ontology(tmp_path, "acme", "acme-eu"),
+                  "mart-declares-grain").severity == "error"
