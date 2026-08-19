@@ -615,32 +615,44 @@ def cmd_align_stages() -> None:
 
 @app.command("housekeeping")
 def cmd_housekeeping(
-    group: str,
-    project: str,
+    group: str = typer.Argument("", help="group (omit both for platform scope)"),
+    project: str = typer.Argument("", help="project (omit both for platform scope)"),
     apply: bool = typer.Option(False, "--apply",
                                help="Execute the automated tasks; default is plan only."),
     retention: int = typer.Option(None, "--retention-days",
-                                  help="Snapshot retention override (default: "
-                                       "PF_LAKE_RETENTION_DAYS or 7)."),
+                                  help="Retention override in days (defaults: "
+                                       "PF_LAKE_RETENTION_DAYS/7 for a lakehouse, "
+                                       "PF_OPS_RETENTION_DAYS/14 for the platform)."),
 ) -> None:
-    """Plan (and with --apply run) lakehouse maintenance on the prod target.
+    """Plan (and with --apply run) maintenance the engines do not do alone.
 
-    DuckLake tasks execute: merge adjacent files, expire snapshots past
-    retention, delete the unreferenced files — in that order, which is the
-    only safe one. Iceberg-on-R2 tasks report: the catalog compacts itself
-    once told to, and expiry needs an engine with delete rights, so the plan
-    says exactly what to enable and where. Anything else exits 1: its engine
-    does its own housekeeping.
+    With a group and project: lakehouse maintenance on that project's prod.
+    DuckLake tasks execute — flush inlined data, merge adjacent files, expire
+    snapshots past retention, delete the unreferenced files, in that order.
+    Iceberg-on-R2 tasks report: the catalog compacts itself once told to, and
+    expiry needs an engine with delete rights. A non-lakehouse prod exits 1.
+
+    With no arguments: the platform's own accumulation — Dagster run history
+    and orphaned compute logs, oversized dbt logs, expired PR and Elementary
+    reports — plus a warning for any stray warehouse WAL.
     """
-    from pf.housekeeping import plan_for_project, run
+    from pf.housekeeping import plan_for_project, plan_platform, run
 
-    report = plan_for_project(group, project, pdir(group, project), retention)
+    if bool(group) != bool(project):
+        console.print("[red]give a group and a project, or neither[/]")
+        raise typer.Exit(1)
+
+    if not group:
+        report = plan_platform(root(), retention)
+    else:
+        report = plan_for_project(group, project, pdir(group, project), retention)
     for note in report.notes:
         console.print(f"[dim]{note}[/]")
     if not report.engine:
         raise typer.Exit(1)
 
-    console.print(f"[bold]{group}/{project}[/] · {report.engine}")
+    console.print(f"[bold]{group + '/' + project if group else 'platform'}[/]"
+                  f" · {report.engine}")
     fragmented = [t for t in report.tables if t.get("files")]
     for t in sorted(fragmented, key=lambda t: -t["files"])[:10]:
         console.print(f"  [dim]{t['table']}: {t['files']} file(s), "
