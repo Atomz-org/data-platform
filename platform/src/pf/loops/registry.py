@@ -58,6 +58,19 @@ SPECS: dict[str, LoopSpec] = {
                     "each movement implicates.",
         autonomy="L1", cadence="weekly", token_budget=0, writes=False,
     ),
+    "observability-triage": LoopSpec(
+        name="observability-triage",
+        description="Read Elementary's recorded test history; report what is "
+                    "failing or anomalous, with how often — recurrence is the "
+                    "difference between an incident and a broken test.",
+        autonomy="L1", cadence="every 6h", token_budget=12_000, writes=False,
+    ),
+    "expectations-refresher": LoopSpec(
+        name="expectations-refresher",
+        description="Regenerate the ontology-derived expectations floor when the "
+                    "knowledge graph has moved past it.",
+        autonomy="L2", cadence="on graph change", token_budget=0, writes=True,
+    ),
 }
 
 
@@ -260,9 +273,112 @@ def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str
     return out
 
 
+def observability_triage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    """What Elementary's history says is wrong, weighted by recurrence.
+
+    Reads `main_elementary.elementary_test_results` — every framework's tests
+    land there (dbt's own, dbt-expectations, the generated floor, anomaly
+    monitors) — rather than the one run_results.json that happened to survive.
+    The deterministic findings are the fallback; with credentials the existing
+    triage agent classifies them, exactly as `test-failure-triage` does for a
+    single run.
+    """
+    import duckdb
+
+    from pf.runtime.warehouse import Warehouse
+
+    pdir = root / "groups" / group / "projects" / project
+    wh = Warehouse.for_project(pdir, group, project)
+    if not Path(wh.path).exists():
+        return []
+    try:
+        con = duckdb.connect(str(wh.path), read_only=True)
+    except duckdb.Error:
+        return []  # a sister holds the write lock — report nothing, not an error
+    try:
+        if not con.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = "
+                "'main_elementary' AND table_name = 'elementary_test_results' "
+                "LIMIT 1").fetchone():
+            return [f"elementary tables missing — `pf tool elementary run {group} {project}`"]
+        rows = con.execute("""
+            WITH latest AS (
+                SELECT test_unique_id, table_name, column_name, test_name,
+                       status, test_results_description, detected_at,
+                       row_number() OVER (PARTITION BY test_unique_id
+                                          ORDER BY detected_at DESC) AS rn
+                FROM main_elementary.elementary_test_results
+            ), history AS (
+                SELECT test_unique_id,
+                       count(*) FILTER (WHERE status <> 'pass') AS bad_runs,
+                       count(*) AS runs
+                FROM main_elementary.elementary_test_results GROUP BY 1
+            )
+            SELECT l.table_name, l.column_name, l.test_name, l.status,
+                   l.test_results_description, h.bad_runs, h.runs
+            FROM latest l JOIN history h USING (test_unique_id)
+            WHERE l.rn = 1 AND l.status <> 'pass'
+            ORDER BY h.bad_runs DESC LIMIT 20""").fetchall()
+    except duckdb.Error as exc:
+        return [f"could not read elementary history: {exc}"[:200]]
+    finally:
+        con.close()
+
+    raw = [f"{t or '?'}{'.' + c if c else ''} [{n}] {s} "
+           f"({bad}/{total} runs bad): {(d or '')[:120]}"
+           for t, c, n, s, d, bad, total in rows]
+    if not raw:
+        return []
+
+    from pf.agents import NoCredentials, have_credentials, triage_failures
+    if not have_credentials():
+        return raw
+    failures = [{"unique_id": f"{t or '?'}.{n}", "status": s,
+                 "message": f"{bad}/{total} runs bad — {(d or '')[:160]}"}
+                for t, c, n, s, d, bad, total in rows]
+    try:
+        verdict = triage_failures(root, group, project, failures, "")
+    except NoCredentials:
+        return raw
+    if verdict is None:
+        return raw
+    prefix = "ESCALATE" if verdict.escalate else verdict.confidence.upper()
+    return [(f"[{prefix}] root_cause={verdict.root_cause}: {verdict.summary} "
+            f"→ {verdict.suggested_fix}")]
+
+
+def expectations_refresher(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    """Keep the generated quality floor caught up with the graph.
+
+    The mirror of `index-refresher`, one derivation later: the graph is rebuilt
+    from the manifest, and the expectations floor is derived from the graph, so
+    a graph newer than the newest generated test means annotations moved and
+    the floor may be stale. `write_tests` is already idempotent and
+    marker-scoped, so re-deriving over an up-to-date floor writes nothing.
+    """
+    from pf.tools import expectations as ex
+
+    pdir = root / "groups" / group / "projects" / project
+    graph = pdir / "kg" / "graph.duckdb"
+    if not graph.exists():
+        return []
+    tdir = ex.tests_dir(pdir)
+    newest = max((f.stat().st_mtime for f in tdir.glob("*.sql")), default=0.0) \
+        if tdir.exists() else 0.0
+    if newest >= graph.stat().st_mtime:
+        return []
+    written, unchanged, removed = ex.write_tests(pdir)
+    if not (written or removed):
+        return []
+    return [(f"expectations floor refreshed: {written} written, {removed} stale "
+            f"removed ({unchanged} unchanged) — runs on the next `pf seed`")]
+
+
 BODIES = {
     "dashboard-coverage": dashboard_coverage,
     "vendor-drift": vendor_drift,
+    "observability-triage": observability_triage,
+    "expectations-refresher": expectations_refresher,
     "freshness-triage": freshness_triage,
     "test-failure-triage": test_failure_triage,
     "metric-gap-harvester": metric_gap_harvester,
