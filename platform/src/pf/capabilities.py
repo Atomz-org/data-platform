@@ -333,7 +333,156 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
     )
 
 
+# ------------------------------------------------------------------- air --
+AIR_JOB = """\
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage {{group}} {{project}} --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate {{group}} {{project}}
+"""
+
+AIR_DOCS = """\
+# AI risk controls — {{project}}
+
+This project declares which AI controls it commits to in `air.yaml`, and
+`pf air gate {{group}} {{project}}` blocks the merge when one of them is not
+enforced. Controls come from whichever catalogues are registered —
+`pf air catalogues` lists them and where each is checked out.
+
+| command | what it answers |
+| --- | --- |
+| `pf air catalogues` | which control catalogues are registered |
+| `pf air controls` | which controls exist |
+| `pf air show <id>` | one control, and every regulation it discharges |
+| `pf air baseline {{group}} {{project}} --suggest` | the controls that already pass |
+| `pf air coverage {{group}} {{project}}` | which of them this project enforces |
+| `pf air gaps` | only the ones it does not |
+| `pf air crosswalk eu-ai-act` | the regulator's view of the same facts |
+| `pf air register {{group}} {{project}}` | regenerate `governance/air-register.md` |
+
+## Declaring a baseline
+
+`air.yaml` is hand-written and carries the judgement:
+
+- `baseline:` — controls this project commits to. These **block the merge**.
+- `accepted:` — controls consciously not taken. `reason` and `owner` are both
+  required, because an acceptance without them is a gap with better formatting.
+- `profile:` — where this project sits in the framework's taxonomy.
+
+A project may add to its group's baseline; it cannot remove from it. The way to
+drop a control is `accepted:`, which leaves a name attached to the decision.
+
+## The register is generated
+
+`governance/air-register.md` is derived from `air.yaml` plus a fresh coverage
+run and is on the gate denylist — hand-editing it would make it disagree with
+the declaration it came from. Change `air.yaml`, then `pf air register`.
+
+It carries the credit line of every catalogue it drew from, collected from the
+sources actually loaded rather than templated — so a catalogue swapped out takes
+its obligation with it, and one added brings its own.
+"""
+
+# The starter declaration. Deliberately empty of baseline entries: a scaffolder
+# that pre-commits a project to four controls produces four commitments nobody
+# made, and the first `pf air gate` would fail on a decision never taken.
+#
+# Lives here with the other capability file templates rather than in `pf.air`,
+# which keeps `pf.capabilities` free of any import into `pf.air` — `pf.tools.spec`
+# imports this module, and `pf.air.register` reads `pf.tools.config`.
+AIR_CONFIG = """\
+# Which AI controls {{project}} commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered: `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Merged over the group's air.yaml. `baseline` is a union with the group's, not
+# a replacement: an entity may commit to more than its family, never to less.
+version: 1
+
+# Where this project sits in its catalogue's taxonomy, if it declares one.
+# Free-form until then.
+#
+# profile:
+#   ai_type: Agentic_AI
+#   architecture_pattern: Agentic/Autonomous_AI
+profile: {}
+
+# Controls this project commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything else is reported and advisory.
+#
+# Start from `pf air baseline {{group}} {{project}} --suggest`, which proposes
+# only what already passes — a ratchet against regression rather than a wall of
+# work nobody agreed to. Accepting the proposal stays a person's act.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this project does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
+
 CAPABILITIES: dict[str, Capability] = {
+    "air": Capability(
+        name="air",
+        description="AI control baseline: declare it in air.yaml, gate the merge on it.",
+        files={
+            "air.yaml": AIR_CONFIG,
+            "docs/air.md": AIR_DOCS,
+        },
+        ci_jobs={"air-baseline": AIR_JOB},
+        settings={
+            "permissions": {"allow": [
+                "Bash(pf air:*)",
+            ]},
+        },
+        gate={
+            # Generated from air.yaml on every run. Hand-editing it makes the
+            # register disagree with the declaration it was derived from, and the
+            # next `pf air register` discards the edit — the same argument that
+            # denies every other generated artefact here.
+            "denylist": ["**/governance/air-register.md"],
+            # Changing what an entity commits to is a governance decision, not a
+            # refactor. It stays editable — the register is the generated half —
+            # but the blast radius gets reported first.
+            "impact_required": ["**/air.yaml"],
+        },
+        default_enabled=True,
+    ),
     "evidence": Capability(
         name="evidence",
         description="Evidence BI reporting layer, generated from the semantic layer.",

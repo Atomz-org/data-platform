@@ -44,6 +44,7 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
            "tools_yaml": _default_tools_yaml()}
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "air.yaml", GROUP_AIR, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
@@ -141,6 +142,49 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
 
 
 # ================================================================ templates ==
+GROUP_AIR = """\
+# Which AI controls the {{group}} family commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered; `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Declared here means declared for **every sister project** in {{group}}. A
+# project may add to `baseline` in its own air.yaml; it cannot remove from it.
+# The way to drop a control is `accepted:`, which requires a reason and an owner.
+#
+#   pf air coverage {{group}} <project>    # what this entity enforces today
+#   pf air baseline {{group}} --suggest    # the controls that already pass
+#   pf air gate {{group}} <project>        # blocks on a failing commitment
+#
+# `baseline` starts empty on purpose. A scaffolder that pre-commits a family to
+# a set of controls produces commitments nobody made, and the first gate run
+# fails on a decision never taken. Fill it from `--suggest`, which proposes only
+# what already passes — a ratchet against regression rather than a wall of work.
+version: 1
+
+# Where this family sits in the catalogue's taxonomy, if it declares one.
+# `pf air catalogues` names the corpus; its deployment-model data file lists the
+# vocabulary. Free-form until then.
+profile: {}
+
+# Controls this family commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything outside this list is reported and advisory.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this family does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
 GROUP_TOOLS = """\
 # Which platform tools this group runs. `pf tool list` shows what is available.
 #
