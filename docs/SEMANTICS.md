@@ -6,6 +6,8 @@ policy without an ontology has nothing to attach to.
 
 ```
 policy.yaml     what must HOLD    intent -> constraint -> artifact -> evidence   (OpenTopology)
+                                  ...and `controls:`, the external ids each policy
+                                  discharges (`AIR-DET-21`) — see docs/AIR.md
 topology.yaml   how they RELATE   named relations, domain/range, cardinality     (OWL object properties)
 concepts.yaml   what things ARE   classes, identity, datatype properties          (OWL classes)
 annotations     where they LIVE   concept/role/links per dlt resource            (per project)
