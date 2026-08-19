@@ -1,5 +1,11 @@
 models:
 - name: order_items
+  # Junction table other models and unit tests depend on — a schema change
+  # here breaks silently downstream, which is exactly what this watches for.
+  data_tests:
+  - elementary.schema_changes:
+      config:
+        severity: warn
   columns:
   - name: order_item_id
     data_tests:
