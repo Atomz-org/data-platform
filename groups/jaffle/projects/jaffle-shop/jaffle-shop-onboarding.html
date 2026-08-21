@@ -1,0 +1,697 @@
+<title>Jaffle Shop Onboarding</title>
+<style>
+:root {
+  --paper:      #F6F8F7;
+  --surface:    #FFFFFF;
+  --ink:        #16201E;
+  --ink-soft:   #3D4B47;
+  --muted:      #66746F;
+  --rule:       #D9E0DD;
+  --rule-soft:  #E8EDEB;
+  --accent:     #0F6F5C;
+  --accent-dim: #E2F0EC;
+  --blocked:    #A3341F;
+  --blocked-dim:#F7E7E2;
+  --decide:     #8A6206;
+  --decide-dim: #F7EEDA;
+  --code-bg:    #EFF3F1;
+
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:      #0D1412;
+    --surface:    #141D1A;
+    --ink:        #E5EBE8;
+    --ink-soft:   #B6C2BE;
+    --muted:      #849690;
+    --rule:       #26332F;
+    --rule-soft:  #1C2724;
+    --accent:     #58C4A7;
+    --accent-dim: #16302A;
+    --blocked:    #E2836B;
+    --blocked-dim:#301A14;
+    --decide:     #D8AA47;
+    --decide-dim: #2C2312;
+    --code-bg:    #182220;
+  }
+}
+:root[data-theme="dark"] {
+  --paper:      #0D1412;
+  --surface:    #141D1A;
+  --ink:        #E5EBE8;
+  --ink-soft:   #B6C2BE;
+  --muted:      #849690;
+  --rule:       #26332F;
+  --rule-soft:  #1C2724;
+  --accent:     #58C4A7;
+  --accent-dim: #16302A;
+  --blocked:    #E2836B;
+  --blocked-dim:#301A14;
+  --decide:     #D8AA47;
+  --decide-dim: #2C2312;
+  --code-bg:    #182220;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.62;
+  margin: 0;
+  padding: 0 24px 120px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+.col  { max-width: 68ch; }
+
+/* ---------- masthead ---------- */
+.masthead {
+  padding: 72px 0 36px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 0;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+h1 {
+  font-size: clamp(34px, 6vw, 54px);
+  line-height: 1.04;
+  letter-spacing: -0.028em;
+  font-weight: 700;
+  margin: 0 0 22px;
+  text-wrap: balance;
+}
+.standfirst {
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+.route {
+  font-family: var(--mono);
+  font-size: 13px;
+  margin-top: 28px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+.route b { color: var(--ink); font-weight: 500; }
+.route .arrow { color: var(--accent); }
+
+/* ---------- sections ---------- */
+section { padding-top: 60px; }
+h2 {
+  font-size: 13px;
+  font-family: var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 0 0 8px;
+}
+h3 {
+  font-size: clamp(23px, 3.2vw, 30px);
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+h4 {
+  font-size: 17.5px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+p { margin: 0 0 16px; text-wrap: pretty; }
+.col > p:last-child { margin-bottom: 0; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.855em;
+  background: var(--code-bg);
+  padding: 1.5px 5px;
+  border-radius: 2px;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* ---------- verdict block ---------- */
+.verdict {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 24px;
+  margin: 0 0 8px;
+}
+.verdict p { font-size: 18.5px; line-height: 1.5; }
+
+/* ---------- data tables ---------- */
+.tablewrap { overflow-x: auto; margin: 28px 0 8px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+caption {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 10px;
+}
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 1px solid var(--ink);
+  padding: 0 16px 8px 0;
+  white-space: nowrap;
+}
+td {
+  padding: 9px 16px 9px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+}
+td.num, th.num { text-align: right; font-family: var(--mono); padding-right: 22px; }
+tr:last-child td { border-bottom: 1px solid var(--rule); }
+td.mono { font-family: var(--mono); font-size: 13px; }
+.dim { color: var(--muted); }
+
+/* ---------- findings ---------- */
+.finding {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  gap: 0 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--rule);
+  align-items: start;
+}
+.finding:last-of-type { border-bottom: 1px solid var(--rule); }
+.chip {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.chip.blocked { background: var(--blocked-dim); color: var(--blocked); }
+.chip.decide  { background: var(--decide-dim);  color: var(--decide); }
+.chip.clear   { background: var(--accent-dim);  color: var(--accent); }
+.finding-body p { margin: 0 0 12px; max-width: 66ch; }
+.finding-body p:last-child { margin-bottom: 0; }
+
+/* ---------- phases ---------- */
+.phase {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 0 24px;
+  padding: 30px 0;
+  border-top: 1px solid var(--rule);
+}
+.phase:last-of-type { border-bottom: 1px solid var(--rule); }
+.phase-n {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  padding-top: 5px;
+  font-weight: 500;
+}
+.phase-body { max-width: 68ch; }
+.phase-body > p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 20px; }
+li { margin-bottom: 7px; padding-left: 2px; }
+li:last-child { margin-bottom: 0; }
+
+pre {
+  background: var(--code-bg);
+  border-left: 2px solid var(--rule);
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  margin: 0 0 16px;
+  border-radius: 0 2px 2px 0;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.cmt { color: var(--muted); }
+
+.exit {
+  border-top: 1px solid var(--rule-soft);
+  margin-top: 16px;
+  padding-top: 12px;
+  font-size: 14.5px;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+}
+.exit .lbl {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+.exit .txt { color: var(--ink-soft); }
+
+/* ---------- checklist ---------- */
+.checks { list-style: none; padding: 0; margin: 22px 0 0; }
+.checks li {
+  border-top: 1px solid var(--rule-soft);
+  padding: 13px 0 13px 30px;
+  position: relative;
+  margin: 0;
+  max-width: 70ch;
+}
+.checks li:last-child { border-bottom: 1px solid var(--rule-soft); }
+.checks li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 20px;
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
+}
+
+.footnote {
+  margin-top: 64px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-size: 13.5px;
+  color: var(--muted);
+  max-width: 70ch;
+}
+.footnote p { margin-bottom: 10px; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:focus-visible, :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 640px) {
+  .finding, .phase { grid-template-columns: 1fr; gap: 10px; }
+  body { padding: 0 18px 80px; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Migration brief · surveyed 14 Aug 2026</p>
+  <h1>Onboarding Jaffle&nbsp;Shop Expanded</h1>
+  <p class="standfirst">A 1,058-model dbt project from <code>DataRecce/jaffle-shop-expand</code>, brought into the platform. The SQL is the easy half. The semantics, and the platform's own scale limits, are the real work.</p>
+  <p class="route">
+    <b>DataRecce/jaffle-shop-expand</b> <span class="arrow">→</span> <b>groups/jaffle/projects/jaffle-shop</b>
+    <span class="dim">· DuckDB first, Snowflake once dev is green</span>
+  </p>
+</header>
+
+<section>
+  <h2>Verdict</h2>
+  <div class="col verdict">
+    <p>Mechanically this lands in about a day, and the tooling to do it is built. The blocker is not code — it is that <strong>the platform's ontology has no concepts for half of what this project models</strong>. That is a platform-tier decision, and it has to be made before a single file is copied.</p>
+    <p>Below it sits one real technical risk, and it is the quiet kind: 128 SQL call sites that run without error on the target and can still return the wrong number.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What the source actually is</h2>
+  <div class="col">
+    <p>Its README is explicit: <em>"a realistic mock data warehouse for testing dbt tools, PR review workflows, and data platform capabilities."</em> This is Recce's scale fixture, built on <code>dbt-labs/jaffle-shop</code> — not a company's warehouse. That matters for how much semantic investment the synthetic domains deserve.</p>
+    <p>It is also unusually clean to move: <strong>no Python whatsoever</strong>. No Airflow, no Prefect, no Dagster, no dlt. Just dbt, seeds and macros.</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Surveyed contents</caption>
+      <thead>
+        <tr><th>Layer</th><th class="num">Models</th><th>Shape</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">staging</td><td class="num">88</td><td>6 domain folders + 30 <code>derived</code> models that join rather than clean 1:1</td></tr>
+        <tr><td class="mono">intermediate</td><td class="num">194</td><td>per-domain and <code>*_deep</code> chains, plus cross-domain</td></tr>
+        <tr><td class="mono">marts</td><td class="num">772</td><td>spread over 38 folders — only 6 are domains, the rest are <em>shapes</em>: trends, kpis, rankings, alerts, wide_tables, mega_wide…</td></tr>
+        <tr><td class="mono">utilities</td><td class="num">4</td><td>date spine and helpers</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <caption>Everything else</caption>
+      <thead>
+        <tr><th>Resource</th><th class="num">Count</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>dbt sources</td><td class="num">6</td><td class="mono">ecom, finance, hr_ops, marketing, product, supply_chain</td></tr>
+        <tr><td>Seed CSVs</td><td class="num">59</td><td>16 MB — <code>raw_items</code> 90,901 rows, <code>raw_orders</code> 61,949, <code>raw_customers</code> 936</td></tr>
+        <tr><td>Schema YAML</td><td class="num">87</td><td>3,180 column declarations</td></tr>
+        <tr><td>Tests</td><td class="num">~794</td><td>511 <code>not_null</code>, 275 <code>unique</code>, 4 <code>expression_is_true</code>, 3 <code>relationships</code>, 1 <code>accepted_values</code></td></tr>
+        <tr><td>Macros</td><td class="num">22</td><td>18 helpers + 4 custom generic tests</td></tr>
+        <tr><td>Semantic models</td><td class="num">6</td><td>on the original jaffle core only; 3 files carry metrics</td></tr>
+        <tr><td>Snapshots / analyses / data tests</td><td class="num">2 / 3 / 3</td><td>—</td></tr>
+        <tr><td>Incremental models</td><td class="num">15</td><td>the only non-trivial materialisations</td></tr>
+        <tr><td>Exposures</td><td class="num">1 file</td><td>plus 2 models with contracts, 0 with <code>access</code></td></tr>
+        <tr><td>SQL volume</td><td class="num">57,407</td><td>lines; longest model <code>mega_wide_store_master</code> at 763</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Where it lands</h2>
+  <div class="col">
+    <p><strong>A new group, <code>jaffle</code>, with one project, <code>jaffle-shop</code>.</strong> Not inside <code>acme</code>, <code>globex</code> or <code>zenith</code>.</p>
+    <p>A group in this platform asserts something specific: sister companies sharing an ontology instance, conformed dimensions and group metrics, with a roll-up that unions across them. Dropping a sandwich-shop chain beside an existing family would assert conformance that does not exist, and the roll-up would be the thing that breaks. A new group costs one <code>pf new-group</code> and keeps the claim honest.</p>
+    <p>Per the repo's own rule I did not read the other groups' business logic to reach this — the argument is structural, not comparative.</p>
+  </div>
+</section>
+
+<section>
+  <h2>What actually blocks</h2>
+  <div class="col"><p>Four things, in the order they have to be resolved.</p></div>
+
+  <div class="finding">
+    <div><span class="chip blocked">Decision</span></div>
+    <div class="finding-body">
+      <h4>The ontology has no concepts for most of this project</h4>
+      <p>Ontology v2 has 16 concepts, shaped for subscription commerce: <code>Customer</code>, <code>Order</code>, <code>Product</code>, <code>Location</code>, <code>Employee</code>, <code>Payment</code>, <code>Subscription</code>, <code>Interaction</code>…</p>
+      <p>Four of the six core jaffle tables map cleanly — customers, orders, products, stores. <strong>Two do not:</strong> <code>raw_items</code> (order lines) and <code>raw_supplies</code> (per-SKU cost inputs) have no concept at all. Beyond the core it gets worse: supply chain needs Supplier, PurchaseOrder, Shipment, Inventory; HR needs Department and Position; marketing needs Campaign. None exist.</p>
+      <p>The 16 <em>roles</em> are fine — they are generic enough to carry any of this. It is purely a concept gap. Extending the ontology is a platform-tier change affecting every existing group, so it is your call, not a step in this plan.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip clear">Withdrawn</span></div>
+    <div class="finding-body">
+      <h4>The context card fits fine — this blocker was mine, and it was wrong</h4>
+      <p>I reported that 1,058 models could not fit the 1,500-token card budget, at roughly 3× over in the most compressed form. That was wrong, and building the check properly disproved it.</p>
+      <p><code>pf kg card</code> does not enumerate every model. Each section truncates at a fixed limit, so its output is <strong>bounded regardless of project size</strong> — measured: 3 marts render in 3 lines, 772 marts in 13 lines and 364 tokens, identical to 100 marts.</p>
+      <p>What is genuinely true is smaller and different: a card naming 12 of 772 marts is inside budget and nearly uninformative. So the card now rolls the remainder up by tag rather than only counting it — <code>…and 760 more — by domain: marketing (128), hr_ops (128), supply_chain (127)…</code> — which costs one line and describes all of them. jaffle's <code>domain:</code> tags make that work out of the box. All seven existing cards regenerate byte-identical.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip decide">Decide</span></div>
+    <div class="finding-body">
+      <h4><code>maxFiles: 12</code> versus a 1,058-model project</h4>
+      <p>The gate caps a loop run at 12 files. That is a sensible ceiling for a 9-model project and an almost meaningless one here — a single tag rename across <code>marts/finance</code> touches 29. Agent loops will be unable to do useful work on this project without either a per-project override or an explicit decision that loops don't run here.</p>
+      <p>I'd leave the cap alone and exclude this project from loops until it earns its way in. Raising a global safety limit to accommodate one imported fixture is the wrong trade.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip blocked">Tooling</span></div>
+    <div class="finding-body">
+      <h4><code>pf onboard</code> is not on this branch</h4>
+      <p>The branch is <code>feat/-project-onboarding-from-github</code>, but the onboarding code lives on <code>feat/adding-context-and-rules</code> — this branch has only a stale <code>__pycache__</code> where <code>platform/src/pf/onboard/</code> should be, and no <code>context.py</code>.</p>
+      <p>Related and worth fixing regardless: <code>TOOLKITS.md</code> and seven <code>kg/tools_card.md</code> files are <em>committed</em> here, but the generator that produces them is not. Nothing on this branch can regenerate or validate them, and on the other branch they are gitignored as build output.</p>
+      <p>Cherry-pick the onboard and context modules across before starting, or Phase 1 is a manual copy with no survey, no capability reconciliation and no plan/apply split.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What looks hard and isn't</h2>
+
+  <div class="finding">
+    <div><span class="chip clear">Built</span></div>
+    <div class="finding-body">
+      <h4>The SQL is portable through a macro toolkit — no per-database rewrite</h4>
+      <p>There is now a <code>dbt-snowflake</code> toolkit on <code>macro-paths</code> for every project. Its <code>sf_*</code> macros compile to whatever the <em>target</em> adapter understands, so one set of models runs on DuckDB in development and Snowflake in production — and on Postgres or ClickHouse without further work.</p>
+      <pre><code>select {{ sf_iff("status = 'paid'", 'amount', '0') }} as paid
+
+<span class="cmt">DuckDB / Postgres → case when status = 'paid' then amount else 0 end
+Snowflake         → iff(status = 'paid', amount, 0)
+ClickHouse        → if(status = 'paid', amount, 0)</span></code></pre>
+      <p>29 macros, each asserted against a real dbt run. Three reproduce Snowflake's semantics <em>against</em> DuckDB's native behaviour, which is the reason the toolkit exists rather than a find-and-replace:</p>
+      <ul>
+        <li><code>sf_least(['a','b'])</code> returns NULL if either is NULL. DuckDB, Postgres and BigQuery would skip the NULL and return the other value.</li>
+        <li><code>sf_div0(a, b)</code> returns <strong>0</strong> on a zero divisor. A hand-written <code>a / nullif(b, 0)</code> returns NULL — on exactly the rows anyone added the guard for.</li>
+        <li><code>sf_datediff(part, start, end)</code> takes the part <strong>first</strong>. dbt-core's own <code>datediff</code> takes it last, so passing Snowflake's arguments through gives a sign-flipped answer in the wrong unit.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip decide">Corrected</span></div>
+    <div class="finding-body">
+      <h4>Two numbers in my first survey were wrong</h4>
+      <p>Building the detector properly disproved both. I had reported <code>iff</code> at 182 uses and <code>dateadd</code> at 27, from a substring grep.</p>
+      <p><strong><code>iff</code> does not appear in this project at all.</strong> The 182 was <code>datediff(</code> — which ends in the characters <code>iff(</code>. A word-boundary scan finds zero. And all 27 <code>dateadd</code> calls are <code>{{ dbt.dateadd(...) }}</code>, dbt's own cross-database macro, portable already.</p>
+      <p>So the conclusion is better than I first reported: <strong>this project has no unsupported functions.</strong> Its entire portability risk is the ambiguous set below — the half that runs without complaint.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip blocked">Real risk</span></div>
+    <div class="finding-body">
+      <h4>128 call sites resolve on DuckDB and can still be wrong</h4>
+      <p><code>date_trunc</code> ×66, <code>datediff</code> ×30, <code>least</code> ×27, <code>greatest</code> ×7, <code>listagg</code> ×5 — all raw SQL, all resolvable, none of them guaranteed to mean what the author meant. <code>least</code> and <code>greatest</code> disagree about NULLs; <code>date_trunc</code> and <code>datediff</code> disagree about argument order across dialects.</p>
+      <p>These are never translated automatically. <code>pf dialect</code> reports each with the macro that pins the source dialect's semantics, and a human confirms which warehouse the SQL was written for before wrapping. That confirmation is the actual work, and it cannot be skipped — the same text means different things depending on the answer.</p>
+      <p>The remaining 363 <code>date_trunc</code> and 153 <code>datediff</code> occurrences are already <code>{{ dbt.* }}</code> calls and are correctly ignored.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip clear">Trivial</span></div>
+    <div class="finding-body">
+      <h4>The package dependencies are nearly vestigial</h4>
+      <p>Three packages are declared. Actual usage across 1,058 models: <code>dbt_utils</code> <strong>5 call sites</strong> (4 <code>expression_is_true</code> tests, 1 <code>generate_surrogate_key</code>), <code>dbt_date</code> <strong>2</strong> (both <code>get_base_dates</code>), <code>dbt-audit-helper</code> <strong>zero</strong>.</p>
+      <p>So: keep <code>dbt_utils</code> under the platform's existing <code>&gt;=1.3.0,&lt;2.0.0</code> pin — 1.3.3 satisfies it. Drop audit-helper entirely, which is a bonus: it was pinned to git <code>revision: main</code>, i.e. unpinned, which the vendor policy would never accept. That leaves <code>dbt_date</code> as the only genuinely new dependency, for two call sites.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip clear">Nothing to do</span></div>
+    <div class="finding-body">
+      <h4>No orchestrator to migrate, and no ingestion to port</h4>
+      <p>The Airflow/Prefect→Dagster path doesn't apply — there is no Python in the repo at all. Dagster assets come from the platform's <code>dagster-dbt</code> factory once the project is registered. Source data is 59 static seed CSVs behind <code>var('load_source_data')</code>, not a pipeline.</p>
+      <p>Keep them as seeds. Writing dlt pipelines to load static fixture CSVs would be ceremony; add dlt when a real source appears. Note the platform will still expect <code>src/jaffle_shop/</code> to exist, so scaffold it and leave it empty of sources.</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <div><span class="chip clear">Verified</span></div>
+    <div class="finding-body">
+      <h4>No model name collisions</h4>
+      <p>dbt's namespace is flat, so 1,058 models across 38 mart folders is a real collision risk. Checked: <strong>zero duplicate basenames</strong>. The tree can be flattened or restructured without renaming anything.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What is now built, and reusable</h2>
+  <div class="col">
+    <p>Every finding above came from a generic check, not a jaffle-specific one. Each is registry-driven or discovered at runtime, so the next import gets the same scrutiny without anyone editing code.</p>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Check</th><th>How it generalises</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">pf dialect</td>
+          <td>Knows no vendor. Scans call sites, resolves them against DuckDB's <em>live</em> catalogue plus a binder probe, then reports against the macro toolkits. A function DuckDB gains natively stops being reported with no list to update.</td>
+        </tr>
+        <tr>
+          <td class="mono">dbt-snowflake toolkit</td>
+          <td>Adapter-dispatched, so it covers DuckDB, Postgres, Redshift, ClickHouse, BigQuery and Snowflake. A BigQuery-origin project gets a <code>bq_*</code> sibling — added to one tuple and one <code>macro-paths</code> entry.</td>
+        </tr>
+        <tr>
+          <td class="mono">reserved macros</td>
+          <td>A registry of dbt built-ins whose override breaks the platform's layout, each with the reason. <code>generate_schema_name</code> is the one that bit here; <code>generate_alias_name</code>, <code>ref</code> and <code>source</code> are the same class.</td>
+        </tr>
+        <tr>
+          <td class="mono">path keys</td>
+          <td>Reads <code>test-paths</code>, <code>snapshot-paths</code> and <code>analysis-paths</code> from the source rather than assuming dbt's defaults, then normalises into this platform's layout. This is what found jaffle's 3 tests, 2 snapshots and 3 analyses — all previously dropped in silence.</td>
+        </tr>
+        <tr>
+          <td class="mono">config re-keying</td>
+          <td>The source's per-directory config follows its models through the layer mapping, so <code>bronze:</code> becomes <code>staging:</code> and two layers collapsing onto one merge. Without it every tag and materialisation is silently lost.</td>
+        </tr>
+        <tr>
+          <td class="mono">card rollup</td>
+          <td>Any section over its limit is summarised by tag namespace — <code>domain</code>, then <code>type</code>, then <code>criticality</code> — instead of truncated to a count. Falls back cleanly when a project has no tags, and refuses to "group" into a single bucket.</td>
+        </tr>
+        <tr>
+          <td class="mono">scale guard</td>
+          <td>Reports density rather than budget, and says whether the project carries tags the card can roll up by. Kept in step with the card's own section limit by a test, so the advice cannot drift from the behaviour.</td>
+        </tr>
+        <tr>
+          <td class="mono">package audit</td>
+          <td>Counts real call sites per package and flags git pins on a moving branch. Found audit-helper at zero uses and unpinned.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="col" style="margin-top:24px">
+    <p><code>pf onboard</code> refuses to apply while any blocking finding stands, unless you pass <code>--force</code>. 73 tests cover it, including every toolkit macro compiled through dbt against a real adapter.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Conflicts needing an explicit call</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Conflict</th><th>Why it bites</th><th>Recommendation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">generate_schema_name</td>
+          <td>The source ships its own override. On any non-<code>prod</code> target it collapses every model into <code>target.schema</code>, ignoring <code>+schema</code>. The platform's <code>dbt_project.yml</code> relies on <code>staging</code>/<code>marts</code> schema separation.</td>
+          <td><strong>Do not import it.</strong> Silent, and it breaks layer separation on exactly the dev target you want green first.</td>
+        </tr>
+        <tr>
+          <td class="mono">pf gen-staging</td>
+          <td>Generates staging from annotations. The source has 88 hand-written staging models, 30 of which are joins, not 1:1 cleans — generation would fight them.</td>
+          <td>Suppress for this project initially. Revisit only for the 6 <code>ecom</code> tables once annotated.</td>
+        </tr>
+        <tr>
+          <td class="mono">macro-paths</td>
+          <td>Source declares <code>["macros"]</code>; the platform needs <code>../../../../../platform/dbt/macros</code> for <code>pf_clean</code> dispatch.</td>
+          <td>Merge, keeping both. Only collision is <code>generate_schema_name</code>, handled above.</td>
+        </tr>
+        <tr>
+          <td class="mono">data-tests/</td>
+          <td>Source uses <code>test-paths: ["data-tests"]</code>; platform scaffolds <code>tests</code>. Also needs <code>snapshot-paths</code> and <code>analysis-paths</code>, which the platform template omits.</td>
+          <td>Carry the source's paths into the merged <code>dbt_project.yml</code>. Cheaper than moving 3 files and 2 snapshots.</td>
+        </tr>
+        <tr>
+          <td class="mono">target-base/</td>
+          <td>Checked-in Recce base artifacts. Regenerable, large, and <code>gate.yaml</code> denies <code>**/target/**</code> but not this.</td>
+          <td>Don't import. Regenerate from a base build if Recce comparison is wanted.</td>
+        </tr>
+        <tr>
+          <td class="mono">profiles.yml</td>
+          <td>Source defaults to <code>target: snowflake-current</code> with 6 outputs. Platform uses <code>DBT_TARGET</code> with <code>PF_DUCKDB_PATH</code>.</td>
+          <td>Take the platform's wholesale. Add the Snowflake output in Phase 5, from your credentials.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>The plan</h2>
+  <div class="col"><p>Five phases. Each has an exit criterion that is checkable, not a judgement call — the point is that you can tell whether a phase is actually finished.</p></div>
+
+  <div class="phase">
+    <div class="phase-n">PHASE&nbsp;1</div>
+    <div class="phase-body">
+      <h4>Clear the platform-tier decisions</h4>
+      <p>Nothing else can start. All three are edits to shared infra, so they happen while <em>not</em> in a project session.</p>
+      <ul>
+        <li>Decide the ontology question — extend v2 with retail and supply-chain concepts, or scope the import to what fits.</li>
+        <li>Restore the context generator, or stop committing its output — <code>TOOLKITS.md</code> and seven <code>tools_card.md</code> files are checked in here without the code that produces them.</li>
+      </ul>
+      <p class="dim" style="font-size:14.5px">Everything else in this phase is done: <code>pf onboard</code>, <code>pf dialect</code>, the macro toolkit and the card rollup are all on this branch, with 92 tests.</p>
+      <div class="exit"><span class="lbl">Exit</span><span class="txt"><code>pf ontology</code> shows the agreed concept set; <code>pf tokens</code> still green on the seven existing projects.</span></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-n">PHASE&nbsp;2</div>
+    <div class="phase-body">
+      <h4>Scaffold and land the code</h4>
+      <p>Mechanical, and the fast part. Survey first, apply second.</p>
+      <pre><code>uv run pf new-group jaffle
+uv run pf new-project jaffle jaffle-shop --with evidence,github
+uv run pf onboard jaffle jaffle-shop \
+  https://github.com/DataRecce/jaffle-shop-expand   <span class="cmt"># plan</span>
+uv run pf onboard jaffle jaffle-shop &lt;src&gt; --apply</code></pre>
+      <p>The config merge, the reserved-macro exclusion and the toolkit wiring all happen in the apply. What is left by hand: drop audit-helper, add <code>dbt_date</code> and its <code>dbt_date:time_zone</code> var, then work the <code>pf dialect</code> report — confirm the source dialect, and wrap the 128 ambiguous call sites in their <code>sf_*</code> macros.</p>
+      <div class="exit"><span class="lbl">Exit</span><span class="txt"><code>pf dialect</code> clean; <code>dbt deps</code>, <code>dbt seed --vars 'load_source_data: true'</code> and <code>dbt build</code> all green on DuckDB — 1,058 models and ~794 tests passing.</span></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-n">PHASE&nbsp;3</div>
+    <div class="phase-body">
+      <h4>Make it legible to the platform</h4>
+      <p>This is where the real cost sits, and it is annotation work no tool can infer. Write <code>contracts/annotations.yaml</code> for the raw tables in scope — concept, roles, renames, FK links, grain and description per resource.</p>
+      <p>Start with the 6 <code>ecom</code> tables. They are the original jaffle core, they carry the semantic models and metrics, and they are the only ones with a genuine business shape. The other five domains are synthetic; decide domain by domain whether they earn annotations or stay unannotated mass.</p>
+      <p>Be aware of the trap: <code>validate_project</code> only <em>warns</em> on missing annotations. The project will pass <code>pf check</code> while contributing nothing to the graph, the metrics or the gate. Passing is not the same as onboarded.</p>
+      <div class="exit"><span class="lbl">Exit</span><span class="txt">Every in-scope resource resolves to a concept; <code>pf kg build</code> produces a graph with real edges; <code>pf tokens</code> green with the summarised card.</span></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-n">PHASE&nbsp;4</div>
+    <div class="phase-body">
+      <h4>Wire the platform's machinery</h4>
+      <ul>
+        <li><code>pf dagster-workspace</code> to register the code location; assets come from the <code>dagster-dbt</code> factory.</li>
+        <li>Evidence reporting from the semantic layer — the 6 existing semantic models and 3 metric files are a real head start.</li>
+        <li>The GitHub impact gate on PRs. Expect <code>pf impact</code> blast radius to be large and slow here; measure it before trusting it in CI.</li>
+        <li>Settle the <code>maxFiles</code> question — my recommendation is to exclude this project from loops rather than raise the cap.</li>
+      </ul>
+      <div class="exit"><span class="lbl">Exit</span><span class="txt"><code>pf check</code> clean; the project appears in <code>pf status</code>; a test PR touching one mart produces a correct, bounded impact report.</span></div>
+    </div>
+  </div>
+
+  <div class="phase">
+    <div class="phase-n">PHASE&nbsp;5</div>
+    <div class="phase-body">
+      <h4>Snowflake</h4>
+      <p>Only once DuckDB is green, per your call. Add a <code>snowflake</code> output to the project's <code>profiles.yml</code> from your credentials. The <code>sf_*</code> macros dispatch on the adapter, so they compile to native Snowflake functions with nothing to switch off.</p>
+      <p>Because the models were made portable rather than rewritten, this is a connection change and a full build — not a migration. Compare row counts per model between the two targets; that diff is the actual proof the macros were faithful, and it is the only proof that counts.</p>
+      <div class="exit"><span class="lbl">Exit</span><span class="txt">Identical model and test results on both targets, with per-model row-count parity on the seeded data.</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What no tool can do for you</h2>
+  <div class="col">
+    <p>Everything above that a command can perform, a command performs. This is the residue — the judgement that decides whether the project is genuinely part of the platform or merely stored in it.</p>
+  </div>
+  <ul class="checks">
+    <li>Which of the six domains deserve ontology concepts, and which stay unannotated fixture mass.</li>
+    <li>The grain of each mart — 772 of them, and <code>meta.grain</code> is what makes the impact gate meaningful rather than decorative.</li>
+    <li>Which foreign keys are real relationships versus incidental shared column names.</li>
+    <li>Whether <code>raw_items</code> is a first-class concept (<code>OrderLine</code>) or a grain of <code>Order</code> — this shapes every downstream fact table.</li>
+    <li>Which of the 38 mart folders are business outputs and which are synthetic shape-tests that should never reach a dashboard.</li>
+    <li>Whether the 3 existing metric definitions are correct under this platform's semantics, particularly any ratio metric — those must re-divide as <code>sum(num)/sum(den)</code>, never <code>avg(ratio)</code>.</li>
+  </ul>
+</section>
+
+<div class="footnote">
+  <p><strong>Method.</strong> Every number came from a shallow clone surveyed on 14 Aug 2026, then re-derived by the tooling described above rather than by grep. That re-derivation is what corrected the <code>iff</code> and <code>dateadd</code> figures, and what raised <code>date_trunc</code> from a portable footnote to the main finding.</p>
+  <p><strong>On catalogue lookups.</strong> <code>duckdb_functions()</code> is authoritative when a name is present and unreliable when it is absent: <code>coalesce</code>, <code>percentile_cont</code> and <code>grouping</code> all work and none of them appear in it. The detector therefore layers three sources — the catalogue, an allowlist for parser-level forms and ordered-set aggregates, and a binder probe that separates "no such function" from "wrong arguments". A single-source lookup reports problems that do not exist, which is how a tool teaches people to ignore it.</p>
+</div>
+
+</div>
