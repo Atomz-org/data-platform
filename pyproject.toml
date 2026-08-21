@@ -153,4 +153,4 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"platform/tests/*" = ["E501"]
+"platform/tests/**" = ["E501"]
