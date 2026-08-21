@@ -3,14 +3,15 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "./platform"
+        "source": "directory",
+        "path": "./platform"
       }
     }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "power-tools@platform"
-  ],
+  "enabledPlugins": {
+    "platform-init@platform": true,
+    "power-tools@platform": true
+  },
   "permissions": {
     "deny": [
       "Read(./.env)",
