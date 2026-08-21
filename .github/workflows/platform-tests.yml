@@ -1,0 +1,71 @@
+# The platform's own test suite, on every pull request that touches it.
+#
+# This is hand-written, and it is the one workflow that should be. The per-project
+# workflows are *generated* — `pf bootstrap` composes `<project>.yml` from the
+# `ci_jobs` each capability declares — because each project needs its own copy of
+# the same jobs. The platform suite is the opposite shape: one suite, repo-wide,
+# not per project. Contributing it as a capability job would run it eight times,
+# once per project, all testing the same code.
+#
+# Named `platform-tests` rather than `platform` so it cannot collide with the
+# generated workflow of a project that happened to be called `platform`.
+#
+# Why it exists: 416 tests guarded nothing on a pull request. The only workflow
+# that ran anything platform-wide was `claude-review.yml`, which runs `pf check`
+# with `|| true` — it gathers context for a reviewer and is not a gate. A test
+# suite that never runs is documentation with a `def` in front of it.
+name: platform-tests
+
+on:
+  pull_request:
+    paths:
+      - "platform/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/platform-tests.yml"
+
+# One run per PR. A push that supersedes an in-flight run cancels it rather than
+# racing it, the same rule the generated project workflows use.
+concurrency:
+  group: platform-tests-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The suite reads the vendored OpenMetadata JSON schemas; without the
+          # submodule those tests skip rather than fail, which would quietly
+          # shrink CI's coverage relative to a developer's checkout.
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Lint
+        run: uv run ruff check platform/
+
+      # Fails when a test file was added without `pf test index`. The index is
+      # what makes the suite navigable without reading it, and one generated
+      # before a file was added answers "where is that tested" with confident
+      # silence.
+      - name: Test index is current
+        run: uv run pf test check
+
+      # The suite carries its own structural guards — that every test file is
+      # committed, that none computes the repo root by counting parents, and
+      # that the pre-commit gate still sees renames. See
+      # `platform/tests/gate/test_suite_index.py`.
+      #
+      # The committed-files guard is deliberately *not* also a step here. A
+      # fresh clone has no untracked files by definition, so a CI check for them
+      # can never fail — it would be a green tick meaning "found nothing", which
+      # is the failure mode the rest of this repo refuses. It runs in the suite,
+      # where a developer's working copy is what gets inspected, and that is the
+      # only place it can catch anything.
+      - name: Suite
+        run: uv run pytest platform/tests -q
