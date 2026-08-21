@@ -270,3 +270,92 @@ def test_bootstrap_leaves_an_existing_overlay_alone(
 
     assert _by_id(load_project_ontology(tmp_path, "acme", "acme-eu"),
                   "mart-declares-grain").severity == "error"
+
+
+# --------------------------------------------------------------- the graph --
+# The overlay is only real where it is read. `pf semantic policy` resolving at
+# project scope while `pf kg build` stopped at the group meant the governance
+# plane an agent walks was the family floor — so a project that raised a
+# severity, or declared an obligation of its own, was governed by rules its own
+# graph did not contain.
+
+def _graph_policies(pdir: Path, group: str, project: str) -> dict[str, dict]:
+    """Build a graph for `pdir` and return its Policy nodes by id."""
+    import duckdb
+    from pf.kg.build import build_graph
+
+    build_graph(pdir, group=group, project=project)
+    con = duckdb.connect(str(pdir / "kg" / "graph.duckdb"), read_only=True)
+    try:
+        rows = con.execute(
+            "SELECT name, json_extract_string(props, '$.severity'), "
+            "json_extract_string(props, '$.scope') "
+            "FROM kg_nodes WHERE kind = 'Policy'"
+        ).fetchall()
+    finally:
+        con.close()
+    return {r[0]: {"severity": r[1], "scope": r[2]} for r in rows}
+
+
+def test_graph_carries_the_projects_own_policy(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A policy only the project declares has to reach that project's graph."""
+    root = _fake_root(tmp_path, monkeypatch)
+    pdir = root / "groups" / "acme" / "projects" / "acme-eu"
+    _policy_file(pdir / "governance" / "policy.yaml", [{
+        "id": "gdpr-erasure-path",
+        "intent": "A subject access request must have somewhere to land.",
+        "constraint": "erasure_declared",
+        "applies_to": {"role_glob": "pii_*"},
+        "severity": "error",
+    }])
+
+    found = _graph_policies(pdir, "acme", "acme-eu")
+
+    assert "gdpr-erasure-path" in found
+    assert found["gdpr-erasure-path"]["scope"] == "project:acme/acme-eu"
+
+
+def test_graph_carries_a_tightened_severity_and_says_who_set_it(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The graph must show the tightened severity, and attribute it.
+
+    Severity alone is not enough: an agent reading `error` off the graph cannot
+    tell an obligation this project took on from one the whole platform carries,
+    and those warrant different conversations.
+    """
+    root = _fake_root(tmp_path, monkeypatch)
+    pdir = root / "groups" / "acme" / "projects" / "acme-eu"
+    _policy_file(pdir / "governance" / "policy.yaml",
+                 [{"id": "mart-declares-grain", "severity": "error"}])
+
+    platform_default = _by_id(load_ontology(), "mart-declares-grain").severity
+    assert platform_default != "error", "fixture assumes the floor is looser"
+
+    found = _graph_policies(pdir, "acme", "acme-eu")
+
+    assert found["mart-declares-grain"]["severity"] == "error"
+    assert found["mart-declares-grain"]["scope"] == "project:acme/acme-eu"
+
+
+def test_a_sister_without_an_overlay_keeps_the_floor(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """One sister's overlay must not leak into another's graph.
+
+    `load_ontology` is lru_cached and shared, so the leak this guards against
+    would surface in a project that declared nothing at all.
+    """
+    root = _fake_root(tmp_path, monkeypatch)
+    eu = root / "groups" / "acme" / "projects" / "acme-eu"
+    _policy_file(eu / "governance" / "policy.yaml",
+                 [{"id": "mart-declares-grain", "severity": "error"}])
+    _graph_policies(eu, "acme", "acme-eu")
+
+    us = root / "groups" / "acme" / "projects" / "acme-us"
+    us.mkdir(parents=True, exist_ok=True)
+    found = _graph_policies(us, "acme", "acme-us")
+
+    assert found["mart-declares-grain"]["severity"] == \
+        _by_id(load_ontology(), "mart-declares-grain").severity
+    assert found["mart-declares-grain"]["scope"] == "platform"
+    assert "gdpr-erasure-path" not in found
