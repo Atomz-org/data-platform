@@ -666,35 +666,108 @@ def work(group: str, project: str) -> None:
 
 # ------------------------------------------------------------ graph & card --
 @kg_app.command("build")
-def cmd_kg_build(group: str, project: str,
+def cmd_kg_build(group: str = typer.Argument("", help="omit for every group"),
+                 project: str = typer.Argument("", help="omit for every project in the group"),
                  parse: bool = typer.Option(
                      True, help="parse the dbt project first if it has no manifest")) -> None:
-    """Rebuild a project's knowledge graph from annotations + dbt manifests."""
-    d = pdir(group, project)
-    # The builder treats the manifest as optional and degrades without it. That
-    # is the right default for a source of documentation and the wrong one for
-    # the graph CI gates against: no manifest means no Model, Metric or Exposure
-    # nodes, and a blast-radius query over that graph finds nothing and says so.
-    if parse:
-        from pf.runtime.dbt_runtime import ensure_manifest
-        from pf.runtime.warehouse import Warehouse
-        ensure_manifest(d, duckdb_path=Warehouse.for_project(d, group, project).path)
-    counts = build_graph(d, group=group, project=project)
-    t = Table("kind", "nodes", title=f"{group}/{project} graph")
-    for k, v in sorted(counts.items()):
-        t.add_row(k, str(v))
+    """Rebuild knowledge graphs. No arguments → every project."""
+    targets = _targets(group, project)
+    rows: list[tuple[str, dict[str, int]]] = []
+    for g, p, d in targets:
+        # The builder treats the manifest as optional and degrades without it.
+        # That is the right default for a source of documentation and the wrong
+        # one for the graph CI gates against: no manifest means no Model, Metric
+        # or Exposure nodes, and a blast-radius query over that graph finds
+        # nothing and says so.
+        if parse:
+            from pf.runtime.dbt_runtime import ensure_manifest
+            from pf.runtime.warehouse import Warehouse
+            ensure_manifest(d, duckdb_path=Warehouse.for_project(d, g, p).path)
+        rows.append((f"{g}/{p}", build_graph(d, group=g, project=p)))
+
+    if len(rows) == 1:
+        name, counts = rows[0]
+        t = Table("kind", "nodes", title=f"{name} graph")
+        for k, v in sorted(counts.items()):
+            t.add_row(k, str(v))
+        console.print(t)
+        return
+
+    # Across many projects the per-kind breakdown is noise; what is worth seeing
+    # at a glance is the kinds whose absence means something. A zero here is the
+    # finding — no Model means the gate cannot run at all.
+    t = Table("project", "nodes", "models", "metrics", "policies",
+              title=f"{len(rows)} graph(s) rebuilt")
+    for name, counts in rows:
+        def cell(kind: str, c: dict[str, int] = counts) -> str:
+            n = c.get(kind, 0)
+            return str(n) if n else "[red]0[/]"
+        t.add_row(name, str(sum(counts.values())),
+                  cell("Model"), cell("Metric"), cell("Policy"))
     console.print(t)
 
 
 @kg_app.command("card")
-def cmd_kg_card(group: str, project: str) -> None:
-    """Regenerate the context card (the always-in-context index)."""
-    d = pdir(group, project)
-    p = render_project_card(d, group, project)
-    render_group_card(root() / "groups" / group, group)
-    tokens = estimate_tokens(p.read_text())
-    status = "green" if tokens <= PROJECT_CARD_BUDGET else "red"
-    console.print(f"[{status}]✓[/] {p}  (~{tokens} tokens / {PROJECT_CARD_BUDGET} budget)")
+def cmd_kg_card(group: str = typer.Argument("", help="omit for every group"),
+                project: str = typer.Argument("", help="omit for every project in the group")) -> None:
+    """Regenerate context cards. No arguments → every project."""
+    targets = _targets(group, project)
+    for g, p, d in targets:
+        card = render_project_card(d, g, p)
+        tokens = estimate_tokens(card.read_text())
+        ok = tokens <= PROJECT_CARD_BUDGET
+        # Rendering reports the budget but does not enforce it — `pf tokens` is
+        # the enforcement point, and having two commands fail on the same
+        # condition means fixing it twice and trusting neither.
+        console.print(f"[{'green' if ok else 'red'}]✓[/] {g}/{p}"
+                      f"  [dim](~{tokens} tokens / {PROJECT_CARD_BUDGET})[/]")
+    # Once per group, not once per project: the group card is a roster of
+    # sisters, so rendering it inside the loop rewrites the same file N times.
+    for g in sorted({g for g, _, _ in targets}):
+        render_group_card(root() / "groups" / g, g)
+
+
+@kg_app.command("check")
+def cmd_kg_check(group: str = typer.Argument("", help="omit for every group"),
+                 project: str = typer.Argument("", help="omit for every project in the group"),
+                 strict: bool = typer.Option(
+                     False, "--strict",
+                     help="a project that cannot be judged fails too"),
+                 parse: bool = typer.Option(
+                     True, help="parse the dbt project first if it has no manifest")) -> None:
+    """Is each committed graph current with the dbt project beside it?
+
+    The graph has no clock. One built before a model landed answers every query
+    confidently and wrongly, and nothing else in the repo notices — it simply
+    holds fewer nodes than the project has models. This is what notices.
+    """
+    from pf.kg.build import graph_drift
+
+    drifted = unexercised = 0
+    for g, p, d in _targets(group, project):
+        # `target/` is gitignored, so a fresh checkout — every CI runner — has no
+        # manifest to compare the committed graph against. Without this the check
+        # reports "not exercised" everywhere it matters most and passes.
+        if parse:
+            from pf.runtime.dbt_runtime import ensure_manifest
+            from pf.runtime.warehouse import Warehouse
+            try:
+                ensure_manifest(d, duckdb_path=Warehouse.for_project(d, g, p).path)
+            except Exception as exc:  # noqa: BLE001 — reported per project, not fatal
+                console.print(f"[dim]{g}/{p}: dbt parse failed — {exc}[/]")
+        report = graph_drift(d, f"{g}/{p}")
+        console.print(report.render())
+        if not report.exercised:
+            unexercised += 1
+        elif report.total:
+            drifted += 1
+
+    if drifted:
+        console.print(f"[red]{drifted} stale graph(s)[/] — run `pf kg build` and commit "
+                      f"kg/graph.json")
+    if unexercised and strict:
+        console.print(f"[red]{unexercised} graph(s) could not be checked[/]")
+    raise typer.Exit(1 if drifted or (unexercised and strict) else 0)
 
 
 @kg_app.command("search")
@@ -2176,12 +2249,25 @@ def _recce_or_exit():  # the pf.tools.recce module, for its key semantics
 
 
 def _targets(group: str, project: str) -> list[tuple[str, str, Path]]:
-    """One project, or every project when neither argument is given."""
+    """One project, one group, or every project when nothing is given.
+
+    The widening from "both or neither" is what lets the graph commands be run
+    the way they are actually needed — `pf kg build` after adding a project
+    anywhere, `pf kg build acme` after changing something a family shares. A
+    command that can only be pointed at one project at a time gets run for the
+    project you remembered, which is how seven graphs end up a month stale.
+    """
     if group and project:
         return [(group, project, pdir(group, project))]
-    if group or project:
-        console.print("[red]give both group and project, or neither[/]")
+    if project:
+        console.print("[red]a project needs its group[/]")
         raise typer.Exit(1)
+    if group:
+        hits = [(g, p, d) for g, p, d in all_projects() if g == group]
+        if not hits:
+            console.print(f"[red]group {group} has no projects[/]")
+            raise typer.Exit(1)
+        return hits
     return all_projects()
 
 
