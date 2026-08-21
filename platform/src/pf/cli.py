@@ -2493,6 +2493,44 @@ def _git_tracked(path: Path, cwd: Path) -> bool:
 tool_app = typer.Typer(help="Pluggable tools: dbt review, BI, whatever is installed.")
 app.add_typer(tool_app, name="tool")
 
+# ---------------------------------------------------------- architecture --
+arch_app = typer.Typer(help="The repository's own map, generated from it.")
+app.add_typer(arch_app, name="arch")
+
+
+@arch_app.command("build")
+def cmd_arch_build() -> None:
+    """Regenerate `docs/ARCHITECTURE.md` from the repository itself."""
+    from pf.archmap import doc_path, gather, render
+
+    facts = gather(root())
+    out = doc_path(root())
+    content = render(facts)
+    current = out.exists() and out.read_text() == content
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(content)
+    console.print(
+        f"[green]✓[/] {out.relative_to(root())}  "
+        f"[dim]({facts.projects} project(s), {len(facts.toolkits)} toolkit(s), "
+        f"~{len(content) // 4} tokens{'' if not current else ' · already current'})[/]")
+
+
+@arch_app.command("check")
+def cmd_arch_check() -> None:
+    """Is the committed map current with the repository?
+
+    A stale map is worse than none: it sends a reader confidently to a path that
+    moved, which is exactly the cost this document exists to remove.
+    """
+    from pf.archmap import drift
+
+    reason = drift(root())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the architecture map matches the repository")
+
+
 # ------------------------------------------------------------- test index --
 test_app = typer.Typer(help="What the test suite guards, without reading it.")
 app.add_typer(test_app, name="test")
