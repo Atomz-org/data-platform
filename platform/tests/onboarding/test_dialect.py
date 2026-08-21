@@ -16,6 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from conftest import REPO_ROOT
 from pf.onboard.dialect import (
     AMBIGUOUS,
     TOOLKITS,
@@ -26,7 +27,7 @@ from pf.onboard.dialect import (
     toolkit_macros,
 )
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 
 
 # ------------------------------------------------------------- registries ----
