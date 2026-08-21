@@ -28,7 +28,9 @@
     "jaffle-group@jaffle": true,
     "evidence-bi@platform": true,
     "dbt-snowflake@platform": true,
-    "power-tools@platform": true
+    "power-tools@platform": true,
+    "dbt-expectations@platform": true,
+    "dbt-elementary@platform": true
   },
   "permissions": {
     "deny": [
