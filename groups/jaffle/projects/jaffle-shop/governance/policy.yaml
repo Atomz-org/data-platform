@@ -1,0 +1,57 @@
+# Policy overlay for jaffle/jaffle-shop.
+#
+# The platform ships a policy floor in `platform/src/pf/ontology/policy.yaml`
+# that applies to every project. This file layers over it, and over any group
+# overlay at `groups/jaffle/ontology/policy.yaml`, for the obligations that
+# are this entity's alone — a jurisdiction, a customer contract, a retention
+# rule a sister does not share.
+#
+# Vocabulary is deliberately NOT layered here. Two sisters must mean the same
+# thing by `Payment` or a roll-up adds two numbers that merely share a name;
+# concepts live in the group ontology for that reason. What must *hold* is the
+# part that is genuinely local, so it is the part that layers.
+#
+# THIS FILE MAY ONLY TIGHTEN.
+#
+#   add       declare a policy the platform does not have
+#   tighten   raise an inherited policy's severity (info -> warning -> error)
+#   enforce   name another artifact or evidence kind for an inherited policy
+#
+# Lowering a severity raises `PolicyRelaxation` at load time, and there is no
+# syntax for deleting an inherited policy. An omitted `severity:` means inherit,
+# so adding an `enforced_by` line cannot silently escalate the rule.
+#
+# Inspect the resolved result — including which layer set each severity — with:
+#
+#     pf semantic policy jaffle jaffle-shop
+
+policies: []
+
+# --- examples, all inert until uncommented -----------------------------------
+#
+# Tighten an inherited policy. `mart-declares-grain` ships as a warning; here an
+# undeclared grain would block the merge.
+#
+# policies:
+#   - id: mart-declares-grain
+#     severity: error
+#
+# Declare an obligation the platform does not know about. Note it names no
+# `enforced_by`: `pf semantic policy` will report it as unenforced, which is the
+# honest state until the check exists. Claiming enforcement that does not exist
+# is worse than declaring none — it ends the conversation.
+#
+#   - id: retention-window-declared
+#     intent: >
+#       A table holding personal data must declare how long it keeps it, or the
+#       retention promise is prose nobody can verify.
+#     applies_to: {role_glob: "pii_*"}
+#     constraint: retention_declared
+#     severity: error
+#
+# Add enforcement to an inherited policy without claiming ownership of it. The
+# severity's owner stays where it was; only the artifact list grows.
+#
+#   - id: pii-not-in-consumption
+#     enforced_by: [pf.local.checks:pii_sweep]
+#     evidence: [pf loop run pii-audit]
