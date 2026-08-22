@@ -31,6 +31,9 @@ from itertools import groupby
 from pathlib import Path
 from typing import Any
 
+from pf.viz import PALETTE
+from pf.viz import esc as _mm
+
 VERDICTS = ("block", "review", "clear")
 
 
@@ -282,7 +285,10 @@ def _vendor_slice(root: Path) -> list[dict[str, Any]]:
 # greyscale print.
 MM_MAX_PROJECTS = 6
 
-# fill / stroke, keyed by the job the node does.
+# This chart's class names, mapped onto the shared palette in `pf.viz`. The
+# colours live there rather than here because the architecture map draws the
+# same layers and must use the same hues — two copies of a palette agree until
+# one of them is edited.
 #
 # The container fills at the bottom are deliberately weaker than the node fills.
 # They are styled at all because mermaid's *default* subgraph fill is a yellow
@@ -290,51 +296,19 @@ MM_MAX_PROJECTS = 6
 # group on every PR looks like it is flagging something. Severity keeps a tint
 # here (it is the box's whole point) but a pale one, so the layer-coloured nodes
 # sitting inside still separate from their background.
-MM_CLASSDEF = (
-    ("pr", "#cde2fb", "#2a78d6"),
-    ("platform", "#ded9f7", "#4a3aa7"),
-    ("project", "#e3eefc", "#2a78d6"),
-    ("node", "#fbe8bd", "#eda100"),
-    ("model", "#d6f2e6", "#1baf7a"),
-    ("metric", "#fadfe8", "#e87ba4"),
-    ("exposure", "#fbdccf", "#eb6834"),
-    ("vendor", "#e8e7e2", "#898781"),
-    ("good", "#d5f2d5", "#0ca30c"),
-    ("warning", "#fdeccb", "#fab219"),
-    ("critical", "#f6d8d8", "#d03b3b"),
-    ("grp", "#f6f6f4", "#898781"),
-    ("sevBreaking", "#fdefef", "#d03b3b"),
-    ("sevReview", "#fef7e8", "#fab219"),
-    ("sevSafe", "#eef9ee", "#0ca30c"),
-)
+MM_ROLES = {
+    "pr": "ingress", "platform": "platform", "project": "project",
+    "node": "raw", "model": "model", "metric": "metric", "exposure": "exposure",
+    "vendor": "neutral", "good": "good", "warning": "warning",
+    "critical": "critical", "grp": "lane", "sevBreaking": "laneBad",
+    "sevReview": "laneWarn", "sevSafe": "laneGood",
+}
+MM_CLASSDEF = tuple((name, *PALETTE[role]) for name, role in MM_ROLES.items())
 
 MM_VERDICT = {"block": ("critical", "BLOCK"), "review": ("warning", "REVIEW"),
               "clear": ("good", "CLEAR")}
 MM_SEV = {"breaking": ("sevBreaking", "breaking"), "review": ("sevReview", "review"),
           "safe": ("sevSafe", "safe")}
-
-
-def _mm(text: Any, limit: int = 46) -> str:
-    """Make `text` safe to sit inside a double-quoted mermaid label.
-
-    `#` opens a mermaid entity reference and `"` ends the label early — an
-    unescaped one in a dbt node name or a branch name turns the whole diagram
-    into a parse error, which on GitHub renders as a red box where the
-    architecture should be. `<` matters for a subtler reason: GitHub renders
-    mermaid with `htmlLabels` on, so an exposure owner written
-    `Data Science <ds@jaffle.test>` has its address parsed as a tag and silently
-    swallowed — the label loses the very name the reviewer needs to notify.
-
-    Callers pass *fragments*; the deliberate `<br/>` separators are concatenated
-    outside, so escaping here never eats a line break. Order matters: `#` goes
-    first, so the `#` this introduces for the others is not escaped twice.
-    """
-    t = " ".join(str(text).split())
-    if len(t) > limit:
-        t = t[: limit - 1] + "…"
-    for a, b in (("#", "#35;"), ('"', "#quot;"), ("<", "#lt;"), (">", "#gt;")):
-        t = t.replace(a, b)
-    return t
 
 
 def _mm_project(out: list[str], n: int, p: ProjectSlice) -> None:

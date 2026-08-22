@@ -73,6 +73,10 @@ Precedence between toolkits is in `ROUTING.md`.
   - The scaffolder reports what it made; reading the tree to find out is the expensive way to learn it.
   `quick-start`
   - Follow the path source → annotate → model → metric; skipping annotation costs that work several times over later.
+  `design-architecture`
+  - Read `kg/architecture.md` before reading a project's files — it is the whole feature inventory, absent features included, for ~2,000 tokens.
+  - A feature missing from the map is one `Feature` entry in `pf.architecture.FEATURES`, never a hand edit; the document is overwritten by the next bootstrap.
+  - Diagrams take their colours from `pf.viz` and every interpolated string from `viz.esc` — a hard-coded fill breaks one page theme, an unescaped label breaks the render.
 
 ## power-tools — Auditing, shipping or reviewing a change, and the session hooks that run alongside it.
   - Commands audit (security, performance, architecture, tech debt) and ship; the subagents that back them are read-only by construction.
