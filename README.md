@@ -25,6 +25,7 @@ uv run pf status                   # every group and project
 | Command | What it does |
 |---|---|
 | `pf new-group <g> --domain b2b_saas` | New company group (ontology instance, shared dbt package) |
+| `pf new-project <g> <p> --plan` | Resolve a scaffold and write nothing — **run this first** ([docs](docs/SCAFFOLDING.md)) |
 | `pf new-project <g> <p>` | New entity inside a group |
 | `pf new-project <g> <g>-rollup --rollup --sisters a,b` | Cross-entity roll-up project |
 | `pf work <g> <p>` | Launch Claude scoped to exactly one project |
@@ -48,7 +49,10 @@ uv run pf status                   # every group and project
 | `groups/<g>/ontology/instance.yaml` | CI, engine pins, extension set |
 
 Adding a sister company is `pf new-project`, sources and models. Upgrading dbt for
-every entity is one line in `pyproject.toml`.
+every entity is one line in `pyproject.toml`. Plan the scaffold before applying
+it — `--plan` resolves the capability set, the gate rules and the CI jobs without
+writing, and refuses on the two mistakes that actually happen: a group that does
+not exist, and a directory already taken. See [docs/SCAFFOLDING.md](docs/SCAFFOLDING.md).
 
 ## The three mechanisms that make it work
 
