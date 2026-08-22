@@ -11,9 +11,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from conftest import REPO_ROOT
 from pf.loops.gate import _is_name_heuristic, check_path, check_paths
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 
 #: Paths that must stay denied. Each is a real thing the gate exists to stop.
 MUST_DENY = [

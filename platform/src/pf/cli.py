@@ -2493,6 +2493,61 @@ def _git_tracked(path: Path, cwd: Path) -> bool:
 tool_app = typer.Typer(help="Pluggable tools: dbt review, BI, whatever is installed.")
 app.add_typer(tool_app, name="tool")
 
+# ------------------------------------------------------------- test index --
+test_app = typer.Typer(help="What the test suite guards, without reading it.")
+app.add_typer(test_app, name="test")
+
+
+def _tests_dir() -> Path:
+    return root() / "platform" / "tests"
+
+
+@test_app.command("index")
+def cmd_test_index() -> None:
+    """Regenerate `platform/tests/README.md` from the suite's own docstrings."""
+    from pf.testmap import index_path, render_index, scan
+
+    files = scan(_tests_dir())
+    out = index_path(_tests_dir())
+    content = render_index(files)
+    changed = not out.exists() or out.read_text() != content
+    out.write_text(content)
+    console.print(f"[green]✓[/] {out.relative_to(root())}  "
+                  f"[dim]({len(files)} files, {sum(f.tests for f in files)} tests"
+                  f"{'' if changed else ' · already current'})[/]")
+
+
+@test_app.command("where")
+def cmd_test_where(term: str) -> None:
+    """Which tests cover this? Searches subjects, filenames and imported modules."""
+    from pf.testmap import scan, where
+
+    hits = where(scan(_tests_dir()), term)
+    if not hits:
+        console.print(f"No test file mentions '{term}'.")
+        raise typer.Exit(1)
+    t = Table("file", "guards", "tests", title=f"{len(hits)} file(s) for '{term}'")
+    for f in hits:
+        t.add_row(f"{f.group}/{f.path.name}" if f.group else f.path.name,
+                  f.subject[:64], str(f.tests))
+    console.print(t)
+
+
+@test_app.command("check")
+def cmd_test_check() -> None:
+    """Is the committed index current with the suite?
+
+    An index generated before a test file was added answers "where is that
+    tested" with confident silence, which is worse than having no index.
+    """
+    from pf.testmap import drift
+
+    reason = drift(_tests_dir())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the test index matches the suite")
+
 
 @tool_app.command("list")
 def cmd_tool_list(group: str = typer.Argument("", help="show enablement for a project"),
