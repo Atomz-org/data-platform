@@ -7,10 +7,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "quantity",
+        "role": "",
         "pii": false,
         "model": "dim_customers",
-        "data_type": null
+        "data_type": "HUGEINT",
+        "documented": false
       }
     },
     {
@@ -95,10 +96,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "geo_country",
+        "role": "",
         "pii": false,
         "model": "dim_customers",
-        "data_type": null
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -108,10 +110,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "geo_country",
+        "role": "",
         "pii": false,
         "model": "fct_payments",
-        "data_type": null
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -152,6 +155,20 @@
       }
     },
     {
+      "id": "col:model:dim_customers.created_at",
+      "kind": "Column",
+      "name": "created_at",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": "TIMESTAMP",
+        "documented": false
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.created_at",
       "kind": "Column",
       "name": "created_at",
@@ -162,31 +179,6 @@
         "pii": false,
         "model": "stg_stripe__customers",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:model:dim_customers.created_at",
-      "kind": "Column",
-      "name": "created_at",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "dim_customers",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.subscriptions.currency",
-      "kind": "Column",
-      "name": "currency",
-      "layer": "raw",
-      "label": "currency_code",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "table": "subscriptions"
       }
     },
     {
@@ -202,16 +194,15 @@
       }
     },
     {
-      "id": "col:model:fct_revenue.currency_code",
+      "id": "col:table:stripe.subscriptions.currency",
       "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
       "props": {
         "role": "currency_code",
         "pii": false,
-        "model": "fct_revenue",
-        "data_type": null
+        "table": "subscriptions"
       }
     },
     {
@@ -221,10 +212,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "currency_code",
+        "role": "",
         "pii": false,
         "model": "fct_payments",
-        "data_type": null
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -238,6 +230,20 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_revenue.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -267,17 +273,16 @@
       }
     },
     {
-      "id": "col:model:fct_payments.customer_id",
+      "id": "col:model:stg_stripe__charges.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "marts",
-      "label": "",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "fct_payments",
-        "data_type": "VARCHAR",
-        "documented": false
+        "model": "stg_stripe__charges",
+        "data_type": null
       }
     },
     {
@@ -320,19 +325,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__customers.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "stg_stripe__customers",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:dim_customers.customer_id",
       "kind": "Column",
       "name": "customer_id",
@@ -346,15 +338,29 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.customer_id",
+      "id": "col:model:fct_payments.customer_id",
       "kind": "Column",
       "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
+      "layer": "marts",
+      "label": "",
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "stg_stripe__charges",
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__customers.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_stripe__customers",
         "data_type": null
       }
     },
@@ -372,16 +378,17 @@
       }
     },
     {
-      "id": "col:model:dim_customers.customer_segment",
+      "id": "col:model:fct_payments.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
-      "label": "Sales segment. Drives most reporting cuts.",
+      "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "",
         "pii": false,
-        "model": "dim_customers",
-        "data_type": null
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -391,23 +398,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "",
         "pii": false,
         "model": "fct_revenue",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_payments.customer_segment",
-      "kind": "Column",
-      "name": "customer_segment",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": null
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -420,6 +415,19 @@
         "role": "status_enum",
         "pii": false,
         "model": "stg_stripe__customers",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dim_customers.customer_segment",
+      "kind": "Column",
+      "name": "customer_segment",
+      "layer": "marts",
+      "label": "Sales segment. Drives most reporting cuts.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dim_customers",
         "data_type": null
       }
     },
@@ -469,22 +477,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "money_amount",
+        "role": "",
         "pii": false,
         "model": "fct_revenue",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.customers.id",
-      "kind": "Column",
-      "name": "id",
-      "layer": "raw",
-      "label": "natural_key",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "table": "customers"
+        "data_type": "DECIMAL(38,2)",
+        "documented": false
       }
     },
     {
@@ -497,6 +494,18 @@
         "role": "natural_key",
         "pii": false,
         "table": "charges"
+      }
+    },
+    {
+      "id": "col:table:stripe.customers.id",
+      "kind": "Column",
+      "name": "id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "customers"
       }
     },
     {
@@ -526,18 +535,6 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.mrr_amount",
-      "kind": "Column",
-      "name": "mrr_amount",
-      "layer": "raw",
-      "label": "money_amount",
-      "props": {
-        "role": "money_amount",
-        "pii": false,
-        "table": "subscriptions"
-      }
-    },
-    {
       "id": "col:model:stg_stripe__subscriptions.mrr_amount",
       "kind": "Column",
       "name": "mrr_amount",
@@ -548,6 +545,18 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.subscriptions.mrr_amount",
+      "kind": "Column",
+      "name": "mrr_amount",
+      "layer": "raw",
+      "label": "money_amount",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "table": "subscriptions"
       }
     },
     {
@@ -573,6 +582,20 @@
         "pii": false,
         "model": "fct_revenue",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dim_customers.organization_id",
+      "kind": "Column",
+      "name": "organization_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "dim_customers",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -602,17 +625,16 @@
       }
     },
     {
-      "id": "col:model:dim_customers.organization_id",
+      "id": "col:model:stg_stripe__charges.paid_at",
       "kind": "Column",
-      "name": "organization_id",
-      "layer": "marts",
+      "name": "paid_at",
+      "layer": "staging",
       "label": "",
       "props": {
-        "role": "foreign_key",
+        "role": "event_time",
         "pii": false,
-        "model": "dim_customers",
-        "data_type": "VARCHAR",
-        "documented": false
+        "model": "stg_stripe__charges",
+        "data_type": null
       }
     },
     {
@@ -629,42 +651,17 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.paid_at",
-      "kind": "Column",
-      "name": "paid_at",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_revenue.payment_count",
       "kind": "Column",
       "name": "payment_count",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "quantity",
+        "role": "",
         "pii": false,
         "model": "fct_revenue",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_payments.payment_id",
-      "kind": "Column",
-      "name": "payment_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": null
+        "data_type": "BIGINT",
+        "documented": false
       }
     },
     {
@@ -681,13 +678,13 @@
       }
     },
     {
-      "id": "col:model:fct_payments.payment_status",
+      "id": "col:model:fct_payments.payment_id",
       "kind": "Column",
-      "name": "payment_status",
+      "name": "payment_id",
       "layer": "marts",
-      "label": "Which statuses count as revenue is a semantic-layer policy.",
+      "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "natural_key",
         "pii": false,
         "model": "fct_payments",
         "data_type": null
@@ -707,6 +704,20 @@
       }
     },
     {
+      "id": "col:model:fct_payments.payment_status",
+      "kind": "Column",
+      "name": "payment_status",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
       "id": "col:table:stripe.subscriptions.plan",
       "kind": "Column",
       "name": "plan",
@@ -719,29 +730,17 @@
       }
     },
     {
-      "id": "col:model:fct_payments.plan_tier",
-      "kind": "Column",
-      "name": "plan_tier",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_revenue.plan_tier",
       "kind": "Column",
       "name": "plan_tier",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "",
         "pii": false,
         "model": "fct_revenue",
-        "data_type": null
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -755,6 +754,20 @@
         "pii": false,
         "model": "stg_stripe__subscriptions",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_payments.plan_tier",
+      "kind": "Column",
+      "name": "plan_tier",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -863,23 +876,11 @@
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "quantity",
+        "role": "",
         "pii": false,
         "model": "dim_customers",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.charges.subscription_id",
-      "kind": "Column",
-      "name": "subscription_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "charges",
-        "links_to": "Subscription"
+        "data_type": "BIGINT",
+        "documented": false
       }
     },
     {
@@ -894,6 +895,19 @@
         "model": "fct_payments",
         "data_type": "VARCHAR",
         "documented": false
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.subscription_id",
+      "kind": "Column",
+      "name": "subscription_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "charges",
+        "links_to": "Subscription"
       }
     },
     {
@@ -1522,7 +1536,8 @@
           "platform/hooks/pre_commit.sh"
         ],
         "enforced": true,
-        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+        "scope": "platform"
       }
     },
     {
@@ -1543,7 +1558,8 @@
           "pf.tools.recce:register_commands"
         ],
         "enforced": true,
-        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\".",
+        "scope": "platform"
       }
     },
     {
@@ -1565,7 +1581,8 @@
           "pf.ontology.validate:class-without-identity"
         ],
         "enforced": true,
-        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+        "scope": "platform"
       }
     },
     {
@@ -1585,7 +1602,8 @@
           "pf.ontology.validate:illegal-edge"
         ],
         "enforced": true,
-        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse.",
+        "scope": "platform"
       }
     },
     {
@@ -1607,7 +1625,8 @@
           "pf.kg.build:model-grain"
         ],
         "enforced": true,
-        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+        "scope": "platform"
       }
     },
     {
@@ -1635,7 +1654,8 @@
           "pf.ontology.validate:metric-shaped-column"
         ],
         "enforced": true,
-        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first.",
+        "scope": "platform"
       }
     },
     {
@@ -1658,7 +1678,8 @@
           "pf.ontology.validate:money-without-currency"
         ],
         "enforced": true,
-        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+        "scope": "platform"
       }
     },
     {
@@ -1684,7 +1705,8 @@
           "pf.loops.registry:pii_audit"
         ],
         "enforced": true,
-        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+        "scope": "platform"
       }
     },
     {
@@ -1705,7 +1727,8 @@
           "pf.tools.recce:generate_config"
         ],
         "enforced": true,
-        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out.",
+        "scope": "platform"
       }
     },
     {
@@ -1726,7 +1749,8 @@
           "platform/hooks/pre_tool_use.py"
         ],
         "enforced": true,
-        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+        "scope": "platform"
       }
     },
     {
@@ -1737,7 +1761,7 @@
       "label": "acme/acme-us",
       "props": {
         "group": "acme",
-        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-us"
+        "path": "/Users/suresh/data-platform/groups/acme/projects/acme-us"
       }
     },
     {
@@ -1753,6 +1777,22 @@
         "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -1785,22 +1825,6 @@
         "concept": "Payment",
         "mdl_type": "DOUBLE",
         "xsd_type": "xsd:double",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Refund.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -1869,22 +1893,6 @@
       }
     },
     {
-      "id": "property:Organization.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Customer.country",
       "kind": "Property",
       "name": "country",
@@ -1901,18 +1909,18 @@
       }
     },
     {
-      "id": "property:Payment.created",
+      "id": "property:Organization.country",
       "kind": "Property",
-      "name": "created",
+      "name": "country",
       "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
+      "label": "string \u00b7 geo_country",
       "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
         "is_identity": false
       }
     },
@@ -1927,6 +1935,22 @@
         "role": "event_time",
         "required": true,
         "concept": "Customer",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.created",
+      "kind": "Property",
+      "name": "created",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -1949,7 +1973,7 @@
       }
     },
     {
-      "id": "property:Refund.currency",
+      "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -1957,8 +1981,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": false,
-        "concept": "Refund",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1981,22 +2005,6 @@
       }
     },
     {
-      "id": "property:Payment.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.currency",
       "kind": "Property",
       "name": "currency",
@@ -2007,6 +2015,22 @@
         "role": "currency_code",
         "required": false,
         "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Refund",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2029,22 +2053,6 @@
       }
     },
     {
-      "id": "property:Payment.customer_id",
-      "kind": "Property",
-      "name": "customer_id",
-      "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
-      "props": {
-        "datatype": "string",
-        "role": "foreign_key",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Subscription.customer_id",
       "kind": "Property",
       "name": "customer_id",
@@ -2055,6 +2063,22 @@
         "role": "foreign_key",
         "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2237,6 +2261,22 @@
       }
     },
     {
+      "id": "property:Product.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 free_text",
+      "props": {
+        "datatype": "string",
+        "role": "free_text",
+        "required": false,
+        "concept": "Product",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Organization.name",
       "kind": "Property",
       "name": "name",
@@ -2263,22 +2303,6 @@
         "role": "pii_name",
         "required": true,
         "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Product.name",
-      "kind": "Property",
-      "name": "name",
-      "layer": "ontology",
-      "label": "string \u00b7 free_text",
-      "props": {
-        "datatype": "string",
-        "role": "free_text",
-        "required": false,
-        "concept": "Product",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2333,22 +2357,6 @@
       }
     },
     {
-      "id": "property:Customer.organization_id",
-      "kind": "Property",
-      "name": "organization_id",
-      "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
-      "props": {
-        "datatype": "string",
-        "role": "foreign_key",
-        "required": true,
-        "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Organization.organization_id",
       "kind": "Property",
       "name": "organization_id",
@@ -2362,6 +2370,22 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.organization_id",
+      "kind": "Property",
+      "name": "organization_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
       }
     },
     {
@@ -2573,6 +2597,38 @@
       }
     },
     {
+      "id": "property:Payment.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Subscription.status",
       "kind": "Property",
       "name": "status",
@@ -2605,30 +2661,14 @@
       }
     },
     {
-      "id": "property:Order.status",
+      "id": "property:Payment.subscription_id",
       "kind": "Property",
-      "name": "status",
+      "name": "subscription_id",
       "layer": "ontology",
-      "label": "string \u00b7 status_enum",
+      "label": "string \u00b7 foreign_key",
       "props": {
         "datatype": "string",
-        "role": "status_enum",
-        "required": false,
-        "concept": "Order",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Payment.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
+        "role": "foreign_key",
         "required": true,
         "concept": "Payment",
         "mdl_type": "VARCHAR",
@@ -2647,22 +2687,6 @@
         "role": "natural_key",
         "required": true,
         "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Payment.subscription_id",
-      "kind": "Property",
-      "name": "subscription_id",
-      "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
-      "props": {
-        "datatype": "string",
-        "role": "foreign_key",
-        "required": true,
-        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -4314,36 +4338,6 @@
       "props": {}
     },
     {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.currency_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.payment_status",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.customer_segment",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.country_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_payments",
-      "dst": "col:model:fct_payments.plan_tier",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
       "src": "model:fct_revenue",
       "dst": "col:model:fct_revenue.revenue_date",
       "kind": "has_column",
@@ -4356,36 +4350,6 @@
       "props": {}
     },
     {
-      "src": "model:fct_revenue",
-      "dst": "col:model:fct_revenue.gross_amount",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_revenue",
-      "dst": "col:model:fct_revenue.currency_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_revenue",
-      "dst": "col:model:fct_revenue.customer_segment",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_revenue",
-      "dst": "col:model:fct_revenue.plan_tier",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_revenue",
-      "dst": "col:model:fct_revenue.payment_count",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
       "src": "model:dim_customers",
       "dst": "col:model:dim_customers.customer_id",
       "kind": "has_column",
@@ -4394,30 +4358,6 @@
     {
       "src": "model:dim_customers",
       "dst": "col:model:dim_customers.customer_segment",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:dim_customers",
-      "dst": "col:model:dim_customers.country_code",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:dim_customers",
-      "dst": "col:model:dim_customers.created_at",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:dim_customers",
-      "dst": "col:model:dim_customers.subscription_count",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:dim_customers",
-      "dst": "col:model:dim_customers.active_subscriptions",
       "kind": "has_column",
       "props": {}
     },
@@ -4615,6 +4555,30 @@
     },
     {
       "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.country_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.created_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.subscription_count",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
+      "dst": "col:model:dim_customers.active_subscriptions",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dim_customers",
       "dst": "col:model:dim_customers.first_subscribed_at",
       "kind": "has_column",
       "props": {}
@@ -4634,6 +4598,66 @@
     {
       "src": "model:fct_payments",
       "dst": "col:model:fct_payments.subscription_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.currency_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.payment_status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.customer_segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.country_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_payments",
+      "dst": "col:model:fct_payments.plan_tier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.customer_segment",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.plan_tier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.currency_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.gross_amount",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_revenue",
+      "dst": "col:model:fct_revenue.payment_count",
       "kind": "has_column",
       "props": {}
     },
