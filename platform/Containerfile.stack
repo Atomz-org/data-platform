@@ -140,7 +140,7 @@ ENV FERNET_KEY=jJ/9sz0g0OHxsfxOoSfdFdmk3ysNmPRnH3TUAbz3IHA=
 # one to use.
 EXPOSE 8080 8585 3000
 
-COPY platform/scripts/stack-entrypoint.sh /usr/local/bin/pf-stack
+COPY platform/entrypoints/stack-entrypoint.sh /usr/local/bin/pf-stack
 RUN chmod +x /usr/local/bin/pf-stack
 
 ENTRYPOINT ["/usr/local/bin/pf-stack"]
