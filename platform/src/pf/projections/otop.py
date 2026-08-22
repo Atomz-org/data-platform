@@ -32,7 +32,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pf.ontology.model import Policy, load_ontology
+from pf.ontology.model import (
+    Policy,
+    load_group_ontology,
+    load_ontology,
+    load_project_ontology,
+)
 
 OTOP_VERSION = 0.2
 NS = "pf"
@@ -295,15 +300,25 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
                    project_dir: str | Path | None = None) -> dict[str, Any]:
     """Emit the policy layer as an otop-core 0.2 manifest.
 
-    Scope is a choice, not an accident. Policies and their enforcing artifacts
-    are platform-wide, so they are identical in every project; evidence is not,
-    because `pf check` passes in one project and fails in another. Passing a
-    project produces the same governance skeleton with that project's observed
-    results attached.
+    Scope is a choice, not an accident, and it now applies to the constraints as
+    well as the evidence. This used to assume policies were platform-wide and so
+    identical everywhere; they are not. A group or a project may layer its own
+    `policy.yaml` over the platform floor — acme-eu carries obligations acme-us
+    does not — so the manifest resolves the ontology at the scope it was asked
+    for. Exporting a project's governance against the platform policy set would
+    understate exactly the obligations that project was given.
+
+    Evidence remains per-project for the original reason: `pf check` passes in
+    one project and fails in another.
     """
     root = Path(root)
     pdir = Path(project_dir) if project_dir else None
-    onto = load_ontology()
+    if group and project:
+        onto = load_project_ontology(root, group, project)
+    elif group:
+        onto = load_group_ontology(root, group)
+    else:
+        onto = load_ontology()
     commit = _commit(root)
     policy_created = _authored(root, "platform/src/pf/ontology/policy.yaml")
 
