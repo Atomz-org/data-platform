@@ -88,6 +88,7 @@ The real levers here, cheapest first:
 
 | Instead of | Do |
 |---|---|
+| reading a project's tree to orient | `kg/architecture.md` — every feature, ~2k tokens |
 | reading models to find a dependency | `kg_neighbors`, `kg_path` |
 | grepping for where a concept is used | `kg_search` |
 | reading downstream models to judge a change | `impact_analysis` |
