@@ -10,6 +10,20 @@ Precedence between toolkits is in `ROUTING.md`.
   - Assets come from the runtime factory; a project contributes business logic, not wiring.
   - Sister projects run in parallel and each writes its own warehouse — never share a writer.
 
+## dbt-elementary — Anomaly detection and test-result triage with Elementary.
+  `add-anomaly-tests`  `triage-alerts`
+  - Anomaly tests are `warn`; built-in key and referential tests are `error`.
+  - Freshness belongs on the source, never on the mart that inherited its staleness.
+  - An anomaly is a question about data — classify it before changing anything, and never loosen a threshold you cannot explain.
+  - These never gate a merge; `pf impact` judges code, this judges data.
+
+## dbt-expectations — Distribution, range, type and row-count tests with dbt_expectations.
+  `add-expectations`  `choose-a-test`
+  - Generate the expectation from the column's annotated role, not from imagination.
+  - Never restate a built-in — `unique`, `not_null`, `accepted_values` and `relationships` read better in a diff.
+  - Prefer the cheapest test that expresses the assumption: built-in, then expectation, then unit test.
+  - Static assertions are expectations; historical ones are dbt-elementary.
+
 ## dbt-govern — A dbt run or test failed, or a model needs a contract, access modifier or version.
   `contracts-and-access`  `troubleshoot-runs`
   - Classify a failure before fixing it — upstream_data, model_logic, stale_source or test_too_strict.
