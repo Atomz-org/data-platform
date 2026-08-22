@@ -441,13 +441,89 @@ the graph is the stale one.
 
 ---
 
-## Rebuilding
+## Keeping it current
+
+The graph is only worth querying while it matches the project beside it. Three
+mechanisms keep it there, and none of them requires remembering a project name.
+
+### The commands take any scope
 
 ```bash
-uv run pf kg build <group> <project>    # parses dbt first if no manifest
-uv run pf kg card  <group> <project>    # regenerate the card, never hand-trim it
-uv run pf tokens                        # the card budgets, enforced
+uv run pf kg build                      # every project in every group
+uv run pf kg build acme                 # every project in one group
+uv run pf kg build acme acme-us         # one project
 ```
 
+`build`, `card` and `check` all widen the same way: **no arguments means
+everything**. A command that can only be pointed at one project at a time gets
+run for the project you remembered, which is how seven graphs end up a month
+stale while the eighth is fine.
+
+`pf kg build` parses the dbt project first when there is no manifest — without
+one the graph holds no Model nodes and every blast-radius query comes back empty.
+
+### A new group or project gets one on creation
+
+`pf new-project` runs the shared bootstrap, and building the graph, rendering the
+card and refreshing the group roster are steps in it. Nothing here is a follow-up
+you can forget:
+
+```console
+$ uv run pf new-project demo demo-us
+  ✓ knowledge graph          99 nodes across 6 kinds
+  ✓ context card             ~106 tokens / 1500
+  ✓ group card               sister roster refreshed
+  ✓ ci workflow              3 job(s): impact-gate, kg-current, recce
+```
+
+`pf bootstrap --all` does the same for every project that already exists, which
+is how a project created before a capability landed catches up.
+
+### CI fails a pull request that leaves it stale
+
+```bash
+uv run pf kg check                      # is every committed graph current?
+uv run pf kg check acme --strict        # one group; unjudgeable also fails
+```
+
+`pf kg check` compares the tracked `kg/graph.json` against the dbt manifests and
+reports what the project has that the graph does not:
+
+```console
+⛔ acme/acme-us — 4 resource(s) missing from the graph
+     models: fct_revenue
+     metrics: revenue
+     exposures: crm_customer_sync, exec_weekly_dashboard
+     run `pf kg build` and commit kg/graph.json
+```
+
+It compares **only what a runner without a warehouse can see** — models, metrics
+and exposures, which come from the manifests. Columns are backfilled from
+`information_schema`, which CI does not have, so comparing those too would be red
+on every pull request forever, and a permanently red check is one nobody reads.
+
+A project with no manifest at all reports **not exercised** rather than clean.
+That is the same refusal `GateNotExercised` makes: a green tick meaning "found
+nothing" is worse than no check, because it is trusted.
+
+The job reaches every project because it is contributed by a **capability**, not
+written into a workflow file:
+
+```python
+"github": Capability(
+    ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB},
+    default_enabled=True,
+),
+```
+
+`_ci_workflow` composes one workflow per project from every enabled capability's
+jobs. Adding this job edited one dictionary — no scaffolder, no CLI, no workflow
+file — and the next `pf bootstrap --all` put it in all eight. A project created
+tomorrow gets it for the same reason, and an opt-in check would instead reach
+only the projects whose author remembered the flag.
+
+### What is tracked
+
 `kg/graph.duckdb` and `kg/context_card.md` are gitignored and rebuilt locally.
-`kg/graph.json` is tracked, so a graph change is reviewable in a diff.
+`kg/graph.json` is tracked, so a graph change is reviewable in a diff — and so
+CI has something to check the manifest against.
