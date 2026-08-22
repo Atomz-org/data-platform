@@ -1,0 +1,35 @@
+# What the platform graph does not index.
+#
+# Scope: this graph describes the **shared** layer — `platform/`, `docs/`, repo
+# tooling. It is what an agent working *on the platform* asks before reading
+# files, and it is served over MCP by `graphify-mcp`.
+#
+# `groups/` is excluded on purpose, and not for size. CLAUDE.md's rule is that a
+# session never reads another group or another sister project, because business
+# logic does not transfer between entities and an assumption carried across is a
+# bug. One graph spanning acme, globex, jaffle and zenith would hand any session
+# a queryable index of all four — the isolation rule, undone by a retrieval tool.
+# A project that wants its own graph has one: `pf kg build` writes it per project,
+# and `kg_search` serves it scoped.
+groups/
+
+# Fourteen pinned upstreams, ~389MB. Read them directly, or graph one on its own
+# with `graphify extract vendor/<name>` into its own graphify-out — which is what
+# vendor/evidence-bi already does.
+vendor/
+
+# Build output and environments.
+node_modules/
+.venv/
+__pycache__/
+.git/
+graphify-out/
+
+# Generated artefacts. These mirror .gitignore: indexing a compiled manifest
+# teaches the graph the output rather than the source that produced it.
+**/target/
+**/target-*/
+**/logs/
+**/dbt_packages/
+*.duckdb
+*.pyc
