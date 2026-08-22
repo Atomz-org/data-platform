@@ -69,6 +69,16 @@ class ProductionWarehouse:
     default_enabled: bool = False
     #: Anything an operator has to know that is neither credentials nor auth.
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    #: MCP server definition(s) for querying this warehouse directly, merged into
+    #: the project's `.mcp.json` by `capability()`. Declared beside the dbt target
+    #: for the same reason `om_connection` is: the engine dbt writes to and the
+    #: engine an agent reads from must be the same engine, and two definitions in
+    #: two files is how they end up not being.
+    #:
+    #: Credentials here are **not** added to `env`. That tuple is what `pf doctor`
+    #: demands before `DBT_TARGET=prod` will connect, and a missing MCP token must
+    #: not read as a broken warehouse — the models still build without it.
+    mcp: dict[str, object] = field(default_factory=dict)
     #: OpenMetadata's connection `type` for this engine, and the config it
     #: expects. Declared beside the dbt target on purpose: a warehouse the
     #: platform can deploy to but not catalogue is half a warehouse, and keeping
