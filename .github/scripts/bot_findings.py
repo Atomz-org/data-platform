@@ -853,6 +853,53 @@ def field_value(item: str, name: str) -> str:
     return ""
 
 
+# --------------------------------------------------------------- backfill ----
+#: Rebuild a Finding well enough to classify it, from an issue that already
+#: exists. Only the three fields `priority()` and `category()` actually read —
+#: severity, kind and path — so nothing here pretends to reconstruct the rest.
+_KIND_LABEL = {"security": "security", "bug": "bug", "documentation": "docs"}
+_FILE_LINE = re.compile(r"^\*\*File:\*\*\s*`([^`]+)`", re.M)
+_ORIGIN_LINE = re.compile(r"^\*\*(?:Raised on|Origin):\*\*\s*#(\d+)", re.M)
+
+
+def backfill_board(board) -> int:
+    """Put every tracked issue on the board, not only the ones a run re-reads.
+
+    `file_on_board` runs inside `track`, so it only ever sees findings still
+    reachable from an open pull request. A finding whose PR was merged months
+    ago stays in the repository and never reaches the board — which is the
+    opposite of the point, since outliving the PR is the whole reason it exists.
+
+    Thirty of a hundred and thirty-two were in exactly that position.
+    """
+    if not board:
+        return 0
+    index()          # populates _ALL
+    added = 0
+    for it in _ALL:
+        if it.get("state") != "open":
+            continue
+        body = it.get("body") or ""
+        labels = {x["name"] for x in it.get("labels", [])}
+        kind = next((v for k, v in _KIND_LABEL.items() if k in labels), "quality")
+        m = _FILE_LINE.search(body)
+        pr = _ORIGIN_LINE.search(body)
+        bot = ("CodeRabbit" if "coderabbit" in labels
+               else "Gitar" if "gitar" in labels else "Reviewer")
+        stub = Finding(
+            bot=bot, path=m.group(1) if m else "", line=None,
+            title=it.get("title", ""),
+            severity="major" if "severity:major" in labels else "minor",
+            kind=kind, body="", url=it.get("html_url", ""),
+            pr=int(pr.group(1)) if pr else 0)
+        try:
+            file_on_board(board, it["number"], stub, both=False)
+            added += 1
+        except Exception as exc:  # noqa: BLE001 — one bad card must not stop the rest
+            print(f"::warning::#{it['number']} not filed on the board: {exc}")
+    return added
+
+
 # ------------------------------------------------------------------- main ----
 def collect(pr: int) -> list[Finding]:
     """Every finding raised on this PR, by anyone.
@@ -989,6 +1036,12 @@ def main() -> int:
         track(collect(pr), board)
         n = record_resolution(pr, board)
         print(f"  {n} finding(s) with a fix landed — all still open")
+
+    # Findings whose pull request is long closed are never re-read by the loop
+    # above, so they sit in the repository and never reach the board — the exact
+    # opposite of the point, since outliving the PR is why they exist.
+    if os.environ.get("BOT_FINDINGS_BACKFILL_BOARD"):
+        print(f"backfilled {backfill_board(board)} tracked issue(s) onto the board")
     return 0
 
 

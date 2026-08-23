@@ -60,6 +60,11 @@ on:
         description: 'PR number, or "all" for every PR (default: open PRs)'
         required: false
         default: ""
+      backfill_board:
+        description: "Also put every tracked issue on the board, including ones whose PR has closed"
+        type: boolean
+        required: false
+        default: false
 
 # Several events on one PR would otherwise race to create the same issue.
 # Serialise per PR; the fingerprint makes a late run a no-op rather than a
@@ -103,4 +108,5 @@ jobs:
 
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR: ${{ github.event.inputs.pr }}
+          BOT_FINDINGS_BACKFILL_BOARD: ${{ github.event.inputs.backfill_board == 'true' && '1' || '' }}
         run: python3 .github/scripts/bot_findings.py
