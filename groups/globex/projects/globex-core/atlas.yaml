@@ -1,0 +1,28 @@
+# When this project publishes its atlas, and what goes in it.
+#
+# Merged over `groups/<group>/atlas.yaml`, which is merged over the platform
+# defaults in `pf.atlas.DEFAULTS`. Set only what differs.
+#
+#   pf atlas <group> <project>     regenerate now
+#   pf atlas --all                 every project
+version: 1
+atlas:
+  enabled: true
+
+  # Written inside this project, beside the graph it describes.
+  output: kg/atlas.html
+
+  # Regenerated around `dbt run` and `dbt build` — not around `parse`, `deps` or
+  # `ls`, which change nothing an atlas would show.
+  #
+  #   after_dbt_run    the default: models exist and the manifest is fresh
+  #   before_dbt_run   the state going in, for a run expected to break something
+  phases:
+    - after_dbt_run
+
+  # Move the outgoing page to atlas.prev.html instead of overwriting it, so a
+  # before/after pair survives the run that separated them.
+  keep_previous: false
+
+  # Trim to the part this project actually reads.
+  sections: [census, pipeline, lineage, governance, provenance, gaps]
