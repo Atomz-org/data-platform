@@ -81,7 +81,7 @@ def check_paths(root: Path, ups: list[Upstream]) -> list[Finding]:
 def _validator(schema_path: Path):
     import jsonschema
 
-    schema = json.loads(schema_path.read_text())
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     cls = jsonschema.validators.validator_for(schema)
     cls.check_schema(schema)
     return cls(schema)
@@ -156,7 +156,7 @@ def check_loop_parity(root: Path) -> list[Finding]:
     schema_path = root / "vendor" / "loop-engineering" / "patterns" / "registry.schema.json"
     if not schema_path.exists():
         return [Finding("error", "contract:loops", str(schema_path), "vendored schema missing")]
-    schema = json.loads(schema_path.read_text())
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item = schema["properties"]["patterns"]["items"]
     required = list(item.get("required") or [])
 
@@ -174,7 +174,9 @@ def check_loop_parity(root: Path) -> list[Finding]:
         out.append(Finding("info", "contract:loops", f,
                            "mapped here but no longer present upstream"))
 
-    from pf.loops.registry import SPECS
+    from pf.loops.registry import all_specs
+
+    SPECS = all_specs()
 
     timed = [s for s in SPECS.values() if _is_timed(s.cadence)]
     out.append(Finding(

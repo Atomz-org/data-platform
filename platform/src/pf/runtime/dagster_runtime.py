@@ -266,7 +266,7 @@ def _group_name(props: dict[str, Any]) -> str:
     `my-models` is legal on disk and illegal as a group name, and a loader that
     dies over a hyphen is not one anybody can scaffold against.
     """
-    dirs = [p for p in (props.get("path") or "").split("/")[:-1] if p]
+    dirs = [p for p in (props.get("path") or "").replace("\\", "/").split("/")[:-1] if p]
     raw = dirs[0] if dirs else _DEFAULT_GROUP.get(
         str(props.get("resource_type") or ""), "transform")
     return _sanitise_group(raw)

@@ -59,7 +59,7 @@ class Template:
 
 def load_template(path: Path, toolkit: str = "") -> Template:
     try:
-        raw = json.loads(path.read_text())
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise TemplateError(f"{path}: not valid JSON — {exc}") from exc
 

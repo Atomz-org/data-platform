@@ -235,7 +235,7 @@ def _from_ledger(root: Path, loop: str, now: str,
     if not p.exists():
         return Observation("unknown", now, "no ledger")
     try:
-        doc = json.loads(p.read_text())
+        doc = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return Observation("unknown", now, "ledger unreadable")
     runs = doc.get("runs") if isinstance(doc, dict) else doc
@@ -438,7 +438,7 @@ def export(root: str | Path, group: str = "", project: str = "",
     else:
         path = Path(root) / "platform" / "src" / "pf" / "ontology" / "otop.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(m, indent=2) + "\n")
+    path.write_text(json.dumps(m, indent=2) + "\n", encoding="utf-8")
     return path
 
 

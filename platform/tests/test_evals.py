@@ -43,7 +43,7 @@ def _case(tmp_path: Path, **overrides) -> Path:
     }
     body.update(overrides)
     path = tmp_path / "c.json"
-    path.write_text(json.dumps(body))
+    path.write_text(json.dumps(body), encoding="utf-8")
     return path
 
 
@@ -142,7 +142,7 @@ def test_discovery_never_reads_a_sister(tmp_path: Path) -> None:
         d.mkdir(parents=True)
         (d / "c.json").write_text(json.dumps({
             "name": f"{project}_case", "agent": "freshness_triage",
-            "input": {"monitor_rows": []}, "expect": {"ignorable": True}}))
+            "input": {"monitor_rows": []}, "expect": {"ignorable": True}}), encoding="utf-8")
 
     found = {c.name for c in discover(root, "acme", "acme-eu")}
     assert found == {"acme-eu_case"}
@@ -155,7 +155,7 @@ def test_templates_are_not_discovered_as_cases(tmp_path: Path) -> None:
     tdir.mkdir(parents=True)
     (tdir / "t.json").write_text(json.dumps({
         "template": "t", "agent": "freshness_triage", "requires": {},
-        "input": {"monitor_rows": []}, "expect": {"ignorable": True}}))
+        "input": {"monitor_rows": []}, "expect": {"ignorable": True}}), encoding="utf-8")
 
     assert discover(tmp_path, None, None) == []
 
@@ -168,7 +168,7 @@ def test_duplicate_case_names_are_rejected(tmp_path: Path) -> None:
         d.mkdir(parents=True)
         (d / "c.json").write_text(json.dumps({
             "name": "same", "agent": "freshness_triage",
-            "input": {"monitor_rows": []}, "expect": {"ignorable": True}}))
+            "input": {"monitor_rows": []}, "expect": {"ignorable": True}}), encoding="utf-8")
 
     with pytest.raises(CaseError, match="duplicate"):
         discover(root, "g", "p")
@@ -184,7 +184,7 @@ def _template(tmp_path: Path, **overrides) -> Path:
     }
     body.update(overrides)
     path = tmp_path / "t.json"
-    path.write_text(json.dumps(body))
+    path.write_text(json.dumps(body), encoding="utf-8")
     return path
 
 

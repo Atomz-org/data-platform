@@ -59,7 +59,7 @@ class Case:
 def load_case(path: Path, scope: str = "platform", owner: str = "") -> Case:
     """Parse and validate one case file."""
     try:
-        raw = json.loads(path.read_text())
+        raw = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise CaseError(f"{path}: not valid JSON — {exc}") from exc
     return validate_case(raw, origin=str(path), scope=scope, owner=owner)

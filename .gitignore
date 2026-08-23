@@ -70,6 +70,12 @@ node_modules/
 # evals/cases/, and are committed.
 **/evals/cases/generated/
 data/pr/
+# Eval results and loop proposals: derived, machine-local; the ledger is
+# what is committed. Worktrees are where a loop branches without touching
+# the operator's checkout.
+data/evals/
+data/proposals/
+.worktrees/
 .dagster/history/
 .dagster/storage/
 .dagster/logs/

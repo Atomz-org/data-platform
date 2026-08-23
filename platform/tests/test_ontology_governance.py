@@ -51,7 +51,7 @@ def test_a_property_cannot_conjure_a_class_that_was_rejected(tmp_path: Path) -> 
         _prop("Supply.cost", "money_amount", accept=True),
     ])
     path, applied = apply_to_extension(tmp_path, p)
-    doc = yaml.safe_load(path.read_text())
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     assert "Supply" not in (doc.get("classes") or {})
     assert applied["properties"] == 0
 
@@ -67,7 +67,7 @@ def test_a_relation_needs_both_of_its_classes(tmp_path: Path) -> None:
     path, applied = apply_to_extension(tmp_path, p)
     assert applied["relations"] == 0
     assert "not approved" in " ".join(
-        yaml.safe_load(path.read_text())["_skipped_on_last_approval"])
+        yaml.safe_load(path.read_text(encoding="utf-8"))["_skipped_on_last_approval"])
 
 
 def test_a_property_on_an_existing_platform_class_still_lands(tmp_path: Path) -> None:
@@ -88,7 +88,7 @@ def test_skips_are_recorded_in_the_file_not_only_on_the_terminal(tmp_path: Path)
         _cls("Supply", "raw_supplies", accept=False, identity=""),
         _prop("Supply.cost", "money_amount"),
     ]))
-    assert yaml.safe_load(path.read_text())["_skipped_on_last_approval"]
+    assert yaml.safe_load(path.read_text(encoding="utf-8"))["_skipped_on_last_approval"]
 
 
 # ------------------------------------------------ annotations from a scan ----
@@ -181,12 +181,12 @@ def test_unmodelled_needs_a_reason_to_count(tmp_path: Path) -> None:
     p.write_text(yaml.safe_dump({
         "resources": [],
         "unmodelled": {"raw_bridge": "junction table, not an entity", "raw_x": "  "},
-    }))
+    }), encoding="utf-8")
     assert load_unmodelled(p) == {"raw_bridge": "junction table, not an entity"}
 
 
 def test_unmodelled_survives_a_regeneration(tmp_path: Path) -> None:
     p = tmp_path / "a.yaml"
-    p.write_text(yaml.safe_dump({"resources": [], "unmodelled": {"raw_bridge": "why"}}))
+    p.write_text(yaml.safe_dump({"resources": [], "unmodelled": {"raw_bridge": "why"}}), encoding="utf-8")
     merge_annotations(p, [Annotation(resource="raw_orders", concept="Order")])
     assert load_unmodelled(p) == {"raw_bridge": "why"}

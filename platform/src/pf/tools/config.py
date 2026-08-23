@@ -86,7 +86,7 @@ def load(path: Path) -> dict[str, Any]:
     most projects will never have one until a tool is enabled."""
     if not path.exists():
         return {}
-    doc = yaml.safe_load(path.read_text()) or {}
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     return doc.get("tools") or {}
 
 
@@ -152,7 +152,7 @@ def write(root: Path, group: str, project: str, name: str, *,
     path = config_path(root, group, project)
     doc: dict[str, Any] = {}
     if path.exists():
-        doc = yaml.safe_load(path.read_text()) or {}
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     doc.setdefault("version", 1)
     tools = doc.setdefault("tools", {})
     entry = tools.setdefault(name, {})
@@ -165,5 +165,5 @@ def write(root: Path, group: str, project: str, name: str, *,
     extra = PROJECT_EXTRA if project else GROUP_EXTRA
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(HEADER.format(level=level, extra=extra)
-                    + yaml.safe_dump(doc, sort_keys=False))
+                    + yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
     return path

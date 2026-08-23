@@ -49,12 +49,12 @@ def skills(toolkit: Path) -> list[Path]:
 
 
 def registered() -> dict[str, str]:
-    doc = json.loads(MARKETPLACE.read_text())
+    doc = json.loads(MARKETPLACE.read_text(encoding="utf-8"))
     return {p["name"]: p["source"] for p in doc["plugins"]}
 
 
 def catalogue() -> str:
-    return (TOOLKITS / "TOOLKITS.md").read_text()
+    return (TOOLKITS / "TOOLKITS.md").read_text(encoding="utf-8")
 
 
 # ------------------------------------------------------------------ plugin ----
@@ -63,7 +63,7 @@ def test_toolkit_is_a_plugin(tk: Path):
     """Without a manifest the directory is not a toolkit, it is a folder."""
     manifest = tk / ".claude-plugin" / "plugin.json"
     assert manifest.exists(), f"{tk.name} has no plugin.json"
-    assert json.loads(manifest.read_text())["name"] == tk.name
+    assert json.loads(manifest.read_text(encoding="utf-8"))["name"] == tk.name
 
 
 @pytest.mark.parametrize("tk", toolkits(), ids=lambda p: p.name)
@@ -72,7 +72,7 @@ def test_skill_frontmatter_is_addressable(tk: Path):
     one the directory advertises, and a missing description makes a skill
     un-routable — TOOLKITS.md is built from these two fields."""
     for sk in skills(tk):
-        fm = re.match(r"^---\n(.*?)\n---\n", sk.read_text(), re.S)
+        fm = re.match(r"^---\n(.*?)\n---\n", sk.read_text(encoding="utf-8"), re.S)
         assert fm, f"{sk} has no frontmatter"
         doc = yaml.safe_load(fm.group(1)) or {}
         assert doc.get("name") == sk.parent.name, f"{sk}: name != directory"
@@ -126,4 +126,4 @@ def test_viz_standards_is_wired_end_to_end():
     assert (tk / "skills" / "charts-and-diagrams" / "SKILL.md").exists()
     assert "viz-standards" in registered()
     assert "## viz-standards" in catalogue()
-    assert "viz-standards" in (TOOLKITS / "ROUTING.md").read_text()
+    assert "viz-standards" in (TOOLKITS / "ROUTING.md").read_text(encoding="utf-8")

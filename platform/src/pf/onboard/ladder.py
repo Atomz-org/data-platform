@@ -173,7 +173,7 @@ class Ctx:
         if not p.exists():
             return {}
         try:
-            return yaml.safe_load(p.read_text()) or {}
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             return {}
 
@@ -183,7 +183,7 @@ class Ctx:
         if not p.exists():
             return {}
         try:
-            return yaml.safe_load(p.read_text()) or {}
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             return {}
 
@@ -223,7 +223,7 @@ class Ctx:
         out = []
         for f in sorted((self.transform / "models" / "semantic").rglob("*.yml")):
             try:
-                doc = yaml.safe_load(f.read_text())
+                doc = yaml.safe_load(f.read_text(encoding="utf-8"))
             except yaml.YAMLError:
                 continue
             if isinstance(doc, dict):
@@ -283,7 +283,7 @@ def _upstreams(path: Path) -> set[str]:
     why the manifest will not build is no use.
     """
     try:
-        text = path.read_text(errors="ignore")
+        text = path.read_text(errors="ignore", encoding="utf-8")
     except OSError:
         return set()
     return {m.group(1).strip() for m in _REF.finditer(text)}
@@ -361,7 +361,7 @@ def _raw_resources(c: Ctx) -> set[str]:
     names = {f.stem for f in (c.transform / "seeds").rglob("*.csv")}
     for f in (c.transform / "models").rglob("*.yml"):
         try:
-            doc = yaml.safe_load(f.read_text())
+            doc = yaml.safe_load(f.read_text(encoding="utf-8"))
         except yaml.YAMLError:
             continue
         if not isinstance(doc, dict):
@@ -743,7 +743,7 @@ def check_metrics(c: Ctx) -> list[Check]:
         else:
             mf = c.transform / "target" / "semantic_manifest.json"
             if mf.exists():
-                doc = json.loads(mf.read_text())
+                doc = json.loads(mf.read_text(encoding="utf-8"))
                 checks.append(passed(
                     "semantic manifest validates",
                     f"{len(doc.get('semantic_models') or [])} semantic model(s), "
@@ -812,8 +812,8 @@ def eval_review(c: Ctx) -> list[Risk]:
 
     if base.exists() and current.exists():
         try:
-            b = set(json.loads(base.read_text()).get("nodes", {}))
-            n = set(json.loads(current.read_text()).get("nodes", {}))
+            b = set(json.loads(base.read_text(encoding="utf-8")).get("nodes", {}))
+            n = set(json.loads(current.read_text(encoding="utf-8")).get("nodes", {}))
         except (json.JSONDecodeError, OSError):
             b = n = set()
         added, removed = n - b, b - n

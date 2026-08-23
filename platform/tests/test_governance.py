@@ -27,7 +27,7 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         "domain: b2b_saas\n"
         "classes:\n"
         "  - Customer\n"
-    )
+    , encoding="utf-8")
     return tmp_path
 
 
@@ -47,7 +47,7 @@ def test_an_edit_rewrites_the_file_and_records_who(repo: Path) -> None:
 def test_the_comment_survives_the_rewrite(repo: Path) -> None:
     """A dumper would strip this, and the comment is the reason the class exists."""
     apply_edit(repo, "instance", "domain", "fintech", actor="a", group="acme")
-    text = (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text()
+    text = (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text(encoding="utf-8")
     assert "the comment that must survive" in text
 
 
@@ -58,10 +58,10 @@ def test_a_structural_change_is_refused_rather_than_flattened(repo: Path) -> Non
 
 
 def test_an_unknown_path_is_refused_and_leaves_the_file_alone(repo: Path) -> None:
-    before = (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text()
+    before = (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text(encoding="utf-8")
     with pytest.raises(EditRejected, match="no such path"):
         apply_edit(repo, "instance", "nope", "x", actor="a", group="acme")
-    assert (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text() == before
+    assert (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text(encoding="utf-8") == before
 
 
 def test_a_scoped_surface_without_a_group_is_refused(repo: Path) -> None:
@@ -84,7 +84,7 @@ def test_revert_restores_the_previous_value_as_a_new_row(repo: Path) -> None:
 def test_the_yaml_stays_parseable_after_an_edit(repo: Path) -> None:
     apply_edit(repo, "instance", "domain", "fintech", actor="a", group="acme")
     doc = yaml.safe_load(
-        (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text())
+        (repo / "groups" / "acme" / "ontology" / "instance.yaml").read_text(encoding="utf-8"))
     assert doc["classes"] == ["Customer"]
     assert doc["group"] == "acme"
 

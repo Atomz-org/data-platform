@@ -79,7 +79,7 @@ def render_card(root: str | Path, out: str | Path | None = None) -> Path:
     ]
     path = Path(out) if out else root / "docs" / "VENDOR-CARD.md"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8")
     return path
 
 
@@ -191,5 +191,5 @@ def render_doc(root: str | Path, out: str | Path | None = None) -> Path:
 
     path = Path(out) if out else root / "docs" / "VENDOR.md"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8")
     return path

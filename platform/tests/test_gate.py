@@ -85,7 +85,7 @@ def test_impact_required_warns_rather_than_blocks(tmp_path: Path) -> None:
     workflow, not something a test should quietly assert away.
     """
     (tmp_path / "gate.yaml").write_text(
-        "version: 1\nimpact_required:\n  - '**/transform/models/**/*.sql'\n")
+        "version: 1\nimpact_required:\n  - '**/transform/models/**/*.sql'\n", encoding="utf-8")
     r = check_path("groups/g/projects/p/transform/models/marts/fct_x.sql", tmp_path)
     assert r.verdict == "warn"
     assert "impact" in r.message
@@ -97,7 +97,7 @@ def test_the_allowlist_outranks_impact_required(tmp_path: Path) -> None:
     (tmp_path / "gate.yaml").write_text(
         "version: 1\n"
         "autoMergeAllowlist:\n  - '**/*.sql'\n"
-        "impact_required:\n  - '**/transform/models/**/*.sql'\n")
+        "impact_required:\n  - '**/transform/models/**/*.sql'\n", encoding="utf-8")
     assert check_path("g/p/transform/models/m.sql", tmp_path).verdict == "allow"
 
 
@@ -110,6 +110,6 @@ def test_env_example_is_the_one_documented_exception() -> None:
 def test_a_run_that_touches_too_many_files_is_blocked_as_a_whole(
     tmp_path: Path,
 ) -> None:
-    (tmp_path / "gate.yaml").write_text("version: 1\nmaxFiles: 2\n")
+    (tmp_path / "gate.yaml").write_text("version: 1\nmaxFiles: 2\n", encoding="utf-8")
     results = check_paths([f"a/{i}.md" for i in range(3)], tmp_path)
     assert any(r.blocked and "maxFiles" in r.rule for r in results)

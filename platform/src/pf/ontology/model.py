@@ -296,10 +296,10 @@ def _parse_properties(spec: dict[str, Any]) -> dict[str, Property]:
 def load_ontology(directory: str | Path | None = None) -> Ontology:
     """Load concepts + topology + policy. Cached; pass a directory to override."""
     base = Path(directory) if directory else ONTOLOGY_DIR
-    concepts = yaml.safe_load((base / "concepts.yaml").read_text()) or {}
-    topology = yaml.safe_load((base / "topology.yaml").read_text()) or {}
+    concepts = yaml.safe_load((base / "concepts.yaml").read_text(encoding="utf-8")) or {}
+    topology = yaml.safe_load((base / "topology.yaml").read_text(encoding="utf-8")) or {}
     policy_path = base / "policy.yaml"
-    policy_doc = yaml.safe_load(policy_path.read_text()) if policy_path.exists() else {}
+    policy_doc = yaml.safe_load(policy_path.read_text(encoding="utf-8")) if policy_path.exists() else {}
 
     classes = {
         name: OntologyClass(
@@ -373,7 +373,7 @@ def load_group_ontology(root: str | Path, group: str) -> Ontology:
     if not ext_path.exists():
         return base
 
-    ext = yaml.safe_load(ext_path.read_text()) or {}
+    ext = yaml.safe_load(ext_path.read_text(encoding="utf-8")) or {}
 
     classes = dict(base.classes)
     for name, spec in (ext.get("classes") or {}).items():

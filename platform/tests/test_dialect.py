@@ -81,7 +81,7 @@ def test_a_genuinely_missing_function_is_still_missing() -> None:
 def test_type_names_in_casts_are_not_function_calls(tmp_path: Path) -> None:
     """`numeric(18, 2)` matches any regex looking for `name(`."""
     f = tmp_path / "m.sql"
-    f.write_text("select cast(x as numeric(18,2)), cast(y as varchar(50)) from t")
+    f.write_text("select cast(x as numeric(18,2)), cast(y as varchar(50)) from t", encoding="utf-8")
     assert "numeric" not in call_sites([f])
 
 
@@ -90,7 +90,7 @@ def test_substring_matches_do_not_invent_call_sites(tmp_path: Path) -> None:
     """`datediff(` ends in `iff(`. A substring scan reports 182 uses of a
     function the project never calls, and someone then builds a macro for it."""
     f = tmp_path / "m.sql"
-    f.write_text("select datediff('day', a, b) from t")
+    f.write_text("select datediff('day', a, b) from t", encoding="utf-8")
     calls = call_sites([f])
     assert calls["datediff"] == 1
     assert "iff" not in calls
@@ -104,13 +104,13 @@ def test_already_portable_calls_are_not_reported(tmp_path: Path) -> None:
         "-- iff(a,b,c) in a comment\n"
         "{{ dbt.dateadd('day', 1, 'x') }}\n"
         "{{ sf_iff('a', 1, 0) }}\n"
-        "select fake_fn(1), 'iff(' as literal from t\n")
+        "select fake_fn(1), 'iff(' as literal from t\n", encoding="utf-8")
     assert call_sites([f]) == {"fake_fn": 1}
 
 
 def test_analyse_separates_the_three_outcomes(tmp_path: Path) -> None:
     f = tmp_path / "m.sql"
-    f.write_text("select iff(a, 1, 0), date_trunc('month', d), no_such_fn(x) from t")
+    f.write_text("select iff(a, 1, 0), date_trunc('month', d), no_such_fn(x) from t", encoding="utf-8")
     r = analyse([f])
     assert r.covered == {"iff": 1}, "unresolvable, and a macro exists"
     assert r.ambiguous == {"date_trunc": 1}, "resolvable, and means something else"
@@ -120,13 +120,13 @@ def test_analyse_separates_the_three_outcomes(tmp_path: Path) -> None:
 
 def test_the_report_names_the_macro_to_use(tmp_path: Path) -> None:
     f = tmp_path / "m.sql"
-    f.write_text("select iff(a, 1, 0) from t")
+    f.write_text("select iff(a, 1, 0) from t", encoding="utf-8")
     assert analyse([f]).macro_for("iff") == "sf_iff"
 
 
 def test_a_projects_own_macros_resolve(tmp_path: Path) -> None:
     f = tmp_path / "m.sql"
-    f.write_text("select my_local_helper(a, b) from t")
+    f.write_text("select my_local_helper(a, b) from t", encoding="utf-8")
     assert analyse([f], local_macros={"my_local_helper"}).clean
 
 
@@ -145,11 +145,11 @@ def test_star_expression_syntax_is_not_a_call_site(tmp_path: Path) -> None:
     reported this platform's own generated SQL as unportable."""
     f = tmp_path / "stg_x.sql"
     f.write_text("select * exclude (_dlt_load_id) rename (a as b) "
-                 "from {{ ref('r') }}")
+                 "from {{ ref('r') }}", encoding="utf-8")
     assert not (set(call_sites([f])) & {"exclude", "rename"})
 
 
 def test_generated_staging_sql_scans_clean(tmp_path: Path) -> None:
     f = tmp_path / "stg_x.sql"
-    f.write_text("select * exclude (_dlt_load_id) rename (a as b) from {{ ref('r') }}")
+    f.write_text("select * exclude (_dlt_load_id) rename (a as b) from {{ ref('r') }}", encoding="utf-8")
     assert analyse([f], local_macros=set()).clean

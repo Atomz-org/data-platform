@@ -38,11 +38,11 @@ def roster(tmp_path: Path, *names: tuple[str, str],
         d = tmp_path / "groups" / group / "projects" / project
         if dbt:
             (d / "transform").mkdir(parents=True, exist_ok=True)
-            (d / "transform" / "dbt_project.yml").write_text("name: x\n")
+            (d / "transform" / "dbt_project.yml").write_text("name: x\n", encoding="utf-8")
         if defs:
             module = project.replace("-", "_")
             (d / "src" / module).mkdir(parents=True, exist_ok=True)
-            (d / "src" / module / "definitions.py").write_text("defs = None\n")
+            (d / "src" / module / "definitions.py").write_text("defs = None\n", encoding="utf-8")
         d.mkdir(parents=True, exist_ok=True)
         out.append((group, project, d))
     return out
@@ -115,16 +115,16 @@ def test_the_stack_home_is_rendered_from_the_tracked_base(tmp_path: Path) -> Non
     base_dir = tmp_path / ".dagster"
     base_dir.mkdir()
     base = base_dir / "dagster.yaml"
-    base.write_text(BASE_YAML)
+    base.write_text(BASE_YAML, encoding="utf-8")
 
     home = tmp_path / ".dagster-stack"
     path, changed = storage.write(home, storage.Settings(host="pg"), base=base)
 
     assert changed and path.parent == home
-    assert "default_limit: 1" in path.read_text()
-    assert "search_path=dagster" in path.read_text()
+    assert "default_limit: 1" in path.read_text(encoding="utf-8")
+    assert "search_path=dagster" in path.read_text(encoding="utf-8")
     # The tracked file is left exactly as it was.
-    assert base.read_text() == BASE_YAML
+    assert base.read_text(encoding="utf-8") == BASE_YAML
 
 
 # --------------------------------------------------------------- frontdoor --
@@ -184,7 +184,7 @@ def test_a_roster_with_no_dbt_project_renders_a_usable_front_door(
 def test_only_projects_with_a_review_start_on_boot(tmp_path: Path) -> None:
     """~350 MB each; eight of them for one review is how it ran out of memory."""
     r = roster(tmp_path, ("acme", "acme-eu"), ("jaffle", "jaffle-shop"))
-    (r[1][2] / "transform" / "recce_state.json").write_text("{}")
+    (r[1][2] / "transform" / "recce_state.json").write_text("{}", encoding="utf-8")
 
     svcs = frontdoor.services(r)
     assert [s.reviewed for s in svcs] == [False, True]

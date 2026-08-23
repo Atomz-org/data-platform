@@ -23,16 +23,16 @@ def _repo(tmp_path: Path, dag: str = "", *, layers=("staging", "marts"),
           workflows: bool = False) -> Path:
     root = tmp_path / "src_repo"
     (root / "models").mkdir(parents=True)
-    (root / "dbt_project.yml").write_text("name: 'incoming'\nversion: '1.0.0'\n")
+    (root / "dbt_project.yml").write_text("name: 'incoming'\nversion: '1.0.0'\n", encoding="utf-8")
     for layer in layers:
         (root / "models" / layer).mkdir(parents=True, exist_ok=True)
-        (root / "models" / layer / f"m_{layer}.sql").write_text("select 1")
+        (root / "models" / layer / f"m_{layer}.sql").write_text("select 1", encoding="utf-8")
     if dag:
         (root / "dags").mkdir(exist_ok=True)
-        (root / "dags" / "pipeline.py").write_text(textwrap.dedent(dag))
+        (root / "dags" / "pipeline.py").write_text(textwrap.dedent(dag), encoding="utf-8")
     if workflows:
         (root / ".github" / "workflows").mkdir(parents=True)
-        (root / ".github" / "workflows" / "ci.yml").write_text("name: ci\n")
+        (root / ".github" / "workflows" / "ci.yml").write_text("name: ci\n", encoding="utf-8")
     return root
 
 
@@ -175,7 +175,7 @@ def test_plan_adds_only_the_capabilities_the_source_lacks(tmp_path: Path) -> Non
 
 def test_plan_reports_a_foreign_warehouse(tmp_path: Path) -> None:
     root = _repo(tmp_path)
-    (root / "profiles.yml").write_text("x:\n  outputs:\n    prod:\n      type: snowflake\n")
+    (root / "profiles.yml").write_text("x:\n  outputs:\n    prod:\n      type: snowflake\n", encoding="utf-8")
     p = plan(tmp_path, "g", "proj", root)
     risk = next(r for r in p.risks if r.kind == "warehouse-foreign")
     assert "snowflake" in risk.detail
@@ -196,13 +196,13 @@ def test_our_package_pin_wins_a_conflict(tmp_path: Path) -> None:
     taking the incoming pin could break every sister sharing the runtime."""
     src = tmp_path / "in.yml"
     src.write_text("packages:\n  - package: dbt-labs/dbt_utils\n    version: 0.9.0\n"
-                   "  - package: other/pkg\n    version: 1.0.0\n")
+                   "  - package: other/pkg\n    version: 1.0.0\n", encoding="utf-8")
     dst = tmp_path / "out.yml"
-    dst.write_text("packages:\n  - package: dbt-labs/dbt_utils\n    version: 1.1.1\n")
+    dst.write_text("packages:\n  - package: dbt-labs/dbt_utils\n    version: 1.1.1\n", encoding="utf-8")
 
     _merge_packages(src, dst)
     import yaml
-    pkgs = yaml.safe_load(dst.read_text())["packages"]
+    pkgs = yaml.safe_load(dst.read_text(encoding="utf-8"))["packages"]
     versions = {p["package"]: p["version"] for p in pkgs}
     assert versions["dbt-labs/dbt_utils"] == "1.1.1"
     assert versions["other/pkg"] == "1.0.0"
@@ -218,10 +218,10 @@ def test_path_keys_are_read_from_the_source_config(tmp_path: Path) -> None:
         "name: 'incoming'\n"
         'test-paths: ["data-tests"]\n'
         'snapshot-paths: ["snaps"]\n'
-        'analysis-paths: ["explorations"]\n')
+        'analysis-paths: ["explorations"]\n', encoding="utf-8")
     for d, stem in (("data-tests", "t"), ("snaps", "s"), ("explorations", "a")):
         (root / d).mkdir()
-        (root / d / f"{stem}.sql").write_text("select 1")
+        (root / d / f"{stem}.sql").write_text("select 1", encoding="utf-8")
 
     s = survey(root)
     assert len(s.tests) == 1
@@ -234,7 +234,7 @@ def test_build_output_is_not_imported(tmp_path: Path) -> None:
     ships a stale manifest that `pf check` later reads as if it were current."""
     root = _repo(tmp_path)
     (root / "target-base").mkdir()
-    (root / "target-base" / "stale.sql").write_text("select 1")
+    (root / "target-base" / "stale.sql").write_text("select 1", encoding="utf-8")
     assert not any("target-base" in str(f) for f in survey(root).sql_files())
 
 
@@ -245,8 +245,8 @@ def test_a_reserved_macro_override_is_detected(tmp_path: Path) -> None:
     which breaks layer separation with no error anywhere."""
     root = _repo(tmp_path)
     (root / "macros").mkdir()
-    (root / "macros" / "generate_schema_name.sql").write_text("{% macro x() %}{% endmacro %}")
-    (root / "macros" / "helper.sql").write_text("{% macro h() %}{% endmacro %}")
+    (root / "macros" / "generate_schema_name.sql").write_text("{% macro x() %}{% endmacro %}", encoding="utf-8")
+    (root / "macros" / "helper.sql").write_text("{% macro h() %}{% endmacro %}", encoding="utf-8")
 
     s = survey(root)
     assert set(s.reserved_macros) == {"generate_schema_name"}
@@ -262,8 +262,8 @@ def test_a_reserved_macro_override_is_detected(tmp_path: Path) -> None:
 def test_duplicate_model_names_are_fatal(tmp_path: Path) -> None:
     """dbt resolves models by bare name regardless of directory."""
     root = _repo(tmp_path, layers=("staging", "marts"))
-    (root / "models" / "marts" / "dupe.sql").write_text("select 1")
-    (root / "models" / "staging" / "dupe.sql").write_text("select 1")
+    (root / "models" / "marts" / "dupe.sql").write_text("select 1", encoding="utf-8")
+    (root / "models" / "staging" / "dupe.sql").write_text("select 1", encoding="utf-8")
     risk = next(r for r in audit(survey(root)) if r.kind == "name-collision")
     assert risk.severity == "blocks" and "dupe" in risk.detail
 
@@ -276,9 +276,9 @@ def test_package_usage_and_pinning_are_reported(tmp_path: Path) -> None:
         "  - package: dbt-labs/dbt_utils\n"
         "    version: 1.3.3\n"
         '  - git: "https://github.com/dbt-labs/dbt-audit-helper.git"\n'
-        "    revision: main\n")
+        "    revision: main\n", encoding="utf-8")
     (root / "models" / "marts" / "m_marts.sql").write_text(
-        "select {{ dbt_utils.generate_surrogate_key(['a']) }}")
+        "select {{ dbt_utils.generate_surrogate_key(['a']) }}", encoding="utf-8")
 
     s = survey(root)
     assert s.package_usage["dbt-labs/dbt_utils"] == 1
@@ -294,9 +294,9 @@ def test_a_short_package_namespace_does_not_match_prose(tmp_path: Path) -> None:
     description ending in the word — and inflates usage into the dozens."""
     root = _repo(tmp_path)
     (root / "packages.yml").write_text(
-        "packages:\n  - package: godatadriven/dbt_date\n    version: 0.17.2\n")
+        "packages:\n  - package: godatadriven/dbt_date\n    version: 0.17.2\n", encoding="utf-8")
     (root / "models" / "marts" / "schema.yml").write_text(
-        "models:\n  - name: m_marts\n    description: One row per order date.\n")
+        "models:\n  - name: m_marts\n    description: One row per order date.\n", encoding="utf-8")
     assert survey(root).package_usage["godatadriven/dbt_date"] == 0
 
 
@@ -308,7 +308,7 @@ def _scaffolded(tmp_path: Path) -> Path:
         "name": "ours", "profile": "ours",
         "model-paths": ["models"],
         "models": {"ours": {"staging": {"+materialized": "view"}}},
-    }, sort_keys=False))
+    }, sort_keys=False), encoding="utf-8")
     return target
 
 
@@ -321,11 +321,11 @@ def test_the_source_config_block_is_rekeyed_and_kept(tmp_path: Path) -> None:
         "name": "incoming",
         "vars": {"load_source_data": False},
         "models": {"incoming": {"marts": {"+tags": ["domain:finance"]}}},
-    }, sort_keys=False))
+    }, sort_keys=False), encoding="utf-8")
     target = _scaffolded(tmp_path)
 
     _merge_dbt_project(survey(root), target)
-    merged = yaml.safe_load(target.read_text())
+    merged = yaml.safe_load(target.read_text(encoding="utf-8"))
 
     assert merged["models"]["ours"]["marts"]["+tags"] == ["domain:finance"]
     assert "incoming" not in merged["models"]
@@ -339,10 +339,10 @@ def test_platform_settings_win_a_conflict(tmp_path: Path) -> None:
     (root / "dbt_project.yml").write_text(yaml.safe_dump({
         "name": "incoming",
         "models": {"incoming": {"staging": {"+materialized": "table"}}},
-    }, sort_keys=False))
+    }, sort_keys=False), encoding="utf-8")
     target = _scaffolded(tmp_path)
     _merge_dbt_project(survey(root), target)
-    merged = yaml.safe_load(target.read_text())
+    merged = yaml.safe_load(target.read_text(encoding="utf-8"))
     assert merged["models"]["ours"]["staging"]["+materialized"] == "view"
 
 
@@ -354,7 +354,7 @@ def test_the_dialect_toolkit_path_is_added_once(tmp_path: Path) -> None:
     s = survey(root)
     _merge_dbt_project(s, target)
     _merge_dbt_project(s, target)
-    paths = yaml.safe_load(target.read_text())["macro-paths"]
+    paths = yaml.safe_load(target.read_text(encoding="utf-8"))["macro-paths"]
     assert paths.count("../../../../../platform/toolkits/dbt-snowflake/macros") == 1
 
 
@@ -365,9 +365,9 @@ def _big_repo(tmp_path: Path, *, tags: bool) -> Path:
         (root / "dbt_project.yml").write_text(yaml.safe_dump({
             "name": "incoming",
             "models": {"incoming": {"marts": {"+tags": ["domain:finance"]}}},
-        }, sort_keys=False))
+        }, sort_keys=False), encoding="utf-8")
     for i in range(900):
-        (root / "models" / "marts" / f"a_fairly_long_mart_model_name_{i}.sql").write_text("select 1")
+        (root / "models" / "marts" / f"a_fairly_long_mart_model_name_{i}.sql").write_text("select 1", encoding="utf-8")
     return root
 
 
@@ -414,11 +414,11 @@ def test_config_directory_keys_follow_the_models_to_their_new_layer(tmp_path: Pa
             "bronze": {"+tags": ["layer:staging"]},
             "gold": {"+tags": ["domain:finance"]},
         }},
-    }, sort_keys=False))
+    }, sort_keys=False), encoding="utf-8")
     target = _scaffolded(tmp_path)
 
     _merge_dbt_project(survey(root), target)
-    block = yaml.safe_load(target.read_text())["models"]["ours"]
+    block = yaml.safe_load(target.read_text(encoding="utf-8"))["models"]["ours"]
 
     assert block["staging"]["+tags"] == ["layer:staging"]
     assert block["marts"]["+tags"] == ["domain:finance"]
@@ -435,11 +435,11 @@ def test_two_source_layers_collapsing_onto_one_are_merged(tmp_path: Path) -> Non
             "intermediate": {"+tags": ["layer:intermediate"]},
             "marts": {"+materialized": "table"},
         }},
-    }, sort_keys=False))
+    }, sort_keys=False), encoding="utf-8")
     target = _scaffolded(tmp_path)
 
     _merge_dbt_project(survey(root), target)
-    marts = yaml.safe_load(target.read_text())["models"]["ours"]["marts"]
+    marts = yaml.safe_load(target.read_text(encoding="utf-8"))["models"]["ours"]["marts"]
     assert marts["+tags"] == ["layer:intermediate"]
     assert marts["+materialized"] == "table"
 
@@ -450,15 +450,15 @@ def test_source_path_keys_are_not_carried_into_our_config(tmp_path: Path) -> Non
     directory the files were moved out of."""
     root = _repo(tmp_path)
     (root / "dbt_project.yml").write_text(
-        "name: 'incoming'\ntest-paths: [\"data-tests\"]\n")
+        "name: 'incoming'\ntest-paths: [\"data-tests\"]\n", encoding="utf-8")
     (root / "data-tests").mkdir()
-    (root / "data-tests" / "t.sql").write_text("select 1")
+    (root / "data-tests" / "t.sql").write_text("select 1", encoding="utf-8")
     target = _scaffolded(tmp_path)
 
     s = survey(root)
     assert len(s.tests) == 1, "still read from the source"
     _merge_dbt_project(s, target)
-    assert "data-tests" not in target.read_text()
+    assert "data-tests" not in target.read_text(encoding="utf-8")
 
 
 def test_an_unpinned_unused_package_is_dropped_not_merged(tmp_path: Path) -> None:
@@ -468,14 +468,14 @@ def test_an_unpinned_unused_package_is_dropped_not_merged(tmp_path: Path) -> Non
     (root / "packages.yml").write_text(
         "packages:\n"
         '  - git: "https://github.com/dbt-labs/dbt-audit-helper.git"\n'
-        "    revision: main\n")
+        "    revision: main\n", encoding="utf-8")
     target = tmp_path / "transform" / "packages.yml"
     target.parent.mkdir(parents=True)
-    target.write_text("packages: []\n")
+    target.write_text("packages: []\n", encoding="utf-8")
 
     note = _merge_packages(root / "packages.yml", target, survey(root))
     assert "dropped 1 unpinned and unused" in note
-    assert "audit-helper" not in target.read_text()
+    assert "audit-helper" not in target.read_text(encoding="utf-8")
 
 
 def test_an_unpinned_but_used_package_is_kept(tmp_path: Path) -> None:
@@ -485,12 +485,12 @@ def test_an_unpinned_but_used_package_is_kept(tmp_path: Path) -> None:
     (root / "packages.yml").write_text(
         "packages:\n"
         '  - git: "https://github.com/dbt-labs/dbt-audit-helper.git"\n'
-        "    revision: main\n")
+        "    revision: main\n", encoding="utf-8")
     (root / "models" / "marts" / "m_marts.sql").write_text(
-        "{{ audit_helper.compare_relations() }}")
+        "{{ audit_helper.compare_relations() }}", encoding="utf-8")
     target = tmp_path / "transform" / "packages.yml"
     target.parent.mkdir(parents=True)
-    target.write_text("packages: []\n")
+    target.write_text("packages: []\n", encoding="utf-8")
 
     assert "+1 package" in _merge_packages(root / "packages.yml", target, survey(root))
 
@@ -498,9 +498,9 @@ def test_an_unpinned_but_used_package_is_kept(tmp_path: Path) -> None:
 def test_a_pinned_unused_package_is_kept(tmp_path: Path) -> None:
     root = _repo(tmp_path)
     (root / "packages.yml").write_text(
-        "packages:\n  - package: dbt-labs/dbt_utils\n    version: 1.3.3\n")
+        "packages:\n  - package: dbt-labs/dbt_utils\n    version: 1.3.3\n", encoding="utf-8")
     target = tmp_path / "transform" / "packages.yml"
     target.parent.mkdir(parents=True)
-    target.write_text("packages: []\n")
+    target.write_text("packages: []\n", encoding="utf-8")
 
     assert "+1 package" in _merge_packages(root / "packages.yml", target, survey(root))

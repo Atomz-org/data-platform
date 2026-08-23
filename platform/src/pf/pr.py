@@ -556,7 +556,7 @@ def save(root: str | Path, r: PRReport) -> Path:
     # the record.
     payload = r.to_dict()
     payload["markdown"] = markdown(r)
-    p.write_text(json.dumps(payload, indent=2) + "\n")
+    p.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return p
 
 
@@ -568,7 +568,7 @@ def load_all(root: str | Path) -> list[dict[str, Any]]:
     out = []
     for f in d.glob("*.json"):
         try:
-            out.append(json.loads(f.read_text()))
+            out.append(json.loads(f.read_text(encoding="utf-8")))
         except json.JSONDecodeError:
             continue
     return sorted(out, key=lambda r: r.get("generated_at", ""), reverse=True)
