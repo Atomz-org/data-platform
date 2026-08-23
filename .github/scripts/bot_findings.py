@@ -105,6 +105,12 @@ MARK = "bot-finding:"
 LANDED_LABEL = "fix-landed"
 #: Set by hand when one defect was filed twice; see `locate`.
 DUPLICATE_LABEL = "duplicate"
+#: Marks a parent issue that gathers one category of finding. Deliberately
+#: not `bot-finding`: `index` and `backfill_board` walk that label, and an
+#: epic is not a finding — counting it as one would put it on the board as a
+#: defect and let `locate` match a real finding against it.
+EPIC_LABEL = "finding-epic"
+EPIC_MARK = "finding-epic:"
 
 PRIORITIES = [("P0 — Critical", "RED"), ("P1 — High", "ORANGE"),
               ("P2 — Medium", "YELLOW"), ("P3 — Low", "GRAY")]
@@ -431,6 +437,7 @@ LABELS = [
     ("security", "b60205", "Security or secrets"),
     ("bug", "d73a4a", "Defect or edge case"),
     ("documentation", "0075ca", "Prose"),
+    (EPIC_LABEL, "0e8a16", "Gathers every finding in one category"),
 ]
 
 _LABELS_READY = False
@@ -915,6 +922,86 @@ def wait_for_checks(pr: int, budget: int = 900, grace: int = 180) -> None:
     print("::warning::timed out waiting for checks; reconciling anyway")
 
 
+_EPICS: dict[str, int] | None = None
+
+
+def _epic_index() -> dict[str, int]:
+    """Category slug -> the parent issue gathering it."""
+    global _EPICS
+    if _EPICS is not None:
+        return _EPICS
+    _EPICS = {}
+    for it in api(f"repos/{REPO}/issues?labels={EPIC_LABEL}&state=all&per_page=100",
+                  jq=".[]"):
+        if it.get("pull_request"):
+            continue
+        m = re.search(rf"{re.escape(EPIC_MARK)}([a-z0-9-]+)", it.get("body") or "")
+        if m:
+            _EPICS[m.group(1)] = it["number"]
+    return _EPICS
+
+
+def _slug(cat: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", cat.lower()).strip("-")
+
+
+def ensure_epic(cat: str) -> int | None:
+    """The parent issue for a category, created the first time one is needed.
+
+    A hundred and fifty findings in one flat list is a list nobody triages. The
+    axis to group them on already exists — `category()` computes it per finding
+    and the board has carried it as a column all along — so this makes that same
+    answer the issue hierarchy too, rather than inventing a second taxonomy that
+    would immediately disagree with the first.
+    """
+    slug = _slug(cat)
+    idx = _epic_index()
+    if slug in idx:
+        return idx[slug]
+    if DRY_RUN:
+        print(f"    WOULD OPEN epic for {cat}")
+        return None
+    body = (f"<!-- {EPIC_MARK}{slug} -->\n\n"
+            f"Every review finding in **{cat}**, gathered so the category can be "
+            f"triaged as one thing.\n\n"
+            f"Sub-issues are attached automatically when a finding is filed — this "
+            f"issue is generated, so edits to it will not survive.\n\n"
+            f"Closing this does not close its findings, and closing every finding "
+            f"does not close this: each sub-issue stays open until somebody has "
+            f"verified that defect is gone.")
+    out = run(["gh", "issue", "create", "--repo", REPO,
+               "--title", f"Findings — {cat}", "--body", body,
+               "--label", EPIC_LABEL])
+    url = next((x for x in reversed(out.strip().splitlines())
+                if x.startswith("http")), "")
+    if not url:
+        print(f"::warning::could not open an epic for {cat}")
+        return None
+    n = int(url.rsplit("/", 1)[1])
+    idx[slug] = n
+    print(f"  opened epic #{n}  Findings — {cat}")
+    return n
+
+
+def adopt(parent: int | None, child: int) -> None:
+    """Make `child` a sub-issue of `parent`, if it is not already."""
+    if not parent or parent == child or DRY_RUN:
+        return
+    try:
+        kids = api(f"repos/{REPO}/issues/{parent}/sub_issues?per_page=100", jq=".[]")
+        if any(k.get("number") == child for k in kids):
+            return
+        # The REST endpoint takes the child's *database* id, not its number.
+        cid = (api(f"repos/{REPO}/issues/{child}", paginate=False) or {}).get("id")
+        if not cid:
+            return
+        run(["gh", "api", "--method", "POST",
+             f"repos/{REPO}/issues/{parent}/sub_issues", "-F", f"sub_issue_id={cid}"])
+        print(f"    #{child} → sub-issue of #{parent}")
+    except Exception as exc:  # noqa: BLE001 — hierarchy is a convenience, not the record
+        print(f"::warning::could not attach #{child} to #{parent}: {str(exc)[:120]}")
+
+
 # ------------------------------------------------------------------ board ----
 def gql_options(opts: list[tuple[str, str]]) -> str:
     """Render select options as a GraphQL literal.
@@ -1105,8 +1192,7 @@ def backfill_board(board) -> int:
 
     Thirty of a hundred and thirty-two were in exactly that position.
     """
-    if not board:
-        return 0
+    # The board needs a token; the hierarchy does not. Run for either.
     index()          # populates _ALL
     added = 0
     for it in _ALL:
@@ -1126,8 +1212,14 @@ def backfill_board(board) -> int:
             kind=kind, body="", url=it.get("html_url", ""),
             pr=int(pr.group(1)) if pr else 0)
         try:
-            file_on_board(board, it["number"], stub, both=False,
-                          landed=LANDED_LABEL in labels)
+            if board:
+                file_on_board(board, it["number"], stub, both=False,
+                              landed=LANDED_LABEL in labels)
+            # The same pass that puts a finding on the board files it under its
+            # parent. Both answers come from `category(stub)`, so a backfilled
+            # issue cannot end up in one category on the board and another in
+            # the hierarchy.
+            adopt(ensure_epic(category(stub)), it["number"])
             added += 1
         except Exception as exc:  # noqa: BLE001 — one bad card must not stop the rest
             print(f"::warning::#{it['number']} not filed on the board: {exc}")
@@ -1199,6 +1291,9 @@ def track(findings: list[Finding], board=None) -> None:
         for f in fs:
             n = upsert(f) or n
         file_on_board(board, n, lead, both)
+        # Same answer as the board's Category column, made structural.
+        if n:
+            adopt(ensure_epic(category(lead)), n)
 
 
 #: `pull_request_target` carries the same payload as `pull_request` — the
