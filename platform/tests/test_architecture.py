@@ -87,15 +87,115 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
         "ci workflow": "ci", "dagster code location": "code_location",
         "dbt wiring": "profiles",
     }
-    keys = {f.key for f in arch.FEATURES}
+    keys = {f.key for f in arch.features()}
 
     for step in STEPS:
         if step.name in NOT_PER_PROJECT:
             continue
         assert step.name in covered, (
             f"bootstrap step {step.name!r} writes something into a project and no "
-            "Feature reports it — add one to pf.architecture.FEATURES")
+            "Feature reports it — add one to pf.architecture.CORE")
         assert covered[step.name] in keys
+
+
+# ------------------------------------------------------------ pluggability ---
+def test_a_third_party_tool_claims_its_own_territory(monkeypatch,
+                                                     tmp_path: Path) -> None:
+    """The reason the registry is composed rather than listed.
+
+    A tool arrives by installing a package with a `pf.tools` entry point, and
+    nothing in this repository changes when one does. So a tool that writes
+    `elementary/` into a project has to be able to account for that directory
+    itself — otherwise every project reports an unmapped entry and
+    `pf arch --check` fails, fixable only by patching platform code.
+    """
+    from pf.features import Feature
+    from pf.tools.spec import Tool
+
+    elementary = Tool(
+        name="elementary", title="Elementary", summary="Anomaly monitors on dbt.",
+        features=(Feature("elementary", "anomaly monitors", "operate",
+                          "statistical monitors over dbt test results",
+                          ("elementary/**",), optional=True,
+                          made_by="pf tool enable elementary",
+                          source="tool:elementary"),))
+    monkeypatch.setattr(arch, "_installed_tools", lambda: [elementary])
+
+    root = _bare(tmp_path)
+    d = root / "groups" / "demo" / "projects" / "demo-us"
+    (d / "elementary").mkdir()
+    (d / "elementary" / "monitors.yml").write_text("monitors: []\n")
+
+    a = arch.gather(root, "demo", "demo-us")
+
+    assert not a.unmapped, "an installed tool must account for what it writes"
+    assert a.by_key("elementary").present
+    assert "anomaly monitors" in arch.render(a)
+
+
+def test_a_tool_that_declares_nothing_still_claims_what_it_writes(monkeypatch,
+                                                                  tmp_path: Path
+                                                                  ) -> None:
+    """Declaring a Feature is the refinement, not the price of entry.
+
+    A tool already says where its artefacts go, for `pf tool doctor`. Making it
+    repeat that as a Feature would be the kind of duplicated declaration this
+    platform keeps removing, so the derivation reads what is already there.
+    """
+    from pf.tools.spec import DbtBinding, Tool
+
+    mc = Tool(name="montecarlo", title="Monte Carlo", summary="Freshness monitors.",
+              dbt=DbtBinding(artefacts=("montecarlo/state.json",)))
+    monkeypatch.setattr(arch, "_installed_tools", lambda: [mc])
+
+    root = _bare(tmp_path)
+    d = root / "groups" / "demo" / "projects" / "demo-us"
+    (d / "montecarlo").mkdir()
+    (d / "montecarlo" / "state.json").write_text("{}")
+
+    a = arch.gather(root, "demo", "demo-us")
+
+    assert not a.unmapped
+    derived = a.by_key("tool_montecarlo")
+    assert derived.present, "the derivation did not read dbt.artefacts"
+    assert derived.feature.source == "tool:montecarlo"
+    assert derived.feature.lane in arch.LANES
+
+
+def test_a_contribution_never_overwrites_a_platform_feature(monkeypatch) -> None:
+    """`CORE` is the authority on the features the platform itself provides.
+
+    A tool shipping a `Feature(key="graph", ...)` must not be able to redefine
+    what the knowledge graph is in every project's map.
+    """
+    from pf.features import Feature
+    from pf.tools.spec import Tool
+
+    hostile = Tool(name="x", title="X", summary="s",
+                   features=(Feature("graph", "not the graph", "operate",
+                                     "hijacked", ("elsewhere/**",),
+                                     made_by="nothing"),))
+    monkeypatch.setattr(arch, "_installed_tools", lambda: [hostile])
+
+    graph = next(f for f in arch.features() if f.key == "graph")
+
+    assert graph.source == "platform"
+    assert graph.title == "knowledge graph"
+
+
+def test_capabilities_are_named_even_when_they_earn_no_row() -> None:
+    """Nine capabilities writing one page each would be nine identical rows.
+
+    They are summarised on their own line instead — but a capability that is
+    present must still be visible somewhere, or the map is silent about why a
+    project has a `reporting/` directory at all.
+    """
+    a = arch.gather(ROOT, "acme", "acme-us")
+
+    assert a.caps, "a scaffolded project has capabilities"
+    out = arch.render(a)
+    for name in a.caps:
+        assert f"`{name}`" in out
 
 
 def test_an_absent_feature_is_reported_rather_than_omitted(tmp_path: Path) -> None:
@@ -106,7 +206,7 @@ def test_an_absent_feature_is_reported_rather_than_omitted(tmp_path: Path) -> No
     out = arch.render(a)
 
     assert a.gaps, "an empty project is all gaps"
-    for f in arch.FEATURES:
+    for f in arch.features():
         assert f.title in out, f"{f.key} vanished from the map"
     assert "## Gaps" in out
     # A gap without a route is a dead end.
@@ -114,14 +214,14 @@ def test_an_absent_feature_is_reported_rather_than_omitted(tmp_path: Path) -> No
 
 
 def test_every_feature_declares_where_it_comes_from() -> None:
-    for f in arch.FEATURES:
+    for f in arch.features():
         assert f.made_by, f"{f.key}: an absent row has to name its fix"
         assert f.lane in arch.LANES, f"{f.key}: lane {f.lane!r} is not a lane"
         assert f.paths or f.repo_paths, f"{f.key}: nothing to detect it by"
 
 
 def test_feature_keys_are_unique() -> None:
-    keys = [f.key for f in arch.FEATURES]
+    keys = [f.key for f in arch.features()]
     assert len(keys) == len(set(keys))
 
 
@@ -241,7 +341,7 @@ def test_the_summary_is_json_serialisable() -> None:
     payload = json.loads(arch.as_json(arch.gather(ROOT, group, project)))
 
     assert payload["project"] == project
-    assert set(payload["features"]) == {f.key for f in arch.FEATURES}
+    assert set(payload["features"]) == {f.key for f in arch.features()}
 
 
 # ------------------------------------------------------------- isolation -----
