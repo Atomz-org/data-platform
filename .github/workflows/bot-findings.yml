@@ -1,47 +1,72 @@
 # Review findings outlive their pull request.
 #
-# CodeRabbit and Gitar write findings as review comments, and a review comment
-# dies with its PR — merged, folded away, never read again. This workflow turns
-# each finding into an issue on the findings board, and closes that issue again
-# once the review thread is resolved, citing the commit that did it.
+# A review comment dies with its PR — merged, folded away behind "resolved",
+# never read again. This workflow turns every finding raised on a PR into an
+# issue on the findings board and keeps it there.
+#
+# WHAT IT DOES NOT DO IS CLOSE ANYTHING. An earlier version closed a finding
+# once its review thread was resolved. A resolved thread and a merged PR are
+# statements about the pull request, not about the defect: a thread is resolved
+# by whoever clicks the button, and merging says the reviewers were content.
+# Neither is evidence that the flagged code changed. So the issue stays open and
+# the board's `Verification` column carries the progress — `Fix landed — verify`
+# — until a person checks it and closes it themselves.
+#
+# Sources: CodeRabbit, Gitar, and human reviewers. A human comment counts when
+# its review requested changes, or when the comment says so (`issue:`, `bug:`,
+# `security:`, `blocker:`, `must fix`, `finding:`, `defect:`). Everything else a
+# reviewer writes stays conversation.
 #
 # Two speeds, on purpose:
 #
-#   as it lands   a new bot comment is tracked immediately, so nothing is lost
-#                 if the reconcile pass never runs
-#   at the end    once every other pipeline on the PR has finished, re-read the
-#                 whole PR: file whatever is new, close whatever is now fixed
-#
-# The reconcile pass is the one that matters for closing. It runs on the
-# completion of every other workflow in this repo, and then waits for any check
-# still running, so "is this finding fixed" is asked once the PR has settled
-# rather than mid-flight.
+#   as it lands   a new comment is tracked immediately, so nothing is lost if
+#                 the reconcile pass never runs
+#   at the end    re-read the whole PR once its checks have settled: file
+#                 whatever is new, record whatever now has a candidate fix
 name: bot findings
 
 on:
   # As it lands.
   pull_request_review_comment:
     types: [created, edited]
+  pull_request_review:
+    types: [submitted, edited]
   issue_comment:
     types: [created, edited]
 
-  # At the end — after every other pipeline here has completed.
-  workflow_run:
-    workflows:
-      - "impact-gate (jaffle-shop)"
-      - "PR impact report"
-      - "recce (acme-eu)"
-      - "recce (acme-rollup)"
-      - "recce (acme-us)"
-      - "recce (globex-core)"
-      - "recce (globex-eu)"
-      - "recce (zenith-de)"
-      - "recce (zenith-uk)"
-    types: [completed]
+  # Reconcile.
+  #
+  # This used to trigger on `workflow_run` naming each of the other workflows
+  # here. Eight of those nine names were the per-capability workflows that
+  # `pf bootstrap` replaced with one workflow per project, so the pass fired
+  # only after "PR impact report" and effectively never ran.
+  #
+  # A hand-kept list of generated workflow names cannot stay true — adding a
+  # project renames nothing here and breaks it again — and `workflows:` takes no
+  # wildcard. Triggering on the pull request itself needs no such list, and
+  # `wait_for_checks` already holds until the other pipelines have stopped
+  # before asking whether anything has been fixed.
+  #
+  # `pull_request_target`, not `pull_request`, for one reason: on a
+  # `pull_request` event GitHub takes the workflow *and the script* from the
+  # PR's own branch. Forty-odd branches here were cut before this file was
+  # fixed, so each of them would keep running its own stale copy — which is
+  # exactly why `track` is red on three of them today — and none of that clears
+  # until every branch rebases. `pull_request_target` always runs the version on
+  # the default branch, so one fix reaches every open PR at once.
+  #
+  # The usual danger of `pull_request_target` is that it hands write
+  # credentials to a job that then checks out and executes the contributor's
+  # code. This job never does: the checkout below pins `ref` to the default
+  # branch and takes nothing but `.github/scripts`. PR content reaches this
+  # workflow only as API data — comment bodies, paths, line numbers — and is
+  # never executed.
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
 
-  # A merge or close is the last chance to reconcile that PR.
-  pull_request:
-    types: [closed]
+  # A sweep, for whatever a missed event left behind.
+  schedule:
+    - cron: "17 6 * * *"
 
   # Backfill: a PR number, "all", or empty for every open PR.
   workflow_dispatch:
@@ -50,36 +75,73 @@ on:
         description: 'PR number, or "all" for every PR (default: open PRs)'
         required: false
         default: ""
+      backfill_board:
+        description: "Also put every tracked issue on the board, including ones whose PR has closed"
+        type: boolean
+        required: false
+        default: false
 
-# Findings from several workflows finishing at once would otherwise race to
-# create the same issue. Serialise per PR; the fingerprint makes a late run a
-# no-op rather than a duplicate.
+# Several events on one PR would otherwise race to create the same issue, so
+# runs are serialised: per PR for the PR-shaped events, and — because a sweep
+# reads every PR and therefore collides with any other sweep — under one shared
+# key for `schedule` and `workflow_dispatch`. Those used to fall through to
+# `run_id`, which is unique per run and so serialised nothing; that is how #294
+# and #297 became two copies of one finding.
+#
+# The fingerprint still makes a late run a no-op rather than a duplicate.
+# `cancel-in-progress: false` because a cancelled run leaves the board
+# half-written, and the work is cheap.
 concurrency:
-  group: bot-findings-${{ github.event.workflow_run.head_sha || github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  group: >-
+    bot-findings-${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+      && 'sweep'
+      || (github.event.pull_request.number || github.event.issue.number || github.run_id) }}
   cancel-in-progress: false
 
 permissions:
-  contents: read          # read commits, to name the one that fixed a finding
-  issues: write           # file, relabel and close the tracked issues
+  contents: read          # read commits, to name the one a fix landed in
+  issues: write           # file, relabel and reopen the tracked issues
   pull-requests: read     # read review threads and their resolved state
 
 jobs:
   track:
     runs-on: ubuntu-latest
     steps:
+      # Always the default branch's copy of the script, never the PR's. On
+      # `pull_request_target` the default checkout ref is the base branch
+      # already, but naming it makes the guarantee independent of the event:
+      # one version of this tracker runs for every PR, and a PR cannot edit
+      # the code that runs here holding `issues: write`.
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: .github/scripts
 
-      - name: Track findings, close what is fixed
+      # Runs after the PR's own pipelines, not beside them: the script waits
+      # for the checks to appear and then to finish before reading the PR, so
+      # the review bots have posted by the time it collects. It files findings
+      # whether those checks passed or failed — a red pipeline is when a finding
+      # matters most — and writes what it did to the run's summary.
+      - name: Wait for the pipeline, then file every finding as an issue
         env:
           # GITHUB_TOKEN covers issues and PR reads. Writing to a ProjectV2
           # needs `project` scope, which it does not have — set PROJECTS_TOKEN
           # to a PAT with that scope to enable the board. Without it the issues
-          # are still filed and closed, and only the board step is skipped.
+          # are still filed and kept, and only the board step is skipped.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
-          PROJECT_TITLE: ${{ vars.BOT_FINDINGS_PROJECT }}
+
+          # The board, addressed as its URL addresses it:
+          # https://github.com/orgs/Atomz-org/projects/4
+          #
+          # By number rather than by title. Renaming a board in the UI is one
+          # click and leaves the URL alone; matching on title meant the next run
+          # could not find it and created a second board under the old name,
+          # with findings landing somewhere nobody was watching.
+          PROJECT_OWNER: ${{ vars.FINDINGS_PROJECT_OWNER || 'Atomz-org' }}
+          PROJECT_NUMBER: ${{ vars.FINDINGS_PROJECT_NUMBER || '4' }}
+
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR: ${{ github.event.inputs.pr }}
+          BOT_FINDINGS_BACKFILL_BOARD: ${{ github.event.inputs.backfill_board == 'true' && '1' || '' }}
         run: python3 .github/scripts/bot_findings.py

@@ -1,20 +1,43 @@
 #!/usr/bin/env python3
-"""Carry CodeRabbit and Gitar review findings into tracked issues on a board,
-and close those issues again when the finding is actually fixed.
+"""Carry every finding raised on a pull request into a tracked issue on a board,
+and keep it open until a person says it is fixed.
 
 A review comment dies with its pull request: merge the PR and the finding is
 archived behind a "resolved" fold nobody reopens. This turns each finding into
-an issue that outlives the PR, files it on a project board under a priority and
-category derived from what the bot itself said, and — once the review thread is
-resolved — closes the issue citing the commit that fixed it.
+an issue that outlives the PR and files it on the findings board under a
+priority and category derived from what the reviewer said.
+
+## It does not close anything, and that is the design
+
+An earlier version closed a finding once its review thread was resolved. It no
+longer does, because a resolved thread and a merged pull request are statements
+about the *pull request*, not about the defect. A thread is resolved by whoever
+clicks the button. Merging says the reviewers were content. Neither is evidence
+that the flagged code changed — and a finding that is closed is a finding that
+is not read again, which is the exact failure this script exists to prevent.
+
+So when a thread resolves, the issue gets a comment naming the commit that most
+likely carries the fix, a `fix-landed` label, and its board card moves to
+`Verification: Fix landed — verify`. It stays **open**. A person verifies and
+closes it, which is the one judgement here worth a human. Issues closed by the
+previous behaviour are reopened when a reconcile pass next passes over them.
+
+## Sources
+
+CodeRabbit and Gitar, parsed from their structured comments. Human reviewers
+too: a comment counts as a finding when its review requested changes, or when
+the comment says so — `issue:`, `bug:`, `security:`, `blocker:`, `must fix`,
+`finding:`, `defect:`. Everything else a reviewer writes stays conversation,
+because filing all of it would bury the defects in the discussion around them.
 
 Events it runs on (see .github/workflows/bot-findings.yml):
 
   pull_request_review_comment  a new inline finding, tracked as it lands
-  issue_comment                a bot's summary comment, which may hold several
-  workflow_run / pull_request  reconcile: every other pipeline has finished, so
-                               re-read the PR, file what is new and close what
-                               is fixed
+  pull_request_review          a review body, where a blocker is usually stated
+  issue_comment                a summary comment, which may hold several
+  pull_request                 reconcile: wait for the checks to settle, then
+                               re-read the whole PR
+  schedule                     a daily sweep for anything a missed event lost
   workflow_dispatch            backfill one PR, or every open one
 
 Every issue carries a fingerprint of (path, normalised title). That fingerprint
@@ -25,7 +48,7 @@ matched back to the issue it came from.
 
 Writing to a ProjectV2 needs a token with `project` scope, which GITHUB_TOKEN
 does not have. Set the PROJECTS_TOKEN secret to enable the board; without it
-issues are still filed and closed, and only the board step is skipped.
+issues are still filed and kept, and only the board step is skipped.
 """
 
 from __future__ import annotations
@@ -42,14 +65,52 @@ from dataclasses import dataclass
 
 BOTS = ("coderabbitai", "gitar-bot")
 
+#: Markers that turn a human review comment into a tracked finding. A reviewer
+#: writes far more than findings — questions, agreement, style preferences — and
+#: filing all of it would bury the defects among the conversation. A review that
+#: requested changes counts on its own; anything else has to say so.
+HUMAN_MARKERS = ("issue:", "bug:", "security:", "blocker:", "must fix",
+                 "must-fix:", "finding:", "defect:")
+
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 OWNER = REPO.split("/")[0] if REPO else ""
 NAME = REPO.split("/")[1] if "/" in REPO else ""
-PROJECT_TITLE = os.environ.get("PROJECT_TITLE") or "Bot findings — carried from PR review"
+
+#: The board, addressed the way its URL addresses it:
+#: https://github.com/orgs/<owner>/projects/<number>.
+#:
+#: By number, not by title, and that is a fix rather than a preference. Matching
+#: on title meant renaming the board in the UI — which is one click and leaves
+#: the URL untouched — made the next run fail to find it and create a *second*
+#: board with the old name. Findings then landed on a project nobody was
+#: looking at, and nothing reported anything wrong.
+PROJECT_OWNER = os.environ.get("PROJECT_OWNER") or OWNER
+PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER") or 0)
+PROJECT_TITLE = os.environ.get("PROJECT_TITLE") or "PR findings — carried past the PR"
 PROJECT_TOKEN = os.environ.get("PROJECTS_TOKEN") or ""
+
+#: Print what would be filed and write nothing. This script creates issues in a
+#: real repository; being able to look at the output first is the difference
+#: between a review of the plan and a review of the damage.
+DRY_RUN = bool(os.environ.get("BOT_FINDINGS_DRY_RUN"))
 
 TRACKING_LABEL = "bot-finding"
 MARK = "bot-finding:"
+
+#: Applied once a candidate fix has been named, and checked before commenting so
+#: the daily sweep does not repeat the note every morning for the rest of the
+#: finding's life. A label rather than a marker in the comment body: the issue
+#: index is built from the issues endpoint, which returns labels and not
+#: comments, so a marker buried in a comment would never be seen again.
+LANDED_LABEL = "fix-landed"
+#: Set by hand when one defect was filed twice; see `locate`.
+DUPLICATE_LABEL = "duplicate"
+#: Marks a parent issue that gathers one category of finding. Deliberately
+#: not `bot-finding`: `index` and `backfill_board` walk that label, and an
+#: epic is not a finding — counting it as one would put it on the board as a
+#: defect and let `locate` match a real finding against it.
+EPIC_LABEL = "finding-epic"
+EPIC_MARK = "finding-epic:"
 
 PRIORITIES = [("P0 — Critical", "RED"), ("P1 — High", "ORANGE"),
               ("P2 — Medium", "YELLOW"), ("P3 — Low", "GRAY")]
@@ -57,7 +118,15 @@ CATEGORIES = [("Security & Secrets", "RED"), ("Catalog & Metadata", "BLUE"),
               ("Toolkit Hooks & Scripts", "PURPLE"), ("CI & Scaffold", "GREEN"),
               ("PR Reporting", "PINK"), ("Tests & Cleanup", "YELLOW"),
               ("Runtime & Platform", "ORANGE"), ("Docs", "GRAY")]
-SOURCES = [("CodeRabbit", "BLUE"), ("Gitar", "GREEN"), ("Both bots", "PURPLE")]
+SOURCES = [("CodeRabbit", "BLUE"), ("Gitar", "GREEN"), ("Reviewer", "YELLOW"),
+           ("Both bots", "PURPLE")]
+
+#: Where a finding stands. This replaces closing the issue, and it is the whole
+#: point of the change: a merged PR is not evidence that a defect was fixed, so
+#: the issue stays open and the board says how far along it is instead.
+VERIFICATION = [("Open — unfixed", "GRAY"), ("Fix landed — verify", "YELLOW"),
+                ("Verified fixed", "GREEN")]
+V_OPEN, V_LANDED = VERIFICATION[0][0], VERIFICATION[1][0]
 
 
 # --------------------------------------------------------------------- gh ----
@@ -71,11 +140,31 @@ def run(cmd: list[str], token: str | None = None, check: bool = True) -> str:
     return p.stdout
 
 
-def api(path: str, jq: str | None = None, paginate: bool = True) -> object:
+#: Substrings of a `gh` failure that mean "the network blinked", not "this
+#: request is wrong". Retrying a 404 or a 422 just fails slower.
+TRANSIENT = ("operation timed out", "connection reset", "EOF",
+             "timeout awaiting", "502 Bad Gateway", "503 Service",
+             "504 Gateway", "temporary failure in name resolution")
+
+
+def api(path: str, jq: str | None = None, paginate: bool = True,
+        tries: int = 3) -> object:
     cmd = ["gh", "api", path] + (["--paginate"] if paginate else [])
     if jq:
         cmd += ["--jq", jq]
-    out = run(cmd).strip()
+    for attempt in range(1, tries + 1):
+        try:
+            out = run(cmd).strip()
+            break
+        except RuntimeError as exc:
+            msg = str(exc)
+            if attempt == tries or not any(t.lower() in msg.lower()
+                                           for t in TRANSIENT):
+                raise
+            wait = 2 ** attempt
+            print(f"  transient: {msg[:90]} — retrying in {wait}s "
+                  f"({attempt}/{tries - 1})")
+            time.sleep(wait)
     if not out:
         return [] if jq else {}
     if jq:
@@ -108,7 +197,7 @@ def strip_noise(body: str) -> str:
 
 @dataclass
 class Finding:
-    bot: str            # CodeRabbit | Gitar
+    bot: str            # CodeRabbit | Gitar | Reviewer
     path: str
     line: int | None
     title: str
@@ -117,11 +206,47 @@ class Finding:
     body: str
     url: str
     pr: int
+    #: The login, when the source is a person. The board groups every human
+    #: under one "Reviewer" source — a per-person option would grow a column
+    #: that nobody filters on — and the citation names them.
+    author: str = ""
+    #: The pull request's title. Carried because the issue outlives the PR and a
+    #: bare `#268` is unreadable once you are looking at a board of ninety
+    #: findings — the number tells you nothing about what the change *was*.
+    #: Deliberately not part of the fingerprint: a PR retitled mid-review must
+    #: not fork its findings into a second set of issues.
+    pr_title: str = ""
+
+    @property
+    def origin(self) -> str:
+        return f"{self.bot} @{self.author}" if self.author else self.bot
 
     @property
     def fingerprint(self) -> str:
-        norm = re.sub(r"[^a-z0-9]+", "-", self.title.lower()).strip("-")[:60]
-        return hashlib.sha256(f"{self.path}|{norm}".encode()).hexdigest()[:16]
+        return _key(self.path, self.title)
+
+    @property
+    def title_key(self) -> str:
+        """The same finding, stated without a file.
+
+        A bot reports one defect twice on the same PR: inline on the line, where
+        the payload carries `path`, and again in its walkthrough, where it does
+        not. `path` is half the fingerprint, so `""|title` and `chain.py|title`
+        hash apart and the board grows two issues for one defect — #298/#300 and
+        #299/#301 arrived exactly that way.
+
+        Matching on title alone would be the wrong cure: the same sentence about
+        two different files is two defects, which is why `path` is in the
+        fingerprint at all. So this is a fallback, and `locate` only trusts it
+        when one side has no path to contradict the other and exactly one
+        candidate answers.
+        """
+        return _key("", self.title)
+
+
+def _key(path: str, title: str) -> str:
+    norm = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
+    return hashlib.sha256(f"{path}|{norm}".encode()).hexdigest()[:16]
 
 
 CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_", re.M)
@@ -202,6 +327,56 @@ def parse(body: str, path: str, line: int | None, login: str,
     return out
 
 
+def parse_human(body: str, path: str, line: int | None, login: str, url: str,
+                pr: int, requested_changes: bool = False) -> list[Finding]:
+    """A human reviewer's finding, if the comment is one.
+
+    Reviewers write far more than findings, and filing all of it would bury the
+    defects in the conversation that surrounded them. Two things qualify a
+    comment, and both are the reviewer saying so rather than us guessing:
+
+      the review requested changes    a formal CHANGES_REQUESTED review is the
+                                        one place GitHub already records "this
+                                        must be addressed"
+      the comment is marked           `issue:`, `bug:`, `security:`, `blocker:`,
+                                        `must fix`, `finding:`, `defect:`
+
+    Everything else — a question, agreement, a preference — stays conversation.
+    A reviewer who wants something tracked has a one-word way to say so, and
+    that is a better contract than a classifier guessing at tone.
+    """
+    clean = strip_noise(body)
+    if not clean:
+        return []
+
+    # The title comes from the line carrying the marker, not from the first line
+    # of the comment. A reviewer who writes a paragraph of context and *then*
+    # "blocker: the token is logged in plaintext" would otherwise have the issue
+    # titled after the preamble, which is the half that says nothing.
+    marker, claim = "", ""
+    for raw in clean.splitlines():
+        line = raw.strip(" *_>#-")
+        hit = next((m for m in HUMAN_MARKERS if line.lower().startswith(m)), "")
+        if hit:
+            marker, claim = hit, line[len(hit):].strip()
+            break
+    if not marker:
+        if not requested_changes:
+            return []
+        claim = next((ln.strip(" *_>#-") for ln in clean.splitlines() if ln.strip()), "")
+
+    title = " ".join(claim.split())[:160].rstrip(".")
+    if len(title) < 8:
+        return []
+
+    blob = (marker + " " + clean).lower()
+    severity = "major" if (requested_changes or marker in
+                           ("security:", "blocker:", "bug:", "must fix", "must-fix:",
+                            "defect:")) else "minor"
+    return [Finding("Reviewer", path, line, title, severity,
+                    _kind(blob, path), clean, url, pr, author=login)]
+
+
 # ------------------------------------------------------- classification ----
 def priority(f: Finding) -> str:
     if f.severity == "critical" or (f.severity == "major" and f.kind == "security"):
@@ -221,7 +396,10 @@ def category(f: Finding) -> str:
         return "Catalog & Metadata"
     if re.search(r"toolkits/.+/(scripts|hooks)/", p):
         return "Toolkit Hooks & Scripts"
-    if re.search(r"scaffold/|\.github/workflows|/ci\.py", p):
+    # `.github/scripts/` belongs here too. Without it every finding on the
+    # tracker itself — the largest single source of them on this repo — fell
+    # through to the default category.
+    if re.search(r"scaffold/|\.github/(workflows|scripts)|/ci\.py", p):
         return "CI & Scaffold"
     if re.search(r"/pr\.py$", p):
         return "PR Reporting"
@@ -233,7 +411,8 @@ def category(f: Finding) -> str:
 
 
 def labels_for(f: Finding) -> list[str]:
-    out = [TRACKING_LABEL, "coderabbit" if f.bot == "CodeRabbit" else "gitar"]
+    src = {"CodeRabbit": "coderabbit", "Gitar": "gitar"}.get(f.bot, "reviewer")
+    out = [TRACKING_LABEL, src]
     out.append("severity:major" if f.severity in ("critical", "major") else "severity:minor")
     if f.kind == "security":
         out.append("security")
@@ -245,12 +424,135 @@ def labels_for(f: Finding) -> list[str]:
 
 
 # ----------------------------------------------------------------- issues ----
+#: Every label this script can apply, with a colour and a description. They are
+#: created up front because `gh issue create --label X` *fails* when X does not
+#: exist — so a new source or a new state would silently file nothing at all
+#: until somebody added the label by hand. `reviewer` and `fix-landed` are both
+#: new, and both would have hit exactly that.
+LABELS = [
+    (TRACKING_LABEL, "5319e7", "Carried from a PR review; outlives the PR"),
+    ("coderabbit", "1f6feb", "Raised by CodeRabbit"),
+    ("gitar", "0e8a16", "Raised by Gitar"),
+    ("reviewer", "fbca04", "Raised by a human reviewer"),
+    (LANDED_LABEL, "c2e0c6", "A candidate fix has landed; needs verifying"),
+    ("severity:major", "d73a4a", "Critical or major"),
+    ("severity:minor", "d4c5f9", "Minor"),
+    ("security", "b60205", "Security or secrets"),
+    ("bug", "d73a4a", "Defect or edge case"),
+    ("documentation", "0075ca", "Prose"),
+    (EPIC_LABEL, "0e8a16", "Gathers every finding in one category"),
+]
+
+_LABELS_READY = False
+
+
+def ensure_labels() -> None:
+    global _LABELS_READY
+    if _LABELS_READY:
+        return
+    _LABELS_READY = True
+    have = {x["name"] for x in api(f"repos/{REPO}/labels?per_page=100", jq=".[]")}
+    for name, colour, desc in LABELS:
+        if name in have:
+            continue
+        if DRY_RUN:
+            print(f"  WOULD CREATE LABEL  {name}")
+            continue
+        run(["gh", "label", "create", name, "--repo", REPO, "--color", colour,
+             "--description", desc], check=False)
+        print(f"  label created: {name}")
+
+
 def find_issue(fp: str) -> dict | None:
     return index().get(fp)
 
 
+def locate(f: "Finding") -> dict | None:
+    """The tracked issue for this finding, by fingerprint or by title.
+
+    The fingerprint is `(path, title)`, and it is exact. It also splits one
+    defect in two whenever a bot reports it both inline — where the payload
+    carries a path — and again in a walkthrough, where it does not.
+
+    So when the exact key misses, fall back to the title, under two conditions
+    that keep the fallback from merging things that are genuinely different:
+
+      exactly one candidate   two issues sharing a title means the title is not
+                              an identity; decline rather than pick one
+      one side has no path    a path on both sides that disagree is two defects
+                              in two files, which the fingerprint is right to
+                              have separated
+    """
+    hit = index().get(f.fingerprint)
+    # A closed issue is normally still the right answer — `record_resolution`
+    # reopens a finding the bots raise again, which is the whole point. But a
+    # duplicate closed by hand is different: that close says "tracked over
+    # there", so honouring the exact key would reopen the copy and leave the
+    # original untouched. Fall through to the title and find the survivor.
+    dup = (hit is not None and hit.get("state") != "open"
+           and any(x["name"] == DUPLICATE_LABEL for x in hit.get("labels", [])))
+    if hit is not None and not dup:
+        return hit
+    cands = {c["number"]: c for c in _ALIAS.get(f.title_key, [])}
+    # A duplicate that has since been closed by hand must not make the title
+    # ambiguous again — it is the same defect, already reconciled, and counting
+    # it would send this finding back to filing a third copy.
+    live = {n: c for n, c in cands.items() if c.get("state") == "open"} or cands
+    if len(live) != 1:
+        return hit
+    cand = next(iter(live.values()))
+    if f.path and issue_path(cand):
+        return hit
+    if cand.get("state") != "open" and dup:
+        return hit          # every candidate is closed too; nothing to redirect to
+    print(f"  matched #{cand['number']} on title "
+          f"({'no path here' if not f.path else 'none recorded there'})")
+    return cand
+
+
+#: What this run did, for the job summary. A workflow whose only output is a
+#: green tick tells a reviewer nothing about whether it found anything.
+TALLY: dict[str, list[str]] = {"created": [], "updated": [], "reopened": []}
+
+
 _INDEX: dict[str, dict] | None = None
 _ALL: list[dict] = []
+#: title_key -> the tracked issues carrying that title, however many. A list,
+#: not a dict entry, because ambiguity is the signal: two issues under one key
+#: means the title does not identify a defect on its own, and `locate` declines.
+_ALIAS: dict[str, list[dict]] = {}
+
+FILE_LINE = re.compile(r"^\*\*File:\*\* `([^`]+)`", re.M)
+
+
+def issue_path(issue: dict) -> str:
+    """The file an existing issue names, or "" if it names none."""
+    m = FILE_LINE.search(issue.get("body") or "")
+    return m.group(1) if m else ""
+
+
+def _already_filed(fp: str) -> int | None:
+    """Has another run filed this fingerprint since our index was built?"""
+    try:
+        rows = api(f"repos/{REPO}/issues?labels={TRACKING_LABEL}&state=all"
+                   f"&per_page=100", jq=".[]")
+    except Exception:  # noqa: BLE001 — a failed check must not block filing
+        return None
+    for it in rows:
+        if it.get("pull_request"):
+            continue
+        if fp in (it.get("body") or ""):
+            remember(it, [fp])
+            return it["number"]
+    return None
+
+
+def canonical_title(issue: dict) -> str:
+    """The finding's own title, with any file-stem prefix `upsert` added removed."""
+    title = issue.get("title") or ""
+    stem = pathlib.Path(issue_path(issue)).name
+    prefix = f"{stem}: " if stem else ""
+    return title[len(prefix):] if prefix and title.startswith(prefix) else title
 
 
 def index() -> dict[str, dict]:
@@ -272,19 +574,53 @@ def index() -> dict[str, dict]:
         for fp in re.findall(rf"{re.escape(MARK)}([0-9a-f]+)", it.get("body") or ""):
             # An open issue wins over a closed one carrying the same marker.
             cur = _INDEX.get(fp)
+            # Two *open* issues under one fingerprint is a duplicate that no
+            # amount of re-running will reconcile: the index keeps one and the
+            # other is never matched again, so it sits on the board forever.
+            # Say so rather than silently picking the first one seen.
+            if cur is not None and cur.get("state") == "open" == it.get("state"):
+                print(f"::warning::#{it['number']} duplicates #{cur['number']} "
+                      f"— same fingerprint {fp}; close one")
             if cur is None or (cur.get("state") != "open" and it.get("state") == "open"):
                 _INDEX[fp] = it
-    print(f"  index: {len(_ALL)} tracked issue(s), {len(_INDEX)} fingerprint(s)")
+        # Derived from the issue's own title rather than a second marker, so
+        # every issue already on the board is covered without editing any of
+        # them. `upsert` truncates a title at 250 characters and `_key` at 60
+        # normalised ones, so the two agree.
+        #
+        # Undo the file-stem prefix first. `upsert` prepends `<basename>: ` to
+        # any title under 25 characters, so hashing what is *displayed* would
+        # key the alias on a string no `Finding.title_key` can ever produce —
+        # the pathless report would find no alias and file a duplicate, which
+        # is the whole failure this index exists to prevent.
+        _ALIAS.setdefault(_key("", canonical_title(it)), []).append(it)
+    print(f"  index: {len(_ALL)} tracked issue(s), {len(_INDEX)} fingerprint(s), "
+          f"{len(_ALIAS)} title(s)")
     return _INDEX
 
 
-def remember(issue: dict, fps: list[str]) -> None:
-    """Keep the in-memory index true after a write, so one run stays consistent."""
+def remember(issue: dict, fps: list[str], canonical: str = "") -> None:
+    """Keep the in-memory index true after a write, so one run stays consistent.
+
+    `fps` are body-backed fingerprints only. A title key must never be written
+    here: for a pathless finding `fingerprint == title_key`, so putting one in
+    the exact index lets a later pathless report resolve straight to whichever
+    pathful issue was remembered last, skipping the ambiguity and path checks
+    `locate` applies for exactly that case. Title keys live in `_ALIAS`, which
+    is the structure that knows how to refuse.
+
+    `canonical` is the finding's own title, before `upsert` prefixed it with a
+    file stem. The alias must be keyed on that, not on what is displayed.
+    """
     idx = index()
     for fp in fps:
         idx[fp] = issue
     if issue not in _ALL:
         _ALL.append(issue)
+        # Without this, one run that files the inline report and then meets the
+        # walkthrough copy creates both — the bug this alias exists to stop.
+        _ALIAS.setdefault(_key("", canonical or issue.get("title") or ""),
+                          []).append(issue)
 
 
 def related(path: str, skip_fp: str) -> list[dict]:
@@ -306,26 +642,53 @@ def related(path: str, skip_fp: str) -> list[dict]:
 
 
 def render(f: Finding, prior: str | None = None) -> str:
-    cite = (f"### {f.bot} — [`{f.path}:{f.line}`]({f.url}) (PR #{f.pr})\n\n"
-            if f.path else f"### {f.bot} — [PR #{f.pr}]({f.url})\n\n")
+    cite = (f"### {f.origin} — [`{f.path}:{f.line}`]({f.url}) (PR #{f.pr})\n\n"
+            if f.path else f"### {f.origin} — [PR #{f.pr}]({f.url})\n\n")
     block = cite + f.body
     if prior:
         # Same defect, second citation (the other bot, or a re-review).
         return prior.rstrip() + "\n\n---\n\n" + block if f.url not in prior else prior
-    head = ("> Carried over from an automated PR review so it survives the PR "
-            "being merged/closed.\n"
-            "> **This issue stays open until the finding is resolved.**\n\n"
+    # The PR is named, not just numbered. The issue outlives the PR, and on a
+    # board of ninety findings a bare `#268` says nothing about what the change
+    # was — which is the first thing anyone triaging needs.
+    origin = f"**Raised on:** #{f.pr}"
+    if f.pr_title:
+        origin += f" — *{f.pr_title}*"
+    if f.path:
+        origin += f"\n**File:** `{f.path}`"
+
+    head = ("> Carried over from a pull-request review so it survives the PR "
+            "being merged or closed.\n"
+            "> **This stays open even after the PR merges.** A resolved thread "
+            "says the reviewers were content, not that the defect is gone — "
+            "verify, then close this yourself.\n\n"
             f"<!-- {MARK}{f.fingerprint} -->\n\n"
-            f"**Origin:** #{f.pr}\n\n")
+            f"{origin}\n\n")
     return head + block
 
 
 def upsert(f: Finding) -> int | None:
-    found = find_issue(f.fingerprint)
+    found = locate(f)
     labels = labels_for(f)
     if found:
         n = found["number"]
         body = render(f, found.get("body") or "")
+        # Reached by title, not by fingerprint: this finding's own key is not in
+        # the body yet. Write it in beside the first, so the next run hits the
+        # index directly — and still hits it if someone edits the title, which
+        # would otherwise take the fallback away and let the duplicate back.
+        # `index` reads every marker in a body, so a second one just works.
+        if f.fingerprint not in body:
+            m = re.search(rf"<!-- {re.escape(MARK)}[0-9a-f]+ -->", body)
+            if m:
+                body = f"{body[:m.end()]}\n<!-- {MARK}{f.fingerprint} -->{body[m.end():]}"
+        if DRY_RUN:
+            changed = "body" if body != (found.get("body") or "") else "nothing"
+            missing = [x for x in labels
+                       if x not in {y["name"] for y in found.get("labels", [])}]
+            print(f"  WOULD UPDATE  #{n} {f.title[:56]} "
+                  f"({changed}; +labels {missing or 'none'})")
+            return n
         if body != (found.get("body") or ""):
             run(["gh", "issue", "edit", str(n), "--repo", REPO, "--body", body])
             found["body"] = body
@@ -342,11 +705,39 @@ def upsert(f: Finding) -> int | None:
                 cmd += ["--add-label", lab]
             run(cmd, check=False)
         print(f"  updated #{n}  {f.title[:60]}")
+        TALLY["updated"].append(f"#{n} {f.title}")
         return n
     # A terse title ("Fail closed when the gate is unavailable") reads as an
     # instruction with no subject; the filename supplies the missing one.
     stem = pathlib.Path(f.path or "").name
-    title = f.title if len(f.title) > 24 else f"{stem}: {f.title}"
+    # `Path("").name` is `""`, so without the `stem and` guard a short title on
+    # a pathless finding was filed as `": the title"` — a stem prefix with no
+    # stem in it.
+    title = f.title if len(f.title) > 24 or not stem else f"{stem}: {f.title}"
+    if DRY_RUN:
+        print(f"  WOULD CREATE  {title[:70]}")
+        print(f"                labels: {', '.join(labels)}")
+        for line in render(f).splitlines()[:9]:
+            print(f"                | {line[:96]}")
+        return None
+    # Last check before the one irreversible act in this file.
+    #
+    # The index is read once at startup, so a run that began before a
+    # concurrent run filed this finding cannot see it — and two runs seconds
+    # apart produced #294/#297 and #306/#309, each pair one defect twice. The
+    # concurrency group serialises what it can, but a sweep and a per-PR run
+    # are keyed differently on purpose and will overlap.
+    #
+    # One REST call, and only on the path that creates. Creations are rare — a
+    # settled repository does none in a whole sweep — so this is close to free,
+    # and it closes the race wherever it comes from rather than only the cases
+    # a concurrency key happens to cover.
+    raced = _already_filed(f.fingerprint)
+    if raced:
+        # `_already_filed` has put it in the index, so this recurses exactly
+        # once and takes the update branch.
+        print(f"  raced #{raced} — filed by a concurrent run; updating instead")
+        return upsert(f)
     cmd = ["gh", "issue", "create", "--repo", REPO, "--title", title[:250],
            "--body", render(f)]
     for lab in labels:
@@ -358,12 +749,13 @@ def upsert(f: Finding) -> int | None:
         return None
     n = int(url.rsplit("/", 1)[1])
     print(f"  created #{n}  {title[:60]}")
+    TALLY["created"].append(f"#{n} {title}")
     sibs = related(f.path, f.fingerprint)
     # Register before cross-linking, so two findings created in one run see each
     # other rather than both being filed as if they were the first.
     remember({"number": n, "title": title, "state": "open",
               "body": render(f), "labels": [{"name": x} for x in labels]},
-             [f.fingerprint])
+             [f.fingerprint], canonical=f.title)
     if sibs:
         lines = "\n".join(f"- #{s['number']} — {s['title']}" for s in sibs[:8])
         note = (f"Other open findings on `{f.path}` — check whether any is this "
@@ -411,15 +803,30 @@ def fix_commit(path: str, since: str, head: str) -> dict | None:
             "msg": (c["commit"]["message"].splitlines() or [""])[0][:100]}
 
 
-def close_resolved(pr: int) -> int:
-    """Close the issues whose review threads the bots have marked resolved."""
+def record_resolution(pr: int, board) -> int:
+    """Note which commit a resolved thread points at. **Never closes the issue.**
+
+    An earlier version closed here, and that is the behaviour this replaces. A
+    resolved review thread and a merged pull request are both statements about
+    the *pull request*, not about the defect: a thread is resolved by whoever
+    clicks the button, and merging says the reviewers were content, neither of
+    which is evidence that the flagged code changed. Twenty-seven findings on
+    this repo were sitting behind exactly that kind of fold.
+
+    So the finding stays open and the board carries the progress instead —
+    `Verification: Fix landed — verify`. A person moves it to *Verified fixed*
+    and closes the issue, which is the one judgement worth a human.
+
+    Issues closed by the previous behaviour are reopened when this passes over
+    them, so the board recovers without anybody going through it by hand.
+    """
     tok = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN") or ""
     data = gql(THREADS_Q, tok, o=OWNER, r=NAME, n=pr)["data"]["repository"]["pullRequest"]
     if not data:
         return 0
     merged, head = data.get("merged"), data.get("headRefOid") or ""
     merge_sha = (data.get("mergeCommit") or {}).get("oid")
-    closed = 0
+    noted = 0
     for th in data["reviewThreads"]["nodes"]:
         if not th.get("isResolved"):
             continue
@@ -428,47 +835,174 @@ def close_resolved(pr: int) -> int:
             continue
         c = cs[0]
         login = (c.get("author") or {}).get("login", "")
-        if not any(b in login for b in BOTS):
-            continue
-        for f in parse(c["body"], th.get("path", ""), None, login, c["url"], pr):
-            issue = find_issue(f.fingerprint)
-            if not issue or issue.get("state") != "open":
+        path = th.get("path", "")
+        findings = (parse(c["body"], path, None, login, c["url"], pr)
+                    if any(b in login for b in BOTS)
+                    else parse_human(c["body"], path, None, login, c["url"], pr,
+                                     requested_changes=True))
+        for f in findings:
+            issue = locate(f)
+            if not issue:
                 continue
-            fc = fix_commit(th.get("path", ""), c["createdAt"], head)
+            n = issue["number"]
+
+            # Undo the old behaviour wherever it reached.
+            if issue.get("state") != "open":
+                run(["gh", "issue", "reopen", str(n), "--repo", REPO], check=False)
+                issue["state"] = "open"
+                print(f"  reopened #{n}  (closed by the previous rule)")
+                TALLY["reopened"].append(f"#{n} {issue.get('title', '')}")
+
+            if LANDED_LABEL in {x["name"] for x in issue.get("labels", [])}:
+                continue
+
+            fc = fix_commit(path, c["createdAt"], head)
             if fc:
                 where = (f"[`{fc['sha'][:8]}`]({fc['url']}) — {fc['msg']}\n\n"
-                         f"That is the most recent change to `{th.get('path')}` after the "
+                         f"That is the most recent change to `{path}` after the "
                          f"finding was raised, on the branch whose thread was resolved.")
             elif merged and merge_sha:
-                where = (f"No commit touched `{th.get('path')}` after the finding was "
-                         f"raised; the thread was resolved and the PR merged as "
+                where = (f"No commit touched `{path}` after the finding was raised; "
+                         f"the thread was resolved and the PR merged as "
                          f"[`{merge_sha[:8]}`](https://github.com/{REPO}/commit/{merge_sha}).")
             else:
                 where = "The review thread was resolved; no fixing commit could be identified."
-            body = (f"Closed automatically: the review thread for this finding was marked "
-                    f"resolved on #{pr}.\n\n**Fixed in:** {where}\n\n"
+            body = (f"The review thread for this finding was marked resolved on "
+                    f"#{pr}{' (merged)' if merged else ''}.\n\n"
+                    f"**Candidate fix:** {where}\n\n"
                     f"Reference: {c['url']}\n\n"
-                    f"If this was resolved without a real fix, reopen — nothing else will.")
-            run(["gh", "issue", "comment", str(issue["number"]), "--repo", REPO,
-                 "--body", body], check=False)
-            run(["gh", "issue", "close", str(issue["number"]), "--repo", REPO,
-                 "--reason", "completed"], check=False)
-            print(f"  closed #{issue['number']}  ({f.title[:50]})")
-            closed += 1
-    return closed
+                    f"**This issue stays open.** A resolved thread and a merged PR "
+                    f"say the reviewers were content, not that the defect is gone. "
+                    f"Verify against the commit above, then move the board card to "
+                    f"*{VERIFICATION[2][0]}* and close this.")
+            run(["gh", "issue", "comment", str(n), "--repo", REPO, "--body", body],
+                check=False)
+            run(["gh", "issue", "edit", str(n), "--repo", REPO,
+                 "--add-label", LANDED_LABEL], check=False)
+            item = board_item(board, n)
+            if item:
+                set_fields(board, item, {"Verification": V_LANDED})
+            issue.setdefault("labels", []).append({"name": LANDED_LABEL})
+            print(f"  fix landed, still open: #{n}  ({f.title[:50]})")
+            noted += 1
+    return noted
 
 
-def wait_for_checks(pr: int, budget: int = 900) -> None:
-    """Hold until every other check on the PR has stopped running."""
-    deadline = time.time() + budget
+def wait_for_checks(pr: int, budget: int = 900, grace: int = 180) -> None:
+    """Hold until the pull request's own pipelines have finished.
+
+    Two phases, because "nothing is pending" means two different things.
+
+    A `synchronize` event reaches this workflow within seconds of the push,
+    often before any other workflow has registered a check. `gh pr checks` then
+    reports nothing pending — not because the pipelines finished but because
+    they have not started — and reading the PR at that moment finds none of the
+    findings the review bots are about to write. The whole pass would run early
+    and file nothing, which looks identical to a PR with no findings.
+
+    So: wait for the pipeline to *appear* (bounded by `grace`, since a PR whose
+    paths trigger no workflow legitimately has no checks at all), and only then
+    wait for it to *finish*.
+    """
+    started = time.time()
+    seen = False
+    deadline = started + budget
     while time.time() < deadline:
         out = run(["gh", "pr", "checks", str(pr), "--repo", REPO], check=False)
-        pending = [x for x in out.splitlines() if "\tpending\t" in x]
+        rows = [x for x in out.splitlines() if "\t" in x]
+        pending = [x for x in rows if "\tpending\t" in x]
+        seen = seen or bool(rows)
         if not pending:
-            return
-        print(f"  waiting on {len(pending)} check(s)…")
-        time.sleep(30)
+            if seen:
+                return
+            if time.time() - started >= grace:
+                print(f"  no checks on #{pr} after {grace}s — nothing to wait for")
+                return
+            print("  no checks registered yet; giving the pipeline time to start")
+        else:
+            print(f"  waiting on {len(pending)} check(s)…")
+        time.sleep(15 if not seen else 30)
     print("::warning::timed out waiting for checks; reconciling anyway")
+
+
+_EPICS: dict[str, int] | None = None
+
+
+def _epic_index() -> dict[str, int]:
+    """Category slug -> the parent issue gathering it."""
+    global _EPICS
+    if _EPICS is not None:
+        return _EPICS
+    _EPICS = {}
+    for it in api(f"repos/{REPO}/issues?labels={EPIC_LABEL}&state=all&per_page=100",
+                  jq=".[]"):
+        if it.get("pull_request"):
+            continue
+        m = re.search(rf"{re.escape(EPIC_MARK)}([a-z0-9-]+)", it.get("body") or "")
+        if m:
+            _EPICS[m.group(1)] = it["number"]
+    return _EPICS
+
+
+def _slug(cat: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", cat.lower()).strip("-")
+
+
+def ensure_epic(cat: str) -> int | None:
+    """The parent issue for a category, created the first time one is needed.
+
+    A hundred and fifty findings in one flat list is a list nobody triages. The
+    axis to group them on already exists — `category()` computes it per finding
+    and the board has carried it as a column all along — so this makes that same
+    answer the issue hierarchy too, rather than inventing a second taxonomy that
+    would immediately disagree with the first.
+    """
+    slug = _slug(cat)
+    idx = _epic_index()
+    if slug in idx:
+        return idx[slug]
+    if DRY_RUN:
+        print(f"    WOULD OPEN epic for {cat}")
+        return None
+    body = (f"<!-- {EPIC_MARK}{slug} -->\n\n"
+            f"Every review finding in **{cat}**, gathered so the category can be "
+            f"triaged as one thing.\n\n"
+            f"Sub-issues are attached automatically when a finding is filed — this "
+            f"issue is generated, so edits to it will not survive.\n\n"
+            f"Closing this does not close its findings, and closing every finding "
+            f"does not close this: each sub-issue stays open until somebody has "
+            f"verified that defect is gone.")
+    out = run(["gh", "issue", "create", "--repo", REPO,
+               "--title", f"Findings — {cat}", "--body", body,
+               "--label", EPIC_LABEL])
+    url = next((x for x in reversed(out.strip().splitlines())
+                if x.startswith("http")), "")
+    if not url:
+        print(f"::warning::could not open an epic for {cat}")
+        return None
+    n = int(url.rsplit("/", 1)[1])
+    idx[slug] = n
+    print(f"  opened epic #{n}  Findings — {cat}")
+    return n
+
+
+def adopt(parent: int | None, child: int) -> None:
+    """Make `child` a sub-issue of `parent`, if it is not already."""
+    if not parent or parent == child or DRY_RUN:
+        return
+    try:
+        kids = api(f"repos/{REPO}/issues/{parent}/sub_issues?per_page=100", jq=".[]")
+        if any(k.get("number") == child for k in kids):
+            return
+        # The REST endpoint takes the child's *database* id, not its number.
+        cid = (api(f"repos/{REPO}/issues/{child}", paginate=False) or {}).get("id")
+        if not cid:
+            return
+        run(["gh", "api", "--method", "POST",
+             f"repos/{REPO}/issues/{parent}/sub_issues", "-F", f"sub_issue_id={cid}"])
+        print(f"    #{child} → sub-issue of #{parent}")
+    except Exception as exc:  # noqa: BLE001 — hierarchy is a convenience, not the record
+        print(f"::warning::could not attach #{child} to #{parent}: {str(exc)[:120]}")
 
 
 # ------------------------------------------------------------------ board ----
@@ -489,8 +1023,21 @@ def ensure_board():
         return None
     nodes = gql('query($l:String!){organization(login:$l){projectsV2(first:100)'
                 '{nodes{id title number}}}}', PROJECT_TOKEN,
-                l=OWNER)["data"]["organization"]["projectsV2"]["nodes"]
-    proj = next((p for p in nodes if p["title"] == PROJECT_TITLE), None)
+                l=PROJECT_OWNER)["data"]["organization"]["projectsV2"]["nodes"]
+    if PROJECT_NUMBER:
+        proj = next((p for p in nodes if p["number"] == PROJECT_NUMBER), None)
+        if not proj:
+            # Deliberately not "create one instead". A new ProjectV2 is assigned
+            # the next free number, so the board this asks for can never be
+            # created on demand — filing onto a different one silently would
+            # scatter findings across two boards.
+            print(f"::error::project #{PROJECT_NUMBER} not found under "
+                  f"{PROJECT_OWNER}. Check PROJECT_NUMBER, and that PROJECTS_TOKEN "
+                  f"has `read:project`/`project` scope for that organisation.")
+            return None
+        print(f"board: {PROJECT_OWNER}/projects/{proj['number']} — {proj['title']}")
+    else:
+        proj = next((p for p in nodes if p["title"] == PROJECT_TITLE), None)
     if not proj:
         oid = gql('query($l:String!){organization(login:$l){id}}',
                   PROJECT_TOKEN, l=OWNER)["data"]["organization"]["id"]
@@ -509,7 +1056,7 @@ def ensure_board():
                  PROJECT_TOKEN, p=proj["id"])["data"]["node"]["fields"]["nodes"]
     have = {f["name"]: f for f in fields if f.get("name")}
     for fname, opts in (("Priority", PRIORITIES), ("Category", CATEGORIES),
-                        ("Source", SOURCES)):
+                        ("Source", SOURCES), ("Verification", VERIFICATION)):
         if fname in have:
             continue
         payload = gql_options(opts)
@@ -519,21 +1066,60 @@ def ensure_board():
                    PROJECT_TOKEN, p=proj["id"], n=fname)
         have[fname] = made["data"]["createProjectV2Field"]["projectV2Field"]
         print(f"  field {fname} created")
+
+    # A field that already exists is not necessarily a field with all its
+    # options. `Source` predates the `Reviewer` value, and a missing option is
+    # silent: `file_on_board` looks the name up, finds nothing, and skips the
+    # field — so every human-raised finding would have landed on the board with
+    # no Source at all and nothing would have said so.
+    for fname, opts in (("Priority", PRIORITIES), ("Category", CATEGORIES),
+                        ("Source", SOURCES), ("Verification", VERIFICATION)):
+        fld = have.get(fname)
+        if not fld:
+            continue
+        present = {o["name"] for o in fld.get("options", [])}
+        wanted = {n for n, _ in opts}
+        if not wanted - present:
+            continue
+        if DRY_RUN:
+            print(f"  WOULD ADD OPTION(S) to {fname}: "
+                  f"{sorted(wanted - present)}")
+            continue
+        # The mutation replaces the option list, so it is sent whole. Existing
+        # options keep their ids only if their names are unchanged, which is why
+        # the declared list must always be a superset rather than a rewrite.
+        merged = [(n, c) for n, c in opts]
+        for name in sorted(present - wanted):
+            merged.append((name, "GRAY"))
+        updated = gql(
+            'mutation($f:ID!){updateProjectV2Field(input:{fieldId:$f,'
+            'singleSelectOptions:' + gql_options(merged) + '}){projectV2Field{'
+            '... on ProjectV2SingleSelectField{id name options{id name}}}}}',
+            PROJECT_TOKEN, f=fld["id"])
+        have[fname] = updated["data"]["updateProjectV2Field"]["projectV2Field"]
+        print(f"  field {fname}: options reconciled")
     return proj["id"], have
 
 
-def file_on_board(board, issue_no: int, f: Finding, both: bool) -> None:
+def board_item(board, issue_no: int) -> str | None:
+    """This issue's item on the board, adding it if it is not there yet.
+
+    `addProjectV2ItemById` is idempotent and returns the existing item for an
+    issue already on the board, so this is also how an update finds one.
+    """
     if not board or not issue_no:
-        return
-    pid, fields = board
+        return None
+    pid, _ = board
     nid = gql('query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r)'
               '{issue(number:$n){id}}}', PROJECT_TOKEN, o=OWNER, r=NAME,
               n=issue_no)["data"]["repository"]["issue"]["id"]
-    item = gql('mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,'
+    return gql('mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,'
                'contentId:$c}){item{id}}}', PROJECT_TOKEN, p=pid,
                c=nid)["data"]["addProjectV2ItemById"]["item"]["id"]
-    want = {"Priority": priority(f), "Category": category(f),
-            "Source": "Both bots" if both else f.bot}
+
+
+def set_fields(board, item: str, want: dict[str, str]) -> None:
+    pid, fields = board
     for fname, oname in want.items():
         fld = fields.get(fname)
         opt = next((o for o in (fld or {}).get("options", []) if o["name"] == oname), None)
@@ -542,31 +1128,163 @@ def file_on_board(board, issue_no: int, f: Finding, both: bool) -> None:
         gql('mutation($p:ID!,$i:ID!,$f:ID!,$o:String!){updateProjectV2ItemFieldValue('
             'input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$o}})'
             '{projectV2Item{id}}}', PROJECT_TOKEN, p=pid, i=item, f=fld["id"], o=opt["id"])
+
+
+def file_on_board(board, issue_no: int, f: Finding, both: bool,
+                  landed: bool = False) -> None:
+    # `board_item` creates the card and `set_fields` writes to it — both are
+    # ProjectV2 mutations, so the check belongs here, before either. An earlier
+    # version of this file gated only issue *creation* and a dry run still
+    # edited every body; the same mistake reached the board through this path.
+    if DRY_RUN:
+        print(f"    WOULD FILE  #{issue_no} on the board — "
+              f"{priority(f)} / {category(f)} / "
+              f"{'Both bots' if both else f.bot}")
+        return
+    item = board_item(board, issue_no)
+    if not item:
+        return
+    want = {"Priority": priority(f), "Category": category(f),
+            "Source": "Both bots" if both else f.bot}
+    # Verification is only ever *initialised* here. Re-running over a PR must
+    # not reset a finding somebody has already moved to "Verified fixed" back to
+    # unfixed — the board is where a human records that judgement, and a nightly
+    # sweep that overwrote it would make the column worthless.
+    if not field_value(item, "Verification"):
+        # A finding can carry `fix-landed` from long before the board could be
+        # written to. Its first card would otherwise open at "Open — unfixed",
+        # contradicting its own label and hiding the one state a person still
+        # has to act on.
+        want["Verification"] = V_LANDED if landed else V_OPEN
+    set_fields(board, item, want)
     print(f"    board: {want['Priority']} / {want['Category']} / {want['Source']}")
+
+
+def field_value(item: str, name: str) -> str:
+    """The current value of one single-select field on a board item."""
+    try:
+        nodes = gql(
+            'query($i:ID!){node(id:$i){... on ProjectV2Item{fieldValues(first:20){nodes{'
+            '... on ProjectV2ItemFieldSingleSelectValue{name field{... on '
+            'ProjectV2FieldCommon{name}}}}}}}}',
+            PROJECT_TOKEN, i=item)["data"]["node"]["fieldValues"]["nodes"]
+    except Exception:  # noqa: BLE001 — an unreadable board must not stop tracking
+        return ""
+    for n in nodes:
+        if (n or {}).get("field", {}).get("name") == name:
+            return n.get("name") or ""
+    return ""
+
+
+# --------------------------------------------------------------- backfill ----
+#: Rebuild a Finding well enough to classify it, from an issue that already
+#: exists. Only the three fields `priority()` and `category()` actually read —
+#: severity, kind and path — so nothing here pretends to reconstruct the rest.
+_KIND_LABEL = {"security": "security", "bug": "bug", "documentation": "docs"}
+_FILE_LINE = re.compile(r"^\*\*File:\*\*\s*`([^`]+)`", re.M)
+_ORIGIN_LINE = re.compile(r"^\*\*(?:Raised on|Origin):\*\*\s*#(\d+)", re.M)
+
+
+def backfill_board(board) -> int:
+    """Put every tracked issue on the board, not only the ones a run re-reads.
+
+    `file_on_board` runs inside `track`, so it only ever sees findings still
+    reachable from an open pull request. A finding whose PR was merged months
+    ago stays in the repository and never reaches the board — which is the
+    opposite of the point, since outliving the PR is the whole reason it exists.
+
+    Thirty of a hundred and thirty-two were in exactly that position.
+    """
+    # The board needs a token; the hierarchy does not. Run for either.
+    index()          # populates _ALL
+    added = 0
+    for it in _ALL:
+        if it.get("state") != "open":
+            continue
+        body = it.get("body") or ""
+        labels = {x["name"] for x in it.get("labels", [])}
+        kind = next((v for k, v in _KIND_LABEL.items() if k in labels), "quality")
+        m = _FILE_LINE.search(body)
+        pr = _ORIGIN_LINE.search(body)
+        bot = ("CodeRabbit" if "coderabbit" in labels
+               else "Gitar" if "gitar" in labels else "Reviewer")
+        stub = Finding(
+            bot=bot, path=m.group(1) if m else "", line=None,
+            title=it.get("title", ""),
+            severity="major" if "severity:major" in labels else "minor",
+            kind=kind, body="", url=it.get("html_url", ""),
+            pr=int(pr.group(1)) if pr else 0)
+        try:
+            if board:
+                file_on_board(board, it["number"], stub, both=False,
+                              landed=LANDED_LABEL in labels)
+            # The same pass that puts a finding on the board files it under its
+            # parent. Both answers come from `category(stub)`, so a backfilled
+            # issue cannot end up in one category on the board and another in
+            # the hierarchy.
+            adopt(ensure_epic(category(stub)), it["number"])
+            added += 1
+        except Exception as exc:  # noqa: BLE001 — one bad card must not stop the rest
+            print(f"::warning::#{it['number']} not filed on the board: {exc}")
+    return added
 
 
 # ------------------------------------------------------------------- main ----
 def collect(pr: int) -> list[Finding]:
+    """Every finding raised on this PR, by anyone.
+
+    Inline comments carry the id of the review they belong to, so a human
+    comment can be judged against that review's state: one inside a
+    CHANGES_REQUESTED review is a finding without needing a marker word.
+    """
+    reviews = {r["id"]: (r.get("state") or "")
+               for r in api(f"repos/{REPO}/pulls/{pr}/reviews?per_page=100", jq=".[]")}
+    title = str((api(f"repos/{REPO}/pulls/{pr}", paginate=False) or {}).get("title") or "")
     out: list[Finding] = []
+
     for c in api(f"repos/{REPO}/pulls/{pr}/comments?per_page=100", jq=".[]"):
-        if any(b in c["user"]["login"] for b in BOTS):
-            out += parse(c["body"], c.get("path", ""),
-                         c.get("line") or c.get("original_line"),
-                         c["user"]["login"], c["html_url"], pr)
+        login = c["user"]["login"]
+        args = (c.get("path", ""), c.get("line") or c.get("original_line"),
+                login, c["html_url"], pr)
+        if any(b in login for b in BOTS):
+            out += parse(c["body"], *args)
+        else:
+            out += parse_human(
+                c["body"], *args,
+                requested_changes=reviews.get(c.get("pull_request_review_id"))
+                == "CHANGES_REQUESTED")
+
+    # A review's own body — the summary a reviewer writes above the inline
+    # comments — is not in the comments endpoint and is where a blocker is most
+    # often stated.
+    for r in api(f"repos/{REPO}/pulls/{pr}/reviews?per_page=100", jq=".[]"):
+        login = (r.get("user") or {}).get("login", "")
+        if not (r.get("body") or "").strip() or any(b in login for b in BOTS):
+            continue
+        out += parse_human(r["body"], "", None, login, r.get("html_url", ""), pr,
+                           requested_changes=r.get("state") == "CHANGES_REQUESTED")
+
     for c in api(f"repos/{REPO}/issues/{pr}/comments?per_page=100", jq=".[]"):
-        if any(b in c["user"]["login"] for b in BOTS):
-            out += parse(c["body"], "", None, c["user"]["login"], c["html_url"], pr)
+        login = c["user"]["login"]
+        if any(b in login for b in BOTS):
+            out += parse(c["body"], "", None, login, c["html_url"], pr)
+        else:
+            out += parse_human(c["body"], "", None, login, c["html_url"], pr)
+    for f in out:
+        f.pr_title = title
     return out
 
 
-def track(findings: list[Finding]) -> None:
+def track(findings: list[Finding], board=None) -> None:
     if not findings:
         print("no findings to track")
         return
+    ensure_labels()
     groups: dict[str, list[Finding]] = {}
     for f in findings:
         groups.setdefault(f.fingerprint, []).append(f)
-    board = ensure_board()
+    if board is None:
+        board = ensure_board()
     print(f"{len(groups)} distinct finding(s)")
     rank = {"critical": 0, "major": 1, "minor": 2}
     for fs in groups.values():
@@ -576,6 +1294,16 @@ def track(findings: list[Finding]) -> None:
         for f in fs:
             n = upsert(f) or n
         file_on_board(board, n, lead, both)
+        # Same answer as the board's Category column, made structural.
+        if n:
+            adopt(ensure_epic(category(lead)), n)
+
+
+#: `pull_request_target` carries the same payload as `pull_request` — the
+#: workflow uses it so that every PR runs the default branch's copy of this
+#: script rather than whatever its own branch happens to hold. Both names
+#: mean "a pull request moved"; nothing downstream distinguishes them.
+PR_EVENTS = ("pull_request", "pull_request_target")
 
 
 def prs_from_event(ev: dict, name: str) -> list[int]:
@@ -590,7 +1318,7 @@ def prs_from_event(ev: dict, name: str) -> list[int]:
             return [p["number"] for p in res if p.get("state") == "open"] or \
                    [p["number"] for p in res]
         return []
-    if name == "pull_request":
+    if name in PR_EVENTS:
         return [ev.get("pull_request", {}).get("number")]
     return []
 
@@ -604,24 +1332,25 @@ def main() -> int:
 
     # A single new comment: track it immediately, so a finding is never lost
     # even if the reconcile pass never runs.
-    if name in ("pull_request_review_comment", "issue_comment"):
-        c = ev.get("comment", {})
+    if name in ("pull_request_review_comment", "issue_comment", "pull_request_review"):
+        c = ev.get("comment") or ev.get("review") or {}
         login = c.get("user", {}).get("login", "")
-        if not any(b in login for b in BOTS):
-            print(f"not a tracked bot ({login})")
-            return 0
         if name == "issue_comment" and not (ev.get("issue") or {}).get("pull_request"):
             print("comment is on an issue, not a PR")
             return 0
         pr = (ev.get("pull_request") or ev.get("issue") or {}).get("number")
-        track(parse(c.get("body", ""), c.get("path", ""),
-                    c.get("line") or c.get("original_line"),
-                    login, c.get("html_url", ""), pr))
+        args = (c.get("path", ""), c.get("line") or c.get("original_line"),
+                login, c.get("html_url", ""), pr)
+        if any(b in login for b in BOTS):
+            track(parse(c.get("body", ""), *args))
+        else:
+            track(parse_human(c.get("body", ""), *args,
+                              requested_changes=c.get("state") == "changes_requested"))
         return 0
 
     # Reconcile: every other pipeline has finished. File what is new, close
     # what the bots have since marked resolved.
-    if name in ("workflow_run", "pull_request"):
+    if name in ("workflow_run", *PR_EVENTS):
         prs = [n for n in prs_from_event(ev, name) if n]
     else:
         target = os.environ.get("PR", "").strip()
@@ -636,19 +1365,79 @@ def main() -> int:
         print("no pull request in scope")
         return 0
     print(f"reconciling {len(prs)} PR(s): {prs}")
+    # Resolved once for the whole run: `ensure_board` costs several GraphQL
+    # round trips and the answer cannot change between two PRs in one pass.
+    board = ensure_board()
+    failed = 0
     for pr in prs:
         print(f"— PR #{pr}")
-        if name in ("workflow_run", "pull_request"):
-            wait_for_checks(pr)
-        track(collect(pr))
-        n = close_resolved(pr)
-        print(f"  {n} issue(s) closed as fixed")
+        # A sweep reads 48 pull requests. Letting one failure end the pass means
+        # a single blink leaves 46 unread — which is how a nightly job quietly
+        # stops doing its job. Report it, carry on, and fail the run at the end
+        # so the red tick still says something went wrong.
+        try:
+            if name in PR_EVENTS and (ev.get("action") != "closed"):
+                wait_for_checks(pr)
+            track(collect(pr), board)
+            n = record_resolution(pr, board)
+            print(f"  {n} finding(s) with a fix landed — all still open")
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            print(f"::warning::PR #{pr} skipped: {str(exc)[:200]}")
+
+    # Findings whose pull request is long closed are never re-read by the loop
+    # above, so they sit in the repository and never reach the board — the exact
+    # opposite of the point, since outliving the PR is why they exist.
+    if os.environ.get("BOT_FINDINGS_BACKFILL_BOARD"):
+        print(f"backfilled {backfill_board(board)} tracked issue(s) onto the board")
+    if failed:
+        print(f"::error::{failed} of {len(prs)} pull request(s) could not be read")
+        return 1
     return 0
+
+
+def write_summary() -> None:
+    """Say what happened, on the run's own page.
+
+    A tracker whose only output is a green tick is indistinguishable from one
+    that ran early and read an empty pull request — which is the failure
+    `wait_for_checks` exists to prevent, and the one nobody would notice.
+    """
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    n = {k: len(v) for k, v in TALLY.items()}
+    lines = ["## Review findings", ""]
+    if not any(n.values()):
+        lines.append("No findings on this pull request — nothing filed.")
+    else:
+        lines += ["| | |", "|---|--:|",
+                  f"| issues filed | {n['created']} |",
+                  f"| issues updated | {n['updated']} |",
+                  f"| reopened | {n['reopened']} |", ""]
+        for label, key in (("Filed", "created"), ("Reopened", "reopened")):
+            if TALLY[key]:
+                lines.append(f"**{label}**")
+                lines += [f"- {x}" for x in TALLY[key][:25]]
+                lines.append("")
+    if not PROJECT_TOKEN:
+        lines.append("> `PROJECTS_TOKEN` is not set, so the issues were filed "
+                     "and labelled but not added to the board.")
+    lines.append("")
+    lines.append("These issues stay open after the pull request merges. "
+                 "Close one when you have verified the defect is gone.")
+    # Append. `$GITHUB_STEP_SUMMARY` is one file shared by every step in the
+    # job, and `write_text` would drop whatever ran before this — the summary
+    # is additive by contract, not a slot one step owns.
+    with pathlib.Path(path).open("a", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        code = main()
+        write_summary()
+        sys.exit(code)
     except Exception as e:                                    # noqa: BLE001
         print(f"::error::{e}")
         sys.exit(1)
