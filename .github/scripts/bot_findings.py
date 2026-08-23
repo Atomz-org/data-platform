@@ -103,6 +103,8 @@ MARK = "bot-finding:"
 #: index is built from the issues endpoint, which returns labels and not
 #: comments, so a marker buried in a comment would never be seen again.
 LANDED_LABEL = "fix-landed"
+#: Set by hand when one defect was filed twice; see `locate`.
+DUPLICATE_LABEL = "duplicate"
 
 PRIORITIES = [("P0 — Critical", "RED"), ("P1 — High", "ORANGE"),
               ("P2 — Medium", "YELLOW"), ("P3 — Low", "GRAY")]
@@ -195,8 +197,30 @@ class Finding:
 
     @property
     def fingerprint(self) -> str:
-        norm = re.sub(r"[^a-z0-9]+", "-", self.title.lower()).strip("-")[:60]
-        return hashlib.sha256(f"{self.path}|{norm}".encode()).hexdigest()[:16]
+        return _key(self.path, self.title)
+
+    @property
+    def title_key(self) -> str:
+        """The same finding, stated without a file.
+
+        A bot reports one defect twice on the same PR: inline on the line, where
+        the payload carries `path`, and again in its walkthrough, where it does
+        not. `path` is half the fingerprint, so `""|title` and `chain.py|title`
+        hash apart and the board grows two issues for one defect — #298/#300 and
+        #299/#301 arrived exactly that way.
+
+        Matching on title alone would be the wrong cure: the same sentence about
+        two different files is two defects, which is why `path` is in the
+        fingerprint at all. So this is a fallback, and `locate` only trusts it
+        when one side has no path to contradict the other and exactly one
+        candidate answers.
+        """
+        return _key("", self.title)
+
+
+def _key(path: str, title: str) -> str:
+    norm = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
+    return hashlib.sha256(f"{path}|{norm}".encode()).hexdigest()[:16]
 
 
 CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_", re.M)
@@ -413,8 +437,63 @@ def find_issue(fp: str) -> dict | None:
     return index().get(fp)
 
 
+def locate(f: "Finding") -> dict | None:
+    """The tracked issue for this finding, by fingerprint or by title.
+
+    The fingerprint is `(path, title)`, and it is exact. It also splits one
+    defect in two whenever a bot reports it both inline — where the payload
+    carries a path — and again in a walkthrough, where it does not.
+
+    So when the exact key misses, fall back to the title, under two conditions
+    that keep the fallback from merging things that are genuinely different:
+
+      exactly one candidate   two issues sharing a title means the title is not
+                              an identity; decline rather than pick one
+      one side has no path    a path on both sides that disagree is two defects
+                              in two files, which the fingerprint is right to
+                              have separated
+    """
+    hit = index().get(f.fingerprint)
+    # A closed issue is normally still the right answer — `record_resolution`
+    # reopens a finding the bots raise again, which is the whole point. But a
+    # duplicate closed by hand is different: that close says "tracked over
+    # there", so honouring the exact key would reopen the copy and leave the
+    # original untouched. Fall through to the title and find the survivor.
+    dup = (hit is not None and hit.get("state") != "open"
+           and any(x["name"] == DUPLICATE_LABEL for x in hit.get("labels", [])))
+    if hit is not None and not dup:
+        return hit
+    cands = {c["number"]: c for c in _ALIAS.get(f.title_key, [])}
+    # A duplicate that has since been closed by hand must not make the title
+    # ambiguous again — it is the same defect, already reconciled, and counting
+    # it would send this finding back to filing a third copy.
+    live = {n: c for n, c in cands.items() if c.get("state") == "open"} or cands
+    if len(live) != 1:
+        return hit
+    cand = next(iter(live.values()))
+    if f.path and issue_path(cand):
+        return hit
+    if cand.get("state") != "open" and dup:
+        return hit          # every candidate is closed too; nothing to redirect to
+    print(f"  matched #{cand['number']} on title "
+          f"({'no path here' if not f.path else 'none recorded there'})")
+    return cand
+
+
 _INDEX: dict[str, dict] | None = None
 _ALL: list[dict] = []
+#: title_key -> the tracked issues carrying that title, however many. A list,
+#: not a dict entry, because ambiguity is the signal: two issues under one key
+#: means the title does not identify a defect on its own, and `locate` declines.
+_ALIAS: dict[str, list[dict]] = {}
+
+FILE_LINE = re.compile(r"^\*\*File:\*\* `([^`]+)`", re.M)
+
+
+def issue_path(issue: dict) -> str:
+    """The file an existing issue names, or "" if it names none."""
+    m = FILE_LINE.search(issue.get("body") or "")
+    return m.group(1) if m else ""
 
 
 def index() -> dict[str, dict]:
@@ -436,9 +515,22 @@ def index() -> dict[str, dict]:
         for fp in re.findall(rf"{re.escape(MARK)}([0-9a-f]+)", it.get("body") or ""):
             # An open issue wins over a closed one carrying the same marker.
             cur = _INDEX.get(fp)
+            # Two *open* issues under one fingerprint is a duplicate that no
+            # amount of re-running will reconcile: the index keeps one and the
+            # other is never matched again, so it sits on the board forever.
+            # Say so rather than silently picking the first one seen.
+            if cur is not None and cur.get("state") == "open" == it.get("state"):
+                print(f"::warning::#{it['number']} duplicates #{cur['number']} "
+                      f"— same fingerprint {fp}; close one")
             if cur is None or (cur.get("state") != "open" and it.get("state") == "open"):
                 _INDEX[fp] = it
-    print(f"  index: {len(_ALL)} tracked issue(s), {len(_INDEX)} fingerprint(s)")
+        # Derived from the issue's own title rather than a second marker, so
+        # every issue already on the board is covered without editing any of
+        # them. `upsert` truncates a title at 250 characters and `_key` at 60
+        # normalised ones, so the two agree.
+        _ALIAS.setdefault(_key("", it.get("title") or ""), []).append(it)
+    print(f"  index: {len(_ALL)} tracked issue(s), {len(_INDEX)} fingerprint(s), "
+          f"{len(_ALIAS)} title(s)")
     return _INDEX
 
 
@@ -449,6 +541,9 @@ def remember(issue: dict, fps: list[str]) -> None:
         idx[fp] = issue
     if issue not in _ALL:
         _ALL.append(issue)
+        # Without this, one run that files the inline report and then meets the
+        # walkthrough copy creates both — the bug this alias exists to stop.
+        _ALIAS.setdefault(_key("", issue.get("title") or ""), []).append(issue)
 
 
 def related(path: str, skip_fp: str) -> list[dict]:
@@ -496,11 +591,20 @@ def render(f: Finding, prior: str | None = None) -> str:
 
 
 def upsert(f: Finding) -> int | None:
-    found = find_issue(f.fingerprint)
+    found = locate(f)
     labels = labels_for(f)
     if found:
         n = found["number"]
         body = render(f, found.get("body") or "")
+        # Reached by title, not by fingerprint: this finding's own key is not in
+        # the body yet. Write it in beside the first, so the next run hits the
+        # index directly — and still hits it if someone edits the title, which
+        # would otherwise take the fallback away and let the duplicate back.
+        # `index` reads every marker in a body, so a second one just works.
+        if f.fingerprint not in body:
+            m = re.search(rf"<!-- {re.escape(MARK)}[0-9a-f]+ -->", body)
+            if m:
+                body = f"{body[:m.end()]}\n<!-- {MARK}{f.fingerprint} -->{body[m.end():]}"
         if DRY_RUN:
             changed = "body" if body != (found.get("body") or "") else "nothing"
             missing = [x for x in labels
@@ -511,7 +615,7 @@ def upsert(f: Finding) -> int | None:
         if body != (found.get("body") or ""):
             run(["gh", "issue", "edit", str(n), "--repo", REPO, "--body", body])
             found["body"] = body
-        remember(found, [f.fingerprint])
+        remember(found, [f.fingerprint, f.title_key])
         have = {x["name"] for x in found.get("labels", [])}
         add = [x for x in labels if x not in have]
         # A finding re-reported harder must not stay labelled minor.
@@ -551,7 +655,7 @@ def upsert(f: Finding) -> int | None:
     # other rather than both being filed as if they were the first.
     remember({"number": n, "title": title, "state": "open",
               "body": render(f), "labels": [{"name": x} for x in labels]},
-             [f.fingerprint])
+             [f.fingerprint, f.title_key])
     if sibs:
         lines = "\n".join(f"- #{s['number']} — {s['title']}" for s in sibs[:8])
         note = (f"Other open findings on `{f.path}` — check whether any is this "
@@ -637,7 +741,7 @@ def record_resolution(pr: int, board) -> int:
                     else parse_human(c["body"], path, None, login, c["url"], pr,
                                      requested_changes=True))
         for f in findings:
-            issue = find_issue(f.fingerprint)
+            issue = locate(f)
             if not issue:
                 continue
             n = issue["number"]

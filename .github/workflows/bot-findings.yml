@@ -81,12 +81,21 @@ on:
         required: false
         default: false
 
-# Several events on one PR would otherwise race to create the same issue.
-# Serialise per PR; the fingerprint makes a late run a no-op rather than a
-# duplicate. `cancel-in-progress: false` because a cancelled run leaves the
-# board half-written, and the work is cheap.
+# Several events on one PR would otherwise race to create the same issue, so
+# runs are serialised: per PR for the PR-shaped events, and — because a sweep
+# reads every PR and therefore collides with any other sweep — under one shared
+# key for `schedule` and `workflow_dispatch`. Those used to fall through to
+# `run_id`, which is unique per run and so serialised nothing; that is how #294
+# and #297 became two copies of one finding.
+#
+# The fingerprint still makes a late run a no-op rather than a duplicate.
+# `cancel-in-progress: false` because a cancelled run leaves the board
+# half-written, and the work is cheap.
 concurrency:
-  group: bot-findings-${{ github.event.pull_request.number || github.event.issue.number || github.run_id }}
+  group: >-
+    bot-findings-${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+      && 'sweep'
+      || (github.event.pull_request.number || github.event.issue.number || github.run_id) }}
   cancel-in-progress: false
 
 permissions:
