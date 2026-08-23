@@ -50,6 +50,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from pf.capabilities import Capability
+from pf.features import Feature
 
 Scope = Literal["project", "group"]
 
@@ -220,6 +221,18 @@ class Tool:
     #: Row for the UI's stack table, so a tool appears in the layer view without
     #: `ui/app.py` growing a hardcoded entry per tool.
     stack_layer: dict[str, Any] = field(default_factory=dict)
+
+    #: What this tool adds to a project's architecture map. Usually empty: the
+    #: map derives a feature from `capability.files` and `dbt.artefacts`, and
+    #: contributes a row only for territory no existing feature claims. Declare
+    #: one to give it a real title, a lane, or a graph `count_kind`.
+    #:
+    #: This is the seam that keeps `pf arch --check` honest for a tool installed
+    #: from outside this repo. Without it a tool writing `elementary/` into a
+    #: project would make every project report an unmapped directory, fixable
+    #: only by patching platform code — which is precisely what a `pf.tools`
+    #: entry point exists to avoid.
+    features: tuple[Feature, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.name.replace("-", "_").isidentifier():

@@ -25,12 +25,14 @@ uv run pf status                   # every group and project
 | Command | What it does |
 |---|---|
 | `pf new-group <g> --domain b2b_saas` | New company group (ontology instance, shared dbt package) |
+| `pf new-project <g> <p> --plan` | Resolve a scaffold and write nothing — **run this first** ([docs](docs/SCAFFOLDING.md)) |
 | `pf new-project <g> <p>` | New entity inside a group |
 | `pf new-project <g> <g>-rollup --rollup --sisters a,b` | Cross-entity roll-up project |
 | `pf work <g> <p>` | Launch Claude scoped to exactly one project |
 | `pf seed <g> <p>` | dlt → DuckDB → annotations → monitors → dbt → graph → card |
 | `pf run-all <g>` | Every sister in parallel, then the roll-up |
 | `pf impact <g> <p> <node>` | Blast radius. Exits 1 on breaking. **The merge gate.** |
+| `pf arch <g> <p>` | Per-project architecture map — every feature, present or not ([docs](docs/ARCHITECTURE-MAPS.md)) |
 | `pf check` | Ontology conformance across every project |
 | `pf tokens` | Always-on token budget; fails if a card is over |
 | `pf kg build/card/search/neighbors` | Knowledge graph operations |
@@ -48,7 +50,10 @@ uv run pf status                   # every group and project
 | `groups/<g>/ontology/instance.yaml` | CI, engine pins, extension set |
 
 Adding a sister company is `pf new-project`, sources and models. Upgrading dbt for
-every entity is one line in `pyproject.toml`.
+every entity is one line in `pyproject.toml`. Plan the scaffold before applying
+it — `--plan` resolves the capability set, the gate rules and the CI jobs without
+writing, and refuses on the two mistakes that actually happen: a group that does
+not exist, and a directory already taken. See [docs/SCAFFOLDING.md](docs/SCAFFOLDING.md).
 
 ## The three mechanisms that make it work
 
@@ -59,7 +64,10 @@ on an unannotated or non-conforming source.
 
 **Knowledge graph → retrieval, not grep.** `kg_search` / `kg_neighbors` / `kg_path`
 let an agent route before it reads. The generated context card (~390 tokens) is the
-always-in-context index; the full graph is queried on demand.
+always-in-context index; the full graph is queried on demand. `kg/architecture.md`
+(~2,000 tokens, on demand) is the map of how one project is *built* — every
+feature it has and every feature it lacks, generated from a registry so a feature
+cannot be quietly left out. See [docs/ARCHITECTURE-MAPS.md](docs/ARCHITECTURE-MAPS.md).
 
 **Impact analysis → safety.** `pf impact` walks the graph downstream and names
 every model, metric, dimension and exposure affected — plus the exposure owner.

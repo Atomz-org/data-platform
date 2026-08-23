@@ -428,6 +428,31 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dbt wiring", "ok", "; ".join(changed))
 
 
+def _render_architecture(root: Path, group: str, project: str) -> StepResult:
+    """The on-demand map of this project — every feature, present or not.
+
+    Runs near the end deliberately: it reports on the CI workflow, the Dagster
+    registration and the dbt targets that earlier steps create, so running it
+    first would draw a project as missing three things it acquired seconds later.
+
+    Unmapped entries are reported but do not fail the step. A directory the
+    feature registry does not know about is a gap in `pf.architecture.FEATURES`,
+    which is platform code — failing eight projects' bootstrap for one missing
+    registry entry blames the wrong person. `pf arch --check` fails on it, in CI,
+    where the platform is what is being changed.
+    """
+    from pf.architecture import ARCHITECTURE_BUDGET, write
+    from pf.kg.card import estimate_tokens
+
+    path, a = write(root, group, project)
+    n = estimate_tokens(path.read_text())
+    status: Status = "ok" if n <= ARCHITECTURE_BUDGET else "failed"
+    detail = f"~{n} tokens / {ARCHITECTURE_BUDGET}, {len(a.gaps)} gap(s)"
+    if a.unmapped:
+        detail += f" · {len(a.unmapped)} unmapped: {', '.join(a.unmapped[:3])}"
+    return StepResult("architecture map", status, detail)
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
 
@@ -469,6 +494,9 @@ STEPS: list[Step] = [
     Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
                        "compile its macros, and one with no base target cannot "
                        "be diffed", _dbt_wiring),
+    Step("architecture map", "every feature of this project, present or absent, "
+                             "so an agent routes instead of reading the tree",
+         _render_architecture),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 
