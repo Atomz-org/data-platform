@@ -757,6 +757,38 @@ def ensure_board():
                    PROJECT_TOKEN, p=proj["id"], n=fname)
         have[fname] = made["data"]["createProjectV2Field"]["projectV2Field"]
         print(f"  field {fname} created")
+
+    # A field that already exists is not necessarily a field with all its
+    # options. `Source` predates the `Reviewer` value, and a missing option is
+    # silent: `file_on_board` looks the name up, finds nothing, and skips the
+    # field — so every human-raised finding would have landed on the board with
+    # no Source at all and nothing would have said so.
+    for fname, opts in (("Priority", PRIORITIES), ("Category", CATEGORIES),
+                        ("Source", SOURCES), ("Verification", VERIFICATION)):
+        fld = have.get(fname)
+        if not fld:
+            continue
+        present = {o["name"] for o in fld.get("options", [])}
+        wanted = {n for n, _ in opts}
+        if not wanted - present:
+            continue
+        if DRY_RUN:
+            print(f"  WOULD ADD OPTION(S) to {fname}: "
+                  f"{sorted(wanted - present)}")
+            continue
+        # The mutation replaces the option list, so it is sent whole. Existing
+        # options keep their ids only if their names are unchanged, which is why
+        # the declared list must always be a superset rather than a rewrite.
+        merged = [(n, c) for n, c in opts]
+        for name in sorted(present - wanted):
+            merged.append((name, "GRAY"))
+        updated = gql(
+            'mutation($f:ID!){updateProjectV2Field(input:{fieldId:$f,'
+            'singleSelectOptions:' + gql_options(merged) + '}){projectV2Field{'
+            '... on ProjectV2SingleSelectField{id name options{id name}}}}}',
+            PROJECT_TOKEN, f=fld["id"])
+        have[fname] = updated["data"]["updateProjectV2Field"]["projectV2Field"]
+        print(f"  field {fname}: options reconciled")
     return proj["id"], have
 
 
