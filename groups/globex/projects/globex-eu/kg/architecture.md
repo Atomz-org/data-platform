@@ -135,6 +135,8 @@ flowchart TB
 | tool overrides | — | `tools.yaml` | opt out of a group tool or retune one; merged over the group's — `pf tool enable` |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
 
+**Capabilities:** `evidence`, `github`, `openmetadata`, `recce`, `snowflake`, `wren`
+
 **Tools enabled:** `openmetadata`, `recce`, `wren`
 
 ## Gaps
