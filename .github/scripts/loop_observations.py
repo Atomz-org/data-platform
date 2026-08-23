@@ -23,6 +23,16 @@ Labels: `loop-observation` (tracking) + `loop:<name>` per loop.
 Run inside Actions (`loop-observations.yml`) or locally with `gh` logged in:
 
     python .github/scripts/loop_observations.py
+
+Developing it needs neither gh nor a token:
+
+    python .github/scripts/loop_observations.py --dry-run
+
+reads the real ledger and prints exactly what would be filed, updated and
+closed. Every gh/GraphQL call goes through `GH`/`bf.gql`, so the tests
+(platform/tests/test_observations.py) inject fakes and assert on the calls;
+`latest_observations(root)` takes the repo root, so a test feeds it a
+temporary ledger rather than this repository's.
 """
 
 from __future__ import annotations
@@ -37,6 +47,9 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import bot_findings as bf  # noqa: E402 — shared gh/gql helpers, same directory
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+#: Every gh CLI call goes through this seam. Tests replace it; --dry-run
+#: replaces it with a printer that answers reads with "nothing yet".
+GH = bf.run
 TRACKING_LABEL = "loop-observation"
 MARK = "loop-observation:"
 PROJECT_TITLE = os.environ.get("LOOP_PROJECT_TITLE") or "Platform observations"
@@ -47,9 +60,9 @@ SKIP_PREFIX = "onboard-"
 
 
 # ---------------------------------------------------------------- ledger ----
-def latest_observations() -> list[dict]:
+def latest_observations(root: pathlib.Path | None = None) -> list[dict]:
     """Newest ledger row per (loop, project), oldest first for stable output."""
-    ledger = ROOT / "loop-ledger.json"
+    ledger = (ROOT if root is None else root) / "loop-ledger.json"
     if not ledger.exists():
         print("no loop-ledger.json — run `pf loop run-all` first")
         return []
@@ -75,7 +88,7 @@ def content_hash(e: dict) -> str:
 
 # ---------------------------------------------------------------- issues ----
 def tracked() -> dict[str, dict]:
-    out = bf.run(["gh", "issue", "list", "--repo", bf.REPO, "--label", TRACKING_LABEL,
+    out = GH(["gh", "issue", "list", "--repo", bf.REPO, "--label", TRACKING_LABEL,
                   "--state", "all", "--limit", "500",
                   "--json", "number,title,state,body"], check=False)
     index: dict[str, dict] = {}
@@ -117,12 +130,12 @@ def render(e: dict) -> tuple[str, str]:
 
 
 def ensure_labels(loops: set[str]) -> None:
-    bf.run(["gh", "label", "create", TRACKING_LABEL, "--repo", bf.REPO,
-            "--color", "D93F0B", "--description",
-            "An observation a platform loop is currently making", "--force"], check=False)
+    GH(["gh", "label", "create", TRACKING_LABEL, "--repo", bf.REPO,
+        "--color", "D93F0B", "--description",
+        "An observation a platform loop is currently making", "--force"], check=False)
     for loop in sorted(loops):
-        bf.run(["gh", "label", "create", f"loop:{loop}", "--repo", bf.REPO,
-                "--color", "0E8A16", "--force"], check=False)
+        GH(["gh", "label", "create", f"loop:{loop}", "--repo", bf.REPO,
+            "--color", "0E8A16", "--force"], check=False)
 
 
 def upsert(e: dict, index: dict[str, dict], board) -> None:
@@ -133,16 +146,16 @@ def upsert(e: dict, index: dict[str, dict], board) -> None:
         if f"hash:{content_hash(e)}" in (have.get("body") or ""):
             print(f"  unchanged  #{have['number']}  {fp}")
             return
-        bf.run(["gh", "issue", "edit", str(have["number"]), "--repo", bf.REPO,
-                "--title", title, "--body", body], check=False)
-        bf.run(["gh", "issue", "comment", str(have["number"]), "--repo", bf.REPO,
-                "--body", f"Observation changed on run `{e.get('run_id')}` "
-                          f"({e.get('started_at')}); body updated in place."], check=False)
+        GH(["gh", "issue", "edit", str(have["number"]), "--repo", bf.REPO,
+            "--title", title, "--body", body], check=False)
+        GH(["gh", "issue", "comment", str(have["number"]), "--repo", bf.REPO,
+            "--body", f"Observation changed on run `{e.get('run_id')}` "
+                      f"({e.get('started_at')}); body updated in place."], check=False)
         print(f"  updated    #{have['number']}  {fp}")
         return
-    out = bf.run(["gh", "issue", "create", "--repo", bf.REPO, "--title", title,
-                  "--body", body, "--label", TRACKING_LABEL,
-                  "--label", f"loop:{e['loop']}"], check=False)
+    out = GH(["gh", "issue", "create", "--repo", bf.REPO, "--title", title,
+              "--body", body, "--label", TRACKING_LABEL,
+              "--label", f"loop:{e['loop']}"], check=False)
     number = int(out.rstrip("/").rsplit("/", 1)[-1]) if out.strip() else 0
     print(f"  filed      #{number or '?'}  {fp}")
     add_to_board(board, number)
@@ -152,12 +165,12 @@ def close_clean(e: dict, index: dict[str, dict]) -> None:
     have = index.get(fingerprint(e))
     if not have or have["state"] != "OPEN":
         return
-    bf.run(["gh", "issue", "comment", str(have["number"]), "--repo", bf.REPO,
-            "--body", f"Closed automatically: run `{e.get('run_id')}` at "
-                      f"{e.get('started_at')} came back clean — the loop no longer "
-                      f"observes this. Reopen if it should not have cleared."], check=False)
-    bf.run(["gh", "issue", "close", str(have["number"]), "--repo", bf.REPO,
-            "--reason", "completed"], check=False)
+    GH(["gh", "issue", "comment", str(have["number"]), "--repo", bf.REPO,
+        "--body", f"Closed automatically: run `{e.get('run_id')}` at "
+                  f"{e.get('started_at')} came back clean — the loop no longer "
+                  f"observes this. Reopen if it should not have cleared."], check=False)
+    GH(["gh", "issue", "close", str(have["number"]), "--repo", bf.REPO,
+        "--reason", "completed"], check=False)
     print(f"  closed     #{have['number']}  {fingerprint(e)}")
 
 
@@ -198,7 +211,24 @@ def add_to_board(board, issue_no: int) -> None:
 
 
 # ------------------------------------------------------------------ main ----
-def main() -> None:
+def _dry_gh(cmd: list[str], token=None, check: bool = True) -> str:
+    """Reads answer empty; writes print themselves. The whole plan, no GitHub."""
+    verb = cmd[1:3]
+    if verb == ["issue", "list"]:
+        return "[]"
+    print(f"  DRY {' '.join(cmd[:4])}" + (f"  {cmd[cmd.index('--title') + 1]!r}"
+                                          if "--title" in cmd else ""))
+    return ""
+
+
+def main(argv: list[str] | None = None) -> None:
+    global GH
+    args = argv if argv is not None else sys.argv[1:]
+    dry = "--dry-run" in args
+    if dry:
+        GH = _dry_gh
+        bf.REPO = bf.REPO or "local/dry-run"
+        bf.PROJECT_TOKEN = ""
     if not bf.REPO:
         sys.exit("GITHUB_REPOSITORY is not set")
     obs = latest_observations()
@@ -206,7 +236,8 @@ def main() -> None:
         return
     with_findings = [e for e in obs if e.get("findings") or e.get("proposals")]
     clean = [e for e in obs if not e.get("findings") and not e.get("proposals")]
-    print(f"{len(obs)} observation(s): {len(with_findings)} active, {len(clean)} clean")
+    print(f"{len(obs)} observation(s): {len(with_findings)} active, {len(clean)} clean"
+          + ("  [dry-run]" if dry else ""))
 
     ensure_labels({e["loop"] for e in with_findings})
     index = tracked()

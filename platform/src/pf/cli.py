@@ -1237,7 +1237,9 @@ def cmd_dagster_workspace() -> None:
 
     Paths are absolute: Dagster resolves a relative `working_directory` against
     the process cwd, not against the workspace file, so a relative path silently
-    resolves outside the repo.
+    resolves outside the repo. Absolute means machine-local, so the file is
+    gitignored and regenerated — by this command, and by every `pf bootstrap` —
+    rather than shared. A fresh clone gets it from either.
     """
     r = root()
     lines = [
