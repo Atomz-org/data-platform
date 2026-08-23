@@ -342,6 +342,7 @@
 <section>
   <h2>How a number reaches the page</h2>
   <p>A genuine sequence, so it is drawn as one. Each stage narrows: 2,234 warehouse tables become 996 marts, six semantic models, nineteen metric definitions, eighteen queries.</p>
+  <p><strong>996 appears twice on purpose.</strong> There are 996 mart models, 996 tables in the <code>main_marts</code> schema, and 996 source extracts &mdash; because Evidence pre-renders exactly one extract per mart. The repetition is a one-to-one mapping, not one figure standing in for two different things.</p>
 <pre class="mermaid">
 flowchart LR
   raw["main_raw<br/>58 tables"]:::phys
@@ -425,10 +426,16 @@ uv run pf report build jaffle jaffle-shop
 <span class="c"># mechanical score: 100/100, 0 errors, 0 warnings</span>
 uv run pf report audit jaffle jaffle-shop
 
-<span class="c"># the gap, from the manifest itself</span>
-python3 -c "import json;m=json.load(open('.../semantic_manifest.json'));
-print({x['name'] for x in m['metrics']} - {p.stem for p in pages})"
-<span class="c"># → {'cumulative_revenue'}</span></pre>
+<span class="c"># the gap, from the manifest itself &mdash; runs as written, from the repo root</span>
+python3 - &lt;&lt;'PY'
+import json, pathlib
+p = pathlib.Path("groups/jaffle/projects/jaffle-shop")
+defined = {m["name"] for m in
+           json.loads((p / "transform/target/semantic_manifest.json").read_text())["metrics"]}
+compiled = {q.stem for q in (p / "reporting/queries/metrics").glob("*.sql")}
+print(sorted(defined - compiled))
+PY
+<span class="c"># &rarr; ['cumulative_revenue']</span></pre>
   <p><strong>The static site was not rendered here.</strong> <code>evidence build</code> requires Node 20 — <code>.nvmrc</code> pins it, and the capability documents that Evidence 40 fails on Node 24 / npm 11, verified against a pristine upstream template. This machine has Node 24 and no Node 20 installed, so <code>npm run build</code> would fail on a supported-runtime boundary rather than on anything in this project. <code>npm run sources</code> and <code>npm run dev</code> do work on Node 24.</p>
 </section>
 
