@@ -1,0 +1,115 @@
+# AI agent governance: prove the provenance chain, then scan for the gaps it
+# cannot see.
+#
+# Two checks that fail in opposite directions, which is why both run:
+#
+#   `pf provenance verify` is *runtime* evidence. It reads the ledger this
+#   platform actually wrote and asks whether it holds together — every record
+#   hash-linked, every action gated before it ran, no denial that executed
+#   anyway. It says nothing about code that has no ledger entries yet.
+#
+#   The ASQAV scanner (vendor/asqav-compliance) is *static* analysis. It reads
+#   the agent code in the diff and asks whether the controls are present at all
+#   — audit trail, policy enforcement, revocation, human oversight, error
+#   handling — and maps them to EU AI Act, DORA and ISO 42001. It says nothing
+#   about whether any of it ran.
+#
+# A clean scan with a broken chain means the controls exist and are not working.
+# A clean chain with a failing scan means the paths that are instrumented are
+# sound and something new is not. Neither result is the other's evidence.
+#
+# The action is pinned as a submodule and run from the checkout (`uses: ./…`)
+# rather than by tag. `jagmarques/asqav-compliance@v1` is a moving reference:
+# the code that judges our compliance would change without a commit here, which
+# is the same objection this repo already makes to unpinned vendored upstreams.
+# Bumping it is `git submodule update --remote` in a reviewed PR.
+name: AI governance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provenance:
+    name: Provenance chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      - name: Unit tests for the chain
+        # The attack tests: edit a record, re-seal it, drop one, claim a denial
+        # that ran. A chain whose tamper detection is broken would otherwise
+        # report a clean ledger for the rest of this job.
+        run: uv run pytest platform/tests/test_provenance.py -q
+
+      - name: Verify the ledger
+        # Non-zero on a broken chain, an ungated execution, an unenforced
+        # denial or a self-approval. Skipped rather than failed when the runner
+        # has no ledger — CI checks out source, and a fresh checkout has no
+        # runtime evidence in it, which is not the same as evidence that failed.
+        run: |
+          if [ -f provenance/chain.jsonl ]; then
+            uv run pf provenance verify --anchors
+          else
+            echo "No ledger in this checkout — nothing to verify."
+            echo "(The ledger is runtime state and is gitignored by design;"
+            echo " archived evidence comes from \`pf provenance export\`.)"
+          fi
+
+      - name: Independent verifier
+        # The same audit through the standalone stdlib script an auditor gets.
+        # If these two ever disagree, the bundled verifier is the one that is
+        # wrong in the way that matters, because it is the one shipped to people
+        # who cannot check our work.
+        run: |
+          if [ -f provenance/chain.jsonl ]; then
+            python3 platform/scripts/verify_provenance.py provenance
+          fi
+
+  compliance-scan:
+    name: ASQAV compliance scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Scan agent code for governance gaps
+        id: scan
+        uses: ./vendor/asqav-compliance
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Reported, never enforced. The scanner is regex over source, so it
+          # scores a file that merely mentions `revoke` the same as one that
+          # implements a kill switch — useful as a prompt to look, wrong as a
+          # merge gate. `pf provenance verify` above is the blocking check,
+          # because it tests behaviour instead of vocabulary.
+          fail-on-gaps: 'false'
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### AI agent governance scan" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Compliance score | ${{ steps.scan.outputs.score }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Agent files | ${{ steps.scan.outputs.agent-files }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gaps | ${{ steps.scan.outputs.gaps }} |" >> "$GITHUB_STEP_SUMMARY"

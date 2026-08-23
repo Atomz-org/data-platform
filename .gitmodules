@@ -74,3 +74,8 @@
 [submodule "vendor/openmetadata"]
 	path = vendor/openmetadata
 	url = https://github.com/open-metadata/OpenMetadata
+[submodule "vendor/asqav-compliance"]
+	path = vendor/asqav-compliance
+	url = https://github.com/jagmarques/asqav-compliance
+	branch = main
+	shallow = true

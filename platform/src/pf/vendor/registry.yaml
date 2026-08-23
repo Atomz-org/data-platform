@@ -878,3 +878,71 @@ upstreams:
           `metadata ingest-dbt` already does it from the dbt artefacts. Two
           descriptions of one table drift apart, and the catalogue shows whichever
           ran last.
+
+  # ------------------------------------------------------------ governance --
+  - id: asqav-compliance
+    summary: "the five governance controls a CI scan checks agent code for"
+    name: ASQAV Compliance Scanner
+    url: https://github.com/jagmarques/asqav-compliance
+    path: vendor/asqav-compliance
+    branch: main
+    licence: Elastic-2.0
+    licence_review: >
+      Elastic License 2.0 permits use and modification but forbids providing the
+      software to third parties as a hosted or managed service, and forbids
+      circumventing licence-key functionality. We run it as a GitHub Action
+      inside our own CI on our own code, which is ordinary internal use and well
+      inside scope. Two limits to hold: this platform must not expose the scanner
+      as a compliance-scanning feature to its own tenants (that is the managed
+      service the licence excludes), and the action's code stays vendored
+      unmodified. Note this is a *stricter* licence than the platform's other
+      upstreams — confirm with counsel before offering governance scanning as a
+      product surface.
+    role: reference
+    why: >
+      It is a second opinion with a different failure mode. `pf provenance` is
+      runtime evidence: it proves what the ledger recorded and can say nothing
+      about code no agent has exercised yet. The scanner is static: it reads
+      agent source and asks whether the controls are present at all, mapped to
+      EU AI Act, DORA and ISO 42001. A control that exists but never runs is
+      invisible to us and visible to it, and the reverse is equally true — which
+      is the only reason to carry both.
+    adopted:
+      - upstream: src/scanner.ts
+        kind: shape
+        ours:
+          - platform/src/pf/provenance/ledger.py
+          - platform/src/pf/provenance/audit.py
+        note: >
+          Its five categories — audit trail, policy enforcement, revocation,
+          human oversight, error handling — are the checklist our ledger is built
+          to satisfy in behaviour rather than in vocabulary: `intent`/`decision`/
+          `execution` are the audit trail, `pf.loops.gate` the policy
+          enforcement, `revoke`/`reinstate` the revocation, `approve` the human
+          oversight. Ours differ in kind: the scanner matches identifiers, we
+          record what actually happened and hash-link it.
+      - upstream: action.yml
+        kind: data
+        ours: [.github/workflows/ai-governance.yml]
+        note: >
+          Run from the submodule path (`uses: ./vendor/asqav-compliance`) rather
+          than by tag, so the code that judges our compliance is pinned like
+          every other upstream here. Its inputs and outputs are the contract that
+          workflow depends on; upstream renaming `score` or `gaps` breaks the
+          job summary.
+    declined:
+      - what: the `asqav` runtime SDK (asqav / @asqav/sdk)
+        why: >
+          It ships actions to a hosted service, defaulting to hash-only mode
+          against *.asqav.com. Our ledger is local, append-only and anchored to a
+          public timestamp authority — an auditor verifies it with openssl and a
+          150-line stdlib script, trusting neither them nor us. Adding a
+          third-party trust dependency to the evidence path would remove the one
+          property the design exists for.
+      - what: failing the build on the scanner's compliance score
+        why: >
+          It is regex over source. A file that mentions `revoke` in a comment
+          scores as having revocation, and a correct implementation that spells
+          it `disable_agent` scores as missing it. Useful as a prompt to go and
+          look; wrong as a merge gate. `pf provenance verify` blocks instead,
+          because it tests behaviour.
