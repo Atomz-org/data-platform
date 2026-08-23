@@ -967,6 +967,13 @@ def track(findings: list[Finding], board=None) -> None:
         file_on_board(board, n, lead, both)
 
 
+#: `pull_request_target` carries the same payload as `pull_request` — the
+#: workflow uses it so that every PR runs the default branch's copy of this
+#: script rather than whatever its own branch happens to hold. Both names
+#: mean "a pull request moved"; nothing downstream distinguishes them.
+PR_EVENTS = ("pull_request", "pull_request_target")
+
+
 def prs_from_event(ev: dict, name: str) -> list[int]:
     if name == "workflow_run":
         wr = ev.get("workflow_run") or {}
@@ -979,7 +986,7 @@ def prs_from_event(ev: dict, name: str) -> list[int]:
             return [p["number"] for p in res if p.get("state") == "open"] or \
                    [p["number"] for p in res]
         return []
-    if name == "pull_request":
+    if name in PR_EVENTS:
         return [ev.get("pull_request", {}).get("number")]
     return []
 
@@ -1011,7 +1018,7 @@ def main() -> int:
 
     # Reconcile: every other pipeline has finished. File what is new, close
     # what the bots have since marked resolved.
-    if name in ("workflow_run", "pull_request"):
+    if name in ("workflow_run", *PR_EVENTS):
         prs = [n for n in prs_from_event(ev, name) if n]
     else:
         target = os.environ.get("PR", "").strip()
@@ -1031,7 +1038,7 @@ def main() -> int:
     board = ensure_board()
     for pr in prs:
         print(f"— PR #{pr}")
-        if name == "pull_request" and (ev.get("action") != "closed"):
+        if name in PR_EVENTS and (ev.get("action") != "closed"):
             wait_for_checks(pr)
         track(collect(pr), board)
         n = record_resolution(pr, board)
