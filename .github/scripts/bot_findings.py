@@ -89,6 +89,11 @@ PROJECT_NUMBER = int(os.environ.get("PROJECT_NUMBER") or 0)
 PROJECT_TITLE = os.environ.get("PROJECT_TITLE") or "PR findings — carried past the PR"
 PROJECT_TOKEN = os.environ.get("PROJECTS_TOKEN") or ""
 
+#: Print what would be filed and write nothing. This script creates issues in a
+#: real repository; being able to look at the output first is the difference
+#: between a review of the plan and a review of the damage.
+DRY_RUN = bool(os.environ.get("BOT_FINDINGS_DRY_RUN"))
+
 TRACKING_LABEL = "bot-finding"
 MARK = "bot-finding:"
 
@@ -177,6 +182,12 @@ class Finding:
     #: under one "Reviewer" source — a per-person option would grow a column
     #: that nobody filters on — and the citation names them.
     author: str = ""
+    #: The pull request's title. Carried because the issue outlives the PR and a
+    #: bare `#268` is unreadable once you are looking at a board of ninety
+    #: findings — the number tells you nothing about what the change *was*.
+    #: Deliberately not part of the fingerprint: a PR retitled mid-review must
+    #: not fork its findings into a second set of issues.
+    pr_title: str = ""
 
     @property
     def origin(self) -> str:
@@ -390,6 +401,9 @@ def ensure_labels() -> None:
     for name, colour, desc in LABELS:
         if name in have:
             continue
+        if DRY_RUN:
+            print(f"  WOULD CREATE LABEL  {name}")
+            continue
         run(["gh", "label", "create", name, "--repo", REPO, "--color", colour,
              "--description", desc], check=False)
         print(f"  label created: {name}")
@@ -462,13 +476,22 @@ def render(f: Finding, prior: str | None = None) -> str:
     if prior:
         # Same defect, second citation (the other bot, or a re-review).
         return prior.rstrip() + "\n\n---\n\n" + block if f.url not in prior else prior
+    # The PR is named, not just numbered. The issue outlives the PR, and on a
+    # board of ninety findings a bare `#268` says nothing about what the change
+    # was — which is the first thing anyone triaging needs.
+    origin = f"**Raised on:** #{f.pr}"
+    if f.pr_title:
+        origin += f" — *{f.pr_title}*"
+    if f.path:
+        origin += f"\n**File:** `{f.path}`"
+
     head = ("> Carried over from a pull-request review so it survives the PR "
             "being merged or closed.\n"
             "> **This stays open even after the PR merges.** A resolved thread "
             "says the reviewers were content, not that the defect is gone — "
             "verify, then close this yourself.\n\n"
             f"<!-- {MARK}{f.fingerprint} -->\n\n"
-            f"**Origin:** #{f.pr}\n\n")
+            f"{origin}\n\n")
     return head + block
 
 
@@ -478,6 +501,13 @@ def upsert(f: Finding) -> int | None:
     if found:
         n = found["number"]
         body = render(f, found.get("body") or "")
+        if DRY_RUN:
+            changed = "body" if body != (found.get("body") or "") else "nothing"
+            missing = [x for x in labels
+                       if x not in {y["name"] for y in found.get("labels", [])}]
+            print(f"  WOULD UPDATE  #{n} {f.title[:56]} "
+                  f"({changed}; +labels {missing or 'none'})")
+            return n
         if body != (found.get("body") or ""):
             run(["gh", "issue", "edit", str(n), "--repo", REPO, "--body", body])
             found["body"] = body
@@ -499,6 +529,12 @@ def upsert(f: Finding) -> int | None:
     # instruction with no subject; the filename supplies the missing one.
     stem = pathlib.Path(f.path or "").name
     title = f.title if len(f.title) > 24 else f"{stem}: {f.title}"
+    if DRY_RUN:
+        print(f"  WOULD CREATE  {title[:70]}")
+        print(f"                labels: {', '.join(labels)}")
+        for line in render(f).splitlines()[:9]:
+            print(f"                | {line[:96]}")
+        return None
     cmd = ["gh", "issue", "create", "--repo", REPO, "--title", title[:250],
            "--body", render(f)]
     for lab in labels:
@@ -795,6 +831,7 @@ def collect(pr: int) -> list[Finding]:
     """
     reviews = {r["id"]: (r.get("state") or "")
                for r in api(f"repos/{REPO}/pulls/{pr}/reviews?per_page=100", jq=".[]")}
+    title = str((api(f"repos/{REPO}/pulls/{pr}", paginate=False) or {}).get("title") or "")
     out: list[Finding] = []
 
     for c in api(f"repos/{REPO}/pulls/{pr}/comments?per_page=100", jq=".[]"):
@@ -825,6 +862,8 @@ def collect(pr: int) -> list[Finding]:
             out += parse(c["body"], "", None, login, c["html_url"], pr)
         else:
             out += parse_human(c["body"], "", None, login, c["html_url"], pr)
+    for f in out:
+        f.pr_title = title
     return out
 
 
