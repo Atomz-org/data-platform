@@ -501,6 +501,14 @@ def issue_path(issue: dict) -> str:
     return m.group(1) if m else ""
 
 
+def canonical_title(issue: dict) -> str:
+    """The finding's own title, with any file-stem prefix `upsert` added removed."""
+    title = issue.get("title") or ""
+    stem = pathlib.Path(issue_path(issue)).name
+    prefix = f"{stem}: " if stem else ""
+    return title[len(prefix):] if prefix and title.startswith(prefix) else title
+
+
 def index() -> dict[str, dict]:
     """Every tracked issue, keyed by each fingerprint in its body.
 
@@ -533,14 +541,31 @@ def index() -> dict[str, dict]:
         # every issue already on the board is covered without editing any of
         # them. `upsert` truncates a title at 250 characters and `_key` at 60
         # normalised ones, so the two agree.
-        _ALIAS.setdefault(_key("", it.get("title") or ""), []).append(it)
+        #
+        # Undo the file-stem prefix first. `upsert` prepends `<basename>: ` to
+        # any title under 25 characters, so hashing what is *displayed* would
+        # key the alias on a string no `Finding.title_key` can ever produce —
+        # the pathless report would find no alias and file a duplicate, which
+        # is the whole failure this index exists to prevent.
+        _ALIAS.setdefault(_key("", canonical_title(it)), []).append(it)
     print(f"  index: {len(_ALL)} tracked issue(s), {len(_INDEX)} fingerprint(s), "
           f"{len(_ALIAS)} title(s)")
     return _INDEX
 
 
-def remember(issue: dict, fps: list[str]) -> None:
-    """Keep the in-memory index true after a write, so one run stays consistent."""
+def remember(issue: dict, fps: list[str], canonical: str = "") -> None:
+    """Keep the in-memory index true after a write, so one run stays consistent.
+
+    `fps` are body-backed fingerprints only. A title key must never be written
+    here: for a pathless finding `fingerprint == title_key`, so putting one in
+    the exact index lets a later pathless report resolve straight to whichever
+    pathful issue was remembered last, skipping the ambiguity and path checks
+    `locate` applies for exactly that case. Title keys live in `_ALIAS`, which
+    is the structure that knows how to refuse.
+
+    `canonical` is the finding's own title, before `upsert` prefixed it with a
+    file stem. The alias must be keyed on that, not on what is displayed.
+    """
     idx = index()
     for fp in fps:
         idx[fp] = issue
@@ -548,7 +573,8 @@ def remember(issue: dict, fps: list[str]) -> None:
         _ALL.append(issue)
         # Without this, one run that files the inline report and then meets the
         # walkthrough copy creates both — the bug this alias exists to stop.
-        _ALIAS.setdefault(_key("", issue.get("title") or ""), []).append(issue)
+        _ALIAS.setdefault(_key("", canonical or issue.get("title") or ""),
+                          []).append(issue)
 
 
 def related(path: str, skip_fp: str) -> list[dict]:
@@ -620,7 +646,7 @@ def upsert(f: Finding) -> int | None:
         if body != (found.get("body") or ""):
             run(["gh", "issue", "edit", str(n), "--repo", REPO, "--body", body])
             found["body"] = body
-        remember(found, [f.fingerprint, f.title_key])
+        remember(found, [f.fingerprint])
         have = {x["name"] for x in found.get("labels", [])}
         add = [x for x in labels if x not in have]
         # A finding re-reported harder must not stay labelled minor.
@@ -638,7 +664,10 @@ def upsert(f: Finding) -> int | None:
     # A terse title ("Fail closed when the gate is unavailable") reads as an
     # instruction with no subject; the filename supplies the missing one.
     stem = pathlib.Path(f.path or "").name
-    title = f.title if len(f.title) > 24 else f"{stem}: {f.title}"
+    # `Path("").name` is `""`, so without the `stem and` guard a short title on
+    # a pathless finding was filed as `": the title"` — a stem prefix with no
+    # stem in it.
+    title = f.title if len(f.title) > 24 or not stem else f"{stem}: {f.title}"
     if DRY_RUN:
         print(f"  WOULD CREATE  {title[:70]}")
         print(f"                labels: {', '.join(labels)}")
@@ -662,7 +691,7 @@ def upsert(f: Finding) -> int | None:
     # other rather than both being filed as if they were the first.
     remember({"number": n, "title": title, "state": "open",
               "body": render(f), "labels": [{"name": x} for x in labels]},
-             [f.fingerprint, f.title_key])
+             [f.fingerprint], canonical=f.title)
     if sibs:
         lines = "\n".join(f"- #{s['number']} — {s['title']}" for s in sibs[:8])
         note = (f"Other open findings on `{f.path}` — check whether any is this "
@@ -957,7 +986,17 @@ def set_fields(board, item: str, want: dict[str, str]) -> None:
             '{projectV2Item{id}}}', PROJECT_TOKEN, p=pid, i=item, f=fld["id"], o=opt["id"])
 
 
-def file_on_board(board, issue_no: int, f: Finding, both: bool) -> None:
+def file_on_board(board, issue_no: int, f: Finding, both: bool,
+                  landed: bool = False) -> None:
+    # `board_item` creates the card and `set_fields` writes to it — both are
+    # ProjectV2 mutations, so the check belongs here, before either. An earlier
+    # version of this file gated only issue *creation* and a dry run still
+    # edited every body; the same mistake reached the board through this path.
+    if DRY_RUN:
+        print(f"    WOULD FILE  #{issue_no} on the board — "
+              f"{priority(f)} / {category(f)} / "
+              f"{'Both bots' if both else f.bot}")
+        return
     item = board_item(board, issue_no)
     if not item:
         return
@@ -968,7 +1007,11 @@ def file_on_board(board, issue_no: int, f: Finding, both: bool) -> None:
     # unfixed — the board is where a human records that judgement, and a nightly
     # sweep that overwrote it would make the column worthless.
     if not field_value(item, "Verification"):
-        want["Verification"] = V_OPEN
+        # A finding can carry `fix-landed` from long before the board could be
+        # written to. Its first card would otherwise open at "Open — unfixed",
+        # contradicting its own label and hiding the one state a person still
+        # has to act on.
+        want["Verification"] = V_LANDED if landed else V_OPEN
     set_fields(board, item, want)
     print(f"    board: {want['Priority']} / {want['Category']} / {want['Source']}")
 
@@ -1029,7 +1072,8 @@ def backfill_board(board) -> int:
             kind=kind, body="", url=it.get("html_url", ""),
             pr=int(pr.group(1)) if pr else 0)
         try:
-            file_on_board(board, it["number"], stub, both=False)
+            file_on_board(board, it["number"], stub, both=False,
+                          landed=LANDED_LABEL in labels)
             added += 1
         except Exception as exc:  # noqa: BLE001 — one bad card must not stop the rest
             print(f"::warning::#{it['number']} not filed on the board: {exc}")
