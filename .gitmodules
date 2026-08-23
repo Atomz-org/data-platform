@@ -74,8 +74,13 @@
 [submodule "vendor/openmetadata"]
 	path = vendor/openmetadata
 	url = https://github.com/open-metadata/OpenMetadata
+	shallow = true
 [submodule "vendor/asqav-compliance"]
 	path = vendor/asqav-compliance
 	url = https://github.com/jagmarques/asqav-compliance
 	branch = main
 	shallow = true
+[submodule "vendor/public-sector-ai-playbook"]
+	path = vendor/public-sector-ai-playbook
+	url = https://github.com/PackMaaan/public-sector-ai-playbook
+	branch = main

@@ -25,12 +25,34 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Submodules are the vendored upstreams; without them the drift
-          # section is silently empty, which reads as "no drift".
-          submodules: recursive
           # Blast radius is computed against the merge base, so a shallow
           # checkout would report every file in the repo as changed.
           fetch-depth: 0
+          # Submodules are deliberately *not* fetched here, and `fetch-depth` is
+          # why: actions/checkout applies it to submodules too, so
+          # `submodules: recursive` alongside `fetch-depth: 0` means a
+          # full-history clone of every pinned upstream. One of them is
+          # `vendor/openmetadata`, the OpenMetadata product monorepo, and the
+          # registry adopts exactly one file from it.
+          #
+          # That is not a theoretical cost. It wedged this workflow: the run for
+          # PR #201 sat in `actions/checkout` for twelve hours, could not be
+          # cancelled (the API returned 500), and held the `pr-report-<n>`
+          # concurrency group the whole time. The other pull requests in that
+          # stack only escaped it by finishing in four to five minutes each,
+          # nearly all of which was this clone.
+
+      # The drift section does need the pinned upstreams — but only their pinned
+      # *trees*. `pf vendor drift` resolves blob OIDs with
+      # `git rev-parse <commit>:<path>`, and the pinned commit is HEAD, so one
+      # commit with no blob content is enough for every comparison it makes.
+      #
+      # Best-effort on purpose. `pf vendor drift` prints "<id> not checked out"
+      # for an upstream it cannot read, which is a different line in the report
+      # from "no drift" — so a partial fetch degrades visibly rather than
+      # silently, which is what the comment this replaces was worried about.
+      - name: Vendored upstreams
+        run: git submodule update --init --jobs 4 --depth 1 --filter=blob:none || true
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
