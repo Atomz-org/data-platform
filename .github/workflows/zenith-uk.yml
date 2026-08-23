@@ -55,6 +55,36 @@ jobs:
           echo "reporting=$(touched "$P/reporting")" >> "$GITHUB_OUTPUT"
           echo "any=$(touched "$P")" >> "$GITHUB_OUTPUT"
 
+  # Is the project's architecture map still true of the project?
+  #
+  # The map is generated and committed, so a PR that adds an exposure or drops a
+  # metric should carry the map change beside it. Without this the file is
+  # correct only until somebody forgets, and a stale map is worse than none: it
+  # is read as current.
+  #
+  # `pf kg build` first, and not optionally. Counts come from the annotations
+  # and the dbt manifest, so without a parse the graph holds no models, every
+  # count reads zero and the check reports drift that is really a missing build.
+  architecture:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Build the graph this map is generated from
+        run: uv run pf kg build zenith zenith-uk
+
+      # Fails on two things: a map that no longer matches its project, and a
+      # directory no `Feature` claims. The second is a platform-side gap — a
+      # capability or tool that writes somewhere the registry does not know
+      # about — and it is reported here because here is where the platform is
+      # what changed.
+      - name: Architecture map is current
+        run: uv run pf arch zenith zenith-uk --check
+
   # The merge gate, in CI. Runs the same `pf impact-gate` the developer's
   # pre-commit hook runs, so a change that bypassed the local hook (--no-verify,
   # a web edit, a bot commit) still cannot merge without its blast radius being
