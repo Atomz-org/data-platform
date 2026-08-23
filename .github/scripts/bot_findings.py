@@ -396,7 +396,10 @@ def category(f: Finding) -> str:
         return "Catalog & Metadata"
     if re.search(r"toolkits/.+/(scripts|hooks)/", p):
         return "Toolkit Hooks & Scripts"
-    if re.search(r"scaffold/|\.github/workflows|/ci\.py", p):
+    # `.github/scripts/` belongs here too. Without it every finding on the
+    # tracker itself — the largest single source of them on this repo — fell
+    # through to the default category.
+    if re.search(r"scaffold/|\.github/(workflows|scripts)|/ci\.py", p):
         return "CI & Scaffold"
     if re.search(r"/pr\.py$", p):
         return "PR Reporting"
