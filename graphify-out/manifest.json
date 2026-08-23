@@ -1,7 +1,7 @@
 {
   ".claude/settings.json": {
-    "mtime": 1787072780.381476,
-    "ast_hash": "b1b81fe1472297d939cbe7f6a1de6a9d",
+    "mtime": 1787080386.7861335,
+    "ast_hash": "2df96e5b4417c33259841ce3b48d6c0a",
     "semantic_hash": ""
   },
   ".github/scripts/bot_findings.py": {
@@ -10890,8 +10890,8 @@
     "semantic_hash": ""
   },
   "platform/hooks/pre_tool_use.py": {
-    "mtime": 1787067777.761679,
-    "ast_hash": "3ec94e0688f59976f4537303df4f5c45",
+    "mtime": 1787080386.793621,
+    "ast_hash": "9f5db80ced0903f461b281c6b4d049ac",
     "semantic_hash": ""
   },
   "platform/pyproject.toml": {
@@ -10920,8 +10920,8 @@
     "semantic_hash": ""
   },
   "platform/src/pf/agents/base.py": {
-    "mtime": 1787067777.7637162,
-    "ast_hash": "54ca8b7e22c281ab1c338332334c7b14",
+    "mtime": 1787080386.7955766,
+    "ast_hash": "5904f247809596805e79250a8f5d04c0",
     "semantic_hash": ""
   },
   "platform/src/pf/agents/loops.py": {
@@ -10945,8 +10945,8 @@
     "semantic_hash": ""
   },
   "platform/src/pf/cli.py": {
-    "mtime": 1787067777.7658746,
-    "ast_hash": "b14719f93c69e5cc0073fcb8fcef26e2",
+    "mtime": 1787080386.797175,
+    "ast_hash": "eed47a645941049e57f28165e61ed850",
     "semantic_hash": ""
   },
   "platform/src/pf/evals/__init__.py": {
@@ -11130,8 +11130,8 @@
     "semantic_hash": ""
   },
   "platform/src/pf/pr.py": {
-    "mtime": 1787067777.7812977,
-    "ast_hash": "a2043e3aca8a2c86a812737c25cb8222",
+    "mtime": 1787080673.8592863,
+    "ast_hash": "029cad4d1bd0d5493ae85c2bf33d7ce5",
     "semantic_hash": ""
   },
   "platform/src/pf/projections/__init__.py": {
@@ -11540,8 +11540,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/pr-report.yml": {
-    "mtime": 1787067777.015683,
-    "ast_hash": "d36f2231f9bd01e1a65e6030ea93efb0",
+    "mtime": 1787080642.1244366,
+    "ast_hash": "9f86a942d61d562ef68288596b10e5d0",
     "semantic_hash": ""
   },
   ".github/workflows/vendor-sync.yml": {
@@ -11560,8 +11560,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1787067777.0171988,
-    "ast_hash": "fc6e212ad01f348edd981981e186643f",
+    "mtime": 1787080386.7891474,
+    "ast_hash": "8482cc3b7ccd41c449537ee74e6b291e",
     "semantic_hash": ""
   },
   "LOOP.md": {
@@ -11615,8 +11615,8 @@
     "semantic_hash": ""
   },
   "gate.yaml": {
-    "mtime": 1787067777.0198445,
-    "ast_hash": "b9c9f963e680b0b42a6eb2915d260cde",
+    "mtime": 1787080898.623779,
+    "ast_hash": "5a48ec3982fc518c10e32ef788185162",
     "semantic_hash": ""
   },
   "groups/acme/.claude/skills/README.md": {
@@ -13365,8 +13365,8 @@
     "semantic_hash": ""
   },
   "platform/src/pf/vendor/registry.yaml": {
-    "mtime": 1787067777.8007078,
-    "ast_hash": "7c17387ca4696ad0dadaabd963813d6b",
+    "mtime": 1787080386.8019025,
+    "ast_hash": "ba97235727ca4729e042c169aa5f51ba",
     "semantic_hash": ""
   },
   "platform/toolkits/ROUTING.md": {
@@ -13682,6 +13682,131 @@
   "platform/workspace.yaml": {
     "mtime": 1787067777.8470705,
     "ast_hash": "1bdae2a70a616339748b8d4f7309d09b",
+    "semantic_hash": ""
+  },
+  "platform/hooks/post_tool_use.py": {
+    "mtime": 1787080386.7922826,
+    "ast_hash": "a700bc8b3aa4e3bccb5eb87947c83b38",
+    "semantic_hash": ""
+  },
+  "platform/scripts/verify_provenance.py": {
+    "mtime": 1787080386.794399,
+    "ast_hash": "612dcbd2dec913b91d515f7dbf4c73ba",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/__init__.py": {
+    "mtime": 1787080386.7978647,
+    "ast_hash": "b07d22080a5746d9786f834e8cd147cf",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/anchor.py": {
+    "mtime": 1787080386.7984838,
+    "ast_hash": "e839c9999c67680469d23612ced3d825",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/audit.py": {
+    "mtime": 1787080386.7989926,
+    "ast_hash": "b3f0af36c1ea89ed1dec3025bada38b6",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/chain.py": {
+    "mtime": 1787080386.7995741,
+    "ast_hash": "2a35b84a7fdc39561b3f6123749e94d5",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/ledger.py": {
+    "mtime": 1787080386.8003027,
+    "ast_hash": "faa670b3877c75ef271af3820fbfdb41",
+    "semantic_hash": ""
+  },
+  "platform/src/pf/provenance/record.py": {
+    "mtime": 1787080386.800761,
+    "ast_hash": "745859a434f4c808a930e09d000b8dca",
+    "semantic_hash": ""
+  },
+  "platform/tests/test_pr_agent_cap.py": {
+    "mtime": 1787081028.239292,
+    "ast_hash": "5d7eaa2392e54a2306f0b575ce242656",
+    "semantic_hash": ""
+  },
+  "platform/tests/test_provenance.py": {
+    "mtime": 1787080386.802701,
+    "ast_hash": "82abb5caa118d5595115321573b29a67",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/package.json": {
+    "mtime": 1787074700.3487377,
+    "ast_hash": "683f4118d8a9599781a6284eb102f4fd",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/src/index.ts": {
+    "mtime": 1787074700.3490222,
+    "ast_hash": "88e61f9b09ab0b411e2a229c891eb299",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/src/scanner.test.ts": {
+    "mtime": 1787074700.3494103,
+    "ast_hash": "15d19753b34ba4dba749407117dda059",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/src/scanner.ts": {
+    "mtime": 1787074700.349739,
+    "ast_hash": "feb7da996ee34ddb0cf2fb3152e4160c",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/tsconfig.json": {
+    "mtime": 1787074700.3498993,
+    "ast_hash": "ee3668b01d88a4e8345c080f14f87925",
+    "semantic_hash": ""
+  },
+  ".github/workflows/ai-governance.yml": {
+    "mtime": 1787080386.7868886,
+    "ast_hash": "4569ab7b773f4b3b8fd790325abef98f",
+    "semantic_hash": ""
+  },
+  "docs/GOVERNANCE.md": {
+    "mtime": 1787080386.7903118,
+    "ast_hash": "1c793a22be56c6922674d226a0fc3375",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/.github/FUNDING.yml": {
+    "mtime": 1787074700.3427153,
+    "ast_hash": "60c65b2151ba580038729a105458d1ae",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/.github/dependabot.yml": {
+    "mtime": 1787074700.342887,
+    "ast_hash": "ceccb9d041d62031c0094b224a3d49fa",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/.github/workflows/ci.yml": {
+    "mtime": 1787074700.3433142,
+    "ast_hash": "226a218a05b029a38c6a98b629eb663b",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/.pre-commit-config.yaml": {
+    "mtime": 1787074700.3437579,
+    "ast_hash": "9367e8a4d0e8526195a530b71608c814",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/CONTRIBUTING.md": {
+    "mtime": 1787074700.343944,
+    "ast_hash": "d0975754f1f328f562110f19f270e1eb",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/README.md": {
+    "mtime": 1787074700.3445354,
+    "ast_hash": "fc7a7643309b9bcc734f83f66e464d68",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/SECURITY.md": {
+    "mtime": 1787074700.344692,
+    "ast_hash": "6a67c65f6004d71d3faea754dabda112",
+    "semantic_hash": ""
+  },
+  "vendor/asqav-compliance/action.yml": {
+    "mtime": 1787074700.3448703,
+    "ast_hash": "6e071d16ebfa102a170f8e15fae97868",
     "semantic_hash": ""
   }
 }
