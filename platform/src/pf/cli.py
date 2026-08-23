@@ -646,6 +646,55 @@ def _print_bootstrap(results) -> bool:
     return ok
 
 
+@app.command("atlas")
+def cmd_atlas(
+    group: str = typer.Argument("", help="group (omit with --all)"),
+    project: str = typer.Argument("", help="project (omit with --all)"),
+    all_: bool = typer.Option(False, "--all", help="every project in the repo"),
+    show_config: bool = typer.Option(False, "--config",
+                                     help="what this project resolved to, and why"),
+) -> None:
+    """Publish a project's own atlas into its own folder.
+
+    Written to `kg/atlas.html` beside the graph it draws, and regenerated around
+    `dbt run` / `dbt build` according to that project's `atlas.yaml`. Platform
+    defaults, then the group's file, then the project's — later wins.
+    """
+    from pf import atlas
+
+    if not all_ and not (group and project):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+    targets = all_projects() if all_ else [(group, project, pdir(group, project))]
+
+    failed = False
+    for g, p, _ in targets:
+        try:
+            cfg = atlas.load_config(root(), g, p)
+        except atlas.InvalidConfig as exc:
+            console.print(f"[red]✗[/] {g}/{p}  {exc}")
+            failed = True
+            continue
+
+        if show_config:
+            console.print(f"[bold]{g}/{p}[/]")
+            for f in ("enabled", "output", "phases", "keep_previous", "sections"):
+                console.print(f"  {f:14} [dim]{getattr(cfg, f)}[/]")
+            continue
+
+        out = atlas.write(root(), g, p, cfg)
+        if out is None:
+            console.print(f"[dim]·[/] {g}/{p}  [dim]disabled in atlas.yaml[/]")
+            continue
+        facts = atlas.gather(root(), g, p)
+        console.print(f"[green]✓[/] {g}/{p}  [dim]{out.relative_to(root())} · "
+                      f"{facts.nodes} node(s) · on: "
+                      f"{', '.join(cfg.phases) or 'request only'}[/]")
+        for gap in facts.gaps:
+            console.print(f"    [yellow]gap[/] {gap}")
+    raise typer.Exit(1 if failed else 0)
+
+
 @app.command("bootstrap-steps")
 def cmd_bootstrap_steps() -> None:
     """What `pf bootstrap` does, and why each step exists."""

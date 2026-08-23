@@ -428,6 +428,32 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dbt wiring", "ok", "; ".join(changed))
 
 
+def _project_atlas(root: Path, group: str, project: str) -> StepResult:
+    """The project's own atlas, and the config that decides when it refreshes.
+
+    The config is written only when absent — it is a decision a project owns,
+    and a bootstrap that reset it every run would quietly undo an opt-out. The
+    page itself is regenerated every time, because it is a projection.
+    """
+    from pf import atlas
+
+    d = _pdir(root, group, project)
+    cfg_path = d / atlas.CONFIG_NAME
+    seeded = ""
+    if not cfg_path.exists():
+        cfg_path.write_text(atlas.default_yaml())
+        seeded = "atlas.yaml written; "
+
+    cfg = atlas.load_config(root, group, project)
+    out = atlas.write(root, group, project, cfg)
+    if out is None:
+        return StepResult("project atlas", "skipped", f"{seeded}disabled in atlas.yaml")
+    f = atlas.gather(root, group, project)
+    return StepResult("project atlas", "ok",
+                      f"{seeded}{out.name} · {f.nodes} node(s) · on: "
+                      f"{', '.join(cfg.phases) or 'request only'}")
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
 
@@ -469,6 +495,8 @@ STEPS: list[Step] = [
     Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
                        "compile its macros, and one with no base target cannot "
                        "be diffed", _dbt_wiring),
+    Step("project atlas", "each project publishes a picture of its own graph, "
+                          "refreshed around its own dbt runs", _project_atlas),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 
