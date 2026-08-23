@@ -134,11 +134,31 @@ def run(cmd: list[str], token: str | None = None, check: bool = True) -> str:
     return p.stdout
 
 
-def api(path: str, jq: str | None = None, paginate: bool = True) -> object:
+#: Substrings of a `gh` failure that mean "the network blinked", not "this
+#: request is wrong". Retrying a 404 or a 422 just fails slower.
+TRANSIENT = ("operation timed out", "connection reset", "EOF",
+             "timeout awaiting", "502 Bad Gateway", "503 Service",
+             "504 Gateway", "temporary failure in name resolution")
+
+
+def api(path: str, jq: str | None = None, paginate: bool = True,
+        tries: int = 3) -> object:
     cmd = ["gh", "api", path] + (["--paginate"] if paginate else [])
     if jq:
         cmd += ["--jq", jq]
-    out = run(cmd).strip()
+    for attempt in range(1, tries + 1):
+        try:
+            out = run(cmd).strip()
+            break
+        except RuntimeError as exc:
+            msg = str(exc)
+            if attempt == tries or not any(t.lower() in msg.lower()
+                                           for t in TRANSIENT):
+                raise
+            wait = 2 ** attempt
+            print(f"  transient: {msg[:90]} — retrying in {wait}s "
+                  f"({attempt}/{tries - 1})")
+            time.sleep(wait)
     if not out:
         return [] if jq else {}
     if jq:
@@ -501,6 +521,22 @@ def issue_path(issue: dict) -> str:
     return m.group(1) if m else ""
 
 
+def _already_filed(fp: str) -> int | None:
+    """Has another run filed this fingerprint since our index was built?"""
+    try:
+        rows = api(f"repos/{REPO}/issues?labels={TRACKING_LABEL}&state=all"
+                   f"&per_page=100", jq=".[]")
+    except Exception:  # noqa: BLE001 — a failed check must not block filing
+        return None
+    for it in rows:
+        if it.get("pull_request"):
+            continue
+        if fp in (it.get("body") or ""):
+            remember(it, [fp])
+            return it["number"]
+    return None
+
+
 def canonical_title(issue: dict) -> str:
     """The finding's own title, with any file-stem prefix `upsert` added removed."""
     title = issue.get("title") or ""
@@ -674,6 +710,24 @@ def upsert(f: Finding) -> int | None:
         for line in render(f).splitlines()[:9]:
             print(f"                | {line[:96]}")
         return None
+    # Last check before the one irreversible act in this file.
+    #
+    # The index is read once at startup, so a run that began before a
+    # concurrent run filed this finding cannot see it — and two runs seconds
+    # apart produced #294/#297 and #306/#309, each pair one defect twice. The
+    # concurrency group serialises what it can, but a sweep and a per-PR run
+    # are keyed differently on purpose and will overlap.
+    #
+    # One REST call, and only on the path that creates. Creations are rare — a
+    # settled repository does none in a whole sweep — so this is close to free,
+    # and it closes the race wherever it comes from rather than only the cases
+    # a concurrency key happens to cover.
+    raced = _already_filed(f.fingerprint)
+    if raced:
+        # `_already_filed` has put it in the index, so this recurses exactly
+        # once and takes the update branch.
+        print(f"  raced #{raced} — filed by a concurrent run; updating instead")
+        return upsert(f)
     cmd = ["gh", "issue", "create", "--repo", REPO, "--title", title[:250],
            "--body", render(f)]
     for lab in labels:
@@ -1216,19 +1270,31 @@ def main() -> int:
     # Resolved once for the whole run: `ensure_board` costs several GraphQL
     # round trips and the answer cannot change between two PRs in one pass.
     board = ensure_board()
+    failed = 0
     for pr in prs:
         print(f"— PR #{pr}")
-        if name in PR_EVENTS and (ev.get("action") != "closed"):
-            wait_for_checks(pr)
-        track(collect(pr), board)
-        n = record_resolution(pr, board)
-        print(f"  {n} finding(s) with a fix landed — all still open")
+        # A sweep reads 48 pull requests. Letting one failure end the pass means
+        # a single blink leaves 46 unread — which is how a nightly job quietly
+        # stops doing its job. Report it, carry on, and fail the run at the end
+        # so the red tick still says something went wrong.
+        try:
+            if name in PR_EVENTS and (ev.get("action") != "closed"):
+                wait_for_checks(pr)
+            track(collect(pr), board)
+            n = record_resolution(pr, board)
+            print(f"  {n} finding(s) with a fix landed — all still open")
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            print(f"::warning::PR #{pr} skipped: {str(exc)[:200]}")
 
     # Findings whose pull request is long closed are never re-read by the loop
     # above, so they sit in the repository and never reach the board — the exact
     # opposite of the point, since outliving the PR is why they exist.
     if os.environ.get("BOT_FINDINGS_BACKFILL_BOARD"):
         print(f"backfilled {backfill_board(board)} tracked issue(s) onto the board")
+    if failed:
+        print(f"::error::{failed} of {len(prs)} pull request(s) could not be read")
+        return 1
     return 0
 
 
@@ -1262,7 +1328,11 @@ def write_summary() -> None:
     lines.append("")
     lines.append("These issues stay open after the pull request merges. "
                  "Close one when you have verified the defect is gone.")
-    pathlib.Path(path).write_text("\n".join(lines))
+    # Append. `$GITHUB_STEP_SUMMARY` is one file shared by every step in the
+    # job, and `write_text` would drop whatever ran before this — the summary
+    # is additive by contract, not a slot one step owns.
+    with pathlib.Path(path).open("a", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
