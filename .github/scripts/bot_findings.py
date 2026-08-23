@@ -480,6 +480,11 @@ def locate(f: "Finding") -> dict | None:
     return cand
 
 
+#: What this run did, for the job summary. A workflow whose only output is a
+#: green tick tells a reviewer nothing about whether it found anything.
+TALLY: dict[str, list[str]] = {"created": [], "updated": [], "reopened": []}
+
+
 _INDEX: dict[str, dict] | None = None
 _ALL: list[dict] = []
 #: title_key -> the tracked issues carrying that title, however many. A list,
@@ -628,6 +633,7 @@ def upsert(f: Finding) -> int | None:
                 cmd += ["--add-label", lab]
             run(cmd, check=False)
         print(f"  updated #{n}  {f.title[:60]}")
+        TALLY["updated"].append(f"#{n} {f.title}")
         return n
     # A terse title ("Fail closed when the gate is unavailable") reads as an
     # instruction with no subject; the filename supplies the missing one.
@@ -650,6 +656,7 @@ def upsert(f: Finding) -> int | None:
         return None
     n = int(url.rsplit("/", 1)[1])
     print(f"  created #{n}  {title[:60]}")
+    TALLY["created"].append(f"#{n} {title}")
     sibs = related(f.path, f.fingerprint)
     # Register before cross-linking, so two findings created in one run see each
     # other rather than both being filed as if they were the first.
@@ -751,6 +758,7 @@ def record_resolution(pr: int, board) -> int:
                 run(["gh", "issue", "reopen", str(n), "--repo", REPO], check=False)
                 issue["state"] = "open"
                 print(f"  reopened #{n}  (closed by the previous rule)")
+                TALLY["reopened"].append(f"#{n} {issue.get('title', '')}")
 
             if LANDED_LABEL in {x["name"] for x in issue.get("labels", [])}:
                 continue
@@ -787,16 +795,40 @@ def record_resolution(pr: int, board) -> int:
     return noted
 
 
-def wait_for_checks(pr: int, budget: int = 900) -> None:
-    """Hold until every other check on the PR has stopped running."""
-    deadline = time.time() + budget
+def wait_for_checks(pr: int, budget: int = 900, grace: int = 180) -> None:
+    """Hold until the pull request's own pipelines have finished.
+
+    Two phases, because "nothing is pending" means two different things.
+
+    A `synchronize` event reaches this workflow within seconds of the push,
+    often before any other workflow has registered a check. `gh pr checks` then
+    reports nothing pending — not because the pipelines finished but because
+    they have not started — and reading the PR at that moment finds none of the
+    findings the review bots are about to write. The whole pass would run early
+    and file nothing, which looks identical to a PR with no findings.
+
+    So: wait for the pipeline to *appear* (bounded by `grace`, since a PR whose
+    paths trigger no workflow legitimately has no checks at all), and only then
+    wait for it to *finish*.
+    """
+    started = time.time()
+    seen = False
+    deadline = started + budget
     while time.time() < deadline:
         out = run(["gh", "pr", "checks", str(pr), "--repo", REPO], check=False)
-        pending = [x for x in out.splitlines() if "\tpending\t" in x]
+        rows = [x for x in out.splitlines() if "\t" in x]
+        pending = [x for x in rows if "\tpending\t" in x]
+        seen = seen or bool(rows)
         if not pending:
-            return
-        print(f"  waiting on {len(pending)} check(s)…")
-        time.sleep(30)
+            if seen:
+                return
+            if time.time() - started >= grace:
+                print(f"  no checks on #{pr} after {grace}s — nothing to wait for")
+                return
+            print("  no checks registered yet; giving the pipeline time to start")
+        else:
+            print(f"  waiting on {len(pending)} check(s)…")
+        time.sleep(15 if not seen else 30)
     print("::warning::timed out waiting for checks; reconciling anyway")
 
 
@@ -1156,9 +1188,44 @@ def main() -> int:
     return 0
 
 
+def write_summary() -> None:
+    """Say what happened, on the run's own page.
+
+    A tracker whose only output is a green tick is indistinguishable from one
+    that ran early and read an empty pull request — which is the failure
+    `wait_for_checks` exists to prevent, and the one nobody would notice.
+    """
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    n = {k: len(v) for k, v in TALLY.items()}
+    lines = ["## Review findings", ""]
+    if not any(n.values()):
+        lines.append("No findings on this pull request — nothing filed.")
+    else:
+        lines += ["| | |", "|---|--:|",
+                  f"| issues filed | {n['created']} |",
+                  f"| issues updated | {n['updated']} |",
+                  f"| reopened | {n['reopened']} |", ""]
+        for label, key in (("Filed", "created"), ("Reopened", "reopened")):
+            if TALLY[key]:
+                lines.append(f"**{label}**")
+                lines += [f"- {x}" for x in TALLY[key][:25]]
+                lines.append("")
+    if not PROJECT_TOKEN:
+        lines.append("> `PROJECTS_TOKEN` is not set, so the issues were filed "
+                     "and labelled but not added to the board.")
+    lines.append("")
+    lines.append("These issues stay open after the pull request merges. "
+                 "Close one when you have verified the defect is gone.")
+    pathlib.Path(path).write_text("\n".join(lines))
+
+
 if __name__ == "__main__":
     try:
-        sys.exit(main())
+        code = main()
+        write_summary()
+        sys.exit(code)
     except Exception as e:                                    # noqa: BLE001
         print(f"::error::{e}")
         sys.exit(1)

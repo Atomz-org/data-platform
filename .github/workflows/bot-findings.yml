@@ -117,7 +117,12 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: .github/scripts
 
-      - name: File findings, and keep them open
+      # Runs after the PR's own pipelines, not beside them: the script waits
+      # for the checks to appear and then to finish before reading the PR, so
+      # the review bots have posted by the time it collects. It files findings
+      # whether those checks passed or failed — a red pipeline is when a finding
+      # matters most — and writes what it did to the run's summary.
+      - name: Wait for the pipeline, then file every finding as an issue
         env:
           # GITHUB_TOKEN covers issues and PR reads. Writing to a ProjectV2
           # needs `project` scope, which it does not have — set PROJECTS_TOKEN
