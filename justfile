@@ -17,7 +17,7 @@ audit:              ; @uv run pf loop audit
 # `hooks` is not optional on a fresh clone: git does not clone .git/hooks, so
 # without it the pre-commit gate is absent and nothing says so until something
 # generated gets committed by hand.
-hooks:              ; @ln -sfn ../../platform/hooks/pre_commit.sh .git/hooks/pre-commit && echo "pre-commit gate installed"
+hooks:              ; @uv run pf install-hook
 fmt:                ; @.venv/bin/ruff format platform groups && .venv/bin/ruff check --fix-only --select I platform groups
 fmt-sql g p:        ; @.venv/bin/sqlfluff fix --disable-progress-bar --ignore-local-config --config .sqlfluff groups/{{g}}/projects/{{p}}/transform/models
 mcp:                ; @uv run pf mcp
