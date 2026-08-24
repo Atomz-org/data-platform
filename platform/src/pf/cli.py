@@ -686,6 +686,34 @@ def cmd_kg_build(group: str, project: str,
     console.print(t)
 
 
+@kg_app.command("bloom")
+def cmd_kg_bloom(
+    out: str = typer.Option("", help="output directory (default: docs/bloom)"),
+) -> None:
+    """Export every project's graph as one Neo4j Bloom workspace.
+
+    Eight project graphs, unioned and qualified by project, plus the perspective
+    that makes 13,000 nodes readable — colours by plane, `Column` hidden, and
+    the questions people actually ask saved as search phrases.
+    """
+    from pf.bloom import write
+    corpus, paths = write(root(), out or None)
+    console.print(f"[green]✓[/] {len(corpus.nodes):,} nodes, "
+                  f"{len(corpus.edges):,} edges from "
+                  f"{len(corpus.projects)} project(s)")
+    if corpus.dangling:
+        # Neo4j rejects a dangling relationship and names one row. Naming all of
+        # them here is the difference between a fixable report and a hunt.
+        console.print(f"[yellow]![/] {len(corpus.dangling)} edge(s) dropped for "
+                      f"a missing endpoint:")
+        for kind, missing in corpus.dangling[:10]:
+            console.print(f"    {kind} → {missing}")
+        if len(corpus.dangling) > 10:
+            console.print(f"    … and {len(corpus.dangling) - 10} more")
+    for path in paths:
+        console.print(f"    {path}")
+
+
 @kg_app.command("card")
 def cmd_kg_card(group: str, project: str) -> None:
     """Regenerate the context card (the always-in-context index)."""
