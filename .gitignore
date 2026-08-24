@@ -104,3 +104,10 @@ connection.json
 # is 200MB of dependencies; both are reproducible from package-lock.json.
 **/ui/static/dist/
 **/ui/web/node_modules/
+
+# The Bloom export's bulk. `pf kg bloom` regenerates nodes.csv and edges.csv
+# from the eight project graphs in seconds, and together they are ~6MB that
+# changes on every graph rebuild. The perspective, the loader and the README
+# are small, reviewable and the actual reusable artefacts — those stay.
+docs/bloom/nodes.csv
+docs/bloom/edges.csv
