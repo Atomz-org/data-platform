@@ -8,8 +8,7 @@ orders as (
 
 invoices as (
 
-    select
-        order_id
+    select order_id
     from {{ ref('fct_invoices') }}
 
 ),
@@ -22,7 +21,7 @@ missing as (
         o.location_id,
         o.ordered_at,
         o.order_total,
-        'completed',
+        'completed' as order_status,
         case
             when 'completed' = 'completed' then 'completed_no_invoice'
             when 'completed' = 'pending' then 'pending_no_invoice'

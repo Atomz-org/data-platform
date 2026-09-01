@@ -17,8 +17,10 @@ the credentials, the adapter package, and any prose the shared README cannot
 know. `capability()` builds the rest, identically every time. Adding ClickHouse
 is one `ProductionWarehouse` entry and no other edit.
 
-Exactly one is default-enabled — Snowflake, because that is where this
-platform's production runs. The others are `pf new-project --with bigquery` or
+Exactly one is default-enabled — DuckLake, because production on this platform
+is the same engine and dialect as development: the laptop build and the prod
+build differ by where the catalog and the parquet live, not by warehouse
+account. The others are `pf new-project --with bigquery` or
 `pf capability-add redshift <group> <project>`, and switching an existing
 project is the same command: `prod` is replaced in place and the DuckDB targets
 beside it are not touched.
@@ -110,7 +112,6 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "`SNOWFLAKE_PRIVATE_KEY_PATH`. Set `SNOWFLAKE_PASSWORD` instead only "
             "if key-pair is not available to you; dbt uses whichever is present."
         ),
-        default_enabled=True,
         om_type="Snowflake",
         om_connection={
             "type": "Snowflake",
@@ -147,9 +148,11 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "convenient locally, unavailable to an unattended run."
         ),
         caveats=(
-            ("BigQuery has no `database`; `project` and `dataset` fill those "
-             "roles, so a model that hardcodes a three-part name will not "
-             "compile here."),
+            (
+                "BigQuery has no `database`; `project` and `dataset` fill those "
+                "roles, so a model that hardcodes a three-part name will not "
+                "compile here."
+            ),
         ),
         om_type="BigQuery",
         om_connection={
@@ -183,9 +186,11 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "run authenticates *as*."
         ),
         caveats=(
-            ("Redshift is case-insensitive and folds identifiers to lower case; "
-             "a model relying on a quoted mixed-case column will resolve "
-             "differently here than on DuckDB."),
+            (
+                "Redshift is case-insensitive and folds identifiers to lower case; "
+                "a model relying on a quoted mixed-case column will resolve "
+                "differently here than on DuckDB."
+            ),
         ),
         om_type="Redshift",
         om_connection={
@@ -220,16 +225,22 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "Against a managed provider also set `POSTGRES_SSLMODE=require`."
         ),
         caveats=(
-            ("Postgres is an OLTP engine serving OLAP here. It is the "
-             "right-sized production target up to tens of GB of marts; beyond "
-             "that, vacuum pressure and sequential scans become the pipeline's "
-             "problem and a columnar target earns its keep."),
-            ("Unquoted identifiers fold to lower case, like Redshift — a model "
-             "relying on a quoted mixed-case column resolves differently here "
-             "than on DuckDB."),
-            ("The whole quality stack runs natively on this target: "
-             "dbt-expectations and the Elementary package both list Postgres "
-             "support, and the `edr` CLI ships a `postgres` extra."),
+            (
+                "Postgres is an OLTP engine serving OLAP here. It is the "
+                "right-sized production target up to tens of GB of marts; beyond "
+                "that, vacuum pressure and sequential scans become the pipeline's "
+                "problem and a columnar target earns its keep."
+            ),
+            (
+                "Unquoted identifiers fold to lower case, like Redshift — a model "
+                "relying on a quoted mixed-case column resolves differently here "
+                "than on DuckDB."
+            ),
+            (
+                "The whole quality stack runs natively on this target: "
+                "dbt-expectations and the Elementary package both list Postgres "
+                "support, and the `edr` CLI ships a `postgres` extra."
+            ),
         ),
         om_type="Postgres",
         om_connection={
@@ -269,6 +280,7 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "threads": "{{ env_var('DUCKLAKE_THREADS', '1') | int }}",
         },
         env=("DUCKLAKE_METADATA",),
+        default_enabled=True,
         auth_note=(
             "`DUCKLAKE_METADATA` is the catalog: a path like "
             "`/lake/analytics.ducklake` (single writer), or a connection string "
@@ -278,21 +290,29 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "environment variables via httpfs — never a literal here."
         ),
         caveats=(
-            ("Same engine and dialect as dev, so the `pf align` dialect gate "
-             "passes by construction — this is the one production target with "
-             "zero portability distance from the laptop build."),
-            ("The parquet DATA_PATH is fixed when the lake is first created "
-             "(`ATTACH 'ducklake:...' (DATA_PATH 's3://...')`, once, by an "
-             "operator). Connecting afterwards reads it from the metadata; "
-             "moving it is a data migration, not a config change. With no "
-             "DATA_PATH given, files land in `<metadata>.files/` beside the "
-             "catalog."),
-            ("A `.ducklake` file catalog resolves concurrent DDL by failing "
-             "one side, and every dbt model is DDL — so `threads` defaults to "
-             "1 and the build is serial. With the metadata in Postgres, set "
-             "`DUCKLAKE_THREADS` up; with a file catalog, leave it."),
-            ("OpenMetadata has no DuckLake connector yet, so this target is "
-             "not catalogued; `om_type` is empty on purpose."),
+            (
+                "Same engine and dialect as dev, so the `pf align` dialect gate "
+                "passes by construction — this is the one production target with "
+                "zero portability distance from the laptop build."
+            ),
+            (
+                "The parquet DATA_PATH is fixed when the lake is first created "
+                "(`ATTACH 'ducklake:...' (DATA_PATH 's3://...')`, once, by an "
+                "operator). Connecting afterwards reads it from the metadata; "
+                "moving it is a data migration, not a config change. With no "
+                "DATA_PATH given, files land in `<metadata>.files/` beside the "
+                "catalog."
+            ),
+            (
+                "A `.ducklake` file catalog resolves concurrent DDL by failing "
+                "one side, and every dbt model is DDL — so `threads` defaults to "
+                "1 and the build is serial. With the metadata in Postgres, set "
+                "`DUCKLAKE_THREADS` up; with a file catalog, leave it."
+            ),
+            (
+                "OpenMetadata has no DuckLake connector yet, so this target is "
+                "not catalogued; `om_type` is empty on purpose."
+            ),
         ),
     ),
     "iceberg": ProductionWarehouse(
@@ -350,25 +370,32 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "catalog's credential vending, so it is the only credential."
         ),
         caveats=(
-            ("Same engine and dialect as dev, so the `pf align` dialect gate "
-             "passes by construction, exactly as with DuckLake. What changes is "
-             "the table format: every model becomes an Iceberg table with "
-             "snapshot history, readable in place by any Iceberg engine — and "
-             "R2 charges no egress, so that external read is free."),
-            ("Writes need the `iceberg` extension of DuckDB ≥ 1.4 and cover "
-             "CREATE, CREATE OR REPLACE and INSERT — table materialisations "
-             "and `append` incrementals. UPDATE/DELETE/MERGE are not there "
-             "yet, so `merge` and `delete+insert` incremental models must "
-             "switch strategy before this target builds them."),
-            ("dbt schemas map to catalog namespaces (`analytics`, "
-             "`analytics_staging`, …), created on first build."),
-            ("Enable managed compaction on the catalog: a dbt rebuild is many "
-             "small commits, and compaction is what keeps scan performance "
-             "flat. Old snapshots are retained per the catalog's policy — a "
-             "rebuild is time-travelable, not free."),
-            ("OpenMetadata has an Iceberg REST connector, but the payload is "
-             "not wired here until it is verified against the vendored schema "
-             "— `om_type` is empty on purpose, like DuckLake's."),
+            (
+                "Same engine and dialect as dev, so the `pf align` dialect gate "
+                "passes by construction, exactly as with DuckLake. What changes is "
+                "the table format: every model becomes an Iceberg table with "
+                "snapshot history, readable in place by any Iceberg engine — and "
+                "R2 charges no egress, so that external read is free."
+            ),
+            (
+                "Writes need the `iceberg` extension of DuckDB ≥ 1.4 and cover "
+                "CREATE, CREATE OR REPLACE and INSERT — table materialisations "
+                "and `append` incrementals. UPDATE/DELETE/MERGE are not there "
+                "yet, so `merge` and `delete+insert` incremental models must "
+                "switch strategy before this target builds them."
+            ),
+            ("dbt schemas map to catalog namespaces (`analytics`, `analytics_staging`, …), created on first build."),
+            (
+                "Enable managed compaction on the catalog: a dbt rebuild is many "
+                "small commits, and compaction is what keeps scan performance "
+                "flat. Old snapshots are retained per the catalog's policy — a "
+                "rebuild is time-travelable, not free."
+            ),
+            (
+                "OpenMetadata has an Iceberg REST connector, but the payload is "
+                "not wired here until it is verified against the vendored schema "
+                "— `om_type` is empty on purpose, like DuckLake's."
+            ),
         ),
     ),
     "clickhouse": ProductionWarehouse(
@@ -395,18 +422,24 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "`CLICKHOUSE_USER` once you have real roles."
         ),
         caveats=(
-            ("dbt-clickhouse has no `merge` incremental strategy; models using "
-             "it must move to `delete+insert` or `append` before this target "
-             "will build."),
-            ("ClickHouse calls a schema a database. `schema:` above is the "
-             "ClickHouse database, which is why there is no separate "
-             "`database` key."),
-            ("Quality stack, honestly: the Elementary package and `edr` CLI "
-             "both ship ClickHouse support (extra `clickhouse`), but "
-             "dbt-expectations depends on dbt_date, which does not declare "
-             "this adapter — the generated floor (row counts, uniqueness, "
-             "not-null) is dialect-safe, while date-windowed expectations "
-             "added by hand may error at runtime here."),
+            (
+                "dbt-clickhouse has no `merge` incremental strategy; models using "
+                "it must move to `delete+insert` or `append` before this target "
+                "will build."
+            ),
+            (
+                "ClickHouse calls a schema a database. `schema:` above is the "
+                "ClickHouse database, which is why there is no separate "
+                "`database` key."
+            ),
+            (
+                "Quality stack, honestly: the Elementary package and `edr` CLI "
+                "both ship ClickHouse support (extra `clickhouse`), but "
+                "dbt-expectations depends on dbt_date, which does not declare "
+                "this adapter — the generated floor (row counts, uniqueness, "
+                "not-null) is dialect-safe, while date-windowed expectations "
+                "added by hand may error at runtime here."
+            ),
         ),
         om_type="Clickhouse",
         om_connection={

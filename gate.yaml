@@ -32,6 +32,11 @@ denylist:
   # and stay editable.
   - "**/evals/cases/generated/**"
   - "**/data/*.duckdb"      # the warehouse itself
+  # The quack dev server's state file (pf.runtime.quack): pid, port and the
+  # session auth token. An agent that can rewrite it can point readers at a
+  # different server or lift the token; the runtime writes it directly (0600)
+  # and nothing legitimate edits it by hand.
+  - "**/data/*.quack.json"
   # Dagster *runtime state* only. `.dagster/dagster.yaml` is deliberately not
   # denied: it is checked-in, hand-maintained instance config (the writer-pool
   # limits live there), and a blanket `.dagster/**` made it uneditable.

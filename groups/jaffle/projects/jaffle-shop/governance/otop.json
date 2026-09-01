@@ -4,9 +4,9 @@
     "id": "otop.pf.jaffle.jaffle-shop",
     "title": "Policy and evidence \u2014 jaffle/jaffle-shop",
     "repository": "https://github.com/Atomz-org/data-platform.git",
-    "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+    "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
     "metadata": {
-      "created_at": "2026-08-19T21:38:43Z",
+      "created_at": "2026-09-01T20:00:06Z",
       "actor": "pf.projections.otop"
     }
   },
@@ -17,13 +17,13 @@
       "title": "Agentic Data Platform governance policy",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
         "scope": "jaffle/jaffle-shop",
         "source": "platform/src/pf/ontology/policy.yaml",
-        "rules": 22
+        "rules": 26
       }
     },
     {
@@ -32,7 +32,7 @@
       "title": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -45,7 +45,7 @@
       "title": "money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -202,8 +202,8 @@
       "title": "pf check for money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:35Z",
-        "observed_at": "2026-08-19T21:38:35Z",
+        "created_at": "2026-09-01T19:59:54Z",
+        "observed_at": "2026-09-01T19:59:54Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -227,7 +227,7 @@
       "title": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -240,7 +240,7 @@
       "title": "entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -396,8 +396,8 @@
       "title": "pf check for entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:35Z",
-        "observed_at": "2026-08-19T21:38:35Z",
+        "created_at": "2026-09-01T19:59:55Z",
+        "observed_at": "2026-09-01T19:59:55Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -421,7 +421,7 @@
       "title": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from th...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -434,7 +434,7 @@
       "title": "link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -588,8 +588,8 @@
       "title": "pf check for link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:36Z",
-        "observed_at": "2026-08-19T21:38:36Z",
+        "created_at": "2026-09-01T19:59:55Z",
+        "observed_at": "2026-09-01T19:59:55Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -613,7 +613,7 @@
       "title": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -626,7 +626,7 @@
       "title": "pii-not-in-consumption",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -801,8 +801,8 @@
       "title": "pf loop run pii-audit for pii-not-in-consumption",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:36Z",
-        "observed_at": "2026-08-19T21:38:36Z",
+        "created_at": "2026-09-01T19:59:56Z",
+        "observed_at": "2026-09-01T19:59:56Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "PII_findings",
@@ -851,7 +851,7 @@
       "title": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -864,7 +864,7 @@
       "title": "mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -980,8 +980,8 @@
       "title": "kg/context_card.md for mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:33Z",
-        "observed_at": "2026-08-19T21:38:33Z",
+        "created_at": "2026-09-01T19:59:52Z",
+        "observed_at": "2026-09-01T19:59:52Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "project_index",
@@ -1005,7 +1005,7 @@
       "title": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a secon...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -1018,7 +1018,7 @@
       "title": "metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -1140,8 +1140,8 @@
       "title": "pf check for metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:37Z",
-        "observed_at": "2026-08-19T21:38:37Z",
+        "created_at": "2026-09-01T19:59:56Z",
+        "observed_at": "2026-09-01T19:59:56Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -1165,7 +1165,7 @@
       "title": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -1178,7 +1178,7 @@
       "title": "change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -1351,8 +1351,8 @@
       "title": "impact_reports for change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:37Z",
-        "observed_at": "2026-08-19T21:38:37Z",
+        "created_at": "2026-09-01T19:59:57Z",
+        "observed_at": "2026-09-01T19:59:57Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "blast_radius_history",
@@ -1376,8 +1376,8 @@
       "title": "loop-ledger.json for change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T20:47:22Z",
-        "observed_at": "2026-08-19T20:47:22Z",
+        "created_at": "2026-08-28T04:59:24Z",
+        "observed_at": "2026-08-28T04:59:24Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "run_history",
@@ -1401,7 +1401,7 @@
       "title": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against ...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -1414,7 +1414,7 @@
       "title": "change-verified-against-baseline",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -1523,8 +1523,8 @@
       "title": "pf tool recce run for change-verified-against-baseline",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:38Z",
-        "observed_at": "2026-08-19T21:38:38Z",
+        "created_at": "2026-09-01T19:59:58Z",
+        "observed_at": "2026-09-01T19:59:58Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "data_diff_against_baseline",
@@ -1548,7 +1548,7 @@
       "title": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore p...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -1561,7 +1561,7 @@
       "title": "review-artifacts-exclude-pii",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -1795,7 +1795,7 @@
       "title": "A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -1808,7 +1808,7 @@
       "title": "builds-record-observability",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -2059,8 +2059,8 @@
       "title": "pf tool elementary report for builds-record-observability",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "observed_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-09-01T19:59:59Z",
+        "observed_at": "2026-09-01T19:59:59Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observability_report_over_recorded_history",
@@ -2084,8 +2084,8 @@
       "title": "loop-ledger.json for builds-record-observability",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T20:47:22Z",
-        "observed_at": "2026-08-19T20:47:22Z",
+        "created_at": "2026-08-28T04:59:24Z",
+        "observed_at": "2026-08-28T04:59:24Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "run_history",
@@ -2109,7 +2109,7 @@
       "title": "Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -2122,7 +2122,7 @@
       "title": "quality-floor-derived-from-ontology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -2338,8 +2338,8 @@
       "title": "pf tool expectations run for quality-floor-derived-from-ontology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "observed_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-09-01T19:59:59Z",
+        "observed_at": "2026-09-01T19:59:59Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "quality_floor_verdicts",
@@ -2363,7 +2363,7 @@
       "title": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -2376,7 +2376,7 @@
       "title": "secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -2522,8 +2522,8 @@
       "title": "pf gate for secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "observed_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-09-01T20:00:00Z",
+        "observed_at": "2026-09-01T20:00:00Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -2547,7 +2547,7 @@
       "title": "An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a ...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -2560,7 +2560,7 @@
       "title": "agent-authority-is-least-privilege",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -2647,8 +2647,8 @@
       "title": "pf gate for agent-authority-is-least-privilege",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:40Z",
-        "observed_at": "2026-08-19T21:38:40Z",
+        "created_at": "2026-09-01T20:00:00Z",
+        "observed_at": "2026-09-01T20:00:00Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -2672,7 +2672,7 @@
       "title": "A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -2685,7 +2685,7 @@
       "title": "tool-contribution-may-only-tighten",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -2773,8 +2773,8 @@
       "title": "pf check for tool-contribution-may-only-tighten",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:40Z",
-        "observed_at": "2026-08-19T21:38:40Z",
+        "created_at": "2026-09-01T20:00:01Z",
+        "observed_at": "2026-09-01T20:00:01Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -2798,7 +2798,7 @@
       "title": "Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No r...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -2811,7 +2811,7 @@
       "title": "agent-decisions-are-recorded",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3008,8 +3008,8 @@
       "title": "pf provenance verify for agent-decisions-are-recorded",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "observed_at": "2026-08-19T21:38:41Z",
+        "created_at": "2026-09-01T20:00:01Z",
+        "observed_at": "2026-09-01T20:00:01Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3033,7 +3033,7 @@
       "title": "A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake i...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3046,7 +3046,7 @@
       "title": "evidence-chain-is-tamper-evident",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3175,8 +3175,8 @@
       "title": "pf provenance verify for evidence-chain-is-tamper-evident",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "observed_at": "2026-08-19T21:38:41Z",
+        "created_at": "2026-09-01T20:00:02Z",
+        "observed_at": "2026-09-01T20:00:02Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3200,7 +3200,7 @@
       "title": "Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session ...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3213,7 +3213,7 @@
       "title": "sister-projects-are-isolated",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3295,8 +3295,8 @@
       "title": "pf gate for sister-projects-are-isolated",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "observed_at": "2026-08-19T21:38:41Z",
+        "created_at": "2026-09-01T20:00:02Z",
+        "observed_at": "2026-09-01T20:00:02Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -3320,7 +3320,7 @@
       "title": "A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreada...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3333,7 +3333,7 @@
       "title": "agent-authority-is-revocable",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3420,8 +3420,8 @@
       "title": "pf provenance verify for agent-authority-is-revocable",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "observed_at": "2026-08-19T21:38:42Z",
+        "created_at": "2026-09-01T20:00:03Z",
+        "observed_at": "2026-09-01T20:00:03Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3445,7 +3445,7 @@
       "title": "Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an ac...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3458,7 +3458,7 @@
       "title": "high-impact-actions-need-a-human",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3587,8 +3587,8 @@
       "title": "pf provenance verify for high-impact-actions-need-a-human",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "observed_at": "2026-08-19T21:38:42Z",
+        "created_at": "2026-09-01T20:00:03Z",
+        "observed_at": "2026-09-01T20:00:03Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3612,7 +3612,7 @@
       "title": "Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matche...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3625,7 +3625,7 @@
       "title": "model-routing-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -3742,8 +3742,8 @@
       "title": "pf provenance verify for model-routing-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "observed_at": "2026-08-19T21:38:42Z",
+        "created_at": "2026-09-01T20:00:04Z",
+        "observed_at": "2026-09-01T20:00:04Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3767,7 +3767,7 @@
       "title": "Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfac...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3780,7 +3780,7 @@
       "title": "upstream-licences-are-reviewed",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "SHOULD",
@@ -3912,8 +3912,8 @@
       "title": "pf check for upstream-licences-are-reviewed",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:43Z",
-        "observed_at": "2026-08-19T21:38:43Z",
+        "created_at": "2026-09-01T20:00:04Z",
+        "observed_at": "2026-09-01T20:00:04Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -3932,12 +3932,675 @@
       }
     },
     {
+      "id": "intent.pf.dev-serving-wire-is-read-only",
+      "kind": "intent",
+      "title": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not ...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not a parser, not a callback, nothing that can be argued with \u2014 and the client refuses non-read statements before the network hop, using DuckDB's own parser rather than string prefixes. Writers exist; they borrow the file through the write window and never meet the wire."
+      }
+    },
+    {
+      "id": "constraint.pf.dev-serving-wire-is-read-only",
+      "kind": "constraint",
+      "title": "dev-serving-wire-is-read-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "read_only_wire",
+      "checkability": "automated",
+      "assertion": "read_only_wire on artifact_glob=**/data/*.duckdb",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "blocks",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "controls": [
+          "AIR-PREV-18",
+          "AIR-DET-16"
+        ],
+        "control_titles": {
+          "AIR-PREV-18": "Agent Authority Least Privilege Framework",
+          "AIR-DET-16": "Preserving Source Data Access Controls in AI Systems"
+        },
+        "regulatory_citations": {
+          "atr": [
+            {
+              "key": "ATR-2026-00012",
+              "title": "ATR-2026-00012 Unauthorized Tool Call",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/tool-poisoning/ATR-2026-00012-unauthorized-tool-call.yaml"
+            },
+            {
+              "key": "ATR-2026-00040",
+              "title": "ATR-2026-00040 Agent Privilege Escalation",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/privilege-escalation/ATR-2026-00040-privilege-escalation.yaml"
+            },
+            {
+              "key": "ATR-2026-00098",
+              "title": "ATR-2026-00098 Unauthorized Financial Action by Agent",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/excessive-autonomy/ATR-2026-00098-unauthorized-financial-action.yaml"
+            }
+          ],
+          "iosco-supervisory-toolkit": [
+            {
+              "key": "t2-cybersecurity",
+              "title": "Table 2: Cybersecurity & Data Privacy/Protection",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=27"
+            },
+            {
+              "key": "t3-4",
+              "title": "Table 3.4: Data Governance",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=35"
+            },
+            {
+              "key": "t3-5",
+              "title": "Table 3.5: Risk Management of Advanced AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=36"
+            },
+            {
+              "key": "t3-7",
+              "title": "Table 3.7: Controls and Human Oversight of AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=37"
+            }
+          ],
+          "iso-42001": [
+            {
+              "key": "A-7-2",
+              "title": "ISO 42001: Data for development and enhancement of AI system",
+              "url": "https://www.iso.org/standard/81230.html"
+            },
+            {
+              "key": "A-7-3",
+              "title": "ISO 42001: Acquisition of data",
+              "url": "https://www.iso.org/standard/81230.html"
+            },
+            {
+              "key": "A-9-2",
+              "title": "ISO 42001: Processes for responsible use of AI systems",
+              "url": "https://www.iso.org/standard/81230.html"
+            }
+          ],
+          "nist-sp-800-53r5": [
+            {
+              "key": "ac-16",
+              "title": "AC-16 Security And Privacy Attributes",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A205%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C238.0%2C0%5D"
+            },
+            {
+              "key": "ac-2",
+              "title": "AC-2 Account Management",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A130%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C720.0%2C0%5D"
+            },
+            {
+              "key": "ac-21",
+              "title": "AC-21 Information Sharing",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A238%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C521.0%2C0%5D"
+            },
+            {
+              "key": "ac-3",
+              "title": "AC-3 Access Enforcement",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A142%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C500.0%2C0%5D"
+            },
+            {
+              "key": "ac-4",
+              "title": "AC-4 Information Flow Enforcement",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A157%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C350.0%2C0%5D"
+            },
+            {
+              "key": "ac-5",
+              "title": "AC-5 Separation Of Duties",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A181%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C611.0%2C0%5D"
+            },
+            {
+              "key": "ac-6",
+              "title": "AC-6 Least Privilege",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A181%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C336.0%2C0%5D"
+            },
+            {
+              "key": "au-2",
+              "title": "AU-2 Event Logging",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A271%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C720.0%2C0%5D"
+            },
+            {
+              "key": "au-6",
+              "title": "AU-6 Audit Record Review, Analysis, And Reporting",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A283%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C512.0%2C0%5D"
+            },
+            {
+              "key": "ca-7",
+              "title": "CA-7 Authorization",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A342%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88%2C310%2C0%5D"
+            },
+            {
+              "key": "ca-8",
+              "title": "CA-8 Penetration Testing",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A351%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C720.0%2C0%5D"
+            },
+            {
+              "key": "si-4",
+              "title": "SI-4 System Monitoring",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1079%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C111.0%2C0%5D"
+            },
+            {
+              "key": "si-7",
+              "title": "SI-7 Software, Firmware, And Information Integrity",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1106%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C536.0%2C0%5D"
+            }
+          ]
+        },
+        "catalogue": {
+          "source": "finos/ai-governance-framework",
+          "path": "vendor/ai-governance-framework",
+          "commit": "274760ccd058da1f1cb12cdbd72e50dfd1258122",
+          "licence": "CC-BY-4.0"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.dev-serving-wire-is-read-only.pytest-platform-tests",
+      "kind": "evidence",
+      "title": "pytest platform/tests for dev-serving-wire-is-read-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "observed_at": "2026-09-01T20:00:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "dev-serving_guardrail_verdicts",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.dev-serving-wire-is-read-only",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "jaffle/jaffle-shop",
+        "detail": "pytest platform/tests not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.dev-server-binds-localhost-only",
+      "kind": "intent",
+      "title": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host i...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host is not a parameter of the serving path, so a routable dev server cannot be configured into existence, only programmed, which is a review event rather than a config drift."
+      }
+    },
+    {
+      "id": "constraint.pf.dev-server-binds-localhost-only",
+      "kind": "constraint",
+      "title": "dev-server-binds-localhost-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "localhost_binding",
+      "checkability": "automated",
+      "assertion": "localhost_binding on artifact_glob=**/data/*.duckdb",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "blocks",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "controls": [
+          "AIR-PREV-22"
+        ],
+        "control_titles": {
+          "AIR-PREV-22": "Multi-Agent Isolation and Segmentation"
+        },
+        "regulatory_citations": {
+          "atr": [
+            {
+              "key": "ATR-2026-00030",
+              "title": "ATR-2026-00030 Cross-Agent Attack Detection",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/agent-manipulation/ATR-2026-00030-cross-agent-attack.yaml"
+            },
+            {
+              "key": "ATR-2026-00076",
+              "title": "ATR-2026-00076 Insecure Inter-Agent Communication",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/agent-manipulation/ATR-2026-00076-inter-agent-message-spoofing.yaml"
+            }
+          ],
+          "iosco-supervisory-toolkit": [
+            {
+              "key": "t2-cybersecurity",
+              "title": "Table 2: Cybersecurity & Data Privacy/Protection",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=27"
+            },
+            {
+              "key": "t3-5",
+              "title": "Table 3.5: Risk Management of Advanced AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=36"
+            }
+          ],
+          "nist-sp-800-53r5": [
+            {
+              "key": "ac-4",
+              "title": "AC-4 Information Flow Enforcement",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A157%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C350.0%2C0%5D"
+            },
+            {
+              "key": "sc-3",
+              "title": "SC-3 Security Function Isolation",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A950%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C217.0%2C0%5D"
+            },
+            {
+              "key": "sc-32",
+              "title": "SC-32 System Partitioning",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1031%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C227.0%2C0%5D"
+            },
+            {
+              "key": "sc-7",
+              "title": "SC-7 Boundary Protection",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A962%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C399.0%2C0%5D"
+            }
+          ]
+        },
+        "catalogue": {
+          "source": "finos/ai-governance-framework",
+          "path": "vendor/ai-governance-framework",
+          "commit": "274760ccd058da1f1cb12cdbd72e50dfd1258122",
+          "licence": "CC-BY-4.0"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.dev-server-binds-localhost-only.pytest-platform-tests",
+      "kind": "evidence",
+      "title": "pytest platform/tests for dev-server-binds-localhost-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "observed_at": "2026-09-01T20:00:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "dev-serving_guardrail_verdicts",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.dev-server-binds-localhost-only",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "jaffle/jaffle-shop",
+        "detail": "pytest platform/tests not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.quack-token-never-leaves-the-machine",
+      "kind": "intent",
+      "title": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is git...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is gitignored, is denied to agent edits by the gate, and is redacted from CLI output by default \u2014 a token echoed into a terminal outlives the server in scrollback and session transcripts."
+      }
+    },
+    {
+      "id": "constraint.pf.quack-token-never-leaves-the-machine",
+      "kind": "constraint",
+      "title": "quack-token-never-leaves-the-machine",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "credential_containment",
+      "checkability": "automated",
+      "assertion": "credential_containment on artifact_glob=**/data/*.quack.json",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "blocks",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/data/*.quack.json"
+        },
+        "params": {},
+        "controls": [
+          "AIR-PREV-23"
+        ],
+        "control_titles": {
+          "AIR-PREV-23": "Agentic System Credential Protection Framework"
+        },
+        "regulatory_citations": {
+          "atr": [
+            {
+              "key": "ATR-2026-00113",
+              "title": "ATR-2026-00113 Credential Theft via Agent Channel",
+              "url": "https://github.com/Agent-Threat-Rule/agent-threat-rules/blob/main/rules/context-exfiltration/ATR-2026-00113-credential-theft.yaml"
+            }
+          ],
+          "iosco-supervisory-toolkit": [
+            {
+              "key": "t2-cybersecurity",
+              "title": "Table 2: Cybersecurity & Data Privacy/Protection",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=27"
+            },
+            {
+              "key": "t3-5",
+              "title": "Table 3.5: Risk Management of Advanced AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=36"
+            }
+          ],
+          "nist-sp-800-53r5": [
+            {
+              "key": "ac-3",
+              "title": "AC-3 Access Enforcement",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A142%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C500.0%2C0%5D"
+            },
+            {
+              "key": "au-6",
+              "title": "AU-6 Audit Record Review, Analysis, And Reporting",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A283%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C512.0%2C0%5D"
+            },
+            {
+              "key": "ia-5",
+              "title": "IA-5 Authenticator Management",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A485%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C524.0%2C0%5D"
+            },
+            {
+              "key": "sc-28",
+              "title": "SC-28 Protection Of Information AT Rest",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1019%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C191.0%2C0%5D"
+            }
+          ]
+        },
+        "catalogue": {
+          "source": "finos/ai-governance-framework",
+          "path": "vendor/ai-governance-framework",
+          "commit": "274760ccd058da1f1cb12cdbd72e50dfd1258122",
+          "licence": "CC-BY-4.0"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.quack-token-never-leaves-the-machine.pytest-platform-tests",
+      "kind": "evidence",
+      "title": "pytest platform/tests for quack-token-never-leaves-the-machine",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "observed_at": "2026-09-01T20:00:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "dev-serving_guardrail_verdicts",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.quack-token-never-leaves-the-machine",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "jaffle/jaffle-shop",
+        "detail": "pytest platform/tests not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.warehouse-custody-is-recorded",
+      "kind": "intent",
+      "title": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, d...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, decision, execution, chained \u2014 so \"who held the warehouse when\" is a query over records, not a reconstruction from process tables. The ledger's kill switch is honoured by construction: a revoked ledger refuses the custody record and with it the custody change."
+      }
+    },
+    {
+      "id": "constraint.pf.warehouse-custody-is-recorded",
+      "kind": "constraint",
+      "title": "warehouse-custody-is-recorded",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "custody_recorded",
+      "checkability": "automated",
+      "assertion": "custody_recorded on artifact_glob=**/data/*.duckdb",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "controls": [
+          "AIR-DET-21",
+          "AIR-DET-4"
+        ],
+        "control_titles": {
+          "AIR-DET-21": "Agent Decision Audit and Explainability",
+          "AIR-DET-4": "AI System Observability"
+        },
+        "regulatory_citations": {
+          "eu-ai-act": [
+            {
+              "key": "c3-s2-a12",
+              "title": "III.S2.A12: Record-Keeping",
+              "url": "https://artificialintelligenceact.eu/article/12/"
+            },
+            {
+              "key": "c3-s2-a13",
+              "title": "III.S2.A13: Transparency and Provision of Information to Deployers",
+              "url": "https://artificialintelligenceact.eu/article/13/"
+            },
+            {
+              "key": "c3-s3-a26",
+              "title": "III.S3.A26: Obligations of Deployers of High-Risk AI Systems",
+              "url": "https://artificialintelligenceact.eu/article/26/"
+            },
+            {
+              "key": "c9-s1-a72",
+              "title": "IX.S1.A72: Post-Market Monitoring by Providers and Post-Market Monitoring Plan for High-Risk AI Systems",
+              "url": "https://artificialintelligenceact.eu/article/72/"
+            },
+            {
+              "key": "c9-s4-a86",
+              "title": "IX.S4.A86: Right to Explanation of Individual Decision-Making",
+              "url": "https://artificialintelligenceact.eu/article/86/"
+            }
+          ],
+          "iosco-supervisory-toolkit": [
+            {
+              "key": "t2-recordkeeping",
+              "title": "Table 2: Recordkeeping & Audit Trail",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=28"
+            },
+            {
+              "key": "t3-7",
+              "title": "Table 3.7: Controls and Human Oversight of AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=37"
+            },
+            {
+              "key": "t6-1",
+              "title": "Table 6.1: Documentation of AI Lifecycle Oversight",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=54"
+            },
+            {
+              "key": "t6-3",
+              "title": "Table 6.3: Documentation of AI-Generated Outcomes",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=54"
+            },
+            {
+              "key": "t6-4",
+              "title": "Table 6.4: Documentation of Explainability of AI Outputs",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=55"
+            },
+            {
+              "key": "t6-5",
+              "title": "Table 6.5: Records on Incidents Relating to AI Products or Services",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=55"
+            },
+            {
+              "key": "t7-adoption",
+              "title": "Table 7: AI Adoption Indicators",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=57"
+            },
+            {
+              "key": "t7-nature",
+              "title": "Table 7: Nature and Use Cases of AI Systems",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=58"
+            },
+            {
+              "key": "t7-performance",
+              "title": "Table 7: AI System Performance Indicators",
+              "url": "https://www.iosco.org/library/pubdocs/pdf/IOSCOPD823.pdf#page=58"
+            }
+          ],
+          "iso-42001": [
+            {
+              "key": "A-6-2-6",
+              "title": "ISO 42001: AI system operation and monitoring",
+              "url": "https://www.iso.org/standard/81230.html"
+            },
+            {
+              "key": "A-6-2-8",
+              "title": "ISO 42001: AI system recording of event logs",
+              "url": "https://www.iso.org/standard/81230.html"
+            },
+            {
+              "key": "A-8-3",
+              "title": "ISO 42001: External reporting",
+              "url": "https://www.iso.org/standard/81230.html"
+            }
+          ],
+          "nist-sp-800-53r5": [
+            {
+              "key": "ac-2",
+              "title": "AC-2 Account Management",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A130%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C720.0%2C0%5D"
+            },
+            {
+              "key": "au-11",
+              "title": "AU-11 Audit Record Retention",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A304%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C462.0%2C0%5D"
+            },
+            {
+              "key": "au-12",
+              "title": "AU-12 Audit Record Generation",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A304%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C122.0%2C0%5D"
+            },
+            {
+              "key": "au-2",
+              "title": "AU-2 Event Logging",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A271%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C720.0%2C0%5D"
+            },
+            {
+              "key": "au-3",
+              "title": "AU-3 Content Of Audit Records",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A274%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C539.0%2C0%5D"
+            },
+            {
+              "key": "au-6",
+              "title": "AU-6 Audit Record Review, Analysis, And Reporting",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A283%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C512.0%2C0%5D"
+            },
+            {
+              "key": "ca-7",
+              "title": "CA-7 Authorization",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A342%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88%2C310%2C0%5D"
+            },
+            {
+              "key": "ir-4",
+              "title": "IR-4 Incident Handling",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A527%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C626.0%2C0%5D"
+            },
+            {
+              "key": "ir-5",
+              "title": "IR-5 Incident Monitoring",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A539%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88%2C387%2C0%5D"
+            },
+            {
+              "key": "ra-10",
+              "title": "RA-10 Threat Hunting",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A812%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C110.0%2C0%5D"
+            },
+            {
+              "key": "si-4",
+              "title": "SI-4 System Monitoring",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1079%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C111.0%2C0%5D"
+            },
+            {
+              "key": "si-7",
+              "title": "SI-7 Software, Firmware, And Information Integrity",
+              "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf#%5B%7B%22num%22%3A1106%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C88.0%2C536.0%2C0%5D"
+            }
+          ]
+        },
+        "catalogue": {
+          "source": "finos/ai-governance-framework",
+          "path": "vendor/ai-governance-framework",
+          "commit": "274760ccd058da1f1cb12cdbd72e50dfd1258122",
+          "licence": "CC-BY-4.0"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.warehouse-custody-is-recorded.pf-provenance-verify",
+      "kind": "evidence",
+      "title": "pf provenance verify for warehouse-custody-is-recorded",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:06Z",
+        "observed_at": "2026-09-01T20:00:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "ledger_audit",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.warehouse-custody-is-recorded",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "jaffle/jaffle-shop",
+        "detail": "pf provenance verify not produced yet"
+      }
+    },
+    {
       "id": "intent.pf.control-baseline-is-declared",
       "kind": "intent",
       "title": "A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from th...",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "extensions": {
@@ -3950,7 +4613,7 @@
       "title": "control-baseline-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "actor": "pf.projections.otop"
       },
       "modality": "MUST",
@@ -3972,8 +4635,8 @@
       "title": "pf air coverage for control-baseline-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:43Z",
-        "observed_at": "2026-08-19T21:38:43Z",
+        "created_at": "2026-09-01T20:00:06Z",
+        "observed_at": "2026-09-01T20:00:06Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "control_coverage_verdicts",
@@ -3997,8 +4660,8 @@
       "title": "governance/air-register.md for control-baseline-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T18:05:20Z",
-        "observed_at": "2026-08-19T18:05:20Z",
+        "created_at": "2026-08-28T04:59:23Z",
+        "observed_at": "2026-08-28T04:59:23Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "per-entity_risk_register",
@@ -4029,7 +4692,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "money-without-currency",
@@ -4052,7 +4715,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "class-without-identity",
@@ -4075,7 +4738,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "illegal-edge",
@@ -4091,18 +4754,18 @@
       "title": "pf.loops.registry:pii_audit",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-17T21:24:35Z",
+        "created_at": "2026-08-19T21:59:25Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "loop",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/loops/registry.py",
         "language": "python",
         "symbol": "pii_audit",
-        "digest": "git:e81ff725c18b4ff2a8187f5fb953a9dc003a56f4"
+        "digest": "git:342daa2d3ab4b71a50fe82a80a7840a0de34d09e"
       },
       "extensions": {
         "exists": true
@@ -4121,7 +4784,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/kg/build.py",
         "language": "python",
         "symbol": "model-grain",
@@ -4144,7 +4807,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "metric-shaped-column",
@@ -4167,7 +4830,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/hooks/pre_tool_use.py",
         "language": "python",
         "digest": "git:230bc9d9639eaa71c8c511affccb14881cdfc1f1"
@@ -4189,7 +4852,7 @@
       "language": "bash",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/hooks/pre_commit.sh",
         "language": "bash",
         "digest": "git:ce8e6f322ce15a546c16d2eb25bddf4fab5b6688"
@@ -4204,18 +4867,18 @@
       "title": "pf.tools.recce:dagster_assets",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-17T23:50:05Z",
+        "created_at": "2026-09-01T19:13:36Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "dagster_assets",
-        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+        "digest": "git:60e4c39d8a87ff2781e5dd07e538e39c063f84dc"
       },
       "extensions": {
         "exists": true
@@ -4227,18 +4890,18 @@
       "title": "pf.tools.recce:register_commands",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-17T23:50:05Z",
+        "created_at": "2026-09-01T19:13:36Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "register_commands",
-        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+        "digest": "git:60e4c39d8a87ff2781e5dd07e538e39c063f84dc"
       },
       "extensions": {
         "exists": true
@@ -4257,7 +4920,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/ontology/model.py",
         "language": "python",
         "symbol": "Role.review_intent",
@@ -4273,18 +4936,18 @@
       "title": "pf.tools.recce:generate_config",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-17T23:50:05Z",
+        "created_at": "2026-09-01T19:13:36Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "generate_config",
-        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+        "digest": "git:60e4c39d8a87ff2781e5dd07e538e39c063f84dc"
       },
       "extensions": {
         "exists": true
@@ -4296,17 +4959,18 @@
       "title": "pf.tools.elementary:bootstrap_project",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:38Z",
+        "created_at": "2026-09-01T19:13:36Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/elementary.py",
         "language": "python",
-        "symbol": "bootstrap_project"
+        "symbol": "bootstrap_project",
+        "digest": "git:abbc7ca56831338eda3ca21eb5f8b718642744d1"
       },
       "extensions": {
         "exists": true
@@ -4318,17 +4982,18 @@
       "title": "pf.tools.elementary:ensure_package",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-09-01T19:13:36Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/elementary.py",
         "language": "python",
-        "symbol": "ensure_package"
+        "symbol": "ensure_package",
+        "digest": "git:abbc7ca56831338eda3ca21eb5f8b718642744d1"
       },
       "extensions": {
         "exists": true
@@ -4340,17 +5005,18 @@
       "title": "pf.tools.expectations:write_tests",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-08-19T21:58:46Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/expectations.py",
         "language": "python",
-        "symbol": "write_tests"
+        "symbol": "write_tests",
+        "digest": "git:06b9fc94f5869e29877cbf0f45b0e8fad1c09411"
       },
       "extensions": {
         "exists": true
@@ -4362,17 +5028,18 @@
       "title": "pf.tools.expectations:bootstrap_project",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
+        "created_at": "2026-08-19T21:58:46Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/expectations.py",
         "language": "python",
-        "symbol": "bootstrap_project"
+        "symbol": "bootstrap_project",
+        "digest": "git:06b9fc94f5869e29877cbf0f45b0e8fad1c09411"
       },
       "extensions": {
         "exists": true
@@ -4391,7 +5058,7 @@
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "denylist",
@@ -4414,7 +5081,7 @@
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "platform_denylist",
@@ -4437,7 +5104,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/loops/gate.py",
         "language": "python",
         "symbol": "check_path",
@@ -4460,7 +5127,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/tools/spec.py",
         "language": "python",
         "symbol": "Tool.gate_sections",
@@ -4483,7 +5150,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "decision",
@@ -4506,7 +5173,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/hooks/post_tool_use.py",
         "language": "python",
         "digest": "git:99dc8363fbb485907c66034f6c6fefdc51336650"
@@ -4528,7 +5195,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/chain.py",
         "language": "python",
         "symbol": "verify",
@@ -4551,7 +5218,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/anchor.py",
         "language": "python",
         "symbol": "stamp_rfc3161",
@@ -4574,7 +5241,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/loops/gate.py",
         "language": "python",
         "symbol": "project_for",
@@ -4597,7 +5264,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "revoke",
@@ -4620,7 +5287,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "is_revoked",
@@ -4643,7 +5310,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "approve",
@@ -4666,7 +5333,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/provenance/audit.py",
         "language": "python",
         "symbol": "report",
@@ -4689,7 +5356,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/agents/base.py",
         "language": "python",
         "symbol": "AGENTS",
@@ -4712,7 +5379,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/vendor/model.py",
         "language": "python",
         "symbol": "load_registry",
@@ -4735,11 +5402,101 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/vendor/verify.py",
         "language": "python",
         "symbol": "verify",
         "digest": "git:4b39f17a26d3f030c4f2ef101c60a502c2f9ccfb"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.runtime.quack.serve-forever",
+      "kind": "artifact",
+      "title": "pf.runtime.quack:serve_forever",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T19:37:39Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/Atomz-org/data-platform.git",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
+        "path": "platform/src/pf/runtime/quack.py",
+        "language": "python",
+        "symbol": "serve_forever",
+        "digest": "git:b6a63331ea654fb1fccf02a754a2fb5c9f483be8"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.runtime.quack.assert-read-only",
+      "kind": "artifact",
+      "title": "pf.runtime.quack:assert_read_only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T19:37:39Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/Atomz-org/data-platform.git",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
+        "path": "platform/src/pf/runtime/quack.py",
+        "language": "python",
+        "symbol": "assert_read_only",
+        "digest": "git:b6a63331ea654fb1fccf02a754a2fb5c9f483be8"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf..gitignore",
+      "kind": "artifact",
+      "title": ".gitignore",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/Atomz-org/data-platform.git",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
+        "path": "platform/src//gitignore.py",
+        "language": "python"
+      },
+      "extensions": {
+        "exists": false
+      }
+    },
+    {
+      "id": "artifact.pf.pf.runtime.quack.-custody",
+      "kind": "artifact",
+      "title": "pf.runtime.quack:_custody",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-09-01T19:37:39Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/Atomz-org/data-platform.git",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
+        "path": "platform/src/pf/runtime/quack.py",
+        "language": "python",
+        "symbol": "_custody",
+        "digest": "git:b6a63331ea654fb1fccf02a754a2fb5c9f483be8"
       },
       "extensions": {
         "exists": true
@@ -4758,7 +5515,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/air/coverage.py",
         "language": "python",
         "symbol": "assess",
@@ -4781,7 +5538,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform.git",
-        "commit": "727018a9bbfd967b24fc2ff788b63fdf70ba1442",
+        "commit": "0a4d8a5263ec8427a85c56a31802c7c26c1430ad",
         "path": "platform/src/pf/air/register.py",
         "language": "python",
         "symbol": "render_register",
@@ -4799,7 +5556,7 @@
       "to": "intent.pf.money-requires-currency",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -4810,7 +5567,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4819,8 +5576,8 @@
       "to": "artifact.pf.pf.ontology.validate.money-without-currency",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4829,8 +5586,8 @@
       "to": "evidence.pf.money-requires-currency.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:35Z",
-        "verified_at": "2026-08-19T21:38:35Z"
+        "created_at": "2026-09-01T19:59:54Z",
+        "verified_at": "2026-09-01T19:59:54Z"
       }
     },
     {
@@ -4839,7 +5596,7 @@
       "to": "intent.pf.entity-requires-identity",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -4850,7 +5607,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4859,8 +5616,8 @@
       "to": "artifact.pf.pf.ontology.validate.class-without-identity",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4869,8 +5626,8 @@
       "to": "evidence.pf.entity-requires-identity.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:35Z",
-        "verified_at": "2026-08-19T21:38:35Z"
+        "created_at": "2026-09-01T19:59:55Z",
+        "verified_at": "2026-09-01T19:59:55Z"
       }
     },
     {
@@ -4879,7 +5636,7 @@
       "to": "intent.pf.link-must-be-in-topology",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -4890,7 +5647,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4899,8 +5656,8 @@
       "to": "artifact.pf.pf.ontology.validate.illegal-edge",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4909,8 +5666,8 @@
       "to": "evidence.pf.link-must-be-in-topology.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:36Z",
-        "verified_at": "2026-08-19T21:38:36Z"
+        "created_at": "2026-09-01T19:59:55Z",
+        "verified_at": "2026-09-01T19:59:55Z"
       }
     },
     {
@@ -4919,7 +5676,7 @@
       "to": "intent.pf.pii-not-in-consumption",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -4930,7 +5687,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4939,8 +5696,8 @@
       "to": "artifact.pf.pf.loops.registry.pii-audit",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4949,8 +5706,8 @@
       "to": "evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:36Z",
-        "verified_at": "2026-08-19T21:38:36Z"
+        "created_at": "2026-09-01T19:59:56Z",
+        "verified_at": "2026-09-01T19:59:56Z"
       }
     },
     {
@@ -4969,7 +5726,7 @@
       "to": "intent.pf.mart-declares-grain",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -4980,7 +5737,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4989,8 +5746,8 @@
       "to": "artifact.pf.pf.kg.build.model-grain",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -4999,8 +5756,8 @@
       "to": "evidence.pf.mart-declares-grain.kg-context-card-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:33Z",
-        "verified_at": "2026-08-19T21:38:33Z"
+        "created_at": "2026-09-01T19:59:52Z",
+        "verified_at": "2026-09-01T19:59:52Z"
       }
     },
     {
@@ -5009,7 +5766,7 @@
       "to": "intent.pf.metric-owns-aggregation",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5020,7 +5777,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5029,8 +5786,8 @@
       "to": "artifact.pf.pf.ontology.validate.metric-shaped-column",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5039,8 +5796,8 @@
       "to": "evidence.pf.metric-owns-aggregation.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:37Z",
-        "verified_at": "2026-08-19T21:38:37Z"
+        "created_at": "2026-09-01T19:59:56Z",
+        "verified_at": "2026-09-01T19:59:56Z"
       }
     },
     {
@@ -5049,7 +5806,7 @@
       "to": "intent.pf.change-declares-blast-radius",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5060,7 +5817,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5069,8 +5826,8 @@
       "to": "artifact.pf.platform.hooks.pre-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5079,8 +5836,8 @@
       "to": "artifact.pf.platform.hooks.pre-commit.sh",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5089,8 +5846,8 @@
       "to": "evidence.pf.change-declares-blast-radius.impact-reports",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:37Z",
-        "verified_at": "2026-08-19T21:38:37Z"
+        "created_at": "2026-09-01T19:59:57Z",
+        "verified_at": "2026-09-01T19:59:57Z"
       }
     },
     {
@@ -5099,8 +5856,8 @@
       "to": "evidence.pf.change-declares-blast-radius.loop-ledger-json",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T20:47:22Z",
-        "verified_at": "2026-08-19T20:47:22Z"
+        "created_at": "2026-08-28T04:59:24Z",
+        "verified_at": "2026-08-28T04:59:24Z"
       }
     },
     {
@@ -5109,7 +5866,7 @@
       "to": "intent.pf.change-verified-against-baseline",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5120,7 +5877,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5129,8 +5886,8 @@
       "to": "artifact.pf.pf.tools.recce.dagster-assets",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5139,8 +5896,8 @@
       "to": "artifact.pf.pf.tools.recce.register-commands",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5149,8 +5906,8 @@
       "to": "evidence.pf.change-verified-against-baseline.pf-tool-recce-run",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:38Z",
-        "verified_at": "2026-08-19T21:38:38Z"
+        "created_at": "2026-09-01T19:59:58Z",
+        "verified_at": "2026-09-01T19:59:58Z"
       }
     },
     {
@@ -5159,7 +5916,7 @@
       "to": "intent.pf.review-artifacts-exclude-pii",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5170,7 +5927,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5179,8 +5936,8 @@
       "to": "artifact.pf.pf.ontology.model.Role.review-intent",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5189,8 +5946,8 @@
       "to": "artifact.pf.pf.tools.recce.generate-config",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5209,7 +5966,7 @@
       "to": "intent.pf.builds-record-observability",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5220,7 +5977,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5229,8 +5986,8 @@
       "to": "artifact.pf.pf.tools.elementary.bootstrap-project",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5239,8 +5996,8 @@
       "to": "artifact.pf.pf.tools.elementary.ensure-package",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5249,8 +6006,8 @@
       "to": "evidence.pf.builds-record-observability.pf-tool-elementary-report",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "verified_at": "2026-08-19T21:38:39Z"
+        "created_at": "2026-09-01T19:59:59Z",
+        "verified_at": "2026-09-01T19:59:59Z"
       }
     },
     {
@@ -5259,8 +6016,8 @@
       "to": "evidence.pf.builds-record-observability.loop-ledger-json",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T20:47:22Z",
-        "verified_at": "2026-08-19T20:47:22Z"
+        "created_at": "2026-08-28T04:59:24Z",
+        "verified_at": "2026-08-28T04:59:24Z"
       }
     },
     {
@@ -5269,7 +6026,7 @@
       "to": "intent.pf.quality-floor-derived-from-ontology",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5280,7 +6037,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5289,8 +6046,8 @@
       "to": "artifact.pf.pf.tools.expectations.write-tests",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5299,8 +6056,8 @@
       "to": "artifact.pf.pf.tools.expectations.bootstrap-project",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5309,8 +6066,8 @@
       "to": "evidence.pf.quality-floor-derived-from-ontology.pf-tool-expectations-run",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "verified_at": "2026-08-19T21:38:39Z"
+        "created_at": "2026-09-01T19:59:59Z",
+        "verified_at": "2026-09-01T19:59:59Z"
       }
     },
     {
@@ -5319,7 +6076,7 @@
       "to": "intent.pf.secrets-never-in-context",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5330,7 +6087,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5339,8 +6096,8 @@
       "to": "artifact.pf.gate.yaml.denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5349,8 +6106,8 @@
       "to": "artifact.pf.platform.hooks.pre-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5359,8 +6116,8 @@
       "to": "evidence.pf.secrets-never-in-context.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:39Z",
-        "verified_at": "2026-08-19T21:38:39Z"
+        "created_at": "2026-09-01T20:00:00Z",
+        "verified_at": "2026-09-01T20:00:00Z"
       }
     },
     {
@@ -5369,7 +6126,7 @@
       "to": "intent.pf.agent-authority-is-least-privilege",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5380,7 +6137,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5389,8 +6146,8 @@
       "to": "artifact.pf.gate.yaml.denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5399,8 +6156,8 @@
       "to": "artifact.pf.gate.yaml.platform-denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5409,8 +6166,8 @@
       "to": "artifact.pf.pf.loops.gate.check-path",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5419,8 +6176,8 @@
       "to": "evidence.pf.agent-authority-is-least-privilege.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:40Z",
-        "verified_at": "2026-08-19T21:38:40Z"
+        "created_at": "2026-09-01T20:00:00Z",
+        "verified_at": "2026-09-01T20:00:00Z"
       }
     },
     {
@@ -5429,7 +6186,7 @@
       "to": "intent.pf.tool-contribution-may-only-tighten",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5440,7 +6197,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5449,8 +6206,8 @@
       "to": "artifact.pf.pf.tools.spec.Tool.gate-sections",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5459,8 +6216,8 @@
       "to": "evidence.pf.tool-contribution-may-only-tighten.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:40Z",
-        "verified_at": "2026-08-19T21:38:40Z"
+        "created_at": "2026-09-01T20:00:01Z",
+        "verified_at": "2026-09-01T20:00:01Z"
       }
     },
     {
@@ -5469,7 +6226,7 @@
       "to": "intent.pf.agent-decisions-are-recorded",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5480,7 +6237,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5489,8 +6246,8 @@
       "to": "artifact.pf.pf.provenance.ledger.decision",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5499,8 +6256,8 @@
       "to": "artifact.pf.platform.hooks.pre-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5509,8 +6266,8 @@
       "to": "artifact.pf.platform.hooks.post-tool-use.py",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5519,8 +6276,8 @@
       "to": "evidence.pf.agent-decisions-are-recorded.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "verified_at": "2026-08-19T21:38:41Z"
+        "created_at": "2026-09-01T20:00:01Z",
+        "verified_at": "2026-09-01T20:00:01Z"
       }
     },
     {
@@ -5529,7 +6286,7 @@
       "to": "intent.pf.evidence-chain-is-tamper-evident",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5540,7 +6297,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5549,8 +6306,8 @@
       "to": "artifact.pf.pf.provenance.chain.verify",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5559,8 +6316,8 @@
       "to": "artifact.pf.pf.provenance.anchor.stamp-rfc3161",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5569,8 +6326,8 @@
       "to": "artifact.pf.gate.yaml.denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5579,8 +6336,8 @@
       "to": "evidence.pf.evidence-chain-is-tamper-evident.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "verified_at": "2026-08-19T21:38:41Z"
+        "created_at": "2026-09-01T20:00:02Z",
+        "verified_at": "2026-09-01T20:00:02Z"
       }
     },
     {
@@ -5589,7 +6346,7 @@
       "to": "intent.pf.sister-projects-are-isolated",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5600,7 +6357,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5609,8 +6366,8 @@
       "to": "artifact.pf.gate.yaml.platform-denylist",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5619,8 +6376,8 @@
       "to": "artifact.pf.pf.loops.gate.project-for",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5629,8 +6386,8 @@
       "to": "evidence.pf.sister-projects-are-isolated.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:41Z",
-        "verified_at": "2026-08-19T21:38:41Z"
+        "created_at": "2026-09-01T20:00:02Z",
+        "verified_at": "2026-09-01T20:00:02Z"
       }
     },
     {
@@ -5639,7 +6396,7 @@
       "to": "intent.pf.agent-authority-is-revocable",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5650,7 +6407,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5659,8 +6416,8 @@
       "to": "artifact.pf.pf.provenance.ledger.revoke",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5669,8 +6426,8 @@
       "to": "artifact.pf.pf.provenance.ledger.is-revoked",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5679,8 +6436,8 @@
       "to": "evidence.pf.agent-authority-is-revocable.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "verified_at": "2026-08-19T21:38:42Z"
+        "created_at": "2026-09-01T20:00:03Z",
+        "verified_at": "2026-09-01T20:00:03Z"
       }
     },
     {
@@ -5689,7 +6446,7 @@
       "to": "intent.pf.high-impact-actions-need-a-human",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5700,7 +6457,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5709,8 +6466,8 @@
       "to": "artifact.pf.pf.provenance.ledger.approve",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5719,8 +6476,8 @@
       "to": "artifact.pf.pf.provenance.audit.report",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5729,8 +6486,8 @@
       "to": "evidence.pf.high-impact-actions-need-a-human.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "verified_at": "2026-08-19T21:38:42Z"
+        "created_at": "2026-09-01T20:00:03Z",
+        "verified_at": "2026-09-01T20:00:03Z"
       }
     },
     {
@@ -5739,7 +6496,7 @@
       "to": "intent.pf.model-routing-is-declared",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5750,7 +6507,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5759,8 +6516,8 @@
       "to": "artifact.pf.pf.agents.base.AGENTS",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5769,8 +6526,8 @@
       "to": "evidence.pf.model-routing-is-declared.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:42Z",
-        "verified_at": "2026-08-19T21:38:42Z"
+        "created_at": "2026-09-01T20:00:04Z",
+        "verified_at": "2026-09-01T20:00:04Z"
       }
     },
     {
@@ -5779,7 +6536,7 @@
       "to": "intent.pf.upstream-licences-are-reviewed",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5790,7 +6547,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5799,8 +6556,8 @@
       "to": "artifact.pf.pf.vendor.model.load-registry",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5809,8 +6566,8 @@
       "to": "artifact.pf.pf.vendor.verify.verify",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5819,8 +6576,198 @@
       "to": "evidence.pf.upstream-licences-are-reviewed.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:43Z",
-        "verified_at": "2026-08-19T21:38:43Z"
+        "created_at": "2026-09-01T20:00:04Z",
+        "verified_at": "2026-09-01T20:00:04Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-serving-wire-is-read-only.derived-from.intent.pf.dev-serving-wire-is-read-only",
+      "from": "constraint.pf.dev-serving-wire-is-read-only",
+      "to": "intent.pf.dev-serving-wire-is-read-only",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-serving-wire-is-read-only.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.dev-serving-wire-is-read-only",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-serving-wire-is-read-only.implemented-by.artifact.pf.pf.runtime.quack.serve-forever",
+      "from": "constraint.pf.dev-serving-wire-is-read-only",
+      "to": "artifact.pf.pf.runtime.quack.serve-forever",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-serving-wire-is-read-only.implemented-by.artifact.pf.pf.runtime.quack.assert-read-only",
+      "from": "constraint.pf.dev-serving-wire-is-read-only",
+      "to": "artifact.pf.pf.runtime.quack.assert-read-only",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-serving-wire-is-read-only.verified-by.evidence.pf.dev-serving-wire-is-read-only.pytest-platform-tests",
+      "from": "constraint.pf.dev-serving-wire-is-read-only",
+      "to": "evidence.pf.dev-serving-wire-is-read-only.pytest-platform-tests",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "verified_at": "2026-09-01T20:00:05Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-server-binds-localhost-only.derived-from.intent.pf.dev-server-binds-localhost-only",
+      "from": "constraint.pf.dev-server-binds-localhost-only",
+      "to": "intent.pf.dev-server-binds-localhost-only",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-server-binds-localhost-only.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.dev-server-binds-localhost-only",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-server-binds-localhost-only.implemented-by.artifact.pf.pf.runtime.quack.serve-forever",
+      "from": "constraint.pf.dev-server-binds-localhost-only",
+      "to": "artifact.pf.pf.runtime.quack.serve-forever",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.dev-server-binds-localhost-only.verified-by.evidence.pf.dev-server-binds-localhost-only.pytest-platform-tests",
+      "from": "constraint.pf.dev-server-binds-localhost-only",
+      "to": "evidence.pf.dev-server-binds-localhost-only.pytest-platform-tests",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "verified_at": "2026-09-01T20:00:05Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.derived-from.intent.pf.quack-token-never-leaves-the-machine",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "intent.pf.quack-token-never-leaves-the-machine",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.implemented-by.artifact.pf.pf.runtime.quack.serve-forever",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "artifact.pf.pf.runtime.quack.serve-forever",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.implemented-by.artifact.pf.gate.yaml.denylist",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "artifact.pf.gate.yaml.denylist",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.implemented-by.artifact.pf..gitignore",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "artifact.pf..gitignore",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.quack-token-never-leaves-the-machine.verified-by.evidence.pf.quack-token-never-leaves-the-machine.pytest-platform-tests",
+      "from": "constraint.pf.quack-token-never-leaves-the-machine",
+      "to": "evidence.pf.quack-token-never-leaves-the-machine.pytest-platform-tests",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:05Z",
+        "verified_at": "2026-09-01T20:00:05Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.warehouse-custody-is-recorded.derived-from.intent.pf.warehouse-custody-is-recorded",
+      "from": "constraint.pf.warehouse-custody-is-recorded",
+      "to": "intent.pf.warehouse-custody-is-recorded",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.warehouse-custody-is-recorded.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.warehouse-custody-is-recorded",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.warehouse-custody-is-recorded.implemented-by.artifact.pf.pf.runtime.quack.-custody",
+      "from": "constraint.pf.warehouse-custody-is-recorded",
+      "to": "artifact.pf.pf.runtime.quack.-custody",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.warehouse-custody-is-recorded.verified-by.evidence.pf.warehouse-custody-is-recorded.pf-provenance-verify",
+      "from": "constraint.pf.warehouse-custody-is-recorded",
+      "to": "evidence.pf.warehouse-custody-is-recorded.pf-provenance-verify",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-09-01T20:00:06Z",
+        "verified_at": "2026-09-01T20:00:06Z"
       }
     },
     {
@@ -5829,7 +6776,7 @@
       "to": "intent.pf.control-baseline-is-declared",
       "type": "derived_from",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
+        "created_at": "2026-08-19T21:59:26Z",
         "confidence": "high",
         "method": "human_review"
       }
@@ -5840,7 +6787,7 @@
       "to": "policy.pf.data-platform",
       "type": "governed_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5849,8 +6796,8 @@
       "to": "artifact.pf.pf.air.coverage.assess",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5859,8 +6806,8 @@
       "to": "artifact.pf.pf.air.register.render-register",
       "type": "implemented_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:19Z",
-        "implemented_at": "2026-08-19T18:05:19Z"
+        "created_at": "2026-08-19T21:59:26Z",
+        "implemented_at": "2026-08-19T21:59:26Z"
       }
     },
     {
@@ -5869,8 +6816,8 @@
       "to": "evidence.pf.control-baseline-is-declared.pf-air-coverage",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T21:38:43Z",
-        "verified_at": "2026-08-19T21:38:43Z"
+        "created_at": "2026-09-01T20:00:06Z",
+        "verified_at": "2026-09-01T20:00:06Z"
       }
     },
     {
@@ -5879,8 +6826,8 @@
       "to": "evidence.pf.control-baseline-is-declared.governance-air-register-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-08-19T18:05:20Z",
-        "verified_at": "2026-08-19T18:05:20Z"
+        "created_at": "2026-08-28T04:59:23Z",
+        "verified_at": "2026-08-28T04:59:23Z"
       }
     }
   ],

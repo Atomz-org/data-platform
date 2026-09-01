@@ -50,20 +50,35 @@ def write_profiles(project_dir: str | Path, project: str) -> Path:
     return out
 
 
-def dbt(project_dir: str | Path, *args: str, target: str = "dev",
-        duckdb_path: str | Path | None = None, check: bool = False) -> subprocess.CompletedProcess:
-    """Invoke dbt Core in a project's transform/ directory."""
+def dbt(
+    project_dir: str | Path, *args: str, target: str = "dev", duckdb_path: str | Path | None = None, check: bool = False
+) -> subprocess.CompletedProcess:
+    """Invoke dbt Core in a project's transform/ directory.
+
+    dbt is a writer, so when the project's dev database is served by a quack
+    server (`pf quack serve`), the invocation runs inside the write window —
+    the server yields the file for the build and is back before this returns.
+    A `prod` build touches a real warehouse, not the file, and skips the
+    window; with no server running the window is a no-op.
+    """
     import os
+
+    from pf.runtime.quack import write_window
 
     env = dict(os.environ)
     env["DBT_TARGET"] = target
     if duckdb_path:
         env["PF_DUCKDB_PATH"] = str(duckdb_path)
     transform = Path(project_dir) / "transform"
-    return subprocess.run(
-        ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
-        env=env, capture_output=True, text=True, check=check,
-    )
+    windowed = None if target == "prod" else env.get("PF_DUCKDB_PATH")
+    with write_window(windowed):
+        return subprocess.run(
+            ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=check,
+        )
 
 
 def deps(project_dir: str | Path, duckdb_path: str | Path | None = None) -> subprocess.CompletedProcess:
@@ -85,8 +100,7 @@ def parse(project_dir: str | Path, duckdb_path: str | Path | None = None) -> sub
     return dbt(project_dir, "parse", duckdb_path=duckdb_path)
 
 
-def ensure_manifest(project_dir: str | Path,
-                    duckdb_path: str | Path | None = None) -> bool:
+def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = None) -> bool:
     """Produce `target/manifest.json` if it is not already there.
 
     The manifest is where the models, their columns and their lineage come
@@ -145,25 +159,43 @@ def failed_nodes(project_dir: str | Path) -> list[dict[str, Any]]:
     ]
 
 
-def modified_nodes(project_dir: str | Path, state_dir: str | Path,
-                   duckdb_path: str | Path | None = None) -> list[str]:
+def modified_nodes(project_dir: str | Path, state_dir: str | Path, duckdb_path: str | Path | None = None) -> list[str]:
     """`dbt ls -s state:modified+` — feeds impact analysis on a PR."""
-    proc = dbt(project_dir, "ls", "--select", "state:modified+",
-               "--state", str(state_dir), "--resource-type", "model",
-               "--output", "name", duckdb_path=duckdb_path)
+    proc = dbt(
+        project_dir,
+        "ls",
+        "--select",
+        "state:modified+",
+        "--state",
+        str(state_dir),
+        "--resource-type",
+        "model",
+        "--output",
+        "name",
+        duckdb_path=duckdb_path,
+    )
     if proc.returncode != 0:
         return []
     return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip() and " " not in ln.strip()]
 
 
-def mf_query(project_dir: str | Path, metrics: list[str], group_by: list[str],
-             where: str = "", limit: int = 100) -> subprocess.CompletedProcess:
-    """MetricFlow CLI — the dbt Core stand-in for the Cloud Semantic Layer API."""
+def mf_query(
+    project_dir: str | Path, metrics: list[str], group_by: list[str], where: str = "", limit: int = 100
+) -> subprocess.CompletedProcess:
+    """MetricFlow CLI — the dbt Core stand-in for the Cloud Semantic Layer API.
+
+    mf reads through dbt's adapter — a direct file open — so while a quack
+    server owns the dev database, the file is borrowed for the query.
+    """
+    import os
+
+    from pf.runtime.quack import write_window
+
     args = ["mf", "query", "--metrics", ",".join(metrics)]
     if group_by:
         args += ["--group-by", ",".join(group_by)]
     if where:
         args += ["--where", where]
     args += ["--limit", str(limit)]
-    return subprocess.run(args, cwd=str(Path(project_dir) / "transform"),
-                          capture_output=True, text=True)
+    with write_window(os.environ.get("PF_DUCKDB_PATH")):
+        return subprocess.run(args, cwd=str(Path(project_dir) / "transform"), capture_output=True, text=True)

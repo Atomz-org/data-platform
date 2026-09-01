@@ -136,10 +136,12 @@ def has_data(project_dir: Path) -> bool:
     except duckdb.Error:
         return False  # a sister holds the write lock — assume it has data
     try:
-        return bool(con.execute(
-            "SELECT 1 FROM information_schema.tables "
-            "WHERE table_schema NOT IN ('information_schema','pg_catalog') LIMIT 1"
-        ).fetchone())
+        return bool(
+            con.execute(
+                "SELECT 1 FROM information_schema.tables "
+                "WHERE table_schema NOT IN ('information_schema','pg_catalog') LIMIT 1"
+            ).fetchone()
+        )
     except duckdb.Error:
         return False
     finally:
@@ -180,8 +182,7 @@ class ReviewModel:
     @property
     def key(self) -> str:
         """First identity column that is safe to key on, or empty."""
-        return next((c.name for c in self.columns
-                     if c.intent == "identity" and not c.pii), "")
+        return next((c.name for c in self.columns if c.intent == "identity" and not c.pii), "")
 
     def comparable(self) -> list[str]:
         """Columns a value diff may materialise — everything except PII."""
@@ -217,13 +218,13 @@ def generate_config(project_dir: Path) -> dict[str, Any]:
     fail on first run.
     """
     checks: list[dict[str, Any]] = [
-        {"name": "Row count diff",
-         "description": "Row counts for every modified table model.",
-         "type": "row_count_diff",
-         "params": {"select": "state:modified,config.materialized:table"}},
-        {"name": "Schema diff",
-         "description": "Column additions, removals and type changes.",
-         "type": "schema_diff"},
+        {
+            "name": "Row count diff",
+            "description": "Row counts for every modified table model.",
+            "type": "row_count_diff",
+            "params": {"select": "state:modified,config.materialized:table"},
+        },
+        {"name": "Schema diff", "description": "Column additions, removals and type changes.", "type": "schema_diff"},
     ]
 
     for model in _reviewable_models(project_dir):
@@ -247,28 +248,35 @@ def generate_config(project_dir: Path) -> dict[str, Any]:
                 # durable and shared, so a PII column here would persist real
                 # addresses into a review artefact.
                 params["columns"] = model.comparable()
-            checks.append({
-                "name": f"Value diff — {model.name}",
-                "description": (f"Row-level differences in {model.name} "
-                                f"({subject}), keyed on {model.key}."
-                                + (f" Excludes {len(redacted)} PII column(s)."
-                                   if redacted else "")),
-                "type": "value_diff",
-                "params": params,
-            })
+            checks.append(
+                {
+                    "name": f"Value diff — {model.name}",
+                    "description": (
+                        f"Row-level differences in {model.name} "
+                        f"({subject}), keyed on {model.key}."
+                        + (f" Excludes {len(redacted)} PII column(s)." if redacted else "")
+                    ),
+                    "type": "value_diff",
+                    "params": params,
+                }
+            )
 
         # Distribution checks take a column list, so one check per model covers
         # every magnitude it carries.
         distribution = model.by_intent("distribution")
         if distribution:
-            checks.append({
-                "name": f"Profile diff — {model.name}",
-                "description": (f"Distribution of {', '.join(distribution)} "
-                                f"({subject}). A shifted total is the failure "
-                                f"lineage cannot predict."),
-                "type": "profile_diff",
-                "params": {"model": model.name, "columns": distribution},
-            })
+            checks.append(
+                {
+                    "name": f"Profile diff — {model.name}",
+                    "description": (
+                        f"Distribution of {', '.join(distribution)} "
+                        f"({subject}). A shifted total is the failure "
+                        f"lineage cannot predict."
+                    ),
+                    "type": "profile_diff",
+                    "params": {"model": model.name, "columns": distribution},
+                }
+            )
 
         # Category drift as a keyed group-by rather than recce's `top_k_diff`.
         #
@@ -284,20 +292,26 @@ def generate_config(project_dir: Path) -> dict[str, Any]:
         # same rename shows up as a row that exists on one side only. Same
         # question, a comparison that can actually answer it.
         for col in model.by_intent("categories"):
-            checks.append({
-                "name": f"Category drift — {model.name}.{col}",
-                "description": (f"Values gained or lost in {col} ({subject}). "
-                                f"A category that appears or disappears breaks an "
-                                f"accepted_values test downstream without moving "
-                                f"the row count."),
-                "type": "query_diff",
-                "params": {
-                    "sql_template": (f"select {col} as category, count(*) as n "
-                                     f"from {{{{ ref('{model.name}') }}}} "
-                                     f"group by 1 order by 1"),
-                    "primary_keys": ["category"],
-                },
-            })
+            checks.append(
+                {
+                    "name": f"Category drift — {model.name}.{col}",
+                    "description": (
+                        f"Values gained or lost in {col} ({subject}). "
+                        f"A category that appears or disappears breaks an "
+                        f"accepted_values test downstream without moving "
+                        f"the row count."
+                    ),
+                    "type": "query_diff",
+                    "params": {
+                        "sql_template": (
+                            f"select {col} as category, count(*) as n "
+                            f"from {{{{ ref('{model.name}') }}}} "
+                            f"group by 1 order by 1"
+                        ),
+                        "primary_keys": ["category"],
+                    },
+                }
+            )
     return {"checks": checks}
 
 
@@ -342,18 +356,18 @@ def _reviewable_models(project_dir: Path) -> list[ReviewModel]:
                     # its own PII role is covered without touching this module.
                     pii = bool(props.get("pii")) or bool(role and role.pii)
                     intent = role.review_intent if role else "none"
-                    cols.append(ReviewColumn(col.name, role_name,
-                                             "none" if pii else intent, pii))
+                    cols.append(ReviewColumn(col.name, role_name, "none" if pii else intent, pii))
                 if any(c.intent != "none" for c in cols):
-                    out.append(ReviewModel(
-                        name=m.name,
-                        grain=(m.props or {}).get("grain", ""),
-                        columns=tuple(cols),
-                    ))
+                    out.append(
+                        ReviewModel(
+                            name=m.name,
+                            grain=(m.props or {}).get("grain", ""),
+                            columns=tuple(cols),
+                        )
+                    )
     except Exception:  # noqa: BLE001 — a half-built graph must not break bootstrap
         return []
     return sorted(out, key=lambda r: r.name)
-
 
 
 def write_config(project_dir: Path) -> tuple[Path, bool]:
@@ -366,21 +380,23 @@ def write_config(project_dir: Path) -> tuple[Path, bool]:
     import yaml
 
     path = config_file(project_dir)
-    body = ("# GENERATED by `pf bootstrap`. Do not edit.\n"
-            "#\n"
-            "# Every check below is derived, not written:\n"
-            "#\n"
-            "#   contracts/annotations.yaml   column -> ontology role\n"
-            "#   ontology concepts.yaml       role   -> review intent, pii flag\n"
-            "#   pf.tools.recce               intent -> check type\n"
-            "#\n"
-            "# So the way to change a check is to fix what the column *means*, not\n"
-            "# to edit here: a wrong check is a wrong role. Columns whose role is\n"
-            "# PII are excluded from every value-level check, because this file's\n"
-            "# results land in recce_state.json, which is durable and shared.\n"
-            "#\n"
-            "# Regenerate with `pf tool recce config <group> <project>`.\n"
-            + yaml.safe_dump(generate_config(project_dir), sort_keys=False))
+    body = (
+        "# GENERATED by `pf bootstrap`. Do not edit.\n"
+        "#\n"
+        "# Every check below is derived, not written:\n"
+        "#\n"
+        "#   contracts/annotations.yaml   column -> ontology role\n"
+        "#   ontology concepts.yaml       role   -> review intent, pii flag\n"
+        "#   pf.tools.recce               intent -> check type\n"
+        "#\n"
+        "# So the way to change a check is to fix what the column *means*, not\n"
+        "# to edit here: a wrong check is a wrong role. Columns whose role is\n"
+        "# PII are excluded from every value-level check, because this file's\n"
+        "# results land in recce_state.json, which is durable and shared.\n"
+        "#\n"
+        "# Regenerate with `pf tool recce config <group> <project>`.\n"
+        + yaml.safe_dump(generate_config(project_dir), sort_keys=False)
+    )
     if path.exists() and path.read_text() == body:
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -443,14 +459,14 @@ def capture_baseline(project_dir: Path, rebuild: bool = True) -> tuple[Path, lis
         if build.returncode != 0:
             raise RuntimeError(
                 "baseline build failed — the comparison environment would be "
-                f"incomplete:\n{(build.stdout or build.stderr)[-2000:]}")
+                f"incomplete:\n{(build.stdout or build.stderr)[-2000:]}"
+            )
         # Column-level checks need a catalog. Failing to produce one degrades the
         # diff to structural checks rather than breaking it, so it is not fatal.
         dbt(project_dir, "docs", "generate", target="base", duckdb_path=wh)
 
     if not (src / "manifest.json").exists():
-        raise FileNotFoundError(
-            f"no dbt manifest at {src / 'manifest.json'} — run `pf seed` first")
+        raise FileNotFoundError(f"no dbt manifest at {src / 'manifest.json'} — run `pf seed` first")
 
     dst = baseline_dir(project_dir)
     dst.mkdir(parents=True, exist_ok=True)
@@ -479,26 +495,23 @@ def review_prefix(group: str, project: str, ref: str = "") -> str:
     return f"{base}/transform/{REVIEWS_DIR}/{artifacts.sanitize_ref(ref) if ref else artifacts.head_ref()}"
 
 
-def baseline_pairs(project_dir: Path, group: str, project: str,
-                   ref: str = "") -> list[tuple[str, Path]]:
+def baseline_pairs(project_dir: Path, group: str, project: str, ref: str = "") -> list[tuple[str, Path]]:
     p = baseline_prefix(group, project, ref)
-    return [(f"{p}/{name}", baseline_dir(project_dir) / name)
-            for name in BASELINE_ARTEFACTS]
+    return [(f"{p}/{name}", baseline_dir(project_dir) / name) for name in BASELINE_ARTEFACTS]
 
 
-def review_pairs(project_dir: Path, group: str, project: str,
-                 ref: str = "") -> list[tuple[str, Path]]:
+def review_pairs(project_dir: Path, group: str, project: str, ref: str = "") -> list[tuple[str, Path]]:
     p = review_prefix(group, project, ref)
-    return [(f"{p}/{STATE_FILE}", state_file(project_dir)),
-            (f"{p}/{SUMMARY_FILE}", summary_file(project_dir))]
+    return [(f"{p}/{STATE_FILE}", state_file(project_dir)), (f"{p}/{SUMMARY_FILE}", summary_file(project_dir))]
 
 
 def _store(store: artifacts.Store | None) -> artifacts.Store | None:
     return store if store is not None else artifacts.Store.from_env()
 
 
-def publish_baseline(project_dir: Path, group: str, project: str, ref: str = "",
-                     store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+def publish_baseline(
+    project_dir: Path, group: str, project: str, ref: str = "", store: artifacts.Store | None = None
+) -> list[artifacts.Transfer]:
     """Push the captured baseline. No store configured → nothing happens.
 
     Silent no-op rather than an error, in every publish and fetch below: a
@@ -510,29 +523,31 @@ def publish_baseline(project_dir: Path, group: str, project: str, ref: str = "",
     return artifacts.push_files(s, baseline_pairs(project_dir, group, project, ref)) if s else []
 
 
-def fetch_baseline(project_dir: Path, group: str, project: str, ref: str = "",
-                   store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+def fetch_baseline(
+    project_dir: Path, group: str, project: str, ref: str = "", store: artifacts.Store | None = None
+) -> list[artifacts.Transfer]:
     """Pull the baseline for this ref into `transform/target-base/`."""
     s = _store(store)
     return artifacts.pull_files(s, baseline_pairs(project_dir, group, project, ref)) if s else []
 
 
-def publish_review(project_dir: Path, group: str, project: str, ref: str = "",
-                   store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+def publish_review(
+    project_dir: Path, group: str, project: str, ref: str = "", store: artifacts.Store | None = None
+) -> list[artifacts.Transfer]:
     """Push the recorded review — the state file and the human-readable summary."""
     s = _store(store)
     return artifacts.push_files(s, review_pairs(project_dir, group, project, ref)) if s else []
 
 
-def fetch_review(project_dir: Path, group: str, project: str, ref: str = "",
-                 store: artifacts.Store | None = None) -> list[artifacts.Transfer]:
+def fetch_review(
+    project_dir: Path, group: str, project: str, ref: str = "", store: artifacts.Store | None = None
+) -> list[artifacts.Transfer]:
     """Pull a recorded review so `pf ui` and `recce server` have one to render."""
     s = _store(store)
     return artifacts.pull_files(s, review_pairs(project_dir, group, project, ref)) if s else []
 
 
-def ensure_baseline(project_dir: Path, group: str, project: str,
-                    ref: str = "") -> str:
+def ensure_baseline(project_dir: Path, group: str, project: str, ref: str = "") -> str:
     """Get a baseline onto disk however possible. Returns how, for printing.
 
     Order matters and is not arbitrary. A baseline already on disk is used
@@ -635,10 +650,20 @@ def _recce(project_dir: Path, *args: str, timeout: int = 900) -> subprocess.Comp
     relative to the dbt project directory, and passing --project-dir alone does
     not move the config lookup.
     """
-    return subprocess.run(
-        ["recce", *args], cwd=str(dbt_dir(project_dir)), env=dbt_env(project_dir),
-        capture_output=True, text=True, timeout=timeout,
-    )
+    from pf.runtime.quack import write_window
+
+    env = dbt_env(project_dir)
+    # recce opens the dev database directly through dbt's adapter; while a
+    # quack server owns the file, borrow it for the duration like any writer.
+    with write_window(env.get("PF_DUCKDB_PATH")):
+        return subprocess.run(
+            ["recce", *args],
+            cwd=str(dbt_dir(project_dir)),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
 
 
 def run(project_dir: Path, *, skip_query: bool = False) -> dict[str, Any]:
@@ -655,8 +680,7 @@ def run(project_dir: Path, *, skip_query: bool = False) -> dict[str, Any]:
     try:
         proc = _recce(project_dir, *args)
     except FileNotFoundError:
-        return {"ok": False, "reason": "not_installed",
-                "message": "recce is not on PATH — `uv sync --extra recce`"}
+        return {"ok": False, "reason": "not_installed", "message": "recce is not on PATH — `uv sync --extra recce`"}
     except subprocess.TimeoutExpired:
         return {"ok": False, "reason": "timeout", "message": "recce run timed out"}
 
@@ -703,13 +727,11 @@ def summary_markdown(project_dir: Path) -> str:
 #: that inferring a model from recce's compiled SQL is not — and the caller
 #: validates every recovered name against a model list it already holds, so a
 #: drift in the convention drops an attribution rather than inventing one.
-_CHECK_MODEL_RE = re.compile(
-    r"^(?:Value diff|Profile diff|Category drift) — ([A-Za-z0-9_]+)")
+_CHECK_MODEL_RE = re.compile(r"^(?:Value diff|Profile diff|Category drift) — ([A-Za-z0-9_]+)")
 
 
 def _run_model(run: dict[str, Any], check: dict[str, Any]) -> str:
-    explicit = ((run.get("params") or {}).get("model")
-                or (check.get("params") or {}).get("model"))
+    explicit = (run.get("params") or {}).get("model") or (check.get("params") or {}).get("model")
     if explicit:
         return str(explicit)
     m = _CHECK_MODEL_RE.match(check.get("name") or "")
@@ -739,11 +761,19 @@ def model_diffs(project_dir: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
 
     def row(name: str) -> dict[str, Any]:
-        return out.setdefault(name, {
-            "model": name, "checks": 0, "check_types": set(),
-            "row_count": None, "rows_added": 0, "rows_removed": 0,
-            "categories_drifted": [], "moved": False,
-        })
+        return out.setdefault(
+            name,
+            {
+                "model": name,
+                "checks": 0,
+                "check_types": set(),
+                "row_count": None,
+                "rows_added": 0,
+                "rows_removed": 0,
+                "categories_drifted": [],
+                "moved": False,
+            },
+        )
 
     for run in state.get("runs") or []:
         kind = run.get("type") or ""
@@ -763,8 +793,7 @@ def model_diffs(project_dir: Path) -> dict[str, dict[str, Any]]:
                 r["check_types"].add(kind)
                 base, curr = counts.get("base"), counts.get("curr")
                 if isinstance(base, int) and isinstance(curr, int):
-                    r["row_count"] = {"base": base, "curr": curr,
-                                      "delta": curr - base}
+                    r["row_count"] = {"base": base, "curr": curr, "delta": curr - base}
                     r["moved"] = r["moved"] or base != curr
             continue
 
@@ -837,28 +866,31 @@ def check_results(project_dir: Path) -> list[dict[str, Any]]:
         elif result is not None:
             verdict, detail = _verdict(kind, result, check)
 
-        out.append({
-            "name": check.get("name", "?"),
-            "description": check.get("description", ""),
-            "type": kind,
-            "model": _run_model(run, check),
-            "verdict": verdict,
-            "detail": detail,
-            "run_at": run.get("run_at", ""),
-            "is_preset": bool(check.get("is_preset")),
-        })
+        out.append(
+            {
+                "name": check.get("name", "?"),
+                "description": check.get("description", ""),
+                "type": kind,
+                "model": _run_model(run, check),
+                "verdict": verdict,
+                "detail": detail,
+                "run_at": run.get("run_at", ""),
+                "is_preset": bool(check.get("is_preset")),
+            }
+        )
     # Findings first: a reviewer reads down until the differences run out.
     order = {"changed": 0, "errored": 1, "not_run": 2, "clean": 3}
     return sorted(out, key=lambda r: (order.get(r["verdict"], 9), r["name"]))
 
 
-def _verdict(kind: str, result: dict[str, Any],
-             check: dict[str, Any]) -> tuple[str, str]:
+def _verdict(kind: str, result: dict[str, Any], check: dict[str, Any]) -> tuple[str, str]:
     """Turn one recorded result into (verdict, human detail)."""
     if kind == "row_count_diff":
-        moved = [f"{n}: {c.get('base')} → {c.get('curr')}"
-                 for n, c in result.items()
-                 if isinstance(c, dict) and c.get("base") != c.get("curr")]
+        moved = [
+            f"{n}: {c.get('base')} → {c.get('curr')}"
+            for n, c in result.items()
+            if isinstance(c, dict) and c.get("base") != c.get("curr")
+        ]
         if moved:
             return "changed", "; ".join(moved[:6])
         return "clean", f"{len(result)} model(s), row counts unchanged"
@@ -897,8 +929,7 @@ def _verdict(kind: str, result: dict[str, Any],
 
 
 # ------------------------------------------------------------------ serve --
-def server_argv(project_dir: Path, port: int = DEFAULT_PORT,
-                host: str = "127.0.0.1") -> list[str]:
+def server_argv(project_dir: Path, port: int = DEFAULT_PORT, host: str = "127.0.0.1") -> list[str]:
     """argv for `recce server`, review mode when a state file exists.
 
     Review mode opens the recorded state instead of recomputing, so the UI shows
@@ -916,8 +947,7 @@ def server_argv(project_dir: Path, port: int = DEFAULT_PORT,
 
 
 # --------------------------------------------------------------- bootstrap --
-def bootstrap_project(root: Path, group: str, project: str,
-                      project_dir: Path, config: dict[str, Any]) -> Any:
+def bootstrap_project(root: Path, group: str, project: str, project_dir: Path, config: dict[str, Any]) -> Any:
     """Idempotent per-project setup. Called by `pf bootstrap`.
 
     Tolerant of an empty project by contract — a freshly scaffolded entity has
@@ -968,7 +998,7 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
         group_name="review",
         deps=deps,
         description="dbt diff against the captured baseline. Structural blast "
-                    "radius is `pf impact`; this is what actually moved.",
+        "radius is `pf impact`; this is what actually moved.",
         compute_kind="recce",
         metadata={"dagster/kind": "recce", "tool": "recce"},
     )
@@ -986,7 +1016,9 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
                 "no baseline on disk or in the artefact store — run "
                 "`pf tool recce baseline %s %s` after a known-good build. "
                 "Skipping the diff rather than comparing against nothing.",
-                ctx.group, ctx.project)
+                ctx.group,
+                ctx.project,
+            )
             context.add_output_metadata({"status": "no_baseline"})
             return
 
@@ -1172,10 +1204,15 @@ CAPABILITY = Capability(
     # question someone asks after their first "review not exercised".
     env=("PF_ARTIFACTS_ACCESS_KEY_ID", "PF_ARTIFACTS_SECRET_ACCESS_KEY"),
     settings={
-        "permissions": {"allow": [
-            "Bash(pf tool recce:*)", "Bash(pf artifacts:*)",
-            "Bash(recce run:*)", "Bash(recce server:*)", "Bash(recce debug:*)",
-        ]},
+        "permissions": {
+            "allow": [
+                "Bash(pf tool recce:*)",
+                "Bash(pf artifacts:*)",
+                "Bash(recce run:*)",
+                "Bash(recce server:*)",
+                "Bash(recce debug:*)",
+            ]
+        },
     },
     gate={
         # Recorded diff state and the captured baseline. Both are build
@@ -1215,8 +1252,7 @@ TOOL = Tool(
         needs_baseline=True,
         baseline_dir=BASELINE_DIR,
         config_file=CONFIG_FILE,
-        artefacts=(f"transform/{STATE_FILE}", f"transform/{SUMMARY_FILE}",
-                   f"transform/{BASELINE_DIR}"),
+        artefacts=(f"transform/{STATE_FILE}", f"transform/{SUMMARY_FILE}", f"transform/{BASELINE_DIR}"),
     ),
     surface=Surface(
         port=DEFAULT_PORT,
@@ -1228,9 +1264,12 @@ TOOL = Tool(
     dagster="pf.tools.recce:dagster_assets",
     commands="pf.tools.recce:register_commands",
     stack_layer={
-        "layer": "review", "title": "Review (Recce)", "upstream": "recce",
+        "layer": "review",
+        "title": "Review (Recce)",
+        "upstream": "recce",
         "toolkits": ["recce-review"],
-        "artefacts": "transform/recce.yml", "node_kinds": [],
+        "artefacts": "transform/recce.yml",
+        "node_kinds": [],
     },
 )
 
@@ -1246,6 +1285,7 @@ def register_commands(app: Any) -> None:
 
     def _pdir(group: str, project: str) -> Path:
         from pf.cli import pdir
+
         return pdir(group, project)
 
     def _baseline(d: Path, group: str, project: str) -> None:
@@ -1270,15 +1310,15 @@ def register_commands(app: Any) -> None:
         for t in moved:
             console.print(f"  [dim]↑ {t.key} ({artifacts.human(t.size)})[/]")
         if not moved and artifacts.Store.from_env() is None:
-            console.print(f"  [dim]{kind} kept local — no artefact store "
-                          f"configured (`pf artifacts status`)[/]")
+            console.print(f"  [dim]{kind} kept local — no artefact store configured (`pf artifacts status`)[/]")
 
     @recce_app.command("baseline")
-    def cmd_baseline(group: str, project: str,
-                     ref: str = typer.Option("", "--ref",
-                                             help="publish under this ref instead of the base branch"),
-                     no_publish: bool = typer.Option(False, "--no-publish",
-                                                     help="capture locally, do not upload")) -> None:
+    def cmd_baseline(
+        group: str,
+        project: str,
+        ref: str = typer.Option("", "--ref", help="publish under this ref instead of the base branch"),
+        no_publish: bool = typer.Option(False, "--no-publish", help="capture locally, do not upload"),
+    ) -> None:
         """Capture the current dbt build as the comparison baseline, and publish it."""
         d = _pdir(group, project)
         try:
@@ -1289,8 +1329,7 @@ def register_commands(app: Any) -> None:
         console.print(f"[green]✓[/] baseline → {dst}")
         console.print(f"  captured: {', '.join(captured)}")
         if "catalog.json" not in captured:
-            console.print("  [yellow]![/] no catalog.json — column-level checks "
-                          "need `dbt docs generate`")
+            console.print("  [yellow]![/] no catalog.json — column-level checks need `dbt docs generate`")
         if no_publish:
             return
         try:
@@ -1307,28 +1346,28 @@ def register_commands(app: Any) -> None:
         d = _pdir(group, project)
         path, changed = write_config(d)
         n = len(generate_config(d)["checks"])
-        console.print(f"[green]✓[/] {path} — {n} check(s)"
-                      + ("" if changed else " [dim](unchanged)[/]"))
+        console.print(f"[green]✓[/] {path} — {n} check(s)" + ("" if changed else " [dim](unchanged)[/]"))
 
     @recce_app.command("run")
-    def cmd_run(group: str, project: str,
-                strict: bool = typer.Option(False, "--strict",
-                                            help="exit non-zero if a check fails")) -> None:
+    def cmd_run(
+        group: str, project: str, strict: bool = typer.Option(False, "--strict", help="exit non-zero if a check fails")
+    ) -> None:
         """Run the preset checks against the baseline."""
         d = _pdir(group, project)
         _baseline(d, group, project)
         if not has_baseline(d):
-            console.print("[red]no baseline[/] — run `pf tool recce baseline` "
-                          "after a known-good build, or `pf artifacts pull "
-                          f"{group} {project}` if one was published")
+            console.print(
+                "[red]no baseline[/] — run `pf tool recce baseline` "
+                "after a known-good build, or `pf artifacts pull "
+                f"{group} {project}` if one was published"
+            )
             raise typer.Exit(1)
         result = run(d)
         if result.get("reason") == "not_installed":
             console.print(f"[yellow]{result['message']}[/]")
             raise typer.Exit(1)
         mark = "[green]✓[/]" if result.get("ok") else "[yellow]![/]"
-        console.print(f"{mark} {result.get('checks_total', 0)} check(s) — "
-                      f"{result.get('state_file', '')}")
+        console.print(f"{mark} {result.get('checks_total', 0)} check(s) — {result.get('state_file', '')}")
         try:
             _published("review", publish_review(d, group, project))
         except artifacts.ArtifactStoreError as exc:
@@ -1338,15 +1377,20 @@ def register_commands(app: Any) -> None:
         raise typer.Exit(1 if strict and not result.get("ok") else 0)
 
     @recce_app.command("serve")
-    def cmd_serve(group: str, project: str,
-                  port: int = typer.Option(DEFAULT_PORT),
-                  host: str = typer.Option(
-                      "127.0.0.1",
-                      help="Bind address. The stack's front door proxies to "
-                           "127.0.0.1; a container that publishes the port "
-                           "directly needs 0.0.0.0.")) -> None:
+    def cmd_serve(
+        group: str,
+        project: str,
+        port: int = typer.Option(DEFAULT_PORT),
+        host: str = typer.Option(
+            "127.0.0.1",
+            help="Bind address. The stack's front door proxies to "
+            "127.0.0.1; a container that publishes the port "
+            "directly needs 0.0.0.0.",
+        ),
+    ) -> None:
         """Serve the Recce UI for this project."""
         import os
+
         d = _pdir(group, project)
         # The server renders artefacts; it does not produce them. A checkout
         # that has never run a review has neither, and since neither is in git
@@ -1361,8 +1405,9 @@ def register_commands(app: Any) -> None:
             except artifacts.ArtifactStoreError as exc:
                 console.print(f"[yellow]![/] could not fetch the review: {exc}")
         if not state_file(d).exists():
-            console.print("[yellow]![/] no recorded review on disk or in the "
-                          f"store — `pf tool recce run {group} {project}` first")
+            console.print(
+                f"[yellow]![/] no recorded review on disk or in the store — `pf tool recce run {group} {project}` first"
+            )
         argv = server_argv(d, port=port, host=host)
         console.print(f"[dim]{' '.join(argv)}  (cwd={dbt_dir(d)})[/]")
         console.print(f"[green]→[/] http://{host}:{port}/")
@@ -1415,8 +1460,7 @@ def register_commands(app: Any) -> None:
 
         if not has_baseline(d):
             if not data:
-                console.print("[yellow]no baseline, and no warehouse to build "
-                              "one from — review not exercised[/]")
+                console.print("[yellow]no baseline, and no warehouse to build one from — review not exercised[/]")
                 summary_file(d).write_text(
                     f"## recce — {group}/{project}\n\n"
                     "**Not exercised.** No baseline was found for this project — "
@@ -1438,8 +1482,7 @@ def register_commands(app: Any) -> None:
                 raise typer.Exit(1)
 
         if not ensure_current_manifest(d):
-            console.print("[red]dbt parse produced no manifest — this branch's "
-                          "dbt project does not compile[/]")
+            console.print("[red]dbt parse produced no manifest — this branch's dbt project does not compile[/]")
             raise typer.Exit(1)
 
         result = run(d, skip_query=not data)
@@ -1451,8 +1494,7 @@ def register_commands(app: Any) -> None:
         # Parenthesised, not bracketed: Rich reads `[...]` as a style tag and
         # would swallow the scope instead of printing it.
         scope = "full" if data else "structural only — no warehouse"
-        console.print(f"{result.get('checks_total', 0)} check(s) ({scope}), "
-                      f"ok={result.get('ok')}")
+        console.print(f"{result.get('checks_total', 0)} check(s) ({scope}), ok={result.get('ok')}")
         _publish_ci_review(d, group, project)
         raise typer.Exit(0 if result.get("ok") else 1)
 
