@@ -87,14 +87,49 @@ class QuackState:
     def endpoint(self) -> str:
         return f"quack:localhost:{self.port}"
 
-    def attach_sql(self, alias: str) -> tuple[str, ...]:
-        """The statements a client runs to reach this server, in order."""
+    def attach_sql(self, alias: str, redact: bool = False) -> tuple[str, ...]:
+        """The statements a client runs to reach this server, in order.
+
+        ``redact=True`` is for anything that prints: the token is replaced by
+        a pointer to the state file it lives in, because a token echoed into a
+        terminal outlives the server in scrollback, logs and transcripts. The
+        redacted form is display text, not runnable SQL — that is the point.
+        """
+        token = f"<redacted — read it from {state_path(self.database)}>" if redact else self.token
         return (
             "INSTALL quack",
             "LOAD quack",
-            f"CREATE SECRET IF NOT EXISTS (TYPE quack, TOKEN '{self.token}')",
+            f"CREATE SECRET IF NOT EXISTS (TYPE quack, TOKEN '{token}')",
             f"ATTACH '{self.endpoint}' AS {alias}",
         )
+
+
+#: Statement types allowed to cross the read path. Everything else is refused
+#: client-side before the network hop — and would be refused again by the
+#: engine anyway, since the server holds the database read-only. EXPLAIN is
+#: the only non-SELECT survivor; DESCRIBE, SHOW, SUMMARIZE and the read
+#: pragmas all parse as SELECT.
+READ_ONLY_STATEMENTS = frozenset({"SELECT", "EXPLAIN"})
+
+
+def assert_read_only(sql: str) -> None:
+    """Refuse anything that is not a read, using the real parser.
+
+    A string prefix is not a classifier — ``WITH … INSERT INTO`` opens with
+    the same characters as a query. ``duckdb.extract_statements`` runs
+    DuckDB's own parser and names every statement in the string, and every one
+    of them must be a read for the string to pass.
+    """
+    import duckdb
+
+    for st in duckdb.extract_statements(str(sql)):
+        name = st.type.name
+        if name not in READ_ONLY_STATEMENTS:
+            raise PermissionError(
+                f"{name} cannot cross the quack read path — the dev server holds "
+                "the database read-only. Writers borrow the file: use "
+                "`Warehouse.connect()` without read_only, or `pf quack stop`."
+            )
 
 
 class ReadConnection:
@@ -124,6 +159,7 @@ class ReadConnection:
             raise ValueError(
                 "bind parameters cannot cross the quack read path — the statement is shipped as text; inline the values"
             )
+        assert_read_only(sql)
         quoted = str(sql).replace("'", "''")
         return self._con.execute(f"SELECT * FROM quack_query('{self.quack_endpoint}', '{quoted}')")
 
@@ -199,12 +235,53 @@ def running_state(db_path: str | Path) -> QuackState | None:
     return state
 
 
-def ensure(db_path: str | Path, timeout: float = 15.0) -> QuackState:
-    """A running server for this database — the one already up, or a new one."""
-    state = running_state(db_path)
-    if state is not None:
-        return state
+# ---------------------------------------------------------------- custody --
+def _repo_root(db_path: str | Path) -> Path | None:
+    """The monorepo root above a warehouse file, or None outside one.
 
+    Identified structurally — `platform/` and `groups/` beside a `gate.yaml` —
+    never from cwd: custody records must land in the ledger of the repository
+    the database belongs to, regardless of who asks from where.
+    """
+    for parent in Path(db_path).resolve().parents:
+        if (parent / "platform").is_dir() and (parent / "groups").is_dir() and (parent / "gate.yaml").exists():
+            return parent
+    return None
+
+
+def _group_project(db_path: str | Path) -> tuple[str, str]:
+    parts = Path(db_path).resolve().parts
+    if "groups" in parts:
+        i = parts.index("groups")
+        if len(parts) > i + 3 and parts[i + 2] == "projects":
+            return parts[i + 1], parts[i + 3]
+    return "", ""
+
+
+@contextmanager
+def _custody(db_path: str | Path, summary: str) -> Iterator[None]:
+    """Record a change of warehouse custody in the provenance ledger.
+
+    Serving, stopping and borrowing are the moments the development database
+    changes hands, and each is an action like any other — intent, decision,
+    execution, chained (`docs/GOVERNANCE.md`). The ledger's kill switch is
+    honoured by construction: a revoked ledger refuses the custody record, and
+    with it the custody change. Outside a platform checkout (unit tests on
+    scratch paths) there is no ledger, and writing no record is the correct
+    record.
+    """
+    root = _repo_root(db_path)
+    if root is None:
+        yield
+        return
+    from pf.provenance import action
+
+    group, project = _group_project(db_path)
+    with action(root, tool="pf.quack", target=str(db_path), summary=summary, group=group, project=project):
+        yield
+
+
+def _spawn(db_path: str | Path, timeout: float) -> QuackState:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(  # noqa: S603 — argv is built here, nothing user-shaped
         [sys.executable, "-m", "pf.runtime.quack", "serve", str(db_path)],
@@ -227,20 +304,40 @@ def ensure(db_path: str | Path, timeout: float = 15.0) -> QuackState:
     raise TimeoutError(f"quack server for {db_path} did not come up within {timeout}s")
 
 
-def stop(db_path: str | Path, timeout: float = 10.0) -> bool:
-    """Stop the server owning this database. True if one was running."""
+def _terminate(db_path: str | Path, timeout: float) -> None:
     state = running_state(db_path)
     if state is None:
-        return False
+        return
     os.kill(state.pid, signal.SIGTERM)
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if not _alive(state.pid):
             state_path(db_path).unlink(missing_ok=True)
-            return True
+            return
         time.sleep(0.1)
     os.kill(state.pid, signal.SIGKILL)
     state_path(db_path).unlink(missing_ok=True)
+
+
+def ensure(db_path: str | Path, timeout: float = 15.0) -> QuackState:
+    """A running server for this database — the one already up, or a new one.
+
+    Starting a server is a custody change (the file stops being openable and
+    starts being served) and is recorded in the provenance ledger.
+    """
+    state = running_state(db_path)
+    if state is not None:
+        return state
+    with _custody(db_path, "dev server up — database now served read-only over quack"):
+        return _spawn(db_path, timeout)
+
+
+def stop(db_path: str | Path, timeout: float = 10.0) -> bool:
+    """Stop the server owning this database. True if one was running. Recorded."""
+    if running_state(db_path) is None:
+        return False
+    with _custody(db_path, "dev server stopped — database file released"):
+        _terminate(db_path, timeout)
     return True
 
 
@@ -249,16 +346,20 @@ def write_window(db_path: str | Path | None) -> Iterator[None]:
     """Yield the database file to a writer; restore the server afterwards.
 
     No server (or no path — a prod build has no file) means no-op, which is
-    what lets dbt and dlt wrap every invocation unconditionally.
+    what lets dbt and dlt wrap every invocation unconditionally. A real window
+    is one custody action in the ledger: the borrow is the intent, the body's
+    outcome is the execution, and a body that raises is recorded as an error
+    before the server comes back.
     """
     if db_path is None or running_state(db_path) is None:
         yield
         return
-    stop(db_path)
-    try:
-        yield
-    finally:
-        ensure(db_path)
+    with _custody(db_path, "write window — file borrowed from the dev server"):
+        _terminate(db_path, timeout=10.0)
+        try:
+            yield
+        finally:
+            _spawn(db_path, timeout=15.0)
 
 
 def serve_forever(db_path: str | Path, port: int | None = None) -> None:
@@ -280,6 +381,16 @@ def serve_forever(db_path: str | Path, port: int | None = None) -> None:
     con.execute("INSTALL quack; LOAD quack;")
     for schema in DEFAULT_SCHEMAS:
         con.execute(f'CREATE SCHEMA IF NOT EXISTS "{schema}"')
+    con.close()
+
+    # The serving connection is read-only, so the wire cannot mutate the
+    # database no matter what arrives on it — refused by the engine itself,
+    # not by a parser or a callback that could be argued with. Writers never
+    # meet this connection: they borrow the file through `write_window`.
+    # The endpoint is localhost by construction — the host is not a
+    # parameter, so a routable dev server cannot be configured into existence.
+    con = duckdb.connect(str(db), read_only=True)
+    con.execute("LOAD quack")
 
     port = derived_port(db) if port is None else port
     while _listening(port):  # hash clash or leftover listener — walk forward

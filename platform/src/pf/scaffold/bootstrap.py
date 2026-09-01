@@ -51,8 +51,17 @@ class Step:
 def _ensure_dirs(root: Path, group: str, project: str) -> StepResult:
     d = _pdir(root, group, project)
     made = []
-    for rel in ("data", "kg", "contracts", "mdl", "governance", ".duckdb-skills",
-                "decisions", ".memory/notes", "evals/cases"):
+    for rel in (
+        "data",
+        "kg",
+        "contracts",
+        "mdl",
+        "governance",
+        ".duckdb-skills",
+        "decisions",
+        ".memory/notes",
+        "evals/cases",
+    ):
         p = d / rel
         if not p.exists():
             p.mkdir(parents=True, exist_ok=True)
@@ -64,8 +73,7 @@ def _build_graph(root: Path, group: str, project: str) -> StepResult:
     from pf.kg.build import build_graph
 
     counts = build_graph(_pdir(root, group, project), group=group, project=project)
-    return StepResult("knowledge graph", "ok",
-                      f"{sum(counts.values())} nodes across {len(counts)} kinds")
+    return StepResult("knowledge graph", "ok", f"{sum(counts.values())} nodes across {len(counts)} kinds")
 
 
 def _render_card(root: Path, group: str, project: str) -> StepResult:
@@ -93,8 +101,7 @@ def _export_mdl(root: Path, group: str, project: str) -> StepResult:
     import json
 
     m = json.loads(path.read_text())
-    return StepResult("MDL manifest", "ok",
-                      f"{len(m['models'])} model(s), {len(m['relationships'])} relationship(s)")
+    return StepResult("MDL manifest", "ok", f"{len(m['models'])} model(s), {len(m['relationships'])} relationship(s)")
 
 
 def _export_owl(root: Path, group: str, project: str) -> StepResult:
@@ -104,8 +111,7 @@ def _export_owl(root: Path, group: str, project: str) -> StepResult:
 
     export_owl(root / "platform" / "src" / "pf" / "ontology" / "ontology.owl")
     s = stats()
-    return StepResult("OWL export", "ok",
-                      f"{s['classes']} classes, {s['object_properties']} object properties")
+    return StepResult("OWL export", "ok", f"{s['classes']} classes, {s['object_properties']} object properties")
 
 
 def _vendor_docs(root: Path, group: str, project: str) -> StepResult:
@@ -140,10 +146,12 @@ def _export_otop(root: Path, group: str, project: str) -> StepResult:
     export_otop(root, group, project, d)
     s = stats(build_manifest(root, group, project, d))
     unknown = s.get("evidence_unknown", 0)
-    return StepResult("otop manifest", "ok",
-                      f"{s.get('constraint', 0)} constraint(s), "
-                      f"{s.get('evidence', 0)} evidence"
-                      + (f", {unknown} unproven" if unknown else ""))
+    return StepResult(
+        "otop manifest",
+        "ok",
+        f"{s.get('constraint', 0)} constraint(s), "
+        f"{s.get('evidence', 0)} evidence" + (f", {unknown} unproven" if unknown else ""),
+    )
 
 
 def _build_reporting(root: Path, group: str, project: str) -> StepResult:
@@ -158,8 +166,7 @@ def _build_reporting(root: Path, group: str, project: str) -> StepResult:
     from pf.projections.evidence import build as build_evidence
 
     r = build_evidence(d, group, project)
-    return StepResult("reporting", "ok",
-                      f"{r['metrics']} metric(s), {r['pages']} page(s)")
+    return StepResult("reporting", "ok", f"{r['metrics']} metric(s), {r['pages']} page(s)")
 
 
 def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
@@ -211,20 +218,21 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
         cap = CAPABILITIES[name]
         # `.github/**` belongs to the repository, not the project — the same
         # split `pf.capabilities.apply` makes when writing.
-        targets = [
-            (root if rel.startswith(".github/") else d) / rel
-            for rel in (render(r, ctx) for r in cap.files)
-        ]
+        targets = [(root if rel.startswith(".github/") else d) / rel for rel in (render(r, ctx) for r in cap.files)]
         present = [t for t in targets if t.exists()]
         if len(present) == len(targets):
             out.append(StepResult(f"capability:{name}", "ok", "present"))
             continue
         if present:
-            out.append(StepResult(
-                f"capability:{name}", "skipped",
-                f"{len(present)}/{len(targets)} file(s) already exist "
-                f"(would rewrite {present[0].name}) — "
-                f"`pf capability-add {name} {group} {project}` to apply deliberately"))
+            out.append(
+                StepResult(
+                    f"capability:{name}",
+                    "skipped",
+                    f"{len(present)}/{len(targets)} file(s) already exist "
+                    f"(would rewrite {present[0].name}) — "
+                    f"`pf capability-add {name} {group} {project}` to apply deliberately",
+                )
+            )
             continue
         try:
             written = apply_capability(cap, root, d, ctx)
@@ -239,8 +247,7 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
         except Exception as exc:  # noqa: BLE001 — one capability must not stop the rest
             out.append(StepResult(f"capability:{name}", "failed", str(exc)))
             continue
-        out.append(StepResult(f"capability:{name}", "ok",
-                              f"added {len(written)} file(s)"))
+        out.append(StepResult(f"capability:{name}", "ok", f"added {len(written)} file(s)"))
 
     if not out:
         return [StepResult("capabilities", "skipped", "none default-enabled")]
@@ -270,10 +277,13 @@ def _group_air(root: Path, group: str, project: str) -> list[StepResult]:
     if path.exists():
         return [StepResult("group air.yaml", "ok", f"{path.relative_to(root)} present")]
     write(path, GROUP_AIR, {"group": group})
-    return [StepResult(
-        "group air.yaml", "created",
-        f"{path.relative_to(root)} — empty baseline; "
-        f"`pf air baseline {group} --suggest` proposes one")]
+    return [
+        StepResult(
+            "group air.yaml",
+            "created",
+            f"{path.relative_to(root)} — empty baseline; `pf air baseline {group} --suggest` proposes one",
+        )
+    ]
 
 
 def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
@@ -334,20 +344,24 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
 
-    lines = ["# GENERATED by `pf bootstrap`. Re-run after adding a project.",
-             "#",
-             "# One code location per project: a failure or reload in one sister never",
-             "# affects another, and each gets its own process.",
-             "load_from:"]
+    lines = [
+        "# GENERATED by `pf bootstrap`. Re-run after adding a project.",
+        "#",
+        "# One code location per project: a failure or reload in one sister never",
+        "# affects another, and each gets its own process.",
+        "load_from:",
+    ]
     n = 0
     for g, p, d in all_projects():
         module = p.replace("-", "_")
         if not (d / "src" / module / "definitions.py").exists():
             continue
-        lines += ["  - python_module:",
-                  f"      module_name: {module}.definitions",
-                  f"      working_directory: {(d / 'src').resolve()}",
-                  f"      location_name: {g}__{p}"]
+        lines += [
+            "  - python_module:",
+            f"      module_name: {module}.definitions",
+            f"      working_directory: {(d / 'src').resolve()}",
+            f"      location_name: {g}__{p}",
+        ]
         n += 1
     (root / "platform" / "workspace.yaml").write_text("\n".join(lines) + "\n")
     return StepResult("dagster code location", "ok", f"{n} location(s)")
@@ -385,8 +399,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     if dbt_yml.exists():
         text = dbt_yml.read_text()
         try:
-            paths = [str(p) for p in
-                     (yaml.safe_load(text) or {}).get("macro-paths") or []]
+            paths = [str(p) for p in (yaml.safe_load(text) or {}).get("macro-paths") or []]
         except yaml.YAMLError:
             paths = []
         wanted = [f"../../../../../platform/toolkits/{t}/macros" for t in TOOLKITS]
@@ -397,9 +410,12 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             for i, line in enumerate(lines):
                 out.append(line)
                 nxt = lines[i + 1] if i + 1 < len(lines) else ""
-                if (not inserted and line.lstrip().startswith("- ")
-                        and any(p in line for p in paths)
-                        and not nxt.lstrip().startswith("- ")):
+                if (
+                    not inserted
+                    and line.lstrip().startswith("- ")
+                    and any(p in line for p in paths)
+                    and not nxt.lstrip().startswith("- ")
+                ):
                     out += [f'  - "{m}"' for m in missing]
                     inserted = True
             if inserted:
@@ -413,15 +429,13 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             doc = yaml.safe_load(text) or {}
         except yaml.YAMLError:
             doc = {}
-        outputs = next((v.get("outputs") or {} for v in doc.values()
-                        if isinstance(v, dict) and "outputs" in v), {})
+        outputs = next((v.get("outputs") or {} for v in doc.values() if isinstance(v, dict) and "outputs" in v), {})
         # Only ever adds. A project that has retargeted `prod` at a real
         # warehouse must not have it reset to the DuckDB default by a step whose
         # job is to fill gaps.
         absent = [n for n in PROJECT_TARGETS if outputs and n not in outputs]
         if absent:
-            text = (text.rstrip("\n") + "\n"
-                    + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent))
+            text = text.rstrip("\n") + "\n" + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent)
             profiles.write_text(text)
             changed.append(f"profiles += {', '.join(absent)}")
 
@@ -447,8 +461,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         wh = default_warehouse()
         if wh is not None and outputs:
             prod = outputs.get("prod") or {}
-            placeholder = (prod.get("type") == "duckdb"
-                           and "PF_DUCKDB_PATH" in str(prod.get("path", "")))
+            placeholder = prod.get("type") == "duckdb" and "PF_DUCKDB_PATH" in str(prod.get("path", ""))
             if placeholder:
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
@@ -457,9 +470,9 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             elif prod:
                 # Name the engine the way an operator would. DuckLake reports as
                 # itself, not as the `duckdb` adapter that happens to drive it.
-                engine = ("ducklake"
-                          if str(prod.get("path", "")).startswith("ducklake:")
-                          else str(prod.get("type") or "?"))
+                engine = (
+                    "ducklake" if str(prod.get("path", "")).startswith("ducklake:") else str(prod.get("type") or "?")
+                )
                 if engine != wh.name:
                     changed.append(f"prod already on {engine}, left alone")
 
@@ -474,43 +487,89 @@ def _validate(root: Path, group: str, project: str) -> StepResult:
     issues = validate_project(_pdir(root, group, project))
     errors = [i for i in issues if i.severity == "error"]
     if errors:
-        return StepResult("conformance", "failed",
-                          "; ".join(str(i) for i in errors[:3]))
-    return StepResult("conformance", "ok",
-                      f"{len(issues)} warning(s)" if issues else "clean")
+        return StepResult("conformance", "failed", "; ".join(str(i) for i in errors[:3]))
+    return StepResult("conformance", "ok", f"{len(issues)} warning(s)" if issues else "clean")
+
+
+def _dev_serving(root: Path, group: str, project: str) -> StepResult:
+    """`docs/quack.md` — the served dev database, and its guardrails, on paper.
+
+    Regenerated, not written-once: the doc states enforced behaviour
+    (read-only wire, localhost binding, token containment, recorded custody),
+    and a stale statement about a guardrail is worse than none. Projects
+    scaffolded before the serving layer existed pick the doc up here.
+    """
+    from pf.scaffold.generator import PROJECT_QUACK_DOC, render
+
+    path = _pdir(root, group, project) / "docs" / "quack.md"
+    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
+    content = render(PROJECT_QUACK_DOC, ctx)
+    if path.exists() and path.read_text() == content:
+        return StepResult("dev serving", "ok", "docs/quack.md current")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    return StepResult("dev serving", "ok", "docs/quack.md written")
 
 
 STEPS: list[Step] = [
     Step("directories", "every generated artefact has a stable home", _ensure_dirs),
-    Step("knowledge graph", "kg_search, impact and the PreToolUse gate need a graph "
-                            "from day one, not after the first seed", _build_graph),
+    Step(
+        "knowledge graph",
+        "kg_search, impact and the PreToolUse gate need a graph from day one, not after the first seed",
+        _build_graph,
+    ),
     Step("context card", "the always-on index every session loads", _render_card),
-    Step("group card", "sister roster, so a new project is visible to its siblings",
-         _render_group_card),
-    Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
-         _export_mdl),
+    Step("group card", "sister roster, so a new project is visible to its siblings", _render_group_card),
+    Step("MDL manifest", "the BI / WrenAI projection; stable path before first model", _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
-    Step("otop manifest", "policy and evidence as an OpenTopology 0.2 graph; "
-                          "validated against the vendored schema", _export_otop),
-    Step("vendor docs", "provenance stays generated, so it cannot drift from the "
-                        "registry the tooling reads", _vendor_docs),
-    Step("reporting", "dashboards are a projection of the metrics, regenerated "
-                      "rather than hand-maintained", _build_reporting),
-    Step("tools", "a tool enabled for the group must reach every sister, "
-                  "including projects created before it existed", _bootstrap_tools),
-    Step("capabilities", "a default-enabled capability must reach every project, "
-                         "including ones scaffolded before it was a default",
-         _bootstrap_capabilities),
-    Step("group air.yaml", "a family with no control declaration has a gate that "
-                           "passes by finding nothing to check", _group_air),
-    Step("ci workflow", "one workflow per project, composed from the jobs its "
-                        "capabilities declare, so CI is readable in one place",
-         _ci_workflow),
-    Step("dagster code location", "an unregistered project never runs",
-         _register_code_location),
-    Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
-                       "compile its macros, and one with no base target cannot "
-                       "be diffed", _dbt_wiring),
+    Step(
+        "otop manifest",
+        "policy and evidence as an OpenTopology 0.2 graph; validated against the vendored schema",
+        _export_otop,
+    ),
+    Step(
+        "vendor docs",
+        "provenance stays generated, so it cannot drift from the registry the tooling reads",
+        _vendor_docs,
+    ),
+    Step(
+        "reporting",
+        "dashboards are a projection of the metrics, regenerated rather than hand-maintained",
+        _build_reporting,
+    ),
+    Step(
+        "tools",
+        "a tool enabled for the group must reach every sister, including projects created before it existed",
+        _bootstrap_tools,
+    ),
+    Step(
+        "capabilities",
+        "a default-enabled capability must reach every project, including ones scaffolded before it was a default",
+        _bootstrap_capabilities,
+    ),
+    Step(
+        "group air.yaml",
+        "a family with no control declaration has a gate that passes by finding nothing to check",
+        _group_air,
+    ),
+    Step(
+        "ci workflow",
+        "one workflow per project, composed from the jobs its capabilities declare, so CI is readable in one place",
+        _ci_workflow,
+    ),
+    Step("dagster code location", "an unregistered project never runs", _register_code_location),
+    Step(
+        "dbt wiring",
+        "a project scaffolded before a toolkit existed cannot "
+        "compile its macros, and one with no base target cannot "
+        "be diffed",
+        _dbt_wiring,
+    ),
+    Step(
+        "dev serving",
+        "the served dev database and its guardrails, documented in the project rather than assumed",
+        _dev_serving,
+    ),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 
@@ -527,8 +586,7 @@ def bootstrap(root: Path, group: str, project: str) -> list[StepResult]:
         try:
             out = step.run(root, group, project)
         except Exception as exc:  # noqa: BLE001 — a step failing is data, not a crash
-            results.append(StepResult(step.name, "failed",
-                                      f"{type(exc).__name__}: {exc}"[:200]))
+            results.append(StepResult(step.name, "failed", f"{type(exc).__name__}: {exc}"[:200]))
             continue
         results.extend(out if isinstance(out, list) else [out])
     return results

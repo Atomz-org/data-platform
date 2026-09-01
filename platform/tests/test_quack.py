@@ -101,6 +101,83 @@ def test_serve_read_over_wire_and_write_window(served) -> None:
     check.close()
 
 
+def test_statement_gate_uses_the_real_parser() -> None:
+    """Prefix matching is not a classifier — the parser is."""
+    for ok in (
+        "SELECT 1",
+        "WITH x AS (SELECT 1) SELECT * FROM x",
+        "DESCRIBE SELECT 1",
+        "SHOW TABLES",
+        "SUMMARIZE SELECT 1",
+        "EXPLAIN SELECT 1",
+        "PRAGMA database_list",
+    ):
+        quack.assert_read_only(ok)
+    for bad in (
+        "CREATE TABLE t(i INT)",
+        "WITH x AS (SELECT 1 a) INSERT INTO t SELECT * FROM x",
+        "DELETE FROM t",
+        "CALL quack_stop('x')",
+        "SET threads=1",
+        "COPY t TO 'out.csv'",
+        "SELECT 1; DROP TABLE t",
+    ):
+        with pytest.raises(PermissionError):
+            quack.assert_read_only(bad)
+
+
+def test_wire_is_read_only(served) -> None:
+    """Two independent refusals: the client's parser and the engine itself."""
+    db, state = served
+    con = quack.read_connection(state)
+    try:
+        with pytest.raises(PermissionError, match="cannot cross the quack read path"):
+            con.execute("CREATE TABLE smuggled AS SELECT 1")
+        # Bypass the client gate entirely: raw passthrough with the real token.
+        # The server holds the database read-only, so the engine refuses.
+        quoted = "CREATE TABLE smuggled AS SELECT 1".replace("'", "''")
+        with pytest.raises(Exception, match="read-only|Cannot execute"):
+            con._con.execute(f"SELECT * FROM quack_query('{state.endpoint}', '{quoted}')").fetchall()
+        assert con.execute("SELECT answer FROM seeded").fetchone() == (42,)
+    finally:
+        con.close()
+
+
+def test_attach_sql_redacts_the_token(served) -> None:
+    db, state = served
+    shown = "\n".join(state.attach_sql("x"))
+    redacted = "\n".join(state.attach_sql("x", redact=True))
+    assert state.token in shown
+    assert state.token not in redacted
+    assert str(quack.state_path(db)) in redacted, "redaction must say where the token lives"
+
+
+def test_custody_changes_are_recorded(tmp_path) -> None:
+    """Serve, borrow and stop each land in the provenance ledger as full actions."""
+    from pf.provenance import ledger
+
+    root = tmp_path / "repo"
+    (root / "platform").mkdir(parents=True)
+    (root / "gate.yaml").write_text("version: 1\n")
+    db = root / "groups" / "g" / "projects" / "p" / "data" / "p.duckdb"
+    db.parent.mkdir(parents=True)
+
+    quack.ensure(db)
+    with quack.write_window(db):
+        pass
+    quack.stop(db)
+
+    recorded = ledger.actions(root)
+    summaries = [r["intent"].payload["summary"] for r in recorded.values() if "intent" in r]
+    assert any("dev server up" in s for s in summaries)
+    assert any("write window" in s for s in summaries)
+    assert any("dev server stopped" in s for s in summaries)
+    for stages in recorded.values():
+        assert stages["intent"].tool == "pf.quack"
+        assert stages["intent"].group == "g" and stages["intent"].project == "p"
+        assert "execution" in stages, "every custody action must close with an execution record"
+
+
 def test_warehouse_connect_routes_reads_over_quack(served, tmp_path) -> None:
     db, state = served
     wh = Warehouse(group="g", project="srv", path=db)

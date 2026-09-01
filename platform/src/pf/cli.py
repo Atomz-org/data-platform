@@ -2550,13 +2550,22 @@ app.add_typer(quack_app, name="quack")
 
 
 @quack_app.command("serve")
-def cmd_quack_serve(group: str, project: str) -> None:
+def cmd_quack_serve(
+    group: str,
+    project: str,
+    show_token: bool = typer.Option(False, "--show-token", help="print the auth token instead of redacting it"),
+) -> None:
     """Serve the project's dev database at quack:localhost:<port>.
 
     Idempotent — an already-running server is reported, not duplicated. While
-    served, every pf reader reaches the database over the wire and dbt/dlt
-    borrow the file back per build; `pf quack stop` hands the file back for
-    anything that needs it held open directly.
+    served, the wire is read-only (the server holds the file read-only, the
+    engine refuses writes) and dbt/dlt borrow the file back per build;
+    `pf quack stop` hands the file back for anything that needs it directly.
+
+    The token is redacted by default: a token echoed into a terminal outlives
+    the server in scrollback and session transcripts. It lives in the 0600
+    state file beside the database; `--show-token` prints it when a human
+    needs to paste it somewhere.
     """
     from pf.runtime.quack import ensure
     from pf.runtime.warehouse import Warehouse
@@ -2564,9 +2573,9 @@ def cmd_quack_serve(group: str, project: str) -> None:
     wh = Warehouse.for_project(pdir(group, project), group, project)
     state = ensure(wh.path)
     console.print(f"[green]serving[/] {wh.path}")
-    console.print(f"  endpoint [bold]{state.endpoint}[/]  pid {state.pid}")
+    console.print(f"  endpoint [bold]{state.endpoint}[/]  pid {state.pid}  [dim](read-only wire)[/]")
     console.print("  from any DuckDB client:")
-    for stmt in state.attach_sql(project.replace("-", "_")):
+    for stmt in state.attach_sql(project.replace("-", "_"), redact=not show_token):
         console.print(f"    [dim]{stmt};[/]")
 
 
