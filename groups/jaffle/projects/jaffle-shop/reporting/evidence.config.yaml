@@ -4,33 +4,39 @@
 title: jaffle-shop
 
 plugins:
+  # Both sections are load-bearing. Without `components`, Evidence's
+  # injectComponents() discovers zero component plugins, silently injects no
+  # imports, and every generated page dies in the build with
+  # "'QueryViewer' is not defined" — naming a component no page mentions,
+  # because the preprocessor wraps each sql fence in one.
+  components:
+    "@evidence-dev/core-components": {}
   datasources:
     "@evidence-dev/duckdb": {}
 
 theme:
+  colorPalettes:
+    default:
+      light:
+        - '#2a78d6'
+        - '#eb6834'
+        - '#1baf7a'
+        - '#eda100'
+        - '#e87ba4'
+        - '#008300'
+        - '#4a3aa7'
+        - '#e34948'
+      dark:
+        - '#3987e5'
+        - '#d95926'
+        - '#199e70'
+        - '#c98500'
+        - '#d55181'
+        - '#008300'
+        - '#9085e9'
+        - '#e66767'
   colors:
-    categorical:
-    light:
-      - '#2a78d6'
-      - '#eb6834'
-      - '#1baf7a'
-      - '#eda100'
-      - '#e87ba4'
-      - '#008300'
-      - '#4a3aa7'
-      - '#e34948'
-    dark:
-      - '#3987e5'
-      - '#d95926'
-      - '#199e70'
-      - '#c98500'
-      - '#d55181'
-      - '#008300'
-      - '#9085e9'
-      - '#e66767'
-
-  status:
-    good: '#0ca30c'
+    positive: '#0ca30c'
     warning: '#fab219'
-    serious: '#ec835a'
-    critical: '#d03b3b'
+    negative: '#d03b3b'
+    status-serious: '#ec835a'
