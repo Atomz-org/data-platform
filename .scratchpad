@@ -1,0 +1,62 @@
+ Usage: pf [OPTIONS] COMMAND [ARGS]...                                          
+                                                                                
+ Agentic data platform control CLI.                                             
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ new-group          Create a new company group (a family of sister            │
+│                    companies).                                               │
+│ new-project        Create a project (one legal entity) inside a group.       │
+│ capabilities       Optional features `pf new-project --with` can wire into a │
+│                    project.                                                  │
+│ models             Model routing per step, with what each model actually     │
+│                    accepts.                                                  │
+│ capability-add     Add a capability to an existing project, then bootstrap   │
+│                    it.                                                       │
+│ onboard            Adopt an existing repository (git URL or path) as a       │
+│                    project.                                                  │
+│ dialect            Which SQL functions a tree calls, and whether they are    │
+│                    portable.                                                 │
+│ bootstrap          Re-run every post-scaffold step. Idempotent.              │
+│ bootstrap-steps    What `pf bootstrap` does, and why each step exists.       │
+│ work               Launch Claude Code scoped to exactly one project.         │
+│ impact             Blast radius of changing a node. The merge gate.          │
+│ impact-gate        CI gate over a comma-separated set of changed nodes.      │
+│ check              Ontology conformance, and the blast radius of anything    │
+│                    you have changed.                                         │
+│ evals-gen          Ground every toolkit's eval templates in this project's   │
+│                    own models.                                               │
+│ evals              Test the parts of this platform that are prompts.         │
+│ tokens             Enforce the always-on token budget. Fails if a card is    │
+│                    over.                                                     │
+│ gen-staging        Generate 1:1 staging models with role-driven cleaning     │
+│                    from annotations.                                         │
+│ seed               Run the project's pipelines and dbt build, then rebuild   │
+│                    graph + card.                                             │
+│ run-all            Run every sister project in parallel, then the roll-up.   │
+│ status             Show every group and project.                             │
+│ ontology           Print the platform ontology.                              │
+│ dagster-workspace  Generate platform/workspace.yaml — one code location per  │
+│                    project.                                                  │
+│ gate               Enforce gate.yaml over a set of paths. Used by the        │
+│                    pre-commit hook.                                          │
+│ ui                 Serve the control-plane dashboard.                        │
+│ mcp                Run the MCP server over stdio.                            │
+│ kg                 Knowledge graph operations.                               │
+│ align              Onboarding ladder: evaluate → implement → validate, one   │
+│                    stage at a time.                                          │
+│ stack              The control plane: one Postgres, one origin, one image.   │
+│ loop               Loop engineering: scheduled, gated, budgeted agent work.  │
+│ semantic           Ontology, topology and their projections.                 │
+│ vendor             Vendored upstreams: provenance, drift and contracts.      │
+│ report             Evidence BI reporting layer.                              │
+│ pr                 Per-pull-request platform impact report.                  │
+│ artifacts          Publish and fetch build artefacts (R2/S3).                │
+│ tool               Pluggable tools: dbt review, BI, whatever is installed.   │
+│ provenance         Agent action provenance: intent, decision, execution,     │
+│                    chain, timestamp.                                         │
+│ air                AI risk taxonomy and control catalogue, and our coverage  │
+│                    of it.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
