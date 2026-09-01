@@ -188,6 +188,32 @@ upstreams:
         why: DuckDB is the warehouse by design — one adapter, one dialect, no portability layer.
 
   # ---------------------------------------------------------------- duckdb --
+  - id: duckdb-quack
+    summary: "the client-server protocol serving every project's dev database"
+    name: DuckDB Quack
+    url: https://github.com/duckdb/duckdb-quack
+    path: vendor/duckdb-quack
+    branch: main
+    licence: MIT
+    role: runtime
+    why: >
+      The quack extension is what `pf quack serve` puts in front of each
+      project's dev DuckDB file. The extension binary itself arrives at
+      runtime via `INSTALL quack`; this pin is the reference source for the
+      wire behaviour our runtime is built around — what `quack_serve`,
+      `quack_query` and the client's ATTACH can and cannot carry.
+    adopted:
+      - upstream: README.md
+        kind: shape
+        ours:
+          - platform/src/pf/runtime/quack.py
+        note: >
+          Serve/secret/attach surface as documented upstream. Our runtime
+          routes reads through `quack_query` passthrough and keeps writers on
+          the file inside a write window, because the experimental client's
+          ATTACH cannot carry schema DDL or schema-qualified base-table
+          fetches — re-measure against this pin when it moves.
+
   - id: duckdb-skills
     summary: "driving DuckDB from an agent, read-only and truncated by policy"
     name: DuckDB Skills

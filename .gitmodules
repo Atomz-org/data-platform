@@ -90,3 +90,6 @@
 	url = https://github.com/Atomz-org/ai-governance-framework
 	branch = main
 	shallow = true
+[submodule "vendor/duckdb-quack"]
+	path = vendor/duckdb-quack
+	url = https://github.com/duckdb/duckdb-quack
