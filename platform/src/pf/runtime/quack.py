@@ -110,8 +110,9 @@ class ReadConnection:
     against a full jaffle-shop build: counts, joins, aggregates, DESCRIBE and
     catalog queries all correct via ``quack_query``; all broken via ATTACH.
 
-    ``execute`` returns the underlying connection, exactly as duckdb's does,
-    so ``con.execute(sql).fetchall()`` reads the same as everywhere else.
+    The local leg rides `pf.runtime.adbc`, so ``execute`` chains the way every
+    pf connection does — ``con.execute(sql).fetchall()`` for rows,
+    ``fetch_arrow`` for the batches themselves.
     """
 
     def __init__(self, con, state: QuackState):
@@ -129,6 +130,10 @@ class ReadConnection:
     def sql(self, sql: str):
         return self.execute(sql)
 
+    def fetch_arrow(self, sql: str):
+        """One server-side statement, straight to an Arrow table."""
+        return self.execute(sql).fetch_arrow_table()
+
     def close(self) -> None:
         self._con.close()
 
@@ -137,10 +142,15 @@ class ReadConnection:
 
 
 def read_connection(state: QuackState) -> ReadConnection:
-    """A connection whose statements run inside the server owning the file."""
-    import duckdb
+    """A connection whose statements run inside the server owning the file.
 
-    con = duckdb.connect()
+    The local leg is ADBC (`pf.runtime.adbc`), so results come off the
+    passthrough as Arrow batches like every other pf connection; the
+    client-to-server leg is the quack extension's own protocol, which is the
+    one part of the path this platform does not define."""
+    from pf.runtime import adbc
+
+    con = adbc.connect(":memory:")
     con.execute("INSTALL quack; LOAD quack;")
     con.execute(f"CREATE SECRET IF NOT EXISTS (TYPE quack, TOKEN '{state.token}')")
     return ReadConnection(con, state)

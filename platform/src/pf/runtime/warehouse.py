@@ -1,14 +1,16 @@
 """Warehouse access. One DuckDB file per project — that is what makes sister
 companies genuinely parallel, since DuckDB's single-writer lock is per file.
 
-When a quack dev server owns the file (`pf quack serve` — see
+Every connection this module hands out communicates over ADBC and moves
+results as Arrow (`pf.runtime.adbc`) — the duckdb Python DBAPI is not used
+here. When a quack dev server owns the file (`pf quack serve` — see
 `pf.runtime.quack`), readers reach the database over the wire instead of
 opening the file, and writers take the write window. Both happen inside
 `connect`, so callers are indifferent to whether the project is served.
 
 Cross-entity reads go through `attach_sisters`, which mounts sibling databases
-READ_ONLY so a roll-up can never corrupt a sister — over quack when a sister
-is served, straight from her file when not.
+READ_ONLY so a roll-up can never corrupt a sister; a served sister's file is
+borrowed for the duration, exactly as her own writers borrow it.
 """
 
 from __future__ import annotations
@@ -19,9 +21,7 @@ from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-import duckdb
-
-from pf.runtime import quack
+from pf.runtime import adbc, quack
 
 EXTENSIONS = ("httpfs", "json")
 
@@ -71,7 +71,7 @@ class Warehouse:
         return self.path
 
     @contextmanager
-    def connect(self, read_only: bool = False) -> Iterator[duckdb.DuckDBPyConnection]:
+    def connect(self, read_only: bool = False) -> Iterator["adbc.Connection | quack.ReadConnection"]:
         self.ensure_dir()
         served = None if self.motherduck else quack.running_state(self.path)
 
@@ -93,16 +93,16 @@ class Warehouse:
                 stack.enter_context(quack.write_window(self.path))
             if read_only and not self.path.exists():
                 read_only = False
-            con = duckdb.connect(self.dsn, read_only=read_only)
+            con = adbc.connect(self.dsn, read_only=read_only)
             stack.callback(con.close)
             for ext in EXTENSIONS:
                 # offline or already present — not fatal
-                with suppress(duckdb.Error):
+                with suppress(Exception):
                     con.execute(f"INSTALL {ext}; LOAD {ext};")
             yield con
 
     @contextmanager
-    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator[duckdb.DuckDBPyConnection]:
+    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator["adbc.Connection"]:
         """Attach sibling project databases READ_ONLY for cross-entity roll-ups.
 
         A served sister's file is borrowed for the duration — her server
@@ -127,11 +127,11 @@ class Warehouse:
                 yield con
             finally:
                 for alias in sisters:
-                    with suppress(duckdb.Error):
+                    with suppress(Exception):
                         con.execute(f"DETACH {alias}")
 
 
-def preview(con: duckdb.DuckDBPyConnection, table: str, limit: int = 5) -> dict:
+def preview(con, table: str, limit: int = 5) -> dict:
     """Truncation policy in one place: schema + n rows + counts. Never a raw dump."""
     limit = min(limit, 20)
     cols = con.execute(f"DESCRIBE SELECT * FROM {table}").fetchall()
