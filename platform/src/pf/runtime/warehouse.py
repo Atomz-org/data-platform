@@ -1,19 +1,27 @@
 """Warehouse access. One DuckDB file per project — that is what makes sister
 companies genuinely parallel, since DuckDB's single-writer lock is per file.
 
+When a quack dev server owns the file (`pf quack serve` — see
+`pf.runtime.quack`), readers reach the database over the wire instead of
+opening the file, and writers take the write window. Both happen inside
+`connect`, so callers are indifferent to whether the project is served.
+
 Cross-entity reads go through `attach_sisters`, which mounts sibling databases
-READ_ONLY so a roll-up can never corrupt a sister.
+READ_ONLY so a roll-up can never corrupt a sister — over quack when a sister
+is served, straight from her file when not.
 """
 
 from __future__ import annotations
 
 import os
 from collections.abc import Iterator
-from contextlib import contextmanager, suppress
+from contextlib import ExitStack, contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
+
+from pf.runtime import quack
 
 EXTENSIONS = ("httpfs", "json")
 
@@ -65,26 +73,52 @@ class Warehouse:
     @contextmanager
     def connect(self, read_only: bool = False) -> Iterator[duckdb.DuckDBPyConnection]:
         self.ensure_dir()
-        if read_only and not self.path.exists():
-            read_only = False
-        con = duckdb.connect(self.dsn, read_only=read_only)
-        try:
+        served = None if self.motherduck else quack.running_state(self.path)
+
+        if served is not None and read_only:
+            # The server holds the file's lock; the wire is not a preference
+            # here, it is the only way in. Statements execute server-side, so
+            # names resolve exactly as they would over a direct connection —
+            # see `quack.ReadConnection` for why this is not an ATTACH.
+            con = quack.read_connection(served)
+            try:
+                yield con
+            finally:
+                con.close()
+            return
+
+        with ExitStack() as stack:
+            if served is not None:
+                # A writer while served: borrow the file, give it back after.
+                stack.enter_context(quack.write_window(self.path))
+            if read_only and not self.path.exists():
+                read_only = False
+            con = duckdb.connect(self.dsn, read_only=read_only)
+            stack.callback(con.close)
             for ext in EXTENSIONS:
                 # offline or already present — not fatal
                 with suppress(duckdb.Error):
                     con.execute(f"INSTALL {ext}; LOAD {ext};")
             yield con
-        finally:
-            con.close()
 
     @contextmanager
     def attach_sisters(self, sisters: dict[str, Path]) -> Iterator[duckdb.DuckDBPyConnection]:
         """Attach sibling project databases READ_ONLY for cross-entity roll-ups.
 
+        A served sister's file is borrowed for the duration — her server
+        pauses and resumes, exactly as it does for her own writers. Attaching
+        her endpoint instead would be prettier and is wrong today: a roll-up
+        joins across catalogs in one statement, which the wire cannot carry,
+        and the quack client cannot fetch schema-qualified base tables at all.
+
         Args:
             sisters: alias -> path of each sister's .duckdb file.
         """
-        with self.connect() as con:
+        with ExitStack() as stack:
+            for p in sisters.values():
+                if quack.running_state(p) is not None:
+                    stack.enter_context(quack.write_window(p))
+            con = stack.enter_context(self.connect())
             for alias, p in sisters.items():
                 if not Path(p).exists():
                     raise FileNotFoundError(f"sister database missing: {alias} at {p}")

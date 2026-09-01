@@ -16,6 +16,7 @@ def render(text: str, ctx: dict[str, Any]) -> str:
     def sub(m: re.Match) -> str:
         key = m.group(1).strip()
         return str(ctx.get(key, m.group(0)))
+
     return re.sub(r"\{\{\s*([a-z_]+)\s*\}\}", sub, text)
 
 
@@ -39,9 +40,12 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
     if gdir.exists():
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
-    ctx = {"group": group, "domain": domain,
-           "classes_yaml": "\n".join(f"  - {c}" for c in classes),
-           "tools_yaml": _default_tools_yaml()}
+    ctx = {
+        "group": group,
+        "domain": domain,
+        "classes_yaml": "\n".join(f"  - {c}" for c in classes),
+        "tools_yaml": _default_tools_yaml(),
+    }
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
         write(gdir / "air.yaml", GROUP_AIR, ctx),
@@ -69,8 +73,8 @@ def _default_tools_yaml() -> str:
     """
     try:
         from pf.tools import all_tools
-        names = sorted(n for n, t in all_tools().items()
-                       if t.default_enabled and "group" in t.scope)
+
+        names = sorted(n for n, t in all_tools().items() if t.default_enabled and "group" in t.scope)
     except Exception:  # noqa: BLE001 — a broken plugin must not block scaffolding
         names = []
     if not names:
@@ -79,8 +83,9 @@ def _default_tools_yaml() -> str:
 
 
 # ---------------------------------------------------------------- project --
-def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
-                sisters: list[str] | None = None) -> list[Path]:
+def new_project(
+    root: Path, group: str, project: str, is_rollup: bool = False, sisters: list[str] | None = None
+) -> list[Path]:
     """Scaffold one project.
 
     The `hooks.PreToolUse` block in PROJECT_SETTINGS is load-bearing, not
@@ -100,12 +105,14 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
     module = project.replace("-", "_")
     sisters = sisters or []
     ctx = {
-        "group": group, "project": project, "module": module,
-        "sisters_py": ", ".join(f'"{s.replace("-", "_")}": "../{s}/data/{s.replace("-", "_")}.duckdb"'
-                                for s in sisters),
+        "group": group,
+        "project": project,
+        "module": module,
+        "sisters_py": ", ".join(
+            f'"{s.replace("-", "_")}": "../{s}/data/{s.replace("-", "_")}.duckdb"' for s in sisters
+        ),
         "sister_list": ", ".join(sisters) or "none",
-        "deny_siblings": ", ".join(
-            f'"Read(../{s}/**)"' for s in sisters) or '"Read(../*/src/**)"',
+        "deny_siblings": ", ".join(f'"Read(../{s}/**)"' for s in sisters) or '"Read(../*/src/**)"',
     }
 
     created = [
@@ -113,14 +120,14 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / ".claude" / "settings.json", PROJECT_SETTINGS, ctx),
         write(pdir / "pyproject.toml", PROJECT_PYPROJECT, ctx),
         write(pdir / "src" / module / "__init__.py", '"""{{project}} — business logic only."""\n', ctx),
-        write(pdir / "src" / module / "definitions.py",
-              ROLLUP_DEFS if is_rollup else PROJECT_DEFS, ctx),
-        write(pdir / "src" / module / "sources" / "__init__.py",
-              '"""Annotated dlt sources."""\n', ctx),
-        write(pdir / "src" / module / "defs" / "__init__.py",
-              '"""Extra Dagster assets collected by the factory."""\n', ctx),
-        write(pdir / "src" / module / "agents" / "__init__.py",
-              '"""Project-specific agent logic."""\n', ctx),
+        write(pdir / "src" / module / "definitions.py", ROLLUP_DEFS if is_rollup else PROJECT_DEFS, ctx),
+        write(pdir / "src" / module / "sources" / "__init__.py", '"""Annotated dlt sources."""\n', ctx),
+        write(
+            pdir / "src" / module / "defs" / "__init__.py",
+            '"""Extra Dagster assets collected by the factory."""\n',
+            ctx,
+        ),
+        write(pdir / "src" / module / "agents" / "__init__.py", '"""Project-specific agent logic."""\n', ctx),
         write(pdir / "transform" / "dbt_project.yml", PROJECT_DBT, ctx),
         write(pdir / "transform" / "profiles.yml", render_profiles(module), ctx),
         write(pdir / "transform" / "packages.yml", PROJECT_PACKAGES, ctx),
@@ -471,17 +478,23 @@ models:
 #: able to build the entire project on a laptop with no credentials, or they
 #: stop building it. Production is declared per project — `pf capability-add
 #: <group> <project> snowflake` rewrites this `prod` entry.
+#:
+#: `pf quack serve` puts a server in front of the dev file without changing
+#: these targets: readers reach the database over the quack protocol, and dbt
+#: keeps writing to the file inside `pf.runtime.quack.write_window` — the
+#: profile stays a plain path on purpose, because the experimental quack
+#: client cannot carry a dbt build (schema DDL and schema-qualified table
+#: fetches do not cross the wire).
 PROJECT_TARGETS: dict[str, dict[str, object]] = {
-    "dev":  {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 4},
-    "ci":   {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
+    "dev": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 4},
+    "ci": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
     "prod": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
     # Recce compares two *built* states, so there has to be somewhere to build
     # the second one. Same file, different schema: a separate database would mean
     # loading the seeds twice and would put the two states out of reach of a
     # single connection. The per-layer `+schema:` config appends to this, so
     # staging lands in `base_staging` and never collides with `main_staging`.
-    "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}",
-             "schema": "base", "threads": 4},
+    "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "schema": "base", "threads": 4},
 }
 
 
@@ -593,10 +606,9 @@ def target_type(text: str, name: str) -> str:
 def render_profiles(module: str, targets: dict[str, dict[str, object]] | None = None) -> str:
     """A whole profiles.yml. `DBT_TARGET` selects; nothing else switches warehouse."""
     targets = PROJECT_TARGETS if targets is None else targets
-    head = (f"{module}:\n"
-            f"  target: \"{{{{ env_var('DBT_TARGET', 'dev') }}}}\"\n"
-            f"  outputs:\n")
+    head = f"{module}:\n  target: \"{{{{ env_var('DBT_TARGET', 'dev') }}}}\"\n  outputs:\n"
     return head + "".join(render_target(n, s) for n, s in targets.items())
+
 
 PROJECT_PACKAGES = """\
 packages:

@@ -31,6 +31,8 @@ graphify-out/cache/
 **/kg/context_card.md
 **/data/*.duckdb
 **/data/*.duckdb.wal
+# The quack dev server's state file — holds the session token; never tracked.
+**/data/*.quack.json
 
 # Recce's recorded reviews and captured baselines, for every project.
 #

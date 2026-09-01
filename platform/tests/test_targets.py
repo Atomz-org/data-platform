@@ -24,8 +24,8 @@ ROOT = Path(__file__).resolve().parents[2]
 # ---------------------------------------------------------------- registry ----
 def test_exactly_one_warehouse_is_the_default() -> None:
     defaults = [w.name for w in WAREHOUSES.values() if w.default_enabled]
-    assert defaults == ["snowflake"]
-    assert default_warehouse().name == "snowflake"
+    assert defaults == ["ducklake"]
+    assert default_warehouse().name == "ducklake"
 
 
 @pytest.mark.parametrize("name", sorted(WAREHOUSES), ids=str)
@@ -43,8 +43,7 @@ def test_every_warehouse_has_its_uv_extra(name: str) -> None:
     extras = doc["project"]["optional-dependencies"]
     assert name in extras, f"pyproject has no `{name}` extra"
     adapter = WAREHOUSES[name].adapter
-    assert any(adapter in dep for dep in extras[name]), (
-        f"extra `{name}` does not install {adapter}")
+    assert any(adapter in dep for dep in extras[name]), f"extra `{name}` does not install {adapter}"
 
 
 @pytest.mark.parametrize("name", sorted(WAREHOUSES), ids=str)
@@ -95,8 +94,7 @@ def test_iceberg_prod_is_an_attached_r2_catalog() -> None:
     assert attach["alias"] == "lake"
     assert attach["options"]["type"] == "iceberg"
     assert prod["database"] == "lake"
-    assert WAREHOUSES["iceberg"].env == (
-        "R2_CATALOG_WAREHOUSE", "R2_CATALOG_ENDPOINT", "R2_CATALOG_TOKEN")
+    assert WAREHOUSES["iceberg"].env == ("R2_CATALOG_WAREHOUSE", "R2_CATALOG_ENDPOINT", "R2_CATALOG_TOKEN")
     assert WAREHOUSES["iceberg"].adapter == "dbt-duckdb"
 
 
@@ -110,8 +108,7 @@ def test_replace_target_round_trips_nested_blocks() -> None:
     swapped, changed = replace_target(text, "prod", WAREHOUSES["iceberg"].output)
     assert changed
     prod = yaml.safe_load(swapped)["demo"]["outputs"]["prod"]
-    assert prod["attach"][0]["options"]["endpoint"] == (
-        "{{ env_var('R2_CATALOG_ENDPOINT') }}")
+    assert prod["attach"][0]["options"]["endpoint"] == ("{{ env_var('R2_CATALOG_ENDPOINT') }}")
     # The other targets were not touched, and a second replace is a no-op.
     assert yaml.safe_load(swapped)["demo"]["outputs"]["dev"]["type"] == "duckdb"
     _, changed_again = replace_target(swapped, "prod", WAREHOUSES["iceberg"].output)
@@ -134,17 +131,19 @@ def test_bootstrap_never_takes_a_project_off_ducklake(tmp_path: Path) -> None:
     (d / "dbt_project.yml").write_text("name: demo\n")
 
     # A deliberate DuckLake prod survives.
-    (d / "profiles.yml").write_text(render_profiles(
-        "demo", {**PROJECT_TARGETS, "prod": WAREHOUSES["ducklake"].output}))
+    (d / "profiles.yml").write_text(render_profiles("demo", {**PROJECT_TARGETS, "prod": WAREHOUSES["ducklake"].output}))
     _dbt_wiring(tmp_path, "g", "p")
     prod = yaml.safe_load((d / "profiles.yml").read_text())["demo"]["outputs"]["prod"]
     assert prod["path"].startswith("ducklake:"), "bootstrap reverted DuckLake to the default"
 
-    # The scaffold placeholder is still retrofitted onto the default warehouse.
+    # The scaffold placeholder is still retrofitted onto the default warehouse
+    # — which is DuckLake itself now, distinguishable from the placeholder by
+    # its `ducklake:` path rather than by `type`.
     (d / "profiles.yml").write_text(render_profiles("demo", PROJECT_TARGETS))
     _dbt_wiring(tmp_path, "g", "p")
     prod = yaml.safe_load((d / "profiles.yml").read_text())["demo"]["outputs"]["prod"]
-    assert prod["type"] == "snowflake"
+    assert prod["type"] == "duckdb"
+    assert prod["path"].startswith("ducklake:")
 
 
 def test_bootstrap_never_takes_a_project_off_iceberg(tmp_path: Path) -> None:
@@ -156,8 +155,7 @@ def test_bootstrap_never_takes_a_project_off_iceberg(tmp_path: Path) -> None:
     d = tmp_path / "groups" / "g" / "projects" / "p" / "transform"
     d.mkdir(parents=True)
     (d / "dbt_project.yml").write_text("name: demo\n")
-    (d / "profiles.yml").write_text(render_profiles(
-        "demo", {**PROJECT_TARGETS, "prod": WAREHOUSES["iceberg"].output}))
+    (d / "profiles.yml").write_text(render_profiles("demo", {**PROJECT_TARGETS, "prod": WAREHOUSES["iceberg"].output}))
     _dbt_wiring(tmp_path, "g", "p")
     prod = yaml.safe_load((d / "profiles.yml").read_text())["demo"]["outputs"]["prod"]
     assert prod["database"] == "lake", "bootstrap reverted Iceberg to the default"

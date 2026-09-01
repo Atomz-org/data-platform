@@ -41,9 +41,14 @@ def run_source(
     # dlt opens the duckdb file directly rather than through `Warehouse.connect`,
     # so on a checkout that has never been seeded it fails in `_sync_destination`
     # with a DestinationConnectionError blaming credentials for a missing `data/`.
+    # For the same reason it is a writer the quack server cannot see coming:
+    # the write window below yields the file for the load and re-serves after.
+    from pf.runtime.quack import write_window
+
     warehouse.ensure_dir()
     pipeline = build_pipeline(warehouse, source_name, dataset)
-    info = pipeline.run(source, schema_contract=contract or DEFAULT_CONTRACT)
+    with write_window(warehouse.path):
+        info = pipeline.run(source, schema_contract=contract or DEFAULT_CONTRACT)
     return {
         "pipeline": pipeline.pipeline_name,
         "dataset": pipeline.dataset_name,
@@ -78,17 +83,34 @@ def monitors_for(annotations: Iterable[Any]) -> list[dict[str, Any]]:
         for col, role in ann.roles.items():
             match role:
                 case "event_time":
-                    monitors.append({"resource": ann.resource, "column": col,
-                                     "kind": "freshness", "params": {"max_lag_hours": 26}})
+                    monitors.append(
+                        {"resource": ann.resource, "column": col, "kind": "freshness", "params": {"max_lag_hours": 26}}
+                    )
                 case "money_amount":
-                    monitors.append({"resource": ann.resource, "column": col,
-                                     "kind": "sum_drift",
-                                     "params": {"baseline_weeks": 4, "tolerance_pct": 30}})
+                    monitors.append(
+                        {
+                            "resource": ann.resource,
+                            "column": col,
+                            "kind": "sum_drift",
+                            "params": {"baseline_weeks": 4, "tolerance_pct": 30},
+                        }
+                    )
                 case "status_enum":
-                    monitors.append({"resource": ann.resource, "column": col,
-                                     "kind": "category_drift", "params": {"alert_on_new": True}})
+                    monitors.append(
+                        {
+                            "resource": ann.resource,
+                            "column": col,
+                            "kind": "category_drift",
+                            "params": {"alert_on_new": True},
+                        }
+                    )
                 case "natural_key" | "surrogate_key":
-                    monitors.append({"resource": ann.resource, "column": col,
-                                     "kind": "row_count_band",
-                                     "params": {"baseline_days": 14, "tolerance_pct": 40}})
+                    monitors.append(
+                        {
+                            "resource": ann.resource,
+                            "column": col,
+                            "kind": "row_count_band",
+                            "params": {"baseline_days": 14, "tolerance_pct": 40},
+                        }
+                    )
     return monitors
