@@ -45,7 +45,7 @@ def _load(path: Path):
     from referencing import Resource
     from referencing.jsonschema import DRAFT7
 
-    return Resource(contents=json.loads(path.read_text()), specification=DRAFT7)
+    return Resource(contents=json.loads(path.read_text(encoding="utf-8")), specification=DRAFT7)
 
 
 def _validator(rel: str):
@@ -224,7 +224,7 @@ def test_bootstrap_writes_the_artefacts_without_the_client(tmp_path: Path) -> No
     from pf.tools.openmetadata import bootstrap_project, payload_path, workflow_path
 
     (tmp_path / "transform").mkdir()
-    (tmp_path / "transform" / "dbt_project.yml").write_text("name: p\n")
+    (tmp_path / "transform" / "dbt_project.yml").write_text("name: p\n", encoding="utf-8")
     r = bootstrap_project(tmp_path, "acme", "acme-us", tmp_path, {})
     assert r.status == "ok"
     assert workflow_path(tmp_path).exists()

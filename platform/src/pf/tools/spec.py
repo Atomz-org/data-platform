@@ -210,6 +210,11 @@ class Tool:
     dagster: str = ""
     #: `(typer.Typer) -> None`. Registers tool-specific subcommands.
     commands: str = ""
+    #: `() -> {name: (LoopSpec, body)}`. Loops the tool owns — a loop about a
+    #: tool's artefacts belongs to the tool and is listed, run and promoted
+    #: exactly like a registry loop. `pf.loops.registry.all_loops()` merges
+    #: them; a tool that is not installed contributes nothing.
+    loops: str = ""
     #: `() -> {"ok": bool, "detail": str}`. "Installed" and "works" are not the
     #: same claim: a CLI can install cleanly while its compiled engine refuses
     #: every real request. A tool that can tell the difference says so here, and

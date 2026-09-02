@@ -102,10 +102,10 @@ def _project(tmp_path: Path, models: dict[str, str],
     for rel, sql in models.items():
         f = pdir / "transform" / "models" / rel
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(sql)
+        f.write_text(sql, encoding="utf-8")
     cfg = {"models": {"p": config if config is not None
                       else {"staging": {}, "marts": {}}}}
-    (pdir / "transform" / "dbt_project.yml").write_text(yaml.safe_dump(cfg))
+    (pdir / "transform" / "dbt_project.yml").write_text(yaml.safe_dump(cfg), encoding="utf-8")
     return Ctx(root=tmp_path, group="g", project="p")
 
 

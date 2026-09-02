@@ -46,7 +46,7 @@ PROFILE_TEMPLATE = """\
 def write_profiles(project_dir: str | Path, project: str) -> Path:
     out = Path(project_dir) / "transform" / "profiles.yml"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(PROFILE_TEMPLATE.format(project=project.replace("-", "_")))
+    out.write_text(PROFILE_TEMPLATE.format(project=project.replace("-", "_")), encoding="utf-8")
     return out
 
 
@@ -121,14 +121,14 @@ def ensure_manifest(project_dir: str | Path,
 
 def manifest(project_dir: str | Path) -> dict[str, Any]:
     p = Path(project_dir) / "transform" / "target" / "manifest.json"
-    return json.loads(p.read_text()) if p.exists() else {}
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
 
 def run_results(project_dir: str | Path) -> dict[str, Any]:
     """run_results.json — the dbt Core replacement for the Cloud Jobs API.
     This is what the triage agent reads."""
     p = Path(project_dir) / "transform" / "target" / "run_results.json"
-    return json.loads(p.read_text()) if p.exists() else {}
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
 
 def failed_nodes(project_dir: str | Path) -> list[dict[str, Any]]:
@@ -156,14 +156,53 @@ def modified_nodes(project_dir: str | Path, state_dir: str | Path,
     return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip() and " " not in ln.strip()]
 
 
+def mf_env(project_dir: str | Path, target: str = "dev") -> dict[str, str]:
+    """The environment MetricFlow needs: the same one `dbt()` builds.
+
+    `mf` reads `profiles.yml`, and the profile resolves its DuckDB path from
+    `PF_DUCKDB_PATH`. Running `mf` with the caller's environment left that
+    unset, so every query — from `pf ask`, the MCP `query_metrics` tool and the
+    onboarding metrics check — failed profile validation while `dbt build` in
+    the same project succeeded. One function, used by every `mf` invocation.
+    """
+    import os
+
+    project_dir = Path(project_dir).resolve()   # mf joins a relative dir onto cwd
+    env = dict(os.environ)
+    env.setdefault("DBT_TARGET", target)
+    if not env.get("PF_DUCKDB_PATH"):
+        module = project_dir.name.replace("-", "_")
+        env["PF_DUCKDB_PATH"] = str((project_dir / "data" / f"{module}.duckdb").resolve())
+    transform = project_dir / "transform"
+    env.setdefault("DBT_PROFILES_DIR", str(transform))
+    env.setdefault("DBT_PROJECT_DIR", str(transform))
+    return env
+
+
+def mf(project_dir: str | Path, *args: str, timeout: int = 300) -> subprocess.CompletedProcess:
+    """Invoke the MetricFlow CLI in a project's transform/ with the right env."""
+    transform = Path(project_dir) / "transform"
+    try:
+        # utf-8 explicitly: mf prints ✔ and ✗, and on Windows the default codec
+        # for a pipe is cp1252, which turns a successful query into a decode error.
+        return subprocess.run(["mf", *args], cwd=str(transform), env=mf_env(project_dir),
+                              capture_output=True, text=True, encoding="utf-8",
+                              errors="replace", timeout=timeout)
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(["mf", *args], 127, "",
+                                           "mf not found — `uv sync` installs metricflow")
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(["mf", *args], 124, "",
+                                           f"mf timed out after {timeout}s")
+
+
 def mf_query(project_dir: str | Path, metrics: list[str], group_by: list[str],
              where: str = "", limit: int = 100) -> subprocess.CompletedProcess:
     """MetricFlow CLI — the dbt Core stand-in for the Cloud Semantic Layer API."""
-    args = ["mf", "query", "--metrics", ",".join(metrics)]
+    args = ["query", "--metrics", ",".join(metrics)]
     if group_by:
         args += ["--group-by", ",".join(group_by)]
     if where:
         args += ["--where", where]
     args += ["--limit", str(limit)]
-    return subprocess.run(args, cwd=str(Path(project_dir) / "transform"),
-                          capture_output=True, text=True)
+    return mf(project_dir, *args)

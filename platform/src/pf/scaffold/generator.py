@@ -21,7 +21,7 @@ def render(text: str, ctx: dict[str, Any]) -> str:
 
 def write(path: Path, content: str, ctx: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render(content, ctx))
+    path.write_text(render(content, ctx), encoding="utf-8")
     return path
 
 
@@ -40,10 +40,12 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
     ctx = {"group": group, "domain": domain,
+           "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
            "classes_yaml": "\n".join(f"  - {c}" for c in classes),
            "tools_yaml": _default_tools_yaml()}
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "notify.yaml", GROUP_NOTIFY, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
@@ -161,6 +163,20 @@ GROUP_TOOLS = """\
 # new family, not a fixed set. Turn any of it off; it is your file now.
 version: 1
 tools:{{tools_yaml}}
+"""
+
+GROUP_NOTIFY = """\
+# Where {{group}}'s loops and answers are delivered. Slack and Teams both accept
+# an incoming webhook with a `text` payload; nothing else is required.
+#
+# Values are environment-variable names, never URLs: a webhook is a credential
+# and this file is committed. Set PF_NOTIFY_WEBHOOK_{{group_upper}} (or the
+# per-channel variables below) in the environment that runs the loops.
+# `PF_NOTIFY_WEBHOOK` overrides everything, for CI and laptops.
+channels:
+  default: ${PF_NOTIFY_WEBHOOK_{{group_upper}}}
+  loops:   ${PF_NOTIFY_WEBHOOK_{{group_upper}}_LOOPS}
+  ask:     ${PF_NOTIFY_WEBHOOK_{{group_upper}}_ASK}
 """
 
 PROJECT_TOOLS = """\

@@ -1,0 +1,102 @@
+# The loops' observations, pushed to where people already look.
+#
+# `pf loop run-all` writes findings to loop-ledger.json and STATE.md — files a
+# person has to open. This workflow runs the deterministic loops against every
+# project, then files each observation as an issue (label `loop-observation`,
+# one per loop × project, updated in place, closed on the next clean run) and,
+# when PROJECTS_TOKEN is set, onto the "Platform observations" ProjectV2 board.
+#
+# What runs here and what cannot:
+#
+#   runs      graph-backed loops (metric coverage, PII, dashboard coverage,
+#             impact) after `pf kg build` — which parses dbt itself — plus the
+#             repo-scoped vendor-drift. No warehouse build, no model calls:
+#             without ANTHROPIC_API_KEY every loop falls back to its
+#             deterministic findings by design.
+#   cannot    freshness and test-failure triage need monitor results and
+#             run_results.json from a real warehouse run; on a runner with no
+#             warehouse they report nothing rather than something invented.
+#
+# Memory (decisions/loop-memory.yaml) is committed, so a suppression decided in
+# review holds here too — CI files what a person has not already answered for.
+name: loop observations
+
+on:
+  schedule:
+    - cron: "17 6 * * *"        # daily, off the top of the hour
+  push:
+    branches: [main]            # observations refresh when the platform changes
+    paths:
+      - "groups/**"
+      - "platform/**"
+      - "vendor/**"
+  workflow_dispatch:
+
+# Two triggers landing together must not race to file the same issue.
+concurrency:
+  group: loop-observations
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # vendor-drift reads the submodules; without them every upstream
+          # reports "not checked out", which is a fact about the runner.
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync
+        run: uv sync --frozen
+
+      - name: Build graphs and run every loop
+        env:
+          PYTHONIOENCODING: utf-8
+        # Best-effort per project: one project that cannot parse must not hide
+        # every other project's observations. The failure itself surfaces as
+        # that project's impact-gate check, not here.
+        run: |
+          for d in groups/*/projects/*/; do
+            g=$(basename "$(dirname "$(dirname "$d")")")
+            p=$(basename "$d")
+            echo "::group::$g/$p"
+            uv run pf kg build "$g" "$p" || echo "::warning::$g/$p: graph build failed"
+            uv run pf loop run-all "$g" "$p" || echo "::warning::$g/$p: loops failed"
+            echo "::endgroup::"
+          done
+
+      - name: File observations as issues
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: a PAT with `project` scope puts the issues on the
+          # "Platform observations" board. Issues are filed either way.
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          LOOP_PROJECT_TITLE: ${{ vars.LOOP_OBSERVATIONS_PROJECT }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python3 .github/scripts/loop_observations.py
+
+      - name: Keep the trace
+        # The transcripts of what each loop understood, decided and did —
+        # attached to the run so an observation can be traced to its evidence.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-traces
+          path: |
+            logs/trace/
+            loop-ledger.json
+            STATE.md
+          retention-days: 30
+          if-no-files-found: ignore

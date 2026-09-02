@@ -11,9 +11,9 @@ source:
       type: DBT
       dbtConfigSource:
         dbtConfigType: local
-        dbtManifestFilePath: transform/target/manifest.json
-        dbtCatalogFilePath: transform/target/catalog.json
-        dbtRunResultsFilePath: transform/target/run_results.json
+        dbtManifestFilePath: transform\target\manifest.json
+        dbtCatalogFilePath: transform\target\catalog.json
+        dbtRunResultsFilePath: transform\target\run_results.json
       dbtUpdateDescriptions: false
       dbtUpdateOwners: true
       includeTags: true

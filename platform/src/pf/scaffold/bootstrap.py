@@ -72,7 +72,7 @@ def _render_card(root: Path, group: str, project: str) -> StepResult:
     from pf.kg.card import PROJECT_CARD_BUDGET, estimate_tokens, render_project_card
 
     p = render_project_card(_pdir(root, group, project), group, project)
-    n = estimate_tokens(p.read_text())
+    n = estimate_tokens(p.read_text(encoding="utf-8"))
     status: Status = "ok" if n <= PROJECT_CARD_BUDGET else "failed"
     return StepResult("context card", status, f"~{n} tokens / {PROJECT_CARD_BUDGET}")
 
@@ -92,7 +92,7 @@ def _export_mdl(root: Path, group: str, project: str) -> StepResult:
     path = export_mdl(_pdir(root, group, project), group, project)
     import json
 
-    m = json.loads(path.read_text())
+    m = json.loads(path.read_text(encoding="utf-8"))
     return StepResult("MDL manifest", "ok",
                       f"{len(m['models'])} model(s), {len(m['relationships'])} relationship(s)")
 
@@ -121,7 +121,7 @@ def _vendor_docs(root: Path, group: str, project: str) -> StepResult:
 
     render_doc(root)
     card = render_card(root)
-    n = estimate_tokens(card.read_text())
+    n = estimate_tokens(card.read_text(encoding="utf-8"))
     status: Status = "ok" if n <= VENDOR_CARD_BUDGET else "failed"
     return StepResult("vendor docs", status, f"card ~{n} / {VENDOR_CARD_BUDGET} tokens")
 
@@ -152,14 +152,30 @@ def _build_reporting(root: Path, group: str, project: str) -> StepResult:
     Skipped rather than created when `reporting/` is absent: the reporting layer
     is a capability, and bootstrap must not silently enable one nobody asked for.
     """
-    d = _pdir(root, group, project)
-    if not (d / "reporting").exists():
-        return StepResult("reporting", "skipped", "no reporting/ (add --with evidence)")
-    from pf.projections.evidence import build as build_evidence
+    from pf.tools.evidence import bootstrap_project
 
-    r = build_evidence(d, group, project)
-    return StepResult("reporting", "ok",
-                      f"{r['metrics']} metric(s), {r['pages']} page(s)")
+    d = _pdir(root, group, project)
+    r = bootstrap_project(root, group, project, d, {})
+    return StepResult("reporting", r.status, r.detail)
+
+
+def _group_notify(root: Path, group: str, project: str) -> StepResult:
+    """The group's delivery channel file, for groups scaffolded before it existed.
+
+    Group-level, so it is written once per family and not once per sister; the
+    step is still per project because bootstrap is, and the second sister finds
+    it present.
+    """
+    import re
+
+    from pf.scaffold.generator import GROUP_NOTIFY, render
+
+    f = root / "groups" / group / "notify.yaml"
+    if f.exists():
+        return StepResult("notify channel", "ok", "present")
+    ctx = {"group": group, "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper())}
+    f.write_text(render(GROUP_NOTIFY, ctx), encoding="utf-8")
+    return StepResult("notify channel", "ok", f"wrote {f.relative_to(root)}")
 
 
 def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
@@ -282,9 +298,9 @@ def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
 
     target.parent.mkdir(parents=True, exist_ok=True)
     content = render_project_workflow(group, project, jobs)
-    changed = not target.exists() or target.read_text() != content
+    changed = not target.exists() or target.read_text(encoding="utf-8") != content
     if changed:
-        target.write_text(content)
+        target.write_text(content, encoding="utf-8")
 
     removed = []
     for rel in legacy_paths(project):
@@ -320,7 +336,7 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
                   f"      working_directory: {(d / 'src').resolve()}",
                   f"      location_name: {g}__{p}"]
         n += 1
-    (root / "platform" / "workspace.yaml").write_text("\n".join(lines) + "\n")
+    (root / "platform" / "workspace.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return StepResult("dagster code location", "ok", f"{n} location(s)")
 
 
@@ -355,7 +371,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
 
     dbt_yml = d / "transform" / "dbt_project.yml"
     if dbt_yml.exists():
-        text = dbt_yml.read_text()
+        text = dbt_yml.read_text(encoding="utf-8")
         try:
             paths = [str(p) for p in
                      (yaml.safe_load(text) or {}).get("macro-paths") or []]
@@ -375,12 +391,12 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
                     out += [f'  - "{m}"' for m in missing]
                     inserted = True
             if inserted:
-                dbt_yml.write_text("\n".join(out) + "\n")
+                dbt_yml.write_text("\n".join(out) + "\n", encoding="utf-8")
                 changed.append(f"macro-paths += {len(missing)}")
 
     profiles = d / "transform" / "profiles.yml"
     if profiles.exists():
-        text = profiles.read_text()
+        text = profiles.read_text(encoding="utf-8")
         try:
             doc = yaml.safe_load(text) or {}
         except yaml.YAMLError:
@@ -394,7 +410,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         if absent:
             text = (text.rstrip("\n") + "\n"
                     + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent))
-            profiles.write_text(text)
+            profiles.write_text(text, encoding="utf-8")
             changed.append(f"profiles += {', '.join(absent)}")
 
         # Point `prod` at the production warehouse, if it is still the DuckDB
@@ -418,7 +434,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             if current == "duckdb":
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
-                    profiles.write_text(new_text)
+                    profiles.write_text(new_text, encoding="utf-8")
                     changed.append(f"prod -> {wh.name}")
             elif current and current != wh.name:
                 changed.append(f"prod already on {current}, left alone")
@@ -461,6 +477,8 @@ STEPS: list[Step] = [
     Step("capabilities", "a default-enabled capability must reach every project, "
                          "including ones scaffolded before it was a default",
          _bootstrap_capabilities),
+    Step("notify channel", "where loops and answers are delivered; names an env "
+                           "var, never a URL", _group_notify),
     Step("ci workflow", "one workflow per project, composed from the jobs its "
                         "capabilities declare, so CI is readable in one place",
          _ci_workflow),

@@ -15,9 +15,16 @@ from pydantic import BaseModel, Field
 
 from pf.agents.base import AGENTS, cached_prefix, call
 
-
 # ------------------------------------------------------------- schemas -----
+_UNDERSTANDING = Field(
+    default="",
+    description="In one or two sentences, what you took the input to be and what "
+                "question you are answering. Written for the trace log a person "
+                "reads when the verdict is wrong.")
+
+
 class Diagnosis(BaseModel):
+    understanding: str = _UNDERSTANDING
     root_cause: Literal["upstream_data", "model_logic", "stale_source",
                         "test_too_strict", "unknown"]
     summary: str = Field(description="One sentence a data engineer can act on.")
@@ -28,6 +35,7 @@ class Diagnosis(BaseModel):
 
 
 class AnomalyReport(BaseModel):
+    understanding: str = _UNDERSTANDING
     headline: str = Field(description="One line for STATE.md.")
     severity: Literal["info", "warn", "critical"]
     likely_cause: str
@@ -44,8 +52,21 @@ class MetricProposal(BaseModel):
 
 
 class MetricProposals(BaseModel):
+    understanding: str = _UNDERSTANDING
     proposals: list[MetricProposal]
     summary: str
+
+
+class FixPatch(BaseModel):
+    """One whole file, rewritten. See `pf.loops.actions.Proposal` for why whole."""
+
+    understanding: str = _UNDERSTANDING
+    path: str = Field(description="The project-relative path of the file shown, unchanged.")
+    content: str = Field(description="The complete new contents of that file.")
+    title: str = Field(description="Pull request title, imperative, under 70 chars.")
+    rationale: str = Field(description="What changed and why, for the reviewer.")
+    safe: bool = Field(description="False if the change needs a decision a human "
+                                   "must make first — then nothing is proposed.")
 
 
 # ------------------------------------------------------------- agents ------
@@ -111,4 +132,39 @@ def propose_metrics(root: Path, group: str, project: str,
     )
     parsed, _ = call(cfg, system=cached_prefix(root, group, project, cfg), user=user,
                      output_format=MetricProposals, group=group, project=project)
+    return parsed
+
+
+
+
+def draft_fix(root: Path, group: str, project: str, *, diagnosis: Diagnosis,
+              rel_path: str, current: str, lineage: str) -> FixPatch | None:
+    """Turn a diagnosis into a whole-file rewrite. Transcription, not judgement.
+
+    Only two root causes are eligible — `model_logic` and `test_too_strict` —
+    because those are the two where the fix is a file in this repository.
+    `upstream_data` and `stale_source` are fixed elsewhere, and drafting a
+    model change for them is how a loop papers over a data problem.
+    """
+    cfg = AGENTS["fix_drafter"]
+    nl = "\n"
+    user = (
+        "<diagnosis>" + nl
+        + f"root_cause: {diagnosis.root_cause}{nl}summary: {diagnosis.summary}{nl}"
+        + f"evidence: {diagnosis.evidence}{nl}suggested_fix: {diagnosis.suggested_fix}{nl}"
+        + "</diagnosis>" + nl + nl
+        + f'<file path="{rel_path}">{nl}{current[:12000]}{nl}</file>{nl}{nl}'
+        + "<lineage_neighbourhood>" + nl + lineage[:3000] + nl + "</lineage_neighbourhood>"
+        + nl + nl
+        + "Rewrite the file to implement the suggested fix and nothing else. Rules:" + nl
+        + "- Return the whole file. Keep every line you are not changing byte-identical." + nl
+        + "- The mart's grain and the metric definitions downstream must not change; "
+          "if the fix would change them, set safe=false and explain." + nl
+        + "- A test_too_strict fix edits the test's config or expression, never the "
+          "model, and never deletes the test." + nl
+        + "- No new sources, no new columns the lineage does not already show." + nl
+        + "- If you are not sure the rewrite compiles, set safe=false."
+    )
+    parsed, _ = call(cfg, system=cached_prefix(root, group, project, cfg), user=user,
+                     output_format=FixPatch, group=group, project=project)
     return parsed

@@ -210,13 +210,13 @@ def write(home: Path, s: Settings | None, *,
     """
     path = home / "dagster.yaml"
     source = base if base and base != path and base.exists() else path
-    text = source.read_text() if source.exists() else ""
+    text = source.read_text(encoding="utf-8") if source.exists() else ""
     merged, _ = merge_storage(text, s)
     home.mkdir(parents=True, exist_ok=True)
-    current = path.read_text() if path.exists() else ""
+    current = path.read_text(encoding="utf-8") if path.exists() else ""
     changed = merged != current
     if changed:
-        path.write_text(merged)
+        path.write_text(merged, encoding="utf-8")
     return path, changed
 
 

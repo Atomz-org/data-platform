@@ -73,7 +73,7 @@ def generate(root: Path, group: str, project: str,
         validate_rendered(case, origin=str(target))
 
         out_dir.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(case, indent=2) + "\n")
+        target.write_text(json.dumps(case, indent=2) + "\n", encoding="utf-8")
         written.add(target)
         results.append(Generated(tpl, path=target))
 

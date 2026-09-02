@@ -136,7 +136,7 @@ def write(root: Path, p: Proposal) -> Path:
     out.write_text(
         HEADER.format(status=p.status.upper(), source=p.source, group=p.group,
                       project=p.project, created=p.created, pid=p.pid)
-        + "\n" + yaml.safe_dump(body, sort_keys=False, width=100))
+        + "\n" + yaml.safe_dump(body, sort_keys=False, width=100), encoding="utf-8")
     return out
 
 
@@ -144,7 +144,7 @@ def read(root: Path, group: str, pid: str) -> Proposal:
     f = path_for(root, group, pid)
     if not f.exists():
         raise FileNotFoundError(f"no proposal '{pid}' in {group}")
-    d = yaml.safe_load(f.read_text()) or {}
+    d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
     return Proposal(pid=d["id"], group=d["group"], project=d["project"],
                     source=d["source"], created=d["created"], status=d["status"],
                     axioms=d.get("axioms") or [],
@@ -174,7 +174,7 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
     term is a deliberate edit of extension.yaml.
     """
     ext_path = Path(root) / "groups" / p.group / "ontology" / "extension.yaml"
-    ext = yaml.safe_load(ext_path.read_text()) if ext_path.exists() else {}
+    ext = yaml.safe_load(ext_path.read_text(encoding="utf-8")) if ext_path.exists() else {}
     ext = ext or {}
     classes = ext.setdefault("classes", {})
     relations = ext.setdefault("relations", [])
@@ -283,7 +283,7 @@ def apply_to_extension(root: Path, p: Proposal) -> tuple[Path, dict[str, int]]:
         "# specific to this group, so another company never inherits a word that\n"
         "# means nothing to them. Written by `pf ontology approve`; hand edits are\n"
         "# expected and preserved.\n\n"
-        + yaml.safe_dump(ext, sort_keys=False, width=100))
+        + yaml.safe_dump(ext, sort_keys=False, width=100), encoding="utf-8")
     return ext_path, applied
 
 

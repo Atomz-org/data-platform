@@ -286,7 +286,7 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     manifest_path = root / "transform" / "target" / "manifest.json"
     if not manifest_path.exists():
         return
-    manifest = json.loads(manifest_path.read_text())
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     by_unique: dict[str, str] = {}
 
@@ -296,8 +296,12 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             name = node["name"]
             n_id = mid(name)
             by_unique[uid] = n_id
-            path_parts = (node.get("path") or "").split("/")
-            layer = path_parts[0] if path_parts else "marts"
+            # dbt writes `path` with the OS separator — backslashes on Windows —
+            # and a layer of `martsct_x.sql` matched nothing downstream: the
+            # MDL manifest, the metric-gap loop and the PII audit all saw zero
+            # marts. Normalise before splitting, the same way the gate does.
+            path_parts = (node.get("path") or "").replace("\\", "/").split("/")
+            layer = path_parts[0] if path_parts and path_parts[0] else "marts"
             nodes.append(Node(
                 id=n_id, kind="Model", name=name, layer=layer,
                 label=(node.get("description") or "").strip().split("\n")[0],
@@ -368,7 +372,7 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     sm_path = root / "transform" / "target" / "semantic_manifest.json"
     if not sm_path.exists():
         return
-    sm = json.loads(sm_path.read_text())
+    sm = json.loads(sm_path.read_text(encoding="utf-8"))
 
     measure_owner: dict[str, str] = {}
     for model in sm.get("semantic_models") or []:
@@ -427,4 +431,4 @@ def _export_json(graph_path: Path, out_path: Path) -> None:
             ],
         }
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(payload, indent=2))
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

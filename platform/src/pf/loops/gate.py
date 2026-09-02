@@ -42,11 +42,11 @@ def load_policy(root: Path) -> dict[str, Any]:
     policy: dict[str, Any] = {}
     base = root / "gate.yaml"
     if base.exists():
-        policy = yaml.safe_load(base.read_text()) or {}
+        policy = yaml.safe_load(base.read_text(encoding="utf-8")) or {}
 
     extra_path = root / "gate.capabilities.yaml"
     if extra_path.exists():
-        extra = yaml.safe_load(extra_path.read_text()) or {}
+        extra = yaml.safe_load(extra_path.read_text(encoding="utf-8")) or {}
         for section, patterns in extra.items():
             if not isinstance(patterns, list):
                 continue

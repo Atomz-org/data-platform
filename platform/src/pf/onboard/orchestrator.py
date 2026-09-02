@@ -85,7 +85,7 @@ def _kwarg(call: ast.Call, *names: str) -> str:
 
 def parse(path: Path) -> list[Pipeline]:
     """Extract every pipeline declared in one file."""
-    text = path.read_text(errors="ignore")
+    text = path.read_text(errors="ignore", encoding="utf-8")
     framework = "prefect" if re.search(r"^\s*(?:from|import)\s+prefect\b", text, re.MULTILINE) \
         else "airflow"
     try:

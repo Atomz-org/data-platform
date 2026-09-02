@@ -128,7 +128,7 @@ def current(surface: str, root: Path, group: str = "") -> dict[str, Any]:
                 "exists": False, "document": {}}
     return {
         "surface": surface, "group": group, "path": str(path), "exists": True,
-        "document": yaml.safe_load(path.read_text()) or {},
+        "document": yaml.safe_load(path.read_text(encoding="utf-8")) or {},
     }
 
 
@@ -220,7 +220,7 @@ def apply_edit(root: Path, surface: str, key_path: str, after: Any, *,
     if not path.exists():
         raise EditRejected(f"{path} does not exist")
 
-    text = path.read_text()
+    text = path.read_text(encoding="utf-8")
     doc = yaml.safe_load(text) or {}
     before = _read_scalar(doc, key_path)
     if isinstance(before, (dict, list)):
@@ -245,7 +245,7 @@ def apply_edit(root: Path, surface: str, key_path: str, after: Any, *,
         _write_row(root, row)
         raise
 
-    path.write_text(updated)
+    path.write_text(updated, encoding="utf-8")
     row["applied"] = True
     _write_row(root, row)
     return {**row, "ts": row["ts"].isoformat(),

@@ -1,0 +1,11 @@
+# Where acme's loops and answers are delivered. Slack and Teams both accept
+# an incoming webhook with a `text` payload; nothing else is required.
+#
+# Values are environment-variable names, never URLs: a webhook is a credential
+# and this file is committed. Set PF_NOTIFY_WEBHOOK_ACME (or the
+# per-channel variables below) in the environment that runs the loops.
+# `PF_NOTIFY_WEBHOOK` overrides everything, for CI and laptops.
+channels:
+  default: ${PF_NOTIFY_WEBHOOK_ACME}
+  loops:   ${PF_NOTIFY_WEBHOOK_ACME_LOOPS}
+  ask:     ${PF_NOTIFY_WEBHOOK_ACME_ASK}

@@ -64,8 +64,8 @@ def _load(project_dir: Path) -> tuple[dict, dict]:
     target = project_dir / "transform" / "target"
     sm = target / "semantic_manifest.json"
     mdl = project_dir / "mdl" / "mdl.json"
-    return (json.loads(sm.read_text()) if sm.exists() else {},
-            json.loads(mdl.read_text()) if mdl.exists() else {})
+    return (json.loads(sm.read_text(encoding="utf-8")) if sm.exists() else {},
+            json.loads(mdl.read_text(encoding="utf-8")) if mdl.exists() else {})
 
 
 _DIM_REF = re.compile(r"\{\{\s*Dimension\(\s*'([^']+)'\s*\)\s*\}\}")
@@ -440,21 +440,21 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
 
     for spec in specs:
         (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(
-            _metric_sql(spec, schema))
+            _metric_sql(spec, schema), encoding="utf-8")
         (out / "pages" / "metrics" / f"{spec.name}.md").write_text(
-            _metric_page(project, spec))
+            _metric_page(project, spec), encoding="utf-8")
 
-    (out / "pages" / "index.md").write_text(_index_page(project, specs))
-    (out / "evidence.config.yaml").write_text(_config(project, warehouse))
+    (out / "pages" / "index.md").write_text(_index_page(project, specs), encoding="utf-8")
+    (out / "evidence.config.yaml").write_text(_config(project, warehouse), encoding="utf-8")
     (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(
-        _source_conn(project, warehouse))
+        _source_conn(project, warehouse), encoding="utf-8")
 
     for model in mdl.get("models", []):
         name = model["name"]
         cols = ", ".join(c["name"] for c in model["columns"] if not c.get("isHidden"))
         (out / "sources" / project.replace("-", "_") / f"{name}.sql").write_text(
             f"-- source extract for {name} (PII columns excluded by the MDL projection)\n"
-            f"select {cols or '*'}\nfrom {model['tableReference']['schema']}.{name}\n")
+            f"select {cols or '*'}\nfrom {model['tableReference']['schema']}.{name}\n", encoding="utf-8")
 
     # Dependency set is evidence-dev/template's package.json verbatim, not a
     # hand-assembled subset. Two earlier attempts failed here: pinning
@@ -503,14 +503,14 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
             "sqlite3": "5.1.5",
             "axios": "^1.7.4",
         },
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8")
 
     # legacy-peer-deps is required on npm >= 11, which resolves Evidence's own
     # peer graph more strictly than the npm the upstream template targets. It is
     # safe *because* the dependency block above is the complete canonical set —
     # nothing the build needs is left to peer resolution.
     (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\n"
-                                "legacy-peer-deps=true\n")
+                                "legacy-peer-deps=true\n", encoding="utf-8")
 
     # Toolchain note, verified by controlled experiment rather than assumed:
     # a pristine `degit evidence-dev/template` fails to build identically on
@@ -518,7 +518,7 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # supported-runtime boundary, not this generator. `evidence sources` and
     # `evidence dev` both work. Recorded next to the code so the next person
     # does not repeat the bisection.
-    (out / ".nvmrc").write_text("20\n")
+    (out / ".nvmrc").write_text("20\n", encoding="utf-8")
 
     return {
         "metrics": len(specs),

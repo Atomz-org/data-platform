@@ -85,6 +85,19 @@ AGENTS = {
                 "generation with a schema to check against — mid-tier is the "
                 "quality/cost knee.",
         effort="low", cadence_minutes=1440),
+    "fix_drafter": AgentConfig(
+        "fix_drafter", "claude-sonnet-5",
+        purpose="Rewrite one dbt file to implement a diagnosis that has already "
+                "been made. The judgement was paid for at Opus rates upstream; "
+                "this step is transcription against a file it is shown in full, "
+                "checked by the gate, impact and Recce before anyone reads it.",
+        effort="medium", cadence_minutes=None),
+    "metric_answerer": AgentConfig(
+        "metric_answerer", "claude-sonnet-5",
+        purpose="Answer a business question using governed metrics only. Tool "
+                "use over list/dimensions/query — never SQL — so the answer is "
+                "a metric definition, not an opinion about a table.",
+        effort="medium", thinking=False, cadence_minutes=60),
 }
 
 
@@ -111,13 +124,28 @@ def validate_routing() -> list[str]:
     return issues
 
 
+# A client injected for tests and replays. `set_client(fake)` makes every
+# agent path — loops, ask, evals — run end to end with no credential and no
+# network, against whatever the fake returns. It is the only way to exercise
+# a tool-use loop deterministically, and it is how the trace log is tested.
+_CLIENT: dict[str, Any] = {"override": None}
+
+
+def set_client(client: Any | None) -> None:
+    _CLIENT["override"] = client
+
+
 def have_credentials() -> bool:
+    if _CLIENT["override"] is not None:
+        return True
     return bool(os.environ.get("ANTHROPIC_API_KEY")
                 or os.environ.get("ANTHROPIC_AUTH_TOKEN")
                 or (Path.home() / ".config" / "anthropic" / "credentials").exists())
 
 
 def client() -> Any:
+    if _CLIENT["override"] is not None:
+        return _CLIENT["override"]
     import anthropic
 
     if not have_credentials():
@@ -146,11 +174,11 @@ def cached_prefix(root: Path, group: str, project: str,
     for rel in ("platform/toolkits/ROUTING.md", "loop-constraints.md"):
         f = root / rel
         if f.exists():
-            parts.append(f"<{Path(rel).stem}>\n{f.read_text().strip()}\n</{Path(rel).stem}>")
+            parts.append(f"<{Path(rel).stem}>\n{f.read_text(encoding='utf-8').strip()}\n</{Path(rel).stem}>")
 
     card = root / "groups" / group / "projects" / project / "kg" / "context_card.md"
     if card.exists():
-        parts.append(f"<context_card>\n{_stable(card.read_text())}\n</context_card>")
+        parts.append(f"<context_card>\n{_stable(card.read_text(encoding='utf-8'))}\n</context_card>")
 
     text = ("You are an agent operating inside a governed data platform.\n\n"
             + "\n\n".join(parts))
@@ -209,12 +237,17 @@ def call(
     Structured output rather than prose: shorter, parseable by the caller, and
     no second round trip to reformat.
     """
-    from pf import obs
+    from pf import obs, trace
+
+    tr = trace.get()
+    tr.intent(cfg.purpose, agent=cfg.name, model=cfg.model, effort=cfg.effort)
 
     # Rendered per model: effort and thinking are dropped where the target model
     # rejects them, rather than 400-ing the loop.
     params = request_params(cfg.model, effort=cfg.effort, thinking=cfg.thinking,
                             max_tokens=cfg.max_tokens)
+    tr.request(agent=cfg.name, model=cfg.model, params=params, system=system,
+               user=user, schema=output_format.__name__)
     params |= {
         "system": system,
         "messages": [{"role": "user", "content": user}],
@@ -244,6 +277,8 @@ def call(
     parsed = None if refused else response.parsed_output
 
     _SPEND["tokens"] += usage["input_tokens"] + usage["output_tokens"]
+    tr.response(agent=cfg.name, parsed=parsed, usage=usage,
+                stop_reason=str(getattr(response, "stop_reason", "") or ""), ms=elapsed)
 
     obs.record_agent_run(
         group=group, project=project, agent=cfg.name, model=cfg.model,
