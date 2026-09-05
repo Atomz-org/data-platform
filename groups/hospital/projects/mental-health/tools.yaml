@@ -1,0 +1,9 @@
+# Tools for mental-health, merged over groups/hospital/tools.yaml.
+#
+# Set `enabled: false` here to opt out of something the group turned on. Config
+# dicts deep-merge, so overriding one key (a port, say) keeps the rest.
+#
+#   pf tool list hospital mental-health      # what is on, and where it came from
+#   pf tool doctor hospital mental-health    # why a tool is not doing anything
+version: 1
+tools: {}

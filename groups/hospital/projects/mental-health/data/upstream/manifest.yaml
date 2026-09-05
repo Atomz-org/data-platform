@@ -1,0 +1,51 @@
+# Provenance of every upstream file in this directory.
+#
+# These are point-in-time snapshots carried in-repo so the project builds
+# offline (the survey is gzipped: 29.7 MB → 1.8 MB). Refreshing one means
+# re-running the fetch command, updating the sha256 here, and treating the
+# diff as a data change — `pf impact` before merging.
+
+retrieved: 2026-09-01
+fetch_tool: "uvx kaggle datasets download -d <slug> -p <dir> --unzip"
+
+files:
+  - file: mental_health_diagnosis_treatment.csv
+    sha256: b5fadddf7ec5cd093e64e2d6004c796a8a23c6cf0bdc12df64ae44d662002ec5
+    upstream: https://www.kaggle.com/datasets/uom190346a/mental-health-diagnosis-and-treatment-monitoring
+    slug: uom190346a/mental-health-diagnosis-and-treatment-monitoring
+    nature: synthetic patient-level treatment monitoring (500 episodes)
+    license: see Kaggle page — synthetic, no PHI
+
+  - file: psychiatric_in_patients_annual.csv
+    sha256: d56d7068c4e4b4b88e3a5fbc8a8a6259c68ef063b5f156f80bfa966d22504fdc
+    upstream: https://www.kaggle.com/datasets/noeyislearning/psychiatric-in-patients-annual-diagnostic
+    slug: noeyislearning/psychiatric-in-patients-annual-diagnostic
+    original_source: CSO Ireland, PxStat table HRA71 (psychiatric in-patients
+      by year, sex, ICD-10 diagnostic group, 2001-2023)
+    license: CC BY 4.0 (Irish PSI) — cite CSO Ireland, not only Kaggle
+    caveat: empty VALUE cells are suppressed/not-applicable — never zero
+
+  - file: mental_health_survey.csv.gz
+    sha256: 8378691e1a127760183e754a5bc95a88cb937099e6b2039ce7b75522b361d7e9
+    upstream: https://www.kaggle.com/datasets/bhavikjikadara/mental-health-dataset
+    slug: bhavikjikadara/mental-health-dataset
+    nature: population survey, 2014 lineage (OSMI-style); 292,364 rows,
+      ~290k distinct — exact duplicates removed by the staging dedupe
+    license: see Kaggle page
+
+  - file: dataset_mental_disorders.csv
+    sha256: 774bf766c2e0704ce7ad768bbeb43b2922ab927cfc854f5d2f1ca41c8f0077a1
+    upstream: https://www.kaggle.com/datasets/cid007/mental-disorder-classification
+    slug: cid007/mental-disorder-classification
+    nature: 120 behavioural screenings vs expert diagnosis
+      (Bipolar Type-1/2, Depression, Normal)
+    license: see Kaggle page
+
+  - file: ecg_features.csv
+    sha256: f86b3fde7901f381bc0bc32bf0dc159eb9a9c08491c892311c518db71a685b3a
+    upstream: https://www.kaggle.com/datasets/buraktaci/psychiatry-ecg
+    slug: buraktaci/psychiatry-ecg
+    nature: derived — summary features of 2,670 12-lead ECG segments
+      (bipolar / depression / schizophrenia cohorts); raw .mat signals are
+      NOT carried, rebuild via scripts/extract_ecg_features.py
+    license: see Kaggle page

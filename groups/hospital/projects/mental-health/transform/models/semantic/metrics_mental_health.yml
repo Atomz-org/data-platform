@@ -1,0 +1,71 @@
+version: 2
+metrics:
+  - name: treatment_episodes
+    label: Treatment Episodes
+    description: Count of treatment episodes. The single definition.
+    type: simple
+    type_params: {measure: episode_count}
+
+  - name: adherence_rate
+    label: Adherence Rate
+    description: Mean adherence to treatment, in percent, across episodes.
+    type: simple
+    type_params: {measure: avg_adherence_pct}
+
+  - name: improved_episodes
+    label: Improved Episodes
+    description: Episodes whose recorded outcome is 'improved'.
+    type: simple
+    type_params: {measure: improved_count}
+
+  - name: outcome_improved_rate
+    label: Improved Outcome Rate
+    description: Share of episodes whose recorded outcome is 'improved'.
+    type: ratio
+    type_params:
+      numerator: improved_episodes
+      denominator: treatment_episodes
+
+  - name: avg_symptom_severity
+    label: Avg Symptom Severity
+    description: Mean symptom severity (1-10) across episodes.
+    type: simple
+    type_params: {measure: avg_symptom_severity}
+
+  - name: avg_treatment_duration
+    label: Avg Treatment Duration (weeks)
+    description: Mean episode duration in weeks.
+    type: simple
+    type_params: {measure: avg_treatment_duration_weeks}
+
+  - name: survey_responses
+    label: Survey Responses
+    description: Distinct population survey responses (upstream duplication removed).
+    type: simple
+    type_params: {measure: response_count}
+
+  - name: treatment_seekers
+    label: Treatment Seekers
+    description: Distinct survey respondents who sought treatment.
+    type: simple
+    type_params: {measure: treatment_seeking_count}
+
+  - name: treatment_seeking_rate
+    label: Treatment-Seeking Rate
+    description: Share of distinct survey respondents who sought treatment.
+      Population context — never a clinical outcome.
+    type: ratio
+    type_params:
+      numerator: treatment_seekers
+      denominator: survey_responses
+
+  - name: registry_inpatients
+    label: Registry In-patients
+    description: National psychiatric in-patient count — both sexes, count
+      unit only, suppressed cells excluded by NULL semantics.
+    type: simple
+    type_params: {measure: inpatient_value}
+    filter: |
+      {{ Dimension('statistic__unit') }} = 'number'
+      and {{ Dimension('statistic__sex') }} = 'both sexes'
+      and {{ Dimension('statistic__conformed_icd10_group') }} <> 'all disorders'

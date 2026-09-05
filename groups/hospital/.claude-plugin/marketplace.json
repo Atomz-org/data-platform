@@ -1,0 +1,7 @@
+{
+  "name": "hospital",
+  "owner": { "name": "hospital" },
+  "plugins": [
+    { "name": "hospital-group", "source": "./.claude", "description": "hospital group skills" }
+  ]
+}

@@ -1,0 +1,163 @@
+version: 2
+models:
+  - name: dim_diagnosis
+    description: Conformed diagnosis dimension — source vocabularies mapped to
+      the registry's ICD-10 diagnostic groups. The only sanctioned bridge
+      between patient-level facts and population benchmarks.
+    access: public
+    meta: {grain: one diagnosis code}
+    columns:
+      - name: diagnosis_code
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: diagnosis_label
+        description: Label as written by the source vocabulary.
+      - name: source_vocabulary
+        meta: {role: status_enum}
+      - name: icd10_group
+        description: Registry diagnostic group; NULL for the 'normal' control label.
+        meta: {role: status_enum}
+
+  - name: dim_patients
+    description: Patients derived from treatment episodes.
+    access: public
+    meta: {grain: one patient}
+    columns:
+      - name: patient_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: age
+        meta: {role: quantity}
+      - name: gender
+        meta: {role: status_enum}
+      - name: first_treatment_started_at
+        meta: {role: event_time}
+      - name: episode_count
+        meta: {role: quantity}
+
+  - name: fct_treatment_episodes
+    description: Treatment episode fact enriched with the conformed diagnosis.
+    access: public
+    meta: {grain: one treatment episode}
+    columns:
+      - name: episode_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: patient_id
+        meta: {role: foreign_key}
+        data_tests: [not_null]
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+      - name: icd10_group
+        meta: {role: status_enum}
+      - name: treatment_started_at
+        meta: {role: event_time}
+      - name: outcome
+        description: Episode outcome as recorded upstream.
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['improved', 'deteriorated', 'no change']
+      - name: adherence_pct
+        meta: {role: quantity}
+      - name: is_improved
+        meta: {role: quantity}
+
+  - name: fct_screening_assessments
+    description: Behavioural screening vs expert diagnosis. Static cohort —
+      no time axis, not projected into the semantic layer.
+    access: public
+    meta: {grain: one screening assessment}
+    columns:
+      - name: assessment_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+        data_tests: [not_null]
+      - name: expert_diagnosis
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['bipolar type-1', 'bipolar type-2', 'depression', 'normal']
+
+  - name: fct_ecg_recordings
+    description: ECG segment features by disorder cohort. Static cohort —
+      no time axis, not projected into the semantic layer.
+    access: public
+    meta: {grain: one ECG recording}
+    columns:
+      - name: recording_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+        data_tests: [not_null]
+      - name: disorder_group
+        meta: {role: status_enum}
+
+  - name: fct_registry_annual
+    description: National psychiatric in-patient statistics at published
+      grain. NULL value means suppressed/not-applicable — never zero.
+    access: public
+    meta: {grain: one statistic x year x sex x ICD-10 group}
+    columns:
+      - name: statistic_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: year_date
+        meta: {role: event_time}
+      - name: unit
+        meta: {role: status_enum}
+      - name: sex
+        meta: {role: status_enum}
+      - name: conformed_icd10_group
+        description: Legacy classification labels folded into modern groups.
+        meta: {role: status_enum}
+      - name: value
+        description: NULL when the registry suppressed the cell. No coalesce.
+        meta: {role: quantity}
+
+  - name: fct_survey_responses
+    description: Population survey at distinct-response grain — the
+      content-hash surrogate key drives the role-generated dedupe in staging;
+      the raw table keeps the upstream multiplicity for audit.
+      Respondents are anonymous — never joined to patient-grain data.
+    access: public
+    meta: {grain: one distinct survey response}
+    columns:
+      - name: response_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: content_hash
+        meta: {role: surrogate_key}
+        data_tests: [unique, not_null]
+      - name: surveyed_at
+        meta: {role: event_time}
+      - name: country
+        meta: {role: geo_country}
+      - name: sought_treatment
+        meta: {role: status_enum}
+      - name: is_treatment_seeking
+        meta: {role: quantity}
+
+  - name: fct_diagnosis_benchmark
+    description: Case-mix comparison — this entity's episode mix vs the
+      national in-patient mix, as shares at conformed ICD-10 group grain.
+      The only mart where clinical and population data meet.
+    access: public
+    meta: {grain: one conformed ICD-10 group}
+    columns:
+      - name: icd10_group
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: hospital_episodes
+        meta: {role: quantity}
+      - name: hospital_share
+        meta: {role: quantity}
+      - name: registry_inpatients
+        meta: {role: quantity}
+      - name: registry_share
+        meta: {role: quantity}

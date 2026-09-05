@@ -1,0 +1,5 @@
+[runtime]
+log_level = "WARNING"
+
+[normalize.data_writer]
+disable_compression = false

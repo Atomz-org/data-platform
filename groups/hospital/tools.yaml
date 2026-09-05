@@ -1,0 +1,29 @@
+# Which platform tools this group runs. `pf tool list` shows what is available.
+#
+# Enabled here means enabled for **every sister project** in hospital — that is
+# the point of a group. Sisters share infrastructure and differ only in business
+# logic, so "we review dbt changes with Recce" is decided once for the family.
+# A project can override any key in its own tools.yaml, including turning a tool
+# off, which is the escape hatch for an entity the decision does not fit.
+#
+#   pf tool enable recce hospital              # the whole family
+#   pf tool enable recce hospital <project>    # one entity
+#
+# A tool that is enabled but not installed on this machine is skipped with a
+# note, never a failure: enabling is a decision about the project, installing is
+# a fact about the laptop.
+#
+# What is listed below is what the installed tools declare as a default for a
+# new family, not a fixed set. Turn any of it off; it is your file now.
+version: 1
+tools:
+  elementary:
+    enabled: true
+  expectations:
+    enabled: true
+  openmetadata:
+    enabled: true
+  recce:
+    enabled: true
+  wren:
+    enabled: true

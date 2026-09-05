@@ -1,0 +1,12 @@
+diagnosis_code,diagnosis_label,source_vocabulary,icd10_group
+mdd,Major Depressive Disorder,treatment_monitoring,Depressive disorders
+bip,Bipolar Disorder,treatment_monitoring,Mania
+pan,Panic Disorder,treatment_monitoring,Neuroses
+gad,Generalized Anxiety,treatment_monitoring,Neuroses
+bip1,Bipolar Type-1,disorder_screening,Mania
+bip2,Bipolar Type-2,disorder_screening,Mania
+dep,Depression,disorder_screening,Depressive disorders
+norm,Normal,disorder_screening,
+ecg_bip,Bipolar,psychiatry_ecg,Mania
+ecg_dep,Depression,psychiatry_ecg,Depressive disorders
+ecg_scz,Schizophrenia,psychiatry_ecg,"Schizophrenia, schizotypal and delusional disorders"

@@ -1,0 +1,90 @@
+{
+  "extraKnownMarketplaces": {
+    "platform": {
+      "source": {
+        "source": "../../../../platform"
+      }
+    },
+    "hospital": {
+      "source": {
+        "source": "../.."
+      }
+    }
+  },
+  "enabledPlugins": {
+    "platform-init@platform": true,
+    "dlt-ingest@platform": true,
+    "dlt-quality@platform": true,
+    "dlt-explore@platform": true,
+    "duckdb-ops@platform": true,
+    "dbt-modeling@platform": true,
+    "dbt-semantic@platform": true,
+    "dbt-testing@platform": true,
+    "dbt-govern@platform": true,
+    "dagster-orchestrate@platform": true,
+    "python-standards@platform": true,
+    "power-tools@platform": true,
+    "hospital-group@hospital": true,
+    "evidence-bi@platform": true,
+    "elementary-observe@platform": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(../*/src/**)",
+      "Read(../../../*/projects/**)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets.toml)",
+      "Read(**/.dlt/secrets.toml)",
+      "Read(**/credentials/**)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr create:*)"
+    ],
+    "allow": [
+      "Bash(uv run pf:*)",
+      "Bash(dbt parse:*)",
+      "Bash(dbt ls:*)",
+      "Bash(dbt build:*)",
+      "Bash(dbt test:*)",
+      "Bash(mf query:*)",
+      "Bash(mf list:*)",
+      "Bash(pf air:*)",
+      "Bash(pf align:*)",
+      "Bash(pf dialect:*)",
+      "Bash(pf report:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run sources:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(pf tool expectations:*)",
+      "Bash(pf tool elementary:*)",
+      "Bash(edr report:*)",
+      "Bash(edr monitor:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(pf artifacts:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python ../../../../platform/hooks/pre_tool_use.py"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+version: 2
+semantic_models:
+  - name: episodes
+    description: Treatment episodes. agg_time_dimension derives from the event_time role.
+    model: ref('fct_treatment_episodes')
+    defaults:
+      agg_time_dimension: treatment_started_at
+    entities:
+      - {name: episode, type: primary, expr: episode_id}
+      - {name: patient, type: foreign, expr: patient_id}
+      - {name: diagnosis, type: foreign, expr: diagnosis_code}
+    dimensions:
+      - name: treatment_started_at
+        type: time
+        type_params: {time_granularity: day}
+      - {name: outcome, type: categorical}
+      - {name: therapy_type, type: categorical}
+      - {name: medication, type: categorical}
+      - {name: emotional_state, type: categorical}
+      - {name: gender, type: categorical}
+      - {name: icd10_group, type: categorical}
+    measures:
+      - {name: episode_count, agg: count, expr: episode_id, agg_time_dimension: treatment_started_at}
+      - {name: improved_count, agg: sum, expr: is_improved, agg_time_dimension: treatment_started_at}
+      - {name: avg_adherence_pct, agg: average, expr: adherence_pct, agg_time_dimension: treatment_started_at}
+      - {name: avg_symptom_severity, agg: average, expr: symptom_severity, agg_time_dimension: treatment_started_at}
+      - {name: avg_treatment_duration_weeks, agg: average, expr: treatment_duration_weeks, agg_time_dimension: treatment_started_at}
+
+  - name: survey
+    description: Distinct population survey responses. Context, never clinical truth.
+    model: ref('fct_survey_responses')
+    defaults:
+      agg_time_dimension: surveyed_at
+    entities:
+      - {name: response, type: primary, expr: response_id}
+    dimensions:
+      - name: surveyed_at
+        type: time
+        type_params: {time_granularity: day}
+      - {name: country, type: categorical}
+      - {name: occupation, type: categorical}
+      - {name: family_history, type: categorical}
+      - {name: care_options, type: categorical}
+      - {name: sought_treatment, type: categorical}
+    measures:
+      - {name: response_count, agg: count, expr: response_id, agg_time_dimension: surveyed_at}
+      - {name: treatment_seeking_count, agg: sum, expr: is_treatment_seeking, agg_time_dimension: surveyed_at}
+
+  - name: registry
+    description: National in-patient statistics. NULL values are suppressed cells; sum ignores them by design.
+    model: ref('fct_registry_annual')
+    defaults:
+      agg_time_dimension: year_date
+    entities:
+      - {name: statistic, type: primary, expr: statistic_id}
+    dimensions:
+      - name: year_date
+        type: time
+        type_params: {time_granularity: year}
+      - {name: sex, type: categorical}
+      - {name: unit, type: categorical}
+      - {name: conformed_icd10_group, type: categorical}
+    measures:
+      - {name: inpatient_value, agg: sum, expr: value, agg_time_dimension: year_date}

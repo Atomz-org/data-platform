@@ -1,0 +1,36 @@
+# Candidate sources — a governed backlog, never a bulk import.
+#
+# Admission criteria (all must hold before a candidate becomes a resource):
+#   1. license permits our use and redistribution posture
+#   2. grain is documented and lands as one of: patient-level clinical,
+#      population benchmark, population context (see ADR-0001)
+#   3. it maps onto dim_diagnosis or adds a genuinely new axis
+#      (cost, staffing, longitudinal follow-up, language)
+#   4. `pf semantic scan` induces a proposal a steward approves
+
+candidates:
+  - name: psych-data-conversations
+    url: https://huggingface.co/datasets/Compumacy/Psych_data
+    kind: text corpus (226 MB JSONL, synthetic psych/medical conversations)
+    license: Apache-2.0
+    disposition: not landed — conversational NLP shape, not relational.
+      Revisit as evaluation corpus for this project's agents, or as a
+      document-grain resource if a text lane is added. Never a clinical fact.
+
+  - name: multilingual-mh-nlp-survey
+    url: https://github.com/bucuram/multilingual-mental-health-datasets-nlp
+    kind: curated catalog of multilingual mental-health NLP datasets
+    disposition: catalog, not a dataset — mine it for candidates that add a
+      language axis; each entry admits individually via the criteria above.
+
+  - name: odsc-mental-health-datasets
+    url: https://odsc.medium.com/10-important-mental-health-datasets-for-data-science-and-ai-projects-628d28a15987
+    kind: editorial listicle of mental-health datasets
+    disposition: catalog, not a dataset — same treatment as above; verify
+      each entry's original source and license, never the blog's re-host.
+
+  - name: kaggle-mental-health-tag
+    url: https://www.kaggle.com/datasets?tags=4171-Mental+Health
+    kind: live tag feed
+    disposition: discovery channel — check via
+      `uvx kaggle datasets list --tags 4171` when looking for new axes.

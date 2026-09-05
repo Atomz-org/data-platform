@@ -1,0 +1,216 @@
+version: 2
+
+models:
+  - name: stg_kaggle_mh__ecg_recordings
+    description: >
+      Summary features of psychiatric-cohort ECG segments (Kaggle buraktaci; 2,670 recordings: bipolar, depression, schizophrenia). Raw signals stay out of the warehouse — extraction is reproduced by scripts/extract_ecg_features.py.. Cleaned 1:1 from `kaggle_mh.ecg_recordings`; grain: one 12-lead ECG segment.
+    meta:
+      concept: EcgRecording
+      grain: one 12-lead ECG segment
+      layer: staging
+    columns:
+      - name: recording_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+      - name: disorder_group
+        meta: {role: status_enum}
+      - name: n_samples
+        meta: {role: quantity}
+      - name: n_leads
+        meta: {role: quantity}
+      - name: signal_mean
+        meta: {role: quantity}
+      - name: signal_std
+        meta: {role: quantity}
+      - name: signal_min
+        meta: {role: quantity}
+      - name: signal_max
+        meta: {role: quantity}
+      - name: signal_rms
+        meta: {role: quantity}
+      - name: lead2_mean
+        meta: {role: quantity}
+      - name: lead2_std
+        meta: {role: quantity}
+
+  - name: stg_kaggle_mh__registry_annual
+    description: >
+      Psychiatric in-patients by year, sex and ICD-10 group (CSO Ireland HRA71 via Kaggle noeyislearning; 2001-2023; number, rate per 100k, percent). A NULL value is a suppressed or not-applicable cell — never zero-fill.. Cleaned 1:1 from `kaggle_mh.registry_annual`; grain: one statistic x year x sex x ICD-10 diagnostic group.
+    meta:
+      concept: PopulationStatistic
+      grain: one statistic x year x sex x ICD-10 diagnostic group
+      layer: staging
+    columns:
+      - name: statistic_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: statistic_code
+        meta: {role: status_enum}
+      - name: statistic_label
+        meta: {role: free_text}
+      - name: year
+        meta: {role: quantity}
+      - name: year_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: sex
+        meta: {role: status_enum}
+      - name: icd10_group_code
+        meta: {role: status_enum}
+      - name: icd10_group
+        meta: {role: status_enum}
+      - name: unit
+        meta: {role: status_enum}
+      - name: value
+        meta: {role: quantity}
+
+  - name: stg_kaggle_mh__screening_assessments
+    description: >
+      Behavioural screening vs expert diagnosis — bipolar I/II, depression, normal (Kaggle cid007). Cohort unrelated to treatment_episodes patients.. Cleaned 1:1 from `kaggle_mh.screening_assessments`; grain: one behavioural screening of one person.
+    meta:
+      concept: ScreeningAssessment
+      grain: one behavioural screening of one person
+      layer: staging
+    columns:
+      - name: assessment_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+      - name: expert_diagnosis
+        meta: {role: status_enum}
+      - name: sadness
+        meta: {role: status_enum}
+      - name: euphoric
+        meta: {role: status_enum}
+      - name: exhausted
+        meta: {role: status_enum}
+      - name: sleep_disorder
+        meta: {role: status_enum}
+      - name: mood_swing
+        meta: {role: status_enum}
+      - name: suicidal_thoughts
+        meta: {role: status_enum}
+      - name: anorexia
+        meta: {role: status_enum}
+      - name: authority_respect
+        meta: {role: status_enum}
+      - name: try_explanation
+        meta: {role: status_enum}
+      - name: aggressive_response
+        meta: {role: status_enum}
+      - name: ignore_move_on
+        meta: {role: status_enum}
+      - name: nervous_breakdown
+        meta: {role: status_enum}
+      - name: admit_mistakes
+        meta: {role: status_enum}
+      - name: overthinking
+        meta: {role: status_enum}
+      - name: sexual_activity_score
+        meta: {role: quantity}
+      - name: concentration_score
+        meta: {role: quantity}
+      - name: optimism_score
+        meta: {role: quantity}
+
+  - name: stg_kaggle_mh__survey_responses
+    description: >
+      Population mental-health survey (Kaggle bhavikjikadara, 2014). Respondents are anonymous members of the public — never Patients. Upstream is heavily duplicated (292,364 rows, ~580 distinct); landed as-is, deduplicated by content_hash in the mart.. Cleaned 1:1 from `kaggle_mh.survey_responses`; grain: one survey response as published upstream.
+    meta:
+      concept: SurveyResponse
+      grain: one survey response as published upstream
+      layer: staging
+    columns:
+      - name: response_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: content_hash_id
+        meta: {role: surrogate_key}
+        data_tests: [unique, not_null]
+      - name: surveyed_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: gender
+        meta: {role: status_enum}
+      - name: country
+        meta: {role: geo_country}
+      - name: occupation
+        meta: {role: status_enum}
+      - name: self_employed
+        meta: {role: status_enum}
+      - name: family_history
+        meta: {role: status_enum}
+      - name: sought_treatment
+        meta: {role: status_enum}
+      - name: days_indoors
+        meta: {role: status_enum}
+      - name: growing_stress
+        meta: {role: status_enum}
+      - name: changes_habits
+        meta: {role: status_enum}
+      - name: mental_health_history
+        meta: {role: status_enum}
+      - name: mood_swings
+        meta: {role: status_enum}
+      - name: coping_struggles
+        meta: {role: status_enum}
+      - name: work_interest
+        meta: {role: status_enum}
+      - name: social_weakness
+        meta: {role: status_enum}
+      - name: mental_health_interview
+        meta: {role: status_enum}
+      - name: care_options
+        meta: {role: status_enum}
+
+  - name: stg_kaggle_mh__treatment_episodes
+    description: >
+      Synthetic outpatient treatment monitoring (Kaggle uom190346a). Episode-grain snapshot — the scores are point-in-time, not a longitudinal series.. Cleaned 1:1 from `kaggle_mh.treatment_episodes`; grain: one treatment episode per patient.
+    meta:
+      concept: TreatmentEpisode
+      grain: one treatment episode per patient
+      layer: staging
+    columns:
+      - name: episode_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: patient_id
+        meta: {role: foreign_key}
+      - name: diagnosis_code
+        meta: {role: foreign_key}
+      - name: age
+        meta: {role: quantity}
+      - name: gender
+        meta: {role: status_enum}
+      - name: diagnosis
+        meta: {role: status_enum}
+      - name: symptom_severity
+        meta: {role: quantity}
+      - name: mood_score
+        meta: {role: quantity}
+      - name: sleep_quality
+        meta: {role: quantity}
+      - name: physical_activity_hrs_week
+        meta: {role: quantity}
+      - name: medication
+        meta: {role: status_enum}
+      - name: therapy_type
+        meta: {role: status_enum}
+      - name: treatment_started_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: treatment_duration_weeks
+        meta: {role: quantity}
+      - name: stress_level
+        meta: {role: quantity}
+      - name: outcome
+        meta: {role: status_enum}
+      - name: treatment_progress
+        meta: {role: quantity}
+      - name: emotional_state
+        meta: {role: status_enum}
+      - name: adherence_pct
+        meta: {role: quantity}

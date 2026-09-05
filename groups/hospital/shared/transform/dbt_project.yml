@@ -1,0 +1,5 @@
+name: 'hospital_shared'
+version: '1.0.0'
+config-version: 2
+profile: 'hospital_shared'
+macro-paths: ["macros"]

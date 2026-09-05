@@ -1,0 +1,1319 @@
+{
+  "catalog": "hospital",
+  "schema": "mental_health",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [
+    {
+      "name": "dim_diagnosis",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_diagnosis"
+      },
+      "columns": [
+        {
+          "name": "diagnosis_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "diagnosis_label",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Label as written by the source vocabulary."
+          }
+        },
+        {
+          "name": "source_vocabulary",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Registry diagnostic group; NULL for the 'normal' control label."
+          }
+        }
+      ],
+      "primaryKey": "diagnosis_code",
+      "properties": {
+        "description": "Conformed diagnosis dimension \u2014 source vocabularies mapped to the registry's ICD-10 diagnostic groups. The only sanctioned bridge between patient-level facts and population benchmarks.",
+        "grain": "one diagnosis code",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "dim_patients",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_patients"
+      },
+      "columns": [
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "age",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "gender",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "first_treatment_started_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "episode_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        }
+      ],
+      "primaryKey": "patient_id",
+      "properties": {
+        "description": "Patients derived from treatment episodes.",
+        "grain": "one patient",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_diagnosis_benchmark",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_diagnosis_benchmark"
+      },
+      "columns": [
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "hospital_episodes",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "hospital_share",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "registry_inpatients",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "registry_share",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "registry_year",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "icd10_group",
+      "properties": {
+        "description": "Case-mix comparison \u2014 this entity's episode mix vs the national in-patient mix, as shares at conformed ICD-10 group grain. The only mart where clinical and population data meet.",
+        "grain": "one conformed ICD-10 group",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_ecg_recordings",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_ecg_recordings"
+      },
+      "columns": [
+        {
+          "name": "recording_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "diagnosis_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "disorder_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "n_samples",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "n_leads",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "signal_mean",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "signal_std",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "signal_min",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "signal_max",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "signal_rms",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lead2_mean",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lead2_std",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "recording_id",
+      "properties": {
+        "description": "ECG segment features by disorder cohort. Static cohort \u2014 no time axis, not projected into the semantic layer.",
+        "grain": "one ECG recording",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_registry_annual",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_registry_annual"
+      },
+      "columns": [
+        {
+          "name": "statistic_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "year_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "sex",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "conformed_icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Legacy classification labels folded into modern groups."
+          }
+        },
+        {
+          "name": "value",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity",
+            "description": "NULL when the registry suppressed the cell. No coalesce."
+          }
+        },
+        {
+          "name": "statistic_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "statistic_label",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "year",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "icd10_group_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_suppressed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "statistic_id",
+      "properties": {
+        "description": "National psychiatric in-patient statistics at published grain. NULL value means suppressed/not-applicable \u2014 never zero.",
+        "grain": "one statistic x year x sex x ICD-10 group",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_screening_assessments",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_screening_assessments"
+      },
+      "columns": [
+        {
+          "name": "assessment_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "diagnosis_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "expert_diagnosis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_disorder",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sadness",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "euphoric",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exhausted",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sleep_disorder",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mood_swing",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "suicidal_thoughts",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "anorexia",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "authority_respect",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "try_explanation",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "aggressive_response",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ignore_move_on",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "nervous_breakdown",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "admit_mistakes",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "overthinking",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sexual_activity_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "concentration_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "optimism_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "assessment_id",
+      "properties": {
+        "description": "Behavioural screening vs expert diagnosis. Static cohort \u2014 no time axis, not projected into the semantic layer.",
+        "grain": "one screening assessment",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_survey_responses",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_survey_responses"
+      },
+      "columns": [
+        {
+          "name": "response_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "content_hash",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "surrogate_key"
+          }
+        },
+        {
+          "name": "surveyed_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "country",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "sought_treatment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "is_treatment_seeking",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "gender",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "occupation",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "self_employed",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "family_history",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "days_indoors",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "growing_stress",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "changes_habits",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mental_health_history",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mood_swings",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "coping_struggles",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "work_interest",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "social_weakness",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mental_health_interview",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "care_options",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "response_id",
+      "properties": {
+        "description": "Population survey at distinct-response grain \u2014 the content-hash surrogate key drives the role-generated dedupe in staging; the raw table keeps the upstream multiplicity for audit. Respondents are anonymous \u2014 never joined to patient-grain data.",
+        "grain": "one distinct survey response",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    },
+    {
+      "name": "fct_treatment_episodes",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_treatment_episodes"
+      },
+      "columns": [
+        {
+          "name": "episode_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "patient_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "diagnosis_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "icd10_group",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "treatment_started_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "outcome",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Episode outcome as recorded upstream."
+          }
+        },
+        {
+          "name": "adherence_pct",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "is_improved",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "diagnosis_label",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "age",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "gender",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "symptom_severity",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mood_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sleep_quality",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "physical_activity_hrs_week",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "medication",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "therapy_type",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "treatment_duration_weeks",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "stress_level",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "treatment_progress",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "emotional_state",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "episode_id",
+      "properties": {
+        "description": "Treatment episode fact enriched with the conformed diagnosis.",
+        "grain": "one treatment episode",
+        "layer": "marts",
+        "pf.project": "mental-health",
+        "pf.group": "hospital"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "name": "fct_ecg_recordings_dim_diagnosis",
+      "models": [
+        "fct_ecg_recordings",
+        "dim_diagnosis"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_ecg_recordings.diagnosis_code = dim_diagnosis.diagnosis_code",
+      "properties": {
+        "pf.relation": "ecg_of_diagnosis",
+        "pf.label": "recorded from cohort",
+        "pf.inverse": "cohort of",
+        "pf.description": "Disorder cohort of the recorded patient."
+      }
+    },
+    {
+      "name": "fct_screening_assessments_dim_diagnosis",
+      "models": [
+        "fct_screening_assessments",
+        "dim_diagnosis"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_screening_assessments.diagnosis_code = dim_diagnosis.diagnosis_code",
+      "properties": {
+        "pf.relation": "assessment_of_diagnosis",
+        "pf.label": "concludes",
+        "pf.inverse": "concluded by",
+        "pf.description": "Expert diagnosis assigned by the screening."
+      }
+    },
+    {
+      "name": "fct_treatment_episodes_dim_patients",
+      "models": [
+        "fct_treatment_episodes",
+        "dim_patients"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_treatment_episodes.patient_id = dim_patients.patient_id",
+      "properties": {
+        "pf.relation": "episode_for_patient",
+        "pf.label": "for patient",
+        "pf.inverse": "undergoes",
+        "pf.description": "Each treatment episode belongs to exactly one patient."
+      }
+    },
+    {
+      "name": "fct_treatment_episodes_dim_diagnosis",
+      "models": [
+        "fct_treatment_episodes",
+        "dim_diagnosis"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_treatment_episodes.diagnosis_code = dim_diagnosis.diagnosis_code",
+      "properties": {
+        "pf.relation": "episode_of_diagnosis",
+        "pf.label": "diagnosed as",
+        "pf.inverse": "diagnosis of",
+        "pf.description": "Episode's primary diagnosis, conformed via diagnosis_map."
+      }
+    }
+  ],
+  "views": [],
+  "cubes": [
+    {
+      "name": "mental_health_core",
+      "baseObject": "fct_treatment_episodes",
+      "measures": [
+        {
+          "name": "adherence_rate",
+          "expression": "-- adherence_rate",
+          "type": "DOUBLE",
+          "description": "Adherence Rate",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "avg_symptom_severity",
+          "expression": "-- avg_symptom_severity",
+          "type": "DOUBLE",
+          "description": "Avg Symptom Severity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "avg_treatment_duration",
+          "expression": "-- avg_treatment_duration",
+          "type": "DOUBLE",
+          "description": "Avg Treatment Duration (weeks)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "improved_episodes",
+          "expression": "-- improved_episodes",
+          "type": "DOUBLE",
+          "description": "Improved Episodes",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "outcome_improved_rate",
+          "expression": "-- outcome_improved_rate",
+          "type": "DOUBLE",
+          "description": "Improved Outcome Rate",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "registry_inpatients",
+          "expression": "-- registry_inpatients",
+          "type": "DOUBLE",
+          "description": "Registry In-patients",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "survey_responses",
+          "expression": "-- survey_responses",
+          "type": "DOUBLE",
+          "description": "Survey Responses",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "treatment_episodes",
+          "expression": "-- treatment_episodes",
+          "type": "DOUBLE",
+          "description": "Treatment Episodes",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "treatment_seekers",
+          "expression": "-- treatment_seekers",
+          "type": "DOUBLE",
+          "description": "Treatment Seekers",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "treatment_seeking_rate",
+          "expression": "-- treatment_seeking_rate",
+          "type": "DOUBLE",
+          "description": "Treatment-Seeking Rate",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "care_options",
+          "expression": "care_options",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "conformed_icd10_group",
+          "expression": "conformed_icd10_group",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "country",
+          "expression": "country",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "emotional_state",
+          "expression": "emotional_state",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "family_history",
+          "expression": "family_history",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "gender",
+          "expression": "gender",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "icd10_group",
+          "expression": "icd10_group",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "medication",
+          "expression": "medication",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "occupation",
+          "expression": "occupation",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "outcome",
+          "expression": "outcome",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "sex",
+          "expression": "sex",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "sought_treatment",
+          "expression": "sought_treatment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "therapy_type",
+          "expression": "therapy_type",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "unit",
+          "expression": "unit",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "surveyed_at",
+          "expression": "surveyed_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "treatment_started_at",
+          "expression": "treatment_started_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "year_date",
+          "expression": "year_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

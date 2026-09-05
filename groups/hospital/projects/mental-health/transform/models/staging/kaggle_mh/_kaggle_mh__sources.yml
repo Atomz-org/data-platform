@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: kaggle_mh
+    schema: kaggle_mh
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: ecg_recordings
+      - name: registry_annual
+      - name: screening_assessments
+      - name: survey_responses
+      - name: treatment_episodes

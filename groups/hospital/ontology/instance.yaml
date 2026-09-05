@@ -1,0 +1,10 @@
+# Ontology instance for hospital — which platform classes this group models.
+# Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
+group: hospital
+domain: b2b_saas
+classes:
+  - Party
+  - Agreement
+  - Event
+  - Interaction
+shared_sources: []

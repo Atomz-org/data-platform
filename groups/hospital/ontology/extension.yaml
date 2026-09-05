@@ -1,0 +1,393 @@
+# Group ontology extension — approved additions only.
+#
+# Layers over the platform ontology; never replaces it. Terms here are
+# specific to this group, so another company never inherits a word that
+# means nothing to them. Written by `pf ontology approve`; hand edits are
+# expected and preserved.
+#
+# Design references (see mental-health/decisions/ADR-0001): the class split
+# mirrors the constructs used by Karolinska Institutet GPH research groups —
+# EPiCSS (psychiatric epidemiology, substance use and social environment)
+# for SurveyResponse and PopulationStatistic, PRIME Health (prevention,
+# intervention and mechanisms) for TreatmentEpisode outcomes, GH-Pharma
+# (pharmacology and therapeutics) for the medication/therapy attributes.
+
+version: 1
+
+classes:
+  Patient:
+    label: Patient
+    parent: Party
+    description: >
+      A person receiving care from this group. Distinct from survey
+      respondents, who are anonymous members of the population and are
+      never joined to Patient data.
+    identity: patient_id
+    properties:
+      patient_id:
+        datatype: string
+        role: natural_key
+        required: true
+      age:
+        datatype: integer
+        role: quantity
+      gender:
+        datatype: string
+        role: status_enum
+
+  Diagnosis:
+    label: Diagnosis
+    description: >
+      The conformed diagnosis dimension. Maps each source vocabulary's label
+      (treatment monitoring, disorder screening, psychiatry ECG) onto the
+      ICD-10 diagnostic groups used by the national in-patient registry
+      (CSO Ireland HRA71). The only sanctioned bridge between patient-level
+      facts and population-level benchmarks.
+    identity: diagnosis_code
+    properties:
+      diagnosis_code:
+        datatype: string
+        role: natural_key
+        required: true
+      diagnosis_label:
+        datatype: string
+      source_vocabulary:
+        datatype: string
+        role: status_enum
+      icd10_group:
+        datatype: string
+        role: status_enum
+
+  TreatmentEpisode:
+    label: TreatmentEpisode
+    parent: Agreement
+    description: >
+      One course of outpatient mental-health treatment for one patient —
+      a commitment with a start, a duration and an outcome. Score columns
+      are an episode-grain snapshot, not a longitudinal series.
+    identity: episode_id
+    properties:
+      episode_id:
+        datatype: string
+        role: natural_key
+        required: true
+      patient_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      diagnosis_code:
+        datatype: string
+        role: foreign_key
+        required: true
+      diagnosis:
+        datatype: string
+        role: status_enum
+      symptom_severity:
+        datatype: integer
+        role: quantity
+      mood_score:
+        datatype: integer
+        role: quantity
+      sleep_quality:
+        datatype: integer
+        role: quantity
+      physical_activity_hrs_week:
+        datatype: integer
+        role: quantity
+      medication:
+        datatype: string
+        role: status_enum
+      therapy_type:
+        datatype: string
+        role: status_enum
+      treatment_started_at:
+        datatype: date
+        role: event_time
+        required: true
+      treatment_duration_weeks:
+        datatype: integer
+        role: quantity
+      stress_level:
+        datatype: integer
+        role: quantity
+      outcome:
+        datatype: string
+        role: status_enum
+      treatment_progress:
+        datatype: integer
+        role: quantity
+      emotional_state:
+        datatype: string
+        role: status_enum
+      adherence_pct:
+        datatype: integer
+        role: quantity
+
+  ScreeningAssessment:
+    label: ScreeningAssessment
+    parent: Event
+    description: >
+      One behavioural screening of one person against an expert diagnosis
+      (bipolar I/II, depression, normal). The cohort is unrelated to
+      TreatmentEpisode patients.
+    identity: assessment_id
+    properties:
+      assessment_id:
+        datatype: string
+        role: natural_key
+        required: true
+      diagnosis_code:
+        datatype: string
+        role: foreign_key
+        required: true
+      expert_diagnosis:
+        datatype: string
+        role: status_enum
+      sadness:
+        datatype: string
+        role: status_enum
+      euphoric:
+        datatype: string
+        role: status_enum
+      exhausted:
+        datatype: string
+        role: status_enum
+      sleep_disorder:
+        datatype: string
+        role: status_enum
+      mood_swing:
+        datatype: string
+        role: status_enum
+      suicidal_thoughts:
+        datatype: string
+        role: status_enum
+      anorexia:
+        datatype: string
+        role: status_enum
+      authority_respect:
+        datatype: string
+        role: status_enum
+      try_explanation:
+        datatype: string
+        role: status_enum
+      aggressive_response:
+        datatype: string
+        role: status_enum
+      ignore_move_on:
+        datatype: string
+        role: status_enum
+      nervous_breakdown:
+        datatype: string
+        role: status_enum
+      admit_mistakes:
+        datatype: string
+        role: status_enum
+      overthinking:
+        datatype: string
+        role: status_enum
+      sexual_activity_score:
+        datatype: integer
+        role: quantity
+      concentration_score:
+        datatype: integer
+        role: quantity
+      optimism_score:
+        datatype: integer
+        role: quantity
+
+  EcgRecording:
+    label: EcgRecording
+    parent: Event
+    description: >
+      Summary features of one 12-lead ECG segment recorded from a psychiatric
+      patient (bipolar, depression or schizophrenia cohort). Raw signals stay
+      out of the warehouse; the extraction is reproducible via
+      scripts/extract_ecg_features.py.
+    identity: recording_id
+    properties:
+      recording_id:
+        datatype: string
+        role: natural_key
+        required: true
+      diagnosis_code:
+        datatype: string
+        role: foreign_key
+        required: true
+      source_file:
+        datatype: string
+      disorder_group:
+        datatype: string
+        role: status_enum
+      upstream_label:
+        datatype: integer
+      n_samples:
+        datatype: integer
+        role: quantity
+      n_leads:
+        datatype: integer
+        role: quantity
+      signal_mean:
+        datatype: double
+        role: quantity
+      signal_std:
+        datatype: double
+        role: quantity
+      signal_min:
+        datatype: double
+        role: quantity
+      signal_max:
+        datatype: double
+        role: quantity
+      signal_rms:
+        datatype: double
+        role: quantity
+      lead2_mean:
+        datatype: double
+        role: quantity
+      lead2_std:
+        datatype: double
+        role: quantity
+
+  SurveyResponse:
+    label: SurveyResponse
+    parent: Interaction
+    description: >
+      One response to a population mental-health survey. Respondents are
+      anonymous members of the public — never Patients, never joined to
+      patient-grain data. Upstream carries exact duplicates (292,364 rows,
+      ~290k distinct); raw lands as-is and the content-hash surrogate key
+      drives the dedupe in staging.
+    identity: response_id
+    properties:
+      response_id:
+        datatype: string
+        role: natural_key
+        required: true
+      content_hash:
+        datatype: string
+      surveyed_at:
+        datatype: timestamp
+        role: event_time
+      gender:
+        datatype: string
+        role: status_enum
+      country:
+        datatype: string
+        role: geo_country
+      occupation:
+        datatype: string
+        role: status_enum
+      self_employed:
+        datatype: string
+        role: status_enum
+      family_history:
+        datatype: string
+        role: status_enum
+      sought_treatment:
+        datatype: string
+        role: status_enum
+      days_indoors:
+        datatype: string
+        role: status_enum
+      growing_stress:
+        datatype: string
+        role: status_enum
+      changes_habits:
+        datatype: string
+        role: status_enum
+      mental_health_history:
+        datatype: string
+        role: status_enum
+      mood_swings:
+        datatype: string
+        role: status_enum
+      coping_struggles:
+        datatype: string
+        role: status_enum
+      work_interest:
+        datatype: string
+        role: status_enum
+      social_weakness:
+        datatype: string
+        role: status_enum
+      mental_health_interview:
+        datatype: string
+        role: status_enum
+      care_options:
+        datatype: string
+        role: status_enum
+
+  PopulationStatistic:
+    label: PopulationStatistic
+    parent: Event
+    description: >
+      One cell of a published national statistic: psychiatric in-patients by
+      year, sex and ICD-10 diagnostic group (CSO Ireland HRA71, 2001-2023).
+      A NULL value is a suppressed or not-applicable cell — never zero.
+      Benchmark grain only; never joined to patient-level facts except
+      through Diagnosis.icd10_group at year grain.
+    identity: statistic_id
+    properties:
+      statistic_id:
+        datatype: string
+        role: natural_key
+        required: true
+      statistic_code:
+        datatype: string
+        role: status_enum
+      statistic_label:
+        datatype: string
+      year:
+        datatype: integer
+        role: quantity
+      year_date:
+        datatype: date
+        role: event_time
+        required: true
+      sex:
+        datatype: string
+        role: status_enum
+      icd10_group_code:
+        datatype: string
+        role: status_enum
+      icd10_group:
+        datatype: string
+        role: status_enum
+      unit:
+        datatype: string
+        role: status_enum
+      value:
+        datatype: double
+        role: quantity
+      is_suppressed:
+        datatype: boolean
+
+relations:
+  - name: episode_for_patient
+    domain: TreatmentEpisode
+    range: Patient
+    cardinality: MANY_TO_ONE
+    label: for patient
+    inverse: undergoes
+    description: Each treatment episode belongs to exactly one patient.
+  - name: episode_of_diagnosis
+    domain: TreatmentEpisode
+    range: Diagnosis
+    cardinality: MANY_TO_ONE
+    label: diagnosed as
+    inverse: diagnosis of
+    description: Episode's primary diagnosis, conformed via diagnosis_map.
+  - name: assessment_of_diagnosis
+    domain: ScreeningAssessment
+    range: Diagnosis
+    cardinality: MANY_TO_ONE
+    label: concludes
+    inverse: concluded by
+    description: Expert diagnosis assigned by the screening.
+  - name: ecg_of_diagnosis
+    domain: EcgRecording
+    range: Diagnosis
+    cardinality: MANY_TO_ONE
+    label: recorded from cohort
+    inverse: cohort of
+    description: Disorder cohort of the recorded patient.

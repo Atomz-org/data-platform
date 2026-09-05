@@ -1,0 +1,135 @@
+version: 2
+resources:
+- resource: ecg_recordings
+  concept: EcgRecording
+  source: kaggle_mh
+  roles:
+    recording_id: natural_key
+    diagnosis_code: foreign_key
+    disorder_group: status_enum
+    n_samples: quantity
+    n_leads: quantity
+    signal_mean: quantity
+    signal_std: quantity
+    signal_min: quantity
+    signal_max: quantity
+    signal_rms: quantity
+    lead2_mean: quantity
+    lead2_std: quantity
+  rename: {}
+  links:
+    diagnosis_code: Diagnosis
+  description: "Summary features of psychiatric-cohort ECG segments (Kaggle buraktaci;\
+    \ 2,670 recordings: bipolar, depression, schizophrenia). Raw signals stay out\
+    \ of the warehouse \u2014 extraction is reproduced by scripts/extract_ecg_features.py."
+  grain: one 12-lead ECG segment
+- resource: registry_annual
+  concept: PopulationStatistic
+  source: kaggle_mh
+  roles:
+    statistic_id: natural_key
+    statistic_code: status_enum
+    statistic_label: free_text
+    year: quantity
+    year_date: event_time
+    sex: status_enum
+    icd10_group_code: status_enum
+    icd10_group: status_enum
+    unit: status_enum
+    value: quantity
+  rename: {}
+  links: {}
+  description: "Psychiatric in-patients by year, sex and ICD-10 group (CSO Ireland\
+    \ HRA71 via Kaggle noeyislearning; 2001-2023; number, rate per 100k, percent).\
+    \ A NULL value is a suppressed or not-applicable cell \u2014 never zero-fill."
+  grain: one statistic x year x sex x ICD-10 diagnostic group
+- resource: screening_assessments
+  concept: ScreeningAssessment
+  source: kaggle_mh
+  roles:
+    assessment_id: natural_key
+    diagnosis_code: foreign_key
+    expert_diagnosis: status_enum
+    sadness: status_enum
+    euphoric: status_enum
+    exhausted: status_enum
+    sleep_disorder: status_enum
+    mood_swing: status_enum
+    suicidal_thoughts: status_enum
+    anorexia: status_enum
+    authority_respect: status_enum
+    try_explanation: status_enum
+    aggressive_response: status_enum
+    ignore_move_on: status_enum
+    nervous_breakdown: status_enum
+    admit_mistakes: status_enum
+    overthinking: status_enum
+    sexual_activity_score: quantity
+    concentration_score: quantity
+    optimism_score: quantity
+  rename: {}
+  links:
+    diagnosis_code: Diagnosis
+  description: "Behavioural screening vs expert diagnosis \u2014 bipolar I/II, depression,\
+    \ normal (Kaggle cid007). Cohort unrelated to treatment_episodes patients."
+  grain: one behavioural screening of one person
+- resource: survey_responses
+  concept: SurveyResponse
+  source: kaggle_mh
+  roles:
+    response_id: natural_key
+    content_hash: surrogate_key
+    surveyed_at: event_time
+    gender: status_enum
+    country: geo_country
+    occupation: status_enum
+    self_employed: status_enum
+    family_history: status_enum
+    sought_treatment: status_enum
+    days_indoors: status_enum
+    growing_stress: status_enum
+    changes_habits: status_enum
+    mental_health_history: status_enum
+    mood_swings: status_enum
+    coping_struggles: status_enum
+    work_interest: status_enum
+    social_weakness: status_enum
+    mental_health_interview: status_enum
+    care_options: status_enum
+  rename: {}
+  links: {}
+  description: "Population mental-health survey (Kaggle bhavikjikadara, 2014). Respondents\
+    \ are anonymous members of the public \u2014 never Patients. Upstream carries\
+    \ exact duplicates (292,364 rows, ~290k distinct); landed as-is, deduplicated\
+    \ by the content-hash surrogate key in staging."
+  grain: one survey response as published upstream
+- resource: treatment_episodes
+  concept: TreatmentEpisode
+  source: kaggle_mh
+  roles:
+    episode_id: natural_key
+    patient_id: foreign_key
+    diagnosis_code: foreign_key
+    age: quantity
+    gender: status_enum
+    diagnosis: status_enum
+    symptom_severity: quantity
+    mood_score: quantity
+    sleep_quality: quantity
+    physical_activity_hrs_week: quantity
+    medication: status_enum
+    therapy_type: status_enum
+    treatment_started_at: event_time
+    treatment_duration_weeks: quantity
+    stress_level: quantity
+    outcome: status_enum
+    treatment_progress: quantity
+    emotional_state: status_enum
+    adherence_pct: quantity
+  rename: {}
+  links:
+    patient_id: Patient
+    diagnosis_code: Diagnosis
+  description: "Synthetic outpatient treatment monitoring (Kaggle uom190346a). Episode-grain\
+    \ snapshot \u2014 the scores are point-in-time, not a longitudinal series."
+  grain: one treatment episode per patient
