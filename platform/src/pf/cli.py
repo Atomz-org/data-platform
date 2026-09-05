@@ -2545,6 +2545,70 @@ def _git_tracked(path: Path, cwd: Path) -> bool:
 # Tools are capabilities that also *run*. The sub-app below knows about tools in
 # general and about no tool in particular: every row comes from the registry, so
 # a tool installed from outside this repo appears here without an edit.
+@app.command("commit")
+def cmd_commit(
+    apply: bool = typer.Option(False, "--apply", help="apply the plan (a saved plan for this exact tree is reused)"),
+    auto: bool = typer.Option(False, "--auto", help="plan and apply in one shot — for hooks and scripts"),
+    from_hook: bool = typer.Option(False, "--from-hook", help="session-end entry: a no-op unless PF_AUTO_COMMIT=1"),
+    backend_kind: str = typer.Option(None, "--backend", help="local | claude (default: local, claude as fallback)"),
+) -> None:
+    """Segregate the working tree into commits, split by a local model.
+
+    The model proposes the split; everything that matters is deterministic —
+    every changed file assigned exactly once, nothing gate-denied, nothing
+    under vendor/, and each applied commit lands in the provenance ledger with
+    the model named in a Commit-Split-By trailer. Without --apply the plan is
+    printed and saved to data/commit_plan.json; `pf commit --apply` applies
+    exactly that plan while the tree still matches it, and re-plans otherwise.
+    """
+    from pf import committer
+
+    if from_hook and os.environ.get("PF_AUTO_COMMIT") != "1":
+        raise typer.Exit(0)
+
+    root = Path.cwd()
+    changes = committer.changed_files(root)
+    if not changes:
+        console.print("[green]working tree clean — nothing to commit[/green]")
+        raise typer.Exit(0)
+
+    saved = committer.load_plan(root) if (apply and not auto) else None
+    if saved:
+        plan, model_name = saved
+        console.print(f"[dim]using saved plan from data/commit_plan.json ({model_name})[/dim]")
+    else:
+        be, reply = committer.plan_with_fallback(committer.build_prompt(root, changes), backend_kind)
+        model_name = be.name
+        plan = committer.parse_plan(reply)
+        swept = committer.complete_plan(plan, changes)
+        if swept:
+            console.print(
+                f"[yellow]{len(swept)} file(s) the model left unassigned — swept into a trailing commit[/yellow]"
+            )
+
+    problems = committer.validate_plan(plan, changes, root)
+    table = Table(title=f"commit plan — {model_name}")
+    table.add_column("subject")
+    table.add_column("files", justify="right")
+    for p in plan:
+        table.add_row(p.subject, "\n".join(p.files))
+    console.print(table)
+
+    if problems:
+        for pr in problems:
+            console.print(f"[red]✗[/red] {pr}")
+        console.print("[red]plan rejected — nothing staged[/red]")
+        raise typer.Exit(1)
+
+    if apply or auto:
+        shas = committer.apply_plan(root, plan, model_name)
+        for sha, p in zip(shas, plan):
+            console.print(f"[green]✓[/green] {sha}  {p.subject}")
+    else:
+        committer.save_plan(root, plan, model_name)
+        console.print("plan saved — `pf commit --apply` to make these commits")
+
+
 quack_app = typer.Typer(help="The dev database, served over DuckDB's quack protocol.")
 app.add_typer(quack_app, name="quack")
 

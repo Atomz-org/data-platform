@@ -362,6 +362,41 @@ policies:
     evidence: [pf provenance verify]
     controls: [AIR-DET-21, AIR-DET-4]
 
+  # --- commit segregation (committer) ---------------------------------------
+  # Commit boundaries are proposed by a locally served model (pf.committer) so
+  # the implementing session never spends attention on git splits. The model
+  # only ever emits a plan; these policies name what stands between that plan
+  # and the repository's history.
+
+  - id: commit-plans-are-validated-not-trusted
+    intent: >
+      A model's commit plan is input, not authority. Before anything is staged,
+      deterministic validation requires every pending change assigned to
+      exactly one commit, refuses invented paths, refuses `vendor/**` and the
+      submodule pins (a pin bump is a human decision), and refuses any path
+      the gate denies. A plan that fails is printed and dropped — the model
+      cannot stage a file by being confidently wrong about it.
+    applies_to: {artifact_glob: "**/*"}
+    constraint: plan_validated
+    severity: blocks
+    enforced_by: [pf.committer:validate_plan, pf.loops.gate:check_path]
+    evidence: [pytest platform/tests]
+    controls: [AIR-PREV-18, AIR-PREV-19]
+
+  - id: llm-commits-are-recorded-and-attributed
+    intent: >
+      Every commit the committer applies is an ordinary git commit — the
+      pre-commit impact gate still fires — wrapped in a provenance action
+      whose execution record carries the sha, and whose message ends with a
+      Commit-Split-By trailer naming the model. Who split the history is a
+      query over `git log` and the ledger, never a reconstruction.
+    applies_to: {artifact_glob: "**/*"}
+    constraint: commit_recorded
+    severity: warning
+    enforced_by: [pf.committer:apply_plan]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-21, AIR-DET-4]
+
   - id: control-baseline-is-declared
     intent: >
       A risk register that names controls nobody enforces is a document. Each
