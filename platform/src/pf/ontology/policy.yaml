@@ -397,6 +397,24 @@ policies:
     evidence: [pf provenance verify]
     controls: [AIR-DET-21, AIR-DET-4]
 
+  - id: git-repair-is-a-closed-menu
+    intent: >
+      The git doctor (pf.gitdoctor) lets a local model resolve tree states —
+      pin drift, nested submodules, stale plans — but its entire authority is
+      choosing per finding from an enumerated remedy menu under a written
+      rulebook. It composes no command: each remedy is a function in the
+      module, each finding kind admits a fixed set, and a resolution naming
+      anything else is rejected before it runs. Pin bumps, history rewrites,
+      gate bypasses, vendor edits and merge resolution are enumerated as
+      forbidden and answered only with `leave`, which hands the finding to a
+      human. Every applied remedy is a provenance action.
+    applies_to: {artifact_glob: "**/*"}
+    constraint: repair_menu_closed
+    severity: blocks
+    enforced_by: [pf.gitdoctor:validate_resolutions, pf.gitdoctor:apply_resolutions]
+    evidence: [pytest platform/tests, pf provenance verify]
+    controls: [AIR-PREV-18, AIR-PREV-19, AIR-DET-21]
+
   - id: control-baseline-is-declared
     intent: >
       A risk register that names controls nobody enforces is a document. Each

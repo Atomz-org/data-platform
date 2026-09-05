@@ -175,20 +175,49 @@ def build_prompt(root: Path, changes: list[Change]) -> str:
     return PROMPT.format(subject_max=SUBJECT_MAX, history=history, survey=survey(root, changes))
 
 
-def parse_plan(text: str) -> list[PlannedCommit]:
-    """The model's reply, held to the declared shape.
+def loads_reply(text: str) -> dict:
+    """A model reply as a JSON object, tolerating the wrappings models add.
 
     Reasoning models wrap answers in think-blocks and chat models in code
     fences; both are stripped rather than forbidden, because the contract is
-    the JSON, not the wrapping.
+    the JSON, not the wrapping. One structural fault is repaired rather than
+    bounced: a reply that simply stops before closing its brackets (measured:
+    Qwen3.5-4B reliably drops the final `}`). Appending the missing closers
+    is unambiguous — nothing after them could have meant anything else — while
+    any other malformation still raises for the repair round-trip.
     """
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
     fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, flags=re.DOTALL)
-    candidate = fenced.group(1) if fenced else text[text.find("{") : text.rfind("}") + 1]
+    candidate = fenced.group(1) if fenced else text[text.find("{") :].rstrip()
     try:
-        doc = json.loads(candidate)
+        # raw_decode: the first JSON value, trailing prose ignored.
+        return json.JSONDecoder().raw_decode(candidate)[0]
     except (json.JSONDecodeError, ValueError) as exc:
-        raise ValueError(f"model reply is not the declared JSON shape: {exc}") from exc
+        stack: list[str] = []
+        in_string = escaped = False
+        for ch in candidate:
+            if escaped:
+                escaped = False
+            elif ch == "\\" and in_string:
+                escaped = True
+            elif ch == '"':
+                in_string = not in_string
+            elif not in_string and ch in "{[":
+                stack.append("}" if ch == "{" else "]")
+            elif not in_string and ch in "}]":
+                if stack and stack[-1] == ch:
+                    stack.pop()
+        if not stack:
+            raise ValueError(f"model reply is not the declared JSON shape: {exc}") from exc
+        try:
+            return json.loads(candidate + ('"' if in_string else "") + "".join(reversed(stack)))
+        except (json.JSONDecodeError, ValueError):
+            raise ValueError(f"model reply is not the declared JSON shape: {exc}") from exc
+
+
+def parse_plan(text: str) -> list[PlannedCommit]:
+    """The model's reply, held to the declared shape."""
+    doc = loads_reply(text)
     commits = doc.get("commits")
     if not isinstance(commits, list):
         raise ValueError("model reply has no 'commits' list")
@@ -369,6 +398,27 @@ def plan_with_fallback(prompt: str, kind: str | None = None):
             f"unreachable ({exc}) and no claude CLI on PATH — start one with "
             f"`mlx_lm.server --model {DEFAULT_MODEL}`"
         ) from exc
+
+
+def ask_and_parse(prompt: str, parser, kind: str | None = None):
+    """One completion plus one repair round when the reply doesn't parse.
+
+    A local model at temperature 0 is deterministic: retrying the same prompt
+    reproduces the same malformed JSON byte for byte. What changes the outcome
+    is showing the model its own reply and the parse error — a short prompt,
+    so the repair round costs seconds where the original cost minutes.
+    Returns (backend_used, parsed).
+    """
+    be, reply = plan_with_fallback(prompt, kind)
+    try:
+        return be, parser(reply)
+    except ValueError as exc:
+        repair = (
+            f"Your previous reply could not be parsed: {exc}\n"
+            "Reply again with ONLY the corrected JSON — same content, valid syntax, "
+            "no prose around it.\n\nPrevious reply:\n" + reply
+        )
+        return be, parser(be.complete(repair))
 
 
 # -------------------------------------------------------------------- plan io --

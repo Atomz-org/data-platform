@@ -66,10 +66,13 @@ surfaces the CLI's own words so this diagnoses itself.
 ## Session-end automation
 
 `.claude/settings.json` carries a `Stop` hook running
-`pf commit --from-hook --auto`. It is a **no-op unless `PF_AUTO_COMMIT=1`** —
-armed, every Claude Code session ends with the local model splitting and
-committing whatever the session changed; unarmed, nothing happens and
-`pf commit` stays a deliberate command.
+`pf git-doctor --from-hook --apply` and then `pf commit --from-hook --auto`.
+Both are **no-ops unless `PF_AUTO_COMMIT=1`** — armed, every Claude Code
+session ends with the local model first repairing tree states (doctor), then
+splitting and committing whatever the session changed (committer); unarmed,
+nothing happens and both stay deliberate commands. The doctor runs first on
+purpose: a drifted pin or stale plan would otherwise pollute the commit
+survey it feeds.
 
 ## Guardrails, named
 
@@ -87,3 +90,32 @@ ledger's kill switch is honoured by construction — a revoked ledger refuses
 the action record, and with it the commit.
 
 Tests: `platform/tests/test_committer.py`.
+
+## The git doctor
+
+`pf git-doctor` extends the same division of labor from pending work to
+*wrong states*: submodule checkouts off their recorded pin, nested submodules
+initialized inside vendored checkouts, stale commit plans, conflicts,
+gate-denied paths git tracks anyway. Deterministic scanners find them; the
+local model's entire authority is choosing a remedy per finding from a
+**closed menu** — it composes no command, ever.
+
+The detailed rule is written down, not implied: `pf git-doctor --rules`
+prints the rulebook (`pf.gitdoctor.RULEBOOK`), the exact text the model
+receives. It enumerates the menu per finding kind, and the permanent
+prohibitions no finding can unlock: pin bumps, history rewrites (`reset
+--hard`, rebase, force-push, amend), gate bypasses (`--no-verify`), edits
+under `vendor/**` or `.gitmodules`, anything in `provenance/**` or `.git/`,
+and merge resolution. The only answer for those is `leave`, which hands the
+finding to a human with a stated reason — findings the model omits default to
+`leave` too.
+
+```bash
+pf git-doctor            # diagnose + the model's proposed resolutions
+pf git-doctor --apply    # run the accepted remedies (each a provenance action)
+pf git-doctor --rules    # print the rulebook and exit
+```
+
+An off-menu resolution is rejected before anything runs
+(`git-repair-is-a-closed-menu` in `policy.yaml`, resolving under
+`pf air coverage`). Tests: `platform/tests/test_gitdoctor.py`.

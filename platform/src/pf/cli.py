@@ -2577,9 +2577,8 @@ def cmd_commit(
         plan, model_name = saved
         console.print(f"[dim]using saved plan from data/commit_plan.json ({model_name})[/dim]")
     else:
-        be, reply = committer.plan_with_fallback(committer.build_prompt(root, changes), backend_kind)
+        be, plan = committer.ask_and_parse(committer.build_prompt(root, changes), committer.parse_plan, backend_kind)
         model_name = be.name
-        plan = committer.parse_plan(reply)
         swept = committer.complete_plan(plan, changes)
         if swept:
             console.print(
@@ -2602,11 +2601,62 @@ def cmd_commit(
 
     if apply or auto:
         shas = committer.apply_plan(root, plan, model_name)
-        for sha, p in zip(shas, plan):
+        for sha, p in zip(shas, plan, strict=True):
             console.print(f"[green]✓[/green] {sha}  {p.subject}")
     else:
         committer.save_plan(root, plan, model_name)
         console.print("plan saved — `pf commit --apply` to make these commits")
+
+
+@app.command("git-doctor")
+def cmd_git_doctor(
+    apply: bool = typer.Option(False, "--apply", help="run the accepted remedies (default: propose only)"),
+    rules: bool = typer.Option(False, "--rules", help="print the rulebook the model is bound by and exit"),
+    from_hook: bool = typer.Option(False, "--from-hook", help="session-end entry: a no-op unless PF_AUTO_COMMIT=1"),
+    backend_kind: str = typer.Option(None, "--backend", help="local | claude (default: local, claude as fallback)"),
+) -> None:
+    """Diagnose and repair git tree states, resolved by a local model.
+
+    Deterministic scanners find what is wrong (pin drift, nested submodules,
+    stale plans, conflicts, denied-but-tracked paths); the model's entire
+    authority is choosing a remedy per finding from a closed menu, under the
+    written rulebook (--rules). Anything off-menu is rejected, `leave` hands
+    the finding to a human, and every applied remedy is a provenance action.
+    """
+    from pf import gitdoctor
+
+    if rules:
+        console.print(gitdoctor.RULEBOOK)
+        raise typer.Exit(0)
+
+    if from_hook and os.environ.get("PF_AUTO_COMMIT") != "1":
+        raise typer.Exit(0)
+
+    root = Path.cwd()
+    findings, resolutions, model_name = gitdoctor.propose(root, backend_kind)
+    if not findings:
+        console.print("[green]git tree healthy — nothing to repair[/green]")
+        raise typer.Exit(0)
+
+    table = Table(title=f"git doctor — {model_name}")
+    table.add_column("finding")
+    table.add_column("subject")
+    table.add_column("remedy")
+    table.add_column("why")
+    for r in resolutions:
+        style = "dim" if r.remedy == "leave" else "bold"
+        table.add_row(r.finding.kind, r.finding.subject, f"[{style}]{r.remedy}[/{style}]", r.why)
+    console.print(table)
+
+    if apply:
+        done = gitdoctor.apply_resolutions(root, resolutions, model_name)
+        for d in done:
+            console.print(f"[green]✓[/green] {d}")
+        left = sum(1 for r in resolutions if r.remedy == "leave")
+        if left:
+            console.print(f"[yellow]{left} finding(s) left for a human — see the table above[/yellow]")
+    else:
+        console.print("proposal only — `pf git-doctor --apply` to run the remedies")
 
 
 quack_app = typer.Typer(help="The dev database, served over DuckDB's quack protocol.")

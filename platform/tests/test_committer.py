@@ -48,6 +48,16 @@ def test_parse_bare_json_with_prose_around_it() -> None:
     assert committer.parse_plan(reply)[0].subject == "fix: y"
 
 
+def test_parse_repairs_a_reply_that_stops_before_closing() -> None:
+    # Verbatim failure mode from mlx-served Qwen3.5-4B at temperature 0: the
+    # reply is perfect JSON minus the final closing brace.
+    truncated = '{"commits": [{"message": "feat: x", "files": ["a.py", "b.py"]}]'
+    plan = committer.parse_plan(truncated)
+    assert plan[0].files == ["a.py", "b.py"]
+    # A reply cut mid-string closes the string too.
+    assert committer.loads_reply('{"commits": [{"message": "feat')["commits"]
+
+
 def test_parse_rejects_garbage_and_empty_plans() -> None:
     with pytest.raises(ValueError):
         committer.parse_plan("I could not decide.")
