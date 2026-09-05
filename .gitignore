@@ -76,6 +76,7 @@ graphify-out/cache/
 # evals/cases/, and are committed.
 **/evals/cases/generated/
 data/pr/
+data/commit_plan.json
 .dagster/history/
 .dagster/storage/
 .dagster/logs/

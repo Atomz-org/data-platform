@@ -70,6 +70,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" pf commit --from-hook --auto"
+          }
+        ]
+      }
     ]
   }
 }
