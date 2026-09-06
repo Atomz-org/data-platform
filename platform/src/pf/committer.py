@@ -156,6 +156,8 @@ Rules:
 - Group files by concern: one commit per coherent change, platform vs project \
 work never mixed, generated artefacts ride with the change that regenerated them.
 - Every listed file must appear in exactly one commit. Never invent a path.
+- Plan ONLY the changed files listed below. Do not restate commits from the \
+history — it is style reference, not work to redo. A commit with no files is invalid.
 - Subject line in the style of the recent history below: imperative, \
 `scope: what changed` where the history does that, under {subject_max} chars. \
 A body is welcome when the why is not obvious.
@@ -255,6 +257,20 @@ def parse_plan(text: str) -> list[PlannedCommit]:
     if not plan:
         raise ValueError("model proposed an empty plan")
     return plan
+
+
+def drop_fileless(plan: list[PlannedCommit]) -> int:
+    """Remove commits that name no files; return how many were dropped.
+
+    Measured failure: given a small change set, the model pads its plan by
+    echoing the recent-history subjects as file-less commits. A commit with
+    no files can never stage anything, so dropping them is safe — and done
+    before validation so one hallucination doesn't reject an otherwise
+    complete plan. The count is surfaced, not hidden.
+    """
+    fileless = [p for p in plan if not p.files]
+    plan[:] = [p for p in plan if p.files]
+    return len(fileless)
 
 
 SWEEP_SUBJECT = "chore: remaining changes the model left unassigned"

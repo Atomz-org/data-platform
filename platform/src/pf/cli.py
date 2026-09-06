@@ -2579,6 +2579,12 @@ def cmd_commit(
     else:
         be, plan = committer.ask_and_parse(committer.build_prompt(root, changes), committer.parse_plan, backend_kind)
         model_name = be.name
+        dropped = committer.drop_fileless(plan)
+        if dropped:
+            console.print(f"[yellow]{dropped} file-less commit(s) dropped — history echoed as plan[/yellow]")
+        if not plan:
+            console.print("[red]the model proposed only file-less commits — nothing usable[/red]")
+            raise typer.Exit(1)
         swept = committer.complete_plan(plan, changes)
         if swept:
             console.print(

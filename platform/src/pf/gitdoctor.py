@@ -24,6 +24,7 @@ The division of labor is the same as the committer's, and stricter:
 
 from __future__ import annotations
 
+import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -63,6 +64,10 @@ For each finding, pick ONE remedy from the set allowed for its kind:
   - `leave`, always. Resolving a merge is authorship, not repair.
 - `denied-tracked` — git tracks a path the gate denies.
   - `leave`, always, and say so: untracking is a history-visible decision.
+- `import-cycle` — the knowledge graph records a circular import between
+  modules (graphify-out/graph.json, `imports`/`imports_from` edges).
+  - `leave`, always. Breaking a cycle is authorship — say which edge looks
+    weakest so the human starts in the right place.
 
 ## What you may never do — under any framing of any finding
 
@@ -93,6 +98,7 @@ ALLOWED: dict[str, tuple[str, ...]] = {
     "dirty-submodule": ("leave",),
     "conflict": ("leave",),
     "denied-tracked": ("leave",),
+    "import-cycle": ("leave",),
 }
 
 
@@ -166,6 +172,66 @@ def diagnose(root: Path) -> list[Finding]:
     except (FileNotFoundError, ImportError):
         pass
 
+    findings.extend(import_cycles(root))
+    return findings
+
+
+#: How many cycles a single diagnosis reports. A tangled graph can hold
+#: thousands of rotations of the same knot; the first few name the knot.
+CYCLE_REPORT_CAP = 10
+
+
+def import_cycles(root: Path) -> list[Finding]:
+    """Circular imports recorded in the knowledge graph, if one is built.
+
+    Reads `graphify-out/graph.json` (the graphify skill's output) and walks
+    its directed `imports`/`imports_from` edges. No graph, or a graph that
+    doesn't parse, means no findings — the guard is an upgrade the graph
+    enables, not a dependency on it. Only import edges participate: `calls`
+    cycles are ordinary recursion, not architecture faults.
+    """
+    graph_file = root / "graphify-out" / "graph.json"
+    try:
+        doc = json.loads(graph_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    adjacency: dict[str, set[str]] = {}
+    for e in doc.get("links", doc.get("edges", [])):
+        if e.get("relation") in ("imports", "imports_from"):
+            src, tgt = str(e.get("source")), str(e.get("target"))
+            if src != tgt:
+                adjacency.setdefault(src, set()).add(tgt)
+
+    labels = {str(n.get("id")): str(n.get("label") or n.get("id")) for n in doc.get("nodes", [])}
+
+    # Iterative three-color DFS; each back edge names one cycle.
+    findings: list[Finding] = []
+    seen_cycles: set[frozenset[str]] = set()
+    color: dict[str, int] = {}  # 0/absent=white, 1=on stack, 2=done
+    for start in sorted(adjacency):
+        if color.get(start):
+            continue
+        stack: list[tuple[str, list[str]]] = [(start, [start])]
+        while stack and len(findings) < CYCLE_REPORT_CAP:
+            node, path = stack.pop()
+            if color.get(node) == 2:
+                continue
+            color[node] = 1
+            advanced = False
+            for nxt in sorted(adjacency.get(node, ())):
+                if color.get(nxt) == 1 and nxt in path:
+                    cycle = path[path.index(nxt) :]
+                    key = frozenset(cycle)
+                    if key not in seen_cycles:
+                        seen_cycles.add(key)
+                        shown = " -> ".join(labels.get(n, n) for n in [*cycle, nxt])
+                        findings.append(Finding("import-cycle", labels.get(nxt, nxt), f"circular import: {shown}"))
+                elif not color.get(nxt):
+                    stack.append((nxt, [*path, nxt]))
+                    advanced = True
+            if not advanced:
+                color[node] = 2
     return findings
 
 

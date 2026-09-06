@@ -114,6 +114,18 @@ def test_validate_catches_every_way_a_plan_lies(repo) -> None:
     assert ".env" in problems and "gate-denied" in problems
 
 
+def test_drop_fileless_removes_history_echoes() -> None:
+    plan = [
+        PlannedCommit(message="feat: real work", files=["a.py"]),
+        PlannedCommit(message="feat: an old commit echoed back", files=[]),
+        PlannedCommit(message="chore: another echo", files=[]),
+    ]
+    assert committer.drop_fileless(plan) == 2
+    assert [p.subject for p in plan] == ["feat: real work"]
+    # And the prompt forbids the echo in the first place.
+    assert "not work to redo" in committer.PROMPT
+
+
 def test_complete_plan_sweeps_what_the_model_forgot() -> None:
     changes = [Change(" M", "a.py"), Change("??", "b.py"), Change("??", "c.py")]
     plan = [PlannedCommit(message="feat: a and b", files=["a.py", "b.py"])]
