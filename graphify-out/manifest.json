@@ -7210,9 +7210,9 @@
     "semantic_hash": "281ca09b57fa37316ab46ca877432ae5"
   },
   "platform/src/pf/cli.py": {
-    "mtime": 1788613570.645947,
-    "ast_hash": "04a6c3d6269d5ec7c2aede9d9d51d8b4",
-    "semantic_hash": "04a6c3d6269d5ec7c2aede9d9d51d8b4"
+    "mtime": 1788687753.751507,
+    "ast_hash": "2403157849df11e3591eacde24747c8c",
+    "semantic_hash": "2403157849df11e3591eacde24747c8c"
   },
   "platform/src/pf/evals/__init__.py": {
     "mtime": 1787067777.7664227,
@@ -11155,14 +11155,14 @@
     "semantic_hash": "7f7adb8b1b6e3e0afe705a13d5c42776"
   },
   "platform/src/pf/committer.py": {
-    "mtime": 1788613840.5147638,
-    "ast_hash": "03bd1cb4aa9fc4b86e6798cb39480540",
-    "semantic_hash": "03bd1cb4aa9fc4b86e6798cb39480540"
+    "mtime": 1788687743.7716281,
+    "ast_hash": "55b95360c0eb01e53060ec485a54a506",
+    "semantic_hash": "55b95360c0eb01e53060ec485a54a506"
   },
   "platform/src/pf/gitdoctor.py": {
-    "mtime": 1788613783.1645756,
-    "ast_hash": "af74ebb16e9c5795880d778a4ff94bc1",
-    "semantic_hash": "af74ebb16e9c5795880d778a4ff94bc1"
+    "mtime": 1788687581.2702973,
+    "ast_hash": "8526ea83fbe4acdd905da008bc71b92a",
+    "semantic_hash": "8526ea83fbe4acdd905da008bc71b92a"
   },
   "platform/src/pf/runtime/adbc.py": {
     "mtime": 1788291203.9093115,
@@ -11180,9 +11180,9 @@
     "semantic_hash": "070fc9a9fe3ef4677c80327d8ddc84c5"
   },
   "platform/tests/test_committer.py": {
-    "mtime": 1788613770.7859647,
-    "ast_hash": "33eaa90ff157db5fece5474264807a2d",
-    "semantic_hash": "33eaa90ff157db5fece5474264807a2d"
+    "mtime": 1788687756.6506972,
+    "ast_hash": "9d64b3c6e61c44fdb3b0fe9fec186273",
+    "semantic_hash": "9d64b3c6e61c44fdb3b0fe9fec186273"
   },
   "platform/tests/test_gitdoctor.py": {
     "mtime": 1788612685.831952,
@@ -11210,9 +11210,9 @@
     "semantic_hash": "a36437fa5d67b1548d157adc34672b06"
   },
   "docs/COMMITTER.md": {
-    "mtime": 1788613442.757195,
-    "ast_hash": "14430ef4055c5beb3bb9a8bd25078ce6",
-    "semantic_hash": "14430ef4055c5beb3bb9a8bd25078ce6"
+    "mtime": 1788687684.1625547,
+    "ast_hash": "40158324be65fc045c7a41affdfbd0fb",
+    "semantic_hash": "40158324be65fc045c7a41affdfbd0fb"
   },
   "docs/ONTOLOGY-TESTING.md": {
     "mtime": 1788626844.574293,
@@ -11503,5 +11503,10 @@
     "mtime": 1788292833.608122,
     "ast_hash": "eb9043b93f468b1a824faee48f4a7ab7",
     "semantic_hash": "eb9043b93f468b1a824faee48f4a7ab7"
+  },
+  "platform/tests/test_import_cycle_guard.py": {
+    "mtime": 1788687658.5980046,
+    "ast_hash": "070424bc943f5246b5e5284883c075ea",
+    "semantic_hash": "070424bc943f5246b5e5284883c075ea"
   }
 }
