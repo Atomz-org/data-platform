@@ -137,3 +137,23 @@ pf git-doctor --rules    # print the rulebook and exit
 An off-menu resolution is rejected before anything runs
 (`git-repair-is-a-closed-menu` in `policy.yaml`, resolving under
 `pf air coverage`). Tests: `platform/tests/test_gitdoctor.py`.
+
+## The import-cycle guard
+
+The circular-import invariant is held twice, at different hardnesses:
+
+- **The wall** — `platform/tests/test_import_cycle_guard.py` walks the real
+  module-level imports of `platform/src/pf` and fails the suite (and the
+  merge, since `pytest platform/tests` gates it) on any cross-module cycle.
+  Function-scope imports and the parent-package re-export idiom are exempt —
+  they are the sanctioned ways to break a cycle, not instances of one.
+- **The doctor's eye** — when `graphify-out/graph.json` exists, `pf
+  git-doctor` reports `import-cycle` findings from the knowledge graph's
+  directed `imports` edges (capped at 10, `calls` recursion ignored). It is
+  `leave`-only: breaking a cycle is authorship, so the model names the knot
+  and hands it to a human.
+
+There is deliberately no hand-written PR workflow for this: `.github/
+workflows/**` is gate-denied to agents and generated per project from
+capability `ci_jobs` — the pytest wall rides the existing platform test job,
+which is the same enforcement with none of the drift.
