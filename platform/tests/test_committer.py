@@ -33,6 +33,32 @@ def repo(tmp_path):
     return root
 
 
+def test_style_guide_reaches_the_prompt_when_present(repo, monkeypatch) -> None:
+    monkeypatch.delenv("PF_COMMIT_STYLE_FILE", raising=False)
+    (repo / "b.py").write_text("x = 2\n")
+    changes = committer.changed_files(repo)
+    assert "House commit conventions" not in committer.build_prompt(repo, changes)
+
+    (repo / "docs").mkdir()
+    (repo / "docs" / "COMMIT-STYLE.md").write_text("Group migrations apart from models. Subjects name the mart.")
+    prompt = committer.build_prompt(repo, changes)
+    assert "House commit conventions" in prompt
+    assert "Subjects name the mart" in prompt
+
+    # The guide is capped, not trusted to be short — prefill is the constraint.
+    (repo / "docs" / "COMMIT-STYLE.md").write_text("verbose " * 2_000)
+    prompt = committer.build_prompt(repo, changes)
+    start = prompt.index("House commit conventions")
+    end = prompt.index("Recent commit subjects")
+    assert (end - start) < committer.STYLE_CHARS_MAX + 200
+
+    # PF_COMMIT_STYLE_FILE overrides the default location.
+    alt = repo / "elsewhere.md"
+    alt.write_text("Override conventions here.")
+    monkeypatch.setenv("PF_COMMIT_STYLE_FILE", str(alt))
+    assert "Override conventions here." in committer.build_prompt(repo, changes)
+
+
 # ------------------------------------------------------------------ parsing --
 def test_parse_strips_think_blocks_and_fences() -> None:
     reply = (

@@ -63,6 +63,24 @@ the name in the trailer. One trap on the fallback: a stale `ANTHROPIC_API_KEY`
 in the environment shadows a claude.ai login and the CLI 401s — the error
 surfaces the CLI's own words so this diagnoses itself.
 
+## The style guide seam (NotebookLM or any curated brief)
+
+Twelve log subjects teach the model less than a curated page. If
+`docs/COMMIT-STYLE.md` exists (override the location with
+`PF_COMMIT_STYLE_FILE`), its first ~2,500 characters are injected into the
+commit-plan prompt as **house commit conventions — authoritative for grouping
+and message style**. Absent, empty, or unreadable means no section, never an
+error.
+
+This is the integration point for externally curated knowledge — a NotebookLM
+briefing included. NotebookLM has no API and sits behind Google sign-in, so
+the flow is export-based: in the notebook, have it produce the git-conventions
+guide, export it (copy the note, or send to Docs and download as Markdown),
+and save it as `docs/COMMIT-STYLE.md`. The next `pf commit` reads it
+automatically. The guide informs the model's *judgment* only — grouping and
+wording; every guardrail (validation wall, gate, provenance) is unchanged by
+anything the file says.
+
 ## Session-end automation
 
 `.claude/settings.json` carries a `Stop` hook running

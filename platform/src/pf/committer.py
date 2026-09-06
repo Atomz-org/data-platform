@@ -161,7 +161,7 @@ work never mixed, generated artefacts ride with the change that regenerated them
 A body is welcome when the why is not obvious.
 - Answer with ONLY this JSON, no prose around it:
   {{"commits": [{{"message": "...", "files": ["path", ...]}}]}}
-
+{style}
 Recent commit subjects of this repository:
 {history}
 
@@ -169,10 +169,37 @@ Changed files and their diffs:
 {survey}
 """
 
+#: Where the curated commit conventions live, and how much of them the model
+#: sees. A distilled guide (a NotebookLM briefing, a style doc — anything a
+#: human curated) beats twelve log lines at teaching grouping and phrasing,
+#: but prefill on a laptop-served model is the binding constraint, so it is
+#: capped rather than trusted to be short.
+STYLE_FILE = "docs/COMMIT-STYLE.md"
+STYLE_CHARS_MAX = 2_500
+
+
+def style_guide(root: Path) -> str:
+    """The house commit conventions, if someone has written them down.
+
+    `PF_COMMIT_STYLE_FILE` overrides the default location. Absent file, empty
+    file, unreadable file — all mean no style section, never an error: the
+    guide is an upgrade, not a dependency.
+    """
+    path = Path(os.environ.get("PF_COMMIT_STYLE_FILE", "") or root / STYLE_FILE)
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace").strip()
+    except OSError:
+        return ""
+    if not text or "\x00" in text[:STYLE_CHARS_MAX]:
+        return ""
+    return text[:STYLE_CHARS_MAX]
+
 
 def build_prompt(root: Path, changes: list[Change]) -> str:
     history = _git(root, "log", "--format=%s", "-12")
-    return PROMPT.format(subject_max=SUBJECT_MAX, history=history, survey=survey(root, changes))
+    style = style_guide(root)
+    section = f"\nHouse commit conventions (authoritative for grouping and message style):\n{style}\n" if style else ""
+    return PROMPT.format(subject_max=SUBJECT_MAX, style=section, history=history, survey=survey(root, changes))
 
 
 def loads_reply(text: str) -> dict:
@@ -204,9 +231,8 @@ def loads_reply(text: str) -> dict:
                 in_string = not in_string
             elif not in_string and ch in "{[":
                 stack.append("}" if ch == "{" else "]")
-            elif not in_string and ch in "}]":
-                if stack and stack[-1] == ch:
-                    stack.pop()
+            elif not in_string and ch in "}]" and stack and stack[-1] == ch:
+                stack.pop()
         if not stack:
             raise ValueError(f"model reply is not the declared JSON shape: {exc}") from exc
         try:
