@@ -134,6 +134,13 @@
       "branch": "main",
       "commit": "ad1a69eaf18f82e93d8754a5deec7886ea16b0d2"
     },
+    "pr-agent": {
+      "adopted": {
+        "README.md": "93b81f73dfd4615e53c1dcf649d8a24a964ce9ac"
+      },
+      "branch": "main",
+      "commit": "dd4088f9a355a43931fa9a3cf9e077b5513e4049"
+    },
     "recce": {
       "adopted": {
         "recce/cli.py": "6e81a9bff47c1fa7d75fa7947d30daf820b2afae",
