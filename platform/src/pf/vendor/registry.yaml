@@ -188,6 +188,27 @@ upstreams:
         why: DuckDB is the warehouse by design — one adapter, one dialect, no portability layer.
 
   # ---------------------------------------------------------------- duckdb --
+  # -------------------------------------------------------------- pr-agent --
+  - id: pr-agent
+    summary: "AI pull-request review and description, as a reference for our own gate"
+    name: PR Agent
+    url: https://github.com/The-PR-Agent/pr-agent
+    path: vendor/pr-agent
+    branch: main
+    licence: MIT
+    role: reference
+    why: >
+      An open-source PR agent (review, describe, improve, compliance
+      checklist) that runs as a GitHub Action or a CLI. Pinned as a reference
+      for how a PR-review agent structures its tools, prompts and compliance
+      checklist; nothing is ported yet.
+    adopted:
+      - upstream: README.md
+        kind: shape
+        note: >
+          Command surface and deployment modes. Re-read when deciding which
+          of its tools, if any, our review gate should mirror.
+
   - id: duckdb-skills
     summary: "driving DuckDB from an agent, read-only and truncated by policy"
     name: DuckDB Skills
