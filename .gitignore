@@ -104,3 +104,19 @@ connection.json
 # is 200MB of dependencies; both are reproducible from package-lock.json.
 **/ui/static/dist/
 **/ui/web/node_modules/
+
+# Terraform / OpenTofu working state. `.terraform/` is downloaded provider
+# binaries — over a gigabyte across the three clouds — and is reproducible from
+# the lock file, which IS tracked so everyone resolves the same providers.
+#
+# The state files are excluded because they must never be in git at all: they
+# hold the database password, the storage account key and every value passed
+# through `warehouse_env`. Use an encrypted remote backend.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+# Variable files carry credentials by convention. The example is tracked.
+*.auto.tfvars
+terraform.tfvars
+!*.tfvars.example
