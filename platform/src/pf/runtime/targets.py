@@ -196,6 +196,66 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "database": "${REDSHIFT_DATABASE}",
         },
     ),
+    "databricks": ProductionWarehouse(
+        name="databricks",
+        title="Databricks",
+        adapter="dbt-databricks",
+        output={
+            "type": "databricks",
+            # Workspace hostname with no scheme and no trailing slash. On Azure
+            # that is `adb-<workspace-id>.<n>.azuredatabricks.net`; the adapter
+            # prepends https itself and rejects a value that already has it.
+            "host": "{{ env_var('DATABRICKS_HOST') }}",
+            # A SQL warehouse, not a cluster: `/sql/1.0/warehouses/<id>`.
+            # All-purpose clusters also work and cost several times as much to
+            # keep warm, which is why the documented form is the warehouse one.
+            "http_path": "{{ env_var('DATABRICKS_HTTP_PATH') }}",
+            "token": "{{ env_var('DATABRICKS_TOKEN', '') }}",
+            # OAuth machine-to-machine, for a service principal. Present so the
+            # switch is an env change rather than a profile edit; see auth_note.
+            "client_id": "{{ env_var('DATABRICKS_CLIENT_ID', '') }}",
+            "client_secret": "{{ env_var('DATABRICKS_CLIENT_SECRET', '') }}",
+            # Unity Catalog's first level. dbt's `database` is this, which is
+            # why the key is spelled `catalog` and there is no `database`.
+            "catalog": "{{ env_var('DATABRICKS_CATALOG') }}",
+            "schema": "{{ env_var('DATABRICKS_SCHEMA', 'analytics') }}",
+            "threads": 8,
+        },
+        env=("DATABRICKS_HOST", "DATABRICKS_HTTP_PATH", "DATABRICKS_CATALOG"),
+        auth_note=(
+            "A personal access token in `DATABRICKS_TOKEN` is the default, "
+            "because it works identically on all three clouds and in CI. For an "
+            "unattended production run prefer OAuth M2M: create a service "
+            "principal, then set `DATABRICKS_CLIENT_ID` and "
+            "`DATABRICKS_CLIENT_SECRET` and leave the token unset — the adapter "
+            "uses whichever pair is present. Tokens carry a human's "
+            "entitlements and expire on a schedule nobody owns; a service "
+            "principal does not."
+        ),
+        caveats=(
+            ("Unity Catalog is a three-level namespace — `catalog.schema.table`. "
+             "dbt's `database` is the catalog, so a model that hardcodes a "
+             "two-part name resolves against the wrong level here, and one "
+             "written for DuckDB's `database.schema` will not compile at all."),
+            ("A SQL warehouse auto-stops when idle. The first build after a "
+             "quiet period pays a cold start of a minute or more, which reads "
+             "as a hung run rather than a slow one — set the warehouse's "
+             "auto-stop deliberately rather than discovering it in CI."),
+            ("This is the one target that is genuinely the same on AWS, Azure "
+             "and GCP. Only `host` differs between them, so a project that "
+             "builds here builds on all three — which is the reason to choose "
+             "it over Fabric or Synapse if Azure is not the only destination."),
+        ),
+        om_type="Databricks",
+        om_connection={
+            "type": "Databricks",
+            "hostPort": "${DATABRICKS_HOST}:443",
+            "token": "${DATABRICKS_TOKEN}",
+            "httpPath": "${DATABRICKS_HTTP_PATH}",
+            "catalog": "${DATABRICKS_CATALOG}",
+            "useUnityCatalog": True,
+        },
+    ),
     "clickhouse": ProductionWarehouse(
         name="clickhouse",
         title="ClickHouse Cloud",
