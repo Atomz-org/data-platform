@@ -1,0 +1,7 @@
+commodity_id,purity_code,purity_label,fineness
+gold,24k,24K,1.0
+gold,22k,22K,0.9166666667
+gold,18k,18K,0.75
+silver,999,999 Fine,1.0
+silver,925,925 Sterling,0.925
+silver,900,900 Coin,0.9

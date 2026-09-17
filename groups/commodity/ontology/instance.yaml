@@ -1,0 +1,13 @@
+# Ontology instance for commodity — which platform classes this group models.
+# Validated against platform/src/pf/ontology/concepts.yaml by `pf check`.
+#
+# The platform has no commodities domain, so this list was chosen by hand rather
+# than taken from a `--domain` default. Commodity, PriceObservation, FxRate and
+# ImportTariff are this group's own terms and live in extension.yaml.
+group: commodity
+domain: commodities
+classes:
+  - Product
+  - Currency
+  - Location
+shared_sources: []

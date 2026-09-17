@@ -1,0 +1,134 @@
+version: 2
+# Query every price metric grouped by commodity (`commodity__commodity_id`): a
+# mean across commodities averages dollars per ounce with dollars per bushel.
+#
+# Means are ratio metrics, so they stay correct at any grain. Their components
+# come first — a ratio can only reference a metric already defined — and the
+# `*_total` components are building blocks with no meaning on their own.
+metrics:
+  # -- components --------------------------------------------------------
+  - name: benchmark_price_usd_total
+    label: Benchmark Price Total (component)
+    description: Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.
+    type: simple
+    type_params: {measure: benchmark_price_usd_sum}
+
+  - name: benchmark_price_days
+    label: Priced Days
+    description: Days with a benchmark price. Group by commodity to spot feed gaps.
+    type: simple
+    type_params: {measure: benchmark_price_count}
+
+  - name: landed_price_inr_total
+    label: Landed Price Total (component)
+    description: Building block for avg_landed_price_inr. A sum of prices means nothing on its own.
+    type: simple
+    type_params: {measure: landed_price_inr_sum}
+
+  - name: landed_price_days
+    label: Days With a Landed Price
+    description: Days a landed price exists — never for commodities India prohibits importing.
+    type: simple
+    type_params: {measure: landed_price_count}
+
+  - name: duty_inr_total
+    label: Customs Duty Total (component)
+    description: Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own.
+    type: simple
+    type_params: {measure: duty_inr_sum}
+
+  - name: usd_inr_rate_total
+    label: USD/INR Total (component)
+    description: Building block for avg_usd_inr_rate.
+    type: simple
+    type_params: {measure: usd_rate_sum}
+    filter: "{{ Dimension('fx_day__quote_currency_code') }} = 'INR'"
+
+  - name: usd_inr_rate_days
+    label: USD/INR Days
+    description: Calendar days with a USD/INR rate, including carried-forward days.
+    type: simple
+    type_params: {measure: usd_rate_count}
+    filter: "{{ Dimension('fx_day__quote_currency_code') }} = 'INR'"
+
+  # -- benchmark ---------------------------------------------------------
+  - name: avg_benchmark_price_usd
+    label: Avg Benchmark Price (USD)
+    description: Mean daily settlement price, USD per quote unit. Group by commodity.
+    type: ratio
+    type_params:
+      numerator: benchmark_price_usd_total
+      denominator: benchmark_price_days
+
+  - name: period_high_price_usd
+    label: Period High (USD)
+    description: Highest traded price in the period, USD per quote unit. Group by commodity.
+    type: simple
+    type_params: {measure: high_price_usd_max}
+
+  - name: period_low_price_usd
+    label: Period Low (USD)
+    description: Lowest traded price in the period, USD per quote unit. Group by commodity.
+    type: simple
+    type_params: {measure: low_price_usd_min}
+
+  - name: contracts_traded
+    label: Contracts Traded
+    description: Front-month futures volume from live feeds. Group by commodity.
+    type: simple
+    type_params: {measure: contract_volume}
+    filter: "{{ Dimension('commodity_price__price_basis') }} = 'futures'"
+
+  - name: benchmark_price_mom_change
+    label: Benchmark Price MoM Change
+    description: Month-over-month change in the mean benchmark price. Group by commodity.
+    type: derived
+    type_params:
+      expr: (price - price_prev) / nullif(price_prev, 0)
+      metrics:
+        - name: avg_benchmark_price_usd
+          alias: price
+        - name: avg_benchmark_price_usd
+          offset_window: 1 month
+          alias: price_prev
+
+  # -- India landed ------------------------------------------------------
+  - name: avg_landed_price_inr
+    label: Avg India Landed Price (INR)
+    description: >-
+      Mean India import landed price, ₹ per Indian market unit (benchmark × USD/INR
+      × (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed
+      to exclude history priced at a back-applied duty rate.
+    type: ratio
+    type_params:
+      numerator: landed_price_inr_total
+      denominator: landed_price_days
+
+  - name: avg_duty_inr
+    label: Avg Customs Duty (INR)
+    description: Mean customs duty per Indian market unit. Group by commodity.
+    type: ratio
+    type_params:
+      numerator: duty_inr_total
+      denominator: landed_price_days
+
+  - name: landed_price_mom_change
+    label: Landed Price MoM Change
+    description: Month-over-month change in the mean landed price; moves with both the benchmark and the rupee.
+    type: derived
+    type_params:
+      expr: (landed - landed_prev) / nullif(landed_prev, 0)
+      metrics:
+        - name: avg_landed_price_inr
+          alias: landed
+        - name: avg_landed_price_inr
+          offset_window: 1 month
+          alias: landed_prev
+
+  - name: avg_usd_inr_rate
+    label: Avg USD/INR
+    description: Mean rupees per US dollar, the rate every landed price uses.
+    type: ratio
+    type_params:
+      numerator: usd_inr_rate_total
+      denominator: usd_inr_rate_days

@@ -1,0 +1,1656 @@
+{
+  "catalog": "commodity",
+  "schema": "commodity_india",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [
+    {
+      "name": "dim_commodities",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_commodities"
+      },
+      "columns": [
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "precious | industrial | energy | agri \u2014 the tracker's tabs."
+          }
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "futures (live Yahoo feed) or indicative (manual seed level)."
+          }
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_of_measure"
+          }
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_of_measure"
+          }
+        },
+        {
+          "name": "current_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "commodity_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "yahoo_symbol",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "spot_symbol",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "has_spot_feed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "unit_dimension",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "current_tariff_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "current_duty_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "commodity_id",
+      "properties": {
+        "description": "Every tracked commodity with its benchmark, units and the Indian duty in force today.",
+        "grain": "one commodity",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_commodity_prices_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_commodity_prices_daily"
+      },
+      "columns": [
+        {
+          "name": "price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "high_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "low_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "volume",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "price_change_pct",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "prev_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "moving_avg_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "moving_avg_50d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "price_id",
+      "properties": {
+        "description": "Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.",
+        "grain": "one commodity per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_fx_rates_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_fx_rates_daily"
+      },
+      "columns": [
+        {
+          "name": "fx_day_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "quote_currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "rate_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "usd_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "exchange_rate"
+          }
+        },
+        {
+          "name": "base_currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fixed_on",
+          "type": "DATE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_carried_forward",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "prev_usd_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "usd_rate_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "fx_day_id",
+      "properties": {
+        "description": "Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.",
+        "grain": "one currency per calendar day",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_india_landed_prices_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_india_landed_prices_daily"
+      },
+      "columns": [
+        {
+          "name": "price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_of_measure"
+          }
+        },
+        {
+          "name": "usd_inr_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "exchange_rate"
+          }
+        },
+        {
+          "name": "tariff_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The india_import_duties row applied on this date."
+          }
+        },
+        {
+          "name": "effective_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "duty_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "benchmark_price_usd",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "benchmark_usd_per_market_unit",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "usd_inr_fixed_on",
+          "type": "DATE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "duty_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "assessable_value_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_change_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "price_id",
+      "properties": {
+        "description": "India import landed price per commodity per day, in \u20b9 per Indian market unit: benchmark \u00d7 USD/INR \u00d7 (1 + customs duty). The benchmark stands in for CIF value \u2014 freight, insurance, landing charges and GST are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters.",
+        "grain": "one commodity per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_mcx_lot_equivalents_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_mcx_lot_equivalents_daily"
+      },
+      "columns": [
+        {
+          "name": "lot_equivalent_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "MCX trading symbol."
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "futures, or indicative when the underlying has no live feed (zinc)."
+          }
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_of_measure"
+          }
+        },
+        {
+          "name": "quote_equivalent_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price",
+            "description": "Landed \u20b9 for one MCX quote basis (quote_size \u00d7 quote_unit)."
+          }
+        },
+        {
+          "name": "lot_value_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price",
+            "description": "Landed \u20b9 for one full lot (lot_size \u00d7 lot_unit)."
+          }
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "lot_equivalent_id",
+      "properties": {
+        "description": "The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot \u2014 GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks \u2014 not an MCX quote.",
+        "grain": "one MCX contract per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_precious_metal_retail_prices_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_precious_metal_retail_prices_daily"
+      },
+      "columns": [
+        {
+          "name": "retail_price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "purity_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "price_inr_per_gram",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "price_inr_per_10g",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "price_inr_per_kg",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "purity_label",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fineness",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "retail_price_id",
+      "properties": {
+        "description": "Landed gold and silver in Indian retail conventions \u2014 per gram, 10 g and kg, by purity.",
+        "grain": "one precious metal per purity grade per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "rpt_commodity_price_board",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_commodity_price_board"
+      },
+      "columns": [
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "benchmark_price_usd",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "landed_price_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "is_stale",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The latest benchmark is more than four days old. Always true for indicative levels until refreshed."
+          }
+        },
+        {
+          "name": "commodity_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "price_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "usd_inr_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "effective_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "duty_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "spot_price_usd",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "spot_quoted_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "futures_spot_basis_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_age_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "commodity_id",
+      "properties": {
+        "description": "One row per tracked commodity: latest benchmark and move, 252-day range, landed \u20b9 price, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.",
+        "grain": "one commodity",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "rpt_mcx_contract_board",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_mcx_contract_board"
+      },
+      "columns": [
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "quote_equivalent_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "lot_value_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "is_stale",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The underlying benchmark is more than four days old."
+          }
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_age_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "contract_code",
+      "properties": {
+        "description": "One row per tracked MCX contract: the latest landed equivalent per quote basis and per lot, and how old its benchmark is. ZINC and ZINCMINI carry the last indicative LME level and read stale until it is refreshed.",
+        "grain": "one MCX contract",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "name": "fct_commodity_prices_daily_dim_commodities",
+      "models": [
+        "fct_commodity_prices_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_commodity_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_india_landed_prices_daily_dim_commodities",
+      "models": [
+        "fct_india_landed_prices_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_india_landed_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_mcx_lot_equivalents_daily_dim_commodities",
+      "models": [
+        "fct_mcx_lot_equivalents_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_lot_equivalents_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_precious_metal_retail_prices_daily_dim_commodities",
+      "models": [
+        "fct_precious_metal_retail_prices_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_precious_metal_retail_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "rpt_mcx_contract_board_dim_commodities",
+      "models": [
+        "rpt_mcx_contract_board",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "rpt_mcx_contract_board.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    }
+  ],
+  "views": [],
+  "cubes": [
+    {
+      "name": "commodity_india_core",
+      "baseObject": "fct_commodity_prices_daily",
+      "measures": [
+        {
+          "name": "avg_benchmark_price_usd",
+          "expression": "-- avg_benchmark_price_usd",
+          "type": "DOUBLE",
+          "description": "Avg Benchmark Price (USD)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_duty_inr",
+          "expression": "-- avg_duty_inr",
+          "type": "DOUBLE",
+          "description": "Avg Customs Duty (INR)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_landed_price_inr",
+          "expression": "-- avg_landed_price_inr",
+          "type": "DOUBLE",
+          "description": "Avg India Landed Price (INR)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_usd_inr_rate",
+          "expression": "-- avg_usd_inr_rate",
+          "type": "DOUBLE",
+          "description": "Avg USD/INR",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "benchmark_price_days",
+          "expression": "-- benchmark_price_days",
+          "type": "DOUBLE",
+          "description": "Priced Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "benchmark_price_mom_change",
+          "expression": "-- benchmark_price_mom_change",
+          "type": "DOUBLE",
+          "description": "Benchmark Price MoM Change",
+          "properties": {
+            "pf.metric_type": "derived"
+          }
+        },
+        {
+          "name": "benchmark_price_usd_total",
+          "expression": "-- benchmark_price_usd_total",
+          "type": "DOUBLE",
+          "description": "Benchmark Price Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "contracts_traded",
+          "expression": "-- contracts_traded",
+          "type": "DOUBLE",
+          "description": "Contracts Traded",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "duty_inr_total",
+          "expression": "-- duty_inr_total",
+          "type": "DOUBLE",
+          "description": "Customs Duty Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_days",
+          "expression": "-- landed_price_days",
+          "type": "DOUBLE",
+          "description": "Days With a Landed Price",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_inr_total",
+          "expression": "-- landed_price_inr_total",
+          "type": "DOUBLE",
+          "description": "Landed Price Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_mom_change",
+          "expression": "-- landed_price_mom_change",
+          "type": "DOUBLE",
+          "description": "Landed Price MoM Change",
+          "properties": {
+            "pf.metric_type": "derived"
+          }
+        },
+        {
+          "name": "period_high_price_usd",
+          "expression": "-- period_high_price_usd",
+          "type": "DOUBLE",
+          "description": "Period High (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "period_low_price_usd",
+          "expression": "-- period_low_price_usd",
+          "type": "DOUBLE",
+          "description": "Period Low (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "usd_inr_rate_days",
+          "expression": "-- usd_inr_rate_days",
+          "type": "DOUBLE",
+          "description": "USD/INR Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "usd_inr_rate_total",
+          "expression": "-- usd_inr_rate_total",
+          "type": "DOUBLE",
+          "description": "USD/INR Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "category",
+          "expression": "category",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "commodity_name",
+          "expression": "commodity_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "exchange",
+          "expression": "exchange",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_carried_forward",
+          "expression": "is_carried_forward",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_import_prohibited",
+          "expression": "is_import_prohibited",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_unit",
+          "expression": "market_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_unit",
+          "expression": "market_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "quote_currency_code",
+          "expression": "quote_currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "quote_unit",
+          "expression": "quote_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "segment",
+          "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "rate_date",
+          "expression": "rate_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

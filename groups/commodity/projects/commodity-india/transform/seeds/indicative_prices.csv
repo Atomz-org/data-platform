@@ -1,0 +1,10 @@
+commodity_id,as_of_date,price,currency_code,quote_unit,benchmark
+zinc,2026-06-12,3500,USD,metric_ton,LME 3-month
+nickel,2026-06-12,17900,USD,metric_ton,LME 3-month
+lead,2026-06-12,1975,USD,metric_ton,LME 3-month
+tin,2026-06-12,45000,USD,metric_ton,LME 3-month
+iron_ore,2026-06-12,100,USD,dry_metric_ton,62% Fe fines CFR China
+lithium_carbonate,2026-06-12,20000,USD,metric_ton,Battery-grade Li2CO3 CIF Asia
+cobalt,2026-06-12,55000,USD,metric_ton,Standard-grade cobalt metal
+canola_oil,2026-06-12,1150,USD,metric_ton,Crude canola / rapeseed oil
+palm_oil,2026-06-12,1000,USD,metric_ton,Crude palm oil (Bursa FCPO equivalent)

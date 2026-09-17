@@ -1,0 +1,16 @@
+unit_code,unit_name,dimension,base_unit,base_units_per_unit
+g,gram,mass,kg,0.001
+kg,kilogram,mass,kg,1
+quintal,quintal (100 kg),mass,kg,100
+metric_ton,metric tonne,mass,kg,1000
+dry_metric_ton,dry metric tonne,mass,kg,1000
+troy_oz,troy ounce,mass,kg,0.0311034768
+lb,pound (avoirdupois),mass,kg,0.45359237
+cwt,US hundredweight (100 lb),mass,kg,45.359237
+short_ton,US short ton (2000 lb),mass,kg,907.18474
+bushel_60lb,bushel of wheat or soybeans (60 lb),mass,kg,27.2155422
+bushel_56lb,bushel of corn (56 lb),mass,kg,25.40117272
+barrel,barrel (42 US gal),volume_oil,barrel,1
+mmbtu,million British thermal units,energy,mmbtu,1
+cu_ft,cubic foot,volume_timber,cu_ft,1
+mbf,thousand board feet,volume_timber,cu_ft,83.3333333333

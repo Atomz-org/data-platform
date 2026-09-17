@@ -1,0 +1,337 @@
+version: 2
+
+models:
+  - name: fct_india_landed_prices_daily
+    description: >
+      India import landed price per commodity per day, in ₹ per Indian market unit:
+      benchmark × USD/INR × (1 + customs duty). The benchmark stands in for CIF
+      value — freight, insurance, landing charges and GST are excluded. History
+      before a tariff's `confirmed_from` uses today's rate; filter on
+      `is_duty_rate_confirmed` when that matters.
+    access: public
+    meta: {concept: PriceObservation, grain: one commodity per price date}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, price_date]
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: market_unit
+        meta: {role: unit_of_measure}
+        data_tests: [not_null]
+      - name: usd_inr_rate
+        meta: {role: exchange_rate}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "between 40 and 200"
+      - name: tariff_id
+        description: The india_import_duties row applied on this date.
+        data_tests: [not_null]
+      - name: effective_duty_rate
+        meta: {role: rate_fraction}
+      - name: is_duty_rate_confirmed
+        data_tests: [not_null]
+      - name: landed_price_inr
+        meta: {role: unit_price}
+        data_tests:
+          - not_null:
+              config:
+                where: "not is_import_prohibited"
+      - name: duty_inr
+        meta: {role: unit_price}
+
+  - name: fct_precious_metal_retail_prices_daily
+    description: Landed gold and silver in Indian retail conventions — per gram, 10 g and kg, by purity.
+    access: public
+    meta: {grain: one precious metal per purity grade per price date}
+    columns:
+      - name: retail_price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: price_date
+        meta: {role: event_time}
+      - name: purity_code
+        meta: {role: status_enum}
+      - name: price_inr_per_gram
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: price_inr_per_10g
+        meta: {role: unit_price}
+      - name: price_inr_per_kg
+        meta: {role: unit_price}
+
+  - name: fct_mcx_lot_equivalents_daily
+    description: >
+      The landed price of each MCX bullion and base-metal contract, per its quote
+      basis and per lot — GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per
+      1 MT lot. Computed from international benchmarks — not an MCX quote.
+    access: public
+    meta: {grain: one MCX contract per price date}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [contract_code, price_date]
+    columns:
+      - name: lot_equivalent_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_code
+        description: MCX trading symbol.
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: price_date
+        meta: {role: event_time}
+      - name: price_basis
+        description: futures, or indicative when the underlying has no live feed (zinc).
+        meta: {role: status_enum}
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+      - name: quote_equivalent_inr
+        description: Landed ₹ for one MCX quote basis (quote_size × quote_unit).
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: lot_value_inr
+        description: Landed ₹ for one full lot (lot_size × lot_unit).
+        meta: {role: unit_price}
+        data_tests: [not_null]
+
+  - name: rpt_mcx_contract_board
+    description: >
+      One row per tracked MCX contract: the latest landed equivalent per quote
+      basis and per lot, and how old its benchmark is. ZINC and ZINCMINI carry the
+      last indicative LME level and read stale until it is refreshed.
+    access: public
+    meta: {grain: one MCX contract}
+    columns:
+      - name: contract_code
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('mcx_contract_lots')
+                field: contract_code
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: quote_equivalent_inr
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: lot_value_inr
+        meta: {role: unit_price}
+      - name: is_stale
+        description: The underlying benchmark is more than four days old.
+
+  - name: rpt_commodity_price_board
+    description: >
+      One row per tracked commodity: latest benchmark and move, 252-day range,
+      landed ₹ price, duty, precious-metal spot basis, and staleness. The table
+      behind the commodity price board.
+    access: public
+    meta: {grain: one commodity}
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: category
+        meta: {role: status_enum}
+      - name: benchmark_price_usd
+        meta: {role: unit_price}
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: landed_price_inr
+        meta: {role: unit_price}
+      - name: is_stale
+        description: The latest benchmark is more than four days old. Always true for indicative levels until refreshed.
+
+unit_tests:
+  - name: landed_price_converts_units_fx_and_duty
+    description: >
+      Gold: $4310.80/troy oz → per gram × ₹95.95 × 1.15. Wheat arrives already in
+      dollars from the intermediate model and lands per quintal at 44%.
+    model: fct_india_landed_prices_daily
+    given:
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "gold:2026-09-16", commodity_id: gold, price_date: 2026-09-16, price_basis: futures, quote_unit: troy_oz, close_price: 4310.8}
+          - {price_id: "wheat:2026-09-16", commodity_id: wheat, price_date: 2026-09-16, price_basis: futures, quote_unit: bushel_60lb, close_price: 7.325}
+      - input: ref('int_fx_rates__daily')
+        rows:
+          - {quote_currency_code: INR, rate_date: 2026-09-16, usd_rate: 95.95, fixed_on: 2026-09-16}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: troy_oz, base_units_per_unit: 0.0311034768}
+          - {unit_code: g, base_units_per_unit: 0.001}
+          - {unit_code: bushel_60lb, base_units_per_unit: 27.2155422}
+          - {unit_code: quintal, base_units_per_unit: 100}
+      - input: ref('india_market_units')
+        rows:
+          - {commodity_id: gold, market_unit: g}
+          - {commodity_id: wheat, market_unit: quintal}
+      - input: ref('india_import_duties')
+        rows:
+          - {tariff_id: "IN:gold:base", commodity_id: gold, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0.15}
+          - {tariff_id: "IN:wheat:base", commodity_id: wheat, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0.44}
+    expect:
+      rows:
+        - {commodity_id: gold, assessable_value_inr: 13298.2323, duty_inr: 1994.7348, landed_price_inr: 15292.9672, is_duty_rate_confirmed: true}
+        - {commodity_id: wheat, assessable_value_inr: 2582.4720, duty_inr: 1136.2877, landed_price_inr: 3718.7596, is_duty_rate_confirmed: true}
+
+  - name: landed_price_follows_dated_duty_and_prohibition
+    description: >
+      Cotton is duty-free inside its 2026 exemption window and 11% after it.
+      Live cattle cannot be imported, so it keeps a row but has no landed price.
+      A date before `confirmed_from` is priced but flagged unconfirmed.
+    model: fct_india_landed_prices_daily
+    given:
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "cotton:2026-07-15", commodity_id: cotton, price_date: 2026-07-15, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "cotton:2026-11-02", commodity_id: cotton, price_date: 2026-11-02, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "cotton:2025-01-06", commodity_id: cotton, price_date: 2025-01-06, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "live_cattle:2026-07-15", commodity_id: live_cattle, price_date: 2026-07-15, quote_unit: lb, close_price: 2.2}
+      - input: ref('int_fx_rates__daily')
+        rows:
+          - {quote_currency_code: INR, rate_date: 2026-07-15, usd_rate: 95.95, fixed_on: 2026-07-15}
+          - {quote_currency_code: INR, rate_date: 2026-11-02, usd_rate: 95.95, fixed_on: 2026-11-02}
+          - {quote_currency_code: INR, rate_date: 2025-01-06, usd_rate: 95.95, fixed_on: 2025-01-06}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: lb, base_units_per_unit: 0.45359237}
+          - {unit_code: kg, base_units_per_unit: 1}
+      - input: ref('india_market_units')
+        rows:
+          - {commodity_id: cotton, market_unit: kg}
+          - {commodity_id: live_cattle, market_unit: kg}
+      - input: ref('india_import_duties')
+        rows:
+          - {tariff_id: "IN:cotton:pre", commodity_id: cotton, valid_from: 1900-01-01, valid_to: 2026-05-31, confirmed_from: null, is_import_prohibited: false, effective_duty_rate: 0.11}
+          - {tariff_id: "IN:cotton:exempt", commodity_id: cotton, valid_from: 2026-06-01, valid_to: 2026-10-31, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0}
+          - {tariff_id: "IN:cotton:post", commodity_id: cotton, valid_from: 2026-11-01, valid_to: null, confirmed_from: 2026-11-01, is_import_prohibited: false, effective_duty_rate: 0.11}
+          - {tariff_id: "IN:live_cattle:base", commodity_id: live_cattle, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: true, effective_duty_rate: null}
+    expect:
+      rows:
+        - {price_id: "cotton:2026-07-15", tariff_id: "IN:cotton:exempt", duty_inr: 0.0000, landed_price_inr: 178.7670, is_duty_rate_confirmed: true}
+        - {price_id: "cotton:2026-11-02", tariff_id: "IN:cotton:post", duty_inr: 19.6644, landed_price_inr: 198.4314, is_duty_rate_confirmed: true}
+        - {price_id: "cotton:2025-01-06", tariff_id: "IN:cotton:pre", duty_inr: 19.6644, landed_price_inr: 198.4314, is_duty_rate_confirmed: false}
+        - {price_id: "live_cattle:2026-07-15", tariff_id: "IN:live_cattle:base", duty_inr: null, landed_price_inr: null, is_duty_rate_confirmed: true}
+
+  - name: retail_prices_apply_purity_and_unit_conventions
+    description: 22K is 22/24 of the landed fine-metal price; per kg comes from the units seed.
+    model: fct_precious_metal_retail_prices_daily
+    given:
+      - input: ref('fct_india_landed_prices_daily')
+        rows:
+          - {commodity_id: gold, price_date: 2026-09-16, price_basis: futures, market_unit: g, landed_price_inr: 15292.9672, is_duty_rate_confirmed: true}
+      - input: ref('precious_metal_purities')
+        rows:
+          - {commodity_id: gold, purity_code: 24k, purity_label: 24K, fineness: 1.0}
+          - {commodity_id: gold, purity_code: 22k, purity_label: 22K, fineness: 0.9166666667}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: g, base_units_per_unit: 0.001}
+          - {unit_code: kg, base_units_per_unit: 1}
+    expect:
+      rows:
+        - {purity_code: 24k, price_inr_per_gram: 15292.9672, price_inr_per_10g: 152929.6720, price_inr_per_kg: 15292967.2000}
+        - {purity_code: 22k, price_inr_per_gram: 14018.5533, price_inr_per_10g: 140185.5327, price_inr_per_kg: 14018553.2672}
+
+  - name: cents_quotes_become_dollars
+    description: Yahoo quotes CBOT wheat in US cents (USX); 732.5 must become $7.325.
+    model: int_commodity_prices__usd
+    given:
+      - input: ref('stg_yahoo_finance__futures_prices')
+        rows:
+          - {quote_id: "wheat:2026-09-16", commodity_id: wheat, traded_at: 2026-09-16 00:00:00, currency_code: USX, open_price: 730.0, high_price: 740.0, low_price: 725.0, close_price: 732.5, volume: 100}
+          - {quote_id: "gold:2026-09-16", commodity_id: gold, traded_at: 2026-09-16 00:00:00, currency_code: USD, close_price: 4310.8}
+      - input: ref('stg_reference__commodities')
+        rows:
+          - {commodity_id: wheat, quote_unit: bushel_60lb}
+          - {commodity_id: gold, quote_unit: troy_oz}
+      - input: ref('indicative_prices')
+        rows:
+          - {commodity_id: zinc, as_of_date: 2026-06-12, price: 3500, currency_code: USD, quote_unit: metric_ton}
+    expect:
+      rows:
+        - {price_id: "wheat:2026-09-16", currency_code: USD, close_price: 7.325, high_price: 7.4, price_basis: futures}
+        - {price_id: "gold:2026-09-16", currency_code: USD, close_price: 4310.8, high_price: null, price_basis: futures}
+        - {price_id: "zinc:2026-06-12", currency_code: USD, close_price: 3500, high_price: null, price_basis: indicative}
+
+  - name: mcx_equivalents_follow_quote_basis_and_lot
+    description: >
+      ALUMINI is quoted per kg and traded in 1 MT lots, so ₹353.7931/kg is a
+      ₹3,53,793.10 lot and the 5 MT ALUMINIUM lot is five times that. GOLDM is
+      quoted per 10 g. Zinc lands from an indicative level and says so.
+    model: fct_mcx_lot_equivalents_daily
+    given:
+      - input: ref('fct_india_landed_prices_daily')
+        rows:
+          - {commodity_id: gold, price_date: 2026-09-16, price_basis: futures, market_unit: g, landed_price_inr: 15292.9672, is_duty_rate_confirmed: true}
+          - {commodity_id: aluminium, price_date: 2026-09-16, price_basis: futures, market_unit: kg, landed_price_inr: 353.7931, is_duty_rate_confirmed: true}
+          - {commodity_id: zinc, price_date: 2026-06-12, price_basis: indicative, market_unit: kg, landed_price_inr: 353.5942, is_duty_rate_confirmed: true}
+      - input: ref('mcx_contract_lots')
+        rows:
+          - {contract_code: GOLDM, commodity_id: gold, contract_name: Gold Mini, lot_size: 100, lot_unit: g, quote_size: 10, quote_unit: g}
+          - {contract_code: ALUMINIUM, commodity_id: aluminium, contract_name: Aluminium, lot_size: 5, lot_unit: metric_ton, quote_size: 1, quote_unit: kg}
+          - {contract_code: ALUMINI, commodity_id: aluminium, contract_name: Aluminium Mini, lot_size: 1, lot_unit: metric_ton, quote_size: 1, quote_unit: kg}
+          - {contract_code: ZINCMINI, commodity_id: zinc, contract_name: Zinc Mini, lot_size: 1, lot_unit: metric_ton, quote_size: 1, quote_unit: kg}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: g, base_units_per_unit: 0.001}
+          - {unit_code: kg, base_units_per_unit: 1}
+          - {unit_code: metric_ton, base_units_per_unit: 1000}
+    expect:
+      rows:
+        - {contract_code: GOLDM, price_basis: futures, quote_equivalent_inr: 152929.6720, lot_value_inr: 1529296.72}
+        - {contract_code: ALUMINIUM, price_basis: futures, quote_equivalent_inr: 353.7931, lot_value_inr: 1768965.50}
+        - {contract_code: ALUMINI, price_basis: futures, quote_equivalent_inr: 353.7931, lot_value_inr: 353793.10}
+        - {contract_code: ZINCMINI, price_basis: indicative, quote_equivalent_inr: 353.5942, lot_value_inr: 353594.20}
+
+exposures:
+  - name: commodity_price_board
+    label: Commodity Price Board
+    type: dashboard
+    maturity: medium
+    description: >
+      Live board of international benchmarks and India import landed prices across
+      33 commodities, modelled on MrChartist/commodity-price-tracker.
+    depends_on:
+      - ref('rpt_commodity_price_board')
+      - ref('fct_commodity_prices_daily')
+      - ref('fct_precious_metal_retail_prices_daily')
+      - ref('fct_mcx_lot_equivalents_daily')
+      - ref('rpt_mcx_contract_board')
+      - ref('fct_fx_rates_daily')
+    owner: {name: Commodity Research, email: research@commodity.example}
