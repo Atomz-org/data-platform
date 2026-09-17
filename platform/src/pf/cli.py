@@ -779,8 +779,10 @@ def check(group: str = "", project: str = "",
         console.print(f"    {i}")
 
     failed = bool(topo_errors) or bool(tracked)
+    from pf.runtime.dbt_runtime import validate_paths
+
     for g, p, d in targets:
-        issues = validate_project(d)
+        issues = validate_project(d) + validate_paths(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")
         errors = [i for i in issues + inst if i.severity == "error"]
         warns = [i for i in issues + inst if i.severity == "warning"]

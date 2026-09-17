@@ -228,7 +228,13 @@ name: '{{group}}_shared'
 version: '1.0.0'
 config-version: 2
 profile: '{{group}}_shared'
+# `macros` reach every sister through the sister's own macro-paths, so calls
+# stay unqualified. `seeds` are conformed reference data: once this directory
+# holds a CSV, `pf bootstrap` installs it in each sister as a local dbt package,
+# which is what keeps its compiled files inside that sister's target/. Never
+# point a sister's seed-paths here directly.
 macro-paths: ["macros"]
+seed-paths: ["seeds"]
 """
 
 GROUP_MACRO = """\
