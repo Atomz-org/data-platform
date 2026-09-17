@@ -2187,6 +2187,43 @@ def _store_or_exit(art):  # `art` is the pf.artifacts module
     return store
 
 
+@artifacts_app.command("env")
+def cmd_artifacts_env(
+    local: bool = typer.Option(False, "--local",
+                               help="point at the floci emulator on :4566"),
+) -> None:
+    """Print the export block for a store, for `eval "$(pf artifacts env --local)"`.
+
+    Only `--local` is generated. A real store's credentials are not this
+    command's to invent, and printing a half-filled block for one would produce
+    a shell that is configured and cannot connect — which is harder to diagnose
+    than a shell that is plainly not configured.
+
+    The region is emitted explicitly rather than left to default. It has to
+    match `FLOCI_DEFAULT_REGION` in `compose.floci.yaml`, SigV4 signs it, and a
+    mismatch surfaces as a signature error that reads like a bad credential.
+    """
+    if not local:
+        console.print("[yellow]only --local is generated[/] "
+                      "[dim]— see docs/ARTIFACTS.md for a real store[/]")
+        raise typer.Exit(1)
+
+    from pf import artifacts as art
+
+    endpoint = os.environ.get("PF_FLOCI_ENDPOINT", "http://localhost:4566")
+    region = os.environ.get("PF_FLOCI_REGION", "us-east-1")
+    # Any non-empty pair signs against the emulator; these are deliberately
+    # named so that a leaked shell history shows what they are.
+    for line in (
+        f"export PF_ARTIFACTS_ENDPOINT={endpoint}",
+        f"export PF_ARTIFACTS_REGION={region}",
+        f"export PF_ARTIFACTS_BUCKET={art.DEFAULT_BUCKET}",
+        "export PF_ARTIFACTS_ACCESS_KEY_ID=floci-local",
+        "export PF_ARTIFACTS_SECRET_ACCESS_KEY=floci-local",
+    ):
+        print(line)
+
+
 @artifacts_app.command("status")
 def cmd_artifacts_status() -> None:
     """Is a store configured, and can we reach it?"""
@@ -2202,7 +2239,7 @@ def cmd_artifacts_status() -> None:
 
     d = store.describe()
     t = Table("field", "value", title="artefact store")
-    for k in ("endpoint", "bucket", "key_id", "source"):
+    for k in ("endpoint", "bucket", "backend", "region", "key_id", "source"):
         t.add_row(k, d[k])
     t.add_row("base ref", art.base_ref())
     t.add_row("head ref", art.head_ref(root()))
