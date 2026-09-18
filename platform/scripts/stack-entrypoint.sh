@@ -13,7 +13,28 @@
 # anything. Render before migrate, not after: the storage block `pf stack
 # render` writes is what tells `dagster instance migrate` which database to
 # migrate, and in the other order it cheerfully migrates the SQLite file.
+#
+# ## --migrate-only
+#
+# Everything above the supervisord hand-off, and then exit. It exists for hosts
+# whose startup budget is shorter than a cold OpenMetadata migration: Cloud Run
+# kills a container that has not answered its startup probe in a few minutes, so
+# a service that migrates on boot fails, restarts, migrates again, and presents
+# as a crash loop that looks like a broken image. Those platforms run this as a
+# job first and then start the service with PF_OM_MIGRATE=0.
+#
+# It is the same code path in the same order rather than a second copy of the
+# sequence in a deployment manifest — which is what it replaced, and which would
+# have drifted from this file the first time the order changed here.
 set -euo pipefail
+
+MIGRATE_ONLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --migrate-only) MIGRATE_ONLY=1 ;;
+    *) echo "unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
 
 REPO="${PF_REPO:-$PWD}"
 cd "$REPO"
@@ -134,6 +155,15 @@ if [ -n "${om_reindex_args:-}" ]; then
          "Re-run with: podman exec pf_stack bash -c" \
          "'cd /opt/openmetadata && ./bootstrap/openmetadata-ops.sh reindex --auto-tune --force'" >&2
   fi
+fi
+
+if [ "$MIGRATE_ONLY" = "1" ]; then
+  # Everything below this line either belongs to a process that is about to run
+  # or has to be resolved fresh by the container that serves. The JWT in
+  # particular is exported into supervisord's children and nowhere else, so
+  # resolving it in a job that is about to exit would accomplish nothing.
+  log "migrate-only: done"
+  exit 0
 fi
 
 # ---------------------------------------------------------- catalogue auth --
