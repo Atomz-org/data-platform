@@ -120,3 +120,83 @@ def test_the_suite_is_reachable_from_the_repo_root() -> None:
     assert (REPO_ROOT / "platform").is_dir()
     assert (REPO_ROOT / "groups").is_dir()
     assert Path(__file__).resolve().is_relative_to(REPO_ROOT)
+
+
+# ------------------------------------------------------- regressions ---------
+# Each of the three below is a bug that already happened once and was invisible
+# while it was happening. None of them fails loudly on its own.
+
+def _git(*args: str) -> str:
+    import subprocess
+    return subprocess.run(["git", "-C", str(REPO_ROOT), *args],
+                          capture_output=True, text=True, check=False).stdout
+
+
+@pytest.mark.skipif(not (REPO_ROOT / ".git").exists(), reason="not a git checkout")
+def test_every_test_file_is_committed() -> None:
+    """A test file on disk but not in git runs for its author and nobody else.
+
+    Two were in exactly that state — 30 tests that passed locally, were absent
+    from a fresh clone, and produced no warning anywhere. The suite counts as
+    green either way, which is why nothing noticed.
+    """
+    untracked = [
+        line for line in
+        _git("ls-files", "--others", "--exclude-standard", "platform/tests").splitlines()
+        if Path(line).name.startswith("test_")
+    ]
+    assert not untracked, (
+        f"these test files are not committed, so a fresh clone will not run "
+        f"them: {untracked}"
+    )
+
+
+def test_no_test_computes_the_repo_root_by_counting_parents() -> None:
+    """`Path(__file__).parents[N]` is a magic number, and it was wrong.
+
+    Six files used `parents[2]`. It described how deep each file happened to sit,
+    so moving them made it silently mean `platform/` instead of the checkout —
+    and the failures surfaced as "file not found" on paths nobody had edited.
+    `conftest.REPO_ROOT` walks up for the marker directories instead.
+
+    Checked by parsing, not by grepping. A text scan flags the docstrings that
+    *explain* the bug — including this one — and a check that cannot be
+    described without tripping itself gets deleted rather than fixed.
+    """
+    import ast
+
+    offenders = []
+    for p in sorted(TESTS.rglob("*.py")):
+        src = p.read_text()
+        for node in ast.walk(ast.parse(src)):
+            if not (isinstance(node, ast.Subscript)
+                    and isinstance(node.value, ast.Attribute)
+                    and node.value.attr == "parents"):
+                continue
+            if "__file__" in (ast.get_source_segment(src, node) or ""):
+                offenders.append(f"{p.relative_to(TESTS)}:{node.lineno}")
+    assert not offenders, (
+        f"use `from conftest import REPO_ROOT` instead of a parents[N] count: "
+        f"{offenders}"
+    )
+
+
+def test_the_pre_commit_gate_sees_renames() -> None:
+    """`--diff-filter=ACM` drops renames, so `git mv` walked past the gate.
+
+    A rename-only commit reported "0 path(s)" and every rule was skipped — the
+    maxFiles cap, the denylist, impact analysis. Renaming a denied file is still
+    touching it, and moving a dbt model changes the node id that impact analysis
+    keys on.
+    """
+    hook = REPO_ROOT / "platform" / "hooks" / "pre_commit.sh"
+    filters = [
+        line for line in hook.read_text().splitlines() if "--diff-filter=" in line
+    ]
+    assert filters, "the pre-commit hook no longer filters staged paths"
+    for line in filters:
+        letters = line.split("--diff-filter=")[1].split()[0].strip('"\'')
+        assert "R" in letters, (
+            f"--diff-filter={letters} excludes renames; `git mv` would bypass "
+            f"every gate rule"
+        )
