@@ -39,6 +39,13 @@ class Capability:
     name: str
     description: str
     files: dict[str, str] = field(default_factory=dict)
+    # Files that are *seeded*, not generated: written when absent, left alone
+    # when present. `apply` otherwise rewrites every target wholesale, which is
+    # correct for a generated artefact and destructive for one a human is
+    # expected to edit — a policy overlay, a README, a profiles.yml. Without this
+    # the only protection is `_bootstrap_capabilities` refusing a partial
+    # backfill, and `pf capability-add` deliberately bypasses that.
+    preserve: tuple[str, ...] = ()
     settings: dict[str, Any] = field(default_factory=dict)
     gate: dict[str, list[str]] = field(default_factory=dict)
     env: tuple[str, ...] = ()
@@ -333,7 +340,89 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
     )
 
 
+# ----------------------------------------------------------- governance -----
+# Seeded inert. Every policy below is commented out, so scaffolding a project or
+# backfilling this capability into eight existing ones changes no verdict
+# anywhere — the file exists to be found and edited, not to take effect on
+# arrival. A capability that silently tightened the gate on adoption would be
+# discovered as a broken build in a project nobody had touched.
+GOVERNANCE_POLICY = """\
+# Policy overlay for {{group}}/{{project}}.
+#
+# The platform ships a policy floor in `platform/src/pf/ontology/policy.yaml`
+# that applies to every project. This file layers over it, and over any group
+# overlay at `groups/{{group}}/ontology/policy.yaml`, for the obligations that
+# are this entity's alone — a jurisdiction, a customer contract, a retention
+# rule a sister does not share.
+#
+# Vocabulary is deliberately NOT layered here. Two sisters must mean the same
+# thing by `Payment` or a roll-up adds two numbers that merely share a name;
+# concepts live in the group ontology for that reason. What must *hold* is the
+# part that is genuinely local, so it is the part that layers.
+#
+# THIS FILE MAY ONLY TIGHTEN.
+#
+#   add       declare a policy the platform does not have
+#   tighten   raise an inherited policy's severity (info -> warning -> error)
+#   enforce   name another artifact or evidence kind for an inherited policy
+#
+# Lowering a severity raises `PolicyRelaxation` at load time, and there is no
+# syntax for deleting an inherited policy. An omitted `severity:` means inherit,
+# so adding an `enforced_by` line cannot silently escalate the rule.
+#
+# Inspect the resolved result — including which layer set each severity — with:
+#
+#     pf semantic policy {{group}} {{project}}
+
+policies: []
+
+# --- examples, all inert until uncommented -----------------------------------
+#
+# Tighten an inherited policy. `mart-declares-grain` ships as a warning; here an
+# undeclared grain would block the merge.
+#
+# policies:
+#   - id: mart-declares-grain
+#     severity: error
+#
+# Declare an obligation the platform does not know about. Note it names no
+# `enforced_by`: `pf semantic policy` will report it as unenforced, which is the
+# honest state until the check exists. Claiming enforcement that does not exist
+# is worse than declaring none — it ends the conversation.
+#
+#   - id: retention-window-declared
+#     intent: >
+#       A table holding personal data must declare how long it keeps it, or the
+#       retention promise is prose nobody can verify.
+#     applies_to: {role_glob: "pii_*"}
+#     constraint: retention_declared
+#     severity: error
+#
+# Add enforcement to an inherited policy without claiming ownership of it. The
+# severity's owner stays where it was; only the artifact list grows.
+#
+#   - id: pii-not-in-consumption
+#     enforced_by: [pf.local.checks:pii_sweep]
+#     evidence: [pf loop run pii-audit]
+"""
+
+
 CAPABILITIES: dict[str, Capability] = {
+    "governance": Capability(
+        name="governance",
+        description="Project-scoped policy overlay, layered over the platform "
+                    "and group floors. Tightening only.",
+        files={"governance/policy.yaml": GOVERNANCE_POLICY},
+        # Seeded, never regenerated: this is the one file in the capability a
+        # project is expected to own. Re-applying must not overwrite it.
+        preserve=("governance/policy.yaml",),
+        # A policy overlay decides whether a change is allowed to land, so it is
+        # not something a change may quietly relax on its way past. Edits are
+        # visible rather than blocked — the loosening guard lives in the loader,
+        # where it can read what the edit actually did.
+        gate={"impact_required": ["**/governance/policy.yaml"]},
+        default_enabled=True,
+    ),
     "evidence": Capability(
         name="evidence",
         description="Evidence BI reporting layer, generated from the semantic layer.",
@@ -444,6 +533,11 @@ def apply(cap: Capability, root: Path, project_dir: Path,
         rendered_rel = render(rel, ctx)
         base = root if rendered_rel.startswith(".github/") else project_dir
         target = base / rendered_rel
+        # A seeded file is written once. Re-applying the capability — which
+        # `pf capability-add` does on demand, past the backfill's own guard —
+        # must not overwrite what the project has since written in it.
+        if rel in cap.preserve and target.exists():
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render(template, ctx))
         written.append(target)
