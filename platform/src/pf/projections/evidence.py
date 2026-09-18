@@ -19,6 +19,10 @@ page author:
     except the one it was computed at, and it is the single most common BI bug.
   * **A metric's filter lives in the metric**, not in the page. Two pages filtering
     differently is how one company ends up with two revenues.
+  * **A page re-aggregates only what composes.** Sums and counts add up, max and
+    min compose with themselves, an average composes through its own sum and
+    count, and a distinct count or percentile does not compose at all — so it is
+    shown exactly as computed rather than summed into a wrong total.
 """
 
 from __future__ import annotations
@@ -41,6 +45,47 @@ STATUS = {"good": "#0ca30c", "warning": "#fab219",
           "serious": "#ec835a", "critical": "#d03b3b"}
 
 
+#: MetricFlow's aggregation names are not SQL. `average(x)`, `count_distinct(x)`
+#: and `sum_boolean(x)` exist in none of the warehouses this platform targets,
+#: and writing the name through verbatim failed every page built on such a
+#: measure — at query time, long after the build reported success.
+_SQL_AGG = {"sum": "sum", "count": "count", "max": "max", "min": "min",
+            "average": "avg"}
+
+#: How a page may re-aggregate rows that were already aggregated per metric_time
+#: and dimension. `ratio` means "carry a sum and a count and re-divide"; `none`
+#: means no correct re-aggregation exists, so nothing is summed.
+ROLLUP = {"sum": "sum", "count": "sum", "sum_boolean": "sum",
+          "max": "max", "min": "min", "average": "ratio",
+          "count_distinct": "none", "median": "none", "percentile": "none"}
+
+
+def agg_sql(agg: str, expr: str, params: dict[str, Any] | None = None,
+            where: str = "") -> str | None:
+    """One MetricFlow measure as a SQL aggregate, or None for an unknown agg.
+
+    `where` filters inside the aggregate instead of in a WHERE clause — the one
+    case a WHERE cannot express is a ratio whose two sides filter differently.
+    The percentile forms are the ANSI ordered-set spelling, which DuckDB,
+    Snowflake and Postgres all accept.
+    """
+    agg = (agg or "sum").lower()
+    params = params or {}
+    value = f"case when {where} then {expr} end" if where else expr
+    if agg in _SQL_AGG:
+        return f"{_SQL_AGG[agg]}({value})"
+    if agg == "count_distinct":
+        return f"count(distinct {value})"
+    if agg == "sum_boolean":
+        cond = f"({where}) and ({expr})" if where else expr
+        return f"sum(case when {cond} then 1 else 0 end)"
+    if agg in ("median", "percentile"):
+        pct = 0.5 if agg == "median" else float(params.get("percentile", 0.5))
+        fn = "percentile_disc" if params.get("use_discrete_percentile") else "percentile_cont"
+        return f"{fn}({pct}) within group (order by {value})"
+    return None
+
+
 @dataclass
 class MetricSpec:
     name: str
@@ -54,9 +99,18 @@ class MetricSpec:
     numerator: str = ""
     denominator: str = ""
     description: str = ""
+    #: How a page re-aggregates this metric — a value of ROLLUP.
+    rollup: str = "sum"
+    #: The aggregates carried as `numerator` / `denominator` when rollup is ratio.
+    numerator_sql: str = ""
+    denominator_sql: str = ""
+    #: The measure behind a simple metric, so a ratio can re-render it with the
+    #: metric's own filter.
+    measure: dict[str, Any] = None
 
     def __post_init__(self) -> None:
         self.dimensions = self.dimensions or []
+        self.measure = self.measure or {}
 
 
 # --------------------------------------------------------------- reading ----
@@ -83,7 +137,10 @@ def _translate_filter(f: str) -> str:
     return _DIM_REF.sub(lambda m: m.group(1).split("__")[-1], f).strip()
 
 
-def collect_metrics(project_dir: Path) -> list[MetricSpec]:
+def collect_metrics(project_dir: Path,
+                    skipped: list[str] | None = None) -> list[MetricSpec]:
+    """Every metric the report can render. Names it cannot go to `skipped`."""
+    skipped = [] if skipped is None else skipped
     sm, _ = _load(project_dir)
     if not sm:
         return []
@@ -95,8 +152,14 @@ def collect_metrics(project_dir: Path) -> list[MetricSpec]:
         dims = [d["name"] for d in (model.get("dimensions") or [])
                 if d.get("type") != "time"]
         for m in model.get("measures") or []:
+            agg = (m.get("agg") or "sum").lower()
+            expr = m.get("expr") or m["name"]
+            params = m.get("agg_params") or {}
+            sql = agg_sql(agg, expr, params)
+            if sql is None:
+                continue
             measures[m["name"]] = {
-                "expr": f"{m.get('agg', 'sum')}({m.get('expr') or m['name']})",
+                "agg": agg, "expr": expr, "params": params, "sql": sql,
                 "model": table, "time": time_col, "dims": dims,
             }
 
@@ -111,37 +174,107 @@ def collect_metrics(project_dir: Path) -> list[MetricSpec]:
             measure = _measure_name(tp.get("measure"))
             src = measures.get(measure)
             if not src:
+                skipped.append(m["name"])  # its measure has no SQL translation
                 continue
+            rollup = ROLLUP.get(src["agg"], "none")
             spec = MetricSpec(name=m["name"], label=m.get("label") or m["name"],
                               kind="simple", model=src["model"],
-                              expression=src["expr"], filter_sql=flt,
-                              time_column=src["time"], dimensions=src["dims"],
-                              description=m.get("description", ""))
+                              expression=src["sql"], filter_sql=flt,
+                              time_column=src["time"],
+                              # A distinct count per segment cannot be summed back
+                              # into a total, so it is grouped by time alone.
+                              dimensions=src["dims"] if rollup != "none" else [],
+                              description=m.get("description", ""),
+                              rollup=rollup, measure=src)
+            if rollup == "ratio":
+                # An average travels as its own sum and count, so a page that
+                # rolls days into months divides totals instead of averaging
+                # averages.
+                spec.numerator = f"{spec.name}__sum"
+                spec.denominator = f"{spec.name}__count"
+                spec.numerator_sql = agg_sql("sum", src["expr"])
+                spec.denominator_sql = agg_sql("count", src["expr"])
         elif kind == "ratio":
             num = by_name.get(_metric_name(tp.get("numerator")))
             den = by_name.get(_metric_name(tp.get("denominator")))
             if not num or not den:
+                skipped.append(m["name"])
                 continue
+            if num.filter_sql == den.filter_sql:
+                where, num_sql, den_sql = num.filter_sql, num.expression, den.expression
+            else:
+                # One WHERE cannot hold two filters. Using the numerator's alone
+                # silently applied it to the denominator too.
+                where, num_sql, den_sql = "", _filtered(num), _filtered(den)
+            # Re-dividing summed components is right only when both components
+            # are sums. Over a distinct count or an average it would sum the
+            # unsummable, so such a ratio is read exactly as computed.
+            additive = num.rollup == "sum" and den.rollup == "sum"
             spec = MetricSpec(name=m["name"], label=m.get("label") or m["name"],
                               kind="ratio", model=num.model,
-                              expression=f"{num.expression} / nullif({den.expression}, 0)",
-                              filter_sql=num.filter_sql, time_column=num.time_column,
-                              dimensions=num.dimensions,
+                              expression=f"{num_sql} / nullif({den_sql}, 0)",
+                              filter_sql=where, time_column=num.time_column,
+                              dimensions=num.dimensions if additive else [],
                               numerator=num.name, denominator=den.name,
-                              description=m.get("description", ""))
+                              description=m.get("description", ""),
+                              rollup="ratio" if additive else "none",
+                              numerator_sql=num_sql, denominator_sql=den_sql)
         else:
-            base = next((by_name[_metric_name(x)] for x in (tp.get("metrics") or [])
-                         if _metric_name(x) in by_name), None)
-            if not base:
+            # Only a derived metric that merely renames one base metric can be
+            # drawn from that base. One with an offset (`price_prev`), an
+            # expression over several inputs, or a cumulative window would be
+            # drawn as its base under its own title — a "MoM change" page
+            # plotting the price. MetricFlow computes those; the report does
+            # not, and says so.
+            base = _passthrough_base(kind, tp, by_name)
+            if base is None:
+                skipped.append(m["name"])
                 continue
             spec = MetricSpec(name=m["name"], label=m.get("label") or m["name"],
                               kind=kind, model=base.model, expression=base.expression,
                               filter_sql=base.filter_sql, time_column=base.time_column,
                               dimensions=base.dimensions,
-                              description=m.get("description", ""))
+                              description=m.get("description", ""),
+                              rollup=base.rollup, measure=base.measure,
+                              numerator=base.numerator, denominator=base.denominator,
+                              numerator_sql=base.numerator_sql,
+                              denominator_sql=base.denominator_sql)
         specs.append(spec)
         by_name[spec.name] = spec
     return specs
+
+
+def _passthrough_base(kind: str, tp: dict[str, Any],
+                      by_name: dict[str, MetricSpec]) -> MetricSpec | None:
+    """The one base metric a derived metric merely renames, or None."""
+    if kind != "derived":
+        return None
+    inputs = tp.get("metrics") or []
+    if len(inputs) != 1:
+        return None
+    x = inputs[0]
+    if isinstance(x, dict) and (x.get("offset_window") or x.get("offset_to_grain")):
+        return None
+    base = by_name.get(_metric_name(x))
+    if base is None:
+        return None
+    alias = (x.get("alias") if isinstance(x, dict) else None) or base.name
+    expr = (tp.get("expr") or "").strip()
+    return base if expr in ("", base.name, alias) else None
+
+
+def _non_additive_reason(spec: MetricSpec) -> str:
+    if spec.kind == "ratio":
+        return "ratio over a non-additive component"
+    return spec.measure.get("agg", spec.kind)
+
+
+def _filtered(spec: MetricSpec) -> str:
+    """A ratio component's aggregate with its own filter moved inside it."""
+    m = spec.measure
+    if not spec.filter_sql or not m:
+        return spec.expression
+    return agg_sql(m["agg"], m["expr"], m["params"], where=spec.filter_sql) or spec.expression
 
 
 def _filter_text(f: Any) -> str:
@@ -171,18 +304,23 @@ def _metric_sql(spec: MetricSpec, schema: str) -> str:
     head = [f"-- metric: {spec.name} ({spec.kind}) — generated by `pf report build`",
             f"-- {spec.description or spec.label}",
             "-- Do not edit. Change the metric in transform/models/semantic/, then rerun."]
-    if spec.kind == "ratio":
+    if spec.rollup == "ratio":
         head += [
             "-- Ratio rule: re-divide at the display grain —",
             f"--   sum({spec.numerator}) / sum({spec.denominator})",
             f"-- NEVER avg({spec.name}). Components are carried for exactly that.",
         ]
+    elif spec.rollup == "none":
+        head += [
+            f"-- Not re-aggregatable ({_non_additive_reason(spec)}): grouped by",
+            "-- time alone, and read exactly as computed. Never sum it.",
+        ]
 
     body = ["select",
             f"    {spec.time_column} as metric_time{dim_sql},"]
-    if spec.kind == "ratio":
-        body.append(f"    {_num_expr(spec)} as {spec.numerator},")
-        body.append(f"    {_den_expr(spec)} as {spec.denominator},")
+    if spec.rollup == "ratio":
+        body.append(f"    {spec.numerator_sql} as {spec.numerator},")
+        body.append(f"    {spec.denominator_sql} as {spec.denominator},")
     body.append(f"    {spec.expression} as {spec.name}")
     body.append(f"from {schema}.{spec.model}{where}")
     body.append(f"group by {group_by}")
@@ -190,22 +328,24 @@ def _metric_sql(spec: MetricSpec, schema: str) -> str:
     return "\n".join(head + body) + "\n"
 
 
-def _num_expr(spec: MetricSpec) -> str:
-    return spec.expression.split(" / nullif(")[0]
-
-
-def _den_expr(spec: MetricSpec) -> str:
-    tail = spec.expression.split(" / nullif(")
-    return tail[1].rsplit(", 0)", 1)[0] if len(tail) > 1 else "1"
+def _rollup_sql(spec: MetricSpec) -> str | None:
+    """How a page aggregates this metric's rows, or None if it must not."""
+    if spec.rollup == "ratio":
+        return f"sum({spec.numerator}) / nullif(sum({spec.denominator}), 0)"
+    if spec.rollup in ("sum", "max", "min"):
+        return f"{spec.rollup}({spec.name})"
+    return None
 
 
 def _index_page(project: str, specs: list[MetricSpec]) -> str:
     """Standard page anatomy: title + context -> filter row -> KPI row ->
     primary trend -> breakdown -> detail. Never a wall of charts."""
-    simple = [s for s in specs if s.kind in ("simple", "ratio")]
+    simple = [s for s in specs if s.kind in ("simple", "ratio") and _rollup_sql(s)]
     kpis = simple[:4]
-    trend = next((s for s in specs if s.kind == "simple"), None)
-    dim = next((d for s in specs for d in s.dimensions), None)
+    trend = next((s for s in specs if s.kind == "simple" and _rollup_sql(s)), None)
+    # The breakdown reads the trend's own query, so the dimension must be one
+    # that query carries — any other spec's dimension is a missing column.
+    dim = trend.dimensions[0] if trend and trend.dimensions else None
 
     q = "\n".join(f"  - metrics/{s.name}.sql" for s in specs)
     lines = [
@@ -243,8 +383,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
     for s in kpis:
         lines += [
             f"```sql kpi_{s.name}",
-            (f"select sum({s.numerator}) / nullif(sum({s.denominator}), 0) as {s.name}"
-             if s.kind == "ratio" else f"select sum({s.name}) as {s.name}"),
+            f"select {_rollup_sql(s)} as {s.name}",
             f"from ${{metrics_{s.name}}}",
             "```",
             "",
@@ -263,7 +402,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             f"## {trend.label} over time",
             "",
             "```sql trend",
-            f"select metric_time, sum({trend.name}) as {trend.name}",
+            f"select metric_time, {_rollup_sql(trend)} as {trend.name}",
             f"from ${{metrics_{trend.name}}}",
             "group by 1 order by 1",
             "```",
@@ -277,7 +416,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             f"## {trend.label} by {dim.replace('_', ' ')}",
             "",
             "```sql breakdown",
-            f"select {dim}, sum({trend.name}) as {trend.name}",
+            f"select {dim}, {_rollup_sql(trend)} as {trend.name}",
             f"from ${{metrics_{trend.name}}}",
             f"where {dim} is not null",
             "group by 1 order by 2 desc",
@@ -309,33 +448,48 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
         _context_sentence(spec),
         "",
     ]
-    if spec.kind == "ratio":
+    rollup = _rollup_sql(spec)
+    if spec.rollup == "ratio":
+        kind = "Ratio metric" if spec.kind == "ratio" else "Average"
         lines += [
-            (f"> **Ratio metric.** Aggregated as `sum({spec.numerator}) / "
+            (f"> **{kind}.** Aggregated as `sum({spec.numerator}) / "
             f"sum({spec.denominator})` at whatever grain you group by. "
-            f"Averaging the ratio itself gives a different — and wrong — answer."),
+            f"Averaging the {'ratio' if spec.kind == 'ratio' else 'average'} "
+            f"itself gives a different — and wrong — answer."),
             "",
         ]
+    elif rollup is None:
+        lines += [
+            (f"> **Not additive.** A `{_non_additive_reason(spec)}` "
+             f"cannot be rebuilt from grouped rows, so the series is shown exactly "
+             f"as the metric computed it, per `{spec.time_column}`."),
+            "",
+        ]
+    if spec.rollup == "ratio":
+        series = (f"select metric_time, sum({spec.numerator}) as {spec.numerator}, "
+                  f"sum({spec.denominator}) as {spec.denominator}, "
+                  f"{rollup} as {spec.name}")
+        tail = f"from ${{metrics_{spec.name}}} group by 1 order by 1"
+    elif rollup:
+        series = f"select metric_time, {rollup} as {spec.name}"
+        tail = f"from ${{metrics_{spec.name}}} group by 1 order by 1"
+    else:
+        series = f"select metric_time, {spec.name}"
+        tail = f"from ${{metrics_{spec.name}}} order by 1"
     lines += [
         "```sql series",
-        f"select metric_time, sum({spec.numerator}) as {spec.numerator}, "
-        f"sum({spec.denominator}) as {spec.denominator}, "
-        f"sum({spec.numerator}) / nullif(sum({spec.denominator}), 0) as {spec.name}"
-        if spec.kind == "ratio" else
-        f"select metric_time, sum({spec.name}) as {spec.name}",
-        f"from ${{metrics_{spec.name}}} group by 1 order by 1",
+        series,
+        tail,
         "```",
         "",   # a component on the line after a fence is swallowed by the block
         f"<LineChart data={{series}} x=metric_time y={spec.name} yFmt={fmt}/>",
         "",
     ]
-    if dim:
+    if dim and rollup:
         lines += [
             f"## By {dim.replace('_', ' ')}", "",
             "```sql by_dim",
-            f"select {dim}, "
-            + (f"sum({spec.numerator}) / nullif(sum({spec.denominator}), 0) as {spec.name}"
-               if spec.kind == "ratio" else f"sum({spec.name}) as {spec.name}"),
+            f"select {dim}, {rollup} as {spec.name}",
             f"from ${{metrics_{spec.name}}} where {dim} is not null group by 1 order by 2 desc",
             "```",
             "",
@@ -358,7 +512,7 @@ def _context_sentence(spec: MetricSpec) -> str:
     else:
         parts.append("**unfiltered** — every row in the underlying fact counts")
     parts.append(f"measured over `{spec.time_column}` from `{spec.model}`")
-    if spec.kind == "ratio":
+    if spec.rollup == "ratio":
         parts.append(f"and carried as `{spec.numerator}` / `{spec.denominator}` so it "
                      f"re-divides correctly at any grain")
     return (", ".join(parts) + ". Defined once in the dbt semantic layer and "
@@ -429,7 +583,8 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     """Generate the Evidence project. Returns a summary."""
     root = Path(project_dir)
     out = root / "reporting"
-    specs = collect_metrics(root)
+    skipped: list[str] = []
+    specs = collect_metrics(root, skipped)
     _, mdl = _load(root)
     schema = "main_marts"
     warehouse = (root / "data" / f"{project.replace('-', '_')}.duckdb").resolve()
@@ -443,6 +598,16 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
             _metric_sql(spec, schema))
         (out / "pages" / "metrics" / f"{spec.name}.md").write_text(
             _metric_page(project, spec))
+
+    # Both directories are generated in full, so a file for a metric that is
+    # no longer rendered is stale, not someone's work.
+    current = {s.name for s in specs}
+    removed: list[str] = []
+    for sub, ext in (("queries", ".sql"), ("pages", ".md")):
+        for f in (out / sub / "metrics").glob(f"*{ext}"):
+            if f.stem not in current:
+                f.unlink()
+                removed.append(f.stem)
 
     (out / "pages" / "index.md").write_text(_index_page(project, specs))
     (out / "evidence.config.yaml").write_text(_config(project, warehouse))
@@ -526,4 +691,6 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
         "sources": len(mdl.get("models", [])),
         "path": out,
         "unbacked": [s.name for s in specs if not s.time_column],
+        "skipped": skipped,
+        "removed": sorted(set(removed)),
     }

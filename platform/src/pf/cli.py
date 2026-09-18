@@ -2039,6 +2039,10 @@ def cmd_report_build(group: str, project: str) -> None:
                   f"{r['sources']} source extract(s)")
     if r["unbacked"]:
         console.print(f"  [yellow]![/] no time dimension: {', '.join(r['unbacked'])}")
+    if r["skipped"]:
+        console.print(f"  [yellow]![/] MetricFlow only, no page: {', '.join(r['skipped'])}")
+    if r["removed"]:
+        console.print(f"  stale page(s) removed: {', '.join(r['removed'])}")
     if not r["metrics"]:
         console.print("  [yellow]![/] no metrics in the semantic layer yet — "
                       "add them in transform/models/semantic/, then `pf seed`")
