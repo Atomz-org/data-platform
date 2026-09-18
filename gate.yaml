@@ -9,6 +9,22 @@
 version: 1
 
 # Paths no agent may write, in any session.
+# What the gate is shown, before any rule below applies.
+#
+# `platform/hooks/pre_commit.sh` selects staged paths with
+# `--diff-filter=ACMR`: Added, Copied, Modified, Renamed. Renames were missing
+# until they were found to be walking straight past every rule here — a
+# rename-only commit reported "0 path(s)" and skipped the denylist, the maxFiles
+# cap and impact analysis alike.
+#
+# Deletions (`D`) are still not shown, and that is a live question rather than a
+# settled one. Including them would mean *deleting* a denylisted file is denied
+# the same way editing it is, which is defensible — a generated file removed by
+# hand lies as loudly as one edited by hand — but it is a widening of what this
+# gate refuses, so it wants a decision rather than a quiet edit. The impact half
+# is the stronger argument: `pf.capabilities.IMPACT_JOB` already reasons that a
+# deleted model is the most dangerous change there is, because its consumers are
+# still in the base graph.
 denylist:
   - ".env"
   - ".env.*"
