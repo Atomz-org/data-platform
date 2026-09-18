@@ -3,7 +3,8 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "./platform"
+        "source": "directory",
+        "path": "./platform"
       }
     }
   },
@@ -54,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python platform/hooks/pre_tool_use.py"
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/pre_tool_use.py\""
           }
         ]
       }
