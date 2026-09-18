@@ -15,6 +15,7 @@ members = [
     "acme-eu",
     "acme-rollup",
     "acme-us",
+    "commodity-india",
     "data-platform",
     "globex-core",
     "globex-eu",
@@ -478,6 +479,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/84/1b/1ecdd371fa68839cf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/2f/12747be360d6dea432e7b5dfae3419132cb008535cfe614af73b9ce2643b/coloredlogs-14.0-py2.py3-none-any.whl", hash = "sha256:346f58aad6afd48444c2468618623638dadab76e4e70d5e10822676f2d32226a", size = 43888, upload-time = "2020-02-16T20:51:09.712Z" },
 ]
+
+[[package]]
+name = "commodity-india"
+version = "0.1.0"
+source = { editable = "groups/commodity/projects/commodity-india" }
+dependencies = [
+    { name = "pf" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pf", editable = "platform" }]
 
 [[package]]
 name = "cryptography"

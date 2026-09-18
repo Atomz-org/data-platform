@@ -1,0 +1,11 @@
+contract_code,commodity_id,contract_name,lot_size,lot_unit,quote_size,quote_unit
+GOLDM,gold,Gold Mini,100,g,10,g
+GOLDGUINEA,gold,Gold Guinea,8,g,8,g
+GOLDPETAL,gold,Gold Petal,1,g,1,g
+SILVER,silver,Silver,30,kg,1,kg
+SILVERM,silver,Silver Mini,5,kg,1,kg
+SILVERMIC,silver,Silver Micro,1,kg,1,kg
+ALUMINIUM,aluminium,Aluminium,5,metric_ton,1,kg
+ALUMINI,aluminium,Aluminium Mini,1,metric_ton,1,kg
+ZINC,zinc,Zinc,5,metric_ton,1,kg
+ZINCMINI,zinc,Zinc Mini,1,metric_ton,1,kg

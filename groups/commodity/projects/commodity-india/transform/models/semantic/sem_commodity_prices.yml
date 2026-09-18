@@ -1,0 +1,82 @@
+version: 2
+# Prices are non-additive, so every measure here is a sum, count, max or min
+# that a ratio metric divides at query grain — never `average`, which cannot be
+# re-aggregated by a page that rolls days up into months.
+#
+# `commodity_id` is also the first categorical dimension on each fact: the
+# reporting projection groups by the first dimensions it finds, and a price
+# grouped by anything coarser than a commodity mixes ounces with bushels.
+semantic_models:
+  - name: commodities
+    description: Commodity dimension.
+    model: ref('dim_commodities')
+    entities:
+      - {name: commodity, type: primary, expr: commodity_id}
+    dimensions:
+      - {name: commodity_name, type: categorical}
+      - {name: category, type: categorical}
+      - {name: segment, type: categorical}
+      - {name: exchange, type: categorical}
+      - {name: price_basis, type: categorical}
+      - {name: quote_unit, type: categorical}
+      - {name: market_unit, type: categorical}
+      - {name: is_import_prohibited, type: categorical}
+
+  - name: commodity_prices
+    description: Daily benchmark prices, USD per quote unit. agg_time_dimension derives from the event_time role.
+    model: ref('fct_commodity_prices_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: commodity_price, type: primary, expr: price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: price_basis, type: categorical}
+    measures:
+      - {name: benchmark_price_usd_sum, agg: sum, expr: close_price}
+      - {name: benchmark_price_count, agg: count, expr: close_price}
+      - {name: high_price_usd_max, agg: max, expr: "coalesce(high_price, close_price)"}
+      - {name: low_price_usd_min, agg: min, expr: "coalesce(low_price, close_price)"}
+      - {name: contract_volume, agg: sum, expr: volume}
+
+  - name: india_landed_prices
+    description: Daily India import landed prices, ₹ per Indian market unit.
+    model: ref('fct_india_landed_prices_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: landed_price, type: primary, expr: price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: market_unit, type: categorical}
+      - {name: is_duty_rate_confirmed, type: categorical}
+      - {name: price_basis, type: categorical}
+    measures:
+      - {name: landed_price_inr_sum, agg: sum, expr: landed_price_inr}
+      - {name: landed_price_count, agg: count, expr: landed_price_inr}
+      - {name: duty_inr_sum, agg: sum, expr: duty_inr}
+
+  - name: fx_rates
+    description: Daily USD fixes, quote currency per 1 USD.
+    model: ref('fct_fx_rates_daily')
+    defaults:
+      agg_time_dimension: rate_date
+    entities:
+      - {name: fx_day, type: primary, expr: fx_day_id}
+    dimensions:
+      - name: rate_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: quote_currency_code, type: categorical}
+      - {name: is_carried_forward, type: categorical}
+    measures:
+      - {name: usd_rate_sum, agg: sum, expr: usd_rate}
+      - {name: usd_rate_count, agg: count, expr: usd_rate}

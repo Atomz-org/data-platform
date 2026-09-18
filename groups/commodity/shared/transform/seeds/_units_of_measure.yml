@@ -1,0 +1,38 @@
+version: 2
+
+seeds:
+  - name: units_of_measure
+    description: >
+      Conformed units for every commodity sister, built in each sister from this
+      group package. A price per `from` unit becomes a price per `to` unit via
+      `reprice_per_unit` — valid only when both units share a `dimension`.
+    meta:
+      grain: one unit of measure
+    config:
+      column_types:
+        unit_code: varchar
+        unit_name: varchar
+        dimension: varchar
+        base_unit: varchar
+        base_units_per_unit: double
+    columns:
+      - name: unit_code
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: dimension
+        meta: {role: status_enum}
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [mass, volume_oil, energy, volume_timber]
+      - name: base_unit
+        meta: {role: unit_of_measure}
+        data_tests: [not_null]
+      - name: base_units_per_unit
+        description: Size of one unit, in `base_unit`s.
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"

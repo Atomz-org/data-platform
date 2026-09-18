@@ -1,0 +1,61 @@
+version: 2
+
+models:
+  - name: int_commodity_prices__usd
+    description: >
+      Futures candles and indicative levels in one shape: USD (major units) per the
+      commodity's quote unit. The only model that converts cents to dollars.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per price date and basis
+      layer: intermediate
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, price_date, price_basis]
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests: [not_null]
+      - name: price_basis
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [futures, indicative]
+      - name: currency_code
+        description: Always a major currency after conversion.
+        meta: {role: currency_code}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [USD]
+      - name: close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+
+  - name: int_fx_rates__daily
+    description: >
+      Gap-free daily USD fixes per currency, carrying the last fix over weekends and
+      holidays so any price date can take an equi-join to its rate.
+    meta:
+      concept: FxRate
+      grain: one currency per calendar day
+      layer: intermediate
+    columns:
+      - name: fx_day_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: usd_rate
+        meta: {role: exchange_rate}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+      - name: fixed_on
+        description: Date of the fix this day uses; earlier than rate_date when carried forward.
+        data_tests: [not_null]
