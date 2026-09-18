@@ -11,6 +11,7 @@ Inputs (each optional — the builder degrades gracefully):
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pf.kg.store import Edge, Node, open_graph
@@ -431,6 +432,91 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             if owner:
                 edges.append(Edge(src=mid(owner), dst=n_id, kind="measures",
                                   props={"measure": measure}))
+
+
+@dataclass
+class GraphDrift:
+    """dbt resources the manifest declares that the tracked graph does not hold.
+
+    Deliberately compares **only what a runner without a warehouse can see**.
+    Models, metrics and exposures come from the dbt manifests, which any checkout
+    has; columns are backfilled from `information_schema`, which CI does not. A
+    check that compared columns too would be red on every pull request forever,
+    and a permanently red check is one nobody reads.
+
+    `exercised` is the honest third answer. A project with no manifest cannot be
+    judged either way, and reporting that as "no drift" would be the same green
+    tick for "found nothing" that `GateNotExercised` exists to refuse.
+    """
+
+    project: str
+    exercised: bool
+    reason: str = ""
+    models: list[str] = field(default_factory=list)
+    metrics: list[str] = field(default_factory=list)
+    exposures: list[str] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return len(self.models) + len(self.metrics) + len(self.exposures)
+
+    def render(self) -> str:
+        if not self.exercised:
+            return f"?  {self.project} — not exercised: {self.reason}"
+        if not self.total:
+            return f"✓  {self.project} — graph is current"
+        parts = [f"⛔ {self.project} — {self.total} resource(s) missing from the graph"]
+        for label, names in (("models", self.models), ("metrics", self.metrics),
+                             ("exposures", self.exposures)):
+            if names:
+                head = ", ".join(sorted(names)[:8])
+                rest = f", +{len(names) - 8} more" if len(names) > 8 else ""
+                parts.append(f"     {label}: {head}{rest}")
+        parts.append("     run `pf kg build` and commit kg/graph.json")
+        return "\n".join(parts)
+
+
+def graph_drift(project_dir: str | Path, project: str = "") -> GraphDrift:
+    """Is the committed graph current with the dbt project beside it?
+
+    This is the question a merge gate needs and `pf kg build` cannot answer:
+    the graph is a build artefact with no clock, so one built before a model
+    landed answers confidently and wrongly. Nothing else in the repo notices —
+    the graph simply has fewer nodes than the project has models.
+    """
+    root = Path(project_dir)
+    name = project or root.name
+
+    manifest_path = root / "transform" / "target" / "manifest.json"
+    if not manifest_path.exists():
+        return GraphDrift(name, exercised=False,
+                          reason="no dbt manifest; run `pf kg build` (which parses first)")
+
+    graph_json = root / "kg" / "graph.json"
+    if not graph_json.exists():
+        return GraphDrift(name, exercised=False,
+                          reason="no kg/graph.json; the graph has never been built")
+
+    payload = json.loads(graph_json.read_text())
+    have = {(n.get("kind"), n.get("name")) for n in payload.get("nodes") or []}
+
+    manifest = json.loads(manifest_path.read_text())
+    drift = GraphDrift(name, exercised=True)
+
+    for node in (manifest.get("nodes") or {}).values():
+        if node.get("resource_type") == "model" and ("Model", node["name"]) not in have:
+            drift.models.append(node["name"])
+    for exp in (manifest.get("exposures") or {}).values():
+        if ("Exposure", exp["name"]) not in have:
+            drift.exposures.append(exp["name"])
+
+    sm_path = root / "transform" / "target" / "semantic_manifest.json"
+    if sm_path.exists():
+        sm = json.loads(sm_path.read_text())
+        for metric in sm.get("metrics") or []:
+            if ("Metric", metric["name"]) not in have:
+                drift.metrics.append(metric["name"])
+    return drift
 
 
 def _export_json(graph_path: Path, out_path: Path) -> None:

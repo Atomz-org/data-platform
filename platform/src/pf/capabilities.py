@@ -407,6 +407,35 @@ policies: []
 """
 
 
+KG_CURRENT_JOB = """\
+  # The graph has no clock. One built before a model landed answers every query
+  # confidently and wrongly, and nothing else notices — it simply holds fewer
+  # nodes than the project has models. Every other job here trusts that graph:
+  # the impact gate computes a blast radius from it, and an agent reads its
+  # context card. A stale graph makes both of those quietly wrong rather than
+  # loudly broken, which is why this is a gate and not a reminder.
+  kg-current:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      # `pf kg check` parses the dbt project first — `target/` is gitignored, so
+      # a runner has no manifest to compare the committed graph against, and
+      # without one the check reports "not exercised" and passes.
+      #
+      # It compares only what a runner without a warehouse can see: models,
+      # metrics and exposures come from the dbt manifests, which this checkout
+      # has. Columns are backfilled from information_schema, which it does not —
+      # comparing those too would be red on every pull request forever.
+      - name: Is the committed graph current?
+        run: uv run pf kg check {{group}} {{project}} --strict
+"""
+
+
 CAPABILITIES: dict[str, Capability] = {
     "governance": Capability(
         name="governance",
@@ -453,9 +482,10 @@ CAPABILITIES: dict[str, Capability] = {
     ),
     "github": Capability(
         name="github",
-        description="Run the impact gate on every pull request touching this project.",
+        description="Run the impact gate and the graph currency check on every "
+                    "pull request touching this project.",
         files={"docs/github.md": GITHUB_README},
-        ci_jobs={"impact-gate": IMPACT_JOB},
+        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB},
         settings={
             "permissions": {"allow": ["Bash(gh pr view:*)", "Bash(gh pr diff:*)"]},
         },
