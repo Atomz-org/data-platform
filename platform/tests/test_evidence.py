@@ -220,3 +220,119 @@ def test_build_removes_pages_for_metrics_it_no_longer_renders(specs, tmp_path: P
     assert r["skipped"] == ["price_mom"] and r["removed"] == ["price_mom"]
     assert not (out / "pages" / "metrics" / "price_mom.md").exists()
     assert (out / "pages" / "metrics" / "uniq_per_row.md").exists()
+
+
+# ------------------------------------------------------------- exposures ----
+
+def test_every_page_that_reads_something_becomes_a_dbt_exposure(specs, tmp_path: Path) -> None:
+    """The loop was open here: pages consumed marts and lineage could not see it.
+
+    `pf impact` on a column reported nothing downstream while a dashboard was
+    reading it, so the owner of a broken page was never told.
+    """
+    import yaml
+    (tmp_path / "transform" / "models").mkdir(parents=True, exist_ok=True)
+    build(tmp_path, "g", "p")
+    doc = yaml.safe_load(
+        (tmp_path / "transform" / "models" / "_reporting__exposures.yml").read_text())
+    by_name = {e["name"]: e for e in doc["exposures"]}
+    assert "report_metrics_ok_total_per_row" in by_name
+    exp = by_name["report_metrics_ok_total_per_row"]
+    assert exp["depends_on"] == ["ref('fct_prices')"]
+    assert exp["type"] == "dashboard" and exp["owner"]["email"]
+
+
+def test_a_curated_page_reading_a_source_extract_is_an_exposure_too(specs, tmp_path: Path) -> None:
+    """A page can reach the warehouse without a metric — `from <source>.<table>`.
+    That is still a dependency, and it is the shape every hand-written board has."""
+    import yaml
+    (tmp_path / "transform" / "models").mkdir(parents=True, exist_ok=True)
+    build(tmp_path, "g", "p")
+    page = tmp_path / "reporting" / "pages" / "board.md"
+    page.write_text("---\ntitle: Board\n---\n\n```sql b\nselect * from p.rpt_board\n```\n")
+    build(tmp_path, "g", "p")
+    doc = yaml.safe_load(
+        (tmp_path / "transform" / "models" / "_reporting__exposures.yml").read_text())
+    exp = next(e for e in doc["exposures"] if e["name"] == "report_board")
+    assert exp["depends_on"] == ["ref('rpt_board')"]
+    assert exp["url"] == "reporting/pages/board.md"
+
+
+def test_a_page_that_reads_nothing_gets_no_exposure(specs, tmp_path: Path) -> None:
+    import yaml
+    (tmp_path / "transform" / "models").mkdir(parents=True, exist_ok=True)
+    build(tmp_path, "g", "p")
+    (tmp_path / "reporting" / "pages" / "about.md").write_text(
+        "---\ntitle: About\n---\n\nJust prose, no query.\n")
+    build(tmp_path, "g", "p")
+    doc = yaml.safe_load(
+        (tmp_path / "transform" / "models" / "_reporting__exposures.yml").read_text())
+    assert "report_about" not in {e["name"] for e in doc["exposures"]}
+
+
+def test_the_generated_theme_uses_the_keys_evidence_actually_reads(tmp_path: Path) -> None:
+    """An earlier shape nested the palette under `theme.colors.categorical` —
+    valid YAML that Evidence ignores, so every chart rendered in the stock
+    palette while the config claimed a validated one."""
+    import yaml
+    from pf.projections.evidence import PALETTE_LIGHT, _config
+    theme = yaml.safe_load(_config("p", tmp_path / "p.duckdb"))["theme"]
+    assert theme["colorPalettes"]["default"]["light"] == PALETTE_LIGHT
+    assert theme["colorScales"]["default"]["dark"]
+    # Status colours are Evidence's reserved names, not ours.
+    assert set(theme["colors"]) >= {"positive", "negative", "warning", "info"}
+
+
+def test_the_group_manifest_owner_shape_is_accepted(tmp_path: Path) -> None:
+    """`group.yaml` spells this team/contact; dbt spells it name/email. Falling
+    back to a placeholder address is how an exposure ends up telling nobody."""
+    from pf.projections.evidence import _owner
+    root = tmp_path / "groups" / "g" / "projects" / "p"
+    root.mkdir(parents=True)
+    (tmp_path / "groups" / "g" / "group.yaml").write_text(
+        "owner:\n  team: commodity-research\n  contact: research@example.com\n")
+    assert _owner(root) == {"name": "commodity-research",
+                            "email": "research@example.com"}
+
+
+def test_a_metric_query_addresses_the_evidence_source_not_the_warehouse_schema(
+        specs, tmp_path: Path) -> None:
+    """The two namespaces look interchangeable and are not.
+
+    A source extract runs against the warehouse connection, so it selects
+    `main_marts.<model>`. A file in `queries/` runs against the extracted
+    parquet, where the only namespace is the source's. Writing the warehouse
+    schema into a metric query compiled, scored 100 on the mechanical audit, and
+    executed correctly against DuckDB by hand — then failed *every* query at
+    `evidence build` with "Table with name fct_prices does not exist". Nothing
+    short of a real build caught it, so this test pins the spelling.
+    """
+    mdl = tmp_path / "mdl"
+    mdl.mkdir()
+    (mdl / "mdl.json").write_text(json.dumps({"models": [{
+        "name": "fct_prices",
+        "tableReference": {"schema": "main_marts", "table": "fct_prices"},
+        "columns": [{"name": "price"}],
+    }]}))
+    build(tmp_path, "g", "my-project")
+    query = (tmp_path / "reporting" / "queries" / "metrics"
+             / "ok_total_per_row.sql").read_text()
+    assert "from my_project.fct_prices" in query
+    assert "main_marts" not in query
+
+    extract = (tmp_path / "reporting" / "sources" / "my_project"
+               / "fct_prices.sql").read_text()
+    assert "from main_marts.fct_prices" in extract
+
+
+def test_the_build_dependencies_cover_what_evidences_template_needs(tmp_path: Path) -> None:
+    """npm >= 11 stopped hoisting four modules Evidence's own template requires.
+    Without them `evidence build` dies before rendering a single page."""
+    from pf.projections.evidence import build as _build
+    (tmp_path / "transform" / "target").mkdir(parents=True)
+    (tmp_path / "transform" / "target" / "semantic_manifest.json").write_text("{}")
+    _build(tmp_path, "g", "p")
+    deps = json.loads((tmp_path / "reporting" / "package.json").read_text())["dependencies"]
+    assert {"git-remote-origin-url", "autoprefixer", "postcss"} <= set(deps)
+    # v4 removed `tailwindcss/nesting`, which the template's postcss config imports.
+    assert deps["tailwindcss"].startswith("^3")

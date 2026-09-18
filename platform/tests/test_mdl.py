@@ -183,3 +183,135 @@ def test_a_declared_column_without_a_type_takes_the_warehouse_type(tmp_path: Pat
     assert {n.name: n.props["data_type"] for n in nodes if n.kind == "Column"} == {
         "is_ok": "BOOLEAN", "n": "INTEGER"}
     assert len(nodes) == 3  # the declared node was typed in place, not duplicated
+
+
+# ------------------------------------------------------- cubes and views ----
+
+def _metric(name: str, kind: str, **props) -> Node:
+    return Node(id=f"metric:{name}", kind="Metric", name=name, layer="semantic",
+                label=name, props={"type": kind, **props})
+
+
+def _dims(names: list[tuple[str, str]]) -> list[Node]:
+    return [Node(id=f"dim:{i}", kind="Dimension", name=n, layer="semantic",
+                 label="", props={"type": t}) for i, (n, t) in enumerate(names)]
+
+
+def _exposure(name: str, models: list[str]) -> tuple[list, list]:
+    node = Node(id=f"exposure:{name}", kind="Exposure", name=name, layer="consumption",
+                props={"type": "dashboard", "owner": "Research"})
+    return [node], [Edge(src=f"model:{m}", dst=node.id, kind="feeds") for m in models]
+
+
+def test_a_conformed_dimension_appears_once_in_the_cube(tmp_path: Path) -> None:
+    """A dimension is declared per semantic model, so `commodity_id` arrives from
+    every fact that has it. A cube is a flat namespace: duplicates make the
+    manifest invalid and every planner reading it picks an arbitrary winner."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(pdir, [
+        _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
+        _mart("fct_commodity_prices_daily",
+              {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+        ([Node(id="metric:avg_price", kind="Metric", name="avg_price",
+               layer="semantic", label="Avg Price", props={"type": "ratio"}),
+          *_dims([("commodity_id", "categorical"), ("commodity_id", "categorical"),
+                  ("price_basis", "categorical"),
+                  ("price_date", "time"), ("price_date", "time")])], []),
+    ])
+    cube = build_manifest(pdir, "commodity", "commodity-x")["cubes"][0]
+    assert [d["name"] for d in cube["dimensions"]] == ["commodity_id", "price_basis"]
+    assert [d["name"] for d in cube["timeDimensions"]] == ["price_date"]
+
+
+def test_a_view_is_generated_for_every_mart_an_exposure_names(tmp_path: Path) -> None:
+    """An exposure is the only place anyone states *this is a surface people
+    read*, so views derive from it rather than from an `rpt_` name prefix."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(pdir, [
+        _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
+        _mart("fct_commodity_prices_daily",
+              {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+        _mart("fct_unread", {"x_id": KEY, "commodity_id": FK}),
+        _exposure("price_board", ["fct_commodity_prices_daily"]),
+        ([_relation("price_observation_of_commodity")], []),
+    ])
+    views = build_manifest(pdir, "commodity", "commodity-x")["views"]
+    assert [v["name"] for v in views] == ["fct_commodity_prices_daily_view"]
+    # The view denormalises along the relationship already derived, and renames
+    # the joined key so the surface has no duplicate column. Models are named
+    # BARE: a `catalog.schema.model` reference inside a view statement is passed
+    # to the warehouse verbatim instead of being resolved to a tableReference,
+    # and every query against the view dies on a catalog that does not exist.
+    stmt = views[0]["statement"]
+    join = ("from fct_commodity_prices_daily\n  left join dim_commodities on "
+            "fct_commodity_prices_daily.commodity_id = dim_commodities.commodity_id")
+    assert join in stmt
+    assert "commodity.commodity_x." not in stmt
+    assert "dim_commodities.commodity_id as commodities_commodity_id" in stmt
+
+
+def test_a_mart_read_by_several_exposures_is_one_view(tmp_path: Path) -> None:
+    """A hand-written board and the generated page for every metric on the same
+    mart are one surface with several readers, not several surfaces. Keyed by
+    exposure this collided on the view name."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(pdir, [
+        _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
+        _mart("fct_commodity_prices_daily",
+              {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+        _exposure("price_board", ["fct_commodity_prices_daily"]),
+        _exposure("report_avg_price", ["fct_commodity_prices_daily"]),
+    ])
+    views = build_manifest(pdir, "commodity", "commodity-x")["views"]
+    assert len(views) == 1
+    assert views[0]["properties"]["pf.exposures"] == "price_board, report_avg_price"
+
+
+def test_a_hidden_column_stays_hidden_in_a_view(tmp_path: Path) -> None:
+    """A view is a wider surface than a model. Honouring isHidden here is the
+    only thing between a PII column and an NL query that selects it back out."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(pdir, [
+        _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
+        _mart("fct_commodity_prices_daily",
+              {"price_id": KEY, "commodity_id": FK,
+               "trader_email": {"role": "email", "pii": True}},
+              concept="PriceObservation"),
+        _exposure("price_board", ["fct_commodity_prices_daily"]),
+    ])
+    manifest = build_manifest(pdir, "commodity", "commodity-x")
+    fact = next(m for m in manifest["models"] if m["name"] == "fct_commodity_prices_daily")
+    assert next(c for c in fact["columns"] if c["name"] == "trader_email")["isHidden"]
+    assert "trader_email" not in manifest["views"][0]["statement"]
+
+
+def test_a_cube_measure_is_real_sql_or_it_is_not_emitted(tmp_path: Path) -> None:
+    """The placeholder was the metric name behind `--`, which parses as a comment.
+
+    The whole cube then failed to analyse, and every query against its *base
+    object* — the busiest mart in the project — died with "Expected: an
+    expression, found: EOF". A missing measure costs one metric; an unparseable
+    one costs the mart.
+    """
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(pdir, [
+        _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
+        _mart("fct_commodity_prices_daily",
+              {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+        ([_metric("price_total", "simple", agg="sum", expr="close_price"),
+          _metric("priced_days", "simple", agg="count", expr="close_price"),
+          _metric("avg_price", "ratio", numerator="price_total",
+                  denominator="priced_days"),
+          # Window semantics a cube measure cannot express.
+          _metric("price_mom", "derived"),
+          *_dims([("commodity_id", "categorical")])], []),
+    ])
+    cube = build_manifest(pdir, "commodity", "commodity-x")["cubes"][0]
+    got = {m["name"]: m["expression"] for m in cube["measures"]}
+    assert got == {
+        "price_total": "sum(close_price)",
+        "priced_days": "count(close_price)",
+        # A ratio re-divides; it never averages an average.
+        "avg_price": "sum(close_price) / nullif(count(close_price), 0)",
+    }
+    assert not any(m["expression"].lstrip().startswith("--") for m in cube["measures"])

@@ -24,7 +24,11 @@
     "@evidence-dev/snowflake": "^1.2.4",
     "@evidence-dev/source-javascript": "^0.0.3",
     "@evidence-dev/sqlite": "^2.0.9",
-    "@evidence-dev/trino": "^1.0.11"
+    "@evidence-dev/trino": "^1.0.11",
+    "autoprefixer": "^10.4.20",
+    "git-remote-origin-url": "^4.0.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "3.1.2"

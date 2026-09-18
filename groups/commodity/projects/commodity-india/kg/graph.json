@@ -3616,7 +3616,9 @@
       "label": "Avg Benchmark Price (USD)",
       "props": {
         "type": "ratio",
-        "description": "Mean daily settlement price, USD per quote unit. Group by commodity."
+        "description": "Mean daily settlement price, USD per quote unit. Group by commodity.",
+        "numerator": "benchmark_price_usd_total",
+        "denominator": "benchmark_price_days"
       }
     },
     {
@@ -3627,7 +3629,9 @@
       "label": "Avg Customs Duty (INR)",
       "props": {
         "type": "ratio",
-        "description": "Mean customs duty per Indian market unit. Group by commodity."
+        "description": "Mean customs duty per Indian market unit. Group by commodity.",
+        "numerator": "duty_inr_total",
+        "denominator": "landed_price_days"
       }
     },
     {
@@ -3638,7 +3642,9 @@
       "label": "Avg India Landed Price (INR)",
       "props": {
         "type": "ratio",
-        "description": "Mean India import landed price, \u20b9 per Indian market unit (benchmark \u00d7 USD/INR \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate."
+        "description": "Mean India import landed price, \u20b9 per Indian market unit (benchmark \u00d7 USD/INR \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.",
+        "numerator": "landed_price_inr_total",
+        "denominator": "landed_price_days"
       }
     },
     {
@@ -3649,7 +3655,9 @@
       "label": "Avg USD/INR",
       "props": {
         "type": "ratio",
-        "description": "Mean rupees per US dollar, the rate every landed price uses."
+        "description": "Mean rupees per US dollar, the rate every landed price uses.",
+        "numerator": "usd_inr_rate_total",
+        "denominator": "usd_inr_rate_days"
       }
     },
     {
@@ -3660,7 +3668,12 @@
       "label": "Priced Days",
       "props": {
         "type": "simple",
-        "description": "Days with a benchmark price. Group by commodity to spot feed gaps."
+        "description": "Days with a benchmark price. Group by commodity to spot feed gaps.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "close_price",
+        "agg_params": {}
       }
     },
     {
@@ -3671,7 +3684,9 @@
       "label": "Benchmark Price MoM Change",
       "props": {
         "type": "derived",
-        "description": "Month-over-month change in the mean benchmark price. Group by commodity."
+        "description": "Month-over-month change in the mean benchmark price. Group by commodity.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -3682,7 +3697,12 @@
       "label": "Benchmark Price Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own."
+        "description": "Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "close_price",
+        "agg_params": {}
       }
     },
     {
@@ -3693,7 +3713,12 @@
       "label": "Contracts Traded",
       "props": {
         "type": "simple",
-        "description": "Front-month futures volume from live feeds. Group by commodity."
+        "description": "Front-month futures volume from live feeds. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "volume",
+        "agg_params": {}
       }
     },
     {
@@ -3704,7 +3729,12 @@
       "label": "Customs Duty Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own."
+        "description": "Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "duty_inr",
+        "agg_params": {}
       }
     },
     {
@@ -3715,7 +3745,12 @@
       "label": "Days With a Landed Price",
       "props": {
         "type": "simple",
-        "description": "Days a landed price exists \u2014 never for commodities India prohibits importing."
+        "description": "Days a landed price exists \u2014 never for commodities India prohibits importing.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "landed_price_inr",
+        "agg_params": {}
       }
     },
     {
@@ -3726,7 +3761,12 @@
       "label": "Landed Price Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_landed_price_inr. A sum of prices means nothing on its own."
+        "description": "Building block for avg_landed_price_inr. A sum of prices means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "landed_price_inr",
+        "agg_params": {}
       }
     },
     {
@@ -3737,7 +3777,9 @@
       "label": "Landed Price MoM Change",
       "props": {
         "type": "derived",
-        "description": "Month-over-month change in the mean landed price; moves with both the benchmark and the rupee."
+        "description": "Month-over-month change in the mean landed price; moves with both the benchmark and the rupee.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -3748,7 +3790,12 @@
       "label": "Period High (USD)",
       "props": {
         "type": "simple",
-        "description": "Highest traded price in the period, USD per quote unit. Group by commodity."
+        "description": "Highest traded price in the period, USD per quote unit. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "max",
+        "expr": "coalesce(high_price, close_price)",
+        "agg_params": {}
       }
     },
     {
@@ -3759,7 +3806,12 @@
       "label": "Period Low (USD)",
       "props": {
         "type": "simple",
-        "description": "Lowest traded price in the period, USD per quote unit. Group by commodity."
+        "description": "Lowest traded price in the period, USD per quote unit. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "min",
+        "expr": "coalesce(low_price, close_price)",
+        "agg_params": {}
       }
     },
     {
@@ -3770,7 +3822,12 @@
       "label": "USD/INR Days",
       "props": {
         "type": "simple",
-        "description": "Calendar days with a USD/INR rate, including carried-forward days."
+        "description": "Calendar days with a USD/INR rate, including carried-forward days.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "usd_rate",
+        "agg_params": {}
       }
     },
     {
@@ -3781,7 +3838,12 @@
       "label": "USD/INR Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_usd_inr_rate."
+        "description": "Building block for avg_usd_inr_rate.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "usd_rate",
+        "agg_params": {}
       }
     },
     {
