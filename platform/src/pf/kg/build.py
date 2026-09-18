@@ -4,7 +4,8 @@ Inputs (each optional — the builder degrades gracefully):
   contracts/annotations.yaml        ontology annotations exported by dlt sources
   transform/target/manifest.json    dbt models, columns, tests, exposures, lineage
   transform/target/semantic_manifest.json   MetricFlow metrics and dimensions
-  the platform ontology             concept nodes and the topology
+  governance/policy.yaml            this project's own policy overlay
+  the project ontology              concept nodes, the topology, the policy chain
 """
 
 from __future__ import annotations
@@ -14,7 +15,7 @@ from pathlib import Path
 
 from pf.kg.store import Edge, Node, open_graph
 from pf.ontology.annotate import load_annotations
-from pf.ontology.model import load_group_ontology, load_ontology
+from pf.ontology.model import load_group_ontology, load_ontology, load_project_ontology
 
 
 def cid(name: str) -> str: return f"concept:{name}"
@@ -102,11 +103,26 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
     nodes: list[Node] = []
     edges: list[Edge] = []
 
-    # The group ontology, not the platform one: a term a steward approved into
-    # groups/<g>/ontology/extension.yaml is not usable by dbt, Wren, BI or an
-    # agent until it is in the graph, and building from the platform ontology
+    # The *project* ontology, not the platform one: a term a steward approved
+    # into groups/<g>/ontology/extension.yaml is not usable by dbt, Wren, BI or
+    # an agent until it is in the graph, and building from the platform ontology
     # silently drops every approved extension.
-    onto = load_group_ontology(_repo_root(root), group) if group else load_ontology()
+    #
+    # Resolving only as far as the group made the same mistake one layer in. The
+    # governance plane is what an agent walks to ask "what constrains this, and
+    # what proves it ran" — built at group scope it answers with the family's
+    # floor, so a project that raised a severity or declared an obligation of its
+    # own (acme-eu's GDPR erasure path) is governed by rules its own graph does
+    # not contain. The overlay may only tighten, so the project scope is always
+    # the stricter and truer answer.
+    repo = _repo_root(root)
+    name = project or root.name
+    if group and name:
+        onto = load_project_ontology(repo, group, name)
+    elif group:
+        onto = load_group_ontology(repo, group)
+    else:
+        onto = load_ontology()
 
     _add_ontology(nodes, edges, onto)
     _add_annotations(root, nodes, edges, onto)
@@ -200,7 +216,11 @@ def _add_policy(onto, nodes: list[Node], edges: list[Edge]) -> None:
             props={"constraint": p.constraint, "severity": p.severity,
                    "applies_to": p.applies_to, "params": p.params,
                    "enforced_by": p.enforced_by, "enforced": p.enforced,
-                   "intent": p.intent},
+                   "intent": p.intent,
+                   # Which layer set this severity. Without it the graph shows a
+                   # policy raised to error but not who raised it, which is the
+                   # one question `Policy.scope` exists to answer.
+                   "scope": p.scope},
         ))
         for e in p.evidence:
             edges.append(Edge(src=polid(p.id), dst=evid(e), kind="evidenced_by"))
