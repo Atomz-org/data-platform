@@ -277,27 +277,54 @@ derivable rather than guessed. `pf check` fails on an undeclared join.
 - Run `impact_analysis` before changing a column, a model or a metric.
 """
 
-PROJECT_SETTINGS = """\
+#: The platform toolkits every project gets, in the order they read.
+#:
+#: One list because it feeds two places that must not disagree: the settings a
+#: new project is scaffolded with, and `pf.scaffold.claude_settings.ensure_plugins`,
+#: which brings an existing project up to the current set. When those were the
+#: same JSON typed twice, adding a toolkit reached the projects created after it
+#: and no others — the same failure `Capability.default_enabled` exists to stop.
+#:
+#: A project's own group plugin is appended per project and is not listed here.
+DEFAULT_TOOLKITS: tuple[str, ...] = (
+    "platform-init",
+    "dlt-ingest",
+    "dlt-quality",
+    "dlt-explore",
+    "duckdb-ops",
+    "dbt-modeling",
+    "dbt-semantic",
+    "dbt-testing",
+    "dbt-expectations",
+    "dbt-elementary",
+    "dbt-govern",
+    "dagster-orchestrate",
+    "python-standards",
+    "power-tools",
+)
+
+
+def default_plugins(group: str) -> dict[str, bool]:
+    """The full `enabledPlugins` record for a project in `group`."""
+    plugins = {f"{name}@platform": True for name in DEFAULT_TOOLKITS}
+    plugins[f"{group}-group@{group}"] = True
+    return plugins
+
+
+_PLUGIN_LINES = "\n".join(
+    f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
+
+PROJECT_SETTINGS = ("""\
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "{{group}}": { "source": { "source": "../.." } }
+    "platform": { "source": { "source": "directory", "path": "../../../../platform" } },
+    "{{group}}": { "source": { "source": "directory", "path": "../.." } }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "dlt-ingest@platform",
-    "dlt-quality@platform",
-    "dlt-explore@platform",
-    "duckdb-ops@platform",
-    "dbt-modeling@platform",
-    "dbt-semantic@platform",
-    "dbt-testing@platform",
-    "dbt-govern@platform",
-    "dagster-orchestrate@platform",
-    "python-standards@platform",
-    "power-tools@platform",
-    "{{group}}-group@{{group}}"
-  ],
+  "enabledPlugins": {
+"""
+    + _PLUGIN_LINES + """
+    "{{group}}-group@{{group}}": true
+  },
   "permissions": {
     "deny": [{{deny_siblings}}, "Read(../../../*/projects/**)",
       "Read(./.env)", "Read(./.env.*)",
@@ -324,7 +351,7 @@ PROJECT_SETTINGS = """\
     ]
   }
 }
-"""
+""")
 
 PROJECT_PYPROJECT = """\
 [project]
@@ -441,6 +468,38 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
 }
 
 
+def _yaml_flow(value: object) -> str:
+    """A nested list or mapping, in YAML flow style.
+
+    `render_target` writes one `key: value` line per entry, which covers every
+    warehouse whose target is flat scalars — which was all of them until DuckLake.
+    DuckLake's catalog is reached through dbt-duckdb's `attach:`, a *list of
+    mappings*, and a Python list interpolated into an f-string arrives as its
+    `repr`. That the repr of a simple list happens to parse as YAML is luck, not
+    a contract: one value containing a quote and the file silently becomes a
+    different document. So nesting is rendered deliberately here instead.
+
+    Flow style rather than block style because the caller has already committed
+    to a single line per key, and re-indenting a block from inside a loop that
+    does not know its own depth is how the emitted YAML stops matching the
+    indentation `replace_target` uses to find a block's end.
+    """
+    if isinstance(value, dict):
+        return "{" + ", ".join(f"{k}: {_yaml_flow(v)}" for k, v in value.items()) + "}"
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(_yaml_flow(v) for v in value) + "]"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        # Quote every string inside a flow collection. Two things in these
+        # values need it and both are easy to miss: `{{` opens a flow mapping,
+        # and `ducklake:catalog.ddb` has a colon in it, which is a key/value
+        # separator to a YAML parser. Quoting unconditionally is one rule
+        # instead of two exceptions.
+        return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
+    return str(value)
+
+
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
     """One dbt output block. The unit `pf align` checks and bootstrap appends."""
     lines = [f"{indent}{name}:"]
@@ -452,6 +511,8 @@ def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> s
             # nobody can copy an idiom from is a generated file people edit by
             # hand, and `secure: True` beside `threads: 8` reads as a mistake.
             rendered: object = "true" if value else "false"
+        elif isinstance(value, (list, dict)):
+            rendered = _yaml_flow(value)
         elif isinstance(value, str) and "{{" in value:
             rendered = f'"{value}"'
         else:

@@ -56,6 +56,13 @@ jobs:
       - name: Test index is current
         run: uv run pf test check
 
+      # Fails when the repository's shape changed and `docs/ARCHITECTURE.md`
+      # still describes the old one. A stale map is worse than none: it sends a
+      # reader confidently to a path that moved, which is the cost the map
+      # exists to remove.
+      - name: Architecture map is current
+        run: uv run pf arch check
+
       # The suite carries its own structural guards — that every test file is
       # committed, that none computes the repo root by counting parents, and
       # that the pre-commit gate still sees renames. See
