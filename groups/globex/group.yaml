@@ -1,0 +1,17 @@
+schema_version: 1
+group: globex
+display_name: ''
+domain: ecommerce
+lifecycle: provisioned
+template_version: 3
+tier: standard
+owner:
+  team: ''
+  contact: ''
+data:
+  residency: ''
+  retention_days: null
+  erasure_sla_days: null
+budget:
+  daily_tokens: null
+resources: {}

@@ -14,7 +14,8 @@ static analysis is stricter about ambiguous refs and untyped columns.
 
 **Retarget the warehouse** (duckdb → MotherDuck → Snowflake/BigQuery). Only
 `platform/runtime/warehouse.py` and the profile template change; models should be
-portable if they avoid DuckDB-specific functions. Set `PF_MOTHERDUCK_DB` to switch
+portable if they avoid DuckDB-specific functions. Set `PF_MOTHERDUCK_DB` (an account prefix — the database resolves to
+`<prefix>_<project>`, one per tenant) to switch
 a project without touching code.
 
 All three are plan-then-apply operations. Never run them from a chat turn.

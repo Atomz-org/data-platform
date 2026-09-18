@@ -12,9 +12,9 @@ queries:
   - metrics/period_high_price_usd.sql
   - metrics/period_low_price_usd.sql
   - metrics/contracts_traded.sql
+  - metrics/avg_landed_price_inr.sql
   - metrics/avg_duty_inr.sql
   - metrics/avg_usd_inr_rate.sql
-  - metrics/avg_landed_price_inr.sql
 ---
 
 Every number on this page is a governed metric compiled from the dbt

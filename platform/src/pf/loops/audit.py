@@ -79,6 +79,25 @@ def project_readiness(root: Path) -> list[ProjectReadiness]:
     return out
 
 
+def _broken_sources(market_root: Path, entries: list) -> list[str]:
+    """The plugins in one marketplace that would not load, by name.
+
+    Sources are relative to the marketplace root (the directory holding
+    `.claude-plugin/`), must not escape it, and must land on a directory
+    containing a plugin manifest. Shared by the platform and group checks so
+    the two cannot drift into judging the same file by different rules.
+    """
+    broken = []
+    for e in entries:
+        src = str(e.get("source", ""))
+        if src.startswith("..") or "/../" in src:
+            broken.append(f"{e.get('name')} (escapes marketplace root)")
+            continue
+        if not (market_root / src / ".claude-plugin" / "plugin.json").exists():
+            broken.append(f"{e.get('name')} (no plugin.json at {src})")
+    return broken
+
+
 def _marketplace_resolves(root: Path) -> tuple[bool, str]:
     """Does every plugin the marketplace advertises actually exist on disk?
 
@@ -97,18 +116,44 @@ def _marketplace_resolves(root: Path) -> tuple[bool, str]:
     if not entries:
         return False, "marketplace lists no plugins"
 
-    market_root = manifest.parent.parent
-    broken = []
-    for e in entries:
-        src = str(e.get("source", ""))
-        if src.startswith("..") or "/../" in src:
-            broken.append(f"{e.get('name')} (escapes marketplace root)")
-            continue
-        if not (market_root / src / ".claude-plugin" / "plugin.json").exists():
-            broken.append(f"{e.get('name')} (no plugin.json at {src})")
+    broken = _broken_sources(manifest.parent.parent, entries)
     if broken:
         return False, f"{len(broken)}/{len(entries)} unresolvable: {', '.join(broken[:3])}"
     return True, f"{len(entries)} plugin(s) resolve"
+
+
+def _group_plugins_resolve(root: Path, only: str = "") -> tuple[bool, str]:
+    """Does every group's own plugin load, by the marketplace's rule?
+
+    The scaffold wrote each group a marketplace naming `./.claude` and a skills
+    directory under it, but never the `plugin.json` that makes a directory a
+    plugin, so every group plugin was listed, enabled in each sister's settings
+    and silently never loaded. Existence checks only: the audit runs from a
+    platform session and must not read one entity's content. A group with no
+    marketplace has nothing to resolve and is skipped.
+    """
+    gdir = root / "groups"
+    if not gdir.exists():
+        return True, "no groups"
+    checked, broken = 0, []
+    for g in sorted(x for x in gdir.iterdir() if x.is_dir() and not x.name.startswith(".")):
+        if only and g.name != only:
+            continue
+        manifest = g / ".claude-plugin" / "marketplace.json"
+        if not manifest.exists():
+            continue
+        checked += 1
+        try:
+            entries = (json.loads(manifest.read_text()) or {}).get("plugins") or []
+        except json.JSONDecodeError:
+            broken.append(f"{g.name} (marketplace.json does not parse)")
+            continue
+        broken += [f"{g.name}: {b}" for b in _broken_sources(g, entries)]
+    if not checked:
+        return True, "no group marketplaces"
+    if broken:
+        return False, f"{len(broken)} unresolvable: {', '.join(broken[:3])}"
+    return True, f"{checked} group plugin(s) resolve"
 
 
 def _mcp_wired(root: Path, projects: list[ProjectReadiness]) -> tuple[bool, str]:
@@ -127,8 +172,19 @@ def _mcp_wired(root: Path, projects: list[ProjectReadiness]) -> tuple[bool, str]
     return True, f"enabled in {len(projects)}/{len(projects)} project(s)"
 
 
-def audit(root: Path) -> tuple[int, list[Check]]:
-    from pf.loops.runner import Ledger
+def audit(root: Path, group: str = "") -> tuple[int, list[Check]]:
+    """The readiness score, for the fleet or for one family.
+
+    Scoped with `group` because the fleet-wide semantics below are "all
+    projects, not any project", and that is self-defeating once tenants are
+    independent: the newest group, onboarded this morning and not yet graphed,
+    drags the score under the L2 threshold and de-authorises automation for
+    every mature tenant beside it. Onboarding a tenant should not demote the
+    others, so each family gets a number it can move on its own. The
+    platform-level checks stay in a group's score on purpose: a family cannot
+    be governed by a gate the repo does not have.
+    """
+    from pf.loops.runner import Ledger, all_entries
 
     checks: list[Check] = []
 
@@ -154,6 +210,8 @@ def audit(root: Path) -> tuple[int, list[Check]]:
     # must drag the score down until it is governed, or scaffolding one is a
     # silent hole.
     projects = project_readiness(root)
+    if group:
+        projects = [p for p in projects if p.group == group]
     n = len(projects)
 
     settings = root / ".claude" / "settings.json"
@@ -172,6 +230,14 @@ def audit(root: Path) -> tuple[int, list[Check]]:
     ok_market, market_detail = _marketplace_resolves(root)
     add("plugin marketplace resolves", 10, ok_market, market_detail)
 
+    # A group's plugin fails the same way, and did: the scaffold wrote the
+    # marketplace but not the manifest, so the group skills were enabled in
+    # every sister's settings and loaded nowhere. Weighted below the platform
+    # marketplace because a group plugin carries domain skills, not the graph
+    # tools; the total is summed from this list, so nothing else rebalances.
+    ok_groups, groups_detail = _group_plugins_resolve(root, group)
+    add("group plugins resolve", 5, ok_groups, groups_detail)
+
     # `pf mcp` exposes kg_search, kg_neighbors, kg_path and impact_analysis. Every
     # project CLAUDE.md instructs the agent to call them before reading files or
     # changing a column. Without a plugin shipping `.mcp.json`, those tools do not
@@ -189,8 +255,7 @@ def audit(root: Path) -> tuple[int, list[Check]]:
     carded = [p for p in projects if p.card]
     add("context cards generated", 5, n > 0 and len(carded) == n, f"{len(carded)}/{n} card(s)")
 
-    ledger = Ledger(root)
-    entries = ledger.read()
+    entries = Ledger(root, group).read() if group else all_entries(root)
     add("ledger has runs", 5, bool(entries), f"{len(entries)} run(s)")
 
     # -- autonomy track record --------------------------------------------
@@ -205,9 +270,9 @@ def audit(root: Path) -> tuple[int, list[Check]]:
 
 
 def recommended_level(score: int, root: Path) -> str:
-    from pf.loops.runner import Ledger
+    from pf.loops.runner import all_entries
 
-    runs = len(Ledger(root).read())
+    runs = len(all_entries(root))
     if score >= 80 and runs >= 50:
         return "L3 defensible — but only for loops with their own track record"
     if score >= 80:

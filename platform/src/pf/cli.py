@@ -6,11 +6,13 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import typer
 import yaml
 from rich.console import Console
+from rich.markup import escape
 from rich.table import Table
 
 from pf import obs
@@ -32,7 +34,16 @@ from pf.capabilities import (
     resolve as resolve_capabilities,
 )
 from pf.kg.build import build_graph
-from pf.kg.card import GROUP_CARD_BUDGET, PROJECT_CARD_BUDGET, estimate_tokens, render_group_card, render_project_card
+from pf.kg.card import (
+    GROUP_CARD_BUDGET,
+    GROUP_CLAUDE_BUDGET,
+    PROJECT_CARD_BUDGET,
+    PROJECT_CLAUDE_BUDGET,
+    ROUTER_BUDGET,
+    estimate_tokens,
+    render_group_card,
+    render_project_card,
+)
 
 # Aliased: the `gate` command below is a *path* gate and would otherwise shadow
 # this import at module level, so `pf impact-gate` would call the wrong one.
@@ -45,10 +56,11 @@ from pf.kg.impact import (
     gate as impact_gate,
 )
 from pf.kg.query import kg_neighbors, kg_search
+from pf.loops import config as loop_config
 from pf.loops.audit import audit as loop_audit
 from pf.loops.audit import project_readiness, recommended_level
 from pf.loops.gate import GateResult, check_paths, nodes_for, project_for, tracked_denied
-from pf.loops.registry import BODIES, SPECS
+from pf.loops.registry import BODIES, SPECS, watch_list
 from pf.loops.runner import Ledger, run_loop, update_state
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
@@ -454,7 +466,9 @@ def cmd_align_status(
     if write_state:
         from pf.loops.runner import update_state
 
-        p = update_state(root(), state_entries(root(), group, project))
+        p = update_state(root(), state_entries(root(), group, project),
+                         watch=watch_list(), group=group, project=project,
+                         writer="onboarding")
         console.print(f"[dim]wrote {p.relative_to(root())}[/]")
 
     raise typer.Exit(0 if done == len(STAGES) else 1)
@@ -751,6 +765,25 @@ def check(group: str = "", project: str = "",
     targets = [(g, p, d) for g, p, d in all_projects()
                if (not group or g == group) and (not project or p == project)]
     if not targets:
+        # A named group with nothing in it used to exit 0 here, so a family that
+        # was scaffolded and then abandoned passed every gate in the repo by
+        # having nothing to fail. Whether that is an error depends on what the
+        # family claims to be: `proposed` is allowed to be empty, `active` is not.
+        from pf import groups as groups_mod
+
+        if group:
+            try:
+                manifest = groups_mod.load(root(), group)
+            except groups_mod.GroupError as exc:
+                console.print(f"[red]✗[/] {escape(group)}  {escape(str(exc))}")
+                raise typer.Exit(1) from None
+            if manifest.strict:
+                console.print(f"[red]✗[/] {group} is {manifest.lifecycle} and has no "
+                              "projects — nothing here can be conformant")
+                raise typer.Exit(1)
+            console.print(f"[yellow]no projects in {group}[/] "
+                          f"(lifecycle: {manifest.lifecycle})")
+            raise typer.Exit(0)
         console.print("[yellow]no projects found[/]")
         raise typer.Exit(0)
 
@@ -779,13 +812,27 @@ def check(group: str = "", project: str = "",
         console.print(f"    {i}")
 
     failed = bool(topo_errors) or bool(tracked)
+    from pf import groups as groups_mod
     from pf.runtime.dbt_runtime import validate_paths
 
+    strict_groups: dict[str, bool] = {}
     for g, p, d in targets:
         issues = validate_project(d) + validate_paths(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")
+        if g not in strict_groups:
+            try:
+                strict_groups[g] = groups_mod.load(root(), g).strict
+            except groups_mod.GroupError:
+                # Unmanaged: legacy, and not something to start failing over.
+                strict_groups[g] = False
         errors = [i for i in issues + inst if i.severity == "error"]
         warns = [i for i in issues + inst if i.severity == "warning"]
+        if strict_groups[g]:
+            # A family that declared itself live does not get to carry warnings
+            # forever. Before the lifecycle existed this severity had to be one
+            # value for every group, and picking the strict one is how five of
+            # nine projects came to be permanently yellow and ignored.
+            errors, warns = errors + warns, []
         mark = "[red]✗[/]" if errors else "[green]✓[/]"
         console.print(f"{mark} {g}/{p}  {len(errors)} error(s), {len(warns)} warning(s)")
         for i in errors + warns:
@@ -985,13 +1032,23 @@ def evals(group: str = typer.Argument("", help="omit to run the platform tier al
 
 
 @app.command()
-def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_tokens API")) -> None:
-    """Enforce the always-on token budget. Fails if a card is over."""
+def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_tokens API"),
+           group: str = typer.Option("", "--group", help="one family's artefacts")) -> None:
+    """Enforce the always-on token budget. Fails if a card is over.
+
+    The total at the bottom is the worst *single session*, not the sum of every
+    tenant's artefacts. A session loads one project, its group and the platform
+    rows; adding a fiftieth family does not make any existing session larger,
+    and a number that grows with the fleet would say it does.
+    """
     rows, over = [], False
+    per_session: dict[str, int] = {}
     for g, p, d in all_projects():
+        if group and g != group:
+            continue
         for artefact, path, budget in [
             ("context_card", d / "kg" / "context_card.md", PROJECT_CARD_BUDGET),
-            ("project_claude", d / "CLAUDE.md", 600),
+            ("project_claude", d / "CLAUDE.md", PROJECT_CLAUDE_BUDGET),
         ]:
             if not path.exists():
                 continue
@@ -1000,7 +1057,11 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
             obs.record_token_budget(group=g, project=p, artefact=artefact, tokens=n, budget=budget)
             over = over or n > budget
             rows.append((f"{g}/{p}", artefact, n, budget, "OK" if n <= budget else "OVER"))
+            per_session[f"{g}/{p}"] = per_session.get(f"{g}/{p}", 0) + n
+    group_totals: dict[str, int] = {}
     for g in (root() / "groups").iterdir() if (root() / "groups").exists() else []:
+        if group and g.name != group:
+            continue
         card = g / "kg" / "group_card.md"
         if card.exists():
             n = _count(card.read_text(), exact)
@@ -1009,12 +1070,35 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
             over = over or n > GROUP_CARD_BUDGET
             rows.append((g.name, "group_card", n, GROUP_CARD_BUDGET,
                          "OK" if n <= GROUP_CARD_BUDGET else "OVER"))
+            group_totals[g.name] = group_totals.get(g.name, 0) + n
+        claude = g / "CLAUDE.md"
+        if claude.exists():
+            n = _count(claude.read_text(), exact)
+            obs.record_token_budget(group=g.name, project="", artefact="group_claude",
+                                    tokens=n, budget=GROUP_CLAUDE_BUDGET)
+            over = over or n > GROUP_CLAUDE_BUDGET
+            rows.append((g.name, "group_claude", n, GROUP_CLAUDE_BUDGET,
+                         "OK" if n <= GROUP_CLAUDE_BUDGET else "OVER"))
+            group_totals[g.name] = group_totals.get(g.name, 0) + n
+
+    platform_total = 0
+    # The router is loaded by every session in the repo and was the only
+    # always-on artefact with no budget — which makes it the one file where a
+    # table of every group would grow the preamble for all of them.
+    router = root() / "CLAUDE.md"
+    if router.exists():
+        n = _count(router.read_text(), exact)
+        rows.append(("platform", "CLAUDE.md", n, ROUTER_BUDGET,
+                     "OK" if n <= ROUTER_BUDGET else "OVER"))
+        over = over or n > ROUTER_BUDGET
+        platform_total += n
 
     routing = root() / "platform" / "toolkits" / "ROUTING.md"
     if routing.exists():
         n = _count(routing.read_text(), exact)
         rows.append(("platform", "ROUTING.md", n, 400, "OK" if n <= 400 else "OVER"))
         over = over or n > 400
+        platform_total += n
 
     from pf.vendor.card import VENDOR_CARD_BUDGET
 
@@ -1029,8 +1113,13 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
     for r in rows:
         t.add_row(r[0], r[1], str(r[2]), str(r[3]), f"[green]{r[4]}[/]" if r[4] == "OK" else f"[red]{r[4]}[/]")
     console.print(t)
-    total = sum(r[2] for r in rows if r[1] in ("context_card", "project_claude", "group_card", "ROUTING.md"))
-    console.print(f"[dim]worst-case session preamble ≈ {total} tokens[/]")
+    if per_session:
+        worst, cost = max(((k, v + group_totals.get(k.split("/")[0], 0) + platform_total)
+                           for k, v in per_session.items()), key=lambda kv: kv[1])
+        console.print(f"[dim]worst single session ≈ {cost} tokens ({worst}); "
+                      f"a further group costs existing sessions nothing[/]")
+    else:
+        console.print(f"[dim]platform preamble ≈ {platform_total} tokens[/]")
     raise typer.Exit(1 if over else 0)
 
 
@@ -1140,32 +1229,15 @@ def ontology() -> None:
 def cmd_dagster_workspace() -> None:
     """Generate platform/workspace.yaml — one code location per project.
 
-    Paths are absolute: Dagster resolves a relative `working_directory` against
-    the process cwd, not against the workspace file, so a relative path silently
-    resolves outside the repo.
+    The same writer `pf bootstrap` uses, rather than a second copy of it: two
+    generators for one file is how the file came to disagree with itself
+    depending on which command last touched it.
     """
+    from pf.scaffold.bootstrap import _register_code_location
+
     r = root()
-    lines = [
-        "# GENERATED by `pf dagster-workspace`. Re-run after adding a project.",
-        "#",
-        "# One code location per project: a failure or reload in one sister never",
-        "# affects another, and each gets its own process.",
-        "load_from:",
-    ]
-    for g, p, d in all_projects():
-        module = p.replace("-", "_")
-        if not (d / "src" / module / "definitions.py").exists():
-            continue
-        lines += [
-            "  - python_module:",
-            f"      module_name: {module}.definitions",
-            f"      working_directory: {(d / 'src').resolve()}",
-            f"      location_name: {g}__{p}",
-        ]
-    out = r / "platform" / "workspace.yaml"
-    out.write_text("\n".join(lines) + "\n")
-    n = sum(1 for line in lines if line.startswith("  - python_module"))
-    console.print(f"[green]✓[/] {out}  ({n} code location(s))")
+    result = _register_code_location(r, "", "")
+    console.print(f"[green]✓[/] {r / 'platform' / 'workspace.yaml'}  ({result.detail})")
     console.print(f"  run: [cyan]DAGSTER_HOME={r}/.dagster uv run dagster dev "
                   f"-w platform/workspace.yaml[/]")
 
@@ -1390,29 +1462,75 @@ loop_app = typer.Typer(help="Loop engineering: scheduled, gated, budgeted agent 
 app.add_typer(loop_app, name="loop")
 
 
+def _loop_config_or_exit(fn, *args):
+    """Run one `pf.loops.config` reader, or exit 1 with the yaml's mistake.
+
+    A loops.yaml with a typo in it must stop the command, not fall back to the
+    registry: the person who wrote `pii-audt:` believes the audit is waived.
+    """
+    try:
+        return fn(root(), *args)
+    except loop_config.LoopConfigError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1) from None
+
+
 @loop_app.command("list")
-def cmd_loop_list() -> None:
-    """Every loop, with its autonomy level and budget."""
-    t = Table("loop", "autonomy", "cadence", "budget", "writes", "description")
-    for s in SPECS.values():
+def cmd_loop_list(
+    group: str = typer.Option("", "--group", help="the effective loops for one group"),
+) -> None:
+    """Every loop, with its autonomy level and budget.
+
+    With `--group`, what that group actually runs: the registry with its
+    `loops.yaml` applied, where each setting came from, and the loops it turned
+    off with their reasons.
+    """
+    if not group:
+        t = Table("loop", "autonomy", "cadence", "budget", "writes", "description")
+        for s in SPECS.values():
+            t.add_row(s.name, s.autonomy, s.cadence,
+                      f"{s.token_budget:,}" if s.token_budget else "—",
+                      "yes" if s.writes else "no", s.description)
+        console.print(t)
+        console.print("[dim]L1 report-only · L2 gated patches · L3 unattended. "
+                      "Nothing is L3 until it has a track record.[/]")
+        return
+
+    specs = _loop_config_or_exit(loop_config.resolve, group)
+    overrides = _loop_config_or_exit(loop_config.overrides, group)
+    off = _loop_config_or_exit(loop_config.disabled, group)
+    t = Table("loop", "autonomy", "cadence", "budget", "writes", "source", "waivers",
+              "description", title=f"loops · {group}")
+    for s in specs.values():
+        o = overrides.get(s.name)
         t.add_row(s.name, s.autonomy, s.cadence,
                   f"{s.token_budget:,}" if s.token_budget else "—",
-                  "yes" if s.writes else "no", s.description)
+                  "yes" if s.writes else "no",
+                  "group" if o and o.touches_spec else "registry",
+                  str(len(o.waivers)) if o and o.waivers else "—", s.description)
     console.print(t)
-    console.print("[dim]L1 report-only · L2 gated patches · L3 unattended. "
-                  "Nothing is L3 until it has a track record.[/]")
+    for name, reason in off.items():
+        console.print(f"  [dim]off[/] {name}: {reason}")
+    console.print(f"[dim]Overrides live in groups/{group}/{loop_config.CONFIG_NAME}. "
+                  "They may lower autonomy or waive a finding; never raise.[/]")
 
 
 @loop_app.command("run")
 def cmd_loop_run(loop: str, group: str, project: str,
                  dry_run: bool = typer.Option(False, "--dry-run")) -> None:
-    """Run one loop against one project."""
-    spec = SPECS.get(loop)
+    """Run one loop against one project, as the group configured it."""
+    pdir(group, project)
+    r = root()
+    off = _loop_config_or_exit(loop_config.disabled, group)
+    if loop in off:
+        # An explicit request refused with a reason beats a silent no-op: the
+        # person asked for this loop and needs to know the group turned it off.
+        console.print(f"[red]{loop} is disabled for {group}[/]: {off[loop]}")
+        raise typer.Exit(1)
+    spec = _loop_config_or_exit(loop_config.resolve, group).get(loop)
     if spec is None:
         console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
         raise typer.Exit(1)
-    pdir(group, project)
-    r = root()
     run = run_loop(spec, lambda run: BODIES[loop](r, group, project, run),
                    root=r, group=group, project=project, dry_run=dry_run)
     colour = {"ok": "yellow", "noop": "green", "circuit_open": "red",
@@ -1429,32 +1547,76 @@ def cmd_loop_run(loop: str, group: str, project: str,
 
 @loop_app.command("run-all")
 def cmd_loop_run_all(group: str, project: str) -> None:
-    """Run every read-only (L1) loop and refresh STATE.md."""
+    """Run every read-only (L1) loop the group has on, and refresh this
+    project's section of STATE.md."""
+    pdir(group, project)
     r, findings = root(), []
-    for name, spec in SPECS.items():
+    specs = _loop_config_or_exit(loop_config.resolve, group)
+    for name, spec in specs.items():
         if spec.autonomy != "L1":
             continue
         run = run_loop(spec, lambda run, n=name: BODIES[n](r, group, project, run),
                        root=r, group=group, project=project)
         for f in run.findings:
             findings.append(f"[{name}] {f}")
+        if run.outcome not in ("ok", "noop"):
+            # A latched breaker or a crashed body has no findings, and keyed on
+            # findings alone it printed a green tick and left STATE.md clean:
+            # the harvester sat tripped for five sweeps that way. It stays on
+            # the spine until a human resets it.
+            findings.append(f"[{name}] {run.outcome}: {run.message}")
+            console.print(f"  [red]✗[/] {name}: {run.outcome} ({run.message})")
+            continue
         console.print(f"  {'[yellow]•[/]' if run.findings else '[green]✓[/]'} "
                       f"{name}: {len(run.findings)} finding(s)")
-    p = update_state(r, findings, watch=[s.name for s in SPECS.values() if s.autonomy != "L1"])
+        if run.message:
+            # An ok run can still carry a note — over budget, or the model was
+            # not asked because its key was refused. Say so where it ran.
+            console.print(f"    [dim]{run.message}[/]")
+    p = update_state(r, findings, watch=watch_list(), group=group, project=project,
+                     writer="loops")
     console.print(f"[green]✓[/] {p} updated ({len(findings)} open item(s))")
 
 
 @loop_app.command("audit")
-def cmd_loop_audit() -> None:
-    """Loop Readiness Score — is this repo safe to give a loop more autonomy?"""
-    score, checks = loop_audit(root())
-    t = Table("check", "weight", "status", "detail", title="Loop Readiness")
+def cmd_loop_audit(group: str = typer.Option("", "--group",
+                                             help="score one family instead of the fleet"),
+                   per_group: bool = typer.Option(False, "--per-group",
+                                                  help="a score for every family")) -> None:
+    """Loop Readiness Score — is this repo safe to give a loop more autonomy?
+
+    With `--group`, the score is that family's own. The fleet number answers
+    "all projects, not any project", which is the right question for the
+    platform and the wrong one for a tenant: the newest group drags it down and
+    holds every mature family at report-only autonomy.
+    """
+    from pf import groups as groups_mod
+
+    if per_group:
+        gt = Table("group", "lifecycle", "score", "level", box=None, pad_edge=False)
+        worst = 100
+        for name in groups_mod.group_names(root()):
+            gscore, _ = loop_audit(root(), name)
+            worst = min(worst, gscore)
+            try:
+                life = groups_mod.load(root(), name).lifecycle
+            except groups_mod.GroupError:
+                life = "unmanaged"
+            colour = "green" if gscore >= 80 else "yellow" if gscore >= 55 else "red"
+            gt.add_row(name, _state(life), f"[{colour}]{gscore}/100[/]",
+                       recommended_level(gscore, root()).split(".")[0])
+        console.print(gt)
+        raise typer.Exit(0 if worst >= 55 else 1)
+
+    score, checks = loop_audit(root(), group)
+    title = f"Loop Readiness — {group}" if group else "Loop Readiness"
+    t = Table("check", "weight", "status", "detail", title=title)
     for c in checks:
         t.add_row(c.name, str(c.weight),
                   "[green]PASS[/]" if c.passed else "[red]FAIL[/]", c.detail)
     console.print(t)
 
-    rows = project_readiness(root())
+    rows = [r for r in project_readiness(root()) if not group or r.group == group]
     pt = Table("group/project", "hook", "graph", "card", "CLAUDE.md", "state",
                title="Per-project governance")
     tick = {True: "[green]✓[/]", False: "[red]✗[/]"}
@@ -1472,16 +1634,21 @@ def cmd_loop_audit() -> None:
 
 
 @loop_app.command("status")
-def cmd_loop_status(limit: int = 15) -> None:
-    """Recent loop runs from the ledger."""
-    entries = Ledger(root()).read()[-limit:]
+def cmd_loop_status(limit: int = 15,
+                    group: str = typer.Option("", "--group",
+                                              help="one family's history")) -> None:
+    """Recent loop runs. Every group's, or one family's with --group."""
+    from pf.loops.runner import all_entries
+
+    entries = (Ledger(root(), group).read() if group else all_entries(root()))[-limit:]
     if not entries:
         console.print("[yellow]no runs yet[/]")
         return
-    t = Table("when", "loop", "project", "outcome", "findings", "ms")
+    t = Table("when", "group", "loop", "project", "outcome", "findings", "ms")
     for e in entries:
-        t.add_row(e["started_at"][:19], e["loop"], e["project"], e["outcome"],
-                  str(len(e.get("findings") or [])), str(e.get("duration_ms", 0)))
+        t.add_row(e["started_at"][:19], e.get("group", "-"), e["loop"], e["project"],
+                  e["outcome"], str(len(e.get("findings") or [])),
+                  str(e.get("duration_ms", 0)))
     console.print(t)
 
 
@@ -1493,7 +1660,7 @@ def cmd_loop_reset(loop: str, group: str, project: str,
         console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
         raise typer.Exit(1)
     pdir(group, project)
-    ledger = Ledger(root())
+    ledger = Ledger(root(), group)
     fails = ledger.consecutive_failures(loop, project)
     if not fails:
         console.print(f"[green]✓[/] {loop} · {group}/{project} is not tripped")
@@ -2425,6 +2592,198 @@ def _git_tracked(path: Path, cwd: Path) -> bool:
     return proc.returncode == 0
 
 
+# -------------------------------------------------------------- workflows --
+# Claude Code writes a workflow run's transcripts under its own session folder,
+# where a /clear or a new session hides them. `link` points those directories at
+# logs/workflows/ instead, so runs are written in the repo as they happen;
+# pf.workflows says which directories can be linked without handing Claude Code's
+# retention sweep a route into the repo, and why "complete" is a heuristic.
+workflow_app = typer.Typer(help="Claude Code workflow runs, written into logs/workflows/ "
+                                "as they happen.")
+app.add_typer(workflow_app, name="workflow")
+
+_QUIET_HELP = ("seconds without a change before a run counts as complete; "
+               "removing a session copy always waits the full 120 s")
+
+
+def _workflow_log(line: str) -> None:
+    # Labels and file names come from the harness; none of them is rich markup.
+    # soft_wrap: a watcher usually writes to a file or a pipe, where rich would
+    # otherwise fold every line at 80 columns and split a label from its run.
+    console.print(line, markup=False, highlight=False, soft_wrap=True)
+
+
+@workflow_app.command("list")
+def cmd_workflow_list(quiet_for: float = typer.Option(120.0, "--quiet-for", help=_QUIET_HELP)) -> None:
+    """Every run of this repo: written here, still in a session folder, or both."""
+    from pf import workflows
+
+    home = workflows.claude_home()
+    runs = workflows.discover(root(), home, quiet_for=quiet_for)
+    t = Table("run", "name", "when", "agents", "size", "where", "state",
+              box=None, pad_edge=False)
+    for r in runs:
+        agents = f"{r.finished}/{r.started}" + (f" [red]✗{r.failed}[/]" if r.failed else "")
+        where = "repo" if r.in_repo else ("both" if r.mirror is not None else "session")
+        when = time.strftime("%m-%d %H:%M", time.localtime(r.last_change)) if r.last_change else "-"
+        t.add_row(r.run_id, escape(r.name) or "[dim]-[/]", when, agents,
+                  workflows.human_size(r.bytes), where,
+                  "[yellow]live[/]" if r.live else "[green]complete[/]")
+    console.print(t)
+    if not runs:
+        console.print("[dim]no workflow runs for this repo[/]")
+    # A session that is not linked will write its next run under ~/.claude, and
+    # the only sign of that before the run happens is this line.
+    unlinked = {r.session for r in workflows.link(root(), home, dry_run=True) if not r.ok}
+    if unlinked:
+        console.print(f"[yellow]{len(unlinked)} session(s) not linked into the repo[/]"
+                      "  run `pf workflow link` (add --adopt to take what they hold)")
+
+
+@workflow_app.command("link")
+def cmd_workflow_link(session: str = typer.Option("", "--session",
+                                                  help="one session id; created if the harness has not made it yet"),
+                      adopt: bool = typer.Option(False, "--adopt",
+                                                 help="take what a session already holds into the repo first"),
+                      check: bool = typer.Option(False, "--check",
+                                                 help="report only; exit 1 if any session is not linked"),
+                      quiet: bool = typer.Option(False, "--quiet",
+                                                 help="print only what changed or was refused")) -> None:
+    """Point this repo's sessions at logs/workflows/, so runs are written here.
+
+    Claude Code writes a run under ~/.claude/projects/<slug>/<session>/. Making
+    those two directories symlinks into the repo is what puts a run next to the
+    code it changed while it is still running, with nothing copied afterwards.
+    Idempotent, and run by the SessionStart hook for every new session."""
+    from pf import workflows
+
+    home = workflows.claude_home()
+    # A bare id, never a path: `--session ../<another repo's slug>/<id>` would
+    # otherwise name a session belonging to a different checkout and adopt its
+    # runs into this repo.
+    if session and (Path(session).name != session or session in (".", "..")):
+        console.print(f"[red]--session takes a session id, not a path: {escape(session)}[/]")
+        raise typer.Exit(1)
+    sess_dir = (home / "projects" / workflows.slug(root()) / session) if session else None
+    try:
+        reports = workflows.link(root(), home, session_dir=sess_dir, adopt=adopt,
+                                 dry_run=check, log=None)
+    except OSError as exc:
+        console.print(f"[red]workflow link: {type(exc).__name__}: {escape(str(exc))}[/]")
+        raise typer.Exit(1) from None
+    colour = {"linked": "dim", "created": "green", "adopted": "green",
+              "narrowed": "green", "unlinked": "yellow", "refused": "red"}
+    for r in reports:
+        # A state the module grew without telling the CLI must not be the reason
+        # a link command fails after it has already changed the filesystem.
+        if quiet and r.state == "linked":
+            continue
+        console.print(f"[{colour.get(r.state, 'white')}]{escape(r.line(root()))}[/]",
+                      soft_wrap=True)
+    if not reports:
+        console.print("[dim]no sessions for this repo yet[/]")
+    bad = [r for r in reports if not r.ok]
+    if any("adopt" in r.note for r in bad):
+        console.print("[dim]--adopt copies each run into the repo, verifies it by hash, "
+                      "and only then removes the session copy[/]")
+    if check and bad:
+        raise typer.Exit(1)
+
+
+@workflow_app.command("sync")
+def cmd_workflow_sync(move: bool = typer.Option(False, "--move",
+                                                help="remove the session copy of each complete, verified run"),
+                      quiet_for: float = typer.Option(120.0, "--quiet-for", help=_QUIET_HELP),
+                      quiet: bool = typer.Option(False, "--quiet",
+                                                 help="print only when something was copied or moved")) -> None:
+    """Copy runs a session wrote while it was not linked into logs/workflows/.
+
+    The fallback, not the strategy: `pf workflow link` is what keeps this list
+    empty, and a session linked at its start never appears here. Errors are
+    printed rather than raised and the exit code stays 0, so it is safe to wire
+    into a hook. A live run is only copied, because finalize refuses to remove
+    the session copy of one."""
+    from pf import workflows
+
+    try:
+        results = workflows.sync(root(), workflows.claude_home(), move=move,
+                                 quiet_for=quiet_for, log=None if quiet else _workflow_log)
+    except Exception as exc:  # noqa: BLE001 — a hook must not fail the turn
+        console.print(f"[red]workflow sync: {type(exc).__name__}: {escape(str(exc))}[/]")
+        return
+    for r in results:
+        # A refusal is printed even when quiet: a run that can never be adopted
+        # needs a human, and nothing else will mention it.
+        if quiet and not (r.copied or r.moved or r.refused):
+            continue
+        if r.refused:
+            what = f"not adopted: {r.refused}"
+        else:
+            what = f"copied {r.copied} file(s), {workflows.human_size(r.bytes)}"
+            if r.moved:
+                what += f"; {r.note}"
+            elif move:
+                what += f"; kept: {r.note}"
+        console.print(f"[bold]{r.run_id}[/] {escape(r.name)}  {escape(what)}")
+    if not results and not quiet:
+        console.print("[dim]nothing to adopt: every run of this repo is already "
+                      "in it (`pf workflow link --check`)[/]")
+
+
+@workflow_app.command("watch")
+def cmd_workflow_watch(interval: float = typer.Option(2.0, "--interval", help="seconds between rounds"),
+                       quiet_for: float = typer.Option(120.0, "--quiet-for", help=_QUIET_HELP)) -> None:
+    """Live progress of every run. Ctrl-C to stop.
+
+    A linked run is read where the harness is writing it, so what this prints is
+    the run's own files growing. A run from a session that was never linked is
+    copied into the repo each round, so watching it also adopts it."""
+    from pf import workflows
+
+    console.print(f"[dim]watching {workflows.RUNS_DIR}/ and this repo's sessions every "
+                  f"{interval:g} s. Ctrl-C to stop.[/]", soft_wrap=True)
+    try:
+        workflows.watch(root(), workflows.claude_home(), interval=interval,
+                        quiet_for=quiet_for, log=_workflow_log)
+    except KeyboardInterrupt:
+        console.print("[dim]stopped[/]")
+
+
+@workflow_app.command("show")
+def cmd_workflow_show(run_id: str) -> None:
+    """Phases and every agent of one run, with its state."""
+    from pf import workflows
+
+    runs = {r.run_id: r for r in workflows.discover(root(), workflows.claude_home())}
+    run = runs.get(run_id)
+    if run is None:
+        console.print(f"[red]no workflow run {escape(run_id)}[/]  (`pf workflow list`)")
+        raise typer.Exit(1)
+    _workflow_log(run.progress_line())
+    # Resolved, not as found: a linked session reaches every one of these
+    # through a symlink, and printing that path would name a directory the run
+    # is not stored in.
+    def _where(p: Path | str | None) -> str:
+        return str(Path(p).resolve()) if p else "-"
+
+    rows = [("run", _where(run.mirror or run.source)), ("script", _where(run.script))]
+    if run.session:
+        rows.insert(0, ("session", run.session))
+    if run.source is not None:
+        rows.append(("session copy", _where(run.source)))
+    for k, v in rows:
+        # A path has no break point, so without soft_wrap rich drops it to its
+        # own line and folds it from column 0, away from its label.
+        console.print(f"  [dim]{k:8}[/] {escape(str(v))}", soft_wrap=True)
+    marks = {"done": "[green]✓[/]", "failed": "[red]✗[/]", "running": "[yellow]▸[/]"}
+    for phase, (s, f) in run.phases.items():
+        console.print(f"\n[bold]{escape(phase) or '(no phase)'}[/]  {f}/{s} done")
+        for a in run.agents:
+            if a.phase == phase:
+                console.print(f"  {marks[a.state]} {a.state:8} {escape(a.label)}  "
+                              f"[dim]{a.agent_id}[/]")
+
+
 # ------------------------------------------------------------------ tools --
 # Tools are capabilities that also *run*. The sub-app below knows about tools in
 # general and about no tool in particular: every row comes from the registry, so
@@ -2572,6 +2931,193 @@ def _register_tool_commands() -> None:
         except Exception as exc:  # noqa: BLE001 — a broken tool CLI is not fatal
             console.print(f"[dim]tool '{name}' registered no commands: "
                           f"{type(exc).__name__}[/]", highlight=False)
+
+
+
+# --------------------------------------------------------------- groups --
+# A group is an object with an owner, a lifecycle and a set of promises about
+# its data — `pf.groups` says why. These commands are the only way that object
+# is meant to be read or moved; everything else in the platform still discovers
+# groups by walking the filesystem, so an unmanaged group stays visible rather
+# than disappearing from the fleet the moment it lacks a manifest.
+group_app = typer.Typer(help="Tenant groups: their manifest, lifecycle and readiness.")
+app.add_typer(group_app, name="group")
+
+_LIFECYCLE_COLOUR = {
+    "proposed": "dim", "provisioned": "cyan", "active": "green",
+    "suspended": "yellow", "offboarding": "magenta", "archived": "dim",
+    "unmanaged": "red", "unknown": "red",
+}
+
+
+def _state(text: str) -> str:
+    return f"[{_LIFECYCLE_COLOUR.get(text, 'white')}]{text}[/]"
+
+
+@group_app.command("list")
+def cmd_group_list() -> None:
+    """Every group: lifecycle, owner, readiness."""
+    from pf import groups
+
+    reports = {r.group: r for r in groups.verify_all(root())}
+    t = Table("group", "lifecycle", "tier", "owner", "projects", "score",
+              box=None, pad_edge=False)
+    for name in groups.group_names(root()):
+        report = reports.get(name)
+        n = len(groups.projects_in(root(), name))
+        try:
+            m = groups.load(root(), name)
+            owner, tier, life = m.owner.contact or m.owner.team or "-", m.tier, m.lifecycle
+        except groups.GroupError:
+            owner, tier, life = "-", "-", "unmanaged"
+        score = "-" if report is None or report.error else f"{report.score}/100"
+        t.add_row(name, _state(life), tier, escape(owner), str(n), score)
+    console.print(t)
+    missing = groups.unmanaged(root())
+    if missing:
+        console.print(f"[yellow]{len(missing)} group(s) with no group.yaml[/]  "
+                      "run `pf bootstrap --all`")
+
+
+@group_app.command("show")
+def cmd_group_show(group: str) -> None:
+    """The manifest, as the platform reads it."""
+    from pf import groups
+
+    try:
+        m = groups.load(root(), group)
+    except groups.GroupError as exc:
+        console.print(f"[red]{escape(str(exc))}[/]")
+        raise typer.Exit(1) from None
+    rows = [
+        ("lifecycle", m.lifecycle), ("tier", m.tier), ("domain", m.domain or "-"),
+        ("display name", m.display_name or "-"),
+        ("owner", f"{m.owner.team or '-'} · {m.owner.contact or 'no contact'}"),
+        ("template", f"v{m.template_version}"
+         + (f" (behind v{groups.TEMPLATE_VERSION})" if m.behind_template else "")),
+        ("residency", m.data.residency or "-"),
+        ("retention", f"{m.data.retention_days} days" if m.data.retention_days
+         else "indefinite"),
+        ("erasure SLA", f"{m.data.erasure_sla_days} days" if m.data.erasure_sla_days
+         else "none recorded"),
+        ("daily tokens", str(m.daily_tokens) if m.daily_tokens else "platform default"),
+        ("runs loops", "yes" if m.runs_loops else "no"),
+        ("strict gates", "yes" if m.strict else "no"),
+    ]
+    for k, v in rows:
+        console.print(f"  [dim]{k:14}[/] {escape(str(v))}", soft_wrap=True)
+    if m.resources:
+        console.print("  [dim]resources[/]")
+        for k, v in m.resources.items():
+            console.print(f"    [dim]{k:12}[/] {escape(str(v))}", soft_wrap=True)
+
+
+@group_app.command("verify")
+def cmd_group_verify(group: str = typer.Argument("", help="one group; omit for all"),
+                     strict: bool = typer.Option(False, "--strict",
+                                                 help="treat warnings as failures too")) -> None:
+    """Is this family onboarded? Exits 1 if any check fails.
+
+    The per-project ladder (`pf align`) answers the same question one entity at
+    a time. This is the family-level answer, and its severity comes from the
+    manifest: a group still being built may be incomplete, one declared `active`
+    may not.
+    """
+    from pf import groups
+
+    reports = ([groups.verify(root(), group)] if group
+               else groups.verify_all(root()))
+    if not reports:
+        console.print("[yellow]no groups[/]")
+        raise typer.Exit(0)
+    bad = 0
+    for r in reports:
+        if r.error:
+            console.print(f"[red]✗[/] [bold]{r.group}[/]  {escape(r.error)}")
+            bad += 1
+            continue
+        mark = "[green]✓[/]" if r.ok else "[red]✗[/]"
+        console.print(f"{mark} [bold]{r.group}[/]  {_state(r.lifecycle)}  "
+                      f"{r.score}/100  {len(r.failures)} failing, "
+                      f"{len(r.warnings)} warning(s)")
+        for c in r.checks:
+            if c.passed:
+                continue
+            colour = "red" if c.status == "fail" else "yellow"
+            console.print(f"    [{colour}]{c.status:4}[/] {c.name}  "
+                          f"[dim]{escape(c.detail)}[/]", soft_wrap=True)
+        bad += 1 if (r.failures or (strict and r.warnings)) else 0
+    if bad:
+        raise typer.Exit(1)
+
+
+@group_app.command("set-state")
+def cmd_group_set_state(group: str, state: str) -> None:
+    """Move a group through its lifecycle. Refuses an illegal transition."""
+    from pf import groups
+
+    try:
+        m = groups.set_lifecycle(root(), group, state)
+    except groups.GroupError as exc:
+        console.print(f"[red]{escape(str(exc))}[/]")
+        raise typer.Exit(1) from None
+    console.print(f"[green]✓[/] {group} is now {_state(m.lifecycle)}")
+    if m.lifecycle == "active":
+        console.print("  [dim]strict gates now apply; `pf group verify "
+                      f"{group}` must stay clean[/]")
+    if m.lifecycle == "offboarding":
+        console.print(f"  [dim]next: `pf offboard {group}` for the removal plan[/]")
+
+
+@app.command("offboard")
+def cmd_offboard(group: str,
+                 apply_: bool = typer.Option(False, "--apply",
+                                             help="remove what the repo owns (needs lifecycle: offboarding)"),
+                 keep_directory: bool = typer.Option(False, "--keep-directory",
+                                                     help="with --apply, leave groups/<g>/ in place")) -> None:
+    """What leaving costs. Enumerates first; removes only with --apply.
+
+    The inverse of `pf bootstrap`, which has thirteen "ensure present" steps and
+    never had an inverse. Everything a removal misses fails silently, so the
+    plan is the product: run it long before anyone leaves, and the gaps it
+    reports are the handles that should have been written into `group.yaml`
+    while someone still knew them.
+    """
+    from pf import offboard as off
+
+    p = off.plan(root(), group)
+    console.print(f"[bold]{group}[/]  lifecycle: {_state(p.lifecycle)}")
+    for blocker in p.blockers:
+        console.print(f"  [red]{escape(blocker)}[/]")
+
+    for kind, heading, colour in (
+            ("removes", "the repo removes (nothing else will)", "red"),
+            ("regenerates", "regenerates once the directory is gone", "green"),
+            ("manual", "outside this repo — a human, or it bills forever", "yellow")):
+        rows = p.of(kind)
+        if not rows:
+            continue
+        console.print(f"\n[{colour}]{heading}[/]")
+        for item in rows:
+            console.print(f"  • {escape(item.what)}")
+            if item.detail:
+                console.print(f"    [dim]{escape(item.detail)}[/]", soft_wrap=True)
+
+    if not apply_:
+        console.print(f"\n[dim]nothing was removed. `pf group set-state {group} "
+                      f"offboarding` then `pf offboard {group} --apply`[/]")
+        return
+
+    try:
+        removed, stone = off.apply(root(), group, keep_directory=keep_directory)
+    except Exception as exc:  # noqa: BLE001 — surfaced, never a traceback
+        console.print(f"[red]{escape(str(exc))}[/]")
+        raise typer.Exit(1) from None
+    console.print(f"\n[green]✓[/] removed {len(removed)} item(s); tombstone at {stone}")
+    for r in removed:
+        console.print(f"    {escape(r)}")
+    console.print("[yellow]The manual list above is still outstanding.[/] "
+                  "Nothing in this repo can remove it.")
 
 
 _register_tool_commands()

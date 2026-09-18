@@ -1,0 +1,15 @@
+{
+  "name": "price_is_not_additive",
+  "agent": "metric_gap_proposer",
+  "why": "The one rule every desk in this family shares and no sister may disagree with: a price is a unit_price, not a money_amount. Summing it across rows produces a number with no meaning — add ten gold quotes and you have neither a total nor an average, you have an artefact of how many rows the window happened to contain. The honest average is a ratio, sum of value over sum of quantity, within a single commodity. A proposer that reaches for `sum` because the column looks numeric is the failure this case exists to catch, and it is a family-level rule because the alternative is each sister rediscovering it after publishing a dashboard nobody can defend.",
+  "tags": ["conformed", "units"],
+  "input": {
+    "gaps": [
+      "fct_landed_prices_daily has no metric over price_inr_per_gram"
+    ],
+    "mart_detail": "fct_landed_prices_daily(commodity_code, market_code, price_date, price_inr_per_gram, quantity_grams, currency_code). Grain: one row per commodity per market per day. price_inr_per_gram is a unit price already converted to INR per gram; quantity_grams is the traded quantity behind that quote."
+  },
+  "expect": {
+    "proposals[].metric_type": {"all": {"not": "sum"}}
+  }
+}

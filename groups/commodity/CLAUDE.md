@@ -16,6 +16,11 @@ warehouses and run in parallel**.
   built in each sister from the group package. Never hardcode 31.1035 or
   0.4536 in a model.
 - Customs duty is per market, so it belongs to a sister project, never here.
+- dlt Core lands raw only: one dataset per source, types frozen, row counts
+  read back. dbt owns the rest: staging generated 1:1 (`pf gen-staging`),
+  currency, unit and FX conversion once in `intermediate` or a mart, grain in
+  marts.
+- Never transform inside a dlt resource. Never join in staging.
 
 ## Cross-entity work
 Only the `commodity-rollup` project may read sister data, and only via ATTACH READ_ONLY.

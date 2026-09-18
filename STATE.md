@@ -1,6 +1,6 @@
 # Loop State — data platform
 
-Last run: 2026-08-15T04:22:32+00:00
+Last run: 2026-09-17T22:37:51+00:00
 
 ## High priority (a loop is acting, or waiting on a human)
 
@@ -8,7 +8,7 @@ Last run: 2026-08-15T04:22:32+00:00
 
 ## Watch list
 
-- (empty)
+- index-refresher
 
 ---
 Written by `pf loop run`. Cadence, autonomy and budgets live in `LOOP.md`;

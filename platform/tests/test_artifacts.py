@@ -202,3 +202,137 @@ def test_push_skips_a_file_that_was_never_built(tmp_path: Path) -> None:
 def test_an_absent_key_is_reported_not_raised() -> None:
     assert A.Transfer("k", Path("p"), -1).ok is False
     assert A.human(-1) == "absent"
+
+
+# ------------------------------------------------------------- deletion --
+#: Two sisters in one group. The one that leaves and the one that must still be
+#: there afterwards — offboarding is the only operation in this module whose
+#: blast radius reaches a tenant that did not ask for anything.
+IND = A.project_prefix("commodity", "commodity-india")
+BRA = A.project_prefix("commodity", "commodity-brazil")
+
+
+class _FakeS3:
+    """Enough of botocore's client for the three calls deletion makes.
+
+    A fake and not a bucket: every test below is about what happens *before*
+    the network, and a suite that needed credentials would be a suite nobody
+    runs. Paginated two keys to a page, because "stopped at the first page" is
+    the failure `delete_prefix` has to not have and a fake that returns
+    everything in one go cannot catch it.
+    """
+
+    PAGE = 2
+
+    def __init__(self, keys: list[str]) -> None:
+        self.keys = list(keys)
+        self.deleted: list[str] = []
+
+    def get_paginator(self, name: str) -> _FakeS3:
+        assert name == "list_objects_v2"
+        return self
+
+    def paginate(self, *, Bucket: str, Prefix: str = "") -> list[dict]:
+        hits = sorted(k for k in self.keys if k.startswith(Prefix))
+        return [{"Contents": [{"Key": k, "Size": 1} for k in hits[i:i + self.PAGE]]}
+                for i in range(0, len(hits), self.PAGE)]
+
+    def head_object(self, *, Bucket: str, Key: str) -> dict:
+        if Key not in self.keys:
+            raise _Err(response={"Error": {"Code": "404"}})
+        return {}
+
+    def delete_object(self, *, Bucket: str, Key: str) -> dict:
+        # Idempotent, exactly like the real one: a key that was never there
+        # deletes fine and answers 204, which is why `delete` buys the HEAD.
+        self.deleted.append(Key)
+        self.keys = [k for k in self.keys if k != Key]
+        return {}
+
+
+def s3(monkeypatch: pytest.MonkeyPatch, keys: list[str]) -> tuple[A.Store, _FakeS3]:
+    fake = _FakeS3(keys)
+    s = store(monkeypatch)
+    monkeypatch.setattr(A.Store, "client", lambda self: fake)
+    return s, fake
+
+
+def test_delete_reports_that_the_key_was_there(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    s, fake = s3(monkeypatch, [f"{IND}/transform/reviews/main/recce_state.json"])
+    assert s.delete(f"{IND}/transform/reviews/main/recce_state.json") is True
+    assert fake.keys == []
+
+
+def test_deleting_a_key_that_was_never_published_is_not_an_error(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Offboarding walks keys that *might* exist — a project reviewed once has no catalog."""
+    s, fake = s3(monkeypatch, [f"{IND}/transform/target-base/main/manifest.json"])
+    assert s.delete(f"{IND}/transform/target-base/main/catalog.json") is False
+    assert fake.deleted == []
+
+
+def test_a_403_on_delete_is_a_fault_not_an_absence(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """A revoked token must not read as 'that was already gone'."""
+    s, fake = s3(monkeypatch, [f"{IND}/manifest.json"])
+
+    def refuse(**_kw: str) -> dict:
+        raise _Err(response={"Error": {"Code": "403"}})
+
+    monkeypatch.setattr(fake, "delete_object", refuse)
+    with pytest.raises(A.ArtifactStoreError, match="delete failed"):
+        s.delete(f"{IND}/manifest.json")
+
+
+def test_delete_prefix_is_a_dry_run_unless_told_otherwise(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """The default is the feature: a mistyped sister must not be unrecoverable."""
+    keys = [f"{IND}/a.json", f"{IND}/b.json"]
+    s, fake = s3(monkeypatch, keys)
+    assert s.delete_prefix(IND) == keys
+    assert fake.deleted == []
+    assert fake.keys == keys
+
+
+def test_delete_prefix_removes_when_it_is_not_a_dry_run(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    s, fake = s3(monkeypatch, [f"{IND}/a.json", f"{IND}/b.json", f"{BRA}/a.json"])
+    assert s.delete_prefix(IND, dry_run=False) == [f"{IND}/a.json", f"{IND}/b.json"]
+    assert fake.keys == [f"{BRA}/a.json"]
+
+
+def test_delete_prefix_walks_every_page_not_just_the_first(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """Truncating at a page boundary reports a clean offboarding and leaves the tail."""
+    keys = [f"{IND}/r{i:02d}.json" for i in range(7)]      # four pages of two
+    s, fake = s3(monkeypatch, [*keys, f"{BRA}/keep.json"])
+    assert s.delete_prefix(IND, dry_run=False) == keys
+    assert fake.keys == [f"{BRA}/keep.json"]
+
+
+@pytest.mark.parametrize("prefix", ["", "   ", "/", "///"])
+def test_an_empty_prefix_is_refused_even_when_it_is_not_a_dry_run(
+        monkeypatch: pytest.MonkeyPatch, prefix: str) -> None:
+    """It matches every key every sister ever published, and nothing says so."""
+    s, fake = s3(monkeypatch, [f"{IND}/a.json", f"{BRA}/a.json"])
+    with pytest.raises(A.ArtifactStoreError, match="every key"):
+        s.delete_prefix(prefix, dry_run=False)
+    assert fake.deleted == []
+
+
+@pytest.mark.parametrize("prefix", ["groups", "groups/", "transform/reviews"])
+def test_a_prefix_that_names_no_tenant_is_refused(
+        monkeypatch: pytest.MonkeyPatch, prefix: str) -> None:
+    """`groups/` is every tenant in the bucket; anything outside it is not a key we wrote."""
+    s, fake = s3(monkeypatch, [f"{IND}/a.json", f"{BRA}/a.json"])
+    with pytest.raises(A.ArtifactStoreError, match="not scoped to one tenant"):
+        s.delete_prefix(prefix, dry_run=False)
+    assert fake.deleted == []
+
+
+def test_a_whole_group_is_a_tenant_and_is_allowed(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    """The shallowest thing that is still one tenant's — a group offboarding is real."""
+    s, _ = s3(monkeypatch, [f"{IND}/a.json", f"{BRA}/a.json"])
+    assert s.delete_prefix("groups/commodity") == [f"{BRA}/a.json", f"{IND}/a.json"]

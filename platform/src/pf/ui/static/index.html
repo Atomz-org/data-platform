@@ -553,7 +553,8 @@ const LAYER_BUCKET = { ontology:0, raw:1, staging:2, intermediate:2, marts:3, se
 const LAYER_LABEL = ['Ontology','Raw (dlt)','Staging / intermediate','Marts','Semantic / consumption'];
 const SHAPES = { Concept:'diamond', Source:'square', Table:'square', Column:'dot',
                  Model:'circle', Metric:'triangle', Dimension:'diamond',
-                 Exposure:'hexagon', Test:'cross', Project:'star' };
+                 Exposure:'hexagon', Test:'cross', Project:'star',
+                 Decision:'triangle' };
 
 const fmt = n => n === null || n === undefined ? '—' : Number(n).toLocaleString();
 const money = n => '$' + Number(n || 0).toFixed(4);

@@ -7,9 +7,21 @@ User-Agent — without one Yahoo answers 429.
 Prices land exactly as quoted: the exchange's currency (USX for cents) and the
 contract's unit. Conversion is a dbt concern, done once, in the group macros.
 
-Incremental without a cursor column: a symbol with nothing stored fetches
-`history_range`; otherwise the load refetches from its last stored day minus a
+Why `RESTClient` and a parser rather than a declarative `rest_api` config: a
+chart payload is parallel arrays (`timestamp[]`, `quote[0].close[]`) that no
+selector turns into rows, and every symbol needs its own request window. That
+is the case dlt's REST guidance reserves for the client, so the client owns the
+session and retries and Python owns the shape.
+
+Incremental, per symbol, in dlt's own state: `dlt.current.resource_state()`
+keeps the newest stored day for each symbol. A symbol with nothing stored
+fetches `history_range`; otherwise the load refetches from its last day minus a
 `REFETCH_DAYS` overlap, so late revisions land and a missed week self-heals.
+`dlt.sources.incremental` was not used because it keeps one cursor per resource:
+a metal added to the catalog would start at the others' cursor and get no
+history. The state travels with the destination — dlt writes it to
+`_dlt_pipeline_state` and drops the local copy when the dataset is gone — so
+deleting data/*.duckdb rebackfills instead of loading ten days into nothing.
 Changing `history_range` re-backfills every symbol.
 
     SOURCES__YAHOO_FINANCE__HISTORY_RANGE=10y uv run pf seed commodity commodity-india
@@ -25,14 +37,15 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import dlt
-from dlt.sources.helpers import requests
+from dlt.sources.helpers.rest_client import RESTClient
 from pf.ontology import annotate
 
 from commodity_india.catalog import COMMODITIES, FX_CURRENCIES
 
 log = logging.getLogger(__name__)
 
-CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+BASE_URL = "https://query1.finance.yahoo.com"
+CHART_PATH = "v8/finance/chart/{symbol}"
 HEADERS = {"User-Agent": "Mozilla/5.0 (commodity-india data pipeline)"}
 DEFAULT_HISTORY_RANGE = "5y"
 REFETCH_DAYS = 10
@@ -42,9 +55,12 @@ def _history_range() -> str:
     return str(dlt.config.get("sources.yahoo_finance.history_range") or DEFAULT_HISTORY_RANGE)
 
 
-def fetch_chart(symbol: str, params: dict[str, Any]) -> dict[str, Any]:
-    resp = requests.get(CHART_URL.format(symbol=symbol), params=params,
-                        headers=HEADERS, timeout=20)
+def _client() -> RESTClient:
+    return RESTClient(base_url=BASE_URL, headers=HEADERS)
+
+
+def fetch_chart(client: RESTClient, symbol: str, params: dict[str, Any]) -> dict[str, Any]:
+    resp = client.get(CHART_PATH.format(symbol=symbol), params=params, timeout=20)
     resp.raise_for_status()
     return resp.json()
 
@@ -87,23 +103,6 @@ def _epoch(d: date) -> int:
     return int(datetime(d.year, d.month, d.day, tzinfo=UTC).timestamp())
 
 
-def stored_last_dates(table: str, key_col: str, date_col: str) -> dict[str, date]:
-    """Newest stored day per key, read from the destination itself.
-
-    Not from dlt state: that lives in ~/.dlt, outside the warehouse, so deleting
-    the generated data/*.duckdb would leave a cursor pointing past rows that no
-    longer exist, and every later run would load ten days into an empty table.
-    """
-    try:
-        with dlt.current.pipeline().sql_client() as client:
-            rows = client.execute_sql(
-                f"select {key_col}, max({date_col}) "
-                f"from {client.make_qualified_table_name(table)} group by 1")
-    except Exception:  # noqa: BLE001 — no table yet means no history yet
-        return {}
-    return {key: last for key, last in rows or [] if last is not None}
-
-
 def window(last: date | None, backfilled_range: str | None, history_range: str) -> dict[str, Any]:
     """Chart query parameters: a full backfill, or a short overlapping refetch."""
     if last and backfilled_range == history_range:
@@ -112,21 +111,26 @@ def window(last: date | None, backfilled_range: str | None, history_range: str) 
     return {"interval": "1d", "range": history_range}
 
 
-def _daily_series(symbols: dict[str, str], stored: dict[str, date], state: dict[str, Any]
+def _daily_series(symbols: dict[str, str], state: dict[str, Any]
                   ) -> Iterator[tuple[str, dict[str, Any], date, dict[str, Any]]]:
     """(key, meta, day, candle) for every symbol, tolerating individual failures.
 
     One delisted contract must not stop thirty others. Every symbol failing is a
     different thing — the feed is down — and raises, so a seed never builds
-    marts over an empty load and calls it green.
+    marts over an empty load and calls it green. Each symbol's cursor advances
+    only after its candles were yielded, so a failed symbol retries its whole
+    window next run.
     """
     history_range = _history_range()
     backfilled = state.get("history_range")
+    cursors: dict[str, str] = state.setdefault("cursors", {})
+    client = _client()
     ok, failed = 0, []
     for key, symbol in symbols.items():
-        params = window(stored.get(key), backfilled, history_range)
+        last = date.fromisoformat(cursors[key]) if key in cursors else None
+        params = window(last, backfilled, history_range)
         try:
-            meta, candles = parse_candles(fetch_chart(symbol, params))
+            meta, candles = parse_candles(fetch_chart(client, symbol, params))
         except Exception as exc:  # noqa: BLE001 — per-symbol isolation is the point
             log.warning("yahoo_finance: %s (%s) failed: %s", key, symbol, exc)
             failed.append(symbol)
@@ -134,6 +138,8 @@ def _daily_series(symbols: dict[str, str], stored: dict[str, date], state: dict[
         ok += 1
         for day, candle in sorted(candles.items()):
             yield key, meta, day, candle
+        if candles:
+            cursors[key] = max(candles).isoformat()
     if symbols and not ok:
         raise RuntimeError(f"yahoo_finance: every symbol failed ({', '.join(failed)})")
     state["history_range"] = history_range
@@ -174,9 +180,7 @@ def _daily_series(symbols: dict[str, str], stored: dict[str, date], state: dict[
 )
 def futures_prices() -> Iterator[dict[str, Any]]:
     symbols = {c.commodity_id: c.yahoo_symbol for c in COMMODITIES if c.yahoo_symbol}
-    stored = stored_last_dates("futures_prices", "commodity_id", "trade_date")
-    state = dlt.current.resource_state()
-    for commodity_id, meta, day, candle in _daily_series(symbols, stored, state):
+    for commodity_id, meta, day, candle in _daily_series(symbols, dlt.current.resource_state()):
         yield {
             "quote_id": f"{commodity_id}:{day.isoformat()}",
             "commodity_id": commodity_id,
@@ -211,9 +215,7 @@ def futures_prices() -> Iterator[dict[str, Any]]:
 def fx_rates() -> Iterator[dict[str, Any]]:
     # Yahoo's `INR=X` is USD/INR: rupees per one dollar.
     symbols = {ccy: f"{ccy}=X" for ccy in FX_CURRENCIES}
-    stored = stored_last_dates("fx_rates", "quote_currency", "rate_date")
-    state = dlt.current.resource_state()
-    for ccy, _meta, day, candle in _daily_series(symbols, stored, state):
+    for ccy, _meta, day, candle in _daily_series(symbols, dlt.current.resource_state()):
         yield {
             "fx_rate_id": f"USD{ccy}:{day.isoformat()}",
             "base_currency": "USD",

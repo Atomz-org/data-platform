@@ -41,7 +41,9 @@ Precedence between toolkits is in `ROUTING.md`.
   - Exploration produces understanding, not published numbers; a figure worth keeping becomes a metric.
 
 ## dlt-ingest — The data needed does not exist in the warehouse yet.
-  `annotate-source`  `create-filesystem-pipeline`  `create-sql-pipeline`  `find-source`  `steward-ontology`
+  `annotate-source`  `create-filesystem-pipeline`  `create-rest-pipeline`  `create-sql-pipeline`  `debug-pipeline`  `find-source`  `steward-ontology`
+  - dlt Core lands the raw stage, one dataset per source; generated dbt staging reads it. A declarative `rest_api` source first, `RESTClient` only for a shape it cannot express.
+  - A load that left a table empty is red, not done — read `rows` back before building on it.
   - Annotate a source with ontology roles before writing any dbt model against it.
   - Annotations drive generated staging, currency normalisation and review config — edit the roles, not the generated files.
 

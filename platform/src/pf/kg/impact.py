@@ -2,7 +2,9 @@
 
 Given a node (or a set of changed dbt nodes), walk the graph downstream and
 report every model, metric, dimension, exposure and test that would be affected
-— plus the human who owns each exposure.
+— plus the human who owns each exposure, and the recorded decisions (ADRs) the
+change re-opens. A decision never changes the severity: it changes what a
+reviewer has to read before merging.
 
 Scope is one project. Graphs are per-project and hold no cross-project edges, so
 a sister's dependency on a change here is *not* visible: sisters share the group
@@ -35,6 +37,7 @@ class ImpactReport:
     exposures: list[Node] = field(default_factory=list)
     tests: list[Node] = field(default_factory=list)
     dimensions: list[Node] = field(default_factory=list)
+    decisions: list[Node] = field(default_factory=list)
     owners: list[str] = field(default_factory=list)
     severity: str = "safe"
 
@@ -51,12 +54,25 @@ class ImpactReport:
             "total": self.total, "owners": self.owners,
             "models": pack(self.models), "metrics": pack(self.metrics),
             "exposures": pack(self.exposures), "tests": pack(self.tests),
-            "dimensions": pack(self.dimensions),
+            "dimensions": pack(self.dimensions), "decisions": pack(self.decisions),
         }
+
+    def _decision_lines(self) -> list[str]:
+        if not self.decisions:
+            return []
+        lines = [f"Decisions to re-read ({len(self.decisions)}):"]
+        for n in sorted(self.decisions, key=lambda x: x.name):
+            lines.append(f"  • {n.name}" + (f" — {n.label}" if n.label else ""))
+        return lines
 
     def render(self) -> str:
         if self.total == 0:
-            return f"✅ No downstream dependencies on {self.root}. Safe to change."
+            safe = f"✅ No downstream dependencies on {self.root}. Safe to change."
+            # Safe to change is not the same as consistent with what was decided:
+            # a model nothing depends on can still be the one an ADR fixed.
+            if not self.decisions:
+                return safe
+            return "\n".join([safe, "", *self._decision_lines()])
 
         icon = {"breaking": "⛔", "review": "⚠️ ", "safe": "✅"}[self.severity]
         lines = [
@@ -82,6 +98,8 @@ class ImpactReport:
         section("Metrics", self.metrics)
         section("Dimensions", self.dimensions)
         section("Exposures", self.exposures)
+        if self.decisions:
+            lines += [*self._decision_lines(), ""]
         if self.tests:
             lines.append(f"Tests that will re-run: {len(self.tests)}")
             lines.append("")
@@ -138,6 +156,18 @@ def impact_of(graph_path: str | Path, node_id: str, max_depth: int = 12) -> Impa
                 case "Test":      report.tests.append(n)
                 case "Dimension": report.dimensions.append(n)
 
+        # A decision is upstream of what it governs, so the downstream walk never
+        # reaches one. Ask every implicated node, the root included, who decided
+        # about it instead.
+        decided: dict[str, Node] = {}
+        for nid in seen:
+            for e in g.in_edges(nid):
+                if e.kind == "decides" and e.src not in decided:
+                    n = g.node(e.src)
+                    if n:
+                        decided[e.src] = n
+        report.decisions = sorted(decided.values(), key=lambda n: n.name)
+
         report.owners = sorted({
             f"{n.props.get('owner')} <{n.props.get('email')}>"
             for n in report.exposures if n.props.get("owner")
@@ -155,12 +185,13 @@ def impact_of_many(graph_path: str | Path, node_ids: list[str]) -> ImpactReport:
             r = impact_of(graph_path, nid)
         except KeyError:
             continue
-        for attr in ("models", "metrics", "exposures", "tests", "dimensions"):
+        for attr in ("models", "metrics", "exposures", "tests", "dimensions", "decisions"):
             for n in getattr(r, attr):
                 if n.id in seen:
                     continue
                 seen.add(n.id)
                 getattr(merged, attr).append(n)
+    merged.decisions.sort(key=lambda n: n.name)
     merged.owners = sorted({
         f"{n.props.get('owner')} <{n.props.get('email')}>"
         for n in merged.exposures if n.props.get("owner")

@@ -221,6 +221,50 @@ def project_prefix(group: str, project: str) -> str:
     return f"groups/{group}/projects/{project}"
 
 
+#: First segment of every key this platform writes — see Layout above. It is
+#: also the shallowest prefix `delete_prefix` will not take: `groups/` alone is
+#: every tenant in the bucket, which is the blast radius the guard exists for.
+TENANT_ROOT = "groups"
+
+
+def _tenant_prefix(prefix: str) -> str:
+    """A prefix that names one tenant, or an error saying why it does not.
+
+    The only caller is `delete_prefix`, and the only reason this is a function
+    rather than two lines inside it is that both of its refusals are about the
+    *bucket*, not about the argument. A prefix is a `startswith` match: an empty
+    one matches every key every sister company ever published, and `groups/`
+    matches every key that is not a stray. Neither is a deletion anybody meant
+    to ask for, and neither announces itself — the call succeeds, returns a
+    plausible-looking list, and the other tenant finds out at their next review.
+
+    So the rule follows the layout rather than the argument's truthiness: a key
+    is `groups/<group>/projects/<project>/…`, and the shallowest thing that is
+    still one tenant's is `groups/<group>`. Anything above that is refused even
+    with `dry_run=False`, because "I meant it" is an answer about the command,
+    not about whose data it reaches.
+    """
+    p = (prefix or "").strip()
+    # Whitespace first: a prefix built from a stripped-then-empty CLI argument
+    # arrives here as `" "`, which is falsy to nobody and matches nothing —
+    # except on a store where a key does start with a space.
+    if not p or not p.strip("/"):
+        raise ArtifactStoreError(
+            f"refusing to delete under {prefix!r}: an empty prefix matches every key "
+            f"in the bucket and would take every other tenant's artefacts with it. "
+            f"Name at least a group — see `project_prefix`."
+        )
+    segments = [s for s in p.split("/") if s]
+    if segments[0] != TENANT_ROOT or len(segments) < 2:
+        raise ArtifactStoreError(
+            f"refusing to delete under {prefix!r}: keys are laid out as "
+            f"{TENANT_ROOT}/<group>/projects/<project>/…, so a prefix that does not "
+            f"name a group is not scoped to one tenant. Name at least a group — see "
+            f"`project_prefix`."
+        )
+    return p
+
+
 def infer_backend(endpoint: str) -> str:
     """Which protocol this endpoint speaks, from its host alone.
 
@@ -438,6 +482,71 @@ class Store:
         except Exception as exc:
             raise ArtifactStoreError(f"list failed for {prefix}: {exc}") from exc
         return out
+
+    def _remove(self, key: str) -> bool:
+        """The delete itself. False when the SDK said the key was not there.
+
+        Split out of `delete` because `delete_prefix` has just listed the keys
+        it is removing and must not pay `delete`'s existence probe again — on a
+        tenant with a thousand artefacts that is a thousand round trips to learn
+        what the listing already said.
+        """
+        try:
+            if self.backend == "azure":
+                self.container().delete_blob(key)
+            else:
+                self.client().delete_object(Bucket=self.bucket, Key=key)
+        except Exception as exc:  # each SDK raises a family, not a base we own
+            if _is_missing(exc):
+                return False
+            raise ArtifactStoreError(f"delete failed for {self.url(key)}: {exc}") from exc
+        return True
+
+    def delete(self, key: str) -> bool:
+        """Remove one key. Returns whether it was there to remove.
+
+        Absent is a normal answer rather than a failure, for the same reason it
+        is in `get`: offboarding walks a list of keys that *might* exist — a
+        project reviewed once has no catalog — and an exception per key that was
+        never published is noise around the one that matters.
+
+        On S3 that answer costs an extra HEAD. DeleteObject is idempotent and
+        replies 204 whether or not the key was there, so the delete alone can
+        tell a caller nothing, and "removed 0 of 30" is the only signal a
+        prefix was wrong that arrives before the data is gone. Azure's
+        `delete_blob` raises on a missing blob and answers for itself.
+        """
+        # Probed before `_remove` rather than inside it, so a 403 surfaces as
+        # the head failure it is instead of a delete failure that never ran.
+        if self.backend != "azure" and not self.exists(key):
+            return False
+        return self._remove(key)
+
+    def delete_prefix(self, prefix: str, *, dry_run: bool = True) -> list[str]:
+        """Every key under a prefix, removed. Returns the keys, in `ls` order.
+
+        `dry_run` defaults to **True**, and the default is the feature. This is
+        what an offboarding command calls, with a prefix assembled from a group
+        and a project somebody typed; a default that deleted would make a
+        mistyped sister's name look exactly like a correct one right up to the
+        point where it is unrecoverable. The caller that means it says so.
+
+        Listing goes through `ls`, so pagination is whatever `ls` does and a
+        tenant with more than one page of artefacts is covered in full rather
+        than truncated at the first thousand — which would report a clean
+        offboarding and leave the tail in the bucket.
+
+        The prefix is matched as a prefix, not as a path: `…/projects/india`
+        also reaches `…/projects/india-legacy`. Deciding what a tenant's keys
+        are is the caller's — see the module docstring on where the semantics
+        live — so pass the trailing slash when that distinction matters.
+        """
+        keys = [str(row["key"]) for row in self.ls(_tenant_prefix(prefix))]
+        if dry_run:
+            return keys
+        for key in keys:
+            self._remove(key)
+        return keys
 
     def check(self) -> str:
         """Can we actually reach the bucket? Returns '' on success, else why not."""

@@ -84,6 +84,108 @@ def _render_group_card(root: Path, group: str, project: str) -> StepResult:
     return StepResult("group card", "ok", "sister roster refreshed")
 
 
+def _install_git_hook(root: Path, group: str, project: str) -> StepResult:
+    """Link `.git/hooks/pre-commit` to the gate, if it is not linked already.
+
+    Git does not clone `.git/hooks`, so on every fresh checkout the gate that
+    refuses a hand-edited generated artefact is simply absent, and nothing says
+    so until something generated is committed by hand. It was a `just hooks`
+    step someone had to remember; `pf loop audit` scored its absence at ten
+    points and named the checkout, which is a strange way to find out.
+
+    An existing hook is left alone, linked or not: replacing a file in someone's
+    `.git` is not a bootstrap's business, and a project using a hook manager has
+    its own reasons.
+    """
+    gitdir = root / ".git"
+    if not gitdir.is_dir():
+        return StepResult("pre-commit gate", "skipped", "not a git checkout")
+    hook = gitdir / "hooks" / "pre-commit"
+    if hook.exists() or hook.is_symlink():
+        return StepResult("pre-commit gate", "ok", "installed")
+    target = root / "platform" / "hooks" / "pre_commit.sh"
+    if not target.is_file():
+        return StepResult("pre-commit gate", "skipped", "no platform/hooks/pre_commit.sh")
+    try:
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        # Relative, so the link keeps working if the checkout moves.
+        hook.symlink_to(Path("..") / ".." / "platform" / "hooks" / "pre_commit.sh")
+    except OSError as exc:
+        return StepResult("pre-commit gate", "failed", str(exc))
+    return StepResult("pre-commit gate", "ok", "linked to platform/hooks/pre_commit.sh")
+
+
+def _group_manifest(root: Path, group: str, project: str) -> StepResult:
+    """`groups/<g>/group.yaml`: created if absent, and its template version
+    raised once the steps below have backfilled what that version promises.
+
+    A group created before the manifest existed is adopted as `provisioned`, not
+    `active`. Bootstrap can see that the plumbing is in place; it cannot see that
+    a human meant to take the family live, and `active` is what makes the gates
+    strict. Promotion is `pf group set-state <g> active`, which is a decision.
+    """
+    from pf import groups
+
+    try:
+        if groups.exists(root, group):
+            manifest = groups.load(root, group)
+            if not manifest.behind_template:
+                return StepResult("group manifest", "ok",
+                                  f"v{manifest.template_version}, {manifest.lifecycle}")
+            was = manifest.template_version
+            manifest.template_version = groups.TEMPLATE_VERSION
+            # In place, so the family's own comments survive a template bump.
+            if not groups.set_key(manifest.path, "template_version",
+                                  groups.TEMPLATE_VERSION):
+                groups.save(manifest)
+            return StepResult("group manifest", "ok",
+                              f"template v{was} -> v{groups.TEMPLATE_VERSION}")
+        # The archetype already lives in the ontology instance for every group
+        # scaffolded before the manifest; carry it over rather than asking again.
+        domain = ""
+        instance = root / "groups" / group / "ontology" / "instance.yaml"
+        if instance.is_file():
+            import yaml
+
+            try:
+                domain = str((yaml.safe_load(instance.read_text()) or {}).get("domain", "") or "")
+            except yaml.YAMLError:
+                domain = ""
+        groups.save(groups.Manifest(
+            group=group, path=groups.manifest_path(root, group), domain=domain,
+            lifecycle="provisioned", template_version=groups.TEMPLATE_VERSION))
+        return StepResult("group manifest", "ok", "created, lifecycle: provisioned")
+    except groups.GroupError as exc:
+        return StepResult("group manifest", "failed", str(exc))
+
+
+def _group_plugin_and_loops(root: Path, group: str, project: str) -> StepResult:
+    """Two group files the scaffold did not always write, created only if absent.
+
+    The group marketplace lists `./.claude` as a plugin, but a plugin directory
+    without `.claude-plugin/plugin.json` is skipped without a message, so every
+    group scaffolded before the manifest was templated had a plugin that was
+    listed, enabled in each sister's settings and never loaded. `loops.yaml`
+    came later still, and a group without one cannot waive a finding or lower a
+    loop's autonomy.
+
+    Per project like the group card, because bootstrap runs per project, and
+    written only when missing: both files are hand-edited after scaffolding,
+    and a step that regenerated them would erase the family's decisions.
+    """
+    from pf.scaffold.generator import GROUP_LOOPS, GROUP_PLUGIN, write
+
+    gdir = root / "groups" / group
+    created = []
+    for rel, template in ((Path(".claude") / ".claude-plugin" / "plugin.json", GROUP_PLUGIN),
+                          (Path("loops.yaml"), GROUP_LOOPS)):
+        if not (gdir / rel).exists():
+            write(gdir / rel, template, {"group": group})
+            created.append(rel.as_posix())
+    return StepResult("group plugin + loops", "ok",
+                      f"created {', '.join(created)}" if created else "present")
+
+
 def _export_mdl(root: Path, group: str, project: str) -> StepResult:
     """The BI/agent projection. Emitted even when empty so the path is stable and
     a consumer can be pointed at it before the first model exists."""
@@ -200,8 +302,9 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
     with `pf capability-add`. A fresh project has none of the files, so
     `pf new-project` still gets the whole default set.
     """
-    from pf.capabilities import CAPABILITIES, defaults, render
+    from pf.capabilities import CAPABILITIES, defaults, gate_additions, render
     from pf.capabilities import apply as apply_capability
+    from pf.cli import _merge_gate_rules
 
     d = _pdir(root, group, project)
     ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
@@ -209,6 +312,13 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
 
     for name in defaults():
         cap = CAPABILITIES[name]
+        # Merged for every default capability, not only for one being applied
+        # now. The files and the gate rules are written by two different calls,
+        # so an interrupt between them left a project whose generated artefacts
+        # nothing denies — and the file check below would then report the
+        # capability "present" forever and never reach the merge again.
+        # `_merge_gate_rules` dedups, so repeating it costs nothing.
+        _merge_gate_rules(gate_additions([cap]))
         # `.github/**` belongs to the repository, not the project — the same
         # split `pf.capabilities.apply` makes when writing.
         targets = [
@@ -228,14 +338,6 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
             continue
         try:
             written = apply_capability(cap, root, d, ctx)
-            # `apply` writes files and merges settings; the gate half is a
-            # separate call in `pf new-project`. Backfilling the files without it
-            # would leave a project whose generated artefacts nothing denies —
-            # the capability present, its guard rail absent.
-            from pf.capabilities import gate_additions
-            from pf.cli import _merge_gate_rules
-
-            _merge_gate_rules(gate_additions([cap]))
         except Exception as exc:  # noqa: BLE001 — one capability must not stop the rest
             out.append(StepResult(f"capability:{name}", "failed", str(exc)))
             continue
@@ -301,6 +403,142 @@ def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
     return StepResult("ci workflow", "ok", detail)
 
 
+PLATFORM_WORKFLOW = """\
+# GENERATED by `pf bootstrap`. Do not hand-edit — the next bootstrap regenerates
+# it. Change `PLATFORM_WORKFLOW` in pf.scaffold.bootstrap instead.
+#
+# The platform had no CI at all. Every tenant's workflow tested that tenant, and
+# the one change with fleet-wide blast radius — the shared engines, the gate, the
+# scaffolder — was the only change nothing ran. `pf tokens`, `pf check` and
+# `pf loop audit` were likewise written to be enforcing and wired into nothing.
+name: platform
+
+on:
+  pull_request:
+    paths:
+      - "platform/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "gate.yaml"
+      - "groups/*/group.yaml"
+      - ".github/workflows/platform.yml"
+
+concurrency:
+  group: platform-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest platform/tests -q
+      # `platform` only: a group's own code is linted by that group's project
+      # workflow, and a platform change should not be blocked by lint debt in a
+      # tenant it never touched.
+      - run: uv run ruff check platform
+
+  # The gates that were written to enforce and then never wired to anything.
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # pf check reports the blast radius of the diff
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - name: Always-on context budget
+        run: uv run pf tokens
+      - name: Ontology conformance and blast radius
+        run: uv run pf check
+      - name: Every family is onboarded
+        run: uv run pf group verify
+      - name: Per-family loop readiness
+        run: uv run pf loop audit --per-group
+
+  # The reconciler, as a gate. `pf bootstrap` is thirteen idempotent steps that
+  # backfill whatever the scaffold gained since a project was created — and
+  # nothing ran it, so four of five groups sat for months without the plugin
+  # manifest and the loop overrides it writes. Drift is only invisible while
+  # nobody compares.
+  converged:
+    runs-on: ubuntu-latest
+    steps:
+      # Submodules, because `docs/VENDOR-CARD.md` reports each upstream `ok` or
+      # `drift` by comparing the vendored checkout against the lock. Without them
+      # every upstream reads `ok` — not because nothing drifted, but because
+      # there is nothing to compare — so the card regenerated here disagreed with
+      # the one a developer commits, and the gate failed on a difference it had
+      # manufactured itself.
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pf bootstrap --all
+      - name: The generated tree matches the committed one
+        # --ignore-submodules=dirty: a vendored submodule with local build
+        # output is a working-tree condition, not a generated-tree mismatch,
+        # and bootstrap never writes into vendor/.
+        #
+        # The exclusions are projections of a *built warehouse*, not of the
+        # scaffold. The graph is read from `transform/target/manifest.json` and
+        # the DuckDB file, and MDL, the catalogue, recce's plan and the whole
+        # reporting layer are read from the graph in turn. None of those inputs
+        # are in git, so a bare checkout regenerates them empty — an 8-line MDL
+        # against a committed 1654-line one — and the gate would fail on every
+        # PR forever while reporting nothing about drift.
+        #
+        # What is left is what a fresh clone can actually reproduce, which is
+        # also what this gate was for: the plugin manifest, the loop overrides,
+        # the cards, the CI wiring. Four of five groups went months without
+        # those. The warehouse-derived artefacts are covered by `tests` and
+        # `recce`, which build before they compare.
+        run: |
+          if ! git diff --exit-code --ignore-submodules=dirty -- . \
+              ':(exclude)**/kg/graph.json' \
+              ':(exclude)**/mdl/mdl.json' \
+              ':(exclude)**/catalog/*.json' \
+              ':(exclude)**/governance/otop.json' \
+              ':(exclude)**/transform/recce.yml' \
+              ':(exclude)**/reporting/**' \
+              ':(exclude)**/transform/models/_reporting__exposures.yml'; then
+            echo "::error::pf bootstrap --all changed tracked files, so the"
+            echo "::error::committed tree is behind the scaffold. Run it"
+            echo "::error::locally and commit what it writes."
+            exit 1
+          fi
+"""
+
+
+def _platform_workflow(root: Path, group: str, project: str) -> StepResult:
+    """CI for the platform itself, which had none.
+
+    Platform-level like the OWL export and the vendor docs: written on every
+    bootstrap, identical every time, so it exists regardless of which project
+    happened to be bootstrapped. It is generated rather than hand-written
+    because `gate.yaml` denies `.github/workflows/**` to agents, and the reason
+    holds — the gate that judges a change is not the change's to edit.
+    """
+    path = root / ".github" / "workflows" / "platform.yml"
+    if path.is_file() and path.read_text() == PLATFORM_WORKFLOW:
+        return StepResult("platform CI", "ok", "current")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(PLATFORM_WORKFLOW)
+    return StepResult("platform CI", "ok", ".github/workflows/platform.yml")
+
+
 def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
@@ -309,6 +547,13 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
              "#",
              "# One code location per project: a failure or reload in one sister never",
              "# affects another, and each gets its own process.",
+             "#",
+             "# Absolute on purpose: Dagster resolves a relative working_directory",
+             "# against the process cwd, not against this file, so a relative path",
+             "# silently resolves outside the repo. That makes the file machine",
+             "# specific, which is why it is generated and not committed — tracked,",
+             "# it recorded whose checkout last ran bootstrap and conflicted on every",
+             "# onboarding.",
              "load_from:"]
     n = 0
     for g, p, d in all_projects():
@@ -423,7 +668,12 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         if wh is not None and outputs:
             current = target_type(text, "prod")
             if current == "duckdb":
-                new_text, swapped = replace_target(text, "prod", wh.output)
+                # `output_for`, not `output`: the destination defaults carry a
+                # `{{module}}` token so each tenant lands in its own schema, and
+                # this path writes the block straight into profiles.yml with no
+                # render pass of its own. Unrendered it would set the schema to
+                # the literal token.
+                new_text, swapped = replace_target(text, "prod", wh.output_for(project))
                 if swapped:
                     profiles.write_text(new_text)
                     changed.append(f"prod -> {wh.name}")
@@ -498,6 +748,13 @@ STEPS: list[Step] = [
     Step("context card", "the always-on index every session loads", _render_card),
     Step("group card", "sister roster, so a new project is visible to its siblings",
          _render_group_card),
+    Step("pre-commit gate", "git does not clone .git/hooks, so on a fresh "
+         "checkout the gate is absent and nothing says so", _install_git_hook),
+    Step("group manifest", "a group is an object with an owner, a lifecycle and "
+         "a template version, not just a directory", _group_manifest),
+    Step("group plugin + loops", "a group scaffolded before either existed has a "
+                                 "plugin that never loads and no loop overrides file",
+         _group_plugin_and_loops),
     Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
          _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
@@ -505,13 +762,16 @@ STEPS: list[Step] = [
                           "validated against the vendored schema", _export_otop),
     Step("vendor docs", "provenance stays generated, so it cannot drift from the "
                         "registry the tooling reads", _vendor_docs),
-    Step("reporting", "dashboards are a projection of the metrics, regenerated "
-                      "rather than hand-maintained", _build_reporting),
     Step("tools", "a tool enabled for the group must reach every sister, "
                   "including projects created before it existed", _bootstrap_tools),
     Step("capabilities", "a default-enabled capability must reach every project, "
                          "including ones scaffolded before it was a default",
          _bootstrap_capabilities),
+    Step("reporting", "dashboards are a projection of the metrics, regenerated "
+                      "rather than hand-maintained", _build_reporting),
+    Step("platform CI", "the change with fleet-wide blast radius was the only "
+         "one with no CI, and the enforcing commands were wired to nothing",
+         _platform_workflow),
     Step("ci workflow", "one workflow per project, composed from the jobs its "
                         "capabilities declare, so CI is readable in one place",
          _ci_workflow),

@@ -80,6 +80,25 @@ def _authored(root: Path, rel: str) -> str:
     return _as_ts(out) or _now()
 
 
+def _anchor(root: Path) -> str:
+    """The instant an export is *about*, which is the commit it describes.
+
+    `_authored` already keeps policy objects from churning. Observations kept
+    `now()`, on the reasoning that checking something happens at the moment you
+    check it — true, and it made the manifest rewrite itself on every export:
+    nine projects, eighty lines each, every `pf bootstrap`. That is the same
+    noise `_authored` exists to prevent, and it costs more than it buys, because
+    re-running a check against an unchanged tree does not produce new evidence.
+    It recomputes the same verdict about the same commit.
+
+    So evidence is stamped with the commit it was derived from. It moves when
+    the thing it describes moves, which is what makes a diff in this file worth
+    reading, and it lets CI assert that the generated tree matches the committed
+    one — impossible while every regeneration guaranteed a diff.
+    """
+    return _as_ts(_git(root, "log", "-1", "--format=%cI")) or _now()
+
+
 def _digest(root: Path, rel: str) -> str:
     oid = _git(root, "rev-parse", f"HEAD:{rel}")
     return f"git:{oid}" if oid else ""
@@ -138,7 +157,7 @@ class Observation:
 
 
 def _observe(root: Path, project_dir: Path | None, kind: str,
-             group: str = "", project: str = "") -> Observation:
+             group: str = "", project: str = "", at: str = "") -> Observation:
     """Resolve one evidence kind against reality.
 
     Deliberately conservative: anything we cannot check right now is `unknown`,
@@ -146,7 +165,7 @@ def _observe(root: Path, project_dir: Path | None, kind: str,
     out of scope (a project-scoped artefact when exporting platform-wide), so it
     stays distinguishable from "we did not look".
     """
-    now = _now()
+    now = at or _now()
 
     if kind == "pf check":
         if project_dir is None:
@@ -305,6 +324,7 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
     pdir = Path(project_dir) if project_dir else None
     onto = load_ontology()
     commit = _commit(root)
+    anchor = _anchor(root)
     policy_created = _authored(root, "platform/src/pf/ontology/policy.yaml")
 
     scope = f"{group}/{project}" if project else "platform"
@@ -362,7 +382,7 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
                                       implemented_at=policy_created))
 
         for kind in p.evidence:
-            o = _observe(root, pdir, kind, group, project)
+            o = _observe(root, pdir, kind, group, project, at=anchor)
             ev_id = f"evidence.{NS}.{p.id}.{_slug(kind)}"
             objects.append(_obj(
                 ev_id, "evidence", f"{kind} for {p.id}", o.observed_at,
@@ -386,7 +406,7 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
             "title": f"Policy and evidence — {scope}",
             "repository": _origin(root),
             "commit": commit,
-            "metadata": {"created_at": _now(), "actor": "pf.projections.otop"},
+            "metadata": {"created_at": anchor, "actor": "pf.projections.otop"},
         },
         "objects": objects,
         "relationships": relationships,
@@ -424,7 +444,23 @@ def _slug(text: str) -> str:
 
 
 def _origin(root: Path) -> str:
-    return _git(root, "remote", "get-url", "origin") or "local"
+    """The repository this manifest describes, spelled one way.
+
+    The same repository has several valid remote spellings — `git@host:org/repo`,
+    `https://host/org/repo`, either with or without `.git` — and which one a
+    checkout uses is a property of how it was cloned, not of the repository.
+    A CI runner clones without the suffix and a laptop with it, so the committed
+    manifest and the regenerated one disagreed about a string neither of them
+    chose. Normalise to the scheme-less canonical form.
+    """
+    url = _git(root, "remote", "get-url", "origin")
+    if not url:
+        return "local"
+    url = url.strip()
+    url = url.removesuffix(".git")
+    if url.startswith("git@"):                      # git@host:org/repo
+        url = "https://" + url[4:].replace(":", "/", 1)
+    return url
 
 
 def export(root: str | Path, group: str = "", project: str = "",
@@ -438,8 +474,50 @@ def export(root: str | Path, group: str = "", project: str = "",
     else:
         path = Path(root) / "platform" / "src" / "pf" / "ontology" / "otop.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(m, indent=2) + "\n")
+    from pf.kg.card import write_if_changed
+
+    # Keep the existing stamps when only the stamps would move.
+    #
+    # The manifest records the commit it was derived from, which makes it
+    # self-referential: generate it, commit it, and HEAD is now a commit the file
+    # cannot name. The next export restamps, so `pf bootstrap` was never
+    # idempotent and the `converged` CI gate — "the generated tree matches the
+    # committed one" — could not pass on any tree, no matter how current.
+    #
+    # Provenance is still honest: the stamp moves whenever the policy or evidence
+    # it describes moves. It just stops moving because time passed.
+    if path.exists():
+        try:
+            if _same_but_for_stamps(json.loads(path.read_text()), m):
+                return path
+        except (json.JSONDecodeError, OSError):
+            pass  # unreadable or not ours — write a fresh one
+
+    write_if_changed(path, json.dumps(m, indent=2) + "\n")
     return path
+
+
+#: Fields that record *when and from where* an export ran, not what it says.
+#: Every `*_at` counts — `implemented_at` and `verified_at` are as much a clock
+#: reading as `created_at`, and naming them one at a time missed one.
+_STAMP_KEYS = frozenset({"commit"})
+
+
+def _is_stamp(key: str) -> bool:
+    return key in _STAMP_KEYS or key.endswith("_at")
+
+
+def _strip_stamps(node: Any) -> Any:
+    if isinstance(node, dict):
+        return {k: _strip_stamps(v) for k, v in node.items() if not _is_stamp(k)}
+    if isinstance(node, list):
+        return [_strip_stamps(v) for v in node]
+    return node
+
+
+def _same_but_for_stamps(old: Any, new: Any) -> bool:
+    """True when two manifests differ only in their provenance stamps."""
+    return _strip_stamps(old) == _strip_stamps(new)
 
 
 def stats(m: dict[str, Any]) -> dict[str, int]:
