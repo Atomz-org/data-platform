@@ -338,6 +338,9 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     dbt_project.yml survive. Text-level for `macro-paths` because a YAML
     round-trip would reflow the whole file and lose the comments explaining why
     the platform macros are on the path in the first place.
+
+    A third thing is wired rather than drifted: a group's shared seeds. See
+    `_wire_group_package`.
     """
     import yaml
 
@@ -377,6 +380,10 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             if inserted:
                 dbt_yml.write_text("\n".join(out) + "\n")
                 changed.append(f"macro-paths += {len(missing)}")
+
+    note = _wire_group_package(root, group, d)
+    if note:
+        changed.append(note)
 
     profiles = d / "transform" / "profiles.yml"
     if profiles.exists():
@@ -428,10 +435,54 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dbt wiring", "ok", "; ".join(changed))
 
 
+def _wire_group_package(root: Path, group: str, d: Path) -> str:
+    """Install `groups/<group>/shared/transform` as a local dbt package.
+
+    Only once the group ships a seed. Pointing a project's `seed-paths` at the
+    shared directory looks equivalent and is not: dbt writes each file's compiled
+    output at `target/<path relative to the project>`, so a `../../../shared`
+    path lands generated SQL and seed copies beside the project, outside every
+    ignore rule. A package compiles under `target/<package>/` instead.
+
+    Macros are unaffected — sisters keep loading the shared `macros` through
+    their own macro-paths, so calls stay unqualified. Appended as text so the
+    file's comments survive, and re-parsed before writing so an unusual layout
+    is reported rather than corrupted.
+    """
+    import os
+
+    import yaml
+
+    shared = root / "groups" / group / "shared" / "transform"
+    if not (shared / "dbt_project.yml").exists() or not any((shared / "seeds").glob("*.csv")):
+        return ""
+    transform = d / "transform"
+    packages = transform / "packages.yml"
+    rel = Path(os.path.relpath(shared, transform)).as_posix()
+
+    def wired(text: str) -> bool:
+        try:
+            listed = (yaml.safe_load(text) or {}).get("packages") or []
+        except yaml.YAMLError:
+            return False
+        return any(isinstance(p, dict) and p.get("local") == rel for p in listed)
+
+    text = packages.read_text() if packages.exists() else "packages:\n"
+    if wired(text):
+        return ""
+    new = text.rstrip("\n") + f"\n  - local: {rel}\n"
+    if not wired(new):
+        return f"group seeds not wired — add `- local: {rel}` to packages.yml"
+    packages.write_text(new)
+    return f"packages += {group} shared (local)"
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
+    from pf.runtime.dbt_runtime import validate_paths
 
-    issues = validate_project(_pdir(root, group, project))
+    d = _pdir(root, group, project)
+    issues = validate_project(d) + validate_paths(d)
     errors = [i for i in issues if i.severity == "error"]
     if errors:
         return StepResult("conformance", "failed",
