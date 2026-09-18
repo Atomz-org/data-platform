@@ -1382,7 +1382,85 @@
       }
     }
   ],
-  "views": [],
+  "views": [
+    {
+      "name": "fct_commodity_prices_daily_view",
+      "statement": "select\n  fct_commodity_prices_daily.price_id,\n  fct_commodity_prices_daily.commodity_id,\n  fct_commodity_prices_daily.price_date,\n  fct_commodity_prices_daily.close_price,\n  fct_commodity_prices_daily.high_price,\n  fct_commodity_prices_daily.low_price,\n  fct_commodity_prices_daily.currency_code,\n  fct_commodity_prices_daily.volume,\n  fct_commodity_prices_daily.price_change_pct,\n  fct_commodity_prices_daily.is_latest,\n  fct_commodity_prices_daily.price_basis,\n  fct_commodity_prices_daily.quote_unit,\n  fct_commodity_prices_daily.open_price,\n  fct_commodity_prices_daily.prev_close_price,\n  fct_commodity_prices_daily.price_change,\n  fct_commodity_prices_daily.moving_avg_20d,\n  fct_commodity_prices_daily.moving_avg_50d,\n  fct_commodity_prices_daily.high_252d,\n  fct_commodity_prices_daily.low_252d,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_commodity_prices_daily\n  left join dim_commodities on fct_commodity_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "commodity_price_board, report_index, report_landed_cost, report_metrics_avg_benchmark_price_usd, report_metrics_benchmark_price_days, report_metrics_benchmark_price_usd_total, report_metrics_contracts_traded, report_metrics_period_high_price_usd, report_metrics_period_low_price_usd",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research, data-platform",
+        "pf.description": "Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.",
+        "pf.grain": "one commodity per price date"
+      }
+    },
+    {
+      "name": "fct_fx_rates_daily_view",
+      "statement": "select\n  fct_fx_rates_daily.fx_day_id,\n  fct_fx_rates_daily.quote_currency_code,\n  fct_fx_rates_daily.rate_date,\n  fct_fx_rates_daily.usd_rate,\n  fct_fx_rates_daily.base_currency_code,\n  fct_fx_rates_daily.fixed_on,\n  fct_fx_rates_daily.is_carried_forward,\n  fct_fx_rates_daily.prev_usd_rate,\n  fct_fx_rates_daily.usd_rate_change_pct\nfrom fct_fx_rates_daily",
+      "properties": {
+        "pf.exposures": "commodity_price_board, report_landed_cost, report_metrics_avg_usd_inr_rate, report_metrics_usd_inr_rate_days, report_metrics_usd_inr_rate_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research, data-platform",
+        "pf.description": "Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.",
+        "pf.grain": "one currency per calendar day"
+      }
+    },
+    {
+      "name": "fct_india_landed_prices_daily_view",
+      "statement": "select\n  fct_india_landed_prices_daily.price_id,\n  fct_india_landed_prices_daily.commodity_id,\n  fct_india_landed_prices_daily.price_date,\n  fct_india_landed_prices_daily.market_unit,\n  fct_india_landed_prices_daily.usd_inr_rate,\n  fct_india_landed_prices_daily.tariff_id,\n  fct_india_landed_prices_daily.effective_duty_rate,\n  fct_india_landed_prices_daily.is_duty_rate_confirmed,\n  fct_india_landed_prices_daily.landed_price_inr,\n  fct_india_landed_prices_daily.duty_inr,\n  fct_india_landed_prices_daily.price_basis,\n  fct_india_landed_prices_daily.quote_unit,\n  fct_india_landed_prices_daily.benchmark_price_usd,\n  fct_india_landed_prices_daily.benchmark_usd_per_market_unit,\n  fct_india_landed_prices_daily.usd_inr_fixed_on,\n  fct_india_landed_prices_daily.duty_basis,\n  fct_india_landed_prices_daily.is_import_prohibited,\n  fct_india_landed_prices_daily.assessable_value_inr,\n  fct_india_landed_prices_daily.landed_price_change_inr,\n  fct_india_landed_prices_daily.landed_price_change_pct,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited as commodities_is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_india_landed_prices_daily\n  left join dim_commodities on fct_india_landed_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_index, report_landed_cost, report_metrics_avg_duty_inr, report_metrics_avg_landed_price_inr, report_metrics_duty_inr_total, report_metrics_landed_price_days, report_metrics_landed_price_inr_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "India import landed price per commodity per day, in \u20b9 per Indian market unit: benchmark \u00d7 USD/INR \u00d7 (1 + customs duty). The benchmark stands in for CIF value \u2014 freight, insurance, landing charges and GST are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters.",
+        "pf.grain": "one commodity per price date"
+      }
+    },
+    {
+      "name": "fct_mcx_lot_equivalents_daily_view",
+      "statement": "select\n  fct_mcx_lot_equivalents_daily.lot_equivalent_id,\n  fct_mcx_lot_equivalents_daily.contract_code,\n  fct_mcx_lot_equivalents_daily.commodity_id,\n  fct_mcx_lot_equivalents_daily.price_date,\n  fct_mcx_lot_equivalents_daily.price_basis,\n  fct_mcx_lot_equivalents_daily.quote_unit,\n  fct_mcx_lot_equivalents_daily.quote_equivalent_inr,\n  fct_mcx_lot_equivalents_daily.lot_value_inr,\n  fct_mcx_lot_equivalents_daily.exchange,\n  fct_mcx_lot_equivalents_daily.contract_name,\n  fct_mcx_lot_equivalents_daily.market_unit,\n  fct_mcx_lot_equivalents_daily.is_duty_rate_confirmed,\n  fct_mcx_lot_equivalents_daily.quote_size,\n  fct_mcx_lot_equivalents_daily.lot_size,\n  fct_mcx_lot_equivalents_daily.lot_unit,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange as commodities_exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_mcx_lot_equivalents_daily\n  left join dim_commodities on fct_mcx_lot_equivalents_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "commodity_price_board",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research",
+        "pf.description": "The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot \u2014 GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks \u2014 not an MCX quote.",
+        "pf.grain": "one MCX contract per price date"
+      }
+    },
+    {
+      "name": "fct_precious_metal_retail_prices_daily_view",
+      "statement": "select\n  fct_precious_metal_retail_prices_daily.retail_price_id,\n  fct_precious_metal_retail_prices_daily.commodity_id,\n  fct_precious_metal_retail_prices_daily.price_date,\n  fct_precious_metal_retail_prices_daily.purity_code,\n  fct_precious_metal_retail_prices_daily.price_inr_per_gram,\n  fct_precious_metal_retail_prices_daily.price_inr_per_10g,\n  fct_precious_metal_retail_prices_daily.price_inr_per_kg,\n  fct_precious_metal_retail_prices_daily.purity_label,\n  fct_precious_metal_retail_prices_daily.fineness,\n  fct_precious_metal_retail_prices_daily.price_basis,\n  fct_precious_metal_retail_prices_daily.is_duty_rate_confirmed,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_precious_metal_retail_prices_daily\n  left join dim_commodities on fct_precious_metal_retail_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "commodity_price_board",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research",
+        "pf.description": "Landed gold and silver in Indian retail conventions \u2014 per gram, 10 g and kg, by purity.",
+        "pf.grain": "one precious metal per purity grade per price date"
+      }
+    },
+    {
+      "name": "rpt_commodity_price_board_view",
+      "statement": "select\n  rpt_commodity_price_board.commodity_id,\n  rpt_commodity_price_board.category,\n  rpt_commodity_price_board.benchmark_price_usd,\n  rpt_commodity_price_board.landed_price_inr,\n  rpt_commodity_price_board.is_stale,\n  rpt_commodity_price_board.commodity_name,\n  rpt_commodity_price_board.segment,\n  rpt_commodity_price_board.exchange,\n  rpt_commodity_price_board.price_basis,\n  rpt_commodity_price_board.quote_unit,\n  rpt_commodity_price_board.price_date,\n  rpt_commodity_price_board.price_change_pct,\n  rpt_commodity_price_board.high_252d,\n  rpt_commodity_price_board.low_252d,\n  rpt_commodity_price_board.market_unit,\n  rpt_commodity_price_board.usd_inr_rate,\n  rpt_commodity_price_board.effective_duty_rate,\n  rpt_commodity_price_board.duty_basis,\n  rpt_commodity_price_board.is_import_prohibited,\n  rpt_commodity_price_board.is_duty_rate_confirmed,\n  rpt_commodity_price_board.landed_price_change_pct,\n  rpt_commodity_price_board.spot_price_usd,\n  rpt_commodity_price_board.spot_quoted_at,\n  rpt_commodity_price_board.futures_spot_basis_pct,\n  rpt_commodity_price_board.price_age_days\nfrom rpt_commodity_price_board",
+      "properties": {
+        "pf.exposures": "commodity_price_board, report_landed_cost, report_price_board",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research, data-platform",
+        "pf.description": "One row per tracked commodity: latest benchmark and move, 252-day range, landed \u20b9 price, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.",
+        "pf.grain": "one commodity"
+      }
+    },
+    {
+      "name": "rpt_mcx_contract_board_view",
+      "statement": "select\n  rpt_mcx_contract_board.contract_code,\n  rpt_mcx_contract_board.commodity_id,\n  rpt_mcx_contract_board.quote_equivalent_inr,\n  rpt_mcx_contract_board.lot_value_inr,\n  rpt_mcx_contract_board.is_stale,\n  rpt_mcx_contract_board.exchange,\n  rpt_mcx_contract_board.contract_name,\n  rpt_mcx_contract_board.price_date,\n  rpt_mcx_contract_board.price_basis,\n  rpt_mcx_contract_board.is_duty_rate_confirmed,\n  rpt_mcx_contract_board.quote_size,\n  rpt_mcx_contract_board.quote_unit,\n  rpt_mcx_contract_board.lot_size,\n  rpt_mcx_contract_board.lot_unit,\n  rpt_mcx_contract_board.price_age_days,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange as commodities_exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom rpt_mcx_contract_board\n  left join dim_commodities on rpt_mcx_contract_board.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "commodity_price_board, report_mcx_contracts",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Commodity Research, data-platform",
+        "pf.description": "One row per tracked MCX contract: the latest landed equivalent per quote basis and per lot, and how old its benchmark is. ZINC and ZINCMINI carry the last indicative LME level and read stale until it is refreshed.",
+        "pf.grain": "one MCX contract"
+      }
+    }
+  ],
   "cubes": [
     {
       "name": "commodity_india_core",
@@ -1390,7 +1468,7 @@
       "measures": [
         {
           "name": "avg_benchmark_price_usd",
-          "expression": "-- avg_benchmark_price_usd",
+          "expression": "sum(close_price) / nullif(count(close_price), 0)",
           "type": "DOUBLE",
           "description": "Avg Benchmark Price (USD)",
           "properties": {
@@ -1399,7 +1477,7 @@
         },
         {
           "name": "avg_duty_inr",
-          "expression": "-- avg_duty_inr",
+          "expression": "sum(duty_inr) / nullif(count(landed_price_inr), 0)",
           "type": "DOUBLE",
           "description": "Avg Customs Duty (INR)",
           "properties": {
@@ -1408,7 +1486,7 @@
         },
         {
           "name": "avg_landed_price_inr",
-          "expression": "-- avg_landed_price_inr",
+          "expression": "sum(landed_price_inr) / nullif(count(landed_price_inr), 0)",
           "type": "DOUBLE",
           "description": "Avg India Landed Price (INR)",
           "properties": {
@@ -1417,7 +1495,7 @@
         },
         {
           "name": "avg_usd_inr_rate",
-          "expression": "-- avg_usd_inr_rate",
+          "expression": "sum(usd_rate) / nullif(count(usd_rate), 0)",
           "type": "DOUBLE",
           "description": "Avg USD/INR",
           "properties": {
@@ -1426,7 +1504,7 @@
         },
         {
           "name": "benchmark_price_days",
-          "expression": "-- benchmark_price_days",
+          "expression": "count(close_price)",
           "type": "DOUBLE",
           "description": "Priced Days",
           "properties": {
@@ -1434,17 +1512,8 @@
           }
         },
         {
-          "name": "benchmark_price_mom_change",
-          "expression": "-- benchmark_price_mom_change",
-          "type": "DOUBLE",
-          "description": "Benchmark Price MoM Change",
-          "properties": {
-            "pf.metric_type": "derived"
-          }
-        },
-        {
           "name": "benchmark_price_usd_total",
-          "expression": "-- benchmark_price_usd_total",
+          "expression": "sum(close_price)",
           "type": "DOUBLE",
           "description": "Benchmark Price Total (component)",
           "properties": {
@@ -1453,7 +1522,7 @@
         },
         {
           "name": "contracts_traded",
-          "expression": "-- contracts_traded",
+          "expression": "sum(volume)",
           "type": "DOUBLE",
           "description": "Contracts Traded",
           "properties": {
@@ -1462,7 +1531,7 @@
         },
         {
           "name": "duty_inr_total",
-          "expression": "-- duty_inr_total",
+          "expression": "sum(duty_inr)",
           "type": "DOUBLE",
           "description": "Customs Duty Total (component)",
           "properties": {
@@ -1471,7 +1540,7 @@
         },
         {
           "name": "landed_price_days",
-          "expression": "-- landed_price_days",
+          "expression": "count(landed_price_inr)",
           "type": "DOUBLE",
           "description": "Days With a Landed Price",
           "properties": {
@@ -1480,7 +1549,7 @@
         },
         {
           "name": "landed_price_inr_total",
-          "expression": "-- landed_price_inr_total",
+          "expression": "sum(landed_price_inr)",
           "type": "DOUBLE",
           "description": "Landed Price Total (component)",
           "properties": {
@@ -1488,17 +1557,8 @@
           }
         },
         {
-          "name": "landed_price_mom_change",
-          "expression": "-- landed_price_mom_change",
-          "type": "DOUBLE",
-          "description": "Landed Price MoM Change",
-          "properties": {
-            "pf.metric_type": "derived"
-          }
-        },
-        {
           "name": "period_high_price_usd",
-          "expression": "-- period_high_price_usd",
+          "expression": "max(coalesce(high_price, close_price))",
           "type": "DOUBLE",
           "description": "Period High (USD)",
           "properties": {
@@ -1507,7 +1567,7 @@
         },
         {
           "name": "period_low_price_usd",
-          "expression": "-- period_low_price_usd",
+          "expression": "min(coalesce(low_price, close_price))",
           "type": "DOUBLE",
           "description": "Period Low (USD)",
           "properties": {
@@ -1516,7 +1576,7 @@
         },
         {
           "name": "usd_inr_rate_days",
-          "expression": "-- usd_inr_rate_days",
+          "expression": "count(usd_rate)",
           "type": "DOUBLE",
           "description": "USD/INR Days",
           "properties": {
@@ -1525,7 +1585,7 @@
         },
         {
           "name": "usd_inr_rate_total",
-          "expression": "-- usd_inr_rate_total",
+          "expression": "sum(usd_rate)",
           "type": "DOUBLE",
           "description": "USD/INR Total (component)",
           "properties": {
@@ -1537,12 +1597,6 @@
         {
           "name": "category",
           "expression": "category",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "commodity_id",
-          "expression": "commodity_id",
           "type": "VARCHAR",
           "description": ""
         },
@@ -1589,24 +1643,6 @@
           "description": ""
         },
         {
-          "name": "market_unit",
-          "expression": "market_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "price_basis",
-          "expression": "price_basis",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "price_basis",
-          "expression": "price_basis",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "price_basis",
           "expression": "price_basis",
           "type": "VARCHAR",
@@ -1632,12 +1668,6 @@
         }
       ],
       "timeDimensions": [
-        {
-          "name": "price_date",
-          "expression": "price_date",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
         {
           "name": "price_date",
           "expression": "price_date",
