@@ -17,8 +17,10 @@ sisters that mean different things by `Payment` cannot be rolled up. Obligations
 can and must, because acme-eu answers to GDPR and acme-us does not. See
 [POLICY.md](POLICY.md).
 
-The knowledge graph is the join of all four. Everything else is a **projection**
-of the graph, never a parallel hand-maintained file:
+The knowledge graph is the join of all four — its node kinds, its legal edges and
+the traversals that answer real questions are mapped in [KG-ATLAS.md](KG-ATLAS.md).
+Everything else is a **projection** of the graph, never a parallel
+hand-maintained file:
 
 | Projection | Command | Consumer |
 |---|---|---|
