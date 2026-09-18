@@ -62,6 +62,46 @@ kg_app = typer.Typer(help="Knowledge graph operations.")
 app.add_typer(kg_app, name="kg")
 console = Console()
 
+
+@app.callback()
+def _bootstrap_commit_gate() -> None:
+    """Runs before every command. Installs the commit gate if its slot is empty.
+
+    The gate is enforced only by `.git/hooks/pre-commit`, and a git hook cannot
+    be committed — so every clone starts ungated and stays that way until
+    somebody runs a setup step. `pf check` reporting the gap only helps the
+    person who runs `pf check`; the person who does not is exactly the one
+    committing 21 files unchecked.
+
+    So it self-heals here instead. Anyone doing real work in this repo runs some
+    `pf` command long before their first commit, which makes this the widest net
+    git actually permits. It is not total — a clone where nobody ever runs `pf`
+    is still ungated, and no amount of code fixes that.
+
+    Deliberately quiet and unfailable:
+
+      * it only ever fills an *empty* slot. `install_hook` refuses a hook it did
+        not write, so someone's own pre-commit script is never touched, and the
+        refusal is not reported here — nagging on every command trains people to
+        ignore output. `pf check` is where that surfaces.
+      * the notice goes to stderr, once, on the run that installs. A line on
+        stdout would corrupt piped output like `pf pr report --markdown`.
+      * every failure is swallowed. Not being able to install a hook must never
+        stop the command the user actually asked for.
+
+    `PF_NO_HOOK_INSTALL=1` opts out.
+    """
+    if os.environ.get("PF_NO_HOOK_INSTALL"):
+        return
+    try:
+        from pf.loops.gate import install_hook
+
+        changed, detail = install_hook(root())
+        if changed:
+            print(f"· commit gate installed — {detail}", file=sys.stderr)
+    except Exception:  # noqa: BLE001 — never block the real command
+        pass
+
 # A tool's scaffold-time half *is* a capability, so it is merged into the same
 # registry `pf new-project --with` and `pf capability-add` read. One scaffolder,
 # one gate merge — a tool is not a second way to write files into a project.
@@ -629,6 +669,15 @@ def bootstrap_cmd(
         console.print("[red]give a group and project, or --all[/]")
         raise typer.Exit(1)
 
+    # Repo-level, so it runs once rather than per project. Bootstrap is "re-run
+    # every post-scaffold step", and installing the commit gate is exactly that:
+    # a step every checkout needs and nobody remembers.
+    from pf.loops.gate import install_hook
+
+    changed, detail = install_hook(root())
+    console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} "
+                  f"{'commit gate':24} [dim]{detail}[/]")
+
     failed = False
     for g, p, _ in targets:
         console.print(f"[bold]{g}/{p}[/]")
@@ -769,6 +818,23 @@ def check(group: str = "", project: str = "",
                       ".gitignore[/]")
     else:
         console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
+
+    # The gate is enforced at commit time, locally — so an uninstalled hook is
+    # not a missing convenience, it is the gate not running at all. This check
+    # exists because that was true for the whole life of the repo and nothing
+    # said so: `maxFiles` and the staged-set denylist were unenforced while
+    # reading as configured.
+    from pf.loops.gate import hook_status
+
+    hstate, hdetail = hook_status(root())
+    if hstate == "ok":
+        console.print(f"[green]✓[/] commit gate       {hdetail}")
+    elif hstate == "no-git":
+        console.print(f"[dim]·[/] commit gate       {hdetail}")
+    else:
+        console.print(f"[red]✗[/] commit gate       {hdetail}")
+        console.print("    [dim]nothing enforces gate.yaml on commit — "
+                      "run `pf install-hook`[/]")
 
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
@@ -1499,6 +1565,27 @@ def cmd_loop_reset(loop: str, group: str, project: str,
     ledger.reset(loop, group, project, note)
     console.print(f"[green]✓[/] {loop} · {group}/{project} reset "
                   f"({fails} consecutive failure(s) cleared)")
+
+
+@app.command("install-hook")
+def cmd_install_hook(
+    force: bool = typer.Option(False, "--force",
+                               help="replace a pre-commit hook that is not ours"),
+) -> None:
+    """Install the pre-commit gate, so gate.yaml is enforced before a commit lands.
+
+    This is the only place `maxFiles` and the staged-set denylist are enforced —
+    CI does not re-apply them — so a checkout without this hook has no gate.
+    """
+    from pf.loops.gate import hook_status, install_hook
+
+    _, detail = install_hook(root(), force=force)
+    state, _ = hook_status(root())
+    if state == "ok":
+        console.print(f"[green]✓[/] {detail}")
+        return
+    console.print(f"[red]✗[/] {detail}")
+    raise typer.Exit(1)
 
 
 @app.command()
