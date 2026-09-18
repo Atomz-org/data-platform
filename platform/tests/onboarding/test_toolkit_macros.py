@@ -21,11 +21,11 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from pathlib import Path
 
 import pytest
+from conftest import REPO_ROOT
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 TOOLKIT = ROOT / "platform" / "toolkits" / "dbt-snowflake" / "macros"
 
 PROBE = """

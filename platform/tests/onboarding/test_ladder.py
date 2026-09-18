@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from conftest import REPO_ROOT
 from pf.onboard.ladder import (
     LAYERS,
     STAGES,
@@ -36,7 +37,7 @@ from pf.onboard.ladder import (
     verify,
 )
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 
 
 # ------------------------------------------------------------- the ladder ----

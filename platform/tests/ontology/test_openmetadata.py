@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from conftest import REPO_ROOT
 from pf.ontology.model import load_ontology
 from pf.projections.openmetadata import (
     GLOSSARY_NAME,
@@ -26,8 +27,7 @@ from pf.projections.openmetadata import (
     build_metrics,
 )
 
-SCHEMA_ROOT = (Path(__file__).resolve().parents[2]
-               / "vendor" / "openmetadata-standards" / "schemas")
+SCHEMA_ROOT = REPO_ROOT / "vendor" / "openmetadata-standards" / "schemas"
 
 requires_schemas = pytest.mark.skipif(
     not SCHEMA_ROOT.is_dir(),
