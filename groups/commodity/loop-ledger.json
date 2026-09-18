@@ -1,0 +1,80 @@
+[
+  {
+    "run_id": "32c67123",
+    "loop": "freshness-triage",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 15,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "b39e09a0",
+    "loop": "test-failure-triage",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 1,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "613a4e87",
+    "loop": "metric-gap-harvester",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 16,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "54b9c48e",
+    "loop": "impact-sentinel",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 47,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "5778c71e",
+    "loop": "dashboard-coverage",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 41,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "770928e4",
+    "loop": "pii-audit",
+    "group": "commodity",
+    "project": "commodity-india",
+    "started_at": "2026-09-17T22:37:51+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 20,
+    "attempt": 1,
+    "message": ""
+  }
+]

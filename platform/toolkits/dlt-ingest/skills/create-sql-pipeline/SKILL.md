@@ -12,7 +12,10 @@ Use `dlt.sources.sql_database`. Decisions to make explicitly:
   run is a full copy.
 - **Write disposition** — `merge` with `primary_key` for mutable tables,
   `append` for immutable event tables.
-- **Reflection level** — `full_with_precision` when column types matter downstream.
-- **Backfill** — large first loads go through `pf plan backfill`, never a bare run.
+- **Reflection level** — `full` when column types matter downstream;
+  `full_with_precision` carries precision some destinations reject.
+- **Backfill** — a large first load is a `pf seed` run with a deliberate
+  `initial_value`, then a Dagster backfill over partitions; never a bare run
+  with no cursor.
 
 Annotate every resource before finishing.

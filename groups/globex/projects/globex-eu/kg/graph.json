@@ -1,19 +1,6 @@
 {
   "nodes": [
     {
-      "id": "col:model:metricflow_time_spine.date_day",
-      "kind": "Column",
-      "name": "date_day",
-      "layer": "utils",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "metricflow_time_spine",
-        "data_type": null
-      }
-    },
-    {
       "id": "concept:Agreement",
       "kind": "Concept",
       "name": "Agreement",
@@ -312,19 +299,6 @@
       }
     },
     {
-      "id": "model:metricflow_time_spine",
-      "kind": "Model",
-      "name": "metricflow_time_spine",
-      "layer": "utils",
-      "label": "Daily time spine required by MetricFlow.",
-      "props": {
-        "schema": "base",
-        "materialized": "table",
-        "grain": "",
-        "tags": []
-      }
-    },
-    {
       "id": "policy:change-declares-blast-radius",
       "kind": "Policy",
       "name": "change-declares-blast-radius",
@@ -557,7 +531,7 @@
       "label": "globex/globex-eu",
       "props": {
         "group": "globex",
-        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/globex/projects/globex-eu"
+        "path": "groups/globex/projects/globex-eu"
       }
     },
     {
@@ -573,22 +547,6 @@
         "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Payment.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -619,6 +577,22 @@
         "role": "money_amount",
         "required": false,
         "concept": "Order",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "DECIMAL",
         "xsd_type": "xsd:decimal",
         "is_identity": false
@@ -737,22 +711,6 @@
       }
     },
     {
-      "id": "property:Subscription.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": false,
-        "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
@@ -795,6 +753,22 @@
         "role": "currency_code",
         "required": false,
         "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -993,22 +967,6 @@
       }
     },
     {
-      "id": "property:Event.occurred_at",
-      "kind": "Property",
-      "name": "occurred_at",
-      "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
-      "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Event",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Interaction.occurred_at",
       "kind": "Property",
       "name": "occurred_at",
@@ -1019,6 +977,22 @@
         "role": "event_time",
         "required": false,
         "concept": "Interaction",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Event.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Event",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -1249,7 +1223,7 @@
       }
     },
     {
-      "id": "property:Subscription.status",
+      "id": "property:Payment.status",
       "kind": "Property",
       "name": "status",
       "layer": "ontology",
@@ -1258,7 +1232,7 @@
         "datatype": "string",
         "role": "status_enum",
         "required": false,
-        "concept": "Subscription",
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1297,7 +1271,7 @@
       }
     },
     {
-      "id": "property:Payment.status",
+      "id": "property:Subscription.status",
       "kind": "Property",
       "name": "status",
       "layer": "ontology",
@@ -1306,7 +1280,7 @@
         "datatype": "string",
         "role": "status_enum",
         "required": false,
-        "concept": "Payment",
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1580,26 +1554,6 @@
         "inverse": "settles",
         "description": "",
         "reverse_label": "Payment settles Subscription"
-      }
-    },
-    {
-      "id": "test:test.globex_eu.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "Test",
-      "name": "not_null_metricflow_time_spine_date_day",
-      "layer": "test",
-      "label": "not_null",
-      "props": {
-        "severity": "ERROR"
-      }
-    },
-    {
-      "id": "test:test.globex_eu.unique_metricflow_time_spine_date_day.ddb41ceac8",
-      "kind": "Test",
-      "name": "unique_metricflow_time_spine_date_day",
-      "layer": "test",
-      "label": "unique",
-      "props": {
-        "severity": "ERROR"
       }
     }
   ],
@@ -2214,24 +2168,6 @@
       "src": "policy:secrets-never-in-context",
       "dst": "evidence:pf gate",
       "kind": "evidenced_by",
-      "props": {}
-    },
-    {
-      "src": "model:metricflow_time_spine",
-      "dst": "col:model:metricflow_time_spine.date_day",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.globex_eu.unique_metricflow_time_spine_date_day.ddb41ceac8",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.globex_eu.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "tested_by",
       "props": {}
     }
   ]

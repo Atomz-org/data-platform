@@ -417,7 +417,7 @@ STACK_LAYERS: list[dict[str, Any]] = [
      "node_kinds": ["Concept", "Property"]},
     {"layer": "topology", "title": "Topology & policy", "upstream": "opentopology",
      "toolkits": [], "artefacts": "governance/otop.json",
-     "node_kinds": ["Relation", "Policy", "Evidence"]},
+     "node_kinds": ["Relation", "Policy", "Evidence", "Decision"]},
     {"layer": "mdl", "title": "MDL projection", "upstream": "wrenai",
      "toolkits": [], "artefacts": "mdl/mdl.json", "node_kinds": []},
     {"layer": "reporting", "title": "Reporting (Evidence)", "upstream": "evidence-bi",

@@ -38,7 +38,14 @@ MAX_TOKENS = 16_000
 
 
 class NoCredentials(RuntimeError):
-    """Raised when no Anthropic credential is resolvable."""
+    """No Anthropic credential is resolvable, or the API refused the one that is.
+
+    A rejected key (401, 403) is raised as this rather than as the SDK's error
+    on purpose: to a loop the two are the same situation — no model, so the
+    deterministic findings stand — and the loop bodies already handle this
+    one. Left as an SDK error it discarded the deterministic findings and,
+    three runs later, latched the breaker on a loop whose subject was fine.
+    """
 
 
 @dataclass(frozen=True)
@@ -132,13 +139,23 @@ def cached_prefix(root: Path, group: str, project: str,
     """The stable system prefix. Identical bytes across every run — that is the
     whole requirement for a cache hit.
 
+    Routing, constraints, the group's rules, the project's rules, then the
+    context card. The two CLAUDE.md files are there because of a concrete miss:
+    the freshness_triage agent judging whether a Monday freshness breach on
+    `futures_prices` was noise had no way to know that futures do not settle at
+    weekends. That rule lives in the project CLAUDE.md, which the loop never
+    saw — the graph cannot encode it, and the card only renders the graph. Lines
+    starting with `@` are dropped: they are include directives for the cards,
+    which are added here on their own terms.
+
     Two model-dependent details decide whether the marker does anything:
 
       * **The minimum cacheable prefix**, which is per model and not monotonic
         across generations (512 on Opus 5, 1024 on Sonnet 5, 4096 on Haiku 4.5).
-        Below it the marker is silently ignored. This prefix is roughly a
-        thousand tokens, so it caches on Opus, is marginal on Sonnet, and never
-        caches on Haiku — we omit the marker there rather than implying it works.
+        Below it the marker is silently ignored. This prefix was ~1.8k tokens
+        without the rules and is ~2.9k with them: it caches on Opus and Sonnet
+        and still never on Haiku — we omit the marker there rather than implying
+        it works.
       * **The TTL**, chosen from the step's cadence. Asking for 1h on a loop that
         runs every two hours pays the 2x write premium to read it zero times.
     """
@@ -147,6 +164,12 @@ def cached_prefix(root: Path, group: str, project: str,
         f = root / rel
         if f.exists():
             parts.append(f"<{Path(rel).stem}>\n{f.read_text().strip()}\n</{Path(rel).stem}>")
+
+    gdir = root / "groups" / group
+    for tag, f in (("group_rules", gdir / "CLAUDE.md"),
+                   ("project_rules", gdir / "projects" / project / "CLAUDE.md")):
+        if f.exists():
+            parts.append(f"<{tag}>\n{_without_includes(f.read_text())}\n</{tag}>")
 
     card = root / "groups" / group / "projects" / project / "kg" / "context_card.md"
     if card.exists():
@@ -167,6 +190,17 @@ def cached_prefix(root: Path, group: str, project: str,
         block["cache_control"] = {"type": "ephemeral",
                                   "ttl": cache_ttl(cfg.cadence_minutes)}
     return [block]
+
+
+def _without_includes(text: str) -> str:
+    """A CLAUDE.md minus its `@file` include lines.
+
+    Those lines pull the cards into a Claude Code session; here the card is a
+    block of its own, so keeping the directive would put an unresolvable path in
+    the prompt and, worse, a second reference to a file whose date we strip.
+    """
+    return "\n".join(line for line in text.splitlines()
+                     if not line.lstrip().startswith("@")).strip()
 
 
 _DATE_RE = re.compile(r"\(generated \d{4}-\d{2}-\d{2}\)")
@@ -226,9 +260,14 @@ def call(
         "output_format": output_format,
     }
 
+    import anthropic
+
     t0 = time.time()
     c = client()
-    response = c.messages.parse(**params)
+    try:
+        response = c.messages.parse(**params)
+    except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as exc:
+        raise NoCredentials(f"credential rejected by the API: {exc}"[:300]) from exc
     elapsed = int((time.time() - t0) * 1000)
 
     u = response.usage

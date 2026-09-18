@@ -9,6 +9,8 @@
 - One project per session. Never read another group or a sister project.
 - Never edit `platform/**` from a project session — it is shared by every company.
 - Cross-entity work happens only in the `<group>-rollup` project.
+- Group loop overrides live in `groups/<g>/loops.yaml`. They may lower a loop's
+  autonomy or waive a finding with a stated reason; they never raise autonomy.
 
 ## Data changes
 - Run impact analysis **before** changing a model, a column or a metric. Report
@@ -19,6 +21,9 @@
   `kg/context_card.md`, `data/*.duckdb`.
 - Staging is 1:1 with a raw table. Cleaning belongs there; joins and aggregation
   do not.
+- dlt extracts and lands raw only, one dataset per source. A transformation
+  inside a dlt resource is a finding, not a fix: joins and unit, currency and FX
+  conversion belong in `intermediate`, grain in marts.
 
 ## Secrets
 - Never ask for a credential in chat. Never read a secrets file.

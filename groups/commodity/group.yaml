@@ -1,0 +1,35 @@
+# Who this family is, what state it is in, and what it owns. Hand-owned.
+#
+# `pf group verify commodity` grades it, `pf offboard commodity` reads it, and
+# the gates take their severity from `lifecycle`: a family still being built is
+# allowed to be incomplete, one declared `active` is not.
+schema_version: 1
+group: commodity
+display_name: Commodity Desks
+domain: commodities
+lifecycle: active
+template_version: 3
+tier: standard
+owner:
+  team: data-platform
+  contact: sureshswaminathan.96@gmail.com
+data:
+  # Local-first: every warehouse in this group is a DuckDB file in the repo, so
+  # the data does not leave the machine it was built on. Change this the day a
+  # sister points `prod` at a cloud warehouse.
+  residency: local
+  retention_days: 3650
+  erasure_sla_days: 30
+budget:
+  # This family's share of the daily agent-token ceiling. Three model-backed
+  # loops at their registry budgets, with room for one triage re-run.
+  daily_tokens: 40000
+resources:
+  # Handles for things the repo can write to but cannot enumerate. `pf offboard`
+  # prints these as the manual checklist, so what is not written here is what
+  # gets left behind and billed for.
+  artifact_prefix: groups/commodity
+  catalog_services:
+    - commodity_commodity-india
+  warehouses:
+    - commodity-india: groups/commodity/projects/commodity-india/data/commodity_india.duckdb

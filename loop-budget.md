@@ -11,11 +11,13 @@ loop, counted in `loop-ledger.json` so a restart does not reset the count.
 | `metric-gap-harvester` | 8,000 | sonnet-5 | low | 5m | Structured, narrow |
 | `pii-audit` | 0 | — | — | Pure graph query, no model call |
 | `impact-sentinel` | 0 | — | — | Pure graph query, no model call |
+| `dashboard-coverage` | 0 | — | — | Pure graph query / deterministic audit |
+| `vendor-drift` | 0 | — | — | Pure graph query / deterministic audit |
 | `index-refresher` | 0 | — | — | Deterministic rebuild |
 
-Three of six loops cost nothing: they are graph queries, not model calls. That is
-the point of building the index — the cheapest agent work is the work an agent
-does not have to do.
+Five of eight loops cost nothing: they are graph queries or deterministic
+audits, not model calls. That is the point of building the index — the cheapest
+agent work is the work an agent does not have to do.
 
 ## Why the Effort and Cache columns are not free choices
 
@@ -27,9 +29,10 @@ Both are per-model constraints, enforced in `pf.agents.models` and checked by
   intent anyway; the renderer drops it for models that cannot take it.
 - **Caching has a per-model minimum prefix** (512 tokens on Opus 5, 1024 on
   Sonnet 5, 4096 on Haiku 4.5) and it is not monotonic across generations. The
-  shared prefix here is ~1,165 tokens: it caches on Opus and Sonnet and can
-  never cache on Haiku, so no marker is sent there rather than implying one
-  works.
+  shared prefix here is ~2,900 tokens (routing, constraints, group and project
+  rules, context card; 4 characters per token, the estimate `pf evals` prints):
+  it caches on Opus and Sonnet and can never cache on
+  Haiku, so no marker is sent there rather than implying one works.
 - **TTL comes from cadence.** A 1h entry bills its write at 2x and needs ~3
   reads to pay for itself, so only a loop running more often than hourly asks
   for one. `freshness-triage` runs every 2h — a 1h TTL would expire before it

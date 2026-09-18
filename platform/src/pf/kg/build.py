@@ -4,12 +4,14 @@ Inputs (each optional — the builder degrades gracefully):
   contracts/annotations.yaml        ontology annotations exported by dlt sources
   transform/target/manifest.json    dbt models, columns, tests, exposures, lineage
   transform/target/semantic_manifest.json   MetricFlow metrics and dimensions
+  decisions/ADR-*.md                the decision log, linked to what it governs
   the platform ontology             concept nodes and the topology
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +33,7 @@ def relid(name: str) -> str: return f"relation:{name}"
 def propid(cls: str, prop: str) -> str: return f"property:{cls}.{prop}"
 def polid(pid: str) -> str: return f"policy:{pid}"
 def evid(eid: str) -> str: return f"evidence:{eid}"
+def decid(name: str) -> str: return f"decision:{name}"
 
 
 def _add_physical_columns(root: Path, project: str, nodes: list[Node],
@@ -103,6 +106,14 @@ def _infer_role(column: str) -> str:
     return ""
 
 
+def _repo_relative(path: Path) -> str:
+    """`groups/<group>/projects/<project>`, whatever the checkout is called."""
+    parts = path.resolve().parts
+    if "groups" in parts:
+        return "/".join(parts[parts.index("groups"):])
+    return path.name
+
+
 def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> dict[str, int]:
     """(Re)build the graph for one project. Returns node counts by kind."""
     root = Path(project_dir)
@@ -122,11 +133,20 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
     _add_dbt(root, nodes, edges)
     _add_physical_columns(root, project or root.name, nodes, edges)
     _add_semantic(root, nodes, edges)
+    # Last, so every node a decision can point at already exists.
+    _add_decisions(root, nodes, edges)
 
+    # `path` is repo-relative on purpose. It used to be `str(root)`, an absolute
+    # path, so every committed graph.json recorded the checkout directory of
+    # whoever last ran the build — `/Users/someone/...` on a laptop,
+    # `/home/runner/work/...` in CI. That is not a property of the project, it
+    # churns the diff for everyone else, and it made the `converged` gate
+    # unsatisfiable on any machine but the last one to run it.
+    props = {"group": group, "path": _repo_relative(root)}
     nodes.append(Node(
         id=f"project:{project or root.name}", kind="Project", name=project or root.name,
         layer="project", label=f"{group}/{project}".strip("/"),
-        props={"group": group, "path": str(root)},
+        props=props,
     ))
 
     known = {n.id for n in nodes}
@@ -432,6 +452,93 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             if owner:
                 edges.append(Edge(src=mid(owner), dst=n_id, kind="measures",
                                   props={"measure": measure}))
+
+
+# --------------------------------------------------------------- decisions --
+#: Kinds a backtick-quoted token in an ADR may name. Columns are left out on
+#: purpose: `amount` is a column on half the models in a warehouse, and a
+#: decision about one of them must not appear to govern all of them. A column
+#: is reached as `model.column`, which is unambiguous. Dimensions are in even
+#: though a name recurs once per semantic model that exposes it: those are the
+#: group's conformed vocabulary, and a decision about `price_date` governs it
+#: wherever it is exposed (ADR-0003 says as much of `commodity_id`). One copy
+#: is reached as `semantic_model.dimension`.
+DECIDABLE_KINDS = frozenset(
+    {"Model", "Metric", "Table", "Source", "Concept", "Exposure", "Dimension"})
+
+_ADR_NAME = re.compile(r"ADR-\d+")
+_ADR_TITLE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
+_ADR_STATUS = re.compile(r"^\*\*Status:\*\*\s*(.+?)\s*$", re.MULTILINE)
+_ADR_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_BACKTICKED = re.compile(r"`([^`\n]+)`")
+
+
+def _add_decisions(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
+    """The decision log, as nodes, each linked to the objects it decided about.
+
+    `decisions/README.md` has promised "The knowledge graph indexes these, so
+    `kg_search` finds them" since the scaffold first wrote it. This is what makes
+    that true. Without it a decision is a file a reviewer has to remember exists:
+    an agent changes a mart's grain, the impact report lists every dependant, and
+    the ADR that fixed the grain is never mentioned because nothing pointed at it.
+
+    A decision is *upstream* of what it governs (the edge contract in `store`):
+    `decides` runs Decision -> Model, so impact analysis reaches a decision by
+    walking `in_edges` of the things it collected, and a decision itself has no
+    dependants to walk to.
+
+    Linking is by name only, to the kinds in `DECIDABLE_KINDS`: a bare token
+    reaches every node of those kinds with that name, which is one node for a
+    model or a metric and one per semantic model for a dimension. A token
+    written `model.column` reaches that model's documented column, and
+    `semantic_model.dimension` one semantic model's copy of a dimension.
+    Anything else in backticks (a macro, a file, a package, a bare column) is
+    prose and links nothing.
+    """
+    paths = sorted((root / "decisions").glob("ADR-*.md"))
+    if not paths:
+        return
+
+    # Built once: the ADRs of a project name a few dozen things between them,
+    # and a scan of the node list per token is quadratic in a large warehouse.
+    by_name: dict[str, list[str]] = {}
+    for n in nodes:
+        if n.kind in DECIDABLE_KINDS:
+            by_name.setdefault(n.name, []).append(n.id)
+    known = {n.id for n in nodes}
+
+    for path in paths:
+        text = path.read_text()
+        m = _ADR_NAME.match(path.stem)
+        name = m.group(0) if m else path.stem
+        title = _ADR_TITLE.search(text)
+        label = re.sub(r"^ADR-\d+\s*:\s*", "", title.group(1)) if title else ""
+
+        status, date = "", ""
+        status_line = _ADR_STATUS.search(text)
+        if status_line:
+            found = _ADR_DATE.search(status_line.group(1))
+            date = found.group(0) if found else ""
+            status = _ADR_DATE.sub("", status_line.group(1)).strip(" ·|,-\t")
+
+        d_id = decid(name)
+        nodes.append(Node(
+            id=d_id, kind="Decision", name=name, layer="governance", label=label,
+            props={"status": status, "date": date,
+                   "path": path.relative_to(root).as_posix()},
+        ))
+
+        targets: list[str] = []
+        for token in _BACKTICKED.findall(text):
+            targets.extend(by_name.get(token, ()))
+            model, _, column = token.partition(".")
+            if model and column:
+                for dst in (mcol(model, column), dimid(f"{model}__{column}")):
+                    if dst in known:
+                        targets.append(dst)
+        # An ADR names the thing it is about many times over.
+        for dst in dict.fromkeys(targets):
+            edges.append(Edge(src=d_id, dst=dst, kind="decides"))
 
 
 def _export_json(graph_path: Path, out_path: Path) -> None:

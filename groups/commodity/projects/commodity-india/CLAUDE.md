@@ -20,6 +20,9 @@ do not read a sister's files from here.
   `ZNC=F` is an untraded COMEX series — so it stays on the LME indicative level.
 - Futures do not settle at weekends: a Monday freshness breach on
   `futures_prices` is the calendar, a midweek one is the feed.
+- dlt Core lands the raw stage (datasets `reference`, `yahoo_finance`,
+  `gold_api`); dbt stages it from there. A source is a declarative `rest_api`
+  config where the endpoint allows and `RESTClient` where it does not (ADR-0004).
 
 ## The semantic stack
 | Ask | Command |
