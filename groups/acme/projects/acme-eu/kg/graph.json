@@ -28,6 +28,19 @@
       }
     },
     {
+      "id": "col:model:fct_payments.amount",
+      "kind": "Column",
+      "name": "amount",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "money_amount",
+        "pii": false,
+        "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:table:stripe.charges.amount",
       "kind": "Column",
       "name": "amount",
@@ -40,16 +53,15 @@
       }
     },
     {
-      "id": "col:model:fct_payments.amount",
+      "id": "col:table:stripe.subscriptions.canceled_at",
       "kind": "Column",
-      "name": "amount",
-      "layer": "marts",
-      "label": "",
+      "name": "canceled_at",
+      "layer": "raw",
+      "label": "valid_to",
       "props": {
-        "role": "money_amount",
+        "role": "valid_to",
         "pii": false,
-        "model": "fct_payments",
-        "data_type": null
+        "table": "subscriptions"
       }
     },
     {
@@ -66,18 +78,6 @@
       }
     },
     {
-      "id": "col:table:stripe.subscriptions.canceled_at",
-      "kind": "Column",
-      "name": "canceled_at",
-      "layer": "raw",
-      "label": "valid_to",
-      "props": {
-        "role": "valid_to",
-        "pii": false,
-        "table": "subscriptions"
-      }
-    },
-    {
       "id": "col:table:stripe.customers.country",
       "kind": "Column",
       "name": "country",
@@ -90,20 +90,6 @@
       }
     },
     {
-      "id": "col:model:dim_customers.country_code",
-      "kind": "Column",
-      "name": "country_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dim_customers",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_payments.country_code",
       "kind": "Column",
       "name": "country_code",
@@ -113,6 +99,20 @@
         "role": "",
         "pii": false,
         "model": "fct_payments",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:dim_customers.country_code",
+      "kind": "Column",
+      "name": "country_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dim_customers",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -131,6 +131,18 @@
       }
     },
     {
+      "id": "col:table:stripe.charges.created",
+      "kind": "Column",
+      "name": "created",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "charges"
+      }
+    },
+    {
       "id": "col:table:stripe.customers.created",
       "kind": "Column",
       "name": "created",
@@ -143,15 +155,16 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.created",
+      "id": "col:model:stg_stripe__customers.created_at",
       "kind": "Column",
-      "name": "created",
-      "layer": "raw",
-      "label": "event_time",
+      "name": "created_at",
+      "layer": "staging",
+      "label": "",
       "props": {
         "role": "event_time",
         "pii": false,
-        "table": "charges"
+        "model": "stg_stripe__customers",
+        "data_type": null
       }
     },
     {
@@ -166,19 +179,6 @@
         "model": "dim_customers",
         "data_type": "TIMESTAMP",
         "documented": false
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__customers.created_at",
-      "kind": "Column",
-      "name": "created_at",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "stg_stripe__customers",
-        "data_type": null
       }
     },
     {
@@ -206,33 +206,6 @@
       }
     },
     {
-      "id": "col:model:fct_payments.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_payments",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__subscriptions.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_revenue.currency_code",
       "kind": "Column",
       "name": "currency_code",
@@ -242,6 +215,20 @@
         "role": "",
         "pii": false,
         "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_payments.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_payments",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -260,6 +247,19 @@
       }
     },
     {
+      "id": "col:model:stg_stripe__subscriptions.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.customer_email",
       "kind": "Column",
       "name": "customer_email",
@@ -269,45 +269,6 @@
         "role": "pii_email",
         "pii": true,
         "model": "stg_stripe__customers",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__charges.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:table:stripe.subscriptions.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "subscriptions",
-        "links_to": "Customer"
-      }
-    },
-    {
-      "id": "col:model:stg_stripe__subscriptions.customer_id",
-      "kind": "Column",
-      "name": "customer_id",
-      "layer": "staging",
-      "label": "Foreign key to Customer.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_stripe__subscriptions",
         "data_type": null
       }
     },
@@ -365,6 +326,45 @@
       }
     },
     {
+      "id": "col:table:stripe.subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "subscriptions",
+        "links_to": "Customer"
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__subscriptions.customer_id",
+      "kind": "Column",
+      "name": "customer_id",
+      "layer": "staging",
+      "label": "Foreign key to Customer.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_stripe__subscriptions",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:stg_stripe__customers.customer_name",
       "kind": "Column",
       "name": "customer_name",
@@ -392,17 +392,16 @@
       }
     },
     {
-      "id": "col:model:fct_revenue.customer_segment",
+      "id": "col:model:dim_customers.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
-      "label": "",
+      "label": "Sales segment. Drives most reporting cuts.",
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_revenue",
-        "data_type": "VARCHAR",
-        "documented": false
+        "model": "dim_customers",
+        "data_type": null
       }
     },
     {
@@ -419,16 +418,17 @@
       }
     },
     {
-      "id": "col:model:dim_customers.customer_segment",
+      "id": "col:model:fct_revenue.customer_segment",
       "kind": "Column",
       "name": "customer_segment",
       "layer": "marts",
-      "label": "Sales segment. Drives most reporting cuts.",
+      "label": "",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dim_customers",
-        "data_type": null
+        "model": "fct_revenue",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -485,18 +485,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.id",
-      "kind": "Column",
-      "name": "id",
-      "layer": "raw",
-      "label": "natural_key",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "table": "charges"
-      }
-    },
-    {
       "id": "col:table:stripe.customers.id",
       "kind": "Column",
       "name": "id",
@@ -518,6 +506,18 @@
         "role": "natural_key",
         "pii": false,
         "table": "subscriptions"
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.id",
+      "kind": "Column",
+      "name": "id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "charges"
       }
     },
     {
@@ -625,19 +625,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.paid_at",
-      "kind": "Column",
-      "name": "paid_at",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_payments.paid_at",
       "kind": "Column",
       "name": "paid_at",
@@ -647,6 +634,19 @@
         "role": "event_time",
         "pii": false,
         "model": "fct_payments",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.paid_at",
+      "kind": "Column",
+      "name": "paid_at",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "stg_stripe__charges",
         "data_type": null
       }
     },
@@ -691,19 +691,6 @@
       }
     },
     {
-      "id": "col:model:stg_stripe__charges.payment_status",
-      "kind": "Column",
-      "name": "payment_status",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "stg_stripe__charges",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_payments.payment_status",
       "kind": "Column",
       "name": "payment_status",
@@ -715,6 +702,19 @@
         "model": "fct_payments",
         "data_type": "VARCHAR",
         "documented": false
+      }
+    },
+    {
+      "id": "col:model:stg_stripe__charges.payment_status",
+      "kind": "Column",
+      "name": "payment_status",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_stripe__charges",
+        "data_type": null
       }
     },
     {
@@ -771,18 +771,6 @@
       }
     },
     {
-      "id": "col:table:stripe.charges.receipt_email",
-      "kind": "Column",
-      "name": "receipt_email",
-      "layer": "raw",
-      "label": "pii_email",
-      "props": {
-        "role": "pii_email",
-        "pii": true,
-        "table": "charges"
-      }
-    },
-    {
       "id": "col:model:stg_stripe__charges.receipt_email",
       "kind": "Column",
       "name": "receipt_email",
@@ -793,6 +781,18 @@
         "pii": true,
         "model": "stg_stripe__charges",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:stripe.charges.receipt_email",
+      "kind": "Column",
+      "name": "receipt_email",
+      "layer": "raw",
+      "label": "pii_email",
+      "props": {
+        "role": "pii_email",
+        "pii": true,
+        "table": "charges"
       }
     },
     {
@@ -1536,7 +1536,8 @@
           "platform/hooks/pre_commit.sh"
         ],
         "enforced": true,
-        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+        "scope": "platform"
       }
     },
     {
@@ -1557,7 +1558,8 @@
           "pf.tools.recce:register_commands"
         ],
         "enforced": true,
-        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\".",
+        "scope": "platform"
       }
     },
     {
@@ -1579,7 +1581,27 @@
           "pf.ontology.validate:class-without-identity"
         ],
         "enforced": true,
-        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:gdpr-erasure-path",
+      "kind": "Policy",
+      "name": "gdpr-erasure-path",
+      "layer": "governance",
+      "label": "A subject access or erasure request must have a declared path to every copy of the subject's data \u2014 marts and review artefacts included, not only the raw tables",
+      "props": {
+        "constraint": "erasure_declared",
+        "severity": "error",
+        "applies_to": {
+          "role_glob": "pii_*"
+        },
+        "params": {},
+        "enforced_by": [],
+        "enforced": false,
+        "intent": "A subject access or erasure request must have a declared path to every copy of the subject's data \u2014 marts and review artefacts included, not only the raw tables it landed in.",
+        "scope": "project:acme/acme-eu"
       }
     },
     {
@@ -1599,7 +1621,8 @@
           "pf.ontology.validate:illegal-edge"
         ],
         "enforced": true,
-        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse.",
+        "scope": "platform"
       }
     },
     {
@@ -1610,7 +1633,7 @@
       "label": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
       "props": {
         "constraint": "meta_field_present",
-        "severity": "warning",
+        "severity": "error",
         "applies_to": {
           "layer": "marts"
         },
@@ -1621,7 +1644,8 @@
           "pf.kg.build:model-grain"
         ],
         "enforced": true,
-        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+        "scope": "project:acme/acme-eu"
       }
     },
     {
@@ -1649,7 +1673,8 @@
           "pf.ontology.validate:metric-shaped-column"
         ],
         "enforced": true,
-        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first.",
+        "scope": "platform"
       }
     },
     {
@@ -1672,7 +1697,8 @@
           "pf.ontology.validate:money-without-currency"
         ],
         "enforced": true,
-        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+        "scope": "platform"
       }
     },
     {
@@ -1698,7 +1724,8 @@
           "pf.loops.registry:pii_audit"
         ],
         "enforced": true,
-        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+        "scope": "platform"
       }
     },
     {
@@ -1719,7 +1746,8 @@
           "pf.tools.recce:generate_config"
         ],
         "enforced": true,
-        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out.",
+        "scope": "platform"
       }
     },
     {
@@ -1740,7 +1768,8 @@
           "platform/hooks/pre_tool_use.py"
         ],
         "enforced": true,
-        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+        "scope": "platform"
       }
     },
     {
@@ -1751,7 +1780,7 @@
       "label": "acme/acme-eu",
       "props": {
         "group": "acme",
-        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/acme/projects/acme-eu"
+        "path": "/Users/suresh/data-platform/groups/acme/projects/acme-eu"
       }
     },
     {
@@ -1771,18 +1800,18 @@
       }
     },
     {
-      "id": "property:Refund.amount",
+      "id": "property:Payment.amount",
       "kind": "Property",
       "name": "amount",
       "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
+      "label": "float \u00b7 money_amount",
       "props": {
-        "datatype": "decimal",
+        "datatype": "float",
         "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "DOUBLE",
+        "xsd_type": "xsd:double",
         "is_identity": false
       }
     },
@@ -1803,18 +1832,18 @@
       }
     },
     {
-      "id": "property:Payment.amount",
+      "id": "property:Refund.amount",
       "kind": "Property",
       "name": "amount",
       "layer": "ontology",
-      "label": "float \u00b7 money_amount",
+      "label": "decimal \u00b7 money_amount",
       "props": {
-        "datatype": "float",
+        "datatype": "decimal",
         "role": "money_amount",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "DOUBLE",
-        "xsd_type": "xsd:double",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -1963,7 +1992,7 @@
       }
     },
     {
-      "id": "property:Payment.currency",
+      "id": "property:Refund.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -1971,8 +2000,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
+        "required": false,
+        "concept": "Refund",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2011,7 +2040,7 @@
       }
     },
     {
-      "id": "property:Refund.currency",
+      "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -2019,8 +2048,8 @@
       "props": {
         "datatype": "string",
         "role": "currency_code",
-        "required": false,
-        "concept": "Refund",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2155,22 +2184,6 @@
       }
     },
     {
-      "id": "property:Customer.id",
-      "kind": "Property",
-      "name": "id",
-      "layer": "ontology",
-      "label": "string \u00b7 natural_key",
-      "props": {
-        "datatype": "string",
-        "role": "natural_key",
-        "required": true,
-        "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": true
-      }
-    },
-    {
       "id": "property:Payment.id",
       "kind": "Property",
       "name": "id",
@@ -2184,6 +2197,22 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
       }
     },
     {
@@ -2587,22 +2616,6 @@
       }
     },
     {
-      "id": "property:Payment.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.status",
       "kind": "Property",
       "name": "status",
@@ -2613,6 +2626,22 @@
         "role": "status_enum",
         "required": false,
         "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
