@@ -61,6 +61,13 @@ Precedence between toolkits is in `ROUTING.md`.
   - Read-only, and truncated by policy (schema + <=20 rows + counts) — aggregate in SQL rather than raising the limit.
   - Cross-sister reads happen only in the _rollup project, via ATTACH READ_ONLY.
 
+## elementary-observe — Monitoring a table no fixed rule can cover, or triaging what Elementary recorded.
+  `add-anomaly-tests`  `triage-observability`
+  - A test asserts a rule; a monitor learns a baseline. Add a monitor only where the rule cannot be written down.
+  - Anomaly monitors are severity warn — an anomaly is a question, not a verdict.
+  - Triage the elementary tables (history), not the log of the run that failed; classify before fixing.
+  - Never edit main_elementary or transform/edr_target/ — the record of what happened is not editable.
+
 ## evidence-bi — Any dashboard, report or metric-visualisation request.
   `build-dashboard`  `dashboard-loop`
   - Pages never restate business logic — every number traces to a compiled metric.
@@ -70,6 +77,12 @@ Precedence between toolkits is in `ROUTING.md`.
 ## platform-init — A project is empty, or the user says "get started".
   `quick-start`
   - Follow the path source → annotate → model → metric; skipping annotation costs that work several times over later.
+
+## project-onboarding — Adopting an external repository, or plugging the quality stack into any dbt project.
+  `onboard-project`  `quality-stack`
+  - Onboarding is a loop you design and then run, six gated stages in dependency order.
+  - The quality stack (recce + expectations + elementary) is one tools.yaml decision per family; everything else is derived — verify the derivation, never wire it by hand.
+  - Coverage is annotation: a mart with no generated checks is an unannotated mart.
 
 ## power-tools — Auditing, shipping or reviewing a change, and the session hooks that run alongside it.
   - Commands audit (security, performance, architecture, tech debt) and ship; the subagents that back them are read-only by construction.
