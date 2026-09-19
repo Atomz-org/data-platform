@@ -5,11 +5,16 @@
   slightly wrong: `a / nullif(b, 0)` returns NULL on a zero divisor, whereas
   Snowflake's `div0` returns 0. They differ on exactly the rows anyone added the
   guard for, so the distinction is preserved here rather than smoothed over.
+
+  Both operands are bracketed. Callers pass expressions, not just columns, and
+  `{{ dividend }} / ...` rendered `'a - b'` as `a - b / nullif(...)`: division
+  binds tighter, so a percentage change came out as `a - 1`. Nothing errors —
+  the numbers are simply wrong — which is why the probe exercises it.
 #}
 
 
 {% macro sf_div0(dividend, divisor) -%}
-    coalesce({{ dividend }} / nullif({{ divisor }}, 0), 0)
+    coalesce(({{ dividend }}) / nullif(({{ divisor }}), 0), 0)
 {%- endmacro %}
 
 
@@ -18,7 +23,7 @@
   `div0` would return NULL.
 #}
 {% macro sf_div0null(dividend, divisor) -%}
-    coalesce({{ dividend }} / nullif(coalesce({{ divisor }}, 0), 0), 0)
+    coalesce(({{ dividend }}) / nullif(coalesce(({{ divisor }}), 0), 0), 0)
 {%- endmacro %}
 
 
@@ -27,7 +32,7 @@
   Unlike `div0` it returns NULL rather than 0, which is BigQuery's behaviour.
 #}
 {% macro sf_safe_divide(dividend, divisor) -%}
-    {{ dividend }} / nullif({{ divisor }}, 0)
+    ({{ dividend }}) / nullif(({{ divisor }}), 0)
 {%- endmacro %}
 
 
