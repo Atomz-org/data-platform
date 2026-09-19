@@ -58,17 +58,19 @@ must set the `PF_` pair, or the AWS fallback will point this at the wrong
 endpoint's credentials and every call will 403.
 
 The endpoint and bucket are **not** credentials — an R2 endpoint carries the
-account id, which every client needs and no client can act on alone — so they
-are committed as defaults below and overridable by env for a fork or a second
-environment.
+account id, which every client needs and no client can act on alone. The
+bucket name is a committed default anyway; the endpoint is not, because the
+account id inside it identifies whose infrastructure this is, and an
+open-source checkout should not ship anyone's. It comes from the environment
+like the keys do.
 
 ## Which stores this reaches
 
-Five, through two code paths. R2 is the default and the only one configured out
-of the box; the rest are three environment variables each.
+Five, through two code paths. None is configured out of the box: each is the
+key pair plus its endpoint, and every store but R2 also needs its region.
 
     store          PF_ARTIFACTS_ENDPOINT                        REGION
-    R2 (default)   (built in)                                   auto
+    R2 (default)   https://<account-id>.r2.cloudflarestorage.com  auto
     AWS S3         https://s3.<region>.amazonaws.com            the real region
     GCS            https://storage.googleapis.com               the real region
     floci          http://localhost:4566                        us-east-1
@@ -97,9 +99,10 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# The bucket this platform publishes to. Overridable, so a fork or a staging
-# environment is two env vars rather than a patch.
-DEFAULT_ENDPOINT = "https://3138e619a0287a5f6e9f343aa3d0b9a1.r2.cloudflarestorage.com"
+# The bucket this platform publishes to. The name is a committed default —
+# it identifies nothing outside this repo. The endpoint has no default on
+# purpose: it carries the account id, so each environment sets its own via
+# PF_ARTIFACTS_ENDPOINT.
 DEFAULT_BUCKET = "data-platform"
 
 # R2 accepts exactly this region and rejects a real AWS one, so it stays the
@@ -134,11 +137,12 @@ SECRET_VARS = ("PF_ARTIFACTS_SECRET_ACCESS_KEY", "R2_SECRET_ACCESS_KEY",
 #: What to tell a caller that has no credentials. One string, so the CLI, the
 #: recce integration and the UI all say the same thing.
 SETUP_HINT = (
-    "artefact store not configured — set PF_ARTIFACTS_ACCESS_KEY_ID and "
-    "PF_ARTIFACTS_SECRET_ACCESS_KEY (an R2 API token with Object Read & Write "
-    "on the bucket). For a store that is not R2, also set PF_ARTIFACTS_ENDPOINT "
-    "and PF_ARTIFACTS_REGION — 'auto' is an R2-ism and real S3 rejects it. "
-    "See docs/ARTIFACTS.md."
+    "artefact store not configured — set PF_ARTIFACTS_ENDPOINT "
+    "(https://<account-id>.r2.cloudflarestorage.com), "
+    "PF_ARTIFACTS_ACCESS_KEY_ID and PF_ARTIFACTS_SECRET_ACCESS_KEY (an R2 API "
+    "token with Object Read & Write on the bucket). For a store that is not R2, "
+    "set its endpoint and PF_ARTIFACTS_REGION too — 'auto' is an R2-ism and real "
+    "S3 rejects it. See docs/ARTIFACTS.md."
 )
 
 
@@ -324,9 +328,9 @@ class Store:
         talk to the bucket call `required()` instead.
         """
         key_id, secret = _first_env(KEY_ID_VARS), _first_env(SECRET_VARS)
-        if not (key_id and secret):
+        endpoint = os.environ.get("PF_ARTIFACTS_ENDPOINT", "")
+        if not (key_id and secret and endpoint):
             return None
-        endpoint = os.environ.get("PF_ARTIFACTS_ENDPOINT") or DEFAULT_ENDPOINT
         backend = os.environ.get("PF_ARTIFACTS_BACKEND") or infer_backend(endpoint)
         if backend not in BACKENDS:
             raise ArtifactStoreError(

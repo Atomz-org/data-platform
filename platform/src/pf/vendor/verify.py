@@ -81,7 +81,7 @@ def check_paths(root: Path, ups: list[Upstream]) -> list[Finding]:
 def _validator(schema_path: Path):
     import jsonschema
 
-    schema = json.loads(schema_path.read_text())
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     cls = jsonschema.validators.validator_for(schema)
     cls.check_schema(schema)
     return cls(schema)
@@ -156,7 +156,7 @@ def check_loop_parity(root: Path) -> list[Finding]:
     schema_path = root / "vendor" / "loop-engineering" / "patterns" / "registry.schema.json"
     if not schema_path.exists():
         return [Finding("error", "contract:loops", str(schema_path), "vendored schema missing")]
-    schema = json.loads(schema_path.read_text())
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     item = schema["properties"]["patterns"]["items"]
     required = list(item.get("required") or [])
 
@@ -174,7 +174,9 @@ def check_loop_parity(root: Path) -> list[Finding]:
         out.append(Finding("info", "contract:loops", f,
                            "mapped here but no longer present upstream"))
 
-    from pf.loops.registry import SPECS
+    from pf.loops.registry import all_specs
+
+    SPECS = all_specs()
 
     timed = [s for s in SPECS.values() if _is_timed(s.cadence)]
     out.append(Finding(
@@ -191,12 +193,41 @@ def _is_timed(cadence: str) -> bool:
 
 
 # ------------------------------------------------------------------ all ----
+def check_air_corpus(root: Path) -> list[Finding]:
+    """The FINOS catalogue's own frontmatter contract.
+
+    `registry.yaml` pins `docs/_mitigations`, `docs/_risks` and
+    `docs/_data/references` as `kind: data`, whose severity is `error`. This is
+    what makes that pin a claim the build checks rather than a label: a bump that
+    renames a control, retires a risk something still cites, or flips a `type:`
+    letter — which silently renames the derived id every `air.yaml` baseline
+    refers to — fails here.
+
+    Delegated to `pf.air.verify` rather than reimplemented, because the module
+    that parses the corpus is the one that knows what a well-formed one looks
+    like. An absent submodule is a warning, matching every other contract here.
+    """
+    from pf.air.verify import verify as air_verify
+
+    rep = air_verify(root)
+    if not rep.vendored:
+        return [Finding("warning", "contract:air", "vendor/ai-governance-framework",
+                        "not exercised: submodule not checked out")]
+    out = [
+        Finding("error" if f.level == "fail" else "warning",
+                "contract:air", "vendor/ai-governance-framework", f.detail)
+        for f in rep.findings if f.level != "ok"
+    ]
+    return out
+
+
 def verify(root: str | Path, project: tuple[str, str, Path] | None = None) -> Result:
     root = Path(root)
     ups = load_registry()
     findings = check_paths(root, ups)
     findings += check_otop(root, project[2] if project else None)
     findings += check_loop_parity(root)
+    findings += check_air_corpus(root)
     if project:
         g, p, d = project
         findings += check_mdl(root, d, g, p)
@@ -209,5 +240,5 @@ def verify(root: str | Path, project: tuple[str, str, Path] | None = None) -> Re
             "warning", "contract:mdl", "-",
             "not exercised: no project has a built graph. Run `pf seed <g> <p>` "
             "or `pf kg build` first, or pass a project explicitly"))
-    n = sum(len(u.adopted) for u in ups) + 3
+    n = sum(len(u.adopted) for u in ups) + 4
     return Result(findings=findings, checked=n)

@@ -61,7 +61,6 @@ from typing import Any
 
 import yaml
 
-from pf.loops.registry import SPECS
 from pf.loops.runner import LoopSpec
 
 CONFIG_NAME = "loops.yaml"
@@ -112,6 +111,12 @@ class LoopOverride:
 
 
 # ------------------------------------------------------------------- read --
+def _specs() -> dict[str, LoopSpec]:
+    """Every loop a group may configure: the registry's and the tools'."""
+    from pf.loops.registry import all_specs
+    return all_specs()
+
+
 def config_path(root: Path, group: str) -> Path:
     return Path(root) / "groups" / group / CONFIG_NAME
 
@@ -134,11 +139,12 @@ def overrides(root: Path, group: str) -> dict[str, LoopOverride]:
     """Parse and validate the group's overrides, keyed by loop name."""
     path = config_path(root, group)
     out: dict[str, LoopOverride] = {}
+    specs = _specs()
     for name, raw in load(path).items():
-        spec = SPECS.get(name)
+        spec = specs.get(name)
         if spec is None:
             raise LoopConfigError(
-                f"{path}: unknown loop `{name}`. Known loops: {', '.join(SPECS)}")
+                f"{path}: unknown loop `{name}`. Known loops: {', '.join(specs)}")
         out[name] = _parse(path, spec, raw or {})
     return out
 
@@ -209,16 +215,19 @@ def resolve(root: Path, group: str) -> dict[str, LoopSpec]:
     """
     ov = overrides(root, group)
     out: dict[str, LoopSpec] = {}
-    for name, spec in SPECS.items():
+    for name, spec in _specs().items():
         o = ov.get(name)
         if o is None:
             out[name] = spec
             continue
         if not o.enabled:
             continue
+        # Lowering autonomy sets the ceiling too: the born level alone would not
+        # hold a loop that has since earned a higher one in the ledger.
         changes = {k: v for k, v in (("cadence", o.cadence),
                                      ("token_budget", o.token_budget),
-                                     ("autonomy", o.autonomy)) if v is not None}
+                                     ("autonomy", o.autonomy),
+                                     ("ceiling", o.autonomy)) if v is not None}
         out[name] = replace(spec, **changes) if changes else spec
     return out
 

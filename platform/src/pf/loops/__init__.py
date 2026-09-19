@@ -17,7 +17,7 @@ from pf.loops.config import (
     waivers,
 )
 from pf.loops.gate import GateResult, check_path, check_paths, nodes_for, project_for
-from pf.loops.registry import BODIES, SPECS
+from pf.loops.registry import BODIES, SPECS, all_bodies, all_loops, all_specs
 from pf.loops.runner import CircuitBreaker, Ledger, LoopRun, LoopSpec, run_loop, update_state
 
 __all__ = [
@@ -31,6 +31,9 @@ __all__ = [
     "LoopRun",
     "LoopSpec",
     "Waiver",
+    "all_bodies",
+    "all_loops",
+    "all_specs",
     "audit",
     "check_path",
     "check_paths",

@@ -1,13 +1,94 @@
 ---
 title: jaffle-shop — Overview
 queries:
-
+  - metrics/lifetime_spend_pretax.sql
+  - metrics/count_lifetime_orders.sql
+  - metrics/average_order_value.sql
+  - metrics/order_total.sql
+  - metrics/new_customer_orders.sql
+  - metrics/large_orders.sql
+  - metrics/orders.sql
+  - metrics/food_orders.sql
+  - metrics/drink_orders.sql
+  - metrics/revenue.sql
+  - metrics/order_cost.sql
+  - metrics/median_revenue.sql
+  - metrics/food_revenue.sql
+  - metrics/drink_revenue.sql
+  - metrics/food_revenue_pct.sql
+  - metrics/drink_revenue_pct.sql
+  - metrics/revenue_growth_mom.sql
+  - metrics/order_gross_profit.sql
 ---
 
 Every number on this page is a governed metric compiled from the dbt
 semantic layer into `queries/metrics/`. Nothing here restates business
 logic — if a figure you need is missing, the fix is a metric definition,
 not SQL in this page.
+
+```sql date_bounds
+-- DateRange reads min()/max() from ONE column, so both bounds must
+-- arrive as two rows in that column — not two columns of one row.
+select min(metric_time) as metric_time from ${metrics_lifetime_spend_pretax}
+union all
+select max(metric_time) from ${metrics_lifetime_spend_pretax}
+```
+
+<DateRange name=period data={date_bounds} dates=metric_time/>
+
+```sql kpi_lifetime_spend_pretax
+select sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
+```
+
+```sql kpi_count_lifetime_orders
+select sum(count_lifetime_orders) as count_lifetime_orders
+from ${metrics_count_lifetime_orders}
+```
+
+```sql kpi_order_total
+select sum(order_total) as order_total
+from ${metrics_order_total}
+```
+
+```sql kpi_new_customer_orders
+select sum(new_customer_orders) as new_customer_orders
+from ${metrics_new_customer_orders}
+```
+
+<Grid cols=4>
+
+<BigValue data={kpi_lifetime_spend_pretax} value=lifetime_spend_pretax title='LTV Pre-tax' fmt=num0/>
+<BigValue data={kpi_count_lifetime_orders} value=count_lifetime_orders title='Count Lifetime Orders' fmt=num0/>
+<BigValue data={kpi_order_total} value=order_total title='Order Total' fmt=num0/>
+<BigValue data={kpi_new_customer_orders} value=new_customer_orders title='New Customers' fmt=num0/>
+
+</Grid>
+
+## LTV Pre-tax over time
+
+```sql trend
+select metric_time, sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
+group by 1 order by 1
+```
+
+<LineChart data={trend} x=metric_time y=lifetime_spend_pretax yFmt=num0/>
+
+## LTV Pre-tax by customer name
+
+```sql breakdown
+select customer_name, sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
+where customer_name is not null
+group by 1 order by 2 desc
+```
+
+<BarChart data={breakdown} x=customer_name y=lifetime_spend_pretax swapXY=true xFmt=num0/>
+
+## Detail
+
+<DataTable data={breakdown} rows=15/>
 
 ---
 

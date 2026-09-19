@@ -1,1 +1,9 @@
-{ "name": "dbt-snowflake", "version": "0.1.0", "description": "Platform toolkit: dbt-snowflake" }
+{
+  "name": "dbt-snowflake",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-snowflake",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

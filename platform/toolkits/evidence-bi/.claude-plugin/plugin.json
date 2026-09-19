@@ -1,1 +1,9 @@
-{ "name": "evidence-bi", "version": "0.1.0", "description": "Evidence BI reporting layer, metric-first" }
+{
+  "name": "evidence-bi",
+  "version": "0.1.0",
+  "description": "Evidence BI reporting layer, metric-first",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

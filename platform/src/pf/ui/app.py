@@ -55,7 +55,7 @@ def graph_path(group: str, project: str) -> Path:
 # ------------------------------------------------------------------ pages --
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
-    return (UI_DIR / "static" / "index.html").read_text()
+    return (UI_DIR / "static" / "index.html").read_text(encoding="utf-8")
 
 
 DIST = UI_DIR / "static" / "dist"
@@ -82,7 +82,7 @@ def spa(path: str = "") -> str:
     if not entry.exists():
         raise HTTPException(
             503, "UI not built — run `npm --prefix platform/src/pf/ui/web run build`")
-    return entry.read_text()
+    return entry.read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------- topology --
@@ -94,7 +94,7 @@ def tree() -> dict[str, Any]:
     if groups_dir.exists():
         for g in sorted(p for p in groups_dir.iterdir() if p.is_dir() and not p.name.startswith(".")):
             inst = g / "ontology" / "instance.yaml"
-            instance = yaml.safe_load(inst.read_text()) if inst.exists() else {}
+            instance = yaml.safe_load(inst.read_text(encoding="utf-8")) if inst.exists() else {}
             projects = []
             pdir = g / "projects"
             if pdir.exists():
@@ -389,7 +389,7 @@ def metrics(group: str, project: str) -> list[dict[str, Any]]:
 @app.get("/api/card")
 def card(group: str, project: str) -> dict[str, Any]:
     p = project_dir(group, project) / "kg" / "context_card.md"
-    text = p.read_text() if p.exists() else ""
+    text = p.read_text(encoding="utf-8") if p.exists() else ""
     return {"markdown": text, "chars": len(text), "est_tokens": max(1, len(text) // 4)}
 
 
@@ -554,7 +554,7 @@ def health() -> dict[str, Any]:
         add("tracking db", False, str(exc)[:80])
 
     ws = root / "platform" / "workspace.yaml"
-    locations = ws.read_text().count("python_module:") if ws.exists() else 0
+    locations = ws.read_text(encoding="utf-8").count("python_module:") if ws.exists() else 0
     add("dagster workspace", ws.exists(), f"{locations} code location(s)")
 
     gate = root / "gate.yaml"

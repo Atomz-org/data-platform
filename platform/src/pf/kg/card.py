@@ -230,7 +230,7 @@ def render_group_card(group_dir: str | Path, group: str) -> Path:
                       if p.is_dir() and not p.name.startswith(".")) if projects_dir.exists() else []
 
     instance_path = root / "ontology" / "instance.yaml"
-    instance = yaml.safe_load(instance_path.read_text()) if instance_path.exists() else {}
+    instance = yaml.safe_load(instance_path.read_text(encoding="utf-8")) if instance_path.exists() else {}
     classes = instance.get("classes") or []
     shared = instance.get("shared_sources") or []
 
