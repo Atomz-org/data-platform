@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from pf.features import Feature
 from pf.runtime.targets import WAREHOUSES, ProductionWarehouse
 from pf.scaffold.generator import PROJECT_TARGETS, render, render_profiles
 
@@ -70,6 +71,13 @@ class Capability:
     # which refuses to apply a capability whose files are only partly present
     # rather than rewriting one someone has edited.
     default_enabled: bool = False
+    # What this capability adds to a project's architecture map, when the
+    # derivation from `files` would not say it well. Optional, and usually
+    # absent: `pf.features.derive` reads `files` and contributes a row only for
+    # territory no existing feature claims, which is the case that would
+    # otherwise surface as an unmapped directory. Declare one to give it a real
+    # title, a lane, or a `count_kind`.
+    feature: Feature | None = None
     # Only offered to an import whose source actually targets this warehouse.
     # Without it, `pf onboard` wires in every registered capability, and a
     # Postgres project would be handed a Snowflake production target it has no
@@ -339,6 +347,38 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
         default_enabled=wh.default_enabled,
     )
 
+
+ARCH_JOB = """\
+  # Is the project's architecture map still true of the project?
+  #
+  # The map is generated and committed, so a PR that adds an exposure or drops a
+  # metric should carry the map change beside it. Without this the file is
+  # correct only until somebody forgets, and a stale map is worse than none: it
+  # is read as current.
+  #
+  # `pf kg build` first, and not optionally. Counts come from the annotations
+  # and the dbt manifest, so without a parse the graph holds no models, every
+  # count reads zero and the check reports drift that is really a missing build.
+  architecture:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Build the graph this map is generated from
+        run: uv run pf kg build {{group}} {{project}}
+
+      # Fails on two things: a map that no longer matches its project, and a
+      # directory no `Feature` claims. The second is a platform-side gap — a
+      # capability or tool that writes somewhere the registry does not know
+      # about — and it is reported here because here is where the platform is
+      # what changed.
+      - name: Architecture map is current
+        run: uv run pf arch {{group}} {{project}} --check
+"""
 
 # ------------------------------------------------------------------- air --
 AIR_JOB = """\
@@ -634,7 +674,8 @@ CAPABILITIES: dict[str, Capability] = {
         description="Run the impact gate and the graph currency check on every "
                     "pull request touching this project.",
         files={"docs/github.md": GITHUB_README},
-        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB},
+        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB,
+                 "architecture": ARCH_JOB},
         settings={
             "permissions": {"allow": ["Bash(gh pr view:*)", "Bash(gh pr diff:*)"]},
         },
