@@ -328,11 +328,10 @@ def absent_reason(root: Path | str) -> str:
     paths = sorted({s.path for s in all_sources().values()})
     if not paths:
         return "no control catalogue is registered — see `pf air catalogues`"
-    hint = " ".join(paths)
-    return (
-        f"no control catalogue checked out ({', '.join(paths)}) — run "
-        f"`git submodule update --init {hint}`"
-    )
+    # The command names the paths; repeating them in a parenthetical before it
+    # said the same thing twice in one sentence.
+    return ("no control catalogue checked out — run "
+            f"`git submodule update --init {' '.join(paths)}`")
 
 
 def _load_regimes(src: CatalogueSource, base: Path) -> dict[str, Regime]:

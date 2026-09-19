@@ -235,7 +235,9 @@ def cmd_air_crosswalk(framework: str = typer.Argument(
         table.add_column(col, overflow="fold")
     for key in sorted(by_key):
         docs = by_key[key]
-        controls = [d for d in docs if d.id.startswith(("AIR-PREV", "AIR-DET", "AIR-RESP"))]
+        # Membership, not id shape: prefixes and type codes are per catalogue,
+        # and an `id_template` need not carry a type segment at all.
+        controls = [d for d in docs if d.id in cat.controls]
         verdicts = [cov.get(c.id) for c in controls]
         verdicts = [v for v in verdicts if v is not None]
         if not verdicts:
