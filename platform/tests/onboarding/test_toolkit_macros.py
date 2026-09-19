@@ -43,6 +43,9 @@ select
     {{ sf_div0('a', '0') }}                            as div0_v,
     {{ sf_div0null('a', 'n') }}                        as div0null_v,
     {{ sf_safe_divide('a', '0') }}                     as safediv_v,
+    {{ sf_div0('b - a', 'a + 1') }}                    as div0_expr_v,
+    {{ sf_div0null('b - a', 'a + 1') }}                as div0null_expr_v,
+    {{ sf_safe_divide('b - a', 'b - a') }}             as safediv_expr_v,
     {{ sf_least(['a', 'b']) }}                         as least_v,
     {{ sf_least(['a', 'n']) }}                         as least_null_v,
     {{ sf_greatest(['a', 'n']) }}                      as greatest_null_v,
@@ -79,6 +82,11 @@ EXPECTED = {
     "div0_v": 0,            # a plain nullif guard would give NULL
     "div0null_v": 0,        # NULL divisor treated as zero, then guarded
     "safediv_v": None,      # BigQuery's spelling really does return NULL
+    # Expressions as operands. Unbracketed, these rendered as `b - a / (a + 1)`
+    # = 4.5 and `b - a / (b - a)` = 4.75: plausible, wrong, and silent.
+    "div0_expr_v": 2,
+    "div0null_expr_v": 2,
+    "safediv_expr_v": 1,
     "least_v": 1,
     "least_null_v": None,   # DuckDB natively returns 1
     "greatest_null_v": None,  # DuckDB natively returns 1
