@@ -2,6 +2,8 @@
 name: annotate-source
 description: Attach ontology meaning to a dlt resource. Use after scaffolding a source and before writing any dbt model.
 ---
+<!-- Independent rewrite against dlt Core's public API; toolkit structure follows
+     dlt-hub/dlthub-ai-workbench (vendor/dlthub-ai-workbench) — see registry.yaml licence_review. -->
 # Annotate a source
 
 This is the platform's canonical data model step. Annotations drive staging

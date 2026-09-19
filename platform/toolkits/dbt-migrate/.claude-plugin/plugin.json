@@ -1,1 +1,9 @@
-{ "name": "dbt-migrate", "version": "0.1.0", "description": "Platform toolkit: dbt-migrate" }
+{
+  "name": "dbt-migrate",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-migrate",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

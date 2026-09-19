@@ -1,1 +1,9 @@
-{ "name": "forge-ui", "version": "0.1.0", "description": "Platform toolkit: forge-ui" }
+{
+  "name": "forge-ui",
+  "version": "0.1.0",
+  "description": "Platform toolkit: forge-ui",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}
