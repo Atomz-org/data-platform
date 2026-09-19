@@ -1,1 +1,9 @@
-{ "name": "dbt-testing", "version": "0.1.0", "description": "Platform toolkit: dbt-testing" }
+{
+  "name": "dbt-testing",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-testing",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

@@ -23,6 +23,8 @@ Raw SQL that recomputes a defined metric is a bug, not a shortcut.
   radius, including exposure owners.
 - After changing a model, confirm the blast radius empirically → `recce-review`.
   Lineage says what could break; only a diff says what did.
+- A failing test or a fired monitor → `elementary-observe: triage-observability`.
+  Classify against the recorded history before fixing anything.
 - Every data-returning tool is truncated by policy (schema + <=20 rows + counts).
   If you need more, aggregate in SQL — do not raise the limit.
 - Any chart or diagram → `viz-standards`. Form first, colour last; the status

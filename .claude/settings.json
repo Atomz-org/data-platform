@@ -3,14 +3,15 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "./platform"
+        "source": "directory",
+        "path": "./platform"
       }
     }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "power-tools@platform"
-  ],
+  "enabledPlugins": {
+    "platform-init@platform": true,
+    "power-tools@platform": true
+  },
   "permissions": {
     "deny": [
       "Read(./.env)",
@@ -48,13 +49,24 @@
     "PF_NOTIFY_VOICE": "1"
   },
   "hooks": {
-    "PreToolUse": [
+    "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python platform/hooks/pre_tool_use.py"
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/post_tool_use.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/pre_tool_use.py\""
           }
         ]
       }

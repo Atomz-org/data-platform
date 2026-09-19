@@ -1,0 +1,37 @@
+# Which AI controls acme-us commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered: `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Merged over the group's air.yaml. `baseline` is a union with the group's, not
+# a replacement: an entity may commit to more than its family, never to less.
+version: 1
+
+# Where this project sits in its catalogue's taxonomy, if it declares one.
+# Free-form until then.
+#
+# profile:
+#   ai_type: Agentic_AI
+#   architecture_pattern: Agentic/Autonomous_AI
+profile: {}
+
+# Controls this project commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything else is reported and advisory.
+#
+# Start from `pf air baseline acme acme-us --suggest`, which proposes
+# only what already passes — a ratchet against regression rather than a wall of
+# work nobody agreed to. Accepting the proposal stays a person's act.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this project does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []

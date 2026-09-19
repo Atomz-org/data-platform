@@ -124,6 +124,12 @@ def plan(root: Path, group: str, project: str, source: Path) -> Plan:
     # declares a warehouse is only relevant to a source that targets it —
     # otherwise every import, whatever it runs on, is handed a Snowflake
     # production target and three environment variables nobody will ever set.
+    # Tool-contributed capabilities (Evidence lives with its tool) are merged
+    # in here, not only at CLI import: the planner is also called from tests
+    # and from the ladder, and a capability the CLI knows but the planner does
+    # not is a capability nobody is told they are missing.
+    from pf.tools import register_capabilities
+    register_capabilities()
     applicable = {n for n, c in CAPABILITIES.items()
                   if not c.warehouse or c.warehouse in s.warehouses}
     p.missing_capabilities = sorted(applicable - s.capabilities_present)
@@ -267,7 +273,7 @@ def _yield_to_imported(scaffolded: list[Path], s: Survey) -> list[str]:
         if not path.exists():
             continue
         try:
-            doc = yaml.safe_load(path.read_text()) or {}
+            doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             continue
         kept = [m for m in (doc.get("models") or [])
@@ -276,7 +282,7 @@ def _yield_to_imported(scaffolded: list[Path], s: Survey) -> list[str]:
             continue
         if kept:
             doc["models"] = kept
-            path.write_text(yaml.safe_dump(doc, sort_keys=False))
+            path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
             out.append(f"models: removed {len(dropped)} entr(y/ies) from {path.name}")
         else:
             path.unlink()
@@ -360,7 +366,7 @@ def _merge_dbt_project(s: Survey, target: Path) -> str:
     if not target.exists():
         return "not merged, no scaffolded file"
     try:
-        ours = yaml.safe_load(target.read_text()) or {}
+        ours = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError as exc:
         return f"not merged, unparseable ({exc.__class__.__name__})"
 
@@ -411,7 +417,7 @@ def _merge_dbt_project(s: Survey, target: Path) -> str:
             kept.append(f"macro-paths+{toolkit}")
     ours["macro-paths"] = paths
 
-    target.write_text(yaml.safe_dump(ours, sort_keys=False))
+    target.write_text(yaml.safe_dump(ours, sort_keys=False), encoding="utf-8")
     return f"merged {', '.join(kept)}" if kept else "nothing to merge"
 
 
@@ -462,13 +468,13 @@ def _merge_packages(source: Path, target: Path, survey: Survey | None = None) ->
     a human decision, and the log line says what was left behind.
     """
     try:
-        incoming = (yaml.safe_load(source.read_text()) or {}).get("packages") or []
+        incoming = (yaml.safe_load(source.read_text(encoding="utf-8")) or {}).get("packages") or []
     except yaml.YAMLError as exc:
         return f"not merged, unparseable ({exc.__class__.__name__})"
 
     current = {}
     if target.exists():
-        current = yaml.safe_load(target.read_text()) or {}
+        current = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
     ours = current.get("packages") or []
 
     def key(entry: dict) -> str:
@@ -495,7 +501,7 @@ def _merge_packages(source: Path, target: Path, survey: Survey | None = None) ->
 
     current["packages"] = [*ours, *added]
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(yaml.safe_dump(current, sort_keys=False))
+    target.write_text(yaml.safe_dump(current, sort_keys=False), encoding="utf-8")
     return f"+{len(added)} package(s){note}"
 
 
@@ -505,7 +511,7 @@ def _migrate_orchestration(pdir: Path, p: Plan) -> list[str]:
 
     out = pdir / "src" / module / "defs" / "migrated_pipelines.py"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render(p.pipelines, module))
+    out.write_text(render(p.pipelines, module), encoding="utf-8")
 
     quarantine = pdir / QUARANTINE
     quarantine.mkdir(parents=True, exist_ok=True)
@@ -515,7 +521,7 @@ def _migrate_orchestration(pdir: Path, p: Plan) -> list[str]:
         "They do not run. They are here because the generated Dagster assets in\n"
         f"`src/{module}/defs/migrated_pipelines.py` translate the task *graph* and\n"
         "not the task *bodies* — porting a body means reading the original.\n\n"
-        "Delete a file here once its asset no longer raises.\n")
+        "Delete a file here once its asset no longer raises.\n", encoding="utf-8")
 
     for f in {x.source for x in p.pipelines}:
         shutil.copy2(f, quarantine / f.name)

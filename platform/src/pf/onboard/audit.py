@@ -231,7 +231,7 @@ def _scale_risks(s: Survey, root: Path | None) -> list[Risk]:
         gate = root / "gate.yaml"
         if gate.exists():
             try:
-                max_files = (yaml.safe_load(gate.read_text()) or {}).get("maxFiles")
+                max_files = (yaml.safe_load(gate.read_text(encoding="utf-8")) or {}).get("maxFiles")
             except yaml.YAMLError:
                 max_files = None
             if isinstance(max_files, int) and len(names) > max_files * 20:

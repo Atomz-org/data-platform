@@ -55,6 +55,66 @@ jobs:
           echo "reporting=$(touched "$P/reporting")" >> "$GITHUB_OUTPUT"
           echo "any=$(touched "$P")" >> "$GITHUB_OUTPUT"
 
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage acme acme-us --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate acme acme-us
+
+  # Is the project's architecture map still true of the project?
+  #
+  # The map is generated and committed, so a PR that adds an exposure or drops a
+  # metric should carry the map change beside it. Without this the file is
+  # correct only until somebody forgets, and a stale map is worse than none: it
+  # is read as current.
+  #
+  # `pf kg build` first, and not optionally. Counts come from the annotations
+  # and the dbt manifest, so without a parse the graph holds no models, every
+  # count reads zero and the check reports drift that is really a missing build.
+  architecture:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Build the graph this map is generated from
+        run: uv run pf kg build acme acme-us
+
+      # Fails on two things: a map that no longer matches its project, and a
+      # directory no `Feature` claims. The second is a platform-side gap — a
+      # capability or tool that writes somewhere the registry does not know
+      # about — and it is reported here because here is where the platform is
+      # what changed.
+      - name: Architecture map is current
+        run: uv run pf arch acme acme-us --check
+
   # The merge gate, in CI. Runs the same `pf impact-gate` the developer's
   # pre-commit hook runs, so a change that bypassed the local hook (--no-verify,
   # a web edit, a bot commit) still cannot merge without its blast radius being
@@ -104,6 +164,32 @@ jobs:
           fi
           uv run pf kg build acme acme-us
           uv run pf impact-gate acme acme-us "${{ steps.changed.outputs.models }}"
+
+  # The graph has no clock. One built before a model landed answers every query
+  # confidently and wrongly, and nothing else notices — it simply holds fewer
+  # nodes than the project has models. Every other job here trusts that graph:
+  # the impact gate computes a blast radius from it, and an agent reads its
+  # context card. A stale graph makes both of those quietly wrong rather than
+  # loudly broken, which is why this is a gate and not a reminder.
+  kg-current:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      # `pf kg check` parses the dbt project first — `target/` is gitignored, so
+      # a runner has no manifest to compare the committed graph against, and
+      # without one the check reports "not exercised" and passes.
+      #
+      # It compares only what a runner without a warehouse can see: models,
+      # metrics and exposures come from the dbt manifests, which this checkout
+      # has. Columns are backfilled from information_schema, which it does not —
+      # comparing those too would be red on every pull request forever.
+      - name: Is the committed graph current?
+        run: uv run pf kg check acme acme-us --strict
 
   # dbt review: what the change did to the data, not just to the DAG.
   #
