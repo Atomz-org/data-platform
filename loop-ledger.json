@@ -877,5 +877,83 @@
     "duration_ms": 0,
     "attempt": 2,
     "message": "all 3 checks passed"
+  },
+  {
+    "run_id": "089944d2",
+    "loop": "observability-triage",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-19T20:36:16+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 39,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "4cef9511",
+    "loop": "expectations-refresher",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-19T20:36:17+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "cb2f7c9d",
+    "loop": "expectations-refresher",
+    "group": "acme",
+    "project": "acme-us",
+    "started_at": "2026-08-19T20:36:18+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "e379336c",
+    "loop": "observability-triage",
+    "group": "qa-demo",
+    "project": "qa-app",
+    "started_at": "2026-08-19T20:46:56+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 0,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "7419931d",
+    "loop": "expectations-refresher",
+    "group": "qa-demo",
+    "project": "qa-app",
+    "started_at": "2026-08-19T20:46:57+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 46,
+    "attempt": 1,
+    "message": ""
+  },
+  {
+    "run_id": "1562307e",
+    "loop": "observability-triage",
+    "group": "qa-demo",
+    "project": "qa-app",
+    "started_at": "2026-08-19T20:47:22+00:00",
+    "outcome": "noop",
+    "findings": [],
+    "tokens_used": 0,
+    "duration_ms": 19,
+    "attempt": 1,
+    "message": ""
   }
 ]

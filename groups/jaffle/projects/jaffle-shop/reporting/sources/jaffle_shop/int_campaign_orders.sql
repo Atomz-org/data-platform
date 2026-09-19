@@ -1,3 +1,7 @@
 -- source extract for int_campaign_orders (PII columns excluded by the MDL projection)
-select campaign_id, order_id, campaign_name, campaign_channel, customer_id, order_total, subtotal, redemption_id, discount_applied, ordered_at
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    campaign_id,
+    order_id
 from main_marts.int_campaign_orders

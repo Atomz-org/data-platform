@@ -1,1 +1,9 @@
-{ "name": "recce-review", "version": "0.1.0", "description": "Platform toolkit: recce-review" }
+{
+  "name": "recce-review",
+  "version": "0.1.0",
+  "description": "Platform toolkit: recce-review",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

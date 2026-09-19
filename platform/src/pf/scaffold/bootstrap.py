@@ -18,6 +18,7 @@ has no sources, no models and no warehouse, and bootstrapping it must still work
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -162,6 +163,76 @@ def _build_reporting(root: Path, group: str, project: str) -> StepResult:
                       f"{r['metrics']} metric(s), {r['pages']} page(s)")
 
 
+def _capability_policies(root: Path, group: str, project: str) -> StepResult:
+    """Regenerate the capability policy overlay from the registry.
+
+    Platform-scope, not project-scope: the file is one per repository and a pure
+    function of `CAPABILITIES`. It runs inside the per-project loop anyway because
+    that is where every other regeneration runs, and writing an identical file
+    eight times is cheaper than a second place for steps to live.
+
+    Idempotent by construction — same registry, same bytes. The step reports the
+    policy count rather than a diff, because a changed count is the thing worth
+    noticing in a bootstrap log.
+    """
+    from pf.capabilities import (
+        defaults,
+        policy_additions,
+        resolve,
+        write_capability_policies,
+    )
+
+    caps = resolve(defaults())
+    before = (root / "platform" / "src" / "pf" / "ontology"
+              / "policy.capabilities.yaml").read_text() if (
+        root / "platform" / "src" / "pf" / "ontology"
+        / "policy.capabilities.yaml").exists() else ""
+    path = write_capability_policies(root, caps)
+    n = len(policy_additions(caps))
+    verb = "unchanged" if path.read_text() == before else "rewritten"
+    return StepResult("capability policies", "ok",
+                      f"{n} policy(ies) from {len(caps)} capability(ies), {verb}")
+
+
+def _claude_settings(root: Path, group: str, project: str) -> StepResult:
+    """Migrate this project's `.claude/settings.json` to the current schema.
+
+    The scaffolder wrote two keys in shapes Claude Code rejects — `enabledPlugins`
+    as a list, and marketplace sources holding a bare path where the source *kind*
+    belongs. Fixing the template only helps projects written after it, and this is
+    the failure the module docstring above describes: a hole that stays silent
+    until someone notices. A rejected settings file loads none of the plugins it
+    declares, `power-tools@platform` among them, so the project loses `kg_search`
+    and `impact_analysis` without ever saying so.
+
+    Runs before `tools` and `capabilities` because both merge into this file, and
+    merging into settings one schema version behind is what turns a repair into a
+    crash. Idempotent: `normalize` reports no changes for a current file, and the
+    file is only rewritten when there is something to change.
+    """
+    from pf.scaffold.claude_settings import ensure_plugins, normalize
+    from pf.scaffold.generator import default_plugins
+
+    path = _pdir(root, group, project) / ".claude" / "settings.json"
+    if not path.exists():
+        return StepResult("claude settings", "skipped", "no .claude/settings.json")
+    try:
+        settings = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        # Reported, not raised: a hand-edited file with a stray comma must not
+        # stop the twelve steps after this one.
+        return StepResult("claude settings", "failed", f"invalid JSON: {exc}")
+
+    changes = normalize(settings)
+    # Order matters: `ensure_plugins` writes into `enabledPlugins` as a record,
+    # which is only what it is once `normalize` has migrated it.
+    changes += ensure_plugins(settings, default_plugins(group))
+    if not changes:
+        return StepResult("claude settings", "ok", "current")
+    path.write_text(json.dumps(settings, indent=2) + "\n")
+    return StepResult("claude settings", "ok", "; ".join(changes))
+
+
 def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
     """Every tool this project enables, set up idempotently.
 
@@ -245,6 +316,35 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
     if not out:
         return [StepResult("capabilities", "skipped", "none default-enabled")]
     return out
+
+
+def _group_air(root: Path, group: str, project: str) -> list[StepResult]:
+    """The group's `air.yaml`, if it has none.
+
+    The sibling of `_bootstrap_capabilities`, one level up. A capability reaches
+    a *project*; the family-level declaration has no capability to carry it, and
+    a group scaffolded before `pf.air` existed would otherwise have no baseline
+    for its sisters to inherit — so `pf air gate` would pass for the whole family
+    by finding nothing to check.
+
+    Written only when absent, never rewritten. It is hand-maintained: the whole
+    point of the file is that a human decided what the family commits to, and a
+    bootstrap that regenerated it would erase that decision on every run.
+
+    The scaffolded baseline is empty, exactly as `pf new-group` writes it.
+    `pf air baseline <group> --suggest` proposes what already passes; accepting
+    the proposal stays a person's act.
+    """
+    from pf.scaffold.generator import GROUP_AIR, write
+
+    path = root / "groups" / group / "air.yaml"
+    if path.exists():
+        return [StepResult("group air.yaml", "ok", f"{path.relative_to(root)} present")]
+    write(path, GROUP_AIR, {"group": group})
+    return [StepResult(
+        "group air.yaml", "created",
+        f"{path.relative_to(root)} — empty baseline; "
+        f"`pf air baseline {group} --suggest` proposes one")]
 
 
 def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
@@ -347,7 +447,6 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         PROJECT_TARGETS,
         render_target,
         replace_target,
-        target_type,
     )
 
     d = _pdir(root, group, project)
@@ -406,22 +505,34 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         # succeeds, writes nothing anyone can see, and reports success. Seven of
         # eight projects were in that state.
         #
-        # Guarded on the *current* type, not on whether we have written here
-        # before. Anything already pointing at a real engine — Snowflake set by
-        # hand, BigQuery from `pf capability-add` — is left exactly alone, so
-        # this can never take a project off its own warehouse. And only the
-        # `prod` block is touched: `replace_target` is text-level precisely so
+        # Guarded on the placeholder's *path*, not on the adapter type. The type
+        # alone cannot tell the scaffold's local file from a deliberate DuckLake
+        # target — both are `type: duckdb` — and guarding on type is how
+        # `pf capability-add ducklake` got silently reverted to Snowflake by the
+        # very next bootstrap. Only the `PF_DUCKDB_PATH` local file is the
+        # placeholder; anything else — Snowflake set by hand, BigQuery from
+        # `pf capability-add`, a `ducklake:` catalog — is a decision, and this
+        # step must never take a project off its own warehouse. Only the `prod`
+        # block is touched: `replace_target` is text-level precisely so
         # hand-added keys on the DuckDB targets beside it survive.
         wh = default_warehouse()
         if wh is not None and outputs:
-            current = target_type(text, "prod")
-            if current == "duckdb":
+            prod = outputs.get("prod") or {}
+            placeholder = (prod.get("type") == "duckdb"
+                           and "PF_DUCKDB_PATH" in str(prod.get("path", "")))
+            if placeholder:
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
                     profiles.write_text(new_text)
                     changed.append(f"prod -> {wh.name}")
-            elif current and current != wh.name:
-                changed.append(f"prod already on {current}, left alone")
+            elif prod:
+                # Name the engine the way an operator would. DuckLake reports as
+                # itself, not as the `duckdb` adapter that happens to drive it.
+                engine = ("ducklake"
+                          if str(prod.get("path", "")).startswith("ducklake:")
+                          else str(prod.get("type") or "?"))
+                if engine != wh.name:
+                    changed.append(f"prod already on {engine}, left alone")
 
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")
@@ -454,6 +565,31 @@ def _project_atlas(root: Path, group: str, project: str) -> StepResult:
                       f"{', '.join(cfg.phases) or 'request only'}")
 
 
+def _render_architecture(root: Path, group: str, project: str) -> StepResult:
+    """The on-demand map of this project — every feature, present or not.
+
+    Runs near the end deliberately: it reports on the CI workflow, the Dagster
+    registration and the dbt targets that earlier steps create, so running it
+    first would draw a project as missing three things it acquired seconds later.
+
+    Unmapped entries are reported but do not fail the step. A directory the
+    feature registry does not know about is a gap in `pf.architecture.FEATURES`,
+    which is platform code — failing eight projects' bootstrap for one missing
+    registry entry blames the wrong person. `pf arch --check` fails on it, in CI,
+    where the platform is what is being changed.
+    """
+    from pf.architecture import ARCHITECTURE_BUDGET, write
+    from pf.kg.card import estimate_tokens
+
+    path, a = write(root, group, project)
+    n = estimate_tokens(path.read_text())
+    status: Status = "ok" if n <= ARCHITECTURE_BUDGET else "failed"
+    detail = f"~{n} tokens / {ARCHITECTURE_BUDGET}, {len(a.gaps)} gap(s)"
+    if a.unmapped:
+        detail += f" · {len(a.unmapped)} unmapped: {', '.join(a.unmapped[:3])}"
+    return StepResult("architecture map", status, detail)
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
 
@@ -482,11 +618,18 @@ STEPS: list[Step] = [
                         "registry the tooling reads", _vendor_docs),
     Step("reporting", "dashboards are a projection of the metrics, regenerated "
                       "rather than hand-maintained", _build_reporting),
+    Step("capability policies", "an obligation a capability introduces must be "
+                                "inspectable and enforceable, not prose in a skill",
+         _capability_policies),
+    Step("claude settings", "a settings file the schema rejects loads none of "
+                            "the plugins it declares, silently", _claude_settings),
     Step("tools", "a tool enabled for the group must reach every sister, "
                   "including projects created before it existed", _bootstrap_tools),
     Step("capabilities", "a default-enabled capability must reach every project, "
                          "including ones scaffolded before it was a default",
          _bootstrap_capabilities),
+    Step("group air.yaml", "a family with no control declaration has a gate that "
+                           "passes by finding nothing to check", _group_air),
     Step("ci workflow", "one workflow per project, composed from the jobs its "
                         "capabilities declare, so CI is readable in one place",
          _ci_workflow),
@@ -497,6 +640,9 @@ STEPS: list[Step] = [
                        "be diffed", _dbt_wiring),
     Step("project atlas", "each project publishes a picture of its own graph, "
                           "refreshed around its own dbt runs", _project_atlas),
+    Step("architecture map", "every feature of this project, present or absent, "
+                             "so an agent routes instead of reading the tree",
+         _render_architecture),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 
