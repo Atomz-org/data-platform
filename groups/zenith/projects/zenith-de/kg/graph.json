@@ -318,7 +318,7 @@
       "layer": "utils",
       "label": "Daily time spine required by MetricFlow.",
       "props": {
-        "schema": "base",
+        "schema": "main",
         "materialized": "table",
         "grain": "",
         "tags": []
@@ -342,7 +342,8 @@
           "platform/hooks/pre_commit.sh"
         ],
         "enforced": true,
-        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+        "scope": "platform"
       }
     },
     {
@@ -363,7 +364,8 @@
           "pf.tools.recce:register_commands"
         ],
         "enforced": true,
-        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\".",
+        "scope": "platform"
       }
     },
     {
@@ -385,7 +387,8 @@
           "pf.ontology.validate:class-without-identity"
         ],
         "enforced": true,
-        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+        "scope": "platform"
       }
     },
     {
@@ -405,7 +408,8 @@
           "pf.ontology.validate:illegal-edge"
         ],
         "enforced": true,
-        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse.",
+        "scope": "platform"
       }
     },
     {
@@ -427,7 +431,8 @@
           "pf.kg.build:model-grain"
         ],
         "enforced": true,
-        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+        "scope": "platform"
       }
     },
     {
@@ -455,7 +460,8 @@
           "pf.ontology.validate:metric-shaped-column"
         ],
         "enforced": true,
-        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first.",
+        "scope": "platform"
       }
     },
     {
@@ -478,7 +484,8 @@
           "pf.ontology.validate:money-without-currency"
         ],
         "enforced": true,
-        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+        "scope": "platform"
       }
     },
     {
@@ -504,7 +511,8 @@
           "pf.loops.registry:pii_audit"
         ],
         "enforced": true,
-        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+        "scope": "platform"
       }
     },
     {
@@ -525,7 +533,8 @@
           "pf.tools.recce:generate_config"
         ],
         "enforced": true,
-        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out.",
+        "scope": "platform"
       }
     },
     {
@@ -546,7 +555,8 @@
           "platform/hooks/pre_tool_use.py"
         ],
         "enforced": true,
-        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+        "scope": "platform"
       }
     },
     {
@@ -557,7 +567,7 @@
       "label": "zenith/zenith-de",
       "props": {
         "group": "zenith",
-        "path": "/Users/sswaminathan/Documents/Data-platform-Agentic/data-platform/groups/zenith/projects/zenith-de"
+        "path": "/Users/suresh/data-platform/groups/zenith/projects/zenith-de"
       }
     },
     {
