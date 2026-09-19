@@ -1,0 +1,915 @@
+<title>Knowledge Graph Atlas</title>
+<style>
+  :root {
+    --ground:   #f5f8f7;
+    --surface:  #ffffff;
+    --sunk:     #eaf1ef;
+    --ink:      #0f1a18;
+    --muted:    #566a66;
+    --faint:    #7d8f8b;
+    --hair:     #d5e2de;
+    --hair-2:   #b9ccc7;
+    --accent:   #0d7d72;
+    --accent-q: #e2f3f0;
+    --plate:    #fbfdfc;
+    --plate-ed: #dfe9e6;
+
+    /* Plane hues. Theme-invariant on purpose: these same values go into the
+       mermaid classDefs, which no media query can reach. */
+    --phy: #0f766e;  --phy-bg: #d9f4ee;
+    --sem: #5b21b6;  --sem-bg: #e9e1fb;
+    --gov: #334155;  --gov-bg: #e0e6ed;
+
+    --warn:   #9a3412;
+    --warn-bg:#fdece4;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:   #0b1211;
+      --surface:  #131d1b;
+      --sunk:     #101917;
+      --ink:      #e8f0ee;
+      --muted:    #94a8a3;
+      --faint:    #7a8d89;
+      --hair:     #22322f;
+      --hair-2:   #2f4340;
+      --accent:   #48c2b1;
+      --accent-q: #102b28;
+      --plate:    #e9efed;
+      --plate-ed: #c3d0cd;
+      --warn:   #f0a882;
+      --warn-bg:#2a1a12;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:   #0b1211;
+    --surface:  #131d1b;
+    --sunk:     #101917;
+    --ink:      #e8f0ee;
+    --muted:    #94a8a3;
+    --faint:    #7a8d89;
+    --hair:     #22322f;
+    --hair-2:   #2f4340;
+    --accent:   #48c2b1;
+    --accent-q: #102b28;
+    --plate:    #e9efed;
+    --plate-ed: #c3d0cd;
+    --warn:   #f0a882;
+    --warn-bg:#2a1a12;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 62rem; margin: 0 auto; }
+  .prose { max-width: 40rem; }
+
+  /* ---- type roles ---- */
+  h1, h2, h3 {
+    font-family: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    font-weight: 600;
+    text-wrap: balance;
+    letter-spacing: -0.011em;
+  }
+  h1 { font-size: clamp(2.1rem, 5.2vw, 3.05rem); line-height: 1.08; margin: 0 0 0.8rem; }
+  h2 { font-size: clamp(1.42rem, 3vw, 1.78rem); line-height: 1.2; margin: 0 0 0.55rem; }
+  h3 { font-size: 1.09rem; line-height: 1.32; margin: 2.1rem 0 0.5rem; }
+
+  .eyebrow {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.705rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.855em;
+  }
+  p code, li code, td code {
+    background: var(--sunk);
+    border: 1px solid var(--hair);
+    border-radius: 3px;
+    padding: 0.05em 0.34em;
+    white-space: nowrap;
+  }
+
+  p { margin: 0 0 1.05rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  strong { font-weight: 650; }
+
+  /* ---- masthead ---- */
+  header.mast {
+    padding: 4.4rem 0 2.2rem;
+    border-bottom: 2px solid var(--ink);
+  }
+  .standfirst {
+    font-size: 1.12rem;
+    color: var(--muted);
+    max-width: 38rem;
+    margin: 0 0 1.6rem;
+  }
+  .mast-meta {
+    display: flex; flex-wrap: wrap; gap: 0.45rem 1.5rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.755rem; color: var(--faint);
+  }
+
+  /* ---- sections ---- */
+  section { padding: 3.1rem 0 0.4rem; border-top: 1px solid var(--hair); }
+  section:first-of-type { border-top: none; }
+  .sec-head { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+
+  /* ---- plane chips ---- */
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 0.16rem 0.5rem; border-radius: 2px;
+    color: #0b0b0b; white-space: nowrap;
+  }
+  .chip.phy { background: var(--phy-bg); border: 1px solid var(--phy); }
+  .chip.sem { background: var(--sem-bg); border: 1px solid var(--sem); }
+  .chip.gov { background: var(--gov-bg); border: 1px solid var(--gov); }
+  .legend { display: flex; flex-wrap: wrap; gap: 0.55rem; margin: 0 0 1.4rem; }
+
+  /* ---- the plate (diagram surface) ---- */
+  figure { margin: 1.7rem 0 2rem; }
+  .plate {
+    background: var(--plate);
+    border: 1px solid var(--plate-ed);
+    border-radius: 3px;
+    padding: 1.5rem 1rem;
+    overflow-x: auto;
+  }
+  .plate pre.mermaid { margin: 0; display: block; min-width: min-content; }
+  figcaption {
+    font-size: 0.86rem; color: var(--muted);
+    margin-top: 0.7rem; max-width: 40rem;
+  }
+  figcaption .lead {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem; letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--faint); display: block; margin-bottom: 0.25rem;
+  }
+
+  /* ---- tables ---- */
+  .tw { overflow-x: auto; margin: 1.4rem 0 1.9rem; border: 1px solid var(--hair); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.885rem; }
+  th, td { text-align: left; padding: 0.56rem 0.85rem; border-bottom: 1px solid var(--hair); vertical-align: top; }
+  thead th {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.685rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--faint); font-weight: 500;
+    background: var(--sunk); border-bottom: 1px solid var(--hair-2);
+    position: sticky; top: 0;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  td .mono, th .mono { white-space: nowrap; }
+  .dim { color: var(--muted); }
+
+  /* ---- code ---- */
+  pre.term {
+    background: var(--sunk);
+    border: 1px solid var(--hair);
+    border-left: 2px solid var(--hair-2);
+    border-radius: 3px;
+    padding: 0.95rem 1.1rem;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.795rem;
+    line-height: 1.62;
+    margin: 1.1rem 0 1.5rem;
+  }
+  pre.term b { color: var(--accent); font-weight: 600; }
+  pre.term i { color: var(--faint); font-style: normal; }
+
+  /* ---- recipes: ordered because the order is the content ---- */
+  ol.recipes { list-style: none; counter-reset: r; padding: 0; margin: 1.4rem 0 0; }
+  ol.recipes > li { counter-increment: r; display: grid; grid-template-columns: 2.4rem 1fr; gap: 0 1rem; padding: 1.15rem 0; border-top: 1px solid var(--hair); }
+  ol.recipes > li::before {
+    content: counter(r, decimal-leading-zero);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.76rem; color: var(--faint); padding-top: 0.28rem;
+  }
+  ol.recipes h3 { margin: 0 0 0.3rem; font-size: 1.02rem; }
+  ol.recipes p { margin: 0 0 0.55rem; font-size: 0.93rem; }
+  .chain {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.775rem; line-height: 1.85;
+    background: var(--sunk); border: 1px solid var(--hair);
+    border-radius: 3px; padding: 0.6rem 0.8rem;
+    overflow-x: auto; white-space: pre;
+  }
+
+  /* ---- callout ---- */
+  .note {
+    border: 1px solid var(--hair-2);
+    border-radius: 3px;
+    background: var(--surface);
+    padding: 1.05rem 1.2rem;
+    margin: 1.6rem 0;
+  }
+  .note.flag { border-color: var(--warn); background: var(--warn-bg); }
+  .note .eyebrow { display: block; margin-bottom: 0.4rem; }
+  .note .eyebrow.w { color: var(--warn); }
+  .note p:last-child { margin-bottom: 0; }
+
+  ul.tight { margin: 0.4rem 0 1.1rem; padding-left: 1.15rem; }
+  ul.tight li { margin-bottom: 0.34rem; }
+
+  footer { margin-top: 3.4rem; padding-top: 1.4rem; border-top: 2px solid var(--ink); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">platform reference · pf.kg</div>
+  <h1>Knowledge Graph Atlas</h1>
+  <p class="standfirst">
+    The graph answers questions about <em>this project</em>. It cannot tell you what
+    it is made of. This is that half: the fourteen node kinds, the fourteen legal
+    edges between them, and the traversals that turn them into answers.
+  </p>
+  <div class="mast-meta">
+    <span>store: kg/graph.duckdb</span>
+    <span>scope: one project</span>
+    <span>census: acme-us · 230 nodes · 250 edges</span>
+    <span>rebuilt 2026-08-21</span>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">why it sits beside the graph</span>
+    <h2>A card says what is here. An atlas says what a graph is.</h2>
+  </div>
+  <div class="prose">
+    <p>
+      Three context tiers already exist, and each pays a different price.
+      <code>CLAUDE.md</code> and <code>kg/context_card.md</code> are
+      <strong>always on and budgeted</strong> — <code>pf tokens</code> fails the
+      build at 1,500 tokens for a project card, 400 for a group card. Toolkit
+      skills are <strong>on demand</strong>. The graph is
+      <strong>queried, never loaded</strong>.
+    </p>
+    <p>
+      That leaves a gap. The card is regenerated per project and lists
+      <em>instances</em> — acme-us has three raw tables and six metrics. It never
+      says that <code>realises</code> runs Column&nbsp;→&nbsp;Relation, that
+      <code>impact_analysis</code> ignores the semantic plane entirely, or that
+      <code>kg_path</code> walks edges in both directions. Those facts are
+      identical in all eight projects, so paying for them in every card would be
+      eight times the right price — and leaving them out is how a traversal gets
+      written backwards.
+    </p>
+    <p>
+      This page is the stable half. Read it once; query the graph forever after.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">the meta-model</span>
+    <h2>Three planes, one store</h2>
+  </div>
+  <div class="prose">
+    <p>
+      Two DuckDB tables hold everything: <code>kg_nodes</code> and
+      <code>kg_edges</code>. The structure lives in the <code>kind</code> column,
+      and it divides cleanly into three planes — what physically exists, what it
+      means, and what must hold of it.
+    </p>
+  </div>
+
+  <div class="legend">
+    <span class="chip phy">physical · what exists</span>
+    <span class="chip sem">semantic · what it means</span>
+    <span class="chip gov">governance · what must hold</span>
+  </div>
+
+  <figure>
+    <div class="plate">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"lineColor":"#78908b","edgeLabelBackground":"#ffffff","primaryTextColor":"#0b0b0b","fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","fontSize":"12px"}}}%%
+flowchart LR
+  subgraph PHY["PHYSICAL / ANALYTICAL — what exists, and what it feeds"]
+    direction TB
+    SO[Source]
+    TA[Table]
+    MO[Model]
+    CL[Column]
+    ME[Metric]
+    DI[Dimension]
+    TE[Test]
+    EX[Exposure]
+    PJ[Project]
+    SO -->|contains| TA
+    TA -->|feeds| MO
+    TA -->|has_column| CL
+    MO -->|has_column| CL
+    MO -->|feeds| MO
+    MO -->|measures| ME
+    MO -->|grouped_by| DI
+    MO -->|tested_by| TE
+    MO -->|feeds| EX
+    ME -->|feeds| ME
+  end
+
+  subgraph SEM["SEMANTIC — what those things mean"]
+    direction TB
+    CO[Concept]
+    PP[Property]
+    RE[Relation]
+    CO -->|has_property| PP
+    CO -->|domain_of| RE
+    RE -->|range_of| CO
+  end
+
+  subgraph GOV["GOVERNANCE — what must hold"]
+    direction TB
+    PO[Policy]
+    EV[Evidence]
+    PO -->|evidenced_by| EV
+  end
+
+  TA -->|instantiates| CO
+  CL -->|links_to| CO
+  CL -->|realises| RE
+  PO -->|governs| CO
+
+  classDef phy fill:#d9f4ee,stroke:#0f766e,stroke-width:1.4px,color:#0b0b0b
+  classDef sem fill:#e9e1fb,stroke:#5b21b6,stroke-width:1.4px,color:#0b0b0b
+  classDef gov fill:#e0e6ed,stroke:#334155,stroke-width:1.4px,color:#0b0b0b
+  classDef orphan fill:#f2f6f5,stroke:#93a5a1,stroke-width:1.2px,stroke-dasharray:4 3,color:#0b0b0b
+
+  class SO,TA,MO,CL,ME,DI,TE,EX phy
+  class CO,PP,RE sem
+  class PO,EV gov
+  class PJ orphan
+
+  style PHY fill:#f4fbf9,stroke:#0f766e,stroke-dasharray:5 4,color:#0b0b0b
+  style SEM fill:#f8f5fe,stroke:#5b21b6,stroke-dasharray:5 4,color:#0b0b0b
+  style GOV fill:#f4f6f9,stroke:#334155,stroke-dasharray:5 4,color:#0b0b0b
+</pre>
+    </div>
+    <figcaption>
+      <span class="lead">plate i — every node kind and every legal edge</span>
+      All fourteen edge kinds appear here; nothing is declared that the builder does
+      not emit. <strong>Project</strong> is drawn dashed because it is an anchor with
+      no edges at all — one node per graph, carrying group and path in its props,
+      reachable only by id. The four edges crossing plane boundaries are the whole
+      point of the design: they are what let a governance question be answered by
+      walking, rather than by reading three YAML files.
+    </figcaption>
+  </figure>
+
+  <div class="note">
+    <span class="eyebrow">why the diagram is the same colour in both themes</span>
+    <p>
+      Mermaid will not recolour an explicit <code>classDef</code> fill, and there is
+      no media query inside a diagram. So every plate here uses the house rule from
+      the <code>viz-standards</code> toolkit — <strong>pale fill, saturated stroke of
+      the same hue, near-black ink</strong> — and sits on a light card in both themes.
+      A fill picked to look right on white is unreadable on black, and nothing
+      downstream can save it.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">the load-bearing rule</span>
+    <h2>Every edge runs upstream → downstream</h2>
+  </div>
+  <div class="prose">
+    <p>
+      This is a contract, not a convention. It means <code>out_edges(n)</code> is
+      always <em>“what depends on n”</em> and <code>in_edges(n)</code> is always
+      <em>“what n was built from”</em> — with no per-kind exceptions to memorise.
+    </p>
+    <p>
+      <code>feeds</code> is named for that direction: a staging model
+      <em>feeds</em> a mart. It was once called <code>derives_from</code>, which
+      pointed the other way and made every rendered lineage path read backwards.
+      The rename is why the rule is stated in the module docstring rather than left
+      implicit.
+    </p>
+    <p>
+      One edge kind is deliberately walked <em>against</em> the arrow:
+      <code>has_column</code>. Changing a column implicates the model that owns it,
+      so impact analysis follows it upward. It is the single exception, and it is
+      encoded as one, in <code>UPWARD_KINDS</code>.
+    </p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Edge</th><th>Runs</th><th>Means</th><th>Impact walks it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="chip phy">phy</span> <code>contains</code></td><td class="mono dim">Source → Table</td><td>a dlt source landed this table</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip phy">phy</span> <code>has_column</code></td><td class="mono dim">Table/Model → Column</td><td>column belongs to it</td><td><strong>upward</strong></td></tr>
+        <tr><td><span class="chip phy">phy</span> <code>feeds</code></td><td class="mono dim">Table/Model/Metric → Model/Metric/Exposure</td><td>lineage; the general dependency edge</td><td><strong>yes</strong></td></tr>
+        <tr><td><span class="chip phy">phy</span> <code>measures</code></td><td class="mono dim">Model → Metric</td><td>a measure on this model backs the metric</td><td><strong>yes</strong></td></tr>
+        <tr><td><span class="chip phy">phy</span> <code>grouped_by</code></td><td class="mono dim">Model → Dimension</td><td>the semantic model exposes this dimension</td><td><strong>yes</strong></td></tr>
+        <tr><td><span class="chip phy">phy</span> <code>tested_by</code></td><td class="mono dim">Model → Test</td><td>a dbt test covers it</td><td><strong>yes</strong></td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>instantiates</code></td><td class="mono dim">Table → Concept</td><td>this table is a physical <em>Payment</em></td><td class="dim">no</td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>has_property</code></td><td class="mono dim">Concept → Property</td><td>datatype property of the class</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>domain_of</code></td><td class="mono dim">Concept → Relation</td><td>the relation starts here</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>range_of</code></td><td class="mono dim">Relation → Concept</td><td>the relation ends here</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>realises</code></td><td class="mono dim">Column → Relation</td><td>the physical FK behind the relation</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip sem">sem</span> <code>links_to</code></td><td class="mono dim">Column → Concept</td><td>declared FK target</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip gov">gov</span> <code>governs</code></td><td class="mono dim">Policy → Concept</td><td>this rule constrains that class</td><td class="dim">no</td></tr>
+        <tr><td><span class="chip gov">gov</span> <code>evidenced_by</code></td><td class="mono dim">Policy → Evidence</td><td>what proves the rule ran</td><td class="dim">no</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note">
+    <span class="eyebrow">read this column before trusting a blast radius</span>
+    <p>
+      <code>impact_analysis</code> traverses <strong>five of the fourteen</strong>
+      edge kinds. It is a lineage instrument, not a governance one: a change that
+      breaks a <code>governs</code> or <code>realises</code> relationship comes back
+      <em>safe to change</em>, because those edges were never walked. For semantic
+      or policy consequences, use <code>kg_neighbors</code> and read the plane
+      directly.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">traversals</span>
+    <h2>Four questions, as edge chains</h2>
+  </div>
+  <div class="prose">
+    <p>
+      These are numbered because the order <em>is</em> the content — each is a
+      sequence of hops that has to happen in that sequence. Every chain below was
+      run against <code>groups/acme/projects/acme-us</code> and is reproduced from
+      its actual output.
+    </p>
+  </div>
+
+  <ol class="recipes">
+    <li>
+      <div>
+        <h3>How does a raw column reach a business metric?</h3>
+        <p>The lineage question. Four hops from a Stripe column to a governed metric:</p>
+        <div class="chain">col:table:stripe.charges.amount
+  --has_column--&gt;  Table  table:stripe.charges
+  --feeds------&gt;    Model  model:stg_stripe__charges
+  --feeds------&gt;    Model  model:fct_payments
+  --measures---&gt;    Metric metric:revenue</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>Why is this column a join key, and to what?</h3>
+        <p>
+          Nothing is inferred from a naming convention. The FK is bound to the named
+          relation it realises, and the relation carries the cardinality — inverted
+          when the key sits on the range side, because the FK is always on the many
+          side.
+        </p>
+        <div class="chain">col:table:stripe.charges.customer_id
+  --realises---&gt;   Relation customer_pays_payment
+                   props: from_concept=Payment, to_concept=Customer,
+                          fk_column=customer_id, fk_table=charges,
+                          cardinality, reverse
+  Relation --range_of--&gt; Concept Customer  (identity: customer_id)
+                   =&gt; fct_payments.customer_id = dim_customers.customer_id</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>Is this rule actually enforced, and what proves it?</h3>
+        <p>
+          The OpenTopology chain — intent, constraint, artifact, evidence — is in the
+          graph so that “does anything check this” is a traversal rather than an
+          archaeology exercise across three YAML files.
+        </p>
+        <div class="chain">policy:entity-requires-identity
+  --governs-------&gt;  Concept concept:Customer
+  --evidenced_by--&gt;  Evidence evidence:impact_reports
+
+  props.enforced_by = []   =&gt;  NOTHING enforces it. That is the finding.</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        <h3>Is it safe to change this?</h3>
+        <p>
+          One <code>has_column</code> hop upward, then everything downstream.
+          Severity is structural, not a judgement call: any exposure or metric in
+          the radius is <em>breaking</em>, models alone are <em>review</em>,
+          nothing is <em>safe</em>.
+        </p>
+        <div class="chain">impact_analysis("col:table:stripe.charges.amount")
+
+⛔ affects 14 downstream object(s) — severity: BREAKING
+   Models (3)      fct_payments, fct_revenue, stg_stripe__charges
+   Metrics (5)     aov, gross_payment_volume, payment_count,
+                   revenue, revenue_mom_growth
+   Dimensions (5)  country_code, customer_segment, paid_at,
+                   payment_status, plan_tier
+   Exposures (1)   exec_weekly_dashboard  ← owner: Finance
+   Tests that will re-run: 7</div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">tool selection</span>
+    <h2>Which of the four to reach for</h2>
+  </div>
+
+  <figure>
+    <div class="plate">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"lineColor":"#78908b","edgeLabelBackground":"#ffffff","primaryTextColor":"#0b0b0b","fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","fontSize":"12px"}}}%%
+flowchart TD
+  Q{"what do you have<br/>to start from?"}
+
+  Q -->|a word, not an id| S["kg_search(term, kinds)"]
+  Q -->|one node id| N["kg_neighbors(node, depth)"]
+  Q -->|two node ids| P["kg_path(src, dst)"]
+  Q -->|a node about to change| I["impact_analysis(node)"]
+  Q -->|a business question| M["query_metrics(metrics, group_by)"]
+
+  S --> S1["substring over name, label and id<br/>case-insensitive · caps at 40"]
+  N --> N1["UNDIRECTED · both in and out edges<br/>narrow with kinds= before raising depth"]
+  P --> P1["UNDIRECTED shortest path, max 8 hops<br/>arrows show chain order, NOT edge direction"]
+  I --> I1["walks 5 edge kinds only<br/>records to obs · returns owners to notify"]
+  M --> M1["a governed definition, never raw SQL<br/>say which metric is missing instead"]
+
+  classDef q fill:#e0e6ed,stroke:#334155,stroke-width:1.4px,color:#0b0b0b
+  classDef tool fill:#d9f4ee,stroke:#0f766e,stroke-width:1.4px,color:#0b0b0b
+  classDef gotcha fill:#f6f4fb,stroke:#7c5cc4,stroke-width:1.2px,stroke-dasharray:4 3,color:#0b0b0b
+
+  class Q q
+  class S,N,P,I,M tool
+  class S1,N1,P1,I1,M1 gotcha
+</pre>
+    </div>
+    <figcaption>
+      <span class="lead">plate ii — entry points, and what each one quietly does</span>
+      The dashed boxes are the behaviours that most often produce a wrong reading.
+      Two are worth committing to memory: <strong>both traversal tools are
+      undirected</strong>. <code>kg_path</code> renders every hop as
+      <code>--kind--&gt;</code> regardless of which way the edge actually ran, so
+      the first hop of recipe 1 prints
+      <code>Column --has_column--&gt; Table</code> — the opposite of the stored
+      direction. The chain is correct; the arrow is chain order, not lineage.
+    </figcaption>
+  </figure>
+
+  <div class="prose">
+    <p>
+      Every one of these returns a compact string on purpose. The MCP truncation
+      policy — schema plus at most twenty rows plus summary stats, never a raw dump
+      — is the cheapest defence there is against a context blowup, and it applies to
+      every data-returning tool on the server, not only these.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">provenance</span>
+    <h2>Where the graph comes from, and when it lies</h2>
+  </div>
+
+  <figure>
+    <div class="plate">
+<pre class="mermaid">
+%%{init: {"theme":"base","themeVariables":{"lineColor":"#78908b","edgeLabelBackground":"#ffffff","primaryTextColor":"#0b0b0b","fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","fontSize":"12px"}}}%%
+flowchart LR
+  A1["contracts/annotations.yaml<br/>exported by dlt sources"]
+  A2["transform/target/manifest.json<br/>dbt models, columns, tests, exposures"]
+  A3["transform/target/semantic_manifest.json<br/>MetricFlow metrics and dimensions"]
+  A4["project ontology<br/>concepts + topology + resolved policy"]
+  A5["data/&lt;project&gt;.duckdb<br/>information_schema"]
+
+  B["pf kg build"]
+  G[("kg/graph.duckdb<br/>kg_nodes · kg_edges")]
+
+  C1["kg/context_card.md"]
+  C2["MDL · OWL · otop"]
+  C3["impact gate"]
+  C4["kg_search / kg_neighbors / kg_path"]
+
+  A1 --> B
+  A2 --> B
+  A3 --> B
+  A4 --> B
+  A5 --> B
+  B --> G
+  G --> C1
+  G --> C2
+  G --> C3
+  G --> C4
+
+  classDef src fill:#d9f4ee,stroke:#0f766e,stroke-width:1.4px,color:#0b0b0b
+  classDef onto fill:#e9e1fb,stroke:#5b21b6,stroke-width:1.4px,color:#0b0b0b
+  classDef build fill:#e0e6ed,stroke:#334155,stroke-width:1.6px,color:#0b0b0b
+  classDef store fill:#fdf6e3,stroke:#8a6d1f,stroke-width:1.6px,color:#0b0b0b
+  classDef out fill:#f4fbf9,stroke:#0f766e,stroke-width:1.2px,stroke-dasharray:4 3,color:#0b0b0b
+
+  class A1,A2,A3,A5 src
+  class A4 onto
+  class B build
+  class G store
+  class C1,C2,C3,C4 out
+</pre>
+    </div>
+    <figcaption>
+      <span class="lead">plate iii — inputs, store, consumers</span>
+      Every input is optional and the builder degrades quietly, which is exactly why
+      a thin graph is not obviously a broken one. The build is destructive by design:
+      <code>reset()</code> empties both tables first, so the graph is never a merge
+      of two eras.
+    </figcaption>
+  </figure>
+
+  <h3>Three ways the graph is thinner than reality</h3>
+  <ul class="tight">
+    <li>
+      <strong>A missing dbt manifest is silent.</strong> No manifest means no Model
+      nodes, and every blast radius over that graph returns empty — <em>“safe to
+      change”</em> for a change it could not see. The CI gate refuses rather than
+      passing: <code>gate()</code> raises <code>GateNotExercised</code> when the
+      graph holds zero models, because a green tick that means “found nothing” is
+      worse than no gate, since it is trusted.
+    </li>
+    <li>
+      <strong>Undocumented columns are backfilled, not documented.</strong> The dbt
+      manifest lists only columns someone wrote a description for — and join keys are
+      usually the columns nobody documents. The builder reads
+      <code>information_schema</code> to fill the gap, skipping <code>_dlt_*</code>
+      and inferring only structural roles from the name. It never infers PII: that
+      must be declared. So an undocumented column carries
+      <code>documented: false</code> and <code>pii: false</code>, and the second flag
+      means <em>not declared</em>, not <em>not sensitive</em>.
+    </li>
+    <li>
+      <strong>Edges to nodes that were never built are dropped.</strong> The last step
+      before writing filters every edge to those whose endpoints both exist. This
+      keeps the store consistent, and it means a missing input removes edges silently
+      rather than leaving dangling ones to trip over.
+    </li>
+  </ul>
+
+  <h3>The ontology is resolved at <em>project</em> scope</h3>
+  <div class="prose">
+    <p>
+      <code>build_graph</code> calls <code>load_project_ontology</code> — not
+      <code>load_group_ontology</code>, and not <code>load_ontology</code>. Both
+      narrower choices were bugs, one layer apart.
+    </p>
+    <p>
+      Building from the <strong>platform</strong> ontology silently drops every class
+      a steward approved into a group's <code>extension.yaml</code>, so an approved
+      term is unusable by dbt, Wren, BI or an agent. Building from the
+      <strong>group</strong> ontology drops the project's policy overlay — and the
+      governance plane is precisely what an agent walks to ask <em>“what constrains
+      this”</em>. At group scope it answers with the family's floor, so a project
+      that raised a severity or declared an obligation of its own was governed by
+      rules its own graph did not contain.
+    </p>
+  </div>
+
+  <pre class="term"><i># acme-eu declares a GDPR erasure path and raises mart-declares-grain</i>
+$ uv run pf kg build acme acme-eu
+  Policy   <b>11</b>
+$ uv run pf kg build acme acme-us
+  Policy   <b>10</b>
+
+<i># and every Policy node now records which layer set its severity</i>
+   gdpr-erasure-path        error     <b>project:acme/acme-eu</b>
+   mart-declares-grain      error     <b>project:acme/acme-eu</b>
+   pii-not-in-consumption   error     platform</pre>
+
+  <div class="prose">
+    <p>
+      That <code>scope</code> prop is the graph's copy of the <code>set by</code>
+      column in <code>pf semantic policy</code>. Severity alone cannot distinguish
+      an obligation this project took on from one the whole platform carries, and
+      those warrant different conversations.
+    </p>
+    <p>
+      Vocabulary deliberately does <strong>not</strong> layer this far — two sisters
+      that mean different things by <em>Payment</em> cannot be rolled up. Only
+      obligations layer, and only ever tighter.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">calibration</span>
+    <h2>What a healthy graph looks like</h2>
+  </div>
+  <div class="prose">
+    <p>
+      Two projects three orders of magnitude apart, so an empty or lopsided graph is
+      recognisable as one. Both exercise all fourteen node kinds and all fourteen
+      edge kinds, which makes them reference shapes rather than just examples.
+      Counts are from the rebuild of 2026-08-21.
+    </p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Node kind</th><th>Plane</th>
+          <th class="num">acme-us</th><th class="num">jaffle-shop</th>
+          <th>Reads as</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Column</code></td><td><span class="chip phy">phy</span></td><td class="num">73</td><td class="num">10294</td><td class="dim">documented + backfilled from information_schema</td></tr>
+        <tr><td><code>Property</code></td><td><span class="chip sem">sem</span></td><td class="num">59</td><td class="num">298</td><td class="dim">datatype properties of the concepts</td></tr>
+        <tr><td><code>Model</code></td><td><span class="chip phy">phy</span></td><td class="num">7</td><td class="num">1058</td><td class="dim">staging + marts</td></tr>
+        <tr><td><code>Test</code></td><td><span class="chip phy">phy</span></td><td class="num">18</td><td class="num">532</td><td class="dim">dbt tests</td></tr>
+        <tr><td><code>Concept</code></td><td><span class="chip sem">sem</span></td><td class="num">16</td><td class="num">68</td><td class="dim">whole group vocabulary, not only what is used</td></tr>
+        <tr><td><code>Table</code></td><td><span class="chip phy">phy</span></td><td class="num">3</td><td class="num">57</td><td class="dim">raw, one per annotated dlt resource</td></tr>
+        <tr><td><code>Dimension</code></td><td><span class="chip phy">phy</span></td><td class="num">8</td><td class="num">25</td><td class="dim">MetricFlow dimensions</td></tr>
+        <tr><td><code>Metric</code></td><td><span class="chip phy">phy</span></td><td class="num">6</td><td class="num">19</td><td class="dim">simple, ratio and derived</td></tr>
+        <tr><td><code>Relation</code></td><td><span class="chip sem">sem</span></td><td class="num">17</td><td class="num">14</td><td class="dim">named, with inverse and cardinality</td></tr>
+        <tr><td><code>Policy</code></td><td><span class="chip gov">gov</span></td><td class="num">10</td><td class="num">10</td><td class="dim">resolved at project scope</td></tr>
+        <tr><td><code>Evidence</code></td><td><span class="chip gov">gov</span></td><td class="num">9</td><td class="num">9</td><td class="dim">declared evidence kinds</td></tr>
+        <tr><td><code>Exposure</code></td><td><span class="chip phy">phy</span></td><td class="num">2</td><td class="num">6</td><td class="dim">where impact analysis finds a human</td></tr>
+        <tr><td><code>Source</code></td><td><span class="chip phy">phy</span></td><td class="num">1</td><td class="num">1</td><td class="dim">the dlt source</td></tr>
+        <tr><td><code>Project</code></td><td><span class="chip phy">phy</span></td><td class="num">1</td><td class="num">1</td><td class="dim">anchor node, no edges</td></tr>
+        <tr><td><strong>total</strong></td><td></td><td class="num"><strong>230</strong></td><td class="num"><strong>12392</strong></td><td class="dim">edges: 250 and 13361</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose">
+    <p>
+      <strong>Concept far exceeding Table is normal</strong> — the vocabulary belongs
+      to the group, and a project instantiates only the part of it it needs, so 16
+      concepts against 3 tables is health rather than drift.
+    </p>
+    <p>
+      <strong>The semantic plane does not scale with the physical one.</strong>
+      jaffle-shop has 151&times; the models of acme-us and <em>fewer</em> relations —
+      14 against 17. Relations come from the group topology, not from the warehouse,
+      so a large project is not automatically a richly-modelled one. A thousand
+      models joined by fourteen named relations is where to go looking for
+      undeclared joins.
+    </p>
+    <p>
+      <strong>Zero of any kind is the signal.</strong> No Model means the dbt
+      manifest was never parsed and the gate cannot run; no Metric means every
+      business question falls back to raw SQL; no Exposure means impact analysis
+      stops at the mart and never reaches a human to notify. The card surfaces the
+      last two as known gaps for exactly that reason.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">boundaries</span>
+    <h2>What the graph will never tell you</h2>
+  </div>
+  <div class="prose">
+    <p>
+      <strong>Anything about a sister.</strong> Graphs are per project and hold no
+      cross-project edges, so a sister's dependency on a change here is invisible —
+      not merely unqueried. Sisters share the group ontology, never a graph.
+      Cross-entity blast radius is assessed in the <code>&lt;group&gt;-rollup</code>
+      project, against its own graph, and nowhere else.
+    </p>
+    <p>
+      <strong>Business logic.</strong> That a <em>Payment</em> has an amount, a
+      currency and an event time is vocabulary, and it is in the graph. <em>How
+      acme-us recognises revenue</em> is business logic, and it lives in
+      project-confined dbt models. The distinction is the reason two sisters can
+      share a word without sharing a definition — and why an assumption carried
+      across is a bug rather than a shortcut.
+    </p>
+    <p>
+      <strong>Freshness — from the inside.</strong> The graph is a build artefact of
+      the last <code>pf kg build</code>. It has no clock, so a graph built before a
+      model landed answers confidently and wrongly. When an answer contradicts a file
+      you can see, the graph is the stale one. What notices from the outside is
+      <code>pf kg check</code>, below.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head">
+    <span class="eyebrow">staying current</span>
+    <h2>Nobody has to remember a project name</h2>
+  </div>
+  <div class="prose">
+    <p>
+      Three mechanisms, none of which requires naming the project that changed.
+    </p>
+  </div>
+
+  <h3>The commands take any scope</h3>
+  <pre class="term">$ uv run pf kg build                  <i># every project in every group</i>
+$ uv run pf kg build acme             <i># every project in one group</i>
+$ uv run pf kg build acme acme-us     <i># one project</i></pre>
+  <div class="prose">
+    <p>
+      <code>build</code>, <code>card</code> and <code>check</code> widen the same
+      way: <strong>no arguments means everything</strong>. A command that can only be
+      pointed at one project at a time gets run for the project you remembered, which
+      is how seven graphs go a month stale while the eighth is fine.
+    </p>
+  </div>
+
+  <h3>A new group or project gets one on creation</h3>
+  <pre class="term">$ uv run pf new-project demo demo-us
+  ✓ knowledge graph          <b>99 nodes across 6 kinds</b>
+  ✓ context card             ~106 tokens / 1500
+  ✓ group card               sister roster refreshed
+  ✓ ci workflow              3 job(s): impact-gate, <b>kg-current</b>, recce</pre>
+  <div class="prose">
+    <p>
+      Building the graph, rendering the card and refreshing the group roster are
+      steps in the shared bootstrap that <code>pf new-project</code> runs — not
+      follow-ups anyone can forget. <code>pf bootstrap --all</code> does the same for
+      every project that already exists.
+    </p>
+  </div>
+
+  <h3>CI fails a pull request that leaves it stale</h3>
+  <pre class="term">$ uv run pf kg check
+⛔ acme/acme-us — 4 resource(s) missing from the graph
+     models: <b>fct_revenue</b>
+     metrics: <b>revenue</b>
+     exposures: <b>crm_customer_sync, exec_weekly_dashboard</b>
+     run `pf kg build` and commit kg/graph.json</pre>
+  <div class="prose">
+    <p>
+      It compares the tracked <code>kg/graph.json</code> against the dbt manifests —
+      and <strong>only what a runner without a warehouse can see</strong>. Columns are
+      backfilled from <code>information_schema</code>, which CI does not have, so
+      comparing those too would be red on every pull request forever, and a
+      permanently red check is one nobody reads.
+    </p>
+    <p>
+      A project with no manifest reports <strong>not exercised</strong> rather than
+      clean — the same refusal <code>GateNotExercised</code> makes, for the same
+      reason.
+    </p>
+  </div>
+
+  <div class="note">
+    <span class="eyebrow">why the job reaches projects that do not exist yet</span>
+    <p>
+      It is contributed by a <strong>capability</strong>, not written into a workflow
+      file. <code>_ci_workflow</code> composes one workflow per project from every
+      enabled capability's jobs, so adding this one edited a single dictionary — no
+      scaffolder, no CLI, no workflow file — and the next
+      <code>pf bootstrap --all</code> put it in all eight. A project created tomorrow
+      gets it for the same reason. An opt-in check would instead reach only the
+      projects whose author remembered the flag.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="mast-meta">
+    <span>pf.kg.store · pf.kg.build · pf.kg.query · pf.kg.impact</span>
+    <span>docs/SEMANTICS.md · docs/POLICY.md · docs/CLAUDE-CODE.md</span>
+  </div>
+</footer>
+
+</div>

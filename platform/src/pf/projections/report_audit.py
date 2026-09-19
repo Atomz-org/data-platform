@@ -62,7 +62,7 @@ def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
 
     for page in pages:
         rel = str(page.relative_to(root))
-        text = page.read_text()
+        text = page.read_text(encoding="utf-8")
 
         refs = set(METRIC_REF.findall(text))
         covered |= refs
