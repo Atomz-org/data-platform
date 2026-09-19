@@ -1,4 +1,4 @@
-"""Tests for the per-project atlas and its dbt hook.
+"""Per-project atlas and its dbt hook.
 
 Two things here are easy to get wrong in ways nothing reports.
 
@@ -17,9 +17,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from conftest import REPO_ROOT
 from pf import atlas
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 
 
 def _project(tmp_path: Path, group: str = "demo", project: str = "demo-us") -> Path:

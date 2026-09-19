@@ -43,11 +43,12 @@ group can be run on its own: `uv run pytest platform/tests/<group>`.
 
 ## `graph/` — the knowledge graph and the always-on context tier
 
-*3 files, 45 tests*
+*4 files, 63 tests*
 
 | File | Guards | Tests |
 |---|---|---:|
 | [`test_architecture.py`](graph/test_architecture.py) | Per-project architecture map. | 22 |
+| [`test_atlas.py`](graph/test_atlas.py) | Per-project atlas and its dbt hook. | 18 |
 | [`test_card.py`](graph/test_card.py) | Context card rendering, and the bound that makes it safe at any project size. | 12 |
 | [`test_kg_currency.py`](graph/test_kg_currency.py) | Graph currency check and the bulk graph commands. | 11 |
 
@@ -74,14 +75,6 @@ group can be run on its own: `uv run pytest platform/tests/<group>`.
 | [`test_openmetadata.py`](ontology/test_openmetadata.py) | The OpenMetadata projection, checked against the vendored schemas. | 18 |
 | [`test_otop.py`](ontology/test_otop.py) | The otop manifest's timestamps. | 4 |
 | [`test_policy_layering.py`](ontology/test_policy_layering.py) | Policy override layer. | 19 |
-
-## (ungrouped)
-
-*1 files, 18 tests*
-
-| File | Guards | Tests |
-|---|---|---:|
-| [`test_atlas.py`](test_atlas.py) | Tests for the per-project atlas and its dbt hook. | 18 |
 
 ## Finding the right file without opening any
 
