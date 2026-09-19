@@ -55,6 +55,36 @@ jobs:
           echo "reporting=$(touched "$P/reporting")" >> "$GITHUB_OUTPUT"
           echo "any=$(touched "$P")" >> "$GITHUB_OUTPUT"
 
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage zenith zenith-de --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate zenith zenith-de
+
   # The merge gate, in CI. Runs the same `pf impact-gate` the developer's
   # pre-commit hook runs, so a change that bypassed the local hook (--no-verify,
   # a web edit, a bot commit) still cannot merge without its blast radius being

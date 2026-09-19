@@ -2,14 +2,12 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "directory",
-        "path": "../../../../platform"
+        "source": "../../../../platform"
       }
     },
     "jaffle": {
       "source": {
-        "source": "directory",
-        "path": "../.."
+        "source": "../.."
       }
     }
   },
@@ -28,7 +26,8 @@
     "jaffle-group@jaffle": true,
     "evidence-bi@platform": true,
     "dbt-snowflake@platform": true,
-    "power-tools@platform": true
+    "power-tools@platform": true,
+    "elementary-observe@platform": true
   },
   "permissions": {
     "deny": [
@@ -64,7 +63,12 @@
       "Bash(wren:*)",
       "Bash(pf tool openmetadata:*)",
       "Bash(metadata:*)",
-      "Bash(pf artifacts:*)"
+      "Bash(pf artifacts:*)",
+      "Bash(pf tool expectations:*)",
+      "Bash(pf air:*)",
+      "Bash(pf tool elementary:*)",
+      "Bash(edr report:*)",
+      "Bash(edr monitor:*)"
     ],
     "ask": [
       "Bash(git push:*)",
