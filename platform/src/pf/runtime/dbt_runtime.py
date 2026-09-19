@@ -51,8 +51,21 @@ def write_profiles(project_dir: str | Path, project: str) -> Path:
 
 
 def dbt(project_dir: str | Path, *args: str, target: str = "dev",
-        duckdb_path: str | Path | None = None, check: bool = False) -> subprocess.CompletedProcess:
-    """Invoke dbt Core in a project's transform/ directory."""
+        duckdb_path: str | Path | None = None, check: bool = False,
+        hooks: bool = True) -> subprocess.CompletedProcess:
+    """Invoke dbt Core in a project's transform/ directory.
+
+    Every dbt invocation in this platform comes through here — `seed.py`,
+    `pf seed`, `deps`, `parse` — which is what makes it the one place a
+    before/after hook can be attached without each caller remembering to.
+
+    The hooks fire only for `run` and `build`. `parse`, `deps`, `ls` and `debug`
+    change nothing a per-project artefact would show, and firing on those would
+    put three identical regenerations in front of every real one.
+
+    `hooks=False` is for a caller that is *inside* a hook. Nothing does that
+    today; it exists so that the first thing which does cannot recurse.
+    """
     import os
 
     env = dict(os.environ)
@@ -60,10 +73,33 @@ def dbt(project_dir: str | Path, *args: str, target: str = "dev",
     if duckdb_path:
         env["PF_DUCKDB_PATH"] = str(duckdb_path)
     transform = Path(project_dir) / "transform"
-    return subprocess.run(
+    command = args[0] if args else ""
+
+    if hooks:
+        _run_hooks(project_dir, "before_dbt_run", command)
+    proc = subprocess.run(
         ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
         env=env, capture_output=True, text=True, check=check,
     )
+    if hooks:
+        _run_hooks(project_dir, "after_dbt_run", command)
+    return proc
+
+
+def _run_hooks(project_dir: str | Path, phase: str, command: str) -> None:
+    """Per-project work bracketing a dbt run.
+
+    Imported lazily and swallowed whole. A hook is a convenience — publishing a
+    picture of the graph — and a broken one must never be able to fail a build
+    that otherwise succeeded. The run is the thing that matters; the artefact is
+    not, and the two must not share a fate.
+    """
+    try:
+        from pf.atlas import run_phase
+
+        run_phase(project_dir, phase, command)
+    except Exception:  # noqa: BLE001 — see the docstring
+        pass
 
 
 def deps(project_dir: str | Path, duckdb_path: str | Path | None = None) -> subprocess.CompletedProcess:
