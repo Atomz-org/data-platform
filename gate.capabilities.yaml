@@ -13,8 +13,6 @@ denylist:
 - '**/catalog/ingestion.yaml'
 - '**/catalog/openmetadata.json'
 - '**/.github/workflows/**'
-- loop-ledger.json
-- loop-levels.json
 - data/proposals/**
 - '**/logs/trace/**'
 impact_required:

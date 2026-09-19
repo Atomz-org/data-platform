@@ -339,12 +339,15 @@ CAPABILITIES: dict[str, Capability] = {
             ]},
         },
         gate={
-            # The ledger, levels and proposals are written by the runner and
-            # read by people; a hand edit forges a track record. Trace logs
-            # are transcripts. Memory is the one agent-adjacent file people
-            # *should* edit, so it is deliberately not here.
+            # Proposals and trace logs are generated, untracked artefacts.
+            # The ledger and levels files are deliberately NOT here even
+            # though hand-editing them would forge a track record: they are
+            # *committed* records — promotion evidence has to travel with the
+            # repo — and this gate's denylist means "generated, never
+            # tracked" (`tracked_denied` enforces exactly that). Their
+            # protection is the same as the governance store's: append-only
+            # writers, and review of the diff.
             "denylist": [
-                "loop-ledger.json", "loop-levels.json",
                 "data/proposals/**", "**/logs/trace/**",
             ],
         },
