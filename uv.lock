@@ -684,6 +684,9 @@ clickhouse = [
 ducklake = [
     { name = "dbt-duckdb" },
 ]
+iceberg = [
+    { name = "dbt-duckdb" },
+]
 postgres = [
     { name = "dbt-postgres" },
 ]
@@ -724,6 +727,7 @@ requires-dist = [
     { name = "dbt-bigquery", marker = "extra == 'bigquery'", specifier = ">=1.9,<2" },
     { name = "dbt-clickhouse", marker = "extra == 'clickhouse'", specifier = ">=1.8,<2" },
     { name = "dbt-duckdb", marker = "extra == 'ducklake'", specifier = ">=1.9,<2" },
+    { name = "dbt-duckdb", marker = "extra == 'iceberg'", specifier = ">=1.9,<2" },
     { name = "dbt-postgres", marker = "extra == 'postgres'", specifier = ">=1.9,<2" },
     { name = "dbt-redshift", marker = "extra == 'redshift'", specifier = ">=1.9,<2" },
     { name = "dbt-snowflake", marker = "extra == 'snowflake'", specifier = ">=1.9,<2" },
@@ -733,7 +737,7 @@ requires-dist = [
     { name = "recce", marker = "extra == 'recce'", specifier = ">=1.60,<2" },
     { name = "wrenai", marker = "extra == 'wren'", specifier = ">=0.13,<1" },
 ]
-provides-extras = ["recce", "artifacts", "stack", "snowflake", "bigquery", "redshift", "clickhouse", "postgres", "ducklake", "wren"]
+provides-extras = ["recce", "artifacts", "stack", "snowflake", "bigquery", "redshift", "clickhouse", "postgres", "ducklake", "iceberg", "wren"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -8,7 +8,7 @@ context per session.
 platform/          engines, ontology, knowledge graph, MCP, 14 skill toolkits   ← you never edit
 groups/<g>/        a family of sister companies: ontology instance, shared macros
   projects/<p>/    one legal entity: sources, models, metrics                    ← you only edit here
-vendor/            10 upstreams pinned as submodules, with recorded provenance   ← you never edit
+vendor/            21 upstreams pinned as submodules, with recorded provenance   ← you never edit
 data/_platform.duckdb   tracking DB (agent runs, spend, monitors, impact history)
 ```
 
@@ -138,7 +138,7 @@ duckdb/duckdb-skills and dagster-io/skills, adapted for dlt Core / dbt Core.
 
 ## Vendored upstreams
 
-Ten upstreams are pinned as branch-tracked submodules under `vendor/`, and every
+Twenty-one upstreams are pinned as branch-tracked submodules under `vendor/`, and every
 borrowing is written down as a **path pair** — one file upstream, one or more of
 ours — in `platform/src/pf/vendor/registry.yaml`. 53 adoptions, 22 explicit
 declines. Full account: [`docs/VENDOR.md`](docs/VENDOR.md); the agent-loadable
@@ -185,3 +185,14 @@ is not an approval.
 The report is written to `data/pr/<n>.json` and posted as a single PR comment
 that is edited in place. `pf ui` reads the same JSON, so the dashboard shows the
 verdict CI computed rather than a second opinion.
+
+## License
+
+Apache License 2.0 — see [LICENSE](LICENSE). Attribution for adapted
+third-party material is in [NOTICE](NOTICE) and
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); the per-path provenance
+record is `platform/src/pf/vendor/registry.yaml` (`pf vendor why <file>`).
+Upstreams under `vendor/` are submodule pointers and keep their own licenses.
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security
+reports go through [SECURITY.md](SECURITY.md), not the issue tracker.

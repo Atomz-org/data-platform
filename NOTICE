@@ -1,0 +1,26 @@
+Agentic Data Platform
+Copyright 2026 Suresh Swaminathan
+
+Licensed under the Apache License, Version 2.0.
+
+This product adapts material from third-party projects. The complete
+per-upstream record — what was taken, from which pinned commit, under which
+license — is maintained in platform/src/pf/vendor/registry.yaml and
+summarised in THIRD-PARTY-NOTICES.md. Notices required by upstream licenses:
+
+- Risk and control catalogue data derived from the FINOS AI Governance
+  Framework (https://github.com/finos/ai-governance-framework), used under
+  CC BY 4.0. Copyright contributors to the FINOS AI Governance Framework.
+
+- Relationship vocabulary (governed_by, implemented_by, verified_by) from
+  OpenTopology (https://github.com/opentopology/opentopology), used under
+  the Apache License 2.0.
+
+- Semantic-model field names and cardinality enumeration from the WrenAI
+  MDL schema (https://github.com/Canner/WrenAI, core/), used under the
+  Apache License 2.0.
+
+- Model-card and risk-register document structure adapted from the Public
+  Sector AI Playbook by Linda Oraegbunam
+  (https://github.com/PackMaaan/public-sector-ai-playbook), used under
+  CC BY 4.0.
