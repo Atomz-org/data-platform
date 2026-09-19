@@ -121,7 +121,7 @@ question falls back to raw SQL.
 | `acme/acme-us` | 3 | 37 | 6 | 2 | 28 | 449 |
 | `globex/globex-core` | 0 | 31 | 0 | 0 | 28 | 320 |
 | `globex/globex-eu` | 0 | 31 | 0 | 0 | 28 | 320 |
-| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 22 | 4545 |
+| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 4556 |
 | `zenith/zenith-de` | 0 | 31 | 0 | 0 | 28 | 320 |
 | `zenith/zenith-uk` | 0 | 31 | 0 | 0 | 28 | 320 |
 
