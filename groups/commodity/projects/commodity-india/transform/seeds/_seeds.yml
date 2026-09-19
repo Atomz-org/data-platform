@@ -1,0 +1,199 @@
+version: 2
+
+seeds:
+  - name: india_import_duties
+    description: >
+      Indian customs duty per commodity over validity intervals (BCD, AIDC, SWS and
+      other levies as fractions). Rates were verified in June 2026. A row with
+      `valid_from` 1900-01-01 is the current rate applied to all history; only
+      dates on or after `confirmed_from` are known to carry it. See ADR-0001.
+    meta:
+      concept: ImportTariff
+      grain: one commodity per validity interval
+    config:
+      column_types:
+        tariff_id: varchar
+        commodity_id: varchar
+        market_country: varchar
+        valid_from: date
+        valid_to: date
+        confirmed_from: date
+        is_import_prohibited: boolean
+        bcd_rate: decimal(9,6)
+        aidc_rate: decimal(9,6)
+        sws_rate: decimal(9,6)
+        other_levy_rate: decimal(9,6)
+        effective_duty_rate: decimal(9,6)
+        duty_basis: varchar
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "abs(bcd_rate + aidc_rate + sws_rate + other_levy_rate - effective_duty_rate) < 0.000001"
+          config:
+            where: "not is_import_prohibited"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "valid_to is null or valid_to >= valid_from"
+    columns:
+      - name: tariff_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_reference__commodities')
+                field: commodity_id
+      - name: market_country
+        meta: {role: geo_country}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [IN]
+      - name: valid_from
+        meta: {role: valid_from}
+        data_tests: [not_null]
+      - name: valid_to
+        meta: {role: valid_to}
+      - name: is_import_prohibited
+        data_tests: [not_null]
+      - name: effective_duty_rate
+        meta: {role: rate_fraction}
+        data_tests:
+          - not_null:
+              config:
+                where: "not is_import_prohibited"
+
+  - name: indicative_prices
+    description: >
+      Manually maintained benchmark levels for commodities with no free live feed
+      (LME base metals, battery metals, iron ore, vegetable oils). Refresh by
+      appending a row with a new `as_of_date`; never overwrite a past level.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per as-of date
+    config:
+      column_types:
+        commodity_id: varchar
+        as_of_date: date
+        price: double
+        currency_code: varchar
+        quote_unit: varchar
+        benchmark: varchar
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, as_of_date]
+    columns:
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_reference__commodities')
+                field: commodity_id
+      - name: price
+        meta: {role: unit_price}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+      - name: currency_code
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+
+  - name: india_market_units
+    description: The unit Indian markets quote each commodity in (gold per gram, grains per quintal).
+    meta:
+      grain: one commodity
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_reference__commodities')
+                field: commodity_id
+      - name: market_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+
+  - name: precious_metal_purities
+    description: Retail purity grades as a fraction of fine metal (22K = 22/24).
+    meta:
+      grain: one metal per purity grade
+    config:
+      column_types:
+        fineness: double
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, purity_code]
+    columns:
+      - name: fineness
+        meta: {role: rate_fraction}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0 and fineness <= 1"
+
+  - name: mcx_contract_lots
+    description: >
+      MCX bullion and base-metal contracts: the price quote basis (₹ per 10 g for
+      GOLDM, ₹ per kg for silver, aluminium and zinc) and the lot size. Keyed on
+      the MCX symbol. Used only to express a landed price the way the contract
+      trades; this project holds no MCX market data. Specifications as of
+      September 2026 — check MCX circulars before relying on a lot size.
+    meta:
+      grain: one contract
+    config:
+      column_types:
+        contract_code: varchar
+        lot_size: double
+        quote_size: double
+    columns:
+      - name: contract_code
+        description: MCX trading symbol (GOLDM, ALUMINI, ZINCMINI, ...).
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_reference__commodities')
+                field: commodity_id
+      - name: lot_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code

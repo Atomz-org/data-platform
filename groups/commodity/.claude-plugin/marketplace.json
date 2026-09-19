@@ -1,0 +1,7 @@
+{
+  "name": "commodity",
+  "owner": { "name": "commodity" },
+  "plugins": [
+    { "name": "commodity-group", "source": "./.claude", "description": "commodity group skills" }
+  ]
+}

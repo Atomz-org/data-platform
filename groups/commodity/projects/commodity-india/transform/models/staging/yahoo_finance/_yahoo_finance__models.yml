@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: stg_yahoo_finance__futures_prices
+    description: >
+      Daily front-month futures candles from Yahoo Finance, in the exchange's quote currency and contract unit (unconverted). Cleaned 1:1 from `yahoo_finance.futures_prices`; grain: one commodity per trading day.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per trading day
+      layer: staging
+    columns:
+      - name: quote_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: open_price
+        meta: {role: unit_price}
+      - name: high_price
+        meta: {role: unit_price}
+      - name: low_price
+        meta: {role: unit_price}
+      - name: close_price
+        meta: {role: unit_price}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: traded_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: volume
+        meta: {role: quantity}
+      - name: commodity_id
+        description: Foreign key to Commodity.
+        meta: {role: foreign_key, links_to: Commodity}
+
+  - name: stg_yahoo_finance__fx_rates
+    description: >
+      Daily USD fixes from Yahoo Finance; rate = quote currency per 1 USD. Cleaned 1:1 from `yahoo_finance.fx_rates`; grain: one currency pair per day.
+    meta:
+      concept: FxRate
+      grain: one currency pair per day
+      layer: staging
+    columns:
+      - name: fx_rate_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: base_currency_code
+        meta: {role: currency_code}
+      - name: quote_currency_code
+        meta: {role: currency_code}
+      - name: rate
+        meta: {role: exchange_rate}
+      - name: rate_at
+        meta: {role: event_time}
+        data_tests: [not_null]
