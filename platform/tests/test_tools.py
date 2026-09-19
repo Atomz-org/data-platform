@@ -516,3 +516,45 @@ def test_a_new_group_enables_the_tools_that_declare_a_default() -> None:
                 if t.default_enabled and "group" in t.scope}
     assert set(parsed) == expected
     assert all(v == {"enabled": True} for v in parsed.values())
+
+
+def test_bootstrap_backfills_an_enabled_tools_capability(tmp_path, monkeypatch) -> None:
+    """Enabling in tools.yaml must be *sufficient*: a fresh project in a group
+    that decided on a tool gets the tool's capability files from plain
+    bootstrap, with no separate `pf tool enable` pass — and a file somebody
+    edited is never rewritten (all-or-nothing, same rule as capabilities)."""
+    import pf.tools as tools_pkg
+    from pf.tools import bootstrap_tools
+
+    fake = Tool(
+        name="fake", title="Fake", summary="s",
+        capability=Capability(
+            name="fake", description="d",
+            files={"docs/fake.md": "# fake for {{group}}/{{project}}\n",
+                   "docs/fake2.md": "second\n"}),
+        offline=True,
+        bootstrap="",
+    )
+    monkeypatch.setattr(tools_pkg, "all_tools", lambda: {"fake": fake})
+
+    d = tmp_path / "groups" / "g" / "projects" / "p"
+    d.mkdir(parents=True)
+    (tmp_path / "groups" / "g" / "tools.yaml").write_text(
+        "version: 1\ntools:\n  fake: {enabled: true}\n")
+
+    results = bootstrap_tools(tmp_path, "g", "p")
+    assert any(r.status == "ok" and "capability applied" in r.detail for r in results)
+    assert (d / "docs" / "fake.md").read_text() == "# fake for g/p\n"
+
+    # Fully present: silent steady state, and the files are untouched.
+    (d / "docs" / "fake.md").write_text("edited by a human\n")
+    results = bootstrap_tools(tmp_path, "g", "p")
+    assert not any("capability" in (r.detail or "") for r in results)
+    assert (d / "docs" / "fake.md").read_text() == "edited by a human\n"
+
+    # Partially present: reported for a deliberate decision, never rewritten.
+    (d / "docs" / "fake2.md").unlink()
+    results = bootstrap_tools(tmp_path, "g", "p")
+    skipped = [r for r in results if r.status == "skipped" and "capability" in r.detail]
+    assert skipped and "pf tool enable fake" in skipped[0].detail
+    assert (d / "docs" / "fake.md").read_text() == "edited by a human\n"
