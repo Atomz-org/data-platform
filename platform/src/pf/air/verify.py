@@ -131,7 +131,11 @@ def _counts(cat: Catalogue, out: list[Finding]) -> None:
         if not any(d.id in cat.controls for d in docs):
             out.append(Finding("fail", "corpus.no_controls",
                                f"{src.name}: {src.path}/{src.layout.controls} parsed to nothing"))
-    if not cat.regimes:
+    # An in-house library with no external crosswalk is a first-class case
+    # (`pf.air.sources`), and such a catalogue cites nothing. The finding is
+    # about citations that would dangle, so it needs citations to be one.
+    cites = any(d.references for d in (*cat.sorted_risks, *cat.sorted_controls))
+    if cites and not cat.regimes:
         out.append(Finding(
             "fail", "corpus.no_regimes",
             "no crosswalk files parsed — every citation would dangle"))

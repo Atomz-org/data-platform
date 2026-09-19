@@ -187,6 +187,11 @@ def _resolve_artefact(root: Path, spec: str) -> tuple[bool, str]:
     # dotted module:name
     if ":" in spec:
         mod, _, attr = spec.partition(":")
+        # `pf.provenance.ledger:` — a trailing colon. Without this guard the
+        # empty name falls through to the rule-id branch, where `"" in src` is
+        # always true and a malformed declaration would count as satisfied.
+        if not attr:
+            return False, f"{spec} names no symbol after ':'"
         try:
             m = importlib.import_module(mod)
         except Exception as exc:  # noqa: BLE001 — an unimportable artefact is the finding
