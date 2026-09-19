@@ -104,3 +104,8 @@ connection.json
 # is 200MB of dependencies; both are reproducible from package-lock.json.
 **/ui/static/dist/
 **/ui/web/node_modules/
+
+# The platform knowledge graph, rebuilt by `graphify extract . --code-only`.
+# Generated like every artefact above, and 3.3MB of it — `.graphifyignore`
+# defines what goes in, which is the part worth reviewing in a diff.
+graphify-out/
