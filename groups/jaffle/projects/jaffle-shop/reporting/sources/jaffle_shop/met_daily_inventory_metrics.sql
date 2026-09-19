@@ -1,3 +1,8 @@
 -- source extract for met_daily_inventory_metrics (PII columns excluded by the MDL projection)
-select movement_date, location_id, total_movements, location_name, inbound_quantity, outbound_quantity, distinct_products_moved, products_in_stock, total_units_on_hand
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    movement_date,
+    location_id,
+    total_movements
 from main_marts.met_daily_inventory_metrics

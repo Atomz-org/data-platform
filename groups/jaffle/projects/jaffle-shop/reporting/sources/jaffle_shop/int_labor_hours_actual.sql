@@ -1,3 +1,6 @@
 -- source extract for int_labor_hours_actual (PII columns excluded by the MDL projection)
-select employee_id, location_id, work_date, total_hours_worked, total_break_minutes, timecard_entries
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    employee_id
 from main_marts.int_labor_hours_actual

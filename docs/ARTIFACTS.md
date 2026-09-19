@@ -66,12 +66,12 @@ branch's.
 
 ## Which store
 
-Five, through two code paths. R2 is the default and the only one configured out
-of the box.
+Five, through two code paths. None is configured out of the box: each is the
+key pair plus its endpoint, and every store but R2 also needs its region.
 
 | Store | `PF_ARTIFACTS_ENDPOINT` | `PF_ARTIFACTS_REGION` | Backend |
 |---|---|---|---|
-| R2 *(default)* | built in | `auto` | `s3` |
+| R2 *(default)* | `https://<account-id>.r2.cloudflarestorage.com` | `auto` | `s3` |
 | AWS S3 | `https://s3.<region>.amazonaws.com` | the real region | `s3` |
 | GCS | `https://storage.googleapis.com` | the real region | `s3` |
 | floci *(local)* | `http://localhost:4566` | `us-east-1` | `s3` |
@@ -130,16 +130,17 @@ mode is in-memory.
 
 | | Secret? | Where it lives |
 |---|---|---|
-| Endpoint (`https://<account-id>.r2.cloudflarestorage.com`) | **No** | committed default in `pf/artifacts.py` |
-| Bucket (`data-platform`) | **No** | committed default |
+| Endpoint (`https://<account-id>.r2.cloudflarestorage.com`) | **No** | `PF_ARTIFACTS_ENDPOINT`, environment only |
+| Bucket (`data-platform`) | **No** | committed default, `PF_ARTIFACTS_BUCKET` overrides |
 | Access Key ID | **Yes** | environment only |
 | Secret Access Key | **Yes** | environment only |
 
 The account id inside the endpoint is not a credential. Every S3 client needs
 it, it appears in every request URL, and it grants nothing on its own — the same
-way an AWS account number is not a secret. It is committed so `pf` works with no
-configuration. Override it with `PF_ARTIFACTS_ENDPOINT` / `PF_ARTIFACTS_BUCKET`
-for a fork or a second environment.
+way an AWS account number is not a secret. It still lives in the environment
+rather than in code: it identifies whose infrastructure this is, and an
+open-source checkout should not ship anyone's. Each environment — laptop, CI,
+fork — sets `PF_ARTIFACTS_ENDPOINT` beside the two keys.
 
 The two keys are credentials and are read **from the environment only**. No
 `pf` command writes them to a file, and none is written into a generated file.
