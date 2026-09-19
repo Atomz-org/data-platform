@@ -17,6 +17,18 @@ dependencies = ["pf"]
 # artefact we run. Keep the floor at the pinned submodule's last release.
 [project.optional-dependencies]
 recce = ["recce>=1.60,<2"]
+# The Elementary CLI (`edr`) is deliberately NOT an extra here, for the same
+# reason as openmetadata-ingestion below. Install it isolated:
+#
+#     uv tool install elementary-data==0.25.* --with dbt-duckdb
+#
+# It is a *command*: `pf.tools.elementary` shells out to `edr report` and never
+# imports it. In-workspace it is unresolvable anyway — elementary-data pins
+# posthog<3.0.0 and recce needs posthog>=3.0.0, so one lockfile cannot hold
+# both, and recce is the tool every group enables. The *recording* half needs
+# no install at all: the `elementary-data/elementary` dbt package rides inside
+# every dbt build. Keep the pin's minor in step with the package range in
+# `pf.tools.elementary` — CLI and package move together.
 # The artefact store. Not a tool — it is where the tools' output goes — but it
 # gets an extra for the same reason they do: a checkout that never publishes
 # anything should not carry botocore. `uv sync --extra recce --extra artifacts`
