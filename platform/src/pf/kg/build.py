@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from pf.kg.store import Edge, Node, open_graph
 from pf.ontology.annotate import load_annotations
@@ -44,7 +45,10 @@ def _add_physical_columns(root: Path, project: str, nodes: list[Node],
     alone has models with no foreign keys and therefore no relationships.
 
     Documentation still wins where it exists — it carries the role and PII flags.
-    This only fills in what is missing.
+    This only fills in what is missing: undocumented columns, and the type of a
+    documented column whose yml names no `data_type`, which is most of them.
+    Without the warehouse's type a declared boolean flag reaches the MDL as
+    VARCHAR and a BI filter on it compares strings.
     """
     import duckdb
 
@@ -55,7 +59,7 @@ def _add_physical_columns(root: Path, project: str, nodes: list[Node],
     models = {n.name: n for n in nodes if n.kind == "Model"}
     if not models:
         return
-    known = {(n.props.get("model"), n.name) for n in nodes if n.kind == "Column"}
+    known = {(n.props.get("model"), n.name): n for n in nodes if n.kind == "Column"}
 
     try:
         con = duckdb.connect(str(db), read_only=True)
@@ -73,7 +77,12 @@ def _add_physical_columns(root: Path, project: str, nodes: list[Node],
 
     for table, column, data_type in rows:
         model = models.get(table)
-        if model is None or (table, column) in known:
+        if model is None:
+            continue
+        documented = known.get((table, column))
+        if documented is not None:
+            if not documented.props.get("data_type"):
+                documented.props["data_type"] = data_type
             continue
         if column.startswith("_dlt_"):
             continue
@@ -303,6 +312,11 @@ def _add_annotations(root: Path, nodes: list[Node], edges: list[Edge],
 
 
 # --------------------------------------------------------------------- dbt --
+def _declared(meta: dict[str, Any] | None, key: str) -> dict[str, str]:
+    value = (meta or {}).get(key)
+    return {key: str(value)} if value else {}
+
+
 def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     manifest_path = root / "transform" / "target" / "manifest.json"
     if not manifest_path.exists():
@@ -327,6 +341,12 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
                     "materialized": (node.get("config") or {}).get("materialized"),
                     "grain": (node.get("meta") or {}).get("grain", ""),
                     "tags": node.get("tags") or [],
+                    # What the model *is*, as the project declared it. Without
+                    # it a projection has to guess the entity from the model's
+                    # name, and `commodity` is not a substring of
+                    # `dim_commodities`. Written only when declared, so projects
+                    # that declare nothing keep a byte-identical graph.
+                    **_declared(node.get("meta"), "concept"),
                 },
             ))
             for col_name, col in (node.get("columns") or {}).items():
@@ -336,7 +356,8 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
                     id=c_id, kind="Column", name=col_name, layer=layer,
                     label=(col.get("description") or "").strip().split("\n")[0],
                     props={"role": meta.get("role", ""), "pii": bool(meta.get("pii", False)),
-                           "model": name, "data_type": col.get("data_type")},
+                           "model": name, "data_type": col.get("data_type"),
+                           **_declared(meta, "links_to")},
                 ))
                 edges.append(Edge(src=n_id, dst=c_id, kind="has_column"))
 
