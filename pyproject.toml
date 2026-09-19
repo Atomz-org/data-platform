@@ -60,6 +60,7 @@ stack = ["pf[stack]"]
 snowflake = ["dbt-snowflake>=1.9,<2"]
 bigquery = ["dbt-bigquery>=1.9,<2"]
 redshift = ["dbt-redshift>=1.9,<2"]
+databricks = ["dbt-databricks>=1.9,<2"]
 clickhouse = ["dbt-clickhouse>=1.8,<2"]
 postgres = ["dbt-postgres>=1.9,<2"]
 # DuckLake is DuckDB pointed at a lakehouse catalog (`ducklake:` path), so its

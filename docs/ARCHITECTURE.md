@@ -174,6 +174,7 @@ package. Adding either touches no scaffolder, no CLI and no workflow.
 | `bigquery` | opt-in | 2 file(s) · settings · env: BIGQUERY_PROJECT |
 | `clickhouse` | opt-in | 2 file(s) · settings · env: CLICKHOUSE_HOST, CLICKHOUSE_PASSWORD |
 | `data-quality` | **yes** | — |
+| `databricks` | opt-in | 2 file(s) · settings · env: DATABRICKS_HOST, DATABRICKS_HTTP_PATH, DATABRICKS_CATALOG |
 | `ducklake` | **yes** | 2 file(s) · settings · env: DUCKLAKE_METADATA |
 | `elementary` | opt-in | 1 file(s) · gate rules · settings |
 | `evidence` | **yes** | 2 file(s) · gate rules · settings |
