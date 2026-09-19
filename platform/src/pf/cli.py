@@ -8,10 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import click
 import typer
 import yaml
 from rich.console import Console
 from rich.table import Table
+from typer.core import TyperGroup
 
 from pf import obs
 from pf.agents.base import AGENTS, validate_routing
@@ -929,7 +931,6 @@ def cmd_atlas(
     raise typer.Exit(1 if failed else 0)
 
 
-@app.command("arch")
 def cmd_arch(
     group: str = typer.Argument("", help="group (omit with --all)"),
     project: str = typer.Argument("", help="project (omit with --all)"),
@@ -3465,8 +3466,31 @@ tool_app = typer.Typer(help="Pluggable tools: dbt review, BI, whatever is instal
 app.add_typer(tool_app, name="tool")
 
 # ---------------------------------------------------------- architecture --
-arch_app = typer.Typer(help="The repository's own map, generated from it.")
+class _ArchGroup(TyperGroup):
+    """`pf arch build|check` is the repository's map; any other `pf arch` is a project's.
+
+    Two maps shipped under one name: `pf arch <group> <project> [--all] [--check]`
+    draws a project, and `pf arch build|check` draws the repository. Registered
+    as a command and a group, the group won without a word — every project's
+    CI `architecture` job then failed on "No such command 'acme'", and nothing
+    else noticed, because bootstrap calls the map directly rather than through
+    the CLI. Routing keeps every call site that exists: eight generated
+    workflows, the docs and the skill use the project form, CI the repository's.
+    """
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        if args and args[0] not in self.commands and args[0] not in ctx.help_option_names:
+            args = ["project", *args]
+        return super().parse_args(ctx, args)
+
+
+arch_app = typer.Typer(
+    cls=_ArchGroup,
+    help="Architecture maps: `build`/`check` for the repository, "
+         "`pf arch <group> <project>` or `--all` for projects.")
 app.add_typer(arch_app, name="arch")
+arch_app.command("project", help="A project's map (the form `pf arch <group> <project>` "
+                                 "runs).")(cmd_arch)
 
 
 @arch_app.command("build")

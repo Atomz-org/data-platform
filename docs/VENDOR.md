@@ -87,6 +87,7 @@ Creative Commons Attribution 4.0 — the most permissive licence in this registr
 | `context-ontology-accelerator` | Apache-2.0 |
 | `evidence-bi` | not stated upstream ⚠️ |
 | `ontology-playground` | MIT |
+| `pr-agent` | MIT |
 | `public-sector-ai-playbook` | CC BY 4.0 ⚠️ |
 | `recce` | Apache-2.0 |
 | `recce-ui` | Apache-2.0 |
@@ -451,6 +452,22 @@ A working reference for how a business ontology is actually shaped — classes w
 
 - **The React/Vite playground application (src/, api/)** — It is an editor. Our ontology is edited as YAML in the repo and reviewed as a diff.
 - **api/generate-ontology** — We induce from what actually landed in the warehouse (`pf semantic scan`) rather than from a prompt, so every axiom carries observed evidence.
+
+---
+
+## PR Agent
+
+`pr-agent` · [https://github.com/The-PR-Agent/pr-agent](https://github.com/The-PR-Agent/pr-agent) · `vendor/pr-agent` @ `main` · reference · MIT
+
+An open-source PR agent (review, describe, improve, compliance checklist) that runs as a GitHub Action or a CLI. Pinned as a reference for how a PR-review agent structures its tools, prompts and compliance checklist; nothing is ported yet.
+
+### Adopted (1)
+
+- **`README.md`** →   ·  _shape_
+  Command surface and deployment modes. Re-read when deciding which of its tools, if any, our review gate should mirror.
+
+### Deliberately not taken (0)
+
 
 ---
 

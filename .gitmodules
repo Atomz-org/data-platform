@@ -74,6 +74,11 @@
 [submodule "vendor/openmetadata"]
 	path = vendor/openmetadata
 	url = https://github.com/open-metadata/OpenMetadata
+[submodule "vendor/pr-agent"]
+	path = vendor/pr-agent
+	url = https://github.com/The-PR-Agent/pr-agent
+	branch = main
+	shallow = true
 	shallow = true
 [submodule "vendor/asqav-compliance"]
 	path = vendor/asqav-compliance

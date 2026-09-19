@@ -419,3 +419,25 @@ def test_the_pr_report_and_the_map_share_one_palette() -> None:
         assert role in viz.PALETTE, f"{name} maps to a role no palette defines"
     for _, fill, stroke in MM_CLASSDEF:
         assert (fill, stroke) in set(viz.PALETTE.values())
+
+
+@pytest.mark.parametrize(("args", "reaches"), [
+    (["acme", "acme-eu", "--help"], "[group] [project]"),   # every project's CI job
+    (["--all", "--help"], "[group] [project]"),
+    (["build", "--help"], "docs/ARCHITECTURE.md"),          # platform-tests.yml
+    (["check", "--help"], "committed map"),
+])
+def test_both_maps_answer_to_pf_arch(args: list[str], reaches: str) -> None:
+    """`pf arch <group> <project>` and `pf arch build|check` share one name.
+
+    Registered as a command and as a group, the group shadowed the command
+    without a word, and every project's CI `architecture` job failed on
+    "No such command 'acme'". Bootstrap never noticed: it calls the map
+    directly, not through the CLI.
+    """
+    from pf.cli import app
+    from typer.testing import CliRunner
+
+    res = CliRunner().invoke(app, ["arch", *args])
+    assert res.exit_code == 0, res.output
+    assert reaches in " ".join(res.output.split())
