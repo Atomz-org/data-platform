@@ -298,6 +298,70 @@ policies:
     evidence: [pf check]
     controls: [AIR-PREV-7]
 
+  # --- dev serving (quack) ---------------------------------------------------
+  # The development warehouse is served over DuckDB's quack protocol
+  # (pf.runtime.quack, upstream pinned at vendor/duckdb-quack). Serving a
+  # database an agent also queries is an attack surface, and each policy here
+  # names the artefact that closes one part of it.
+
+  - id: dev-serving-wire-is-read-only
+    intent: >
+      Whatever arrives over the quack wire cannot mutate the warehouse. The
+      server holds the database read-only, so the engine refuses writes at the
+      catalog — not a parser, not a callback, nothing that can be argued with —
+      and the client refuses non-read statements before the network hop, using
+      DuckDB's own parser rather than string prefixes. Writers exist; they
+      borrow the file through the write window and never meet the wire.
+    applies_to: {artifact_glob: "**/data/*.duckdb"}
+    constraint: read_only_wire
+    severity: blocks
+    enforced_by: [pf.runtime.quack:serve_forever, pf.runtime.quack:assert_read_only]
+    evidence: [pytest platform/tests]
+    controls: [AIR-PREV-18, AIR-DET-16]
+
+  - id: dev-server-binds-localhost-only
+    intent: >
+      A development database served on a routable interface is an exfiltration
+      endpoint with a bearer token. The endpoint is localhost by construction —
+      the host is not a parameter of the serving path, so a routable dev server
+      cannot be configured into existence, only programmed, which is a review
+      event rather than a config drift.
+    applies_to: {artifact_glob: "**/data/*.duckdb"}
+    constraint: localhost_binding
+    severity: blocks
+    enforced_by: [pf.runtime.quack:serve_forever]
+    evidence: [pytest platform/tests]
+    controls: [AIR-PREV-22]
+
+  - id: quack-token-never-leaves-the-machine
+    intent: >
+      The serving token is a bearer credential for the dev warehouse. It is
+      generated fresh per server, lives only in a 0600 state file beside the
+      database, is gitignored, is denied to agent edits by the gate, and is
+      redacted from CLI output by default — a token echoed into a terminal
+      outlives the server in scrollback and session transcripts.
+    applies_to: {artifact_glob: "**/data/*.quack.json"}
+    constraint: credential_containment
+    severity: blocks
+    enforced_by: [pf.runtime.quack:serve_forever, gate.yaml:denylist, .gitignore]
+    evidence: [pytest platform/tests]
+    controls: [AIR-PREV-23]
+
+  - id: warehouse-custody-is-recorded
+    intent: >
+      Serving, stopping and borrowing are the moments the development database
+      changes hands. Each is written to the provenance ledger as a full action
+      — intent, decision, execution, chained — so "who held the warehouse when"
+      is a query over records, not a reconstruction from process tables. The
+      ledger's kill switch is honoured by construction: a revoked ledger
+      refuses the custody record and with it the custody change.
+    applies_to: {artifact_glob: "**/data/*.duckdb"}
+    constraint: custody_recorded
+    severity: warning
+    enforced_by: [pf.runtime.quack:_custody]
+    evidence: [pf provenance verify]
+    controls: [AIR-DET-21, AIR-DET-4]
+
   - id: control-baseline-is-declared
     intent: >
       A risk register that names controls nobody enforces is a document. Each
@@ -338,3 +402,6 @@ evidence_kinds:
   - {id: "pf provenance verify", produces: ledger audit, durable: true}
   - {id: "pf air coverage", produces: control coverage verdicts, durable: false}
   - {id: "governance/air-register.md", produces: per-entity risk register, durable: true}
+  # The dev-serving guardrails are proved by tests that spawn a real server and
+  # try to break in — re-derived on every run, storing nothing.
+  - {id: "pytest platform/tests", produces: dev-serving guardrail verdicts, durable: false}

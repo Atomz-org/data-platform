@@ -5,7 +5,11 @@ description = "Agentic data platform: shared infra, per-company projects"
 license = "Apache-2.0"
 authors = [{ name = "Suresh Swaminathan", email = "sureshswaminathan.96@gmail.com" }]
 requires-python = ">=3.11,<3.13"
-dependencies = ["pf"]
+dependencies = [
+    "adbc-driver-manager>=1.3",
+    "pf",
+    "pyarrow>=17",
+]
 
 # Optional tools, one extra per `pf.tools` entry. Kept out of the base install so
 # a platform checkout stays light and every tool degrades to "not installed"

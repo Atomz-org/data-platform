@@ -8,16 +8,5 @@ select
     ordered_at,
     order_cost,
     is_food_order,
-    is_drink_order,
-    location_id,
-    subtotal_cents,
-    tax_paid_cents,
-    order_total_cents,
-    subtotal,
-    tax_paid,
-    order_items_subtotal,
-    count_food_items,
-    count_drink_items,
-    count_order_items,
-    customer_order_number
+    is_drink_order
 from main_marts.orders

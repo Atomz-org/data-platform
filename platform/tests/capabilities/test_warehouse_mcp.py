@@ -59,10 +59,14 @@ def test_ducklake_profile_round_trips() -> None:
     assert "ducklake" in prod["extensions"]
 
 
-def test_ducklake_does_not_become_the_default_warehouse() -> None:
-    """Exactly one warehouse is default-enabled, and it is not this one."""
+def test_exactly_one_warehouse_is_the_default() -> None:
+    """Exactly one warehouse is default-enabled.
+
+    #329 made that DuckLake (`test_targets.py` pins which); what this pins is
+    that a new warehouse cannot quietly become a second default.
+    """
     defaults = [n for n, w in WAREHOUSES.items() if w.default_enabled]
-    assert defaults == ["snowflake"]
+    assert len(defaults) == 1, defaults
 
 
 def test_ducklake_leaves_the_dev_targets_alone() -> None:

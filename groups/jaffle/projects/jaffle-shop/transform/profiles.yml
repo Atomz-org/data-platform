@@ -10,16 +10,11 @@ jaffle_shop:
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
       threads: 8
     prod:
-      type: snowflake
-      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
-      user: "{{ env_var('SNOWFLAKE_USER') }}"
-      private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH', '') }}"
-      password: "{{ env_var('SNOWFLAKE_PASSWORD', '') }}"
-      role: "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}"
-      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
-      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
-      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}"
-      threads: 8
+      type: duckdb
+      path: "ducklake:{{ env_var('DUCKLAKE_METADATA') }}"
+      schema: "{{ env_var('DUCKLAKE_SCHEMA', 'analytics') }}"
+      extensions: [ducklake, httpfs]
+      threads: "{{ env_var('DUCKLAKE_THREADS', '1') | int }}"
     base:
       type: duckdb
       path: "{{ env_var('PF_DUCKDB_PATH') }}"
@@ -46,16 +41,13 @@ elementary:
       threads: 8
       schema: main_elementary
     prod:
-      type: snowflake
-      account: '{{ env_var(''SNOWFLAKE_ACCOUNT'') }}'
-      user: '{{ env_var(''SNOWFLAKE_USER'') }}'
-      private_key_path: '{{ env_var(''SNOWFLAKE_PRIVATE_KEY_PATH'', '''') }}'
-      password: '{{ env_var(''SNOWFLAKE_PASSWORD'', '''') }}'
-      role: '{{ env_var(''SNOWFLAKE_ROLE'', ''SYSADMIN'') }}'
-      warehouse: '{{ env_var(''SNOWFLAKE_WAREHOUSE'', ''COMPUTE_WH'') }}'
-      database: '{{ env_var(''SNOWFLAKE_DATABASE'') }}'
-      schema: '{{ env_var(''SNOWFLAKE_SCHEMA'', ''ANALYTICS'') }}_elementary'
-      threads: 8
+      type: duckdb
+      path: ducklake:{{ env_var('DUCKLAKE_METADATA') }}
+      schema: '{{ env_var(''DUCKLAKE_SCHEMA'', ''analytics'') }}_elementary'
+      extensions:
+      - ducklake
+      - httpfs
+      threads: '{{ env_var(''DUCKLAKE_THREADS'', ''1'') | int }}'
     base:
       type: duckdb
       path: '{{ env_var(''PF_DUCKDB_PATH'') }}'

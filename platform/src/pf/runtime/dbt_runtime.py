@@ -65,8 +65,16 @@ def dbt(project_dir: str | Path, *args: str, target: str = "dev",
 
     `hooks=False` is for a caller that is *inside* a hook. Nothing does that
     today; it exists so that the first thing which does cannot recurse.
+
+    dbt is a writer, so when the project's dev database is served by a quack
+    server (`pf quack serve`), the invocation runs inside the write window —
+    the server yields the file for the build and is back before this returns.
+    A `prod` build touches a real warehouse, not the file, and skips the
+    window; with no server running the window is a no-op.
     """
     import os
+
+    from pf.runtime.quack import write_window
 
     env = dict(os.environ)
     env["DBT_TARGET"] = target
@@ -77,10 +85,14 @@ def dbt(project_dir: str | Path, *args: str, target: str = "dev",
 
     if hooks:
         _run_hooks(project_dir, "before_dbt_run", command)
-    proc = subprocess.run(
-        ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
-        env=env, capture_output=True, text=True, check=check,
-    )
+    # Hooks stay outside the window: they draw from the graph, not the served
+    # database, and a slow hook must not hold the file away from the server.
+    windowed = None if target == "prod" else env.get("PF_DUCKDB_PATH")
+    with write_window(windowed):
+        proc = subprocess.run(
+            ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
+            env=env, capture_output=True, text=True, check=check,
+        )
     if hooks:
         _run_hooks(project_dir, "after_dbt_run", command)
     return proc
@@ -121,8 +133,7 @@ def parse(project_dir: str | Path, duckdb_path: str | Path | None = None) -> sub
     return dbt(project_dir, "parse", duckdb_path=duckdb_path)
 
 
-def ensure_manifest(project_dir: str | Path,
-                    duckdb_path: str | Path | None = None) -> bool:
+def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = None) -> bool:
     """Produce `target/manifest.json` if it is not already there.
 
     The manifest is where the models, their columns and their lineage come
@@ -181,12 +192,21 @@ def failed_nodes(project_dir: str | Path) -> list[dict[str, Any]]:
     ]
 
 
-def modified_nodes(project_dir: str | Path, state_dir: str | Path,
-                   duckdb_path: str | Path | None = None) -> list[str]:
+def modified_nodes(project_dir: str | Path, state_dir: str | Path, duckdb_path: str | Path | None = None) -> list[str]:
     """`dbt ls -s state:modified+` — feeds impact analysis on a PR."""
-    proc = dbt(project_dir, "ls", "--select", "state:modified+",
-               "--state", str(state_dir), "--resource-type", "model",
-               "--output", "name", duckdb_path=duckdb_path)
+    proc = dbt(
+        project_dir,
+        "ls",
+        "--select",
+        "state:modified+",
+        "--state",
+        str(state_dir),
+        "--resource-type",
+        "model",
+        "--output",
+        "name",
+        duckdb_path=duckdb_path,
+    )
     if proc.returncode != 0:
         return []
     return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip() and " " not in ln.strip()]
@@ -216,14 +236,22 @@ def mf_env(project_dir: str | Path, target: str = "dev") -> dict[str, str]:
 
 
 def mf(project_dir: str | Path, *args: str, timeout: int = 300) -> subprocess.CompletedProcess:
-    """Invoke the MetricFlow CLI in a project's transform/ with the right env."""
+    """Invoke the MetricFlow CLI in a project's transform/ with the right env.
+
+    mf reads through dbt's adapter — a direct file open — so while a quack
+    server owns the dev database, the file is borrowed for the query.
+    """
+    from pf.runtime.quack import write_window
+
     transform = Path(project_dir) / "transform"
+    env = mf_env(project_dir)
     try:
         # utf-8 explicitly: mf prints ✔ and ✗, and on Windows the default codec
         # for a pipe is cp1252, which turns a successful query into a decode error.
-        return subprocess.run(["mf", *args], cwd=str(transform), env=mf_env(project_dir),
-                              capture_output=True, text=True, encoding="utf-8",
-                              errors="replace", timeout=timeout)
+        with write_window(env.get("PF_DUCKDB_PATH")):
+            return subprocess.run(["mf", *args], cwd=str(transform), env=env,
+                                  capture_output=True, text=True, encoding="utf-8",
+                                  errors="replace", timeout=timeout)
     except FileNotFoundError:
         return subprocess.CompletedProcess(["mf", *args], 127, "",
                                            "mf not found — `uv sync` installs metricflow")
