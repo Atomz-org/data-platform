@@ -63,6 +63,32 @@ bucket name is a committed default anyway; the endpoint is not, because the
 account id inside it identifies whose infrastructure this is, and an
 open-source checkout should not ship anyone's. It comes from the environment
 like the keys do.
+
+## Which stores this reaches
+
+Five, through two code paths. None is configured out of the box: each is the
+key pair plus its endpoint, and every store but R2 also needs its region.
+
+    store          PF_ARTIFACTS_ENDPOINT                        REGION
+    R2 (default)   https://<account-id>.r2.cloudflarestorage.com  auto
+    AWS S3         https://s3.<region>.amazonaws.com            the real region
+    GCS            https://storage.googleapis.com               the real region
+    floci          http://localhost:4566                        us-east-1
+    Azure Blob     https://<account>.blob.core.windows.net      n/a
+
+`PF_ARTIFACTS_REGION` is not optional anywhere but R2. SigV4 signs the region
+into every request, so `auto` against real S3 returns
+`AuthorizationHeaderMalformed` — which reads exactly like a bad key and is not
+one. That cost an afternoon before it was written down here.
+
+GCS needs its **XML API** and an HMAC key pair (Cloud Storage → Settings →
+Interoperability), not a service-account JSON. The JSON key is what every other
+GCP integration wants and it does not work here; the HMAC pair is what makes
+GCS an S3-speaking store.
+
+Azure Blob speaks none of that, which is why `backend` exists. floci is an
+emulator and needs no real credentials at all — any non-empty pair signs, which
+is what makes `pf artifacts` testable in CI without a cloud account.
 """
 
 from __future__ import annotations
@@ -79,15 +105,34 @@ from pathlib import Path
 # PF_ARTIFACTS_ENDPOINT.
 DEFAULT_BUCKET = "data-platform"
 
-# R2 accepts exactly this region and rejects a real AWS one. It is not a
-# placeholder to be filled in later.
-REGION = "auto"
+# R2 accepts exactly this region and rejects a real AWS one, so it stays the
+# default. It is **not** a value that works everywhere: SigV4 signs the region
+# into the request, and real S3 rejects `auto` with `AuthorizationHeaderMalformed`
+# — an error that reads like a credential fault and is not one. Any backend that
+# is not R2 must set `PF_ARTIFACTS_REGION`; `Store.from_env` refuses to guess.
+DEFAULT_REGION = "auto"
+
+#: Which object store this is talking to. Inferred from the endpoint host, which
+#: is unambiguous for all four, and overridable when a private endpoint or an
+#: emulator hides the host that would have given it away.
+#:
+#: `s3` covers R2, real AWS S3, GCS-over-XML and floci, because all four speak
+#: SigV4 over the same verbs. Azure Blob does not, and is the reason this is a
+#: field rather than an assumption.
+BACKENDS = ("s3", "azure")
+
+#: Host suffixes that name a backend on sight.
+_AZURE_HOSTS = (".blob.core.windows.net",)
 
 #: Credential env vars, most specific first. See the module docstring for why
 #: the AWS pair is last and why it is a trap on a machine that also uses AWS.
-KEY_ID_VARS = ("PF_ARTIFACTS_ACCESS_KEY_ID", "R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID")
+#: The Azure pair is last for the same reason the AWS pair is: it is a fallback
+#: for a shell that already has it, not the name to set. On Azure `key_id` is
+#: the storage account name and `secret` is one of its two account keys.
+KEY_ID_VARS = ("PF_ARTIFACTS_ACCESS_KEY_ID", "R2_ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID",
+               "AZURE_STORAGE_ACCOUNT")
 SECRET_VARS = ("PF_ARTIFACTS_SECRET_ACCESS_KEY", "R2_SECRET_ACCESS_KEY",
-               "AWS_SECRET_ACCESS_KEY")
+               "AWS_SECRET_ACCESS_KEY", "AZURE_STORAGE_KEY")
 
 #: What to tell a caller that has no credentials. One string, so the CLI, the
 #: recce integration and the UI all say the same thing.
@@ -95,7 +140,9 @@ SETUP_HINT = (
     "artefact store not configured — set PF_ARTIFACTS_ENDPOINT "
     "(https://<account-id>.r2.cloudflarestorage.com), "
     "PF_ARTIFACTS_ACCESS_KEY_ID and PF_ARTIFACTS_SECRET_ACCESS_KEY (an R2 API "
-    "token with Object Read & Write on the bucket). See docs/ARTIFACTS.md."
+    "token with Object Read & Write on the bucket). For a store that is not R2, "
+    "set its endpoint and PF_ARTIFACTS_REGION too — 'auto' is an R2-ism and real "
+    "S3 rejects it. See docs/ARTIFACTS.md."
 )
 
 
@@ -178,6 +225,18 @@ def project_prefix(group: str, project: str) -> str:
     return f"groups/{group}/projects/{project}"
 
 
+def infer_backend(endpoint: str) -> str:
+    """Which protocol this endpoint speaks, from its host alone.
+
+    Only Azure is detectable and only Azure needs detecting: R2, S3, GCS and
+    floci all speak SigV4 and are handled by the same code, so guessing wrong
+    between *them* is impossible. Anything unrecognised is `s3`, which is the
+    right default for a private endpoint or a self-hosted MinIO.
+    """
+    host = endpoint.lower()
+    return "azure" if any(h in host for h in _AZURE_HOSTS) else "s3"
+
+
 # ----------------------------------------------------------------- store --
 @dataclass(frozen=True)
 class Store:
@@ -192,12 +251,28 @@ class Store:
     `describe()` is the safe rendering and is what the CLI prints: endpoint,
     bucket, a four-character prefix of the key id, and which env var it came
     from. Never the secret, in any form.
+
+    ## Why one type and not one class per cloud
+
+    The four S3-speaking stores — R2, AWS S3, GCS over its XML API, and floci —
+    differ by endpoint and signing region and by nothing else this module cares
+    about. Azure Blob differs by protocol. That is one real split, so `backend`
+    is one field and the five operations dispatch on it; a class hierarchy would
+    have put four identical subclasses around the one that is different.
+
+    The field names stay S3's because they are the ones every caller already
+    uses. On Azure they mean: `endpoint` is the account URL, `bucket` is the
+    container, `key_id` is the storage account name, `secret` is an account key.
     """
 
     endpoint: str
     bucket: str
     key_id: str = field(repr=False)
     secret: str = field(repr=False)
+    #: One of `BACKENDS`. Inferred from the endpoint unless overridden.
+    backend: str = "s3"
+    #: SigV4 signing region. Ignored by the Azure backend.
+    region: str = DEFAULT_REGION
 
     # -- construction --
     @classmethod
@@ -212,10 +287,16 @@ class Store:
         endpoint = os.environ.get("PF_ARTIFACTS_ENDPOINT", "")
         if not (key_id and secret and endpoint):
             return None
+        backend = os.environ.get("PF_ARTIFACTS_BACKEND") or infer_backend(endpoint)
+        if backend not in BACKENDS:
+            raise ArtifactStoreError(
+                f"PF_ARTIFACTS_BACKEND={backend!r} is not one of {BACKENDS}")
         return cls(
             endpoint=endpoint,
             bucket=os.environ.get("PF_ARTIFACTS_BUCKET") or DEFAULT_BUCKET,
             key_id=key_id, secret=secret,
+            backend=backend,
+            region=os.environ.get("PF_ARTIFACTS_REGION") or DEFAULT_REGION,
         )
 
     @classmethod
@@ -230,12 +311,18 @@ class Store:
         return {
             "endpoint": self.endpoint,
             "bucket": self.bucket,
+            "backend": self.backend,
+            # Printed because `auto` against real S3 is a signing failure that
+            # reads as a credential failure. Seeing the region is what turns
+            # that twenty-minute confusion into a one-line fix.
+            "region": self.region if self.backend == "s3" else "—",
             "key_id": self.key_id[:4] + "…" if len(self.key_id) > 4 else "set",
             "source": next((n for n in KEY_ID_VARS if os.environ.get(n)), ""),
         }
 
     def url(self, key: str) -> str:
-        return f"s3://{self.bucket}/{key}"
+        scheme = "az" if self.backend == "azure" else "s3"
+        return f"{scheme}://{self.bucket}/{key}"
 
     # -- client --
     def client(self):  # botocore's client type is dynamic; no annotation to give
@@ -259,8 +346,25 @@ class Store:
             cfg = Config(**opts)
 
         return boto3.client(
-            "s3", endpoint_url=self.endpoint, region_name=REGION, config=cfg,
+            "s3", endpoint_url=self.endpoint, region_name=self.region, config=cfg,
             aws_access_key_id=self.key_id, aws_secret_access_key=self.secret,
+        )
+
+    def container(self):
+        """The Azure container client. Mirrors `client()` for the other backend."""
+        try:
+            from azure.storage.blob import ContainerClient
+        except ImportError as exc:  # pragma: no cover - depends on install extras
+            raise ArtifactStoreError(
+                "azure-storage-blob is not installed — "
+                "`uv sync --extra artifacts-azure`") from exc
+
+        return ContainerClient(
+            account_url=self.endpoint, container_name=self.bucket,
+            # The account key, not a connection string: a connection string
+            # carries the endpoint too, and two sources for one value is how
+            # they end up disagreeing.
+            credential={"account_name": self.key_id, "account_key": self.secret},
         )
 
     # -- operations --
@@ -270,8 +374,12 @@ class Store:
         if not p.is_file():
             raise ArtifactStoreError(f"nothing to upload at {p}")
         try:
-            self.client().upload_file(str(p), self.bucket, key)
-        except Exception as exc:  # botocore raises a family, not a base we own
+            if self.backend == "azure":
+                with p.open("rb") as fh:
+                    self.container().upload_blob(name=key, data=fh, overwrite=True)
+            else:
+                self.client().upload_file(str(p), self.bucket, key)
+        except Exception as exc:  # each SDK raises a family, not a base we own
             raise ArtifactStoreError(f"upload failed for {self.url(key)}: {exc}") from exc
         return p.stat().st_size
 
@@ -288,7 +396,11 @@ class Store:
         # cannot leave a half-written manifest that dbt will happily parse.
         tmp = p.with_suffix(p.suffix + ".part")
         try:
-            self.client().download_file(self.bucket, key, str(tmp))
+            if self.backend == "azure":
+                with tmp.open("wb") as fh:
+                    self.container().download_blob(key).readinto(fh)
+            else:
+                self.client().download_file(self.bucket, key, str(tmp))
         except Exception as exc:
             tmp.unlink(missing_ok=True)
             if _is_missing(exc):
@@ -299,6 +411,8 @@ class Store:
 
     def exists(self, key: str) -> bool:
         try:
+            if self.backend == "azure":
+                return bool(self.container().get_blob_client(key).exists())
             self.client().head_object(Bucket=self.bucket, Key=key)
         except Exception as exc:
             if _is_missing(exc):
@@ -310,6 +424,13 @@ class Store:
         """Every key under a prefix, with size and last-modified."""
         out: list[dict[str, object]] = []
         try:
+            if self.backend == "azure":
+                for b in self.container().list_blobs(name_starts_with=prefix):
+                    out.append({
+                        "key": b.name, "size": b.size or 0,
+                        "modified": str(b.last_modified or ""),
+                    })
+                return out
             pages = self.client().get_paginator("list_objects_v2").paginate(
                 Bucket=self.bucket, Prefix=prefix)
             for page in pages:
@@ -325,7 +446,14 @@ class Store:
     def check(self) -> str:
         """Can we actually reach the bucket? Returns '' on success, else why not."""
         try:
-            self.client().list_objects_v2(Bucket=self.bucket, MaxKeys=1)
+            if self.backend == "azure":
+                # get_container_properties, not list_blobs: listing an empty
+                # container succeeds lazily and would report a container that
+                # does not exist as reachable, which is the exact failure
+                # `preflight` exists to prevent.
+                self.container().get_container_properties()
+            else:
+                self.client().list_objects_v2(Bucket=self.bucket, MaxKeys=1)
         except Exception as exc:  # noqa: BLE001 — "why not" is the return value
             return str(exc)
         return ""
@@ -360,7 +488,17 @@ def _is_missing(exc: Exception) -> bool:
     does `NoSuchBucket`, which was in this set until a test against a bucket
     that had not been created yet reported four cheerful lines of "absent"
     instead of "you are pointed at nothing".
+
+    Azure's SDK raises `ResourceNotFoundError`, which carries `status_code` and
+    no `response` dict. It is matched on the status rather than the class so
+    this module never has to import `azure.core` — which is an extra, and would
+    make an S3-only install fail at the point it handled an S3 error.
+    `ContainerNotFound` is deliberately *not* here, for the same reason
+    `NoSuchBucket` is not: it is "you are pointed at nothing".
     """
+    if getattr(exc, "status_code", None) == 404:
+        code = str(getattr(exc, "error_code", "") or "")
+        return code != "ContainerNotFound"
     resp = getattr(exc, "response", None)
     if not isinstance(resp, dict):
         return False

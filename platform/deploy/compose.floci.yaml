@@ -1,0 +1,89 @@
+# A local AWS, for the one subsystem that had no local mode.
+#
+# `pf.artifacts` talks to an S3-compatible bucket. Every other engine here
+# degrades to something on disk — dbt to DuckDB, recce to a local state file,
+# the catalogue to a JSON export — but a bucket is a bucket, so `pf artifacts
+# push/pull/ls` and the recce baseline path through CI could only be exercised
+# against real object storage, with real credentials and real spend. They
+# therefore mostly were not.
+#
+# Floci (vendor/floci, MIT) is an S3 on 4566 that needs no account and no auth
+# token. It replaces LocalStack Community, whose sunset in March 2026 is why
+# this is a new pin rather than an old one.
+#
+# ## Run it
+#
+#   PF_REPO="$PWD" podman compose \
+#     -f platform/deploy/compose.yaml \
+#     -f platform/deploy/compose.floci.yaml up -d
+#
+# Or on its own, which is what you want for `pf artifacts` work and for CI —
+# it needs no Postgres, no Elasticsearch and no stack image:
+#
+#   podman compose -f platform/deploy/compose.floci.yaml up -d
+#   eval "$(pf artifacts env --local)"      # see docs/ARTIFACTS.md
+#   pf artifacts status
+#
+# ## What this proves, and what it does not
+#
+# It proves the AWS *shape* of the artefact store: that keys are laid out the
+# way `project_prefix` says, that a missing baseline reads as absent rather than
+# as an error, that push/pull round-trips. It proves nothing whatsoever about a
+# real bucket being reachable — only `pf artifacts status` against the real
+# endpoint says that. Treat a green floci run as a passing unit test, not as a
+# deployment check.
+#
+# The emulator is deliberately NOT wired into compose.yaml's `stack` service.
+# Pointing the control plane at it would mean the catalogue and recce publish
+# their artefacts into an in-memory emulator that forgets them on restart, and
+# the first sign would be an empty review. Opt in per shell, via
+# PF_ARTIFACTS_ENDPOINT, not per stack.
+
+name: pf
+
+services:
+  floci:
+    # Pinned, not `latest`. The pin here and the submodule pin in .gitmodules
+    # are two different claims — the image is what runs, the submodule is what
+    # `pf vendor drift` reads — and they are allowed to differ. Bump this
+    # deliberately; stable releases ship on the 1st and 3rd Tuesday.
+    image: ${PF_FLOCI_IMAGE:-docker.io/floci/floci:latest}
+    container_name: pf_floci
+    environment:
+      # us-east-1 rather than floci's own default of the same value, spelled out
+      # because `PF_ARTIFACTS_REGION` on the client side has to match it and a
+      # silent default on one side of that pair is how they drift apart. SigV4
+      # signs the region, so a mismatch is a signature error that reads like a
+      # bad credential.
+      FLOCI_DEFAULT_REGION: ${PF_FLOCI_REGION:-us-east-1}
+      # Required for container-to-container calls: without it the emulator
+      # advertises `localhost` in redirects and a caller in another container
+      # follows that to itself.
+      FLOCI_HOSTNAME: floci
+      # `hybrid` flushes asynchronously — fast enough for a test loop, and it
+      # survives a container restart, which `memory` does not. Nothing here is
+      # durable and nothing here should be.
+      FLOCI_STORAGE_MODE: ${PF_FLOCI_STORAGE_MODE:-hybrid}
+    volumes:
+      - floci_data:/data
+    ports:
+      # Loopback only. This is an unauthenticated object store that accepts any
+      # credential pair — it must not be reachable from the network, and the
+      # default bind would have made it so.
+      - "127.0.0.1:4566:4566"
+    healthcheck:
+      # Compose reports "started" the moment the process execs, which for a JVM
+      # is well before it serves. A `pf artifacts` call in that window fails
+      # with a connection reset that reads like a broken emulator.
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_floci/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  # Not external, unlike the stack's two. There is nothing in here worth
+  # keeping: `podman volume rm pf_floci_data` is a supported way to get a clean
+  # bucket, which is the opposite of the guarantee openmetadata_db_data carries.
+  floci_data: {}

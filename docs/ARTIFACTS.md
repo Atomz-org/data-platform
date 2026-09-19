@@ -64,6 +64,66 @@ not.
 `transform/`, because a checkout only holds one. The bucket holds every
 branch's.
 
+## Which store
+
+Five, through two code paths. None is configured out of the box: each is the
+key pair plus its endpoint, and every store but R2 also needs its region.
+
+| Store | `PF_ARTIFACTS_ENDPOINT` | `PF_ARTIFACTS_REGION` | Backend |
+|---|---|---|---|
+| R2 *(default)* | `https://<account-id>.r2.cloudflarestorage.com` | `auto` | `s3` |
+| AWS S3 | `https://s3.<region>.amazonaws.com` | the real region | `s3` |
+| GCS | `https://storage.googleapis.com` | the real region | `s3` |
+| floci *(local)* | `http://localhost:4566` | `us-east-1` | `s3` |
+| Azure Blob | `https://<account>.blob.core.windows.net` | — | `azure` |
+
+The backend is inferred from the endpoint host; `PF_ARTIFACTS_BACKEND` forces it
+where a private endpoint hides the host that would have named it.
+`pf artifacts status` prints both, which is the quickest way to see what you are
+actually pointed at.
+
+### The region is not optional outside R2
+
+SigV4 signs the region into every request. R2 requires the literal `auto` and
+rejects a real one; **real S3 rejects `auto`** with
+`AuthorizationHeaderMalformed` — an error that reads exactly like a bad key and
+is not one. Set `PF_ARTIFACTS_REGION` for anything that is not R2.
+
+### GCS needs an HMAC pair, not a service-account JSON
+
+GCS answers S3 only on its **XML API**, which authenticates with HMAC keys
+(Cloud Storage → Settings → Interoperability). The JSON key that every other GCP
+integration wants does not work here. `platform/deploy/terraform/gcp` creates the
+pair and exposes it as `artifacts_key_id` / `artifacts_secret`.
+
+### Azure needs a second SDK
+
+Blob speaks none of S3, which is why `Store` carries a backend at all. Install it
+with `uv sync --extra artifacts-azure`; without it, the Azure path exits with a
+named install hint rather than an ImportError. `PF_ARTIFACTS_ACCESS_KEY_ID` is
+the **storage account name** and the secret is one of its account keys.
+
+### Locally, with no account: floci
+
+`pf artifacts` was the one subsystem with no local mode — every other engine
+degrades to something on disk, but a bucket is a bucket, so push, pull, ls and
+the recce baseline path through CI could only be exercised against real object
+storage with real spend. [floci](https://github.com/floci-io/floci) is an S3 on
+`localhost:4566` that needs no account and no auth token.
+
+```bash
+podman compose -f platform/deploy/compose.floci.yaml up -d
+eval "$(uv run pf artifacts env --local)"
+uv run pf artifacts status
+```
+
+Any non-empty credential pair signs. What this proves is the *shape* — key
+layout, absence handled as absence, push/pull round-tripping. It proves nothing
+about a real bucket being reachable; only `pf artifacts status` against the real
+endpoint says that. Treat a green floci run as a passing unit test, not as a
+deployment check, and never point a deployed stack at 4566 — the default storage
+mode is in-memory.
+
 ## Setup
 
 ### What is a credential here, and what is not
