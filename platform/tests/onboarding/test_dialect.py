@@ -1,4 +1,4 @@
-"""Tests for SQL portability detection and the cross-database macro toolkits.
+"""SQL portability detection and the cross-database macro toolkits.
 
 The bug class this exists to prevent is a build that passes while being wrong, so
 most of what is pinned here is the *refusal* to translate rather than the

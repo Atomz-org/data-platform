@@ -29,7 +29,8 @@
     "power-tools@platform": true,
     "evidence-bi@platform": true,
     "dbt-expectations@platform": true,
-    "dbt-elementary@platform": true
+    "dbt-elementary@platform": true,
+    "elementary-observe@platform": true
   },
   "permissions": {
     "deny": [
@@ -64,7 +65,12 @@
       "Bash(npm run sources:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr diff:*)",
-      "Bash(pf artifacts:*)"
+      "Bash(pf artifacts:*)",
+      "Bash(pf tool expectations:*)",
+      "Bash(pf air:*)",
+      "Bash(pf tool elementary:*)",
+      "Bash(edr report:*)",
+      "Bash(edr monitor:*)"
     ],
     "ask": [
       "Bash(git push:*)",

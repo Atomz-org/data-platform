@@ -1,4 +1,4 @@
-"""Tests for the graph currency check and the bulk graph commands.
+"""Graph currency check and the bulk graph commands.
 
 The graph is a build artefact with no clock. One built before a model landed
 answers every query confidently and wrongly, and nothing else in the repo

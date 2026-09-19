@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from pf.features import Feature
 from pf.runtime.targets import WAREHOUSES, ProductionWarehouse
 from pf.scaffold.claude_settings import normalize as normalize_settings
 from pf.scaffold.generator import PROJECT_TARGETS, render, render_profiles
@@ -97,6 +98,13 @@ class Capability:
     # which refuses to apply a capability whose files are only partly present
     # rather than rewriting one someone has edited.
     default_enabled: bool = False
+    # What this capability adds to a project's architecture map, when the
+    # derivation from `files` would not say it well. Optional, and usually
+    # absent: `pf.features.derive` reads `files` and contributes a row only for
+    # territory no existing feature claims, which is the case that would
+    # otherwise surface as an unmapped directory. Declare one to give it a real
+    # title, a lane, or a `count_kind`.
+    feature: Feature | None = None
     # Only offered to an import whose source actually targets this warehouse.
     # Without it, `pf onboard` wires in every registered capability, and a
     # Postgres project would be handed a Snowflake production target it has no
@@ -368,6 +376,161 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
     )
 
 
+ARCH_JOB = """\
+  # Is the project's architecture map still true of the project?
+  #
+  # The map is generated and committed, so a PR that adds an exposure or drops a
+  # metric should carry the map change beside it. Without this the file is
+  # correct only until somebody forgets, and a stale map is worse than none: it
+  # is read as current.
+  #
+  # `pf kg build` first, and not optionally. Counts come from the annotations
+  # and the dbt manifest, so without a parse the graph holds no models, every
+  # count reads zero and the check reports drift that is really a missing build.
+  architecture:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Build the graph this map is generated from
+        run: uv run pf kg build {{group}} {{project}}
+
+      # Fails on two things: a map that no longer matches its project, and a
+      # directory no `Feature` claims. The second is a platform-side gap — a
+      # capability or tool that writes somewhere the registry does not know
+      # about — and it is reported here because here is where the platform is
+      # what changed.
+      - name: Architecture map is current
+        run: uv run pf arch {{group}} {{project}} --check
+"""
+
+# ------------------------------------------------------------------- air --
+AIR_JOB = """\
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage {{group}} {{project}} --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate {{group}} {{project}}
+"""
+
+AIR_DOCS = """\
+# AI risk controls — {{project}}
+
+This project declares which AI controls it commits to in `air.yaml`, and
+`pf air gate {{group}} {{project}}` blocks the merge when one of them is not
+enforced. Controls come from whichever catalogues are registered —
+`pf air catalogues` lists them and where each is checked out.
+
+| command | what it answers |
+| --- | --- |
+| `pf air catalogues` | which control catalogues are registered |
+| `pf air controls` | which controls exist |
+| `pf air show <id>` | one control, and every regulation it discharges |
+| `pf air baseline {{group}} {{project}} --suggest` | the controls that already pass |
+| `pf air coverage {{group}} {{project}}` | which of them this project enforces |
+| `pf air gaps` | only the ones it does not |
+| `pf air crosswalk eu-ai-act` | the regulator's view of the same facts |
+| `pf air register {{group}} {{project}}` | regenerate `governance/air-register.md` |
+
+## Declaring a baseline
+
+`air.yaml` is hand-written and carries the judgement:
+
+- `baseline:` — controls this project commits to. These **block the merge**.
+- `accepted:` — controls consciously not taken. `reason` and `owner` are both
+  required, because an acceptance without them is a gap with better formatting.
+- `profile:` — where this project sits in the framework's taxonomy.
+
+A project may add to its group's baseline; it cannot remove from it. The way to
+drop a control is `accepted:`, which leaves a name attached to the decision.
+
+## The register is generated
+
+`governance/air-register.md` is derived from `air.yaml` plus a fresh coverage
+run and is on the gate denylist — hand-editing it would make it disagree with
+the declaration it came from. Change `air.yaml`, then `pf air register`.
+
+It carries the credit line of every catalogue it drew from, collected from the
+sources actually loaded rather than templated — so a catalogue swapped out takes
+its obligation with it, and one added brings its own.
+"""
+
+# The starter declaration. Deliberately empty of baseline entries: a scaffolder
+# that pre-commits a project to four controls produces four commitments nobody
+# made, and the first `pf air gate` would fail on a decision never taken.
+#
+# Lives here with the other capability file templates rather than in `pf.air`,
+# which keeps `pf.capabilities` free of any import into `pf.air` — `pf.tools.spec`
+# imports this module, and `pf.air.register` reads `pf.tools.config`.
+AIR_CONFIG = """\
+# Which AI controls {{project}} commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered: `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Merged over the group's air.yaml. `baseline` is a union with the group's, not
+# a replacement: an entity may commit to more than its family, never to less.
+version: 1
+
+# Where this project sits in its catalogue's taxonomy, if it declares one.
+# Free-form until then.
+#
+# profile:
+#   ai_type: Agentic_AI
+#   architecture_pattern: Agentic/Autonomous_AI
+profile: {}
+
+# Controls this project commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything else is reported and advisory.
+#
+# Start from `pf air baseline {{group}} {{project}} --suggest`, which proposes
+# only what already passes — a ratchet against regression rather than a wall of
+# work nobody agreed to. Accepting the proposal stays a person's act.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this project does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
+
 # ----------------------------------------------------------- governance -----
 # Seeded inert. Every policy below is commented out, so scaffolding a project or
 # backfilling this capability into eight existing ones changes no verdict
@@ -465,6 +628,32 @@ KG_CURRENT_JOB = """\
 
 
 CAPABILITIES: dict[str, Capability] = {
+    "air": Capability(
+        name="air",
+        description="AI control baseline: declare it in air.yaml, gate the merge on it.",
+        files={
+            "air.yaml": AIR_CONFIG,
+            "docs/air.md": AIR_DOCS,
+        },
+        ci_jobs={"air-baseline": AIR_JOB},
+        settings={
+            "permissions": {"allow": [
+                "Bash(pf air:*)",
+            ]},
+        },
+        gate={
+            # Generated from air.yaml on every run. Hand-editing it makes the
+            # register disagree with the declaration it was derived from, and the
+            # next `pf air register` discards the edit — the same argument that
+            # denies every other generated artefact here.
+            "denylist": ["**/governance/air-register.md"],
+            # Changing what an entity commits to is a governance decision, not a
+            # refactor. It stays editable — the register is the generated half —
+            # but the blast radius gets reported first.
+            "impact_required": ["**/air.yaml"],
+        },
+        default_enabled=True,
+    ),
     "governance": Capability(
         name="governance",
         description="Project-scoped policy overlay, layered over the platform "
@@ -626,7 +815,8 @@ CAPABILITIES: dict[str, Capability] = {
         description="Run the impact gate and the graph currency check on every "
                     "pull request touching this project.",
         files={"docs/github.md": GITHUB_README},
-        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB},
+        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB,
+                 "architecture": ARCH_JOB},
         settings={
             "permissions": {"allow": ["Bash(gh pr view:*)", "Bash(gh pr diff:*)"]},
         },
@@ -724,6 +914,9 @@ def apply(cap: Capability, root: Path, project_dir: Path,
             # project is one schema version behind" into a bootstrap crash
             # instead of the repair it should be.
             normalize_settings(settings)
+            if isinstance(settings.get("enabledPlugins"), list):
+                # Legacy scaffold form; Claude Code expects a record.
+                settings["enabledPlugins"] = dict.fromkeys(settings["enabledPlugins"], True)
             _merge(settings, cap.settings)
             settings_path.write_text(json.dumps(settings, indent=2) + "\n")
             written.append(settings_path)

@@ -1,4 +1,4 @@
-"""Tests for the PR architecture chart.
+"""PR architecture chart.
 
 The chart fails in one direction only, and it fails silently: mermaid that does
 not parse renders on GitHub as a red error box where the architecture should be,

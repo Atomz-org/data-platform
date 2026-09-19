@@ -1,4 +1,4 @@
-"""Tests for the path gate.
+"""Path gate.
 
 The gate is the one rule that is enforced rather than remembered, so both of its
 failure directions cost something real: a hole lets an agent write a credential

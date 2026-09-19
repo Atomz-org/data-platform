@@ -202,6 +202,13 @@ class Policy:
     params: dict[str, Any] = field(default_factory=dict)
     enforced_by: list[str] = field(default_factory=list)
     evidence: list[str] = field(default_factory=list)
+    #: External control ids this policy discharges — `AIR-PREV-18`, `AIR-DET-21`,
+    #: from the vendored FINOS catalogue (`pf.air`). Optional and defaulted: a
+    #: policy is a rule of this platform first, and mapping it to somebody's
+    #: framework is a second, separable claim. Empty means "we have not mapped
+    #: this one", which `pf air coverage` reports as an uncovered control rather
+    #: than silently treating our rule as satisfying a standard it never named.
+    controls: list[str] = field(default_factory=list)
     #: Which layer this policy's severity came from — "platform", "group:<g>" or
     #: "project:<g>/<p>". `pf policy` prints it, so "why is this an error here
     #: and a warning next door" is answerable without diffing three files.
@@ -315,6 +322,22 @@ class Ontology:
     def unenforced_policies(self) -> list[Policy]:
         return [p for p in self.policies if not p.enforced]
 
+    def policies_for_control(self, control_id: str) -> list[Policy]:
+        """Every policy claiming to discharge an external control (`AIR-DET-21`).
+
+        Many-to-many on purpose. One control can need several of our rules —
+        `AIR-DET-21` is answered by the recorded decision *and* by the chain that
+        makes the record tamper-evident — and one rule can discharge several
+        controls. Collapsing either direction would force a policy to be renamed
+        every time somebody else's framework reorganised.
+        """
+        target = control_id.strip().upper()
+        return [p for p in self.policies if target in (c.upper() for c in p.controls)]
+
+    def mapped_controls(self) -> list[str]:
+        """Every external control id any policy names, deduplicated and sorted."""
+        return sorted({c.upper() for p in self.policies for c in p.controls})
+
 
 def _parse_policies(doc: dict[str, Any], scope: str, overlay: bool = False) -> list[Policy]:
     """Parse a policy document.
@@ -333,6 +356,7 @@ def _parse_policies(doc: dict[str, Any], scope: str, overlay: bool = False) -> l
             constraint=p.get("constraint", ""), severity=p.get("severity", default),
             applies_to=p.get("applies_to") or {}, params=p.get("params") or {},
             enforced_by=p.get("enforced_by") or [], evidence=p.get("evidence") or [],
+            controls=[str(c) for c in (p.get("controls") or [])],
             scope=scope,
         )
         for p in (doc.get("policies") or [])
@@ -391,6 +415,9 @@ def merge_policies(base: list[Policy], overlay: list[Policy], scope: str) -> lis
             params=prior.params,
             enforced_by=list(dict.fromkeys([*prior.enforced_by, *over.enforced_by])),
             evidence=list(dict.fromkeys([*prior.evidence, *over.evidence])),
+            # A control mapping is a claim like evidence: a layer may add one,
+            # never withdraw one its family made.
+            controls=list(dict.fromkeys([*prior.controls, *over.controls])),
             # Only a real tightening reattributes the policy; an overlay that
             # merely adds evidence leaves the severity's owner where it was.
             scope=scope if new > old else prior.scope,

@@ -1,4 +1,4 @@
-"""Tests for the policy override layer.
+"""Policy override layer.
 
 Policy is the one part of the ontology that is genuinely local: vocabulary must
 be shared or a roll-up adds two things that merely share a name, but what must

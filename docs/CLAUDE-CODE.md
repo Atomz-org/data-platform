@@ -49,6 +49,23 @@ uv run pf test where policy        # which file guards this?
 uv run pf test where pf.kg.build   # which tests import this module?
 uv run pf test index               # regenerate after adding a test file
 ```
+| Scaffolding | `platform/src/pf/scaffold/` + `platform-init/scaffold-project` | plan → apply → verify ([docs](SCAFFOLDING.md)) |
+
+## Creating a project without exploring the repo
+
+A platform session that scaffolds a project should cost about a hundred tokens
+of decision, not eight thousand of discovery. `pf new-project --plan` resolves
+the capability set, the gate rules, the CI jobs and the blockers in one call and
+writes nothing; the `scaffold-project` skill carries the sequence and the exit
+criteria. Neither requires reading `pf/capabilities.py`, the generator, or the
+tree the scaffolder just created — `kg/context_card.md` is the index, and it is
+generated.
+
+```bash
+uv run pf new-project <g> <p> --plan   # ~124 tokens, exits 1 if blocked
+uv run pf new-project <g> <p>          # apply; runs the whole bootstrap
+uv run pf check                        # the third exit criterion
+```
 
 Two commands cover normal use:
 
@@ -96,6 +113,7 @@ The real levers here, cheapest first:
 
 | Instead of | Do |
 |---|---|
+| reading a project's tree to orient | `kg/architecture.md` — every feature, ~2k tokens |
 | reading models to find a dependency | `kg_neighbors`, `kg_path` |
 | grepping for where a concept is used | `kg_search` |
 | reading downstream models to judge a change | `impact_analysis` |

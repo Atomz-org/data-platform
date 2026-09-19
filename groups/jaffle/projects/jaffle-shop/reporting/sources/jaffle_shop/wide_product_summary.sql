@@ -1,3 +1,0 @@
--- source extract for wide_product_summary (PII columns excluded by the MDL projection)
-select menu_item_id, menu_item_name, category_id, product_type, product_description, current_price, is_active, is_food_item, is_drink_item, total_units_sold, total_gross_sales, active_sale_days, first_sale_date, last_sale_date, avg_daily_units, avg_daily_revenue, stores_selling, unit_margin, margin_pct, avg_supply_cost_per_unit, total_supply_cost, total_gross_profit, gross_profit_margin_pct, avg_rating, total_reviews, sales_rank, volume_rank, margin_rank, rating_rank, total_orders_containing, unique_customers_purchasing, peak_season, peak_season_revenue, units_per_active_day, avg_units_per_customer, days_on_sale, performance_tier
-from main_marts.wide_product_summary

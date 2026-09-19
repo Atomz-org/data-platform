@@ -1,4 +1,4 @@
-"""Tests for the eval layer.
+"""Eval layer.
 
 The properties worth pinning are the ones whose failure would be silent. A
 grader that quietly passes when a field is absent, a template that renders a

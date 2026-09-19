@@ -30,7 +30,8 @@
     "power-tools@platform": true,
     "dbt-snowflake@platform": true,
     "dbt-expectations@platform": true,
-    "dbt-elementary@platform": true
+    "dbt-elementary@platform": true,
+    "elementary-observe@platform": true
   },
   "permissions": {
     "deny": [
@@ -66,7 +67,12 @@
       "Bash(gh pr diff:*)",
       "Bash(pf align:*)",
       "Bash(pf dialect:*)",
-      "Bash(pf artifacts:*)"
+      "Bash(pf artifacts:*)",
+      "Bash(pf tool expectations:*)",
+      "Bash(pf air:*)",
+      "Bash(pf tool elementary:*)",
+      "Bash(edr report:*)",
+      "Bash(edr monitor:*)"
     ],
     "ask": [
       "Bash(git push:*)",

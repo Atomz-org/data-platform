@@ -1,4 +1,4 @@
-"""DuckLake as a production target, and the MCP seam warehouses arrive through.
+"""The MCP seam warehouses arrive through, DuckLake's included.
 
 The properties worth pinning down are the ones that would fail quietly. A nested
 `attach:` that renders as a Python repr still *looks* like a profiles.yml until
@@ -22,7 +22,7 @@ from pf.scaffold.generator import PROJECT_TARGETS, render_profiles, render_targe
 
 # ------------------------------------------------------------- the renderer --
 def test_nested_values_render_as_parseable_yaml() -> None:
-    """The repr of a list is not a YAML contract — see `_yaml_flow`."""
+    """The repr of a list is not a YAML contract — see `_render_map`."""
     text = render_target("prod", {
         "type": "duckdb",
         "extensions": ["ducklake", "httpfs"],
@@ -52,10 +52,10 @@ def test_ducklake_profile_round_trips() -> None:
     text = render_profiles("demo", {**PROJECT_TARGETS, "prod": wh.output})
     prod = yaml.safe_load(text)["demo"]["outputs"]["prod"]
 
-    # DuckLake is DuckDB with a catalog attached, not its own adapter.
+    # DuckLake is DuckDB opened on a `ducklake:` catalog, not its own adapter.
     assert prod["type"] == "duckdb"
     assert wh.adapter == "dbt-duckdb"
-    assert prod["attach"][0]["path"] == "{{ env_var('DUCKLAKE_CATALOG') }}"
+    assert prod["path"] == "ducklake:{{ env_var('DUCKLAKE_METADATA') }}"
     assert "ducklake" in prod["extensions"]
 
 
@@ -98,8 +98,8 @@ def test_ducklake_mcp_is_read_only() -> None:
 def test_ducklake_mcp_and_dbt_read_the_same_catalog() -> None:
     """Two definitions of "which lake" is how they end up disagreeing."""
     wh = WAREHOUSES["ducklake"]
-    assert "DUCKLAKE_CATALOG" in wh.mcp["ducklake"]["args"][-1]
-    assert "DUCKLAKE_CATALOG" in str(wh.output["attach"])
+    assert wh.mcp["ducklake"]["args"][-1] == "ducklake:${DUCKLAKE_METADATA}"
+    assert wh.output["path"] == "ducklake:{{ env_var('DUCKLAKE_METADATA') }}"
 
 
 # ------------------------------------------------------------- .mcp.json ----

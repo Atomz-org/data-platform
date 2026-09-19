@@ -1,4 +1,4 @@
-"""Tests for the parts of the ontology flow that decide what is allowed to land.
+"""Parts of the ontology flow that decide what is allowed to land.
 
 Every case here is a hole that was open. An ontology whose rejections do not
 stick is not governed, it is documented — and the difference only shows up much

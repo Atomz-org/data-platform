@@ -1,4 +1,4 @@
-"""Tests for the `.claude/settings.json` schema migrations.
+"""`.claude/settings.json` schema migrations.
 
 The properties worth pinning down are the ones that made the original bug
 expensive: that the migration is idempotent (it runs on every bootstrap), that

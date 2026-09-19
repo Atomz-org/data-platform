@@ -1,4 +1,4 @@
-"""Tests for the onboarding ladder.
+"""Onboarding ladder.
 
 What is worth pinning here is not that the stages run — it is the handful of
 decisions that make the ladder mean anything, each of which was wrong at some

@@ -44,6 +44,7 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
            "tools_yaml": _default_tools_yaml()}
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "air.yaml", GROUP_AIR, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
@@ -141,6 +142,49 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
 
 
 # ================================================================ templates ==
+GROUP_AIR = """\
+# Which AI controls the {{group}} family commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered; `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Declared here means declared for **every sister project** in {{group}}. A
+# project may add to `baseline` in its own air.yaml; it cannot remove from it.
+# The way to drop a control is `accepted:`, which requires a reason and an owner.
+#
+#   pf air coverage {{group}} <project>    # what this entity enforces today
+#   pf air baseline {{group}} --suggest    # the controls that already pass
+#   pf air gate {{group}} <project>        # blocks on a failing commitment
+#
+# `baseline` starts empty on purpose. A scaffolder that pre-commits a family to
+# a set of controls produces commitments nobody made, and the first gate run
+# fails on a decision never taken. Fill it from `--suggest`, which proposes only
+# what already passes — a ratchet against regression rather than a wall of work.
+version: 1
+
+# Where this family sits in the catalogue's taxonomy, if it declares one.
+# `pf air catalogues` names the corpus; its deployment-model data file lists the
+# vocabulary. Free-form until then.
+profile: {}
+
+# Controls this family commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything outside this list is reported and advisory.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this family does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
 GROUP_TOOLS = """\
 # Which platform tools this group runs. `pf tool list` shows what is available.
 #
@@ -468,57 +512,51 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
 }
 
 
-def _yaml_flow(value: object) -> str:
-    """A nested list or mapping, in YAML flow style.
-
-    `render_target` writes one `key: value` line per entry, which covers every
-    warehouse whose target is flat scalars — which was all of them until DuckLake.
-    DuckLake's catalog is reached through dbt-duckdb's `attach:`, a *list of
-    mappings*, and a Python list interpolated into an f-string arrives as its
-    `repr`. That the repr of a simple list happens to parse as YAML is luck, not
-    a contract: one value containing a quote and the file silently becomes a
-    different document. So nesting is rendered deliberately here instead.
-
-    Flow style rather than block style because the caller has already committed
-    to a single line per key, and re-indenting a block from inside a loop that
-    does not know its own depth is how the emitted YAML stops matching the
-    indentation `replace_target` uses to find a block's end.
-    """
-    if isinstance(value, dict):
-        return "{" + ", ".join(f"{k}: {_yaml_flow(v)}" for k, v in value.items()) + "}"
-    if isinstance(value, (list, tuple)):
-        return "[" + ", ".join(_yaml_flow(v) for v in value) + "]"
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, str):
-        # Quote every string inside a flow collection. Two things in these
-        # values need it and both are easy to miss: `{{` opens a flow mapping,
-        # and `ducklake:catalog.ddb` has a colon in it, which is a key/value
-        # separator to a YAML parser. Quoting unconditionally is one rule
-        # instead of two exceptions.
-        return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
-    return str(value)
-
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
     """One dbt output block. The unit `pf align` checks and bootstrap appends."""
-    lines = [f"{indent}{name}:"]
+    return "\n".join([f"{indent}{name}:", *_render_map(spec, indent + "  ")]) + "\n"
+
+
+def _render_scalar(value: object) -> object:
+    if isinstance(value, bool):
+        # Before booleans appeared here every value was a string or an int,
+        # and Python's `True` reached the file verbatim. YAML 1.1 does read
+        # it as a boolean, so nothing was broken — but a generated file that
+        # nobody can copy an idiom from is a generated file people edit by
+        # hand, and `secure: True` beside `threads: 8` reads as a mistake.
+        return "true" if value else "false"
+    if isinstance(value, str) and "{{" in value:
+        return f'"{value}"'
+    return value
+
+
+def _render_map(spec: dict[str, object], indent: str) -> list[str]:
+    """Block-YAML lines for one mapping, nesting two spaces per level.
+
+    Flat targets render exactly as they always have. The nesting exists for
+    catalog-attached targets — dbt-duckdb's `secrets:` and `attach:` are lists
+    of mappings, and a list item puts its first key on the `- ` line the way
+    every hand-written dbt profile does, so the generated block is one a person
+    can copy an idiom from.
+    """
+    lines: list[str] = []
     for key, value in spec.items():
-        if isinstance(value, bool):
-            # Before booleans appeared here every value was a string or an int,
-            # and Python's `True` reached the file verbatim. YAML 1.1 does read
-            # it as a boolean, so nothing was broken — but a generated file that
-            # nobody can copy an idiom from is a generated file people edit by
-            # hand, and `secure: True` beside `threads: 8` reads as a mistake.
-            rendered: object = "true" if value else "false"
-        elif isinstance(value, (list, dict)):
-            rendered = _yaml_flow(value)
-        elif isinstance(value, str) and "{{" in value:
-            rendered = f'"{value}"'
+        if isinstance(value, dict):
+            lines.append(f"{indent}{key}:")
+            lines.extend(_render_map(value, indent + "  "))
+        elif isinstance(value, (list, tuple)):
+            lines.append(f"{indent}{key}:")
+            for item in value:
+                if isinstance(item, dict):
+                    entry = _render_map(item, indent + "    ")
+                    lines.append(f"{indent}  - {entry[0].lstrip()}")
+                    lines.extend(entry[1:])
+                else:
+                    lines.append(f"{indent}  - {_render_scalar(item)}")
         else:
-            rendered = value
-        lines.append(f"{indent}  {key}: {rendered}")
-    return "\n".join(lines) + "\n"
+            lines.append(f"{indent}{key}: {_render_scalar(value)}")
+    return lines
 
 
 def replace_target(text: str, name: str, spec: dict[str, object]) -> tuple[str, bool]:
@@ -716,9 +754,16 @@ compound instead of accumulating notes nobody reads.
 
 TIME_SPINE = """\
 -- Required by MetricFlow for time-based metrics. Platform-standard daily grain.
+--
+-- dbt_utils.date_spine, not DuckDB's range() table function: this model builds
+-- on every target the project has, and range() exists only on DuckDB — on a
+-- Postgres prod it was the one scaffolded model that failed the build.
 {{ config(materialized='table') }}
-select cast(range as date) as date_day
-from range(date '2020-01-01', date '2030-01-01', interval 1 day)
+select cast(date_day as date) as date_day
+from ({{ dbt_utils.date_spine(
+    datepart="day",
+    start_date="cast('2020-01-01' as date)",
+    end_date="cast('2030-01-01' as date)") }}) as spine
 """
 
 TIME_SPINE_YML = """\

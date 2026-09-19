@@ -2,6 +2,12 @@ models:
 - name: orders
   description: Order overview data mart, offering key details for each order inlcluding if it's a customer's
     first order and a food vs. drink item breakdown. One row per order.
+  # Elementary monitors, after the jaffle-shop-goes-online reference use case:
+  # rules assert what must hold; these learn a baseline and flag departures.
+  # See the `elementary-observe: add-anomaly-tests` skill.
+  config:
+    elementary:
+      timestamp_column: ordered_at
   data_tests:
   - dbt_utils.expression_is_true:
       arguments:
@@ -9,6 +15,16 @@ models:
   - dbt_utils.expression_is_true:
       arguments:
         expression: order_total = subtotal + tax_paid
+  - elementary.volume_anomalies:
+      config:
+        severity: warn
+  - elementary.dimension_anomalies:
+      arguments:
+        dimensions:
+        - is_food_order
+        - is_drink_order
+      config:
+        severity: warn
   columns:
   - name: order_id
     description: The unique key of the orders mart.
@@ -24,6 +40,14 @@ models:
           field: customer_id
   - name: order_total
     description: The total amount of the order in USD including tax.
+    data_tests:
+    - elementary.column_anomalies:
+        arguments:
+          column_anomalies:
+          - zero_count
+          - zero_percent
+        config:
+          severity: warn
   - name: ordered_at
     description: The timestamp the order was placed at.
   - name: order_cost

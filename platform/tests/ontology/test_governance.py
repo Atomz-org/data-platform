@@ -1,4 +1,4 @@
-"""Tests for owner-editable governance.
+"""Owner-editable governance.
 
 The properties worth pinning are the ones that make the design defensible: that
 an edit is auditable, that the comments explaining *why* a definition exists

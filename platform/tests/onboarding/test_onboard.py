@@ -1,4 +1,4 @@
-"""Tests for onboarding an external repository.
+"""Onboarding an external repository.
 
 The failures worth pinning are the silent ones. A model landing in the wrong
 layer changes what the semantic layer reasons about. A capability judged
