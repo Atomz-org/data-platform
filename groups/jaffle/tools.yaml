@@ -13,3 +13,7 @@ tools:
     enabled: true
   openmetadata:
     enabled: true
+  expectations:
+    enabled: true
+  elementary:
+    enabled: true

@@ -193,7 +193,7 @@ def toolkit_macros(root: Path) -> set[str]:
         d = root / "platform" / "toolkits" / toolkit / "macros"
         for f in sorted(d.glob("*.sql")) if d.exists() else []:
             found |= {
-                m for m in rx.findall(f.read_text())
+                m for m in rx.findall(f.read_text(encoding="utf-8"))
                 if not m.startswith(("default__", "_")) and "__" not in m
             }
     return found
@@ -264,7 +264,7 @@ def call_sites(paths: list[Path]) -> Counter:
     """
     found: Counter = Counter()
     for path in paths:
-        text = path.read_text(errors="ignore")
+        text = path.read_text(errors="ignore", encoding="utf-8")
         for rx in (_COMMENT, _JINJA, _STRING):
             text = rx.sub(" ", text)
         for name in _CALL.findall(text):

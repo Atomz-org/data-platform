@@ -104,10 +104,10 @@ def write_connection(project_dir: Path, project: str = "") -> tuple[Path, bool]:
                                project or d.name)
     body = json.dumps({"datasource": "duckdb", "path": str(wh.path)}, indent=2) + "\n"
     path = connection_path(d)
-    if path.exists() and path.read_text() == body:
+    if path.exists() and path.read_text(encoding="utf-8") == body:
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(body)
+    path.write_text(body, encoding="utf-8")
     return path, True
 
 
@@ -126,8 +126,8 @@ def probe_engine() -> dict[str, Any]:
         with tempfile.TemporaryDirectory() as tmp:
             m = Path(tmp) / "mdl.json"
             c = Path(tmp) / "conn.json"
-            m.write_text(json.dumps(PROBE_MDL))
-            c.write_text(json.dumps({"datasource": "duckdb"}))
+            m.write_text(json.dumps(PROBE_MDL), encoding="utf-8")
+            c.write_text(json.dumps({"datasource": "duckdb"}), encoding="utf-8")
             proc = _wren("dry-plan", "--sql", "select a from t",
                          "--mdl", str(m), "--connection-file", str(c), timeout=60)
         if proc.returncode == 0:
@@ -233,7 +233,7 @@ def summarise_mdl(project_dir: Path) -> dict[str, Any]:
     if not p.exists():
         return {"models": [], "relationships": [], "metrics": [], "views": []}
     try:
-        m = json.loads(p.read_text())
+        m = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {"models": [], "relationships": [], "metrics": [], "views": []}
 

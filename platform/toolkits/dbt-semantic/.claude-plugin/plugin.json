@@ -1,1 +1,9 @@
-{ "name": "dbt-semantic", "version": "0.1.0", "description": "Platform toolkit: dbt-semantic" }
+{
+  "name": "dbt-semantic",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dbt-semantic",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}
