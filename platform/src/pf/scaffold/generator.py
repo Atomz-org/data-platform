@@ -327,21 +327,21 @@ PROJECT_SETTINGS = """\
     "platform": { "source": { "source": "../../../../platform" } },
     "{{group}}": { "source": { "source": "../.." } }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "dlt-ingest@platform",
-    "dlt-quality@platform",
-    "dlt-explore@platform",
-    "duckdb-ops@platform",
-    "dbt-modeling@platform",
-    "dbt-semantic@platform",
-    "dbt-testing@platform",
-    "dbt-govern@platform",
-    "dagster-orchestrate@platform",
-    "python-standards@platform",
-    "power-tools@platform",
-    "{{group}}-group@{{group}}"
-  ],
+  "enabledPlugins": {
+    "platform-init@platform": true,
+    "dlt-ingest@platform": true,
+    "dlt-quality@platform": true,
+    "dlt-explore@platform": true,
+    "duckdb-ops@platform": true,
+    "dbt-modeling@platform": true,
+    "dbt-semantic@platform": true,
+    "dbt-testing@platform": true,
+    "dbt-govern@platform": true,
+    "dagster-orchestrate@platform": true,
+    "python-standards@platform": true,
+    "power-tools@platform": true,
+    "{{group}}-group@{{group}}": true
+  },
   "permissions": {
     "deny": [{{deny_siblings}}, "Read(../../../*/projects/**)",
       "Read(./.env)", "Read(./.env.*)",
@@ -487,21 +487,48 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
     """One dbt output block. The unit `pf align` checks and bootstrap appends."""
-    lines = [f"{indent}{name}:"]
+    return "\n".join([f"{indent}{name}:", *_render_map(spec, indent + "  ")]) + "\n"
+
+
+def _render_scalar(value: object) -> object:
+    if isinstance(value, bool):
+        # Before booleans appeared here every value was a string or an int,
+        # and Python's `True` reached the file verbatim. YAML 1.1 does read
+        # it as a boolean, so nothing was broken — but a generated file that
+        # nobody can copy an idiom from is a generated file people edit by
+        # hand, and `secure: True` beside `threads: 8` reads as a mistake.
+        return "true" if value else "false"
+    if isinstance(value, str) and "{{" in value:
+        return f'"{value}"'
+    return value
+
+
+def _render_map(spec: dict[str, object], indent: str) -> list[str]:
+    """Block-YAML lines for one mapping, nesting two spaces per level.
+
+    Flat targets render exactly as they always have. The nesting exists for
+    catalog-attached targets — dbt-duckdb's `secrets:` and `attach:` are lists
+    of mappings, and a list item puts its first key on the `- ` line the way
+    every hand-written dbt profile does, so the generated block is one a person
+    can copy an idiom from.
+    """
+    lines: list[str] = []
     for key, value in spec.items():
-        if isinstance(value, bool):
-            # Before booleans appeared here every value was a string or an int,
-            # and Python's `True` reached the file verbatim. YAML 1.1 does read
-            # it as a boolean, so nothing was broken — but a generated file that
-            # nobody can copy an idiom from is a generated file people edit by
-            # hand, and `secure: True` beside `threads: 8` reads as a mistake.
-            rendered: object = "true" if value else "false"
-        elif isinstance(value, str) and "{{" in value:
-            rendered = f'"{value}"'
+        if isinstance(value, dict):
+            lines.append(f"{indent}{key}:")
+            lines.extend(_render_map(value, indent + "  "))
+        elif isinstance(value, (list, tuple)):
+            lines.append(f"{indent}{key}:")
+            for item in value:
+                if isinstance(item, dict):
+                    entry = _render_map(item, indent + "    ")
+                    lines.append(f"{indent}  - {entry[0].lstrip()}")
+                    lines.extend(entry[1:])
+                else:
+                    lines.append(f"{indent}  - {_render_scalar(item)}")
         else:
-            rendered = value
-        lines.append(f"{indent}  {key}: {rendered}")
-    return "\n".join(lines) + "\n"
+            lines.append(f"{indent}{key}: {_render_scalar(value)}")
+    return lines
 
 
 def replace_target(text: str, name: str, spec: dict[str, object]) -> tuple[str, bool]:
@@ -699,9 +726,16 @@ compound instead of accumulating notes nobody reads.
 
 TIME_SPINE = """\
 -- Required by MetricFlow for time-based metrics. Platform-standard daily grain.
+--
+-- dbt_utils.date_spine, not DuckDB's range() table function: this model builds
+-- on every target the project has, and range() exists only on DuckDB — on a
+-- Postgres prod it was the one scaffolded model that failed the build.
 {{ config(materialized='table') }}
-select cast(range as date) as date_day
-from range(date '2020-01-01', date '2030-01-01', interval 1 day)
+select cast(date_day as date) as date_day
+from ({{ dbt_utils.date_spine(
+    datepart="day",
+    start_date="cast('2020-01-01' as date)",
+    end_date="cast('2030-01-01' as date)") }}) as spine
 """
 
 TIME_SPINE_YML = """\
