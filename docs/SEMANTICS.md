@@ -13,8 +13,16 @@ concepts.yaml   what things ARE   classes, identity, datatype properties        
 annotations     where they LIVE   concept/role/links per dlt resource            (per project)
 ```
 
-The knowledge graph is the join of all four. Everything else is a **projection**
-of the graph, never a parallel hand-maintained file:
+Only the bottom layer is per project — with one exception. **Policy also layers,
+platform → group → project, and may only ever tighten.** Vocabulary cannot: two
+sisters that mean different things by `Payment` cannot be rolled up. Obligations
+can and must, because acme-eu answers to GDPR and acme-us does not. See
+[POLICY.md](POLICY.md).
+
+The knowledge graph is the join of all four — its node kinds, its legal edges and
+the traversals that answer real questions are mapped in [KG-ATLAS.md](KG-ATLAS.md).
+Everything else is a **projection** of the graph, never a parallel
+hand-maintained file:
 
 | Projection | Command | Consumer |
 |---|---|---|

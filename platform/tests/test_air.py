@@ -14,11 +14,12 @@ publishes a 24th, which is upstream doing its job — and skip when it is absent
 
 from __future__ import annotations
 
+import shutil
 import textwrap
 from pathlib import Path
 
 import pytest
-from pf.air.catalogue import NotVendored, available, load, split_frontmatter
+from pf.air.catalogue import NotVendored, absent_reason, available, load, split_frontmatter
 from pf.air.coverage import _resolve_artefact, assess
 from pf.air.register import (
     Acceptance,
@@ -214,6 +215,10 @@ def test_absent_submodule_is_a_state_not_a_crash(tmp_path):
     cov = assess(tmp_path)
     assert cov.vendored is False and len(cov) == 0
     assert gate(tmp_path, "g", "p").exit_code == 0
+    # The reason names each missing path once, inside the command that fixes it.
+    reason = absent_reason(tmp_path)
+    assert "git submodule update --init catalogues/fake" in reason
+    assert reason.count("catalogues/fake") == 1
 
 
 # ------------------------------------------------------------------ sources --
@@ -330,6 +335,23 @@ def test_verify_fails_on_an_unknown_type_letter(tmp_path):
     assert any(f.code == "control.unknown_type" for f in verify(tmp_path).failures)
 
 
+def test_verify_accepts_an_in_house_library_with_no_crosswalk(tmp_path):
+    """A catalogue that cites nothing needs no crosswalk. `corpus.no_regimes` is
+    about citations that would dangle, not about a directory being present."""
+    src = build_corpus(tmp_path, risks=[(1, "SEC", "Leaky Agent", [])],
+                       controls=[(1, "PREV", "Plug The Leak", ["ri-1"], [])])
+    shutil.rmtree(tmp_path / src.path / src.layout.references)
+    rep = verify(tmp_path)
+    assert rep.ok
+    assert not any(f.code == "corpus.no_regimes" for f in rep.failures)
+
+
+def test_verify_still_fails_when_citations_have_no_crosswalk(tmp_path):
+    src = build_corpus(tmp_path)  # the default control cites art-1 and art-2
+    shutil.rmtree(tmp_path / src.path / src.layout.references)
+    assert any(f.code == "corpus.no_regimes" for f in verify(tmp_path).failures)
+
+
 # ---------------------------------------------------------------- resolution --
 @pytest.mark.parametrize(
     "spec,expected",
@@ -337,6 +359,7 @@ def test_verify_fails_on_an_unknown_type_letter(tmp_path):
         ("pf.provenance.ledger:decision", True),        # module:symbol
         ("pf.tools.spec:Tool.gate_sections", True),     # module:Class.method
         ("pf.provenance.ledger:no_such_function", False),
+        ("pf.provenance.ledger:", False),               # a trailing colon names nothing
         ("pf.ontology.validate:money-without-currency", True),   # a rule id
         ("pf.ontology.validate:no-such-rule", False),
         ("gate.yaml:denylist", True),                   # file:section
