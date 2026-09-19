@@ -55,6 +55,36 @@ jobs:
           echo "reporting=$(touched "$P/reporting")" >> "$GITHUB_OUTPUT"
           echo "any=$(touched "$P")" >> "$GITHUB_OUTPUT"
 
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage zenith zenith-uk --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate zenith zenith-uk
+
   # Is the project's architecture map still true of the project?
   #
   # The map is generated and committed, so a PR that adds an exposure or drops a
@@ -134,6 +164,32 @@ jobs:
           fi
           uv run pf kg build zenith zenith-uk
           uv run pf impact-gate zenith zenith-uk "${{ steps.changed.outputs.models }}"
+
+  # The graph has no clock. One built before a model landed answers every query
+  # confidently and wrongly, and nothing else notices — it simply holds fewer
+  # nodes than the project has models. Every other job here trusts that graph:
+  # the impact gate computes a blast radius from it, and an agent reads its
+  # context card. A stale graph makes both of those quietly wrong rather than
+  # loudly broken, which is why this is a gate and not a reminder.
+  kg-current:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      # `pf kg check` parses the dbt project first — `target/` is gitignored, so
+      # a runner has no manifest to compare the committed graph against, and
+      # without one the check reports "not exercised" and passes.
+      #
+      # It compares only what a runner without a warehouse can see: models,
+      # metrics and exposures come from the dbt manifests, which this checkout
+      # has. Columns are backfilled from information_schema, which it does not —
+      # comparing those too would be red on every pull request forever.
+      - name: Is the committed graph current?
+        run: uv run pf kg check zenith zenith-uk --strict
 
   # dbt review: what the change did to the data, not just to the DAG.
   #

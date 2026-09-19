@@ -2,6 +2,9 @@
 name = "pf"
 version = "0.1.0"
 description = "Platform runtime, ontology, knowledge graph, MCP and UI"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Suresh Swaminathan", email = "sureshswaminathan.96@gmail.com" }]
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "duckdb>=1.1",

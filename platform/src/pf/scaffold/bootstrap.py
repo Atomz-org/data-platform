@@ -247,6 +247,35 @@ def _bootstrap_capabilities(root: Path, group: str, project: str) -> list[StepRe
     return out
 
 
+def _group_air(root: Path, group: str, project: str) -> list[StepResult]:
+    """The group's `air.yaml`, if it has none.
+
+    The sibling of `_bootstrap_capabilities`, one level up. A capability reaches
+    a *project*; the family-level declaration has no capability to carry it, and
+    a group scaffolded before `pf.air` existed would otherwise have no baseline
+    for its sisters to inherit — so `pf air gate` would pass for the whole family
+    by finding nothing to check.
+
+    Written only when absent, never rewritten. It is hand-maintained: the whole
+    point of the file is that a human decided what the family commits to, and a
+    bootstrap that regenerated it would erase that decision on every run.
+
+    The scaffolded baseline is empty, exactly as `pf new-group` writes it.
+    `pf air baseline <group> --suggest` proposes what already passes; accepting
+    the proposal stays a person's act.
+    """
+    from pf.scaffold.generator import GROUP_AIR, write
+
+    path = root / "groups" / group / "air.yaml"
+    if path.exists():
+        return [StepResult("group air.yaml", "ok", f"{path.relative_to(root)} present")]
+    write(path, GROUP_AIR, {"group": group})
+    return [StepResult(
+        "group air.yaml", "created",
+        f"{path.relative_to(root)} — empty baseline; "
+        f"`pf air baseline {group} --suggest` proposes one")]
+
+
 def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
     """One workflow per project, composed from every job its capabilities declare.
 
@@ -347,7 +376,6 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         PROJECT_TARGETS,
         render_target,
         replace_target,
-        target_type,
     )
 
     d = _pdir(root, group, project)
@@ -406,22 +434,34 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         # succeeds, writes nothing anyone can see, and reports success. Seven of
         # eight projects were in that state.
         #
-        # Guarded on the *current* type, not on whether we have written here
-        # before. Anything already pointing at a real engine — Snowflake set by
-        # hand, BigQuery from `pf capability-add` — is left exactly alone, so
-        # this can never take a project off its own warehouse. And only the
-        # `prod` block is touched: `replace_target` is text-level precisely so
+        # Guarded on the placeholder's *path*, not on the adapter type. The type
+        # alone cannot tell the scaffold's local file from a deliberate DuckLake
+        # target — both are `type: duckdb` — and guarding on type is how
+        # `pf capability-add ducklake` got silently reverted to Snowflake by the
+        # very next bootstrap. Only the `PF_DUCKDB_PATH` local file is the
+        # placeholder; anything else — Snowflake set by hand, BigQuery from
+        # `pf capability-add`, a `ducklake:` catalog — is a decision, and this
+        # step must never take a project off its own warehouse. Only the `prod`
+        # block is touched: `replace_target` is text-level precisely so
         # hand-added keys on the DuckDB targets beside it survive.
         wh = default_warehouse()
         if wh is not None and outputs:
-            current = target_type(text, "prod")
-            if current == "duckdb":
+            prod = outputs.get("prod") or {}
+            placeholder = (prod.get("type") == "duckdb"
+                           and "PF_DUCKDB_PATH" in str(prod.get("path", "")))
+            if placeholder:
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
                     profiles.write_text(new_text)
                     changed.append(f"prod -> {wh.name}")
-            elif current and current != wh.name:
-                changed.append(f"prod already on {current}, left alone")
+            elif prod:
+                # Name the engine the way an operator would. DuckLake reports as
+                # itself, not as the `duckdb` adapter that happens to drive it.
+                engine = ("ducklake"
+                          if str(prod.get("path", "")).startswith("ducklake:")
+                          else str(prod.get("type") or "?"))
+                if engine != wh.name:
+                    changed.append(f"prod already on {engine}, left alone")
 
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")
@@ -486,6 +526,8 @@ STEPS: list[Step] = [
     Step("capabilities", "a default-enabled capability must reach every project, "
                          "including ones scaffolded before it was a default",
          _bootstrap_capabilities),
+    Step("group air.yaml", "a family with no control declaration has a gate that "
+                           "passes by finding nothing to check", _group_air),
     Step("ci workflow", "one workflow per project, composed from the jobs its "
                         "capabilities declare, so CI is readable in one place",
          _ci_workflow),

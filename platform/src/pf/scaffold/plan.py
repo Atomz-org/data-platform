@@ -39,6 +39,10 @@ class Plan:
     blockers: list[str] = field(default_factory=list)
     #: Reasons to look before proceeding. Non-empty is fine to proceed through.
     warnings: list[str] = field(default_factory=list)
+    #: Capability -> env vars it needs that are unset. Also in `warnings`, one
+    #: line each; `render` summarises them, because with every warehouse
+    #: registered the names alone outgrew the plan's budget.
+    missing_env: dict[str, list[str]] = field(default_factory=dict)
     is_rollup: bool = False
 
     @property
@@ -87,7 +91,8 @@ def build(root: Path, group: str, project: str, caps: list[Capability],
     # Missing credentials do not block: the scaffold is inert without them and
     # `pf doctor` reports them later. They are worth seeing now because the
     # cheapest moment to pick a different warehouse is before the files exist.
-    for cap, names in missing_env(p.caps).items():
+    p.missing_env = {cap: list(names) for cap, names in missing_env(p.caps).items()}
+    for cap, names in p.missing_env.items():
         p.warnings.append(f"capability '{cap}' needs unset env: {', '.join(names)}")
 
     return p
@@ -107,7 +112,7 @@ def render(p: Plan) -> str:
             if c.ci_jobs:
                 bits.append("ci: " + ", ".join(sorted(c.ci_jobs)))
             if c.env:
-                bits.append("env: " + ", ".join(c.env))
+                bits.append(f"env ×{len(c.env)}")
             lines.append(f"    {c.name:14} {' · '.join(bits) or '—'}")
     else:
         lines.append("  enabling   nothing (--without removed every default)")
@@ -121,8 +126,15 @@ def render(p: Plan) -> str:
     jobs = sorted({j for c in p.caps for j in c.ci_jobs})
     lines.append(f"  ci         {', '.join(jobs) if jobs else 'no jobs — no CI workflow'}")
 
+    env_lines = {f"capability '{cap}' needs unset env: {', '.join(names)}"
+                 for cap, names in p.missing_env.items()}
     for w in p.warnings:
-        lines.append(f"  [!]        {w}")
+        if w not in env_lines:
+            lines.append(f"  [!]        {w}")
+    if p.missing_env:
+        lines.append("  [!]        unset env: "
+                     + ", ".join(f"{cap} ×{len(n)}" for cap, n in p.missing_env.items())
+                     + " — `pf capabilities` names them")
     for b in p.blockers:
         lines.append(f"  BLOCKED    {b}")
 

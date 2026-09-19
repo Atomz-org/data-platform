@@ -13,6 +13,11 @@ denylist:
 - '**/catalog/ingestion.yaml'
 - '**/catalog/openmetadata.json'
 - '**/.github/workflows/**'
+- '**/governance/air-register.md'
+- '**/transform/edr_target/**'
+- '**/catalog/ingestion/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'
+- '**/transform/tests/expectations/**'
+- '**/air.yaml'

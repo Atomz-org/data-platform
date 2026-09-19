@@ -79,6 +79,11 @@
       "description": "Review what a dbt change did to the data, using Recce"
     },
     {
+      "name": "elementary-observe",
+      "source": "./toolkits/elementary-observe",
+      "description": "Anomaly monitors and observability triage, using Elementary"
+    },
+    {
       "name": "evidence-bi",
       "source": "./toolkits/evidence-bi",
       "description": "Evidence BI reporting layer, metric-first"

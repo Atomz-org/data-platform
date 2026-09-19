@@ -73,6 +73,7 @@ makes `pf arch --check` worth wiring into CI.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -208,6 +209,12 @@ CORE: tuple[Feature, ...] = (
     Feature("docs", "capability docs", "delivery",
             "one page per capability, explaining what it wired in",
             ("docs/*.md",), made_by="pf capability-add"),
+    # Standalone pages about this project, published beside what they describe
+    # rather than under a shared docs tree (jaffle-shop's evidence-layer and
+    # onboarding pages).
+    Feature("published", "published pages", "delivery",
+            "standalone HTML about this project, kept beside what it describes",
+            ("*.html",), optional=True, made_by="written by hand"),
     # ------------------------------------------------------------ operate --
     Feature("dagster", "Dagster definitions", "operate",
             "assets come from the runtime factory; the project supplies logic",
@@ -554,7 +561,8 @@ def _unmapped(pdir: Path, registry: tuple[Feature, ...]) -> list[str]:
     claimed = {s for f in registry for s in f.segments}
     out = []
     for p in sorted(pdir.iterdir()):
-        if p.name in IGNORED or p.name in claimed:
+        # Matched as globs, so a feature can claim `*.html` at the top level.
+        if p.name in IGNORED or any(fnmatch.fnmatchcase(p.name, s) for s in claimed):
             continue
         out.append(p.name + ("/" if p.is_dir() else ""))
     return out

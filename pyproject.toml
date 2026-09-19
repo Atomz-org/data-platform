@@ -2,6 +2,8 @@
 name = "data-platform"
 version = "0.1.0"
 description = "Agentic data platform: shared infra, per-company projects"
+license = "Apache-2.0"
+authors = [{ name = "Suresh Swaminathan", email = "sureshswaminathan.96@gmail.com" }]
 requires-python = ">=3.11,<3.13"
 dependencies = ["pf"]
 
@@ -17,6 +19,18 @@ dependencies = ["pf"]
 # artefact we run. Keep the floor at the pinned submodule's last release.
 [project.optional-dependencies]
 recce = ["recce>=1.60,<2"]
+# The Elementary CLI (`edr`) is deliberately NOT an extra here, for the same
+# reason as openmetadata-ingestion below. Install it isolated:
+#
+#     uv tool install elementary-data==0.25.* --with dbt-duckdb
+#
+# It is a *command*: `pf.tools.elementary` shells out to `edr report` and never
+# imports it. In-workspace it is unresolvable anyway — elementary-data pins
+# posthog<3.0.0 and recce needs posthog>=3.0.0, so one lockfile cannot hold
+# both, and recce is the tool every group enables. The *recording* half needs
+# no install at all: the `elementary-data/elementary` dbt package rides inside
+# every dbt build. Keep the pin's minor in step with the package range in
+# `pf.tools.elementary` — CLI and package move together.
 # The artefact store. Not a tool — it is where the tools' output goes — but it
 # gets an extra for the same reason they do: a checkout that never publishes
 # anything should not carry botocore. `uv sync --extra recce --extra artifacts`
@@ -40,6 +54,17 @@ snowflake = ["dbt-snowflake>=1.9,<2"]
 bigquery = ["dbt-bigquery>=1.9,<2"]
 redshift = ["dbt-redshift>=1.9,<2"]
 clickhouse = ["dbt-clickhouse>=1.8,<2"]
+postgres = ["dbt-postgres>=1.9,<2"]
+# DuckLake is DuckDB pointed at a lakehouse catalog (`ducklake:` path), so its
+# adapter is dbt-duckdb — already in the dev group. The extra exists so a
+# production install that syncs nothing but its warehouse extra still works,
+# and so "one extra per `pf.runtime.targets` entry" stays true.
+ducklake = ["dbt-duckdb>=1.9,<2"]
+# Iceberg on Cloudflare R2 is DuckDB attached to R2 Data Catalog's REST
+# endpoint (`ATTACH ... TYPE iceberg`), so its adapter is dbt-duckdb too —
+# same reasoning as ducklake above. Writing Iceberg needs the extension that
+# ships with DuckDB >= 1.4; the profile's `extensions:` loads it.
+iceberg = ["dbt-duckdb>=1.9,<2"]
 wren = [
     "wrenai>=0.13,<1",
 ]

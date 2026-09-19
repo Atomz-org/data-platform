@@ -1,3 +1,10 @@
 -- source extract for int_campaign_roi (PII columns excluded by the MDL projection)
-select campaign_id, total_spend, attributed_revenue, roi_ratio, cost_per_order, campaign_name, campaign_channel, attributed_orders, attributed_customers, total_discounts_given, first_spend_date, last_spend_date
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    campaign_id,
+    total_spend,
+    attributed_revenue,
+    roi_ratio,
+    cost_per_order
 from main_marts.int_campaign_roi

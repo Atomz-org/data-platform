@@ -36,7 +36,9 @@ MARKETPLACE = ROOT / "platform" / ".claude-plugin" / "marketplace.json"
 UNREGISTERED = {"forge-ui", "recce-review"}
 
 #: Toolkits with no section in TOOLKITS.md. Shrink me.
-UNCATALOGUED = {"dbt-snowflake", "forge-ui", "project-onboarding", "recce-review"}
+#: (project-onboarding left this list when its section landed — the ratchet
+#: now defends that section instead of tolerating its absence.)
+UNCATALOGUED = {"dbt-snowflake", "forge-ui", "recce-review"}
 
 
 def toolkits() -> list[Path]:
