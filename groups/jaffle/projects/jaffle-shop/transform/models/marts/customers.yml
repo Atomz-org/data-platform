@@ -2,10 +2,21 @@ models:
 - name: customers
   description: Customer overview data mart, offering key details for each unique customer. One row per
     customer.
+  # Elementary monitors (jaffle-shop-goes-online pattern): the new/returning
+  # mix drifting is a question no fixed rule can ask.
+  config:
+    elementary:
+      timestamp_column: first_ordered_at
   data_tests:
   - dbt_utils.expression_is_true:
       arguments:
         expression: lifetime_spend_pretax + lifetime_tax_paid = lifetime_spend
+  - elementary.dimension_anomalies:
+      arguments:
+        dimensions:
+        - customer_type
+      config:
+        severity: warn
   columns:
   - name: customer_id
     description: The unique key of the orders mart.
@@ -26,6 +37,13 @@ models:
     description: The sum of all the tax portion of every order a customer has placed.
   - name: lifetime_spend
     description: The sum of all the order totals (including tax) that a customer has ever placed.
+    data_tests:
+    - elementary.column_anomalies:
+        arguments:
+          column_anomalies:
+          - zero_count
+        config:
+          severity: warn
   - name: customer_type
     description: Options are 'new' or 'returning', indicating if a customer has ordered more than once
       or has only placed their first order to date.

@@ -1,0 +1,13 @@
+# Loop memory — decisions this project has made about its own findings.
+# Reviewed in pull requests like any other decision. `pf loop memory` to
+# add, list and audit; a suppression without `expires` is listed by audit.
+entries:
+- id: 700caf86
+  loop: vendor-drift
+  pattern: '*submodule not checked out*'
+  verb: suppress
+  note: shallow vendor checkout on this machine; CI checks out every pin
+  actor: suresh
+  created: '2026-08-23'
+  expires: '2026-09-30'
+  hits: 18

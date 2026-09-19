@@ -7,7 +7,8 @@ Tool surface merges four upstream sources:
   dbt MCP (Core mode) dbt_list, dbt_build, dbt_test, dbt_compile, get_model_details
   MetricFlow          list_metrics, query_metrics, get_dimensions
   this platform       kg_search, kg_neighbors, kg_path, impact_analysis,
-                      ontology_classes, validate_annotations
+                      ontology_classes, validate_annotations,
+                      ask_metric_question, loop_ladder, loop_remember
 
 TRUNCATION POLICY (applies to every data-returning tool): schema + <=20 sample
 rows + summary stats. Never a raw dump. This is the single cheapest defence
@@ -19,7 +20,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 from pathlib import Path
 
 from pf import obs
@@ -129,7 +129,7 @@ def get_local_pipeline_state() -> str:
     for s in states:
         f = s / "state.json"
         if f.exists():
-            st = json.loads(f.read_text())
+            st = json.loads(f.read_text(encoding="utf-8"))
             out.append(f"  {s.name}: schema v{st.get('_version', '?')} "
                        f"dataset={st.get('dataset_name')}")
         else:
@@ -146,7 +146,7 @@ def secrets_view_redacted() -> str:
         if not f.exists():
             continue
         out.append(f"--- {f} ---")
-        for line in f.read_text().splitlines():
+        for line in f.read_text(encoding="utf-8").splitlines():
             out.append(SECRET_RE.sub(lambda m: m.group(0).split("=")[0] + "= ***REDACTED***", line))
     return "\n".join(out) or "No secrets files found."
 
@@ -156,8 +156,8 @@ def secrets_update_fragment(toml_fragment: str, path: str = ".dlt/secrets.toml")
     _, _, root = active_project()
     target = root / path
     target.parent.mkdir(parents=True, exist_ok=True)
-    existing = target.read_text() if target.exists() else ""
-    target.write_text(existing.rstrip() + "\n" + toml_fragment.strip() + "\n")
+    existing = target.read_text(encoding="utf-8") if target.exists() else ""
+    target.write_text(existing.rstrip() + "\n" + toml_fragment.strip() + "\n", encoding="utf-8")
     return f"Merged {len(toml_fragment)} chars into {path}. Values are not echoed."
 
 
@@ -215,7 +215,7 @@ def list_metrics() -> str:
     sm = root / "transform" / "target" / "semantic_manifest.json"
     if not sm.exists():
         return "No semantic manifest. Run `dbt parse` in transform/."
-    payload = json.loads(sm.read_text())
+    payload = json.loads(sm.read_text(encoding="utf-8"))
     lines = []
     for m in payload.get("metrics") or []:
         lines.append(f"  {m['name']} ({m.get('type')}) — {m.get('label') or m.get('description') or ''}")
@@ -224,10 +224,9 @@ def list_metrics() -> str:
 
 def get_dimensions(metrics: list[str]) -> str:
     """Dimensions available for the given metrics."""
+    from pf.runtime.dbt_runtime import mf
     _, _, root = active_project()
-    proc = subprocess.run(
-        ["mf", "list", "dimensions", "--metrics", ",".join(metrics)],
-        cwd=str(root / "transform"), capture_output=True, text=True)
+    proc = mf(root, "list", "dimensions", "--metrics", ",".join(metrics))
     return _clip(proc.stdout or proc.stderr)
 
 
@@ -325,12 +324,70 @@ def toolkit_info(name: str) -> str:
     t = root / "platform" / "toolkits" / name
     if not t.exists():
         return f"Toolkit '{name}' not found. Use list_toolkits."
-    rules = (t / "RULES.md").read_text() if (t / "RULES.md").exists() else ""
+    rules = (t / "RULES.md").read_text(encoding="utf-8") if (t / "RULES.md").exists() else ""
     skills = sorted(s.name for s in (t / "skills").iterdir()) if (t / "skills").exists() else []
     return f"# {name}\nskills: {', '.join(skills)}\n\n{_clip(rules, 3000)}"
 
 
+# ----------------------------------------------------------- agentic ------
+def ask_metric_question(question: str, direct: bool = False) -> str:
+    """Answer a business question from governed metrics only — no SQL.
+
+    Names the metric, dimensions and filter used, and the governed page that
+    shows the same number. Says "no metric covers this" rather than guessing
+    from a table. `direct=True` skips the model: `<metric> [by <dimension>]`.
+    """
+    from pf.agents.ask import ask
+    from pf.agents.base import NoCredentials
+
+    group, project, pdir = active_project()
+    root = obs.repo_root(pdir)
+    try:
+        res = ask(root, group, project, question, direct=direct)
+    except NoCredentials as exc:
+        return f"{exc} — retry with direct=True for `<metric> [by <dimension>]`."
+    return _clip(res.render())
+
+
+def loop_ladder() -> str:
+    """Each loop's earned autonomy for this project, and what blocks the next rung."""
+    from pf.loops import levels
+    from pf.loops.registry import all_specs
+
+    _, project, pdir = active_project()
+    root = obs.repo_root(pdir)
+    lines = []
+    for s in all_specs().values():
+        ev = levels.eligibility(root, s, project)
+        nxt = f"→ {ev.target}: " + ("eligible" if ev.eligible else "; ".join(ev.blockers))
+        nxt = nxt if ev.target else "top rung"
+        lines.append(f"  {s.name} [{ev.current}] {nxt}")
+    nl = chr(10)
+    return nl.join(lines) + nl + nl + "Promotion: `pf loop promote <loop> <group> <project>` (human)."
+
+
+def loop_remember(pattern: str, note: str, loop: str = "*", expires: str = "",
+                  annotate: bool = False) -> str:
+    """Record a decision about a recurring finding so loops stop re-reporting it.
+
+    Writes decisions/loop-memory.yaml in this project — reviewed in a PR like
+    any decision. `annotate=True` keeps the finding and appends the note;
+    otherwise it is suppressed. Give suppressions an `expires` date.
+    """
+    from pf.loops import memory
+
+    _, _, pdir = active_project()
+    e = memory.remember(pdir, loop=loop, pattern=pattern, note=note,
+                        verb="annotate" if annotate else "suppress",
+                        actor="mcp", expires=expires)
+    return (f"{e.verb} `{e.pattern}` for {e.loop} (id {e.id})"
+            + (f" until {e.expires}" if e.expires else " — no expiry; `pf loop memory audit` will list it"))
+
+
 TOOLS = {
+    "ask_metric_question": ask_metric_question,
+    "loop_ladder": loop_ladder,
+    "loop_remember": loop_remember,
     "list_tables": list_tables,
     "preview_table": preview_table,
     "execute_sql_query": execute_sql_query,
@@ -358,7 +415,8 @@ TOOLS = {
 
 # Hot tools stay loaded; the rest are deferred so their schemas do not ride in
 # every request. Pair with the tool-search tool on the client side.
-HOT_TOOLS = ("kg_search", "kg_neighbors", "query_metrics", "impact_analysis", "list_tables")
+HOT_TOOLS = ("kg_search", "kg_neighbors", "query_metrics", "ask_metric_question",
+             "impact_analysis", "list_tables")
 
 
 def main() -> None:

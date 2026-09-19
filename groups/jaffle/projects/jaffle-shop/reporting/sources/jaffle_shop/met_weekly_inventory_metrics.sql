@@ -1,3 +1,7 @@
 -- source extract for met_weekly_inventory_metrics (PII columns excluded by the MDL projection)
-select week_start, location_id, location_name, weekly_movements, weekly_inbound, weekly_outbound, avg_daily_products_moved, products_in_stock, total_units_on_hand
+-- Columns are enumerated, never `select *`: the extract's shape is a
+-- contract with the pages reading it, and a star changes shape silently.
+select
+    week_start,
+    location_id
 from main_marts.met_weekly_inventory_metrics

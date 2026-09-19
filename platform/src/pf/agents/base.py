@@ -21,6 +21,7 @@ easy to miss:
 
 from __future__ import annotations
 
+import contextlib
 import os
 import re
 import time
@@ -85,6 +86,19 @@ AGENTS = {
                 "generation with a schema to check against — mid-tier is the "
                 "quality/cost knee.",
         effort="low", cadence_minutes=1440),
+    "fix_drafter": AgentConfig(
+        "fix_drafter", "claude-sonnet-5",
+        purpose="Rewrite one dbt file to implement a diagnosis that has already "
+                "been made. The judgement was paid for at Opus rates upstream; "
+                "this step is transcription against a file it is shown in full, "
+                "checked by the gate, impact and Recce before anyone reads it.",
+        effort="medium", cadence_minutes=None),
+    "metric_answerer": AgentConfig(
+        "metric_answerer", "claude-sonnet-5",
+        purpose="Answer a business question using governed metrics only. Tool "
+                "use over list/dimensions/query — never SQL — so the answer is "
+                "a metric definition, not an opinion about a table.",
+        effort="medium", thinking=False, cadence_minutes=60),
 }
 
 
@@ -111,13 +125,28 @@ def validate_routing() -> list[str]:
     return issues
 
 
+# A client injected for tests and replays. `set_client(fake)` makes every
+# agent path — loops, ask, evals — run end to end with no credential and no
+# network, against whatever the fake returns. It is the only way to exercise
+# a tool-use loop deterministically, and it is how the trace log is tested.
+_CLIENT: dict[str, Any] = {"override": None}
+
+
+def set_client(client: Any | None) -> None:
+    _CLIENT["override"] = client
+
+
 def have_credentials() -> bool:
+    if _CLIENT["override"] is not None:
+        return True
     return bool(os.environ.get("ANTHROPIC_API_KEY")
                 or os.environ.get("ANTHROPIC_AUTH_TOKEN")
                 or (Path.home() / ".config" / "anthropic" / "credentials").exists())
 
 
 def client() -> Any:
+    if _CLIENT["override"] is not None:
+        return _CLIENT["override"]
     import anthropic
 
     if not have_credentials():
@@ -146,11 +175,11 @@ def cached_prefix(root: Path, group: str, project: str,
     for rel in ("platform/toolkits/ROUTING.md", "loop-constraints.md"):
         f = root / rel
         if f.exists():
-            parts.append(f"<{Path(rel).stem}>\n{f.read_text().strip()}\n</{Path(rel).stem}>")
+            parts.append(f"<{Path(rel).stem}>\n{f.read_text(encoding='utf-8').strip()}\n</{Path(rel).stem}>")
 
     card = root / "groups" / group / "projects" / project / "kg" / "context_card.md"
     if card.exists():
-        parts.append(f"<context_card>\n{_stable(card.read_text())}\n</context_card>")
+        parts.append(f"<context_card>\n{_stable(card.read_text(encoding='utf-8'))}\n</context_card>")
 
     text = ("You are an agent operating inside a governed data platform.\n\n"
             + "\n\n".join(parts))
@@ -209,12 +238,17 @@ def call(
     Structured output rather than prose: shorter, parseable by the caller, and
     no second round trip to reformat.
     """
-    from pf import obs
+    from pf import obs, trace
+
+    tr = trace.get()
+    tr.intent(cfg.purpose, agent=cfg.name, model=cfg.model, effort=cfg.effort)
 
     # Rendered per model: effort and thinking are dropped where the target model
     # rejects them, rather than 400-ing the loop.
     params = request_params(cfg.model, effort=cfg.effort, thinking=cfg.thinking,
                             max_tokens=cfg.max_tokens)
+    tr.request(agent=cfg.name, model=cfg.model, params=params, system=system,
+               user=user, schema=output_format.__name__)
     params |= {
         "system": system,
         "messages": [{"role": "user", "content": user}],
@@ -226,9 +260,76 @@ def call(
         "output_format": output_format,
     }
 
+    # Provenance stages 01–02, before the model is called. An LLM call is an
+    # agent action like any other: it is proposed, it is gated, it happens. A
+    # ledger that covers only file writes would miss the step where the agent
+    # decided what to write — which is the step a regulator asks about.
+    #
+    # Recording is best-effort here for the same reason it is in the hooks: a
+    # loop that stops because its audit log is unwritable stops the work and
+    # keeps no record either way. `PF_PROVENANCE_ENFORCE=1` reverses that.
+    prov, action_id, refuse = None, None, None
+    try:
+        from pf.provenance import ledger as _prov
+
+        prov = _prov
+        prov_root = obs.repo_root()
+        action_id = prov.intent(
+            prov_root, tool=f"llm:{cfg.name}", target=cfg.model,
+            summary=f"{cfg.name} via {cfg.model} ({cfg.effort})",
+            group=group, project=project,
+            payload={"purpose": cfg.purpose[:300], "effort": cfg.effort,
+                     "thinking": cfg.thinking,
+                     "output_schema": output_format.__name__},
+        ).action_id
+        # The routing table *is* the policy for this stage: a step is allowed to
+        # run on the model it declares. A step that is not in it has no declared
+        # purpose, budget or cadence — ungoverned spend.
+        #
+        # The verdict has to match what actually happens or the ledger lies. A
+        # recorded "deny" followed by a successful execution is a worse record
+        # than no record, so an unregistered step is a `warn` when fail-open and
+        # a `deny` only where the deny is enforced by the raise below.
+        known = cfg.name in AGENTS
+        blocking = not known and prov.enforcing()
+        prov.decision(
+            prov_root, action_id,
+            verdict="allow" if known else ("deny" if blocking else "warn"),
+            rule="agent_routing" if known else "agent_routing:unregistered",
+            message=("routed by the declared table" if known else
+                     f"{cfg.name} is not in AGENTS — no declared purpose or budget"),
+            tool=f"llm:{cfg.name}", target=cfg.model, group=group, project=project)
+        if blocking:
+            prov.execution(prov_root, action_id, status="blocked",
+                           tool=f"llm:{cfg.name}", target=cfg.model,
+                           group=group, project=project,
+                           detail="unregistered agent step, enforcement on")
+            # Raised *after* this block, not inside it: the `except` below is
+            # there to stop a recording failure breaking the loop, and a refusal
+            # thrown from inside it would be caught by that same handler.
+            refuse = prov.Revoked(
+                f"{cfg.name} is not in the AGENTS routing table and "
+                f"PF_PROVENANCE_ENFORCE=1 — declare it before running it")
+    except Exception:
+        if prov is not None and getattr(prov, "enforcing", lambda: False)():
+            raise
+        prov, action_id = None, None
+
+    if refuse is not None:
+        raise refuse
+
     t0 = time.time()
     c = client()
-    response = c.messages.parse(**params)
+    try:
+        response = c.messages.parse(**params)
+    except Exception as exc:
+        if prov is not None and action_id is not None:
+            with contextlib.suppress(Exception):
+                prov.execution(obs.repo_root(), action_id, status="error",
+                               tool=f"llm:{cfg.name}", target=cfg.model,
+                               group=group, project=project,
+                               detail=f"{type(exc).__name__}: {exc}"[:400])
+        raise
     elapsed = int((time.time() - t0) * 1000)
 
     u = response.usage
@@ -244,12 +345,26 @@ def call(
     parsed = None if refused else response.parsed_output
 
     _SPEND["tokens"] += usage["input_tokens"] + usage["output_tokens"]
+    tr.response(agent=cfg.name, parsed=parsed, usage=usage,
+                stop_reason=str(getattr(response, "stop_reason", "") or ""), ms=elapsed)
 
     obs.record_agent_run(
         group=group, project=project, agent=cfg.name, model=cfg.model,
         effort=cfg.effort, status="refusal" if refused else "ok",
         duration_ms=elapsed, summary=_summarise(parsed), **usage,
     )
+
+    # Stage 03. A refusal is an outcome, not an error: the model was asked and
+    # declined, and that is exactly the kind of thing an audit should be able to
+    # count rather than have to infer from a missing row.
+    if prov is not None and action_id is not None:
+        with contextlib.suppress(Exception):
+            prov.execution(
+                obs.repo_root(), action_id,
+                status="refusal" if refused else "ok",
+                tool=f"llm:{cfg.name}", target=cfg.model,
+                group=group, project=project, detail=_summarise(parsed),
+                payload={"duration_ms": elapsed, **usage})
     return parsed, usage
 
 
