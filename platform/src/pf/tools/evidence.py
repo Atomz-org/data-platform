@@ -106,7 +106,7 @@ CAPABILITY = Capability(
             "Bash(npm run dev:*)", "Bash(npm run build:*)",
             "Bash(npm run sources:*)",
         ]},
-        "enabledPlugins": ["evidence-bi@platform"],
+        "enabledPlugins": {"evidence-bi@platform": True},
     },
     gate={
         # Generated artefacts and build output. Editing a compiled metric

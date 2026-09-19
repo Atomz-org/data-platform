@@ -3,6 +3,25 @@
 Rules an agent has to *remember* get skipped. This module is what the pre-commit
 hook and the PreToolUse hook call, so a denied path is denied whether or not the
 agent read the constraints file.
+
+## Where the gate is enforced
+
+At commit time, locally, by `.git/hooks/pre-commit` — before anything is pushed
+or a pull request exists. That is the whole enforcement story for `maxFiles` and
+the denylist over a *staged set*: CI does not re-apply the run cap, deliberately.
+
+Which makes installing that hook load-bearing rather than a nicety, and it is
+the part that failed. `just hooks` has always been able to install it; nobody
+ran it, so for the entire life of the repo the only code path that enforces
+`maxFiles` was never invoked, and a 21-file commit landed unchecked. A control
+that depends on a person remembering a setup step is the same class of control
+as a rule an agent has to remember.
+
+So installation is now something the platform does and checks: `pf bootstrap`
+installs it, `pf check` reports it missing, and `pf install-hook` is the direct
+route. `install_hook` refuses to overwrite a hook it did not write — silently
+replacing someone's own pre-commit script would be a worse failure than the one
+being fixed.
 """
 
 from __future__ import annotations
@@ -16,6 +35,83 @@ from typing import Any, Literal
 import yaml
 
 Verdict = Literal["allow", "warn", "deny"]
+
+#: The gate's own pre-commit hook, and where git expects to find it.
+HOOK_SOURCE = "platform/hooks/pre_commit.sh"
+HOOK_TARGET = ".git/hooks/pre-commit"
+#: Relative link target, from `.git/hooks/` back to the repo root. A relative
+#: symlink keeps working when the checkout is moved or cloned to another path;
+#: an absolute one silently points at the previous machine's directory.
+HOOK_LINK = "../../platform/hooks/pre_commit.sh"
+
+HookState = Literal["ok", "missing", "foreign", "no-git"]
+
+
+def hook_status(root: Path) -> tuple[HookState, str]:
+    """Is the gate's pre-commit hook actually installed?
+
+    `foreign` is the case worth naming: a hook exists but is not ours. That is
+    not "installed" and it is not "missing" — it is someone's own script that
+    would be destroyed by a naive install, so it gets its own state and a
+    refusal rather than being counted either way.
+    """
+    git_dir = Path(root) / ".git"
+    if not git_dir.exists():
+        return "no-git", "not a git checkout — nothing to install into"
+
+    target = Path(root) / HOOK_TARGET
+    if not target.exists() and not target.is_symlink():
+        return "missing", "no pre-commit hook — the gate does not run on commit"
+
+    # A symlink pointing at our script, however it was spelled (relative from
+    # `just hooks`, absolute from an older install), counts as ours.
+    if target.is_symlink():
+        dest = target.readlink()
+        resolved = (target.parent / dest).resolve() if not dest.is_absolute() else dest
+        if resolved == (Path(root) / HOOK_SOURCE).resolve():
+            return "ok", f"symlink → {HOOK_SOURCE}"
+        return "foreign", f"pre-commit is a symlink to {dest}, not the platform gate"
+
+    # A regular file that execs our script (someone chained it) also counts.
+    try:
+        body = target.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return "foreign", f"pre-commit exists but is unreadable: {exc}"
+    if HOOK_SOURCE in body or "pf gate" in body:
+        return "ok", "pre-commit calls the platform gate"
+    return "foreign", "pre-commit exists and does not call the platform gate"
+
+
+def install_hook(root: Path, *, force: bool = False) -> tuple[bool, str]:
+    """Install the pre-commit gate. Idempotent; never clobbers a foreign hook.
+
+    Returns (changed, detail) — `changed` is False both when it was already
+    installed and when installation was refused, so callers report the detail
+    rather than inferring success from a boolean.
+    """
+    state, detail = hook_status(root)
+    if state == "no-git":
+        return False, detail
+    if state == "ok":
+        return False, f"already installed ({detail})"
+
+    source = Path(root) / HOOK_SOURCE
+    if not source.exists():
+        return False, f"{HOOK_SOURCE} is missing — nothing to install"
+
+    target = Path(root) / HOOK_TARGET
+    if state == "foreign" and not force:
+        return False, (f"refused: {detail}. Move or chain it, then re-run — "
+                       f"or pass force to replace it.")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists() or target.is_symlink():
+        target.unlink()
+    target.symlink_to(HOOK_LINK)
+    # The hook is exec'd by git, so the *script* must be executable. The symlink
+    # itself carries no mode of its own.
+    source.chmod(source.stat().st_mode | 0o111)
+    return True, f"installed {HOOK_TARGET} → {HOOK_SOURCE}"
 
 
 @dataclass(frozen=True)

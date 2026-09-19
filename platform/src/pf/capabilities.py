@@ -28,7 +28,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from pf.features import Feature
 from pf.runtime.targets import WAREHOUSES, ProductionWarehouse
+from pf.scaffold.claude_settings import normalize as normalize_settings
 from pf.scaffold.generator import PROJECT_TARGETS, render, render_profiles
 
 
@@ -39,7 +41,40 @@ class Capability:
     name: str
     description: str
     files: dict[str, str] = field(default_factory=dict)
+    # Files that are *seeded*, not generated: written when absent, left alone
+    # when present. `apply` otherwise rewrites every target wholesale, which is
+    # correct for a generated artefact and destructive for one a human is
+    # expected to edit — a policy overlay, a README, a profiles.yml. Without this
+    # the only protection is `_bootstrap_capabilities` refusing a partial
+    # backfill, and `pf capability-add` deliberately bypasses that.
+    preserve: tuple[str, ...] = ()
     settings: dict[str, Any] = field(default_factory=dict)
+    #: MCP servers this capability contributes, keyed by server name and merged
+    #: into the project's `.mcp.json`. Merged rather than written like `files`,
+    #: because `.mcp.json` is a file a project also edits by hand — a wholesale
+    #: rewrite on `pf capability-add` would silently drop every server someone
+    #: added beside this one. Declarative like the rest of a capability: a
+    #: server definition, not a hook that runs one.
+    mcp: dict[str, Any] = field(default_factory=dict)
+    #: Obligations this capability introduces, in `policy.yaml`'s shape, written
+    #: to the generated `policy.capabilities.yaml` beside the platform floor.
+    #:
+    #: A capability that adds machinery usually adds a rule about using it, and
+    #: before this the rule had nowhere to live: it went into a skill as prose,
+    #: which `pf semantic policy` cannot see and no gate can enforce. The whole
+    #: point of the policy layer is that intent, constraint, artifact and evidence
+    #: stay linked — a capability whose obligations are only documented breaks
+    #: that chain at the first link.
+    #:
+    #: These layer through `merge_policies` like every other overlay, so a
+    #: capability **may tighten the floor and may never relax it**. Declaring a
+    #: policy with an inherited id and a lower severity raises `PolicyRelaxation`
+    #: at load time rather than quietly widening what the platform allows.
+    #:
+    #: Be honest in `enforced_by`. An obligation with no check yet should name
+    #: none — `pf semantic policy` reports it as unenforced, and an unenforced
+    #: policy you can see beats an enforced-looking one that never runs.
+    policies: tuple[dict[str, Any], ...] = ()
     gate: dict[str, list[str]] = field(default_factory=dict)
     env: tuple[str, ...] = ()
     # CI jobs, keyed by job id, merged into the project's one master workflow by
@@ -63,6 +98,13 @@ class Capability:
     # which refuses to apply a capability whose files are only partly present
     # rather than rewriting one someone has edited.
     default_enabled: bool = False
+    # What this capability adds to a project's architecture map, when the
+    # derivation from `files` would not say it well. Optional, and usually
+    # absent: `pf.features.derive` reads `files` and contributes a row only for
+    # territory no existing feature claims, which is the case that would
+    # otherwise surface as an unmapped directory. Declare one to give it a real
+    # title, a lane, or a `count_kind`.
+    feature: Feature | None = None
     # Only offered to an import whose source actually targets this warehouse.
     # Without it, `pf onboard` wires in every registered capability, and a
     # Postgres project would be handed a Snowflake production target it has no
@@ -315,15 +357,362 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
         },
         settings={
             "permissions": {"allow": ["Bash(pf align:*)", "Bash(pf dialect:*)"]},
-            **({"enabledPlugins": list(wh.plugins)} if wh.plugins else {}),
+            **({"enabledPlugins": dict.fromkeys(wh.plugins, True)} if wh.plugins else {}),
         },
+        mcp=dict(wh.mcp),
         env=wh.env,
         warehouse=wh.name,
         default_enabled=wh.default_enabled,
     )
 
 
+ARCH_JOB = """\
+  # Is the project's architecture map still true of the project?
+  #
+  # The map is generated and committed, so a PR that adds an exposure or drops a
+  # metric should carry the map change beside it. Without this the file is
+  # correct only until somebody forgets, and a stale map is worse than none: it
+  # is read as current.
+  #
+  # `pf kg build` first, and not optionally. Counts come from the annotations
+  # and the dbt manifest, so without a parse the graph holds no models, every
+  # count reads zero and the check reports drift that is really a missing build.
+  architecture:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Build the graph this map is generated from
+        run: uv run pf kg build {{group}} {{project}}
+
+      # Fails on two things: a map that no longer matches its project, and a
+      # directory no `Feature` claims. The second is a platform-side gap — a
+      # capability or tool that writes somewhere the registry does not know
+      # about — and it is reported here because here is where the platform is
+      # what changed.
+      - name: Architecture map is current
+        run: uv run pf arch {{group}} {{project}} --check
+"""
+
+# ------------------------------------------------------------------- air --
+AIR_JOB = """\
+  # The AI-control merge gate. Blocks only on controls this entity actually
+  # committed to in its `air.yaml` baseline; everything else in the catalogue is
+  # reported into the job summary and does not fail. The platform ships with
+  # known gaps and says so, rather than hiding them behind a green check.
+  #
+  # `submodules: true` is load-bearing and unique to this job — the control
+  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
+  # every control assesses as `unexercised` and the gate passes for the wrong
+  # reason.
+  air-baseline:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      - name: Verify the vendored catalogue
+        run: uv run pf air verify
+
+      - name: Control coverage
+        run: uv run pf air coverage {{group}} {{project}} --markdown >> "$GITHUB_STEP_SUMMARY"
+
+      # The blocking step. Exits non-zero when a committed control is failing.
+      - name: Committed baseline
+        run: uv run pf air gate {{group}} {{project}}
+"""
+
+AIR_DOCS = """\
+# AI risk controls — {{project}}
+
+This project declares which AI controls it commits to in `air.yaml`, and
+`pf air gate {{group}} {{project}}` blocks the merge when one of them is not
+enforced. Controls come from whichever catalogues are registered —
+`pf air catalogues` lists them and where each is checked out.
+
+| command | what it answers |
+| --- | --- |
+| `pf air catalogues` | which control catalogues are registered |
+| `pf air controls` | which controls exist |
+| `pf air show <id>` | one control, and every regulation it discharges |
+| `pf air baseline {{group}} {{project}} --suggest` | the controls that already pass |
+| `pf air coverage {{group}} {{project}}` | which of them this project enforces |
+| `pf air gaps` | only the ones it does not |
+| `pf air crosswalk eu-ai-act` | the regulator's view of the same facts |
+| `pf air register {{group}} {{project}}` | regenerate `governance/air-register.md` |
+
+## Declaring a baseline
+
+`air.yaml` is hand-written and carries the judgement:
+
+- `baseline:` — controls this project commits to. These **block the merge**.
+- `accepted:` — controls consciously not taken. `reason` and `owner` are both
+  required, because an acceptance without them is a gap with better formatting.
+- `profile:` — where this project sits in the framework's taxonomy.
+
+A project may add to its group's baseline; it cannot remove from it. The way to
+drop a control is `accepted:`, which leaves a name attached to the decision.
+
+## The register is generated
+
+`governance/air-register.md` is derived from `air.yaml` plus a fresh coverage
+run and is on the gate denylist — hand-editing it would make it disagree with
+the declaration it came from. Change `air.yaml`, then `pf air register`.
+
+It carries the credit line of every catalogue it drew from, collected from the
+sources actually loaded rather than templated — so a catalogue swapped out takes
+its obligation with it, and one added brings its own.
+"""
+
+# The starter declaration. Deliberately empty of baseline entries: a scaffolder
+# that pre-commits a project to four controls produces four commitments nobody
+# made, and the first `pf air gate` would fail on a decision never taken.
+#
+# Lives here with the other capability file templates rather than in `pf.air`,
+# which keeps `pf.capabilities` free of any import into `pf.air` — `pf.tools.spec`
+# imports this module, and `pf.air.register` reads `pf.tools.config`.
+AIR_CONFIG = """\
+# Which AI controls {{project}} commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered: `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Merged over the group's air.yaml. `baseline` is a union with the group's, not
+# a replacement: an entity may commit to more than its family, never to less.
+version: 1
+
+# Where this project sits in its catalogue's taxonomy, if it declares one.
+# Free-form until then.
+#
+# profile:
+#   ai_type: Agentic_AI
+#   architecture_pattern: Agentic/Autonomous_AI
+profile: {}
+
+# Controls this project commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything else is reported and advisory.
+#
+# Start from `pf air baseline {{group}} {{project}} --suggest`, which proposes
+# only what already passes — a ratchet against regression rather than a wall of
+# work nobody agreed to. Accepting the proposal stays a person's act.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this project does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
+
+# ----------------------------------------------------------- governance -----
+# Seeded inert. Every policy below is commented out, so scaffolding a project or
+# backfilling this capability into eight existing ones changes no verdict
+# anywhere — the file exists to be found and edited, not to take effect on
+# arrival. A capability that silently tightened the gate on adoption would be
+# discovered as a broken build in a project nobody had touched.
+GOVERNANCE_POLICY = """\
+# Policy overlay for {{group}}/{{project}}.
+#
+# The platform ships a policy floor in `platform/src/pf/ontology/policy.yaml`
+# that applies to every project. This file layers over it, and over any group
+# overlay at `groups/{{group}}/ontology/policy.yaml`, for the obligations that
+# are this entity's alone — a jurisdiction, a customer contract, a retention
+# rule a sister does not share.
+#
+# Vocabulary is deliberately NOT layered here. Two sisters must mean the same
+# thing by `Payment` or a roll-up adds two numbers that merely share a name;
+# concepts live in the group ontology for that reason. What must *hold* is the
+# part that is genuinely local, so it is the part that layers.
+#
+# THIS FILE MAY ONLY TIGHTEN.
+#
+#   add       declare a policy the platform does not have
+#   tighten   raise an inherited policy's severity (info -> warning -> error)
+#   enforce   name another artifact or evidence kind for an inherited policy
+#
+# Lowering a severity raises `PolicyRelaxation` at load time, and there is no
+# syntax for deleting an inherited policy. An omitted `severity:` means inherit,
+# so adding an `enforced_by` line cannot silently escalate the rule.
+#
+# Inspect the resolved result — including which layer set each severity — with:
+#
+#     pf semantic policy {{group}} {{project}}
+
+policies: []
+
+# --- examples, all inert until uncommented -----------------------------------
+#
+# Tighten an inherited policy. `mart-declares-grain` ships as a warning; here an
+# undeclared grain would block the merge.
+#
+# policies:
+#   - id: mart-declares-grain
+#     severity: error
+#
+# Declare an obligation the platform does not know about. Note it names no
+# `enforced_by`: `pf semantic policy` will report it as unenforced, which is the
+# honest state until the check exists. Claiming enforcement that does not exist
+# is worse than declaring none — it ends the conversation.
+#
+#   - id: retention-window-declared
+#     intent: >
+#       A table holding personal data must declare how long it keeps it, or the
+#       retention promise is prose nobody can verify.
+#     applies_to: {role_glob: "pii_*"}
+#     constraint: retention_declared
+#     severity: error
+#
+# Add enforcement to an inherited policy without claiming ownership of it. The
+# severity's owner stays where it was; only the artifact list grows.
+#
+#   - id: pii-not-in-consumption
+#     enforced_by: [pf.local.checks:pii_sweep]
+#     evidence: [pf loop run pii-audit]
+"""
+
+
+KG_CURRENT_JOB = """\
+  # The graph has no clock. One built before a model landed answers every query
+  # confidently and wrongly, and nothing else notices — it simply holds fewer
+  # nodes than the project has models. Every other job here trusts that graph:
+  # the impact gate computes a blast radius from it, and an agent reads its
+  # context card. A stale graph makes both of those quietly wrong rather than
+  # loudly broken, which is why this is a gate and not a reminder.
+  kg-current:
+    needs: changes
+    if: needs.changes.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+
+      # `pf kg check` parses the dbt project first — `target/` is gitignored, so
+      # a runner has no manifest to compare the committed graph against, and
+      # without one the check reports "not exercised" and passes.
+      #
+      # It compares only what a runner without a warehouse can see: models,
+      # metrics and exposures come from the dbt manifests, which this checkout
+      # has. Columns are backfilled from information_schema, which it does not —
+      # comparing those too would be red on every pull request forever.
+      - name: Is the committed graph current?
+        run: uv run pf kg check {{group}} {{project}} --strict
+"""
+
+
 CAPABILITIES: dict[str, Capability] = {
+    "air": Capability(
+        name="air",
+        description="AI control baseline: declare it in air.yaml, gate the merge on it.",
+        files={
+            "air.yaml": AIR_CONFIG,
+            "docs/air.md": AIR_DOCS,
+        },
+        ci_jobs={"air-baseline": AIR_JOB},
+        settings={
+            "permissions": {"allow": [
+                "Bash(pf air:*)",
+            ]},
+        },
+        gate={
+            # Generated from air.yaml on every run. Hand-editing it makes the
+            # register disagree with the declaration it was derived from, and the
+            # next `pf air register` discards the edit — the same argument that
+            # denies every other generated artefact here.
+            "denylist": ["**/governance/air-register.md"],
+            # Changing what an entity commits to is a governance decision, not a
+            # refactor. It stays editable — the register is the generated half —
+            # but the blast radius gets reported first.
+            "impact_required": ["**/air.yaml"],
+        },
+        default_enabled=True,
+    ),
+    "governance": Capability(
+        name="governance",
+        description="Project-scoped policy overlay, layered over the platform "
+                    "and group floors. Tightening only.",
+        files={"governance/policy.yaml": GOVERNANCE_POLICY},
+        # Seeded, never regenerated: this is the one file in the capability a
+        # project is expected to own. Re-applying must not overwrite it.
+        preserve=("governance/policy.yaml",),
+        # A policy overlay decides whether a change is allowed to land, so it is
+        # not something a change may quietly relax on its way past. Edits are
+        # visible rather than blocked — the loosening guard lives in the loader,
+        # where it can read what the edit actually did.
+        gate={"impact_required": ["**/governance/policy.yaml"]},
+        # The obligations this platform states in prose and enforces in config,
+        # written down where `pf semantic policy` can see them. Each one already
+        # had a mechanism; none had an entry in the chain, so "is the isolation
+        # rule actually enforced?" had no answer but a grep.
+        policies=(
+            {
+                "id": "entity-isolation-enforced",
+                "intent": (
+                    "Business logic does not transfer between entities. A session "
+                    "that can read a sister project will carry an assumption across "
+                    "— a grain, a status enum, a revenue definition — and the bug "
+                    "that results is invisible, because the code it came from is "
+                    "correct in the project it came from."
+                ),
+                "applies_to": {"artifact_glob": "**/groups/*/projects/*/**"},
+                "constraint": "path_denied",
+                "params": {"denies": "sibling and cross-group reads"},
+                "severity": "error",
+                "enforced_by": [
+                    "pf.scaffold.generator:PROJECT_SETTINGS",
+                    "platform/hooks/pre_tool_use.py",
+                ],
+                "evidence": ["pf gate"],
+            },
+            {
+                "id": "vendor-is-read-only",
+                "intent": (
+                    "A vendored upstream is evidence of what an external project "
+                    "actually does. Editing one turns it into a fork wearing a "
+                    "submodule's name, and every later diff against upstream reads "
+                    "as drift that nobody introduced."
+                ),
+                "applies_to": {"artifact_glob": "vendor/**"},
+                "constraint": "path_denied",
+                "severity": "error",
+                "enforced_by": ["gate.yaml:denylist", "platform/hooks/pre_tool_use.py"],
+                "evidence": ["pf gate", "pf vendor drift"],
+            },
+            {
+                "id": "agent-settings-schema-valid",
+                "intent": (
+                    "A settings file the client rejects loads none of the plugins it "
+                    "declares, and says so nowhere a session can see. The platform's "
+                    "own retrieval tools arrive as plugins, so a schema error "
+                    "silently removes kg_search and impact_analysis — and an agent "
+                    "with no graph reads files instead and never reports why."
+                ),
+                "applies_to": {"artifact_glob": "**/.claude/settings.json"},
+                "constraint": "schema_current",
+                "severity": "error",
+                "enforced_by": ["pf.scaffold.claude_settings:normalize"],
+                "evidence": ["pf bootstrap"],
+            },
+        ),
+        default_enabled=True,
+    ),
     "loops": Capability(
         name="loops",
         description="Loop memory, proposal review, trace logs and the metric-question "
@@ -353,11 +742,72 @@ CAPABILITIES: dict[str, Capability] = {
         },
         default_enabled=True,
     ),
+    "data-quality": Capability(
+        name="data-quality",
+        description="Data-quality obligations served by the dbt-expectations and "
+                    "dbt-elementary toolkits.",
+        # No files. The toolkits ship the skills, `DEFAULT_TOOLKITS` enables them,
+        # and what this capability adds is the part neither of those can hold: the
+        # obligations they exist to serve. A skill can say "bound a money column";
+        # only a policy can be asked whether anything checks that it happened.
+        policies=(
+            {
+                "id": "money-amount-bounded",
+                "intent": (
+                    "A monetary column with no lower bound accepts the negative "
+                    "row that a refund, a sign flip or a bad join produces, and it "
+                    "reaches a metric as a quietly smaller number. The currency "
+                    "rule makes the amount interpretable; this makes it credible."
+                ),
+                "applies_to": {"role": "money_amount"},
+                "constraint": "range_asserted",
+                "params": {"suggested": "dbt_expectations.expect_column_values_to_be_between"},
+                "severity": "warning",
+                # Deliberately unenforced: no check reads a model's tests yet.
+                # `pf semantic policy` reports this as unenforced, which is the
+                # honest state and the reason it is worth declaring now.
+                "enforced_by": [],
+                "evidence": ["dbt test"],
+            },
+            {
+                "id": "source-declares-freshness",
+                "intent": (
+                    "A mart is stale because its source was. Monitoring the mart "
+                    "names the wrong artefact to go fix, and monitoring nothing "
+                    "means the first report of a stopped pipeline comes from "
+                    "whoever opened the dashboard."
+                ),
+                "applies_to": {"artifact_glob": "**/transform/models/**/_*__sources.yml"},
+                "constraint": "freshness_declared",
+                "severity": "warning",
+                "enforced_by": [],
+                "evidence": ["dbt source freshness", "dbt test"],
+            },
+            {
+                "id": "anomaly-tests-do-not-gate-merge",
+                "intent": (
+                    "An anomaly test judges data; a merge gate judges code. Wiring "
+                    "a statistical test into the gate blocks a correct change "
+                    "because yesterday's load was small, and the cure is always to "
+                    "weaken the test — which is how the monitoring stops working."
+                ),
+                "applies_to": {"artifact_glob": "**/.github/workflows/**"},
+                "constraint": "not_in_gate",
+                "params": {"excludes": "elementary anomaly tests"},
+                "severity": "error",
+                "enforced_by": ["pf.capabilities:IMPACT_JOB"],
+                "evidence": ["pf impact-gate"],
+            },
+        ),
+        default_enabled=True,
+    ),
     "github": Capability(
         name="github",
-        description="Run the impact gate on every pull request touching this project.",
+        description="Run the impact gate and the graph currency check on every "
+                    "pull request touching this project.",
         files={"docs/github.md": GITHUB_README},
-        ci_jobs={"impact-gate": IMPACT_JOB},
+        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB,
+                 "architecture": ARCH_JOB},
         settings={
             "permissions": {"allow": ["Bash(gh pr view:*)", "Bash(gh pr diff:*)"]},
         },
@@ -435,6 +885,11 @@ def apply(cap: Capability, root: Path, project_dir: Path,
         rendered_rel = render(rel, ctx)
         base = root if rendered_rel.startswith(".github/") else project_dir
         target = base / rendered_rel
+        # A seeded file is written once. Re-applying the capability — which
+        # `pf capability-add` does on demand, past the backfill's own guard —
+        # must not overwrite what the project has since written in it.
+        if rel in cap.preserve and target.exists():
+            continue
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(render(template, ctx), encoding="utf-8")
         written.append(target)
@@ -443,9 +898,30 @@ def apply(cap: Capability, root: Path, project_dir: Path,
         settings_path = project_dir / ".claude" / "settings.json"
         if settings_path.exists():
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
+            # Bring the file to the current schema *before* merging into it. A
+            # capability contributes `enabledPlugins` as a record now, and
+            # merging a record into a project still holding the legacy list
+            # would hand `_merge` a list where it expects a dict — turning "this
+            # project is one schema version behind" into a bootstrap crash
+            # instead of the repair it should be.
+            normalize_settings(settings)
+            if isinstance(settings.get("enabledPlugins"), list):
+                # Legacy scaffold form; Claude Code expects a record.
+                settings["enabledPlugins"] = dict.fromkeys(settings["enabledPlugins"], True)
             _merge(settings, cap.settings)
             settings_path.write_text(json.dumps(settings, indent=2) + "\n", encoding="utf-8")
             written.append(settings_path)
+
+    if cap.mcp:
+        mcp_path = project_dir / ".mcp.json"
+        # Unlike settings.json this file is created when absent: a project has
+        # `.claude/settings.json` from the scaffolder, but `.mcp.json` exists
+        # only once something needs it, and a warehouse capability is exactly
+        # such a something.
+        config = json.loads(mcp_path.read_text()) if mcp_path.exists() else {}
+        _merge(config, {"mcpServers": cap.mcp})
+        mcp_path.write_text(json.dumps(config, indent=2) + "\n")
+        written.append(mcp_path)
 
     return written
 
@@ -459,7 +935,18 @@ def _merge(base: dict[str, Any], extra: dict[str, Any]) -> None:
     """
     for key, value in extra.items():
         if isinstance(value, dict):
-            _merge(base.setdefault(key, {}), value)
+            current = base.setdefault(key, {})
+            if not isinstance(current, dict):
+                # A capability contributing a record into a key this project
+                # holds as something else. `pf.scaffold.claude_settings.normalize`
+                # migrates the shapes we know shipped wrong; whatever is left
+                # here is a real disagreement, and merging past it would quietly
+                # drop one side. Name the key — an AttributeError raised deep in
+                # a recursive merge says nothing about which setting is at fault.
+                raise TypeError(
+                    f"settings key {key!r} is {type(current).__name__}, expected "
+                    f"an object — `pf bootstrap` migrates the known legacy shapes")
+            _merge(current, value)
         elif isinstance(value, list):
             current = base.setdefault(key, [])
             current.extend(v for v in value if v not in current)
@@ -475,6 +962,63 @@ def gate_additions(caps: list[Capability]) -> dict[str, list[str]]:
             bucket = merged.setdefault(section, [])
             bucket.extend(p for p in patterns if p not in bucket)
     return merged
+
+
+def policy_additions(caps: list[Capability]) -> list[dict[str, Any]]:
+    """Every policy a set of capabilities declares, first declaration winning.
+
+    Deduplicated by id so two capabilities naming the same obligation produce one
+    entry rather than a file that fails its own layering check. Order follows the
+    capability order, which `resolve` has already made deterministic — a generated
+    file that reshuffles itself between runs is a diff nobody can read.
+    """
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for cap in caps:
+        for policy in cap.policies:
+            pid = policy.get("id")
+            if pid in seen:
+                continue
+            seen.add(pid)
+            out.append({**policy, "_capability": cap.name})
+    return out
+
+
+#: Where capability-declared policies are written. Beside the platform floor
+#: rather than at the repo root, because that is the layer they belong to: a
+#: capability is a platform feature, so its obligations are platform-scope and
+#: layer over `policy.yaml` exactly as a group's layer over the platform's.
+CAPABILITY_POLICY_FILE = "policy.capabilities.yaml"
+
+POLICY_HEADER = """\
+# GENERATED from `Capability.policies` — do not edit.
+#
+# Written by `pf bootstrap` (step: capability policies) and by `pf new-project`.
+# Layered over policy.yaml at load time by `pf.ontology.model.load_ontology`,
+# through the same `merge_policies` guard every other overlay goes through: a
+# capability may tighten the floor and may never relax it.
+#
+# To change a rule here, change the `policies=` on the capability that declares
+# it — the `_capability` key on each entry names which one.
+"""
+
+
+def write_capability_policies(root: Path, caps: list[Capability] | None = None) -> Path:
+    """Regenerate the capability policy overlay. Returns the path written.
+
+    Defaults to every default-enabled capability, which is what makes this
+    idempotent and safe to run on every bootstrap: the file is a pure function of
+    the registry, so a capability removed from the registry disappears from the
+    overlay rather than lingering as a rule nothing declares any more.
+    """
+    import yaml
+
+    caps = resolve(defaults()) if caps is None else caps
+    policies = policy_additions(caps)
+    path = Path(root) / "platform" / "src" / "pf" / "ontology" / CAPABILITY_POLICY_FILE
+    body = yaml.safe_dump({"policies": policies}, sort_keys=False, width=88)
+    path.write_text(POLICY_HEADER + body)
+    return path
 
 
 def missing_env(caps: list[Capability]) -> dict[str, list[str]]:

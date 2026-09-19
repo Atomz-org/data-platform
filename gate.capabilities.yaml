@@ -15,6 +15,12 @@ denylist:
 - '**/.github/workflows/**'
 - data/proposals/**
 - '**/logs/trace/**'
+- '**/governance/air-register.md'
+- '**/transform/edr_target/**'
+- '**/catalog/ingestion/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'
+- '**/governance/policy.yaml'
+- '**/transform/tests/expectations/**'
+- '**/air.yaml'

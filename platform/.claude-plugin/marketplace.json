@@ -1,6 +1,8 @@
 {
   "name": "platform",
-  "owner": { "name": "data-platform" },
+  "owner": {
+    "name": "data-platform"
+  },
   "description": "Shared toolkits for the agentic data platform: ingestion, modelling, semantics, orchestration, review and the power-user command layer.",
   "plugins": [
     {
@@ -49,6 +51,16 @@
       "description": "Data tests and unit tests"
     },
     {
+      "name": "dbt-elementary",
+      "source": "./toolkits/dbt-elementary",
+      "description": "Anomaly detection and test-result triage with Elementary"
+    },
+    {
+      "name": "dbt-expectations",
+      "source": "./toolkits/dbt-expectations",
+      "description": "Distribution, range and type tests with dbt_expectations"
+    },
+    {
       "name": "dbt-govern",
       "source": "./toolkits/dbt-govern",
       "description": "Contracts, access, versions, run troubleshooting"
@@ -77,6 +89,11 @@
       "name": "recce-review",
       "source": "./toolkits/recce-review",
       "description": "Review what a dbt change did to the data, using Recce"
+    },
+    {
+      "name": "elementary-observe",
+      "source": "./toolkits/elementary-observe",
+      "description": "Anomaly monitors and observability triage, using Elementary"
     },
     {
       "name": "evidence-bi",
