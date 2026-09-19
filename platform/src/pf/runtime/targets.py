@@ -121,6 +121,17 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "if key-pair is not available to you; dbt uses whichever is present."
         ),
         default_enabled=True,
+        # Snowflake's own MCP server is a *hosted* endpoint, not a local process:
+        # you create an MCP server object in a database/schema and reach it over
+        # HTTP with OAuth. So this is a `url`, not a `command` — and it is the one
+        # warehouse here an agent cannot reach without server-side setup first.
+        mcp={"snowflake": {
+            "url": "${SNOWFLAKE_MCP_URL}",
+            "auth": {
+                "CLIENT_ID": "${SNOWFLAKE_MCP_CLIENT_ID}",
+                "CLIENT_SECRET": "${SNOWFLAKE_MCP_CLIENT_SECRET}",
+            },
+        }},
         om_type="Snowflake",
         om_connection={
             "type": "Snowflake",
@@ -161,6 +172,15 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
              "roles, so a model that hardcodes a three-part name will not "
              "compile here."),
         ),
+        # Google's MCP Toolbox, run through npx so nothing has to be installed
+        # first. `--prebuilt bigquery` is their maintained toolset; the alternative
+        # is downloading the `toolbox` binary and pinning it per platform, which
+        # is a second install path to keep current for no extra capability.
+        mcp={"bigquery": {
+            "command": "npx",
+            "args": ["-y", "@toolbox-sdk/server", "--prebuilt", "bigquery", "--stdio"],
+            "env": {"BIGQUERY_PROJECT": "${BIGQUERY_PROJECT}"},
+        }},
         om_type="BigQuery",
         om_connection={
             "type": "BigQuery",
@@ -247,6 +267,78 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "https": True,
             "secure": True,
         },
+    ),
+    "ducklake": ProductionWarehouse(
+        name="ducklake",
+        title="DuckLake",
+        adapter="dbt-duckdb",
+        output={
+            # DuckLake is not a separate adapter — it is DuckDB with a catalog
+            # attached, so `type` stays `duckdb` and `adapter` is the one already
+            # installed for development. This is the only warehouse here whose
+            # prod adapter matches dev's, and it is the reason it is worth
+            # having: portability to it is close to free.
+            "type": "duckdb",
+            # `path` is a *scratch* database, not the lake. dbt needs somewhere
+            # local for temporaries and for anything materialised outside the
+            # attached catalog; the data lives wherever DATA_PATH pointed when
+            # the lake was created. Defaulting to an in-memory file keeps a
+            # forgotten env var from silently writing a warehouse to a laptop.
+            "path": "{{ env_var('DUCKLAKE_SCRATCH', ':memory:') }}",
+            # `httpfs` is here because a DuckLake with a DATA_PATH in object
+            # storage cannot read its own parquet without it, and that failure
+            # surfaces at first query rather than at attach.
+            "extensions": ["ducklake", "httpfs"],
+            "attach": [{
+                "path": "{{ env_var('DUCKLAKE_CATALOG') }}",
+                "alias": "{{ env_var('DUCKLAKE_ALIAS', 'lake') }}",
+            }],
+            "threads": 8,
+        },
+        env=("DUCKLAKE_CATALOG",),
+        plugins=("duckdb-ops@platform",),
+        auth_note=(
+            "`DUCKLAKE_CATALOG` is the ATTACH string, and its prefix chooses the "
+            "catalog backend: `ducklake:catalog.ducklake` for a local file, "
+            "`ducklake:postgres:dbname=... host=...` for a shared Postgres "
+            "catalog, or `md:<name>` for a MotherDuck-hosted lake. A shared "
+            "catalog is what makes the lake multi-writer; a local file is a "
+            "single-writer lake wearing a lakehouse's clothes.\n\n"
+            "Object-storage credentials are DuckDB's, not dbt's: set them with a "
+            "`CREATE SECRET` in an on-run-start hook, or supply the standard "
+            "`AWS_*` variables for httpfs to pick up."
+        ),
+        caveats=(
+            ("The lake must exist before dbt attaches to it. `CREATE DATABASE "
+             "<name> (TYPE ducklake, DATA_PATH '<uri>')` is a one-time "
+             "operation someone runs against the catalog — dbt attaches, it "
+             "does not provision."),
+            ("A MotherDuck-hosted lake needs `is_ducklake: true` on the attach "
+             "entry so dbt applies DuckLake-safe DDL. The `ducklake:` prefix "
+             "carries that signal on its own for local and Postgres catalogs, "
+             "which is why it is not set here — an `md:` catalog is a "
+             "deliberate edit to this target."),
+            ("dbt-duckdb 1.9.6 or newer. Earlier versions parse `attach:` but "
+             "have no DuckLake awareness, so DDL that looks like it worked "
+             "leaves the catalog inconsistent."),
+        ),
+        # MotherDuck's DuckDB server, pointed at the same catalog string dbt
+        # attaches — one `DUCKLAKE_CATALOG`, so the lake an agent queries cannot
+        # drift from the lake the models build into.
+        #
+        # Read-only is the default and is left alone deliberately: this target is
+        # production. `--read-write` exists, and turning it on means an agent can
+        # DROP a production table with one tool call.
+        mcp={"ducklake": {
+            "command": "uvx",
+            "args": ["mcp-server-motherduck", "--db-path", "${DUCKLAKE_CATALOG}"],
+        }},
+        # No `om_type`: OpenMetadata has no DuckLake connector, and pointing it
+        # at the catalog database would catalogue DuckLake's own bookkeeping
+        # tables rather than the lake's. `pf.tools.openmetadata` already treats
+        # an empty connection as "no catalogue workflow" and reports it, so this
+        # degrades to a warehouse you can deploy to and must catalogue by other
+        # means — stated here rather than discovered from an empty catalogue.
     ),
 }
 
