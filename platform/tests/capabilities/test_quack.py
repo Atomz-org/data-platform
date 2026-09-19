@@ -46,6 +46,20 @@ def test_write_window_without_server_is_a_noop(tmp_path) -> None:
         pass
 
 
+def _ensure_or_skip(db):
+    """A live server, or a skip with the reason.
+
+    A sandboxed runner refuses the loopback socket the server binds, and a
+    timeout there is a fact about the runner, not about the wire protocol —
+    the same reason `test_housekeeping` skips when the ducklake extension
+    cannot load. #413 tracks giving CI a way to run these for real.
+    """
+    try:
+        return quack.ensure(db)
+    except (TimeoutError, RuntimeError, OSError) as exc:
+        pytest.skip(f"quack server could not start here: {exc}")
+
+
 @pytest.fixture
 def served(tmp_path):
     """A live quack server over a scratch database with one seeded table."""
@@ -54,14 +68,7 @@ def served(tmp_path):
     con = duckdb.connect(str(db))
     con.execute("CREATE TABLE seeded AS SELECT 42 AS answer")
     con.close()
-    try:
-        state = quack.ensure(db)
-    except (TimeoutError, RuntimeError, OSError) as exc:
-        # A sandboxed runner refuses the loopback socket the server binds, and a
-        # timeout there is a fact about the runner, not about the wire protocol.
-        # Same reason `test_housekeeping` skips when the ducklake extension
-        # cannot load. #413 tracks giving CI a way to run these for real.
-        pytest.skip(f"quack server could not start here: {exc}")
+    state = _ensure_or_skip(db)
     yield db, state
     quack.stop(db)
 
@@ -169,7 +176,7 @@ def test_custody_changes_are_recorded(tmp_path) -> None:
     db = root / "groups" / "g" / "projects" / "p" / "data" / "p.duckdb"
     db.parent.mkdir(parents=True)
 
-    quack.ensure(db)
+    _ensure_or_skip(db)
     with quack.write_window(db):
         pass
     quack.stop(db)
