@@ -59,7 +59,7 @@ ENV UV_LINK_MODE=copy \
 
 EXPOSE 3000
 
-COPY platform/scripts/dagster-entrypoint.sh /usr/local/bin/dagster-entrypoint
+COPY platform/entrypoints/dagster-entrypoint.sh /usr/local/bin/dagster-entrypoint
 RUN chmod +x /usr/local/bin/dagster-entrypoint
 
 ENTRYPOINT ["/usr/local/bin/dagster-entrypoint"]

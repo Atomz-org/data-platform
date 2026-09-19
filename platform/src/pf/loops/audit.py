@@ -70,7 +70,7 @@ def project_readiness(root: Path) -> list[ProjectReadiness]:
             out.append(ProjectReadiness(
                 group=g.name,
                 project=p.name,
-                hook=settings.exists() and "PreToolUse" in settings.read_text(),
+                hook=settings.exists() and "PreToolUse" in settings.read_text(encoding="utf-8"),
                 graph=(p / "kg" / "graph.duckdb").exists(),
                 card=(p / "kg" / "context_card.md").exists(),
                 claude_md=(p / "CLAUDE.md").exists(),
@@ -91,7 +91,7 @@ def _marketplace_resolves(root: Path) -> tuple[bool, str]:
     if not manifest.exists():
         return False, "platform/.claude-plugin/marketplace.json missing — no toolkit loads"
     try:
-        entries = (json.loads(manifest.read_text()) or {}).get("plugins") or []
+        entries = (json.loads(manifest.read_text(encoding="utf-8")) or {}).get("plugins") or []
     except json.JSONDecodeError as exc:
         return False, f"marketplace.json does not parse: {exc}"
     if not entries:
@@ -120,7 +120,7 @@ def _mcp_wired(root: Path, projects: list[ProjectReadiness]) -> tuple[bool, str]
     missing = []
     for p in projects:
         settings = root / "groups" / p.group / "projects" / p.project / ".claude" / "settings.json"
-        if not settings.exists() or "power-tools@platform" not in settings.read_text():
+        if not settings.exists() or "power-tools@platform" not in settings.read_text(encoding="utf-8"):
             missing.append(f"{p.group}/{p.project}")
     if missing:
         return False, f"not enabled in {len(missing)} project(s): {', '.join(missing[:3])}"
@@ -137,7 +137,7 @@ def audit(root: Path) -> tuple[int, list[Check]]:
 
     # -- governance --------------------------------------------------------
     gate = root / "gate.yaml"
-    policy = yaml.safe_load(gate.read_text()) if gate.exists() else {}
+    policy = yaml.safe_load(gate.read_text(encoding="utf-8")) if gate.exists() else {}
     add("gate.yaml present", 10, gate.exists(), str(gate.relative_to(root)) if gate.exists() else "missing")
     add("denylist populated", 10, len(policy.get("denylist") or []) >= 5,
         f"{len(policy.get('denylist') or [])} patterns")
@@ -157,7 +157,7 @@ def audit(root: Path) -> tuple[int, list[Check]]:
     n = len(projects)
 
     settings = root / ".claude" / "settings.json"
-    root_hook = settings.exists() and "PreToolUse" in settings.read_text()
+    root_hook = settings.exists() and "PreToolUse" in settings.read_text(encoding="utf-8")
     hooked = [p for p in projects if p.hook]
     add("PreToolUse hook wired", 10, root_hook and len(hooked) == n,
         f"root + {len(hooked)}/{n} project(s)" if root_hook

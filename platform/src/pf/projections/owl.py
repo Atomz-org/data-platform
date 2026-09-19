@@ -134,7 +134,7 @@ def _inverse_id(name: str) -> str:
 def export(out: str | Path, onto: Ontology | None = None) -> Path:
     path = Path(out)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(to_rdf_xml(onto))
+    path.write_text(to_rdf_xml(onto), encoding="utf-8")
     return path
 
 

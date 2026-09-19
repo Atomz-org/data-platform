@@ -1,1 +1,9 @@
-{ "name": "dlt-quality", "version": "0.1.0", "description": "Platform toolkit: dlt-quality" }
+{
+  "name": "dlt-quality",
+  "version": "0.1.0",
+  "description": "Platform toolkit: dlt-quality",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

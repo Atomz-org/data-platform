@@ -5,13 +5,18 @@ CI sweeper, dependency sweeper). A data platform's loops watch different things:
 freshness, schema drift, metric coverage, index staleness. The *shape* is theirs —
 cadence, autonomy level, token budget, escalation — the subjects are ours.
 
-Every loop here is L1 (report-only) or L2 (patches inside the gate). Nothing is
-L3, because nothing has a track record yet. That ordering is the point.
+Every loop here is *born* L1 (report-only) or L2 (patches inside the gate). The
+level a loop runs at is the one it has *earned* — `pf.loops.levels` reads the
+ledger — and nothing has earned L3 yet. That ordering is the point.
+
+Tools contribute loops too (`Tool.loops`); `all_loops()` is the merged view every
+consumer should read. `SPECS`/`BODIES` are the registry's own.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from pf.loops.runner import LoopRun, LoopSpec
 
@@ -41,12 +46,6 @@ SPECS: dict[str, LoopSpec] = {
         description="Report the blast radius of every uncommitted model/source change.",
         autonomy="L1", cadence="pre-commit", token_budget=0, writes=False,
     ),
-    "dashboard-coverage": LoopSpec(
-        name="dashboard-coverage",
-        description="Score the reporting layer; find metrics no page shows and pages "
-                    "referencing metrics that do not exist.",
-        autonomy="L1", cadence="daily", token_budget=0, writes=False,
-    ),
     "pii-audit": LoopSpec(
         name="pii-audit",
         description="Flag PII columns that reach a mart without a masking policy.",
@@ -57,6 +56,19 @@ SPECS: dict[str, LoopSpec] = {
         description="Report vendored upstreams that moved, and which of our files "
                     "each movement implicates.",
         autonomy="L1", cadence="weekly", token_budget=0, writes=False,
+    ),
+    "observability-triage": LoopSpec(
+        name="observability-triage",
+        description="Read Elementary's recorded test history; report what is "
+                    "failing or anomalous, with how often — recurrence is the "
+                    "difference between an incident and a broken test.",
+        autonomy="L1", cadence="every 6h", token_budget=12_000, writes=False,
+    ),
+    "expectations-refresher": LoopSpec(
+        name="expectations-refresher",
+        description="Regenerate the ontology-derived expectations floor when the "
+                    "knowledge graph has moved past it.",
+        autonomy="L2", cadence="on graph change", token_budget=0, writes=True,
     ),
 }
 
@@ -113,7 +125,70 @@ def test_failure_triage(root: Path, group: str, project: str, run: LoopRun) -> l
     if d is None:
         return raw
     prefix = "ESCALATE" if d.escalate else d.confidence.upper()
-    return [f"[{prefix}] root_cause={d.root_cause}: {d.summary} → {d.suggested_fix}"]
+    finding = f"[{prefix}] root_cause={d.root_cause}: {d.summary} → {d.suggested_fix}"
+
+    # Closing the loop. Only when the diagnosis is one a file in this repo can
+    # fix, the model is sure, and nobody said a human must decide first. The
+    # proposal is queued on the run; the runner executes it at the level the
+    # loop has *earned* — recorded at L1, a reviewed PR at L2, never a merge.
+    if (d.escalate or d.confidence != "high"
+            or d.root_cause not in ("model_logic", "test_too_strict")):
+        return [finding]
+    target = _fix_target(pdir, failures[0], d.root_cause)
+    if target is None:
+        return [finding + " (no file to patch: not in manifest)"]
+    rel, current = target
+    from pf.agents import draft_fix
+    from pf.loops.actions import Proposal
+    try:
+        patch = draft_fix(root, group, project, diagnosis=d, rel_path=rel,
+                          current=current, lineage=lineage)
+    except NoCredentials:
+        return [finding]
+    if patch is None or not patch.safe or patch.path != rel:
+        why = "drafter declined" if patch is None or not patch.safe else "path mismatch"
+        return [finding + f" (no proposal: {why})"]
+    if patch.content == current:
+        return [finding + " (no proposal: drafter returned the file unchanged)"]
+    run.propose(Proposal(loop="test-failure-triage", title=patch.title,
+                         rationale=patch.rationale, files={rel: patch.content},
+                         finding=finding, confidence=d.confidence,
+                         labels=("loop", "test-failure-triage", d.root_cause)))
+    return [finding + f" → proposed: {patch.title}"]
+
+
+def _fix_target(pdir: Path, failure: dict, root_cause: str) -> tuple[str, str] | None:
+    """The one file a diagnosis points at, and its current contents.
+
+    `test_too_strict` edits the file the test is declared in. `model_logic`
+    edits the model the test is attached to. Resolved from the manifest rather
+    than guessed from a name, so a renamed model is a miss rather than a patch
+    to the wrong file.
+    """
+    import json as _json
+
+    manifest = pdir / "transform" / "target" / "manifest.json"
+    if not manifest.exists():
+        return None
+    nodes = (_json.loads(manifest.read_text(encoding="utf-8")) or {}).get("nodes") or {}
+    node = nodes.get(failure.get("unique_id") or "")
+    if not node:
+        return None
+    if root_cause == "model_logic" and node.get("resource_type") == "test":
+        attached = node.get("attached_node") or next(
+            (n for n in (node.get("depends_on") or {}).get("nodes", [])
+             if n.startswith("model.")), "")
+        node = nodes.get(attached) or {}
+        if not node:
+            return None
+    ofp = node.get("original_file_path")
+    if not ofp:
+        return None
+    rel = str(Path("transform") / ofp).replace("\\", "/")
+    f = pdir / rel
+    if not f.exists():
+        return None
+    return rel, f.read_text(encoding="utf-8")
 
 
 def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
@@ -129,6 +204,17 @@ def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> 
             for e in g.in_edges(metric.id):
                 covered.add(e.src)
     gaps = [m for m in marts if m.id not in covered]
+    # A finding per mart is right at ten gaps and unreadable at a thousand —
+    # jaffle-shop's imported marts produced 993 lines and buried every other
+    # loop's findings. Past a screenful, the report aggregates: the count is
+    # the finding, the names are a sample, and the full list stays queryable
+    # in the graph rather than pasted into STATE.md.
+    if len(gaps) > 15:
+        sample = ", ".join(m.name for m in gaps[:8])
+        raw = [f"{len(gaps)} of {len(marts)} marts have no metric coverage "
+               f"(e.g. {sample}, …) — start with the marts a dashboard reads; "
+               f"`kg_search` lists the rest"]
+        return raw
     raw = [f"mart `{m.name}` (grain: {m.props.get('grain', '?')}) has no metric "
            f"measuring it — every question about it falls back to raw SQL"
            for m in gaps]
@@ -217,19 +303,6 @@ def pii_audit(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
             f"explicit waiver" for c in sorted(set(leaked))]
 
 
-def dashboard_coverage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
-    from pf.projections.report_audit import audit as audit_report
-
-    pdir = root / "groups" / group / "projects" / project
-    if not (pdir / "reporting").exists():
-        return []
-    score, findings = audit_report(pdir)
-    out = [str(f) for f in findings if f.severity in ("error", "warning")]
-    if score < 90:
-        out.insert(0, f"report score {score}/100 — run the dashboard-loop skill")
-    return out
-
-
 def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
     """Upstream movement, translated into files a person should re-read.
 
@@ -260,9 +333,111 @@ def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str
     return out
 
 
+def observability_triage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    """What Elementary's history says is wrong, weighted by recurrence.
+
+    Reads `main_elementary.elementary_test_results` — every framework's tests
+    land there (dbt's own, dbt-expectations, the generated floor, anomaly
+    monitors) — rather than the one run_results.json that happened to survive.
+    The deterministic findings are the fallback; with credentials the existing
+    triage agent classifies them, exactly as `test-failure-triage` does for a
+    single run.
+    """
+    import duckdb
+
+    from pf.runtime.warehouse import Warehouse
+
+    pdir = root / "groups" / group / "projects" / project
+    wh = Warehouse.for_project(pdir, group, project)
+    if not Path(wh.path).exists():
+        return []
+    try:
+        con = duckdb.connect(str(wh.path), read_only=True)
+    except duckdb.Error:
+        return []  # a sister holds the write lock — report nothing, not an error
+    try:
+        if not con.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = "
+                "'main_elementary' AND table_name = 'elementary_test_results' "
+                "LIMIT 1").fetchone():
+            return [f"elementary tables missing — `pf tool elementary run {group} {project}`"]
+        rows = con.execute("""
+            WITH latest AS (
+                SELECT test_unique_id, table_name, column_name, test_name,
+                       status, test_results_description, detected_at,
+                       row_number() OVER (PARTITION BY test_unique_id
+                                          ORDER BY detected_at DESC) AS rn
+                FROM main_elementary.elementary_test_results
+            ), history AS (
+                SELECT test_unique_id,
+                       count(*) FILTER (WHERE status <> 'pass') AS bad_runs,
+                       count(*) AS runs
+                FROM main_elementary.elementary_test_results GROUP BY 1
+            )
+            SELECT l.table_name, l.column_name, l.test_name, l.status,
+                   l.test_results_description, h.bad_runs, h.runs
+            FROM latest l JOIN history h USING (test_unique_id)
+            WHERE l.rn = 1 AND l.status <> 'pass'
+            ORDER BY h.bad_runs DESC LIMIT 20""").fetchall()
+    except duckdb.Error as exc:
+        return [f"could not read elementary history: {exc}"[:200]]
+    finally:
+        con.close()
+
+    raw = [f"{t or '?'}{'.' + c if c else ''} [{n}] {s} "
+           f"({bad}/{total} runs bad): {(d or '')[:120]}"
+           for t, c, n, s, d, bad, total in rows]
+    if not raw:
+        return []
+
+    from pf.agents import NoCredentials, have_credentials, triage_failures
+    if not have_credentials():
+        return raw
+    failures = [{"unique_id": f"{t or '?'}.{n}", "status": s,
+                 "message": f"{bad}/{total} runs bad — {(d or '')[:160]}"}
+                for t, c, n, s, d, bad, total in rows]
+    try:
+        verdict = triage_failures(root, group, project, failures, "")
+    except NoCredentials:
+        return raw
+    if verdict is None:
+        return raw
+    prefix = "ESCALATE" if verdict.escalate else verdict.confidence.upper()
+    return [(f"[{prefix}] root_cause={verdict.root_cause}: {verdict.summary} "
+            f"→ {verdict.suggested_fix}")]
+
+
+def expectations_refresher(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
+    """Keep the generated quality floor caught up with the graph.
+
+    The mirror of `index-refresher`, one derivation later: the graph is rebuilt
+    from the manifest, and the expectations floor is derived from the graph, so
+    a graph newer than the newest generated test means annotations moved and
+    the floor may be stale. `write_tests` is already idempotent and
+    marker-scoped, so re-deriving over an up-to-date floor writes nothing.
+    """
+    from pf.tools import expectations as ex
+
+    pdir = root / "groups" / group / "projects" / project
+    graph = pdir / "kg" / "graph.duckdb"
+    if not graph.exists():
+        return []
+    tdir = ex.tests_dir(pdir)
+    newest = max((f.stat().st_mtime for f in tdir.glob("*.sql")), default=0.0) \
+        if tdir.exists() else 0.0
+    if newest >= graph.stat().st_mtime:
+        return []
+    written, unchanged, removed = ex.write_tests(pdir)
+    if not (written or removed):
+        return []
+    return [(f"expectations floor refreshed: {written} written, {removed} stale "
+            f"removed ({unchanged} unchanged) — runs on the next `pf seed`")]
+
+
 BODIES = {
-    "dashboard-coverage": dashboard_coverage,
     "vendor-drift": vendor_drift,
+    "observability-triage": observability_triage,
+    "expectations-refresher": expectations_refresher,
     "freshness-triage": freshness_triage,
     "test-failure-triage": test_failure_triage,
     "metric-gap-harvester": metric_gap_harvester,
@@ -270,3 +445,38 @@ BODIES = {
     "impact-sentinel": impact_sentinel,
     "pii-audit": pii_audit,
 }
+
+
+# ------------------------------------------------------------ the seam ----
+def all_loops() -> dict[str, tuple[LoopSpec, Any]]:
+    """Registry loops plus every installed tool's. One place to ask.
+
+    A tool's loop is listed, run, budgeted and promoted exactly like one
+    declared here; the only difference is who owns it. A registry name wins a
+    collision, and the collision is reported by `pf loop audit` rather than
+    silently shadowed.
+    """
+    out: dict[str, tuple[LoopSpec, Any]] = {n: (SPECS[n], BODIES[n]) for n in SPECS}
+    try:
+        from pf.tools import all_tools
+        tools = all_tools()
+    except Exception:  # noqa: BLE001 — a broken plugin must not hide the registry
+        return out
+    for tool in tools.values():
+        if not tool.loops or (tool.missing() and not tool.offline):
+            continue
+        try:
+            contributed = tool.hook("loops")() or {}
+        except Exception:  # noqa: BLE001
+            continue
+        for name, pair in contributed.items():
+            out.setdefault(name, pair)
+    return out
+
+
+def all_specs() -> dict[str, LoopSpec]:
+    return {n: s for n, (s, _) in all_loops().items()}
+
+
+def all_bodies() -> dict[str, Any]:
+    return {n: b for n, (_, b) in all_loops().items()}

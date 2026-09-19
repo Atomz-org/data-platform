@@ -1,3 +1,0 @@
--- source extract for rpt_referral_viral_coefficient (PII columns excluded by the MDL projection)
-select total_referrers, total_referees, total_referrals, converted_referrals, avg_referrals_per_referrer, avg_successful_referrals_per_referrer, viral_coefficient, virality_tier, status_conversion_rate, purchase_conversion_rate, total_referee_revenue, total_rewards_paid, referral_program_roi, max_referrals_by_single_user, super_referrer_count, avg_referrer_conversion_rate
-from main_marts.rpt_referral_viral_coefficient

@@ -17,8 +17,10 @@ the credentials, the adapter package, and any prose the shared README cannot
 know. `capability()` builds the rest, identically every time. Adding ClickHouse
 is one `ProductionWarehouse` entry and no other edit.
 
-Exactly one is default-enabled — Snowflake, because that is where this
-platform's production runs. The others are `pf new-project --with bigquery` or
+Exactly one is default-enabled — DuckLake, because production on this platform
+is the same engine and dialect as development: the laptop build and the prod
+build differ by where the catalog and the parquet live, not by warehouse
+account. The others are `pf new-project --with bigquery` or
 `pf capability-add redshift <group> <project>`, and switching an existing
 project is the same command: `prod` is replaced in place and the DuckDB targets
 beside it are not touched.
@@ -69,6 +71,16 @@ class ProductionWarehouse:
     default_enabled: bool = False
     #: Anything an operator has to know that is neither credentials nor auth.
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    #: MCP server definition(s) for querying this warehouse directly, merged into
+    #: the project's `.mcp.json` by `capability()`. Declared beside the dbt target
+    #: for the same reason `om_connection` is: the engine dbt writes to and the
+    #: engine an agent reads from must be the same engine, and two definitions in
+    #: two files is how they end up not being.
+    #:
+    #: Credentials here are **not** added to `env`. That tuple is what `pf doctor`
+    #: demands before `DBT_TARGET=prod` will connect, and a missing MCP token must
+    #: not read as a broken warehouse — the models still build without it.
+    mcp: dict[str, object] = field(default_factory=dict)
     #: OpenMetadata's connection `type` for this engine, and the config it
     #: expects. Declared beside the dbt target on purpose: a warehouse the
     #: platform can deploy to but not catalogue is half a warehouse, and keeping
@@ -110,7 +122,17 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "`SNOWFLAKE_PRIVATE_KEY_PATH`. Set `SNOWFLAKE_PASSWORD` instead only "
             "if key-pair is not available to you; dbt uses whichever is present."
         ),
-        default_enabled=True,
+        # Snowflake's own MCP server is a *hosted* endpoint, not a local process:
+        # you create an MCP server object in a database/schema and reach it over
+        # HTTP with OAuth. So this is a `url`, not a `command` — and it is the one
+        # warehouse here an agent cannot reach without server-side setup first.
+        mcp={"snowflake": {
+            "url": "${SNOWFLAKE_MCP_URL}",
+            "auth": {
+                "CLIENT_ID": "${SNOWFLAKE_MCP_CLIENT_ID}",
+                "CLIENT_SECRET": "${SNOWFLAKE_MCP_CLIENT_SECRET}",
+            },
+        }},
         om_type="Snowflake",
         om_connection={
             "type": "Snowflake",
@@ -147,10 +169,21 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "convenient locally, unavailable to an unattended run."
         ),
         caveats=(
-            ("BigQuery has no `database`; `project` and `dataset` fill those "
-             "roles, so a model that hardcodes a three-part name will not "
-             "compile here."),
+            (
+                "BigQuery has no `database`; `project` and `dataset` fill those "
+                "roles, so a model that hardcodes a three-part name will not "
+                "compile here."
+            ),
         ),
+        # Google's MCP Toolbox, run through npx so nothing has to be installed
+        # first. `--prebuilt bigquery` is their maintained toolset; the alternative
+        # is downloading the `toolbox` binary and pinning it per platform, which
+        # is a second install path to keep current for no extra capability.
+        mcp={"bigquery": {
+            "command": "npx",
+            "args": ["-y", "@toolbox-sdk/server", "--prebuilt", "bigquery", "--stdio"],
+            "env": {"BIGQUERY_PROJECT": "${BIGQUERY_PROJECT}"},
+        }},
         om_type="BigQuery",
         om_connection={
             "type": "BigQuery",
@@ -183,9 +216,11 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "run authenticates *as*."
         ),
         caveats=(
-            ("Redshift is case-insensitive and folds identifiers to lower case; "
-             "a model relying on a quoted mixed-case column will resolve "
-             "differently here than on DuckDB."),
+            (
+                "Redshift is case-insensitive and folds identifiers to lower case; "
+                "a model relying on a quoted mixed-case column will resolve "
+                "differently here than on DuckDB."
+            ),
         ),
         om_type="Redshift",
         om_connection={
@@ -195,6 +230,215 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "password": "${REDSHIFT_PASSWORD}",
             "database": "${REDSHIFT_DATABASE}",
         },
+    ),
+    "postgres": ProductionWarehouse(
+        name="postgres",
+        title="PostgreSQL",
+        adapter="dbt-postgres",
+        output={
+            "type": "postgres",
+            "host": "{{ env_var('POSTGRES_HOST') }}",
+            "port": "{{ env_var('POSTGRES_PORT', '5432') | int }}",
+            "user": "{{ env_var('POSTGRES_USER') }}",
+            "password": "{{ env_var('POSTGRES_PASSWORD', '') }}",
+            "dbname": "{{ env_var('POSTGRES_DATABASE') }}",
+            "schema": "{{ env_var('POSTGRES_SCHEMA', 'analytics') }}",
+            # `prefer` connects plain locally and TLS where offered; managed
+            # providers (Neon, RDS) want an explicit `require`.
+            "sslmode": "{{ env_var('POSTGRES_SSLMODE', 'prefer') }}",
+            "threads": 8,
+        },
+        env=("POSTGRES_HOST", "POSTGRES_USER", "POSTGRES_DATABASE"),
+        auth_note=(
+            "Password auth via `POSTGRES_PASSWORD`; leaving it unset uses "
+            "whatever libpq can do without one (peer auth locally, `.pgpass`). "
+            "Against a managed provider also set `POSTGRES_SSLMODE=require`."
+        ),
+        caveats=(
+            (
+                "Postgres is an OLTP engine serving OLAP here. It is the "
+                "right-sized production target up to tens of GB of marts; beyond "
+                "that, vacuum pressure and sequential scans become the pipeline's "
+                "problem and a columnar target earns its keep."
+            ),
+            (
+                "Unquoted identifiers fold to lower case, like Redshift — a model "
+                "relying on a quoted mixed-case column resolves differently here "
+                "than on DuckDB."
+            ),
+            (
+                "The whole quality stack runs natively on this target: "
+                "dbt-expectations and the Elementary package both list Postgres "
+                "support, and the `edr` CLI ships a `postgres` extra."
+            ),
+        ),
+        om_type="Postgres",
+        om_connection={
+            "type": "Postgres",
+            "hostPort": "${POSTGRES_HOST}:${POSTGRES_PORT}",
+            "username": "${POSTGRES_USER}",
+            "authType": {"password": "${POSTGRES_PASSWORD}"},
+            "database": "${POSTGRES_DATABASE}",
+        },
+    ),
+    "ducklake": ProductionWarehouse(
+        name="ducklake",
+        title="DuckLake",
+        adapter="dbt-duckdb",
+        output={
+            "type": "duckdb",
+            # DuckDB opens a DuckLake catalog directly from a `ducklake:` path:
+            # a metadata catalog (file or server) plus parquet data files. The
+            # value is the *metadata* location — a `.ducklake` file for a
+            # single-writer lake, or `postgres:dbname=... host=...` for a
+            # multi-writer one. Where the parquet lands (DATA_PATH) is stored
+            # in the metadata when the lake is first created, so it is not
+            # repeated here — see the generated docs.
+            "path": "ducklake:{{ env_var('DUCKLAKE_METADATA') }}",
+            "schema": "{{ env_var('DUCKLAKE_SCHEMA', 'analytics') }}",
+            # A literal string, not a list, so it renders as flow YAML the same
+            # way the dev target writes it. httpfs rides along for lakes whose
+            # DATA_PATH is object storage.
+            "extensions": "[ducklake, httpfs]",
+            # One thread is the correct default, not a timid one. Every dbt
+            # model is DDL, DuckLake runs each cursor as its own catalog
+            # transaction, and a file-backed catalog resolves concurrent DDL by
+            # failing one side — measured here as 3–9 models flaking per
+            # 35-model build at dbt's usual 8 threads, and 35/35 green at one.
+            # A Postgres-backed catalog serializes properly; raise the var
+            # there, not in this file.
+            "threads": "{{ env_var('DUCKLAKE_THREADS', '1') | int }}",
+        },
+        env=("DUCKLAKE_METADATA",),
+        plugins=("duckdb-ops@platform",),
+        default_enabled=True,
+        auth_note=(
+            "`DUCKLAKE_METADATA` is the catalog: a path like "
+            "`/lake/analytics.ducklake` (single writer), or a connection string "
+            "like `postgres:dbname=lake host=...` (concurrent writers; DuckDB "
+            "autoloads the postgres extension). Object-storage DATA_PATHs "
+            "authenticate through DuckDB secrets or the standard AWS/GCS "
+            "environment variables via httpfs — never a literal here."
+        ),
+        caveats=(
+            (
+                "Same engine and dialect as dev, so the `pf align` dialect gate "
+                "passes by construction — this is the one production target with "
+                "zero portability distance from the laptop build."
+            ),
+            (
+                "The parquet DATA_PATH is fixed when the lake is first created "
+                "(`ATTACH 'ducklake:...' (DATA_PATH 's3://...')`, once, by an "
+                "operator). Connecting afterwards reads it from the metadata; "
+                "moving it is a data migration, not a config change. With no "
+                "DATA_PATH given, files land in `<metadata>.files/` beside the "
+                "catalog."
+            ),
+            (
+                "A `.ducklake` file catalog resolves concurrent DDL by failing "
+                "one side, and every dbt model is DDL — so `threads` defaults to "
+                "1 and the build is serial. With the metadata in Postgres, set "
+                "`DUCKLAKE_THREADS` up; with a file catalog, leave it."
+            ),
+            (
+                "OpenMetadata has no DuckLake connector yet, so this target is "
+                "not catalogued; `om_type` is empty on purpose."
+            ),
+        ),
+        # MotherDuck's DuckDB server, pointed at the same catalog dbt opens — one
+        # `DUCKLAKE_METADATA`, so the lake an agent queries cannot drift from the
+        # lake the models build into.
+        #
+        # Read-only is the default and is left alone deliberately: this target is
+        # production. `--read-write` exists, and turning it on means an agent can
+        # DROP a production table with one tool call.
+        mcp={"ducklake": {
+            "command": "uvx",
+            "args": ["mcp-server-motherduck", "--db-path", "ducklake:${DUCKLAKE_METADATA}"],
+        }},
+    ),
+    "iceberg": ProductionWarehouse(
+        name="iceberg",
+        title="Apache Iceberg on Cloudflare R2",
+        adapter="dbt-duckdb",
+        output={
+            "type": "duckdb",
+            # Scratch only — every model lands in the attached Iceberg catalog;
+            # this is where seeds and run-scoped state live. Deliberately NOT
+            # `PF_DUCKDB_PATH`: bootstrap detects the scaffold placeholder by
+            # that path, and reusing it here would get an Iceberg project
+            # silently retrofitted back onto the default warehouse — the exact
+            # regression DuckLake hit via `type == "duckdb"`.
+            "path": "{{ env_var('PF_ICEBERG_SCRATCH', ':memory:') }}",
+            "extensions": "[iceberg, httpfs]",
+            # DuckDB's `iceberg` secret is the bearer token the REST catalog
+            # expects; the data files under the tables are reached through the
+            # catalog's credential vending, so no S3-style keys appear here.
+            "secrets": [
+                {
+                    "type": "iceberg",
+                    "token": "{{ env_var('R2_CATALOG_TOKEN') }}",
+                },
+            ],
+            # Renders as `ATTACH '<warehouse>' (TYPE iceberg, ENDPOINT ...)`.
+            # Both values are printed on the bucket's Data Catalog page:
+            # warehouse `<account_id>_<bucket>`, endpoint
+            # `https://catalog.cloudflarestorage.com/<account_id>/<bucket>`.
+            "attach": [
+                {
+                    "path": "{{ env_var('R2_CATALOG_WAREHOUSE') }}",
+                    "alias": "lake",
+                    "options": {
+                        "type": "iceberg",
+                        "endpoint": "{{ env_var('R2_CATALOG_ENDPOINT') }}",
+                    },
+                },
+            ],
+            # Build into the attached catalog, never the scratch database.
+            "database": "lake",
+            "schema": "{{ env_var('R2_CATALOG_NAMESPACE', 'analytics') }}",
+            # Every model is one optimistic-concurrency commit against the REST
+            # catalog; commits to *different* tables never conflict, so dbt's
+            # parallelism is safe — kept below the in-warehouse engines' 8
+            # because each commit is also an HTTP round-trip.
+            "threads": "{{ env_var('R2_ICEBERG_THREADS', '4') | int }}",
+        },
+        env=("R2_CATALOG_WAREHOUSE", "R2_CATALOG_ENDPOINT", "R2_CATALOG_TOKEN"),
+        auth_note=(
+            "`R2_CATALOG_TOKEN` is a Cloudflare R2 API token with Data Catalog "
+            "read/write and Object read/write on the bucket. DuckDB presents it "
+            "to the REST catalog as a bearer token via the `iceberg` secret; "
+            "reads and writes of the data files under the tables ride the "
+            "catalog's credential vending, so it is the only credential."
+        ),
+        caveats=(
+            (
+                "Same engine and dialect as dev, so the `pf align` dialect gate "
+                "passes by construction, exactly as with DuckLake. What changes is "
+                "the table format: every model becomes an Iceberg table with "
+                "snapshot history, readable in place by any Iceberg engine — and "
+                "R2 charges no egress, so that external read is free."
+            ),
+            (
+                "Writes need the `iceberg` extension of DuckDB ≥ 1.4 and cover "
+                "CREATE, CREATE OR REPLACE and INSERT — table materialisations "
+                "and `append` incrementals. UPDATE/DELETE/MERGE are not there "
+                "yet, so `merge` and `delete+insert` incremental models must "
+                "switch strategy before this target builds them."
+            ),
+            ("dbt schemas map to catalog namespaces (`analytics`, `analytics_staging`, …), created on first build."),
+            (
+                "Enable managed compaction on the catalog: a dbt rebuild is many "
+                "small commits, and compaction is what keeps scan performance "
+                "flat. Old snapshots are retained per the catalog's policy — a "
+                "rebuild is time-travelable, not free."
+            ),
+            (
+                "OpenMetadata has an Iceberg REST connector, but the payload is "
+                "not wired here until it is verified against the vendored schema "
+                "— `om_type` is empty on purpose, like DuckLake's."
+            ),
+        ),
     ),
     "clickhouse": ProductionWarehouse(
         name="clickhouse",
@@ -220,12 +464,24 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "`CLICKHOUSE_USER` once you have real roles."
         ),
         caveats=(
-            ("dbt-clickhouse has no `merge` incremental strategy; models using "
-             "it must move to `delete+insert` or `append` before this target "
-             "will build."),
-            ("ClickHouse calls a schema a database. `schema:` above is the "
-             "ClickHouse database, which is why there is no separate "
-             "`database` key."),
+            (
+                "dbt-clickhouse has no `merge` incremental strategy; models using "
+                "it must move to `delete+insert` or `append` before this target "
+                "will build."
+            ),
+            (
+                "ClickHouse calls a schema a database. `schema:` above is the "
+                "ClickHouse database, which is why there is no separate "
+                "`database` key."
+            ),
+            (
+                "Quality stack, honestly: the Elementary package and `edr` CLI "
+                "both ship ClickHouse support (extra `clickhouse`), but "
+                "dbt-expectations depends on dbt_date, which does not declare "
+                "this adapter — the generated floor (row counts, uniqueness, "
+                "not-null) is dialect-safe, while date-windowed expectations "
+                "added by hand may error at runtime here."
+            ),
         ),
         om_type="Clickhouse",
         om_connection={

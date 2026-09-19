@@ -13,6 +13,11 @@ test-paths: ["tests"]
 target-path: "target"
 
 models:
+  # Elementary's observability models (run results, test history, schema
+  # snapshots), written by the package's on-run-end hooks on every dbt build.
+  # The schema keeps them out of the marts. Managed by `pf tool elementary`.
+  elementary:
+    +schema: elementary
   zenith_de:
     staging:
       +materialized: view
