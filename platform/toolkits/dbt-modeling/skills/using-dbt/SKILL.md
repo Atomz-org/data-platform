@@ -2,6 +2,7 @@
 name: using-dbt
 description: Build, modify and debug dbt models. The default analytics-engineering skill.
 ---
+<!-- Adapted from dbt-labs/dbt-agent-skills (vendor/dbt-agent-skills, Apache-2.0) — see registry.yaml. -->
 # Using dbt
 
 **Layer boundaries — enforced in review, and agents blur them constantly.**

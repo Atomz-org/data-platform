@@ -8,10 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+import click
 import typer
 import yaml
 from rich.console import Console
 from rich.table import Table
+from typer.core import TyperGroup
 
 from pf import obs
 from pf.agents.base import AGENTS, validate_routing
@@ -48,7 +50,7 @@ from pf.kg.query import kg_neighbors, kg_search
 from pf.loops.audit import audit as loop_audit
 from pf.loops.audit import project_readiness, recommended_level
 from pf.loops.gate import GateResult, check_paths, nodes_for, project_for, tracked_denied
-from pf.loops.registry import BODIES, SPECS
+from pf.loops.registry import all_bodies, all_specs
 from pf.loops.runner import Ledger, run_loop, update_state
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
@@ -61,6 +63,46 @@ app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.
 kg_app = typer.Typer(help="Knowledge graph operations.")
 app.add_typer(kg_app, name="kg")
 console = Console()
+
+
+@app.callback()
+def _bootstrap_commit_gate() -> None:
+    """Runs before every command. Installs the commit gate if its slot is empty.
+
+    The gate is enforced only by `.git/hooks/pre-commit`, and a git hook cannot
+    be committed — so every clone starts ungated and stays that way until
+    somebody runs a setup step. `pf check` reporting the gap only helps the
+    person who runs `pf check`; the person who does not is exactly the one
+    committing 21 files unchecked.
+
+    So it self-heals here instead. Anyone doing real work in this repo runs some
+    `pf` command long before their first commit, which makes this the widest net
+    git actually permits. It is not total — a clone where nobody ever runs `pf`
+    is still ungated, and no amount of code fixes that.
+
+    Deliberately quiet and unfailable:
+
+      * it only ever fills an *empty* slot. `install_hook` refuses a hook it did
+        not write, so someone's own pre-commit script is never touched, and the
+        refusal is not reported here — nagging on every command trains people to
+        ignore output. `pf check` is where that surfaces.
+      * the notice goes to stderr, once, on the run that installs. A line on
+        stdout would corrupt piped output like `pf pr report --markdown`.
+      * every failure is swallowed. Not being able to install a hook must never
+        stop the command the user actually asked for.
+
+    `PF_NO_HOOK_INSTALL=1` opts out.
+    """
+    if os.environ.get("PF_NO_HOOK_INSTALL"):
+        return
+    try:
+        from pf.loops.gate import install_hook
+
+        changed, detail = install_hook(root())
+        if changed:
+            print(f"· commit gate installed — {detail}", file=sys.stderr)
+    except Exception:  # noqa: BLE001 — never block the real command
+        pass
 
 # A tool's scaffold-time half *is* a capability, so it is merged into the same
 # registry `pf new-project --with` and `pf capability-add` read. One scaffolder,
@@ -121,6 +163,7 @@ def cmd_new_project(
                                                  "(see `pf capabilities`)"),
     without: str = typer.Option("", "--without", help="comma-separated default "
                                                       "capabilities to skip"),
+    plan: bool = typer.Option(False, "--plan", help="resolve and report, write nothing"),
 ) -> None:
     """Create a project (one legal entity) inside a group.
 
@@ -136,12 +179,25 @@ def cmd_new_project(
     # while the eighth had one. Opting out stays possible and stays explicit.
     skip = {c.strip() for c in without.split(",") if c.strip()}
     names = [n for n in capability_defaults() if n not in skip]
-    names += [c.strip() for c in with_.split(",")
-              if c.strip() and c.strip() not in names]
+    names += [c.strip() for c in with_.split(",") if c.strip() and c.strip() not in names]
     try:
         caps = resolve_capabilities(names)
     except (UnknownCapability, ValueError) as exc:
         console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
+    # Plan before apply. Scaffolding is cheap to run and expensive to run wrong:
+    # `pf bootstrap` backfills what is missing but never removes what should not
+    # have been added, so the capability set is decided here or corrected by hand.
+    from pf.scaffold import plan as planner
+
+    resolved = planner.build(root(), group, project, caps, is_rollup=rollup)
+    if plan:
+        console.print(planner.render(resolved))
+        raise typer.Exit(0 if resolved.ok else 1)
+    if not resolved.ok:
+        console.print(planner.render(resolved))
+        console.print("\n[red]refusing to scaffold[/] — resolve the blocker(s) above")
         raise typer.Exit(1)
 
     files = new_project(root(), group, project, is_rollup=rollup, sisters=sister_list)
@@ -151,8 +207,7 @@ def cmd_new_project(
     ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
     for cap in caps:
         written = apply_capability(cap, root(), d, ctx)
-        console.print(f"  [green]+[/] capability [bold]{cap.name}[/] "
-                      f"({len(written)} file(s))")
+        console.print(f"  [green]+[/] capability [bold]{cap.name}[/] ({len(written)} file(s))")
     if caps:
         _merge_gate_rules(gate_additions(caps))
 
@@ -165,7 +220,23 @@ def cmd_new_project(
         console.print(f"  [dim]capabilities: {', '.join(c.name for c in caps)}[/]")
     for cap, missing in missing_env(caps).items():
         console.print(f"  [yellow]![/] {cap} needs unset env: {', '.join(missing)}")
-    console.print(f"  next: [cyan]pf seed {group} {project}[/] · [cyan]pf loop audit[/]")
+
+    # What to do next, named as commands rather than described. An agent that
+    # has to work out its own next step explores the project it just created —
+    # which is the most expensive possible way to learn something the scaffolder
+    # already knew.
+    console.print()
+    steps = [
+        (f"pf seed {group} {project}", "load data, build dbt, refresh the graph"),
+        ("/quick-start", "source → annotations → mart → metric"),
+        ("pf check", "conformance, before the first commit"),
+    ]
+    width = max(len(c) for c, _ in steps)
+    console.print("  [bold]next[/]")
+    for i, (cmd, why) in enumerate(steps, 1):
+        console.print(f"    {i}. [cyan]{cmd:<{width}}[/]  [dim]{why}[/]")
+    console.print(f"  [dim]what you got: groups/{group}/projects/{project}/kg/context_card.md "
+                  f"— read that, not the scaffolded files[/]")
 
 
 def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
@@ -179,7 +250,7 @@ def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
     if not additions:
         return
     path = root() / "gate.capabilities.yaml"
-    existing = yaml.safe_load(path.read_text()) if path.exists() else {}
+    existing = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
     existing = existing or {}
     changed = []
     for section, patterns in additions.items():
@@ -192,8 +263,17 @@ def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
         path.write_text(
             "# GENERATED by `pf new-project --with`. Merged over gate.yaml at load\n"
             "# time by pf.loops.gate.load_policy. Edit the capability, not this file.\n"
-            + yaml.safe_dump(existing, sort_keys=False))
-        console.print(f"  [dim]gate overlay += {', '.join(changed)}[/]")
+            + yaml.safe_dump(existing, sort_keys=False), encoding="utf-8")
+        # A count, not the patterns. The six full globs this used to print are
+        # already in `--plan`, are in `gate.capabilities.yaml`, and are the same
+        # every time — three copies of a fixed list in output someone is reading
+        # for what changed.
+        by_section: dict[str, int] = {}
+        for entry in changed:
+            by_section[entry.split(":", 1)[0]] = by_section.get(entry.split(":", 1)[0], 0) + 1
+        summary = ", ".join(f"{k} ×{v}" for k, v in sorted(by_section.items()))
+        console.print(f"  [dim]gate overlay += {len(changed)} rule(s) ({summary}) "
+                      f"→ gate.capabilities.yaml[/]")
 
 
 @app.command()
@@ -201,28 +281,32 @@ def capabilities() -> None:
     """Optional features `pf new-project --with` can wire into a project."""
     t = Table("capability", "adds", "needs env", "description")
     for c in CAPABILITIES.values():
-        t.add_row(c.name, f"{len(c.files)} file(s)",
-                  ", ".join(c.env) or "—", c.description)
+        t.add_row(c.name, f"{len(c.files)} file(s)", ", ".join(c.env) or "—", c.description)
     console.print(t)
-    console.print("[dim]Adding one is a single entry in pf.capabilities.CAPABILITIES — "
-                  "it does not touch the scaffolder, the CLI, or the gate.[/]")
+    console.print(
+        "[dim]Adding one is a single entry in pf.capabilities.CAPABILITIES — "
+        "it does not touch the scaffolder, the CLI, or the gate.[/]"
+    )
 
 
 @app.command()
 def models() -> None:
     """Model routing per step, with what each model actually accepts."""
-    t = Table("step", "model", "effort", "thinking", "cache", "$/Mtok in/out",
-              title="Agent routing")
+    t = Table("step", "model", "effort", "thinking", "cache", "$/Mtok in/out", title="Agent routing")
     for cfg in AGENTS.values():
         s = MODELS.get(cfg.model)
         if s is None:
             t.add_row(cfg.name, f"[red]{cfg.model} (unknown)[/]", "—", "—", "—", "—")
             continue
         effort = cfg.effort if s.supports_effort else "[dim]n/a[/]"
-        thinking = ("adaptive" if s.thinking == "adaptive" and cfg.thinking
-                    else "budget" if s.thinking == "budget" and cfg.thinking else "off")
-        t.add_row(cfg.name, s.id, effort, thinking,
-                  f"≥{s.cache_min_tokens} tok", f"{s.usd_in:.2f}/{s.usd_out:.2f}")
+        thinking = (
+            "adaptive"
+            if s.thinking == "adaptive" and cfg.thinking
+            else "budget"
+            if s.thinking == "budget" and cfg.thinking
+            else "off"
+        )
+        t.add_row(cfg.name, s.id, effort, thinking, f"≥{s.cache_min_tokens} tok", f"{s.usd_in:.2f}/{s.usd_out:.2f}")
     console.print(t)
     for cfg in AGENTS.values():
         if cfg.purpose:
@@ -269,7 +353,9 @@ def _print_risks(risks: list) -> None:
 
 @app.command("onboard")
 def cmd_onboard(
-    group: str, project: str, source: str,
+    group: str,
+    project: str,
+    source: str,
     apply_: bool = typer.Option(False, "--apply", help="write the changes; default is a plan"),
     force: bool = typer.Option(False, "--force", help="apply despite blocking findings"),
 ) -> None:
@@ -294,12 +380,13 @@ def cmd_onboard(
     s = p.survey
 
     console.print(f"[bold]{src}[/] [dim]→ {group}/{project}[/]")
-    console.print(f"  dbt: [cyan]{s.dbt_name or 'none found'}[/] "
-                  f"({s.sql_model_count} model(s), {len(s.macros)} macro(s), "
-                  f"{len(s.seeds)} seed(s), {len(s.tests)} test(s))")
+    console.print(
+        f"  dbt: [cyan]{s.dbt_name or 'none found'}[/] "
+        f"({s.sql_model_count} model(s), {len(s.macros)} macro(s), "
+        f"{len(s.seeds)} seed(s), {len(s.tests)} test(s))"
+    )
     if s.layer_mapping:
-        console.print("  layers: " + ", ".join(
-            f"{k}→{v}" for k, v in sorted(s.layer_mapping.items())))
+        console.print("  layers: " + ", ".join(f"{k}→{v}" for k, v in sorted(s.layer_mapping.items())))
     if s.orchestrators:
         console.print(f"  orchestrator: [cyan]{', '.join(sorted(s.orchestrators))}[/]")
     if s.ingestion:
@@ -326,8 +413,9 @@ def cmd_onboard(
     # and be wrong. Applying over the top of that produces a project someone
     # then has to un-import, so it takes a deliberate second instruction.
     if p.blocking and not force:
-        console.print(f"\n[red]✗[/] {len(p.blocking)} blocking finding(s) — "
-                      f"resolve them, or re-run with --force to apply anyway")
+        console.print(
+            f"\n[red]✗[/] {len(p.blocking)} blocking finding(s) — resolve them, or re-run with --force to apply anyway"
+        )
         raise typer.Exit(1)
 
     console.print("\n[bold]applying[/]")
@@ -359,16 +447,14 @@ def cmd_dialect(
     from pf.onboard.survey import is_build_artifact
 
     target = Path(path).expanduser().resolve()
-    files = [f for f in target.rglob("*.sql")
-             if not is_build_artifact(f.relative_to(target).parts)]
+    files = [f for f in target.rglob("*.sql") if not is_build_artifact(f.relative_to(target).parts)]
     if not files:
         console.print(f"[yellow]![/] no .sql under {target}")
         raise typer.Exit(0)
 
     local = {f.stem for f in files if "macros" in f.parts}
     r = analyse(files, local_macros=local)
-    console.print(f"[bold]{target}[/] [dim]— {len(files)} file(s), "
-                  f"{len(r.calls)} distinct function(s)[/]")
+    console.print(f"[bold]{target}[/] [dim]— {len(files)} file(s), {len(r.calls)} distinct function(s)[/]")
 
     if r.clean:
         console.print("\n[green]✓[/] every call is portable as written")
@@ -385,21 +471,21 @@ def cmd_dialect(
         for name, n in r.covered.most_common():
             macro = UNSUPPORTED[name].macro
             missing = "" if macro in available else " [red](macro not found!)[/]"
-            console.print(f"  [yellow]→[/] {name} [dim]×{n}[/]  "
-                          f"use [cyan]{{{{ {macro}(...) }}}}[/]"
-                          f" [dim]({UNSUPPORTED[name].seen_in})[/]{missing}")
+            console.print(
+                f"  [yellow]→[/] {name} [dim]×{n}[/]  "
+                f"use [cyan]{{{{ {macro}(...) }}}}[/]"
+                f" [dim]({UNSUPPORTED[name].seen_in})[/]{missing}"
+            )
     if r.unsupported:
         console.print("\n[red]unsupported[/] [dim]— no macro covers these[/]")
         for name, n in r.unsupported.most_common():
             console.print(f"  [red]✗[/] {name} [dim]×{n}[/]")
 
-    console.print(f"\n[dim]{len(available)} portable macro(s) available from "
-                  f"platform/toolkits/[/]")
+    console.print(f"\n[dim]{len(available)} portable macro(s) available from platform/toolkits/[/]")
 
 
 # ------------------------------------------------------------- the ladder --
-align_app = typer.Typer(help="Onboarding ladder: evaluate → implement → validate, "
-                             "one stage at a time.")
+align_app = typer.Typer(help="Onboarding ladder: evaluate → implement → validate, one stage at a time.")
 app.add_typer(align_app, name="align")
 
 _MARK = {"pass": ("green", "✓"), "fail": ("red", "✗"), "unexercised": ("yellow", "?")}
@@ -413,9 +499,9 @@ def _print_verdict(stage, verdict) -> None:
 
 @align_app.command("status")
 def cmd_align_status(
-    group: str, project: str,
-    write_state: bool = typer.Option(False, "--state",
-                                     help="also write the position into STATE.md"),
+    group: str,
+    project: str,
+    write_state: bool = typer.Option(False, "--state", help="also write the position into STATE.md"),
 ) -> None:
     """Which rung of the onboarding ladder this project is on.
 
@@ -445,11 +531,12 @@ def cmd_align_status(
             console.print(f"  [red]✗[/] [bold]{stage.name}[/] — {stage.subject}")
             _print_verdict(stage, verdict)
 
-    remaining = [s.name for s in STAGES[len(rungs):]]
+    remaining = [s.name for s in STAGES[len(rungs) :]]
     if remaining:
         console.print(f"  [dim]· {', '.join(remaining)} — not reached[/]")
-    console.print(f"\n[dim]{done}/{len(STAGES)} stage(s) open. "
-                  f"`pf align evaluate {group} {project}` for what to do next.[/]")
+    console.print(
+        f"\n[dim]{done}/{len(STAGES)} stage(s) open. `pf align evaluate {group} {project}` for what to do next.[/]"
+    )
 
     if write_state:
         from pf.loops.runner import update_state
@@ -462,7 +549,8 @@ def cmd_align_status(
 
 @align_app.command("evaluate")
 def cmd_align_evaluate(
-    group: str, project: str,
+    group: str,
+    project: str,
     stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
 ) -> None:
     """Phase one of a stage: what is wrong, and what to do about it.
@@ -474,8 +562,7 @@ def cmd_align_evaluate(
 
     if stage:
         if stage not in BY_NAME:
-            console.print(f"[red]unknown stage '{stage}'[/] — "
-                          f"{', '.join(BY_NAME)}")
+            console.print(f"[red]unknown stage '{stage}'[/] — {', '.join(BY_NAME)}")
             raise typer.Exit(1)
         st = BY_NAME[stage]
     else:
@@ -490,18 +577,19 @@ def cmd_align_evaluate(
     console.print(f"[bold]{group}/{project}[/] [dim]— stage[/] [cyan]{st.name}[/]")
     console.print(f"[dim]{st.subject}[/]\n")
     if not risks:
-        console.print("[green]✓[/] nothing to do — run "
-                      f"[cyan]pf align validate {group} {project} --stage {st.name}[/]")
+        console.print(f"[green]✓[/] nothing to do — run [cyan]pf align validate {group} {project} --stage {st.name}[/]")
         raise typer.Exit(0)
     _print_risks(risks)
-    console.print(f"\n[dim]implement: read {st.reference} in the project-onboarding "
-                  f"toolkit, fix one finding, then validate.[/]")
+    console.print(
+        f"\n[dim]implement: read {st.reference} in the project-onboarding toolkit, fix one finding, then validate.[/]"
+    )
     raise typer.Exit(1 if any(r.blocking for r in risks) else 0)
 
 
 @align_app.command("validate")
 def cmd_align_validate(
-    group: str, project: str,
+    group: str,
+    project: str,
     stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
 ) -> None:
     """Phase three of a stage: the gate, with the evidence for its verdict.
@@ -536,24 +624,28 @@ def cmd_align_validate(
         console.print(f"\n[green]✓[/] {verdict.summary} — the next stage is open")
         raise typer.Exit(0)
     if verdict.open:
-        console.print(f"\n[yellow]~[/] {verdict.summary}. The gate is open; the "
-                      f"unexercised checks are gaps in the evidence, not passes.")
+        console.print(
+            f"\n[yellow]~[/] {verdict.summary}. The gate is open; the "
+            f"unexercised checks are gaps in the evidence, not passes."
+        )
         raise typer.Exit(0)
 
-    console.print(f"\n[red]✗[/] {verdict.summary} — "
-                  f"`pf align evaluate {group} {project} --stage {st.name}`")
+    console.print(f"\n[red]✗[/] {verdict.summary} — `pf align evaluate {group} {project} --stage {st.name}`")
     if not allowed:
         console.print(f"\n[red]■ {why}[/]")
-        console.print("[dim]Stop. Do not attempt this stage a fourth time — "
-                      "report what was tried and what decision it needs. "
-                      f"`pf loop reset onboard-{st.name} {group} {project}` "
-                      "clears the breaker once that decision is made.[/]")
+        console.print(
+            "[dim]Stop. Do not attempt this stage a fourth time — "
+            "report what was tried and what decision it needs. "
+            f"`pf loop reset onboard-{st.name} {group} {project}` "
+            "clears the breaker once that decision is made.[/]"
+        )
     raise typer.Exit(1)
 
 
 @align_app.command("verify")
 def cmd_align_verify(
-    group: str, project: str,
+    group: str,
+    project: str,
     stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
 ) -> None:
     """The checker half: judge the change, not the result.
@@ -582,17 +674,92 @@ def cmd_align_verify(
 
     c = Ctx(root=root(), group=group, project=project)
     verdict = Verdict(st.name, verify(c, st))
-    console.print(f"[bold]{group}/{project}[/] [dim]— checker on stage[/] "
-                  f"[cyan]{st.name}[/]\n")
+    console.print(f"[bold]{group}/{project}[/] [dim]— checker on stage[/] [cyan]{st.name}[/]\n")
     _print_verdict(st, verdict)
     if verdict.failures:
-        console.print(f"\n[red]✗ REJECT[/] — {verdict.summary}. Narrow the change "
-                      f"to what the finding needed and re-run.")
+        console.print(
+            f"\n[red]✗ REJECT[/] — {verdict.summary}. Narrow the change to what the finding needed and re-run."
+        )
         raise typer.Exit(1)
-    console.print(f"\n[green]✓ ACCEPT[/] — {verdict.summary}. Scope and shape are "
-                  f"fine; whether it addresses the right finding is not decidable "
-                  f"here and is still yours to confirm.")
+    console.print(
+        f"\n[green]✓ ACCEPT[/] — {verdict.summary}. Scope and shape are "
+        f"fine; whether it addresses the right finding is not decidable "
+        f"here and is still yours to confirm."
+    )
     raise typer.Exit(0)
+
+
+@align_app.command("ship")
+def cmd_align_ship(
+    group: str, project: str,
+    stage: str = typer.Option("", "--stage", help="a stage name; default is the current one"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="record the proposal, open nothing"),
+) -> None:
+    """Ship one validated stage as one pull request.
+
+    The stage's working-tree changes go through the same chain a loop proposal
+    takes — gate, branch, impact, Recce, PR — scoped to the files the stage
+    owns. A stage whose gate is closed is not shipped.
+    """
+    from pf.onboard.funnel import ship_stage
+    from pf.onboard.ladder import BY_NAME, Ctx, Verdict, current
+
+    if stage and stage not in BY_NAME:
+        console.print(f"[red]unknown stage '{stage}'[/] — {', '.join(BY_NAME)}")
+        raise typer.Exit(1)
+    if stage:
+        st = BY_NAME[stage]
+    else:
+        cur = current(root(), group, project)
+        if cur is None:
+            console.print(f"[green]✓[/] {group}/{project} is through every stage")
+            raise typer.Exit(0)
+        st = cur[0]
+    c = Ctx(root=root(), group=group, project=project)
+    verdict = Verdict(st.name, st.validate(c))
+    _print_verdict(st, verdict)
+    if not verdict.open:
+        console.print(f"\n[red]✗[/] {verdict.summary} — not shipping a stage whose gate is closed")
+        raise typer.Exit(1)
+    from pf import trace
+    with trace.start(root(), "command", f"align-ship-{st.name}", group=group, project=project) as tr:
+        tr.intent(f"ship onboarding stage {st.name} as one pull request",
+                  stage=st.name, checks=[c.name for c in verdict.checks], open=verdict.open)
+        out = ship_stage(root(), group, project, st, verdict, dry_run=dry_run)
+    colour = {"proposed": "green", "branched": "cyan", "recorded": "yellow"}.get(out.status, "red")
+    console.print(f"\n[{colour}]{out.status}[/] stage {st.name} · "
+                  f"{out.pr_url or out.branch or out.path}")
+    if out.impact_severity:
+        console.print(f"  impact {out.impact_severity} ({out.impact_total}) · {out.review}")
+    if out.message:
+        console.print(f"  [dim]{out.message}[/]")
+    raise typer.Exit(0 if out.status in ("proposed", "branched", "recorded") else 1)
+
+
+@align_app.command("funnel")
+def cmd_align_funnel(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                     as_json: bool = typer.Option(False, "--json")) -> None:
+    """Time-to-first-governed-metric, per project, from the ledger."""
+    from pf.onboard.funnel import funnel_all
+
+    targets = [(g, p) for g, p, _ in all_projects()
+               if (not group or g == group) and (not project or p == project)]
+    rows = funnel_all(root(), targets)
+    if as_json:
+        console.print_json(json.dumps([f.to_dict() for f in rows]))
+        return
+    t = Table("group/project", "started", "stage", *[s[:4] for s in
+              ("import", "ontology", "dialect", "layers", "metrics", "review")],
+              "hours to first governed metric")
+    for f in rows:
+        marks = ["[green]✓[/]" if s.passed else ("[yellow]•[/]" if s.attempts else "[dim]–[/]")
+                 for s in f.stages]
+        h = f.hours_to_first_governed_metric
+        t.add_row(f"{f.group}/{f.project}", f.started[:16] or "—", f.current, *marks,
+                  f"{h:.1f}" if h is not None else "—")
+    console.print(t)
+    console.print("[dim]• attempted  ✓ passed. The ladder records every `pf align validate`; "
+                  "the funnel is read back from the ledger, never declared.[/]")
 
 
 @align_app.command("stages")
@@ -606,11 +773,71 @@ def cmd_align_stages() -> None:
     table.add_column("subject")
     table.add_column("budget", justify="right", style="dim")
     for i, s in enumerate(STAGES, 1):
-        table.add_row(str(i), s.name, s.subject,
-                      f"{s.token_budget:,}" if s.token_budget else "0")
+        table.add_row(str(i), s.name, s.subject, f"{s.token_budget:,}" if s.token_budget else "0")
     console.print(table)
-    console.print("[dim]Each stage is evaluate → implement → validate. The gate "
-                  "is code; only the middle phase is an agent's.[/]")
+    console.print(
+        "[dim]Each stage is evaluate → implement → validate. The gate is code; only the middle phase is an agent's.[/]"
+    )
+
+
+@app.command("housekeeping")
+def cmd_housekeeping(
+    group: str = typer.Argument("", help="group (omit both for platform scope)"),
+    project: str = typer.Argument("", help="project (omit both for platform scope)"),
+    apply: bool = typer.Option(False, "--apply", help="Execute the automated tasks; default is plan only."),
+    retention: int = typer.Option(
+        None,
+        "--retention-days",
+        help="Retention override in days (defaults: "
+        "PF_LAKE_RETENTION_DAYS/7 for a lakehouse, "
+        "PF_OPS_RETENTION_DAYS/14 for the platform).",
+    ),
+) -> None:
+    """Plan (and with --apply run) maintenance the engines do not do alone.
+
+    With a group and project: lakehouse maintenance on that project's prod.
+    DuckLake tasks execute — flush inlined data, merge adjacent files, expire
+    snapshots past retention, delete the unreferenced files, in that order.
+    Iceberg-on-R2 tasks report: the catalog compacts itself once told to, and
+    expiry needs an engine with delete rights. A non-lakehouse prod exits 1.
+
+    With no arguments: the platform's own accumulation — Dagster run history
+    and orphaned compute logs, oversized dbt logs, expired PR and Elementary
+    reports — plus a warning for any stray warehouse WAL.
+    """
+    from pf.housekeeping import plan_for_project, plan_platform, run
+
+    if bool(group) != bool(project):
+        console.print("[red]give a group and a project, or neither[/]")
+        raise typer.Exit(1)
+
+    if not group:
+        report = plan_platform(root(), retention)
+    else:
+        report = plan_for_project(group, project, pdir(group, project), retention)
+    for note in report.notes:
+        console.print(f"[dim]{note}[/]")
+    if not report.engine:
+        raise typer.Exit(1)
+
+    console.print(f"[bold]{group + '/' + project if group else 'platform'}[/] · {report.engine}")
+    fragmented = [t for t in report.tables if t.get("files")]
+    for t in sorted(fragmented, key=lambda t: -t["files"])[:10]:
+        console.print(f"  [dim]{t['table']}: {t['files']} file(s), {t['bytes'] / 1e6:,.0f} MB[/]")
+    for task in report.tasks:
+        mark = "[green]auto[/]" if task.automated else "[yellow]manual[/]"
+        console.print(f"  {mark} {task.name:24} {task.reason}")
+        if task.manual:
+            console.print(f"       [dim]{task.manual}[/]")
+
+    if apply:
+        done = run(report)
+        for name in done.applied:
+            console.print(f"  [green]✓[/] applied {name}")
+        if not done.applied:
+            console.print("  [dim]nothing automated to apply[/]")
+    elif any(t.automated for t in report.tasks):
+        console.print("[dim]plan only — re-run with --apply to execute[/]")
 
 
 @app.command("bootstrap")
@@ -629,6 +856,15 @@ def bootstrap_cmd(
         console.print("[red]give a group and project, or --all[/]")
         raise typer.Exit(1)
 
+    # Repo-level, so it runs once rather than per project. Bootstrap is "re-run
+    # every post-scaffold step", and installing the commit gate is exactly that:
+    # a step every checkout needs and nobody remembers.
+    from pf.loops.gate import install_hook
+
+    changed, detail = install_hook(root())
+    console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} "
+                  f"{'commit gate':24} [dim]{detail}[/]")
+
     failed = False
     for g, p, _ in targets:
         console.print(f"[bold]{g}/{p}[/]")
@@ -644,6 +880,115 @@ def _print_bootstrap(results) -> bool:
         console.print(f"  {mark} {r.name:24} [dim]{r.detail}[/]")
         ok = ok and r.ok
     return ok
+
+
+@app.command("atlas")
+def cmd_atlas(
+    group: str = typer.Argument("", help="group (omit with --all)"),
+    project: str = typer.Argument("", help="project (omit with --all)"),
+    all_: bool = typer.Option(False, "--all", help="every project in the repo"),
+    show_config: bool = typer.Option(False, "--config",
+                                     help="what this project resolved to, and why"),
+) -> None:
+    """Publish a project's own atlas into its own folder.
+
+    Written to `kg/atlas.html` beside the graph it draws, and regenerated around
+    `dbt run` / `dbt build` according to that project's `atlas.yaml`. Platform
+    defaults, then the group's file, then the project's — later wins.
+    """
+    from pf import atlas
+
+    if not all_ and not (group and project):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+    targets = all_projects() if all_ else [(group, project, pdir(group, project))]
+
+    failed = False
+    for g, p, _ in targets:
+        try:
+            cfg = atlas.load_config(root(), g, p)
+        except atlas.InvalidConfig as exc:
+            console.print(f"[red]✗[/] {g}/{p}  {exc}")
+            failed = True
+            continue
+
+        if show_config:
+            console.print(f"[bold]{g}/{p}[/]")
+            for f in ("enabled", "output", "phases", "keep_previous", "sections"):
+                console.print(f"  {f:14} [dim]{getattr(cfg, f)}[/]")
+            continue
+
+        out = atlas.write(root(), g, p, cfg)
+        if out is None:
+            console.print(f"[dim]·[/] {g}/{p}  [dim]disabled in atlas.yaml[/]")
+            continue
+        facts = atlas.gather(root(), g, p)
+        console.print(f"[green]✓[/] {g}/{p}  [dim]{out.relative_to(root())} · "
+                      f"{facts.nodes} node(s) · on: "
+                      f"{', '.join(cfg.phases) or 'request only'}[/]")
+        for gap in facts.gaps:
+            console.print(f"    [yellow]gap[/] {gap}")
+    raise typer.Exit(1 if failed else 0)
+
+
+def cmd_arch(
+    group: str = typer.Argument("", help="group (omit with --all)"),
+    project: str = typer.Argument("", help="project (omit with --all)"),
+    all_: bool = typer.Option(False, "--all", help="every project in the repo"),
+    check: bool = typer.Option(False, "--check",
+                               help="fail on a stale map or an unmapped feature; "
+                                    "writes nothing"),
+    show: bool = typer.Option(False, "--show", help="print it instead of writing it"),
+    as_json: bool = typer.Option(False, "--json", help="machine-readable summary"),
+) -> None:
+    """Design this project's architecture map — every feature, present or not.
+
+    Written to `kg/architecture.md` and regenerated by every `pf bootstrap`, so
+    a new project has one at scaffold time and an existing one gets it on the
+    next bootstrap. Never hand-edit it.
+
+    `--check` fails on a map that no longer matches its project, and on any
+    directory the feature registry does not account for. It needs a built
+    graph — run `pf kg build` first, or you are measuring the missing build.
+    """
+    from pf import architecture as arch
+
+    if not all_ and not (group and project):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+    targets = all_projects() if all_ else [(group, project, pdir(group, project))]
+
+    if show or as_json:
+        for g, p, _ in targets:
+            a = arch.gather(root(), g, p)
+            print(arch.as_json(a) if as_json else arch.render(a), end="")
+        raise typer.Exit(0)
+
+    if check:
+        failed = False
+        for g, p, _ in targets:
+            d = arch.drift(root(), g, p)
+            console.print(f"[{'green' if d.ok else 'red'}]"
+                          f"{'✓' if d.ok else '✗'}[/] {d}")
+            failed = failed or not d.ok
+        if failed:
+            console.print("[dim]run `pf arch --all` to regenerate[/]")
+        raise typer.Exit(1 if failed else 0)
+
+    for g, p, _ in targets:
+        path, a = arch.write(root(), g, p)
+        problems = arch.lint_doc(path.read_text())
+        n = estimate_tokens(path.read_text())
+        console.print(f"[green]✓[/] {g}/{p}  [dim]{path.relative_to(root())} · "
+                      f"~{n} tokens · {len(a.gaps)} gap(s)[/]")
+        for gap in a.gaps:
+            console.print(f"    [yellow]gap[/] {gap.feature.title:22} "
+                          f"[dim]{gap.feature.made_by}[/]")
+        for u in a.unmapped:
+            console.print(f"    [red]unmapped[/] {u} [dim]— add it to "
+                          f"pf.architecture.FEATURES[/]")
+        for x in problems:
+            console.print(f"    [red]diagram[/] {x}")
 
 
 @app.command("bootstrap-steps")
@@ -666,35 +1011,136 @@ def work(group: str, project: str) -> None:
 
 # ------------------------------------------------------------ graph & card --
 @kg_app.command("build")
-def cmd_kg_build(group: str, project: str,
+def cmd_kg_build(group: str = typer.Argument("", help="omit for every group"),
+                 project: str = typer.Argument("", help="omit for every project in the group"),
                  parse: bool = typer.Option(
                      True, help="parse the dbt project first if it has no manifest")) -> None:
-    """Rebuild a project's knowledge graph from annotations + dbt manifests."""
-    d = pdir(group, project)
-    # The builder treats the manifest as optional and degrades without it. That
-    # is the right default for a source of documentation and the wrong one for
-    # the graph CI gates against: no manifest means no Model, Metric or Exposure
-    # nodes, and a blast-radius query over that graph finds nothing and says so.
-    if parse:
-        from pf.runtime.dbt_runtime import ensure_manifest
-        from pf.runtime.warehouse import Warehouse
-        ensure_manifest(d, duckdb_path=Warehouse.for_project(d, group, project).path)
-    counts = build_graph(d, group=group, project=project)
-    t = Table("kind", "nodes", title=f"{group}/{project} graph")
-    for k, v in sorted(counts.items()):
-        t.add_row(k, str(v))
+    """Rebuild knowledge graphs. No arguments → every project."""
+    targets = _targets(group, project)
+    rows: list[tuple[str, dict[str, int]]] = []
+    for g, p, d in targets:
+        # The builder treats the manifest as optional and degrades without it.
+        # That is the right default for a source of documentation and the wrong
+        # one for the graph CI gates against: no manifest means no Model, Metric
+        # or Exposure nodes, and a blast-radius query over that graph finds
+        # nothing and says so.
+        if parse:
+            from pf.runtime.dbt_runtime import ensure_manifest
+            from pf.runtime.warehouse import Warehouse
+            ensure_manifest(d, duckdb_path=Warehouse.for_project(d, g, p).path)
+        rows.append((f"{g}/{p}", build_graph(d, group=g, project=p)))
+
+    if len(rows) == 1:
+        name, counts = rows[0]
+        t = Table("kind", "nodes", title=f"{name} graph")
+        for k, v in sorted(counts.items()):
+            t.add_row(k, str(v))
+        console.print(t)
+        return
+
+    # Across many projects the per-kind breakdown is noise; what is worth seeing
+    # at a glance is the kinds whose absence means something. A zero here is the
+    # finding — no Model means the gate cannot run at all.
+    t = Table("project", "nodes", "models", "metrics", "policies",
+              title=f"{len(rows)} graph(s) rebuilt")
+    for name, counts in rows:
+        def cell(kind: str, c: dict[str, int] = counts) -> str:
+            n = c.get(kind, 0)
+            return str(n) if n else "[red]0[/]"
+        t.add_row(name, str(sum(counts.values())),
+                  cell("Model"), cell("Metric"), cell("Policy"))
     console.print(t)
 
 
+@kg_app.command("bloom")
+def cmd_kg_bloom(
+    out: str = typer.Option("", help="output directory (default: docs/bloom)"),
+) -> None:
+    """Export every project's graph as one Neo4j Bloom workspace.
+
+    Eight project graphs, unioned and qualified by project, plus the perspective
+    that makes 13,000 nodes readable — colours by plane, `Column` hidden, and
+    the questions people actually ask saved as search phrases.
+    """
+    from pf.bloom import write
+    corpus, paths = write(root(), out or None)
+    console.print(f"[green]✓[/] {len(corpus.nodes):,} nodes, "
+                  f"{len(corpus.edges):,} edges from "
+                  f"{len(corpus.projects)} project(s)")
+    if corpus.dangling:
+        # Neo4j rejects a dangling relationship and names one row. Naming all of
+        # them here is the difference between a fixable report and a hunt.
+        console.print(f"[yellow]![/] {len(corpus.dangling)} edge(s) dropped for "
+                      f"a missing endpoint:")
+        for kind, missing in corpus.dangling[:10]:
+            console.print(f"    {kind} → {missing}")
+        if len(corpus.dangling) > 10:
+            console.print(f"    … and {len(corpus.dangling) - 10} more")
+    for path in paths:
+        console.print(f"    {path}")
+
+
 @kg_app.command("card")
-def cmd_kg_card(group: str, project: str) -> None:
-    """Regenerate the context card (the always-in-context index)."""
-    d = pdir(group, project)
-    p = render_project_card(d, group, project)
-    render_group_card(root() / "groups" / group, group)
-    tokens = estimate_tokens(p.read_text())
-    status = "green" if tokens <= PROJECT_CARD_BUDGET else "red"
-    console.print(f"[{status}]✓[/] {p}  (~{tokens} tokens / {PROJECT_CARD_BUDGET} budget)")
+def cmd_kg_card(group: str = typer.Argument("", help="omit for every group"),
+                project: str = typer.Argument("", help="omit for every project in the group")) -> None:
+    """Regenerate context cards. No arguments → every project."""
+    targets = _targets(group, project)
+    for g, p, d in targets:
+        card = render_project_card(d, g, p)
+        tokens = estimate_tokens(card.read_text(encoding="utf-8"))
+        ok = tokens <= PROJECT_CARD_BUDGET
+        # Rendering reports the budget but does not enforce it — `pf tokens` is
+        # the enforcement point, and having two commands fail on the same
+        # condition means fixing it twice and trusting neither.
+        console.print(f"[{'green' if ok else 'red'}]✓[/] {g}/{p}"
+                      f"  [dim](~{tokens} tokens / {PROJECT_CARD_BUDGET})[/]")
+    # Once per group, not once per project: the group card is a roster of
+    # sisters, so rendering it inside the loop rewrites the same file N times.
+    for g in sorted({g for g, _, _ in targets}):
+        render_group_card(root() / "groups" / g, g)
+
+
+@kg_app.command("check")
+def cmd_kg_check(group: str = typer.Argument("", help="omit for every group"),
+                 project: str = typer.Argument("", help="omit for every project in the group"),
+                 strict: bool = typer.Option(
+                     False, "--strict",
+                     help="a project that cannot be judged fails too"),
+                 parse: bool = typer.Option(
+                     True, help="parse the dbt project first if it has no manifest")) -> None:
+    """Is each committed graph current with the dbt project beside it?
+
+    The graph has no clock. One built before a model landed answers every query
+    confidently and wrongly, and nothing else in the repo notices — it simply
+    holds fewer nodes than the project has models. This is what notices.
+    """
+    from pf.kg.build import graph_drift
+
+    drifted = unexercised = 0
+    for g, p, d in _targets(group, project):
+        # `target/` is gitignored, so a fresh checkout — every CI runner — has no
+        # manifest to compare the committed graph against. Without this the check
+        # reports "not exercised" everywhere it matters most and passes.
+        if parse:
+            from pf.runtime.dbt_runtime import ensure_manifest
+            from pf.runtime.warehouse import Warehouse
+            try:
+                ensure_manifest(d, duckdb_path=Warehouse.for_project(d, g, p).path)
+            except Exception as exc:  # noqa: BLE001 — reported per project, not fatal
+                console.print(f"[dim]{g}/{p}: dbt parse failed — {exc}[/]")
+        report = graph_drift(d, f"{g}/{p}")
+        console.print(report.render())
+        if not report.exercised:
+            unexercised += 1
+        elif report.total:
+            drifted += 1
+
+    if drifted:
+        console.print(f"[red]{drifted} stale graph(s)[/] — run `pf kg build` and commit "
+                      f"kg/graph.json")
+    if unexercised and strict:
+        console.print(f"[red]{unexercised} graph(s) could not be checked[/]")
+    raise typer.Exit(1 if drifted or (unexercised and strict) else 0)
 
 
 @kg_app.command("search")
@@ -711,8 +1157,9 @@ def cmd_kg_neighbors(group: str, project: str, node: str, depth: int = 1) -> Non
 
 # ---------------------------------------------------------------- impact ----
 @app.command()
-def impact(group: str, project: str, node: str,
-           record: bool = typer.Option(True, help="write to the tracking DB")) -> None:
+def impact(
+    group: str, project: str, node: str, record: bool = typer.Option(True, help="write to the tracking DB")
+) -> None:
     """Blast radius of changing a node. The merge gate."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
     try:
@@ -723,9 +1170,14 @@ def impact(group: str, project: str, node: str,
         raise typer.Exit(1)
     console.print(report.render())
     if record:
-        obs.record_impact(group=group, project=project, root_node=node,
-                          severity=report.severity, total=report.total,
-                          report=report.to_dict())
+        obs.record_impact(
+            group=group,
+            project=project,
+            root_node=node,
+            severity=report.severity,
+            total=report.total,
+            report=report.to_dict(),
+        )
     if report.severity == "breaking":
         raise typer.Exit(1)
 
@@ -745,11 +1197,11 @@ def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
 
 # ----------------------------------------------------------------- checks ---
 @app.command()
-def check(group: str = "", project: str = "",
-          impact: bool = typer.Option(True, help="also gate on blast radius of changes")) -> None:
+def check(
+    group: str = "", project: str = "", impact: bool = typer.Option(True, help="also gate on blast radius of changes")
+) -> None:
     """Ontology conformance, and the blast radius of anything you have changed."""
-    targets = [(g, p, d) for g, p, d in all_projects()
-               if (not group or g == group) and (not project or p == project)]
+    targets = [(g, p, d) for g, p, d in all_projects() if (not group or g == group) and (not project or p == project)]
     if not targets:
         console.print("[yellow]no projects found[/]")
         raise typer.Exit(0)
@@ -759,26 +1211,66 @@ def check(group: str = "", project: str = "",
     # nobody edited, and a reviewer stops reading them.
     tracked = tracked_denied(root())
     if tracked:
-        console.print(f"[red]✗[/] tracked artefacts  {len(tracked)} file(s) git is "
-                      f"tracking that the gate calls generated")
+        console.print(
+            f"[red]✗[/] tracked artefacts  {len(tracked)} file(s) git is tracking that the gate calls generated"
+        )
         for r in tracked[:8]:
             console.print(f"    [red]{r.path}[/] [dim]({r.rule})[/]")
         if len(tracked) > 8:
             console.print(f"    [dim]…and {len(tracked) - 8} more[/]")
-        console.print("    [dim]git rm --cached <paths>, then add the pattern to "
-                      ".gitignore[/]")
+        console.print("    [dim]git rm --cached <paths>, then add the pattern to .gitignore[/]")
     else:
         console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
+
+    # The gate is enforced at commit time, locally — so an uninstalled hook is
+    # not a missing convenience, it is the gate not running at all. This check
+    # exists because that was true for the whole life of the repo and nothing
+    # said so: `maxFiles` and the staged-set denylist were unenforced while
+    # reading as configured.
+    from pf.loops.gate import hook_status
+
+    hstate, hdetail = hook_status(root())
+    if hstate == "ok":
+        console.print(f"[green]✓[/] commit gate       {hdetail}")
+    elif hstate == "no-git":
+        console.print(f"[dim]·[/] commit gate       {hdetail}")
+    else:
+        console.print(f"[red]✗[/] commit gate       {hdetail}")
+        console.print("    [dim]nothing enforces gate.yaml on commit — "
+                      "run `pf install-hook`[/]")
 
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
     mark = "[red]✗[/]" if topo_errors else "[green]✓[/]"
-    console.print(f"{mark} ontology + topology  {len(topo_errors)} error(s), "
-                  f"{len(topo) - len(topo_errors)} warning(s)")
+    console.print(f"{mark} ontology + topology  {len(topo_errors)} error(s), {len(topo) - len(topo_errors)} warning(s)")
     for i in topo:
         console.print(f"    {i}")
 
     failed = bool(topo_errors) or bool(tracked)
+
+    # The agent's own gate. A change to a prompt, the routing table, a skill or
+    # a pin is judged by the contract evals the way a model change is judged
+    # by impact — here, in the same command, so CI cannot run one and not the
+    # other.
+    from pf import pr as pr_mod
+    from pf.evals import gate as eval_gate
+    erep = eval_gate.run_gate(root(), group, project,
+                              changed=pr_mod.changed_files(root()))
+    if erep.required:
+        mark = "[red]✗[/]" if erep.contract_ok is False else "[green]✓[/]"
+        console.print(f"{mark} agent surface  {len(erep.surface)} file(s) changed; "
+                      f"contract evals {'fail' if erep.contract_ok is False else 'pass'}")
+        for c in erep.contract:
+            if c["outcome"] == "fail":
+                console.print(f"    [red]{c['name']}[/] {c['detail']}")
+        if erep.live_required:
+            console.print(f"    [yellow]![/] prompt/skill changed — `pf evals-gate "
+                          f"{group or '<group>'} {project or '<project>'} --live` "
+                          f"before merging")
+        failed = failed or erep.contract_ok is False
+    else:
+        console.print("[green]✓[/] agent surface  unchanged")
+
     for g, p, d in targets:
         issues = validate_project(d)
         inst = validate_instance(root() / "groups" / g / "ontology" / "instance.yaml")
@@ -817,16 +1309,22 @@ def _impact_on_changes(group: str, project: str, d: Path) -> bool:
     console.print(f"    [dim]changed:[/] {', '.join(changed)}")
     for line in report.render().splitlines():
         console.print(f"    {line}")
-    obs.record_impact(group=group, project=project,
-                      root_node=",".join(changed), severity=report.severity,
-                      total=report.total, report=report.to_dict())
+    obs.record_impact(
+        group=group,
+        project=project,
+        root_node=",".join(changed),
+        severity=report.severity,
+        total=report.total,
+        report=report.to_dict(),
+    )
     return report.severity == "breaking"
 
 
 def _changed_nodes(project_dir: Path) -> list[str]:
     """Graph node ids for models/sources touched in the working tree."""
-    proc = subprocess.run(["git", "status", "--porcelain", "--", str(project_dir)],
-                          capture_output=True, text=True, cwd=str(root()))
+    proc = subprocess.run(
+        ["git", "status", "--porcelain", "--", str(project_dir)], capture_output=True, text=True, cwd=str(root())
+    )
     nodes: list[str] = []
     for line in proc.stdout.splitlines():
         path = line[3:].strip().strip('"')
@@ -839,9 +1337,11 @@ def _changed_nodes(project_dir: Path) -> list[str]:
 
 
 @app.command("evals-gen")
-def cmd_evals_gen(group: str, project: str,
-                  toolkit: str = typer.Option("", help="only templates from these toolkits (comma-separated)"),
-                  ) -> None:
+def cmd_evals_gen(
+    group: str,
+    project: str,
+    toolkit: str = typer.Option("", help="only templates from these toolkits (comma-separated)"),
+) -> None:
     """Ground every toolkit's eval templates in this project's own models.
 
     A toolkit knows what correct judgement looks like; it cannot know which
@@ -861,36 +1361,37 @@ def cmd_evals_gen(group: str, project: str,
         raise typer.Exit(1) from exc
 
     if not results:
-        console.print("[yellow]no templates found[/] [dim]— toolkits ship them in "
-                      "platform/toolkits/<toolkit>/evals/templates/[/]")
+        console.print(
+            "[yellow]no templates found[/] [dim]— toolkits ship them in platform/toolkits/<toolkit>/evals/templates/[/]"
+        )
         raise typer.Exit(0)
 
     for r in results:
         if r.path:
             console.print(f"  [green]✓[/] {r.template.toolkit:<14} {r.template.name}")
         else:
-            console.print(f"  [yellow]–[/] {r.template.toolkit:<14} {r.template.name} "
-                          f"[dim]{r.skipped}[/]")
+            console.print(f"  [yellow]–[/] {r.template.toolkit:<14} {r.template.name} [dim]{r.skipped}[/]")
 
     written = [r for r in results if r.path]
-    console.print(f"\n{len(written)} case(s) written to "
-                  f"groups/{group}/projects/{project}/evals/cases/generated/")
+    console.print(f"\n{len(written)} case(s) written to groups/{group}/projects/{project}/evals/cases/generated/")
     if written:
-        console.print("[dim]Generated from this project's models — the reasoning is the "
-                      "toolkit's, the expectations are a starting point. Read them "
-                      "before trusting a green run.[/]")
+        console.print(
+            "[dim]Generated from this project's models — the reasoning is the "
+            "toolkit's, the expectations are a starting point. Read them "
+            "before trusting a green run.[/]"
+        )
 
 
 @app.command()
-def evals(group: str = typer.Argument("", help="omit to run the platform tier alone"),
-          project: str = typer.Argument(""),
-          live: bool = typer.Option(False, "--live",
-                                    help="call the real models and grade the responses (costs money)"),
-          samples: int = typer.Option(1, help="samples per live case; >1 exposes unstable prompts"),
-          agent: str = typer.Option("", help="only cases for this agent"),
-          tag: str = typer.Option("", help="only cases carrying this tag"),
-          scope: str = typer.Option("", help="platform, group or project; default is every tier that applies"),
-          ) -> None:
+def evals(
+    group: str = typer.Argument("", help="omit to run the platform tier alone"),
+    project: str = typer.Argument(""),
+    live: bool = typer.Option(False, "--live", help="call the real models and grade the responses (costs money)"),
+    samples: int = typer.Option(1, help="samples per live case; >1 exposes unstable prompts"),
+    agent: str = typer.Option("", help="only cases for this agent"),
+    tag: str = typer.Option("", help="only cases carrying this tag"),
+    scope: str = typer.Option("", help="platform, group or project; default is every tier that applies"),
+) -> None:
     """Test the parts of this platform that are prompts.
 
     Two tiers. The contract tier is deterministic, needs no credential and costs
@@ -916,10 +1417,14 @@ def evals(group: str = typer.Argument("", help="omit to run the platform tier al
     # naming a field the schema does not have is caught here, for free, instead
     # of after a round of billed calls.
     try:
-        cases = discover(root(), group or None, project or None,
-                         agents={agent} if agent else None,
-                         tags={tag} if tag else None,
-                         scopes=scopes)
+        cases = discover(
+            root(),
+            group or None,
+            project or None,
+            agents={agent} if agent else None,
+            tags={tag} if tag else None,
+            scopes=scopes,
+        )
     except CaseError as exc:
         console.print(f"[red]✗[/] {exc}")
         raise typer.Exit(1) from exc
@@ -937,19 +1442,16 @@ def evals(group: str = typer.Argument("", help="omit to run the platform tier al
             detail = ", ".join(f"{k} ({v})" for k, v in sorted(owned.items()))
             console.print(f"  [cyan]{tier:<9}[/] {detail}")
     if not cases:
-        console.print("  [dim]none — add cases to a toolkit's evals/, or this "
-                      "project's evals/cases/[/]")
+        console.print("  [dim]none — add cases to a toolkit's evals/, or this project's evals/cases/[/]")
 
     if not live:
         if cases:
-            console.print("\n[dim]cases loaded and valid; --live to grade them "
-                          "against the real models[/]")
+            console.print("\n[dim]cases loaded and valid; --live to grade them against the real models[/]")
         raise typer.Exit(1 if failed else 0)
 
     # ---------------------------------------------------------- live -------
     if not group or not project:
-        console.print("[red]✗[/] --live needs a group and a project: the agents "
-                      "run against a project's context card")
+        console.print("[red]✗[/] --live needs a group and a project: the agents run against a project's context card")
         raise typer.Exit(1)
 
     from pf.agents.base import NoCredentials
@@ -976,9 +1478,11 @@ def evals(group: str = typer.Argument("", help="omit to run the platform tier al
 
     console.print(f"\n  {report.tokens:,} tokens  ${report.usd:.4f}")
     if report.flaky:
-        console.print(f"  [yellow]{len(report.flaky)} unstable[/] [dim]— passed some "
-                      f"samples and not others; the prompt is not wrong, it is "
-                      f"underdetermined[/]")
+        console.print(
+            f"  [yellow]{len(report.flaky)} unstable[/] [dim]— passed some "
+            f"samples and not others; the prompt is not wrong, it is "
+            f"underdetermined[/]"
+        )
     raise typer.Exit(1 if failed or not report.ok else 0)
 
 
@@ -993,7 +1497,7 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
         ]:
             if not path.exists():
                 continue
-            text = path.read_text()
+            text = path.read_text(encoding="utf-8")
             n = _count(text, exact)
             obs.record_token_budget(group=g, project=p, artefact=artefact, tokens=n, budget=budget)
             over = over or n > budget
@@ -1001,16 +1505,14 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
     for g in (root() / "groups").iterdir() if (root() / "groups").exists() else []:
         card = g / "kg" / "group_card.md"
         if card.exists():
-            n = _count(card.read_text(), exact)
-            obs.record_token_budget(group=g.name, project="", artefact="group_card",
-                                    tokens=n, budget=GROUP_CARD_BUDGET)
+            n = _count(card.read_text(encoding="utf-8"), exact)
+            obs.record_token_budget(group=g.name, project="", artefact="group_card", tokens=n, budget=GROUP_CARD_BUDGET)
             over = over or n > GROUP_CARD_BUDGET
-            rows.append((g.name, "group_card", n, GROUP_CARD_BUDGET,
-                         "OK" if n <= GROUP_CARD_BUDGET else "OVER"))
+            rows.append((g.name, "group_card", n, GROUP_CARD_BUDGET, "OK" if n <= GROUP_CARD_BUDGET else "OVER"))
 
     routing = root() / "platform" / "toolkits" / "ROUTING.md"
     if routing.exists():
-        n = _count(routing.read_text(), exact)
+        n = _count(routing.read_text(encoding="utf-8"), exact)
         rows.append(("platform", "ROUTING.md", n, 400, "OK" if n <= 400 else "OVER"))
         over = over or n > 400
 
@@ -1018,9 +1520,8 @@ def tokens(exact: bool = typer.Option(False, help="use the Anthropic count_token
 
     vcard = root() / "docs" / "VENDOR-CARD.md"
     if vcard.exists():
-        n = _count(vcard.read_text(), exact)
-        rows.append(("platform", "VENDOR-CARD.md", n, VENDOR_CARD_BUDGET,
-                     "OK" if n <= VENDOR_CARD_BUDGET else "OVER"))
+        n = _count(vcard.read_text(encoding="utf-8"), exact)
+        rows.append(("platform", "VENDOR-CARD.md", n, VENDOR_CARD_BUDGET, "OK" if n <= VENDOR_CARD_BUDGET else "OVER"))
         over = over or n > VENDOR_CARD_BUDGET
 
     t = Table("scope", "artefact", "tokens", "budget", "status", title="Always-on token budget")
@@ -1037,6 +1538,7 @@ def _count(text: str, exact: bool) -> int:
         return estimate_tokens(text)
     try:
         import anthropic
+
         client = anthropic.Anthropic()
         return client.messages.count_tokens(
             model="claude-opus-5",
@@ -1049,8 +1551,7 @@ def _count(text: str, exact: bool) -> int:
 
 # ------------------------------------------------------------------ data ----
 @app.command("gen-staging")
-def cmd_gen_staging(group: str, project: str,
-                    overwrite: bool = typer.Option(False, "--overwrite")) -> None:
+def cmd_gen_staging(group: str, project: str, overwrite: bool = typer.Option(False, "--overwrite")) -> None:
     """Generate 1:1 staging models with role-driven cleaning from annotations."""
     d = pdir(group, project)
     try:
@@ -1091,8 +1592,7 @@ def run_all(group: str) -> None:
     procs = []
     for g, p, _d in sisters:
         console.print(f"[cyan]▸[/] launching {g}/{p}")
-        procs.append((p, subprocess.Popen(
-            [sys.executable, "-m", "pf.cli", "seed", g, p], cwd=str(root()))))
+        procs.append((p, subprocess.Popen([sys.executable, "-m", "pf.cli", "seed", g, p], cwd=str(root()))))
     failed = False
     for name, proc in procs:
         rc = proc.wait()
@@ -1115,10 +1615,11 @@ def status() -> None:
         n = "—"
         if gp.exists():
             from pf.kg.store import open_graph
+
             with open_graph(gp, read_only=True) as gr:
                 n = str(sum(gr.counts().values()))
         card = d / "kg" / "context_card.md"
-        ct = str(estimate_tokens(card.read_text())) if card.exists() else "—"
+        ct = str(estimate_tokens(card.read_text(encoding="utf-8"))) if card.exists() else "—"
         t.add_row(g, p, dbs[0].name if dbs else "—", n, ct)
     console.print(t)
 
@@ -1140,7 +1641,9 @@ def cmd_dagster_workspace() -> None:
 
     Paths are absolute: Dagster resolves a relative `working_directory` against
     the process cwd, not against the workspace file, so a relative path silently
-    resolves outside the repo.
+    resolves outside the repo. Absolute means machine-local, so the file is
+    gitignored and regenerated — by this command, and by every `pf bootstrap` —
+    rather than shared. A fresh clone gets it from either.
     """
     r = root()
     lines = [
@@ -1161,16 +1664,14 @@ def cmd_dagster_workspace() -> None:
             f"      location_name: {g}__{p}",
         ]
     out = r / "platform" / "workspace.yaml"
-    out.write_text("\n".join(lines) + "\n")
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     n = sum(1 for line in lines if line.startswith("  - python_module"))
     console.print(f"[green]✓[/] {out}  ({n} code location(s))")
-    console.print(f"  run: [cyan]DAGSTER_HOME={r}/.dagster uv run dagster dev "
-                  f"-w platform/workspace.yaml[/]")
+    console.print(f"  run: [cyan]DAGSTER_HOME={r}/.dagster uv run dagster dev -w platform/workspace.yaml[/]")
 
 
 # ------------------------------------------------------------------ stack --
-stack_app = typer.Typer(
-    help="The control plane: one Postgres, one origin, one image.")
+stack_app = typer.Typer(help="The control plane: one Postgres, one origin, one image.")
 app.add_typer(stack_app, name="stack")
 
 
@@ -1181,8 +1682,7 @@ def _stack_dir() -> Path:
 @stack_app.command("render")
 def cmd_stack_render(
     listen: int = typer.Option(frontdoor.LISTEN, help="Front-door port."),
-    static: str = typer.Option("", help="Path nginx serves /pf/ from. Defaults "
-                                       "to the generated www/ in this repo."),
+    static: str = typer.Option("", help="Path nginx serves /pf/ from. Defaults to the generated www/ in this repo."),
 ) -> None:
     """Generate nginx, supervisor and the Dagster storage block.
 
@@ -1202,7 +1702,8 @@ def cmd_stack_render(
     files = {
         out / "nginx.conf": frontdoor.nginx_conf(svcs, listen=listen, static=www),
         out / "supervisord.conf": frontdoor.supervisor_conf(
-            svcs, locs, repo=r, nginx_conf_path=str(out / "nginx.conf")),
+            svcs, locs, repo=r, nginx_conf_path=str(out / "nginx.conf")
+        ),
         out / "workspace.yaml": frontdoor.workspace_yaml(locs),
         out / "www" / "index.html": frontdoor.landing_html(svcs, listen=listen),
         out / "www" / "recce-down.html": frontdoor.recce_down_html(),
@@ -1210,7 +1711,7 @@ def cmd_stack_render(
         out / "www" / "bar.js": frontdoor.bar_js(),
     }
     for path, text in files.items():
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         console.print(f"[green]✓[/] {path.relative_to(r)}")
 
     s = storage.settings()
@@ -1219,19 +1720,29 @@ def cmd_stack_render(
     # exactly like success.
     home = Path(os.environ.get("DAGSTER_HOME") or (r / ".dagster"))
     path, changed = storage.write(home, s, base=r / ".dagster" / "dagster.yaml")
-    where = (f"postgres {s.host}:{s.port}/{s.db} schema={s.schema}" if s
-             else f"sqlite (set {storage.ENV_HOST} for postgres)")
+    where = (
+        f"postgres {s.host}:{s.port}/{s.db} schema={s.schema}" if s else f"sqlite (set {storage.ENV_HOST} for postgres)"
+    )
     shown = path.relative_to(r) if path.is_relative_to(r) else path
-    console.print(f"[green]✓[/] {shown}  "
-                  f"{'updated' if changed else 'unchanged'} — {where}")
+    console.print(f"[green]✓[/] {shown}  {'updated' if changed else 'unchanged'} — {where}")
 
     ports = {x.project: x.port for x in locs}
-    t = Table("project", "group", "code server", "recce", "on boot",
-              title=f"{len(locs)} code location(s), {len(svcs)} review server(s)")
+    t = Table(
+        "project",
+        "group",
+        "code server",
+        "recce",
+        "on boot",
+        title=f"{len(locs)} code location(s), {len(svcs)} review server(s)",
+    )
     for x in svcs:
-        t.add_row(x.project, x.group, str(ports.get(x.project, "—")),
-                  str(x.port),
-                  "recce" if x.reviewed else "[dim]code only[/]")
+        t.add_row(
+            x.project,
+            x.group,
+            str(ports.get(x.project, "—")),
+            str(x.port),
+            "recce" if x.reviewed else "[dim]code only[/]",
+        )
     if svcs:
         console.print(t)
 
@@ -1246,16 +1757,14 @@ def cmd_stack_db_init() -> None:
     """
     s = storage.settings()
     if s is None:
-        console.print(f"[red]{storage.ENV_HOST} is not set[/] — nothing to "
-                      "initialise. See docs/STACK.md.")
+        console.print(f"[red]{storage.ENV_HOST} is not set[/] — nothing to initialise. See docs/STACK.md.")
         raise typer.Exit(1)
     admin = storage.admin_settings(s)
     try:
         for line in storage.ensure_schema(s, admin):
             console.print(f"[green]✓[/] {line}")
     except ImportError:
-        console.print("[red]psycopg2 is not installed[/] — "
-                      "[cyan]uv sync --extra stack[/]")
+        console.print("[red]psycopg2 is not installed[/] — [cyan]uv sync --extra stack[/]")
         raise typer.Exit(1) from None
     except Exception as exc:  # noqa: BLE001 - the driver raises many types
         console.print(f"[red]✗[/] {type(exc).__name__}: {exc}")
@@ -1293,15 +1802,18 @@ def cmd_stack_status() -> None:
 
     r = root()
     s = storage.settings()
-    console.print(f"[bold]storage[/]  "
-                  f"{'postgres ' + s.host + ':' + str(s.port) + '/' + s.db if s else 'sqlite (local files)'}")
+    console.print(
+        f"[bold]storage[/]  {'postgres ' + s.host + ':' + str(s.port) + '/' + s.db if s else 'sqlite (local files)'}"
+    )
     if s is None:
         # This shell's configuration, not the container's. Saying so matters:
         # the stack can be serving happily off Postgres while the host that
         # asked reads "sqlite", and that is not a disagreement.
-        console.print(f"  [dim]this shell only — the stack sets "
-                      f"{storage.ENV_HOST} for itself. Set it here too to "
-                      f"point host-side `dagster dev` at the same database.[/]")
+        console.print(
+            f"  [dim]this shell only — the stack sets "
+            f"{storage.ENV_HOST} for itself. Set it here too to "
+            f"point host-side `dagster dev` at the same database.[/]"
+        )
     if s:
         try:
             counts = storage.table_counts(s)
@@ -1309,17 +1821,18 @@ def cmd_stack_status() -> None:
                 mark = "[green]✓[/]" if schema in (s.schema, "public") else " "
                 console.print(f"  {mark} schema {schema}: {n} table(s)")
             if counts.get(s.schema, 0) == 0:
-                console.print(f"  [yellow]![/] schema {s.schema} is empty — "
-                              "Dagster has not migrated into it yet")
+                console.print(f"  [yellow]![/] schema {s.schema} is empty — Dagster has not migrated into it yet")
         except ImportError:
             console.print("  [yellow]![/] psycopg2 missing; cannot inspect")
         except Exception as exc:  # noqa: BLE001
             console.print(f"  [red]✗[/] {type(exc).__name__}: {exc}")
 
     conf = _stack_dir() / "nginx.conf"
-    console.print(f"[bold]front door[/]  "
-                  f"{'rendered' if conf.exists() else '[yellow]not rendered[/]'}"
-                  f" — {conf.relative_to(r) if conf.exists() else 'pf stack render'}")
+    console.print(
+        f"[bold]front door[/]  "
+        f"{'rendered' if conf.exists() else '[yellow]not rendered[/]'}"
+        f" — {conf.relative_to(r) if conf.exists() else 'pf stack render'}"
+    )
 
     # Every probe goes through the front door, including the recce ones. Their
     # own ports are bound to loopback *inside* the container and are not
@@ -1332,10 +1845,10 @@ def cmd_stack_status() -> None:
     # distribution and reporting nothing wrong.
     try:
         with urllib.request.urlopen(  # noqa: S310
-                f"{base}/api/v1/system/version", timeout=5) as resp:
+            f"{base}/api/v1/system/version", timeout=5
+        ) as resp:
             v = json.load(resp)
-        console.print(f"[bold]openmetadata[/]  {v.get('version', '?')}"
-                      f"  [dim]{str(v.get('revision', ''))[:8]}[/]")
+        console.print(f"[bold]openmetadata[/]  {v.get('version', '?')}  [dim]{str(v.get('revision', ''))[:8]}[/]")
     except Exception:  # noqa: BLE001 - not answering is reported by the table
         console.print("[bold]openmetadata[/]  [dim]not answering[/]")
 
@@ -1343,10 +1856,8 @@ def cmd_stack_status() -> None:
     # green Dagster run and 75 rejected writes. Reports where the credential
     # came from and never what it is.
     try:
-        _, source = token.resolve(dict(os.environ),
-                                  storage.admin_settings(s) if s else None)
-        console.print(f"[bold]catalogue auth[/]  [green]✓[/] "
-                      f"resolved from the {source}")
+        _, source = token.resolve(dict(os.environ), storage.admin_settings(s) if s else None)
+        console.print(f"[bold]catalogue auth[/]  [green]✓[/] resolved from the {source}")
     except token.TokenUnavailable as exc:
         console.print(f"[bold]catalogue auth[/]  [yellow]![/] {exc}")
 
@@ -1357,8 +1868,7 @@ def cmd_stack_status() -> None:
         ("dagster", f"{base}/dagster/server_info", ""),
         ("launcher", f"{base}/pf/", ""),
     ]
-    probes += [(f"recce/{x.project}", f"{base}/api/health", x.project)
-               for x in svcs]
+    probes += [(f"recce/{x.project}", f"{base}/api/health", x.project) for x in svcs]
     for name, url, project in probes:
         req = urllib.request.Request(url)  # noqa: S310
         if project:
@@ -1368,15 +1878,13 @@ def cmd_stack_status() -> None:
                 # The front door answers a stopped review server with the
                 # explanatory page, not an error, so 200 alone is not "up".
                 body = resp.read(400)
-                state = ("[dim]stopped[/]" if b"not running" in body
-                         else f"[green]{resp.status}[/]")
+                state = "[dim]stopped[/]" if b"not running" in body else f"[green]{resp.status}[/]"
         except urllib.error.HTTPError as exc:
             # `^~ /api/` deliberately does not serve the explanatory HTML — a
             # JSON client should get a status, not a page — so a refused
             # upstream arrives here as 502, and for a review server that is the
             # normal resting state rather than a fault.
-            state = ("[dim]stopped[/]" if project and exc.code == 502
-                     else f"[yellow]{exc.code}[/]")
+            state = "[dim]stopped[/]" if project and exc.code == 502 else f"[yellow]{exc.code}[/]"
         except Exception as exc:  # noqa: BLE001
             state = f"[red]{type(exc).__name__}[/]"
         t.add_row(name, url, state)
@@ -1388,58 +1896,102 @@ loop_app = typer.Typer(help="Loop engineering: scheduled, gated, budgeted agent 
 app.add_typer(loop_app, name="loop")
 
 
-@loop_app.command("list")
-def cmd_loop_list() -> None:
-    """Every loop, with its autonomy level and budget."""
-    t = Table("loop", "autonomy", "cadence", "budget", "writes", "description")
-    for s in SPECS.values():
-        t.add_row(s.name, s.autonomy, s.cadence,
-                  f"{s.token_budget:,}" if s.token_budget else "—",
-                  "yes" if s.writes else "no", s.description)
-    console.print(t)
-    console.print("[dim]L1 report-only · L2 gated patches · L3 unattended. "
-                  "Nothing is L3 until it has a track record.[/]")
-
-
-@loop_app.command("run")
-def cmd_loop_run(loop: str, group: str, project: str,
-                 dry_run: bool = typer.Option(False, "--dry-run")) -> None:
-    """Run one loop against one project."""
-    spec = SPECS.get(loop)
+def _spec_or_exit(loop: str):
+    specs = all_specs()
+    spec = specs.get(loop)
     if spec is None:
-        console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
+        console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(specs)}")
         raise typer.Exit(1)
-    pdir(group, project)
-    r = root()
-    run = run_loop(spec, lambda run: BODIES[loop](r, group, project, run),
-                   root=r, group=group, project=project, dry_run=dry_run)
-    colour = {"ok": "yellow", "noop": "green", "circuit_open": "red",
-              "error": "red", "escalated": "red"}.get(run.outcome, "white")
-    console.print(f"[{colour}]{run.outcome}[/] {loop} · {group}/{project} "
+    return spec
+
+
+def _print_run(run, loop: str, group: str, project: str) -> None:
+    colour = {"ok": "yellow", "noop": "green", "proposed": "cyan", "circuit_open": "red",
+              "error": "red", "escalated": "red", "gate_blocked": "red"}.get(run.outcome, "white")
+    console.print(f"[{colour}]{run.outcome}[/] {loop} · {group}/{project} · {run.level} "
                   f"· {run.duration_ms}ms · attempt {run.attempt}")
     if run.message:
         console.print(f"  [dim]{run.message}[/]")
     for f in run.findings:
         console.print(f"  • {f}")
+    for pr in run.proposals:
+        where = pr.get("pr_url") or (f"branch {pr['branch']}" if pr.get("branch") else pr.get("path", ""))
+        console.print(f"  [cyan]↗[/] proposal {pr['proposal_id']} [{pr['status']}] {where}")
+        if pr.get("impact_severity"):
+            console.print(f"     impact {pr['impact_severity']} ({pr['impact_total']}) · {pr.get('review', '')}")
+        if pr.get("message"):
+            console.print(f"     [dim]{pr['message']}[/]")
+    if run.suppressed:
+        console.print(f"  [dim]{len(run.suppressed)} finding(s) suppressed by memory[/]")
     if not run.findings and run.outcome == "noop":
         console.print("  [dim]nothing to report[/]")
 
 
+@loop_app.command("list")
+def cmd_loop_list(group: str = typer.Argument(""), project: str = typer.Argument("")) -> None:
+    """Every loop, with its born and (if a project is given) earned autonomy."""
+    from pf.loops import levels
+    t = Table("loop", "born", "earned", "cadence", "budget", "writes", "description")
+    r = root()
+    for s in all_specs().values():
+        earned = levels.effective(r, s, project) if project else "—"
+        t.add_row(s.name, s.autonomy, earned, s.cadence,
+                  f"{s.token_budget:,}" if s.token_budget else "—",
+                  "yes" if s.writes else "no", s.description)
+    console.print(t)
+    console.print("[dim]L1 report-only · L2 gated PRs · L3 unattended. A level is earned "
+                  "from the ledger (`pf loop ladder`), never declared.[/]")
+
+
+@loop_app.command("run")
+def cmd_loop_run(loop: str, group: str, project: str,
+                 dry_run: bool = typer.Option(False, "--dry-run"),
+                 notify: bool = typer.Option(False, "--notify", help="post the result to the group channel")) -> None:
+    """Run one loop against one project."""
+    spec = _spec_or_exit(loop)
+    pdir(group, project)
+    r = root()
+    body = all_bodies()[loop]
+    run = run_loop(spec, lambda run: body(r, group, project, run),
+                   root=r, group=group, project=project, dry_run=dry_run)
+    _print_run(run, loop, group, project)
+    if notify and (run.findings or run.proposals or run.outcome in ("error", "circuit_open")):
+        from pf.notify import notify as _notify
+        from pf.notify import render_run
+        ok, detail = _notify(r, group, render_run(run), channel="loops")
+        console.print(f"  [{'green' if ok else 'yellow'}]notify[/] {detail}")
+
+
 @loop_app.command("run-all")
-def cmd_loop_run_all(group: str, project: str) -> None:
-    """Run every read-only (L1) loop and refresh STATE.md."""
-    r, findings = root(), []
-    for name, spec in SPECS.items():
-        if spec.autonomy != "L1":
-            continue
-        run = run_loop(spec, lambda run, n=name: BODIES[n](r, group, project, run),
+def cmd_loop_run_all(group: str, project: str,
+                     notify: bool = typer.Option(False, "--notify")) -> None:
+    """Run every loop at its earned level and refresh STATE.md."""
+    from pf.loops import levels
+    r, findings, posted = root(), [], []
+    bodies = all_bodies()
+    for name, spec in all_specs().items():
+        run = run_loop(spec, lambda run, n=name: bodies[n](r, group, project, run),
                        root=r, group=group, project=project)
         for f in run.findings:
             findings.append(f"[{name}] {f}")
-        console.print(f"  {'[yellow]•[/]' if run.findings else '[green]✓[/]'} "
-                      f"{name}: {len(run.findings)} finding(s)")
-    p = update_state(r, findings, watch=[s.name for s in SPECS.values() if s.autonomy != "L1"])
+        for pr in run.proposals:
+            findings.append(f"[{name}] proposal {pr['proposal_id']} {pr['status']}: "
+                            f"{pr.get('pr_url') or pr.get('branch') or pr.get('path')}")
+        mark = "[cyan]↗[/]" if run.proposals else "[yellow]•[/]" if run.findings else "[green]✓[/]"
+        console.print(f"  {mark} {name} [{run.level}]: {len(run.findings)} finding(s)"
+                      + (f", {len(run.suppressed)} suppressed" if run.suppressed else ""))
+        if run.findings or run.proposals:
+            posted.append(run)
+    watch = [f"{s.name} at {levels.effective(r, s, project)}" for s in all_specs().values()
+             if levels.effective(r, s, project) != "L1"]
+    p = update_state(r, findings, watch=watch)
     console.print(f"[green]✓[/] {p} updated ({len(findings)} open item(s))")
+    if notify and posted:
+        from pf.notify import notify as _notify
+        from pf.notify import render_run
+        text = "\n\n".join(render_run(x) for x in posted)
+        ok, detail = _notify(r, group, text, channel="loops")
+        console.print(f"  [{'green' if ok else 'yellow'}]notify[/] {detail}")
 
 
 @loop_app.command("audit")
@@ -1448,22 +2000,27 @@ def cmd_loop_audit() -> None:
     score, checks = loop_audit(root())
     t = Table("check", "weight", "status", "detail", title="Loop Readiness")
     for c in checks:
-        t.add_row(c.name, str(c.weight),
-                  "[green]PASS[/]" if c.passed else "[red]FAIL[/]", c.detail)
+        t.add_row(c.name, str(c.weight), "[green]PASS[/]" if c.passed else "[red]FAIL[/]", c.detail)
     console.print(t)
 
     rows = project_readiness(root())
-    pt = Table("group/project", "hook", "graph", "card", "CLAUDE.md", "state",
-               title="Per-project governance")
+    pt = Table("group/project", "hook", "graph", "card", "CLAUDE.md", "state", title="Per-project governance")
     tick = {True: "[green]✓[/]", False: "[red]✗[/]"}
     for r in rows:
-        pt.add_row(f"{r.group}/{r.project}", tick[r.hook], tick[r.graph], tick[r.card],
-                   tick[r.claude_md],
-                   "[green]ready[/]" if r.ready else f"[red]missing: {', '.join(r.missing)}[/]")
+        pt.add_row(
+            f"{r.group}/{r.project}",
+            tick[r.hook],
+            tick[r.graph],
+            tick[r.card],
+            tick[r.claude_md],
+            "[green]ready[/]" if r.ready else f"[red]missing: {', '.join(r.missing)}[/]",
+        )
     console.print(pt)
     if any(not r.ready for r in rows):
-        console.print("[yellow]A project without a graph is ungoverned: its edits get a "
-                      "warning, never a blast radius. Run `pf kg build <group> <project>`.[/]")
+        console.print(
+            "[yellow]A project without a graph is ungoverned: its edits get a "
+            "warning, never a blast radius. Run `pf kg build <group> <project>`.[/]"
+        )
     colour = "green" if score >= 80 else "yellow" if score >= 55 else "red"
     console.print(f"[{colour}]Score: {score}/100[/] — {recommended_level(score, root())}")
     raise typer.Exit(0 if score >= 55 else 1)
@@ -1476,20 +2033,20 @@ def cmd_loop_status(limit: int = 15) -> None:
     if not entries:
         console.print("[yellow]no runs yet[/]")
         return
-    t = Table("when", "loop", "project", "outcome", "findings", "ms")
+    t = Table("when", "loop", "project", "level", "outcome", "findings", "proposals", "ms")
     for e in entries:
-        t.add_row(e["started_at"][:19], e["loop"], e["project"], e["outcome"],
-                  str(len(e.get("findings") or [])), str(e.get("duration_ms", 0)))
+        t.add_row(e["started_at"][:19], e["loop"], e["project"], e.get("level", ""),
+                  e["outcome"], str(len(e.get("findings") or [])),
+                  str(len(e.get("proposals") or [])), str(e.get("duration_ms", 0)))
     console.print(t)
 
 
 @loop_app.command("reset")
-def cmd_loop_reset(loop: str, group: str, project: str,
-                   note: str = typer.Option("", help="why it is safe to resume")) -> None:
+def cmd_loop_reset(
+    loop: str, group: str, project: str, note: str = typer.Option("", help="why it is safe to resume")
+) -> None:
     """Clear a latched circuit breaker after resolving the underlying finding."""
-    if loop not in SPECS:
-        console.print(f"[red]unknown loop '{loop}'[/]. Try: {', '.join(SPECS)}")
-        raise typer.Exit(1)
+    _spec_or_exit(loop)
     pdir(group, project)
     ledger = Ledger(root())
     fails = ledger.consecutive_failures(loop, project)
@@ -1498,7 +2055,241 @@ def cmd_loop_reset(loop: str, group: str, project: str,
         return
     ledger.reset(loop, group, project, note)
     console.print(f"[green]✓[/] {loop} · {group}/{project} reset "
-                  f"({fails} consecutive failure(s) cleared)")
+                  f"({fails} failure(s) cleared)")
+
+
+# ------------------------------------------------------------- ladder ----
+@loop_app.command("ladder")
+def cmd_loop_ladder(group: str, project: str,
+                    loop: str = typer.Argument("", help="one loop, or every loop")) -> None:
+    """What each loop has earned, and what still blocks the next rung."""
+    from pf.loops import levels
+    r = root()
+    pdir(group, project)
+    specs = {loop: _spec_or_exit(loop)} if loop else all_specs()
+    t = Table("loop", "level", "next", "clean runs", "reverts", "evals", "blockers")
+    for s in specs.values():
+        ev = levels.eligibility(r, s, project)
+        evals = "—" if ev.evals_ok is None else ("pass" if ev.evals_ok else "FAIL")
+        if ev.evals_pass_rate is not None:
+            evals += f" {ev.evals_pass_rate:.2f}"
+        state = "[green]eligible[/]" if ev.eligible else (
+            "[dim]top[/]" if ev.target is None else "\n".join(ev.blockers))
+        t.add_row(s.name, ev.current, ev.target or "—",
+                  f"{ev.clean_runs}/{ev.window_days}d" if ev.target else "—",
+                  str(ev.reverts), evals, state)
+    console.print(t)
+    console.print("[dim]Promotion needs a human: `pf loop promote <loop> <group> <project>`. "
+                  "Demotion is automatic on `pf loop revert`.[/]")
+
+
+@loop_app.command("promote")
+def cmd_loop_promote(loop: str, group: str, project: str,
+                     force: bool = typer.Option(False, "--force",
+                                                help="promote without the evidence (recorded as forced)"),
+                     actor: str = typer.Option("", help="who is approving; defaults to git user")) -> None:
+    """Move a loop one rung up, on the ledger's evidence."""
+    from pf.loops import levels
+    spec = _spec_or_exit(loop)
+    pdir(group, project)
+    who = actor or _git_user()
+    ev, rec = levels.promote(root(), spec, project, actor=who, force=force)
+    if ev.target is None:
+        console.print(f"[green]✓[/] {loop} is already at the top rung ({ev.current})")
+        return
+    if rec is None:
+        from pf import trace
+        trace.decision(root(), f"promote-refused:{loop}", group=group, project=project,
+                       loop=loop, target=ev.target, actor=who, blockers=ev.blockers)
+        console.print(f"[red]✗[/] {loop} · {group}/{project} is not eligible for {ev.target}:")
+        for b in ev.blockers:
+            console.print(f"    • {b}")
+        console.print("[dim]--force records a promotion without the evidence; the ledger "
+                      "will say who did it.[/]")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/] {loop} · {group}/{project}: {ev.current} → {rec['level']} "
+                  f"by {who} ({rec['reason']})")
+
+
+@loop_app.command("demote")
+def cmd_loop_demote(loop: str, group: str, project: str,
+                    reason: str = typer.Option(..., help="why"),
+                    actor: str = typer.Option("")) -> None:
+    """Move a loop one rung down. Never below L1."""
+    from pf.loops import levels
+    spec = _spec_or_exit(loop)
+    rec = levels.demote(root(), spec, project, actor=actor or _git_user(), reason=reason)
+    if rec is None:
+        console.print(f"[green]✓[/] {loop} is already L1")
+        return
+    console.print(f"[yellow]↓[/] {loop} · {group}/{project} → {rec['level']}")
+
+
+@loop_app.command("revert")
+def cmd_loop_revert(loop: str, group: str, project: str,
+                    note: str = typer.Option(..., help="what was wrong with the patch"),
+                    proposal: str = typer.Option("", help="proposal id, if known"),
+                    actor: str = typer.Option("")) -> None:
+    """Record that a human reverted something this loop wrote. Demotes it."""
+    from pf.loops import actions, levels
+    spec = _spec_or_exit(loop)
+    who = actor or _git_user()
+    run, rec = levels.record_revert(root(), spec, group, project, actor=who, note=note)
+    if proposal:
+        actions.mark(root(), proposal, "reverted", actor=who, note=note)
+    console.print(f"[red]↺[/] revert recorded for {loop} · {group}/{project} ({run.run_id})")
+    if rec:
+        console.print(f"[yellow]↓[/] demoted to {rec['level']} — it earns the level back from zero")
+    else:
+        console.print("[dim]already L1; the revert is on the ledger[/]")
+
+
+def _git_user() -> str:
+    proc = subprocess.run(["git", "config", "user.name"], capture_output=True, text=True)
+    return proc.stdout.strip() or os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
+
+
+# ---------------------------------------------------------- proposals ----
+proposals_app = typer.Typer(help="What loops proposed, and what people decided.")
+loop_app.add_typer(proposals_app, name="proposals")
+
+
+@proposals_app.command("list")
+def cmd_proposals_list(limit: int = 20) -> None:
+    from pf.loops import actions
+    rows = actions.load_all(root())[-limit:]
+    if not rows:
+        console.print("[dim]no proposals yet[/]")
+        return
+    t = Table("id", "loop", "level", "status", "resolution", "impact", "where", "title")
+    for d in rows:
+        p, o, res = d["proposal"], d["outcome"], d.get("resolution") or {}
+        t.add_row(p["id"], p["loop"], o["level"], o["status"], res.get("status", "—"),
+                  f"{o.get('impact_severity') or '—'}",
+                  o.get("pr_url") or o.get("branch") or "", p["title"][:50])
+    console.print(t)
+
+
+@proposals_app.command("accept")
+def cmd_proposals_accept(proposal: str, note: str = typer.Option(""),
+                         actor: str = typer.Option("")) -> None:
+    """A human merged or applied it. Counts toward promotion."""
+    import uuid
+
+    from pf.loops import actions
+    from pf.loops.runner import LoopRun, _now
+    r = root()
+    rows = {d["proposal"]["id"]: d for d in actions.load_all(r)}
+    if proposal not in rows:
+        console.print(f"[red]unknown proposal {proposal}[/]")
+        raise typer.Exit(1)
+    d = rows[proposal]
+    who = actor or _git_user()
+    actions.mark(r, proposal, "accepted", actor=who, note=note)
+    # The ledger is what promotion reads, so acceptance goes there too.
+    g, pj = _owner_of(d)
+    Ledger(r).append(LoopRun(run_id=str(uuid.uuid4())[:8], loop=d["proposal"]["loop"],
+                             group=g, project=pj, started_at=_now(),
+                             outcome="accepted", message=f"proposal {proposal} accepted by {who}"))
+    console.print(f"[green]✓[/] {proposal} accepted")
+
+
+@proposals_app.command("reject")
+def cmd_proposals_reject(proposal: str, note: str = typer.Option(..., help="why"),
+                         actor: str = typer.Option("")) -> None:
+    from pf.loops import actions
+    if not actions.mark(root(), proposal, "rejected", actor=actor or _git_user(), note=note):
+        console.print(f"[red]unknown proposal {proposal}[/]")
+        raise typer.Exit(1)
+    console.print(f"[yellow]✗[/] {proposal} rejected — if the loop wrote a branch, "
+                  f"`pf loop revert` is the stronger signal")
+
+
+def _owner_of(doc: dict) -> tuple[str, str]:
+    for g in doc["outcome"].get("gate") or []:
+        parts = g["path"].replace("\\", "/").split("/")
+        if len(parts) > 3 and parts[0] == "groups" and parts[2] == "projects":
+            return parts[1], parts[3]
+    return "", ""
+
+
+# ------------------------------------------------------------- memory ----
+memory_app = typer.Typer(help="What a project has decided about its own findings.")
+loop_app.add_typer(memory_app, name="memory")
+
+
+@memory_app.command("add")
+def cmd_memory_add(group: str, project: str, pattern: str,
+                   note: str = typer.Option(..., help="why — required"),
+                   loop: str = typer.Option("*", help="loop name, or * for all"),
+                   annotate: bool = typer.Option(False, "--annotate", help="keep the finding, append the note"),
+                   expires: str = typer.Option("", help="ISO date; suppressions should have one"),
+                   actor: str = typer.Option("")) -> None:
+    """Suppress (or annotate) findings matching a pattern. Reviewed like any decision."""
+    from pf.loops import memory
+    if loop != "*":
+        _spec_or_exit(loop)
+    e = memory.remember(pdir(group, project), loop=loop, pattern=pattern, note=note,
+                        verb="annotate" if annotate else "suppress",
+                        actor=actor or _git_user(), expires=expires)
+    console.print(f"[green]✓[/] {e.id} {e.verb} `{e.pattern}` for {e.loop}"
+                  + (f" until {e.expires}" if e.expires else " [yellow](no expiry)[/]"))
+
+
+@memory_app.command("list")
+def cmd_memory_list(group: str, project: str) -> None:
+    from pf.loops import memory
+    entries = memory.load(pdir(group, project))
+    if not entries:
+        console.print("[dim]no memory yet — `pf loop memory add`[/]")
+        return
+    t = Table("id", "loop", "verb", "pattern", "hits", "expires", "note")
+    for e in entries:
+        t.add_row(e.id, e.loop, e.verb, e.pattern, str(e.hits),
+                  e.expires or "[yellow]never[/]", e.note)
+    console.print(t)
+
+
+@memory_app.command("forget")
+def cmd_memory_forget(group: str, project: str, entry: str) -> None:
+    from pf.loops import memory
+    if memory.forget(pdir(group, project), entry):
+        console.print(f"[green]✓[/] {entry} removed")
+    else:
+        console.print(f"[red]no entry {entry}[/]")
+        raise typer.Exit(1)
+
+
+@memory_app.command("audit")
+def cmd_memory_audit(group: str, project: str) -> None:
+    """Entries a person should look at: expired, never-hit, open-ended."""
+    from pf.loops import memory
+    issues = memory.audit(pdir(group, project))
+    for i in issues:
+        console.print(f"  [yellow]![/] {i}")
+    if not issues:
+        console.print("[green]✓[/] memory is tidy")
+
+
+@app.command("install-hook")
+def cmd_install_hook(
+    force: bool = typer.Option(False, "--force",
+                               help="replace a pre-commit hook that is not ours"),
+) -> None:
+    """Install the pre-commit gate, so gate.yaml is enforced before a commit lands.
+
+    This is the only place `maxFiles` and the staged-set denylist are enforced —
+    CI does not re-apply them — so a checkout without this hook has no gate.
+    """
+    from pf.loops.gate import hook_status, install_hook
+
+    _, detail = install_hook(root(), force=force)
+    state, _ = hook_status(root())
+    if state == "ok":
+        console.print(f"[green]✓[/] {detail}")
+        return
+    console.print(f"[red]✗[/] {detail}")
+    raise typer.Exit(1)
 
 
 @app.command()
@@ -1530,14 +2321,153 @@ def gate(paths: str = typer.Option(..., help="comma-separated paths")) -> None:
             for line in rep.render().splitlines():
                 console.print(f"  {line}")
             if rep.severity == "breaking":
-                blocked.append(GateResult("deny", "impact:breaking", f"{g}/{p}",
-                                          f"{rep.total} downstream object(s)"))
+                blocked.append(GateResult("deny", "impact:breaking", f"{g}/{p}", f"{rep.total} downstream object(s)"))
+
+    # The other half of the gate: a change to what the agent *is* must pass
+    # the contract evals, the same way a change to a model must pass impact.
+    from pf.evals import gate as eval_gate
+    surface = eval_gate.touches_agent_surface(plist)
+    if surface:
+        rep = eval_gate.run_gate(r, "", "", changed=plist)
+        failed = [c["name"] for c in rep.contract if c["outcome"] == "fail"]
+        if failed:
+            console.print(f"[red]EVALS[/] agent surface changed ({len(surface)} file(s)); "
+                          f"contract checks failing: {', '.join(failed)}")
+            blocked.append(GateResult("deny", "evals:contract", ", ".join(surface[:3]),
+                                      "contract evals fail"))
+        else:
+            console.print(f"[green]✓[/] evals: contract passed for {len(surface)} "
+                          f"agent-surface file(s)")
+        if rep.live_required:
+            console.print("[yellow]EVALS[/] prompt/skill changed — run "
+                          "`pf evals-gate <group> <project> --live` before merging")
 
     if blocked:
-        console.print("\n[red]blocked[/] — resolve, or commit with --no-verify "
-                      "and say why in the message")
+        console.print("\n[red]blocked[/] — resolve, or commit with --no-verify and say why in the message")
         raise typer.Exit(1)
     console.print(f"[green]✓[/] gate passed ({len(plist)} path(s))")
+
+
+@app.command("evals-gate")
+def cmd_evals_gate(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                   live: bool = typer.Option(False, "--live", help="grade against the real models"),
+                   samples: int = typer.Option(1),
+                   base: str = typer.Option("", help="git ref to diff against"),
+                   force: bool = typer.Option(False, "--force",
+                                              help="run even if no agent-surface file changed")) -> None:
+    """Evals as a merge gate: required when the diff changes the agent.
+
+    Records whatever ran to data/evals/latest.json — the same file
+    `pf loop promote` reads, so a loop cannot climb on evidence a merge
+    would have refused.
+    """
+    from pf import pr as pr_mod
+    from pf.evals import gate as eval_gate
+
+    r = root()
+    changed = pr_mod.changed_files(r, base=base)
+    rep = eval_gate.run_gate(r, group, project, changed=changed, live=live,
+                             samples=samples, force=force)
+    if not rep.required and not force:
+        console.print(f"[green]✓[/] no agent-surface file in {len(changed)} changed — "
+                      f"evals not required")
+        return
+    console.print(f"[bold]agent surface[/] {len(rep.surface)} file(s)")
+    for f in rep.surface[:10]:
+        console.print(f"  {f}" + ("  [yellow](live)[/]" if f in rep.live_required else ""))
+    for c in rep.contract:
+        mark = {"pass": "[green]✓[/]", "warn": "[yellow]![/]", "fail": "[red]✗[/]"}[c["outcome"]]
+        console.print(f"  {mark} {c['name']:<44} [dim]{c['detail']}[/]")
+    if rep.live_ran:
+        colour = "green" if rep.live_ok else "red"
+        console.print(f"[{colour}]live[/] {rep.live_cases} case(s) · pass rate "
+                      f"{rep.live_pass_rate:.2f} · {rep.live_tokens:,} tokens")
+    if rep.message:
+        console.print(f"[yellow]![/] {rep.message}")
+    console.print(f"[dim]recorded → {eval_gate.latest_path(r)}[/]")
+    raise typer.Exit(0 if rep.ok else 1)
+
+
+# ------------------------------------------------------------------ logs --
+logs_app = typer.Typer(help="Trace logs: what every agent understood, asked, called and got.")
+app.add_typer(logs_app, name="logs")
+
+
+@logs_app.command("list")
+def cmd_logs_list(group: str = typer.Argument(""), project: str = typer.Argument(""),
+                  kind: str = typer.Option("", help="command | loop | ask | proposal"),
+                  limit: int = 30) -> None:
+    """Recent runs, newest last. `pf logs show <run>` for one."""
+    from pf import trace
+    rows = trace.index(root(), limit=limit, group=group, project=project, kind=kind)
+    if not rows:
+        console.print(f"[dim]no traces yet in {trace.trace_dir(root())}[/]")
+        return
+    t = Table("when", "run", "kind", "name", "group/project", "outcome", "events")
+    for r in rows:
+        t.add_row(r["ts"][:19], r["run"], r["kind"], r["name"][:40],
+                  f"{r.get('group','')}/{r.get('project','')}", r["outcome"], str(r["events"]))
+    console.print(t)
+    console.print(f"[dim]{trace.trace_dir(root())}[/]")
+
+
+@logs_app.command("show")
+def cmd_logs_show(run: str, raw: bool = typer.Option(False, "--raw", help="JSONL, not a transcript")) -> None:
+    """One run as a readable transcript: intent, understanding, requests, tools, steps."""
+    from rich.markup import escape
+
+    from pf import trace
+    events = trace.read(root(), run)
+    if not events:
+        console.print(f"[red]no trace for run {run}[/]")
+        raise typer.Exit(1)
+    if raw:
+        for e in events:
+            console.print_json(json.dumps(e))
+        return
+    console.print(escape(trace.render(events)))
+
+
+@logs_app.command("tail")
+def cmd_logs_tail(n: int = 1) -> None:
+    """The last n runs, rendered."""
+    from rich.markup import escape
+
+    from pf import trace
+    for r in trace.index(root(), limit=n):
+        console.print(f"[bold]{r['run']}[/] {r['kind']} {r['name']}")
+        console.print(escape(trace.render(trace.read(root(), r["run"]))))
+        console.print()
+
+
+# ------------------------------------------------------------------- ask --
+@app.command()
+def ask(group: str, project: str, question: str,
+        direct: bool = typer.Option(False, "--direct", help="no model: `<metric> [by <dim>]`"),
+        notify: bool = typer.Option(False, "--notify", help="post the answer to the group channel"),
+        as_json: bool = typer.Option(False, "--json")) -> None:
+    """A business question, answered from governed metrics only. No SQL."""
+    from pf.agents.ask import ask as _ask
+    from pf.agents.base import NoCredentials
+
+    pdir(group, project)
+    try:
+        res = _ask(root(), group, project, question, direct=direct)
+    except NoCredentials as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+    if as_json:
+        console.print_json(json.dumps(res.to_dict()))
+    else:
+        from rich.markup import escape
+        console.print(escape(res.render()))
+        if res.path == "live":
+            console.print(f"[dim]{res.turns} turn(s) · {res.tokens:,} tokens[/]")
+    if notify:
+        from pf.notify import notify as _notify
+        from pf.notify import render_answer
+        ok, detail = _notify(root(), group, render_answer(res, group, project), channel="ask")
+        console.print(f"[{'green' if ok else 'yellow'}]notify[/] {detail}")
 
 
 # ------------------------------------------------------- semantic layer --
@@ -1546,9 +2476,12 @@ app.add_typer(sem_app, name="semantic")
 
 
 @sem_app.command("scan")
-def cmd_onto_scan(group: str, project: str,
-                  schema: str = typer.Option("", help="warehouse schema (default: the dlt dataset)"),
-                  source: str = typer.Option("", help="label for the proposal")) -> None:
+def cmd_onto_scan(
+    group: str,
+    project: str,
+    schema: str = typer.Option("", help="warehouse schema (default: the dlt dataset)"),
+    source: str = typer.Option("", help="label for the proposal"),
+) -> None:
     """Scan what a source actually landed and induce an ontology proposal."""
     from pf.ontology import induct, proposal
     from pf.ontology.model import load_group_ontology
@@ -1581,8 +2514,7 @@ def cmd_onto_scan(group: str, project: str,
         acc = sum(1 for a in p.axioms if a["kind"] == kind and a["accept"])
         t.add_row(kind, str(total), str(acc))
     console.print(t)
-    console.print(f"[green]✓[/] proposal [bold]{p.pid}[/] "
-                  f"({len(tables)} table(s) scanned across {', '.join(schemas)})")
+    console.print(f"[green]✓[/] proposal [bold]{p.pid}[/] ({len(tables)} table(s) scanned across {', '.join(schemas)})")
     console.print(f"  [dim]{proposal.path_for(root(), group, p.pid)}[/]")
     console.print("  Nothing is in effect yet. Review, edit, then approve:")
     console.print(f"    [cyan]pf semantic review {group} {p.pid}[/]")
@@ -1601,7 +2533,8 @@ def _dlt_schemas(warehouse: Path) -> list[str]:
             "AND table_schema NOT LIKE 'main_%' "
             # dlt writes a parallel <dataset>_staging schema during merge loads.
             # Scanning it duplicates every class with an identical, meaningless twin.
-            "AND table_schema NOT LIKE '%_staging' ORDER BY 1").fetchall()
+            "AND table_schema NOT LIKE '%_staging' ORDER BY 1"
+        ).fetchall()
     finally:
         con.close()
     return [r[0] for r in rows]
@@ -1618,27 +2551,28 @@ def cmd_onto_proposals(group: str) -> None:
         return
     t = Table("id", "status", "source", "axioms", "accepted", "approved by")
     for p in items:
-        t.add_row(p.pid, p.status, p.source, str(len(p.axioms)),
-                  str(len(p.accepted)), p.approved_by or "—")
+        t.add_row(p.pid, p.status, p.source, str(len(p.axioms)), str(len(p.accepted)), p.approved_by or "—")
     console.print(t)
 
 
 @sem_app.command("review")
-def cmd_onto_review(group: str, pid: str, show: str = typer.Option(
-        "accepted", help="accepted | all | rejected")) -> None:
+def cmd_onto_review(
+    group: str, pid: str, show: str = typer.Option("accepted", help="accepted | all | rejected")
+) -> None:
     """What a proposal would change, and what it unlocks."""
     from pf.ontology import proposal
 
     p = proposal.read(root(), group, pid)
     d = proposal.diff_against(root(), group, p)
 
-    console.print(f"[bold]{p.pid}[/]  status={p.status}  source={p.source}  "
-                  f"{len(p.accepted)}/{len(p.axioms)} accepted")
+    console.print(f"[bold]{p.pid}[/]  status={p.status}  source={p.source}  {len(p.accepted)}/{len(p.axioms)} accepted")
     console.print()
-    for label, items in (("new classes", d["new_classes"]),
-                         ("reused existing classes", d["reused_classes"]),
-                         ("new properties", d["new_properties"]),
-                         ("new relations", d["new_relations"])):
+    for label, items in (
+        ("new classes", d["new_classes"]),
+        ("reused existing classes", d["reused_classes"]),
+        ("new properties", d["new_properties"]),
+        ("new relations", d["new_relations"]),
+    ):
         if items:
             console.print(f"  [bold]{label}[/] ({len(items)})")
             for i in items[:12]:
@@ -1647,13 +2581,21 @@ def cmd_onto_review(group: str, pid: str, show: str = typer.Option(
                 console.print(f"    … {len(items) - 12} more")
     console.print()
 
-    rows = p.accepted if show == "accepted" else (
-        p.axioms if show == "all" else [a for a in p.axioms if not a.get("accept")])
+    rows = (
+        p.accepted
+        if show == "accepted"
+        else (p.axioms if show == "all" else [a for a in p.axioms if not a.get("accept")])
+    )
     t = Table("✓", "kind", "subject", "conf", "evidence", "rationale")
     for a in rows[:40]:
-        t.add_row("✓" if a.get("accept") else "·", a["kind"], a["subject"],
-                  a.get("confidence", ""), (a.get("evidence") or "")[:44],
-                  (a.get("rationale") or "")[:60])
+        t.add_row(
+            "✓" if a.get("accept") else "·",
+            a["kind"],
+            a["subject"],
+            a.get("confidence", ""),
+            (a.get("evidence") or "")[:44],
+            (a.get("rationale") or "")[:60],
+        )
     console.print(t)
     if len(rows) > 40:
         console.print(f"  [dim]… {len(rows) - 40} more — read the YAML[/]")
@@ -1662,18 +2604,23 @@ def cmd_onto_review(group: str, pid: str, show: str = typer.Option(
 
 
 @sem_app.command("approve")
-def cmd_onto_approve(group: str, pid: str,
-                     by: str = typer.Option("", help="steward name for the audit trail"),
-                     yes: bool = typer.Option(False, "--yes", help="skip confirmation")) -> None:
+def cmd_onto_approve(
+    group: str,
+    pid: str,
+    by: str = typer.Option("", help="steward name for the audit trail"),
+    yes: bool = typer.Option(False, "--yes", help="skip confirmation"),
+) -> None:
     """Merge accepted axioms into the group extension, then rebuild everything."""
     from pf.ontology import proposal
 
     p = proposal.read(root(), group, pid)
     d = proposal.diff_against(root(), group, p)
-    console.print(f"About to add: {len(d['new_classes'])} class(es), "
-                  f"{len(d['new_properties'])} property(ies), "
-                  f"{len(d['new_relations'])} relation(s) to "
-                  f"[bold]groups/{group}/ontology/extension.yaml[/]")
+    console.print(
+        f"About to add: {len(d['new_classes'])} class(es), "
+        f"{len(d['new_properties'])} property(ies), "
+        f"{len(d['new_relations'])} relation(s) to "
+        f"[bold]groups/{group}/ontology/extension.yaml[/]"
+    )
     if not yes and not typer.confirm("Approve?"):
         console.print("[yellow]not approved[/]")
         raise typer.Exit(1)
@@ -1697,11 +2644,13 @@ def cmd_onto_approve(group: str, pid: str,
 
 @sem_app.command("annotate")
 def cmd_onto_annotate(
-    group: str, project: str, pid: str,
+    group: str,
+    project: str,
+    pid: str,
     apply_: bool = typer.Option(False, "--apply", help="write contracts/annotations.yaml"),
-    currency: str = typer.Option("", "--currency",
-                                 help="ISO 4217 code for sources with money "
-                                      "columns and no currency column"),
+    currency: str = typer.Option(
+        "", "--currency", help="ISO 4217 code for sources with money columns and no currency column"
+    ),
 ) -> None:
     """Draft a project's annotations from an ontology proposal's accepted axioms.
 
@@ -1723,75 +2672,94 @@ def cmd_onto_annotate(
     p = proposal.read(root(), group, pid)
     drafted = from_proposal(p, source=p.source, currency=currency.upper())
     if not drafted:
-        console.print(f"[yellow]![/] nothing accepted in {pid} that implies an "
-                      f"annotation — approve the class axioms first")
+        console.print(
+            f"[yellow]![/] nothing accepted in {pid} that implies an annotation — approve the class axioms first"
+        )
         raise typer.Exit(1)
 
     target = pdir(group, project) / "contracts" / "annotations.yaml"
     linked = sum(1 for a in drafted if a.links)
-    console.print(f"[bold]{pid}[/] → {len(drafted)} annotation(s), "
-                  f"{sum(len(a.roles) for a in drafted)} role(s), "
-                  f"{linked} with links")
+    console.print(
+        f"[bold]{pid}[/] → {len(drafted)} annotation(s), "
+        f"{sum(len(a.roles) for a in drafted)} role(s), "
+        f"{linked} with links"
+    )
     if not apply_:
         for a in drafted[:5]:
-            console.print(f"  [cyan]{a.resource}[/] → {a.concept} "
-                          f"[dim]({len(a.roles)} role(s))[/]")
+            console.print(f"  [cyan]{a.resource}[/] → {a.concept} [dim]({len(a.roles)} role(s))[/]")
         console.print(f"  [dim]…and {max(0, len(drafted) - 5)} more[/]")
-        console.print("\n[dim]draft only — re-run with --apply to write "
-                      f"{target.relative_to(root())}[/]")
+        console.print(f"\n[dim]draft only — re-run with --apply to write {target.relative_to(root())}[/]")
         raise typer.Exit(0)
 
     added, kept = merge_annotations(target, drafted)
-    console.print(f"[green]✓[/] {target.relative_to(root())}: "
-                  f"+{added} new, {kept} existing left untouched")
+    console.print(f"[green]✓[/] {target.relative_to(root())}: +{added} new, {kept} existing left untouched")
     if not linked:
-        console.print("[yellow]![/] no links — the proposal's relations are still "
-                      "placeholders. Name them after the business verb in the "
-                      "proposal, approve, then re-run.")
+        console.print(
+            "[yellow]![/] no links — the proposal's relations are still "
+            "placeholders. Name them after the business verb in the "
+            "proposal, approve, then re-run."
+        )
 
 
 @sem_app.command("topology")
 def cmd_topology() -> None:
     """The named relations between ontology classes."""
     o = load_ontology()
-    t = Table("relation", "domain", "→", "range", "cardinality", "inverse",
-              title=f"Topology v{o.version}")
+    t = Table("relation", "domain", "→", "range", "cardinality", "inverse", title=f"Topology v{o.version}")
     for r in o.relations:
         t.add_row(r.name, r.domain, r.label or "→", r.range, r.cardinality, r.inverse or "—")
     console.print(t)
 
 
 @sem_app.command("policy")
-def cmd_policy() -> None:
-    """Policy chain: intent → constraint → artifact → evidence."""
-    o = load_ontology()
-    t = Table("policy", "severity", "constraint", "enforced by", "evidence")
+def cmd_policy(group: str = typer.Argument("", help="resolve at this group's scope"),
+               project: str = typer.Argument("", help="resolve at this project's scope")) -> None:
+    """Policy chain: intent → constraint → artifact → evidence.
+
+    With no argument this prints the platform floor. Naming a group, or a group
+    and a project, resolves the layers over it — which is the only way to answer
+    "what actually binds acme-eu", since a layer may tighten a policy the
+    platform set and the platform file will not show it.
+    """
+    from pf.ontology.model import load_group_ontology, load_project_ontology
+
+    if group and project:
+        o, scope = load_project_ontology(root(), group, project), f"{group}/{project}"
+    elif group:
+        o, scope = load_group_ontology(root(), group), group
+    else:
+        o, scope = load_ontology(), "platform"
+    console.print(f"[dim]scope:[/] {scope}")
+
+    t = Table("policy", "severity", "set by", "constraint", "enforced by", "evidence")
     for p in o.policies:
-        t.add_row(p.id, p.severity, p.constraint,
+        # Anything the local layers moved is the interesting row on this table.
+        sev = p.severity if p.scope == "platform" else f"[yellow]{p.severity}[/]"
+        t.add_row(p.id, sev, p.scope, p.constraint,
                   "\n".join(p.enforced_by) or "[red]NOTHING[/]",
                   "\n".join(p.evidence) or "—")
     console.print(t)
     un = o.unenforced_policies()
     if un:
-        console.print(f"[red]{len(un)} unenforced policy(ies):[/] "
-                      + ", ".join(p.id for p in un))
+        console.print(f"[red]{len(un)} unenforced policy(ies):[/] " + ", ".join(p.id for p in un))
     else:
         console.print("[green]every policy names an enforcing artifact[/]")
 
 
 @sem_app.command("mdl")
-def cmd_mdl(group: str, project: str,
-            out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)")) -> None:
+def cmd_mdl(
+    group: str, project: str, out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)")
+) -> None:
     """Export a WrenAI MDL manifest from the graph."""
     from pf.projections.mdl import export as export_mdl
 
     d = pdir(group, project)
     path = export_mdl(d, group, project, out or None)
-    payload = json.loads(path.read_text())
+    payload = json.loads(path.read_text(encoding="utf-8"))
     console.print(f"[green]✓[/] {path}")
-    console.print(f"  models={len(payload['models'])} "
-                  f"relationships={len(payload['relationships'])} "
-                  f"cubes={len(payload['cubes'])}")
+    console.print(
+        f"  models={len(payload['models'])} relationships={len(payload['relationships'])} cubes={len(payload['cubes'])}"
+    )
     for r in payload["relationships"]:
         console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
 
@@ -1805,14 +2773,18 @@ def cmd_owl(out: str = typer.Option("", help="output path")) -> None:
     path = export_owl(out or (root() / "platform" / "src" / "pf" / "ontology" / "ontology.owl"))
     s = stats()
     console.print(f"[green]✓[/] {path}")
-    console.print(f"  classes={s['classes']} datatypeProperties={s['datatype_properties']} "
-                  f"objectProperties={s['object_properties']}")
+    console.print(
+        f"  classes={s['classes']} datatypeProperties={s['datatype_properties']} "
+        f"objectProperties={s['object_properties']}"
+    )
 
 
 @sem_app.command("otop")
-def cmd_otop(group: str = typer.Argument("", help="omit for a platform-wide export"),
-             project: str = typer.Argument(""),
-             out: str = typer.Option("", help="output path")) -> None:
+def cmd_otop(
+    group: str = typer.Argument("", help="omit for a platform-wide export"),
+    project: str = typer.Argument(""),
+    out: str = typer.Option("", help="output path"),
+) -> None:
     """Export the policy layer as an OpenTopology (otop-core 0.2) manifest."""
     from pf.projections.otop import build_manifest, stats
     from pf.projections.otop import export as export_otop
@@ -1821,9 +2793,11 @@ def cmd_otop(group: str = typer.Argument("", help="omit for a platform-wide expo
     path = export_otop(root(), group, project, d, out or None)
     s = stats(build_manifest(root(), group, project, d))
     console.print(f"[green]✓[/] {path}")
-    console.print(f"  intents={s.get('intent', 0)} constraints={s.get('constraint', 0)} "
-                  f"artifacts={s.get('artifact', 0)} evidence={s.get('evidence', 0)} "
-                  f"relationships={s['relationships']}")
+    console.print(
+        f"  intents={s.get('intent', 0)} constraints={s.get('constraint', 0)} "
+        f"artifacts={s.get('artifact', 0)} evidence={s.get('evidence', 0)} "
+        f"relationships={s['relationships']}"
+    )
     for k in ("pass", "fail", "unknown", "not_applicable"):
         if s.get(f"evidence_{k}"):
             colour = {"pass": "green", "fail": "red"}.get(k, "yellow")
@@ -1838,8 +2812,7 @@ _SEV_COLOUR = {"error": "red", "warning": "yellow", "info": "dim", "none": "gree
 
 
 @vendor_app.command("list")
-def cmd_vendor_list(verbose: bool = typer.Option(False, "--verbose", "-v",
-                                                 help="show every adopted path")) -> None:
+def cmd_vendor_list(verbose: bool = typer.Option(False, "--verbose", "-v", help="show every adopted path")) -> None:
     """Every upstream, what it gave us, and whether we are on the reviewed commit."""
     from pf.vendor.model import drift, load_registry
 
@@ -1865,9 +2838,11 @@ def cmd_vendor_list(verbose: bool = typer.Option(False, "--verbose", "-v",
     console.print(t)
     flagged = [u for u in ups if u.needs_licence_review]
     if flagged:
-        console.print("\n[yellow]![/] licence review outstanding: "
-                      + ", ".join(u.id for u in flagged)
-                      + "  →  `pf vendor licences`")
+        console.print(
+            "\n[yellow]![/] licence review outstanding: "
+            + ", ".join(u.id for u in flagged)
+            + "  →  `pf vendor licences`"
+        )
     if verbose:
         for u in ups:
             console.print(f"\n[bold]{u.id}[/] {u.url}")
@@ -1906,8 +2881,7 @@ def cmd_vendor_why(path: str) -> None:
 
 
 @vendor_app.command("drift")
-def cmd_vendor_drift(fail: bool = typer.Option(False, "--fail",
-                                               help="exit 1 when review is needed")) -> None:
+def cmd_vendor_drift(fail: bool = typer.Option(False, "--fail", help="exit 1 when review is needed")) -> None:
     """What moved since a human last reviewed it. Local only — never fetches."""
     from pf.vendor.model import drift
 
@@ -1918,11 +2892,12 @@ def cmd_vendor_drift(fail: bool = typer.Option(False, "--fail",
 
 
 @vendor_app.command("sync")
-def cmd_vendor_sync(only: str = typer.Option("", help="one upstream id"),
-                    approve: bool = typer.Option(
-                        False, "--approve",
-                        help="record the new state as reviewed (only when nothing "
-                             "adopted changed)")) -> None:
+def cmd_vendor_sync(
+    only: str = typer.Option("", help="one upstream id"),
+    approve: bool = typer.Option(
+        False, "--approve", help="record the new state as reviewed (only when nothing adopted changed)"
+    ),
+) -> None:
     """Fetch each upstream's tracking branch, then report what it means for us."""
     from pf.vendor.model import approve as approve_lock
     from pf.vendor.model import sync as vendor_sync
@@ -1936,11 +2911,9 @@ def cmd_vendor_sync(only: str = typer.Option("", help="one upstream id"),
         approve_lock(root(), clean)
         console.print(f"[green]✓[/] recorded as reviewed: {', '.join(clean)}")
     elif clean:
-        console.print(f"[dim]fast-forwardable (nothing adopted changed): "
-                      f"{', '.join(clean)} — re-run with --approve[/]")
+        console.print(f"[dim]fast-forwardable (nothing adopted changed): {', '.join(clean)} — re-run with --approve[/]")
     if any(d.needs_review for d in reports):
-        console.print("[yellow]![/] review the affected files, then "
-                      "`pf vendor approve <id>`")
+        console.print("[yellow]![/] review the affected files, then `pf vendor approve <id>`")
 
 
 @vendor_app.command("approve")
@@ -1961,16 +2934,15 @@ def cmd_vendor_docs() -> None:
 
     doc = render_doc(root())
     card = render_card(root())
-    n = estimate_tokens(card.read_text())
-    console.print(f"[green]✓[/] {doc}  [dim]{len(doc.read_text().splitlines())} lines[/]")
+    n = estimate_tokens(card.read_text(encoding="utf-8"))
+    console.print(f"[green]✓[/] {doc}  [dim]{len(doc.read_text(encoding='utf-8').splitlines())} lines[/]")
     colour = "green" if n <= VENDOR_CARD_BUDGET else "red"
     console.print(f"[green]✓[/] {card}  [{colour}]~{n} / {VENDOR_CARD_BUDGET} tokens[/]")
     raise typer.Exit(1 if n > VENDOR_CARD_BUDGET else 0)
 
 
 @vendor_app.command("verify")
-def cmd_vendor_verify(group: str = typer.Argument(""),
-                      project: str = typer.Argument("")) -> None:
+def cmd_vendor_verify(group: str = typer.Argument(""), project: str = typer.Argument("")) -> None:
     """Do the declared paths still exist, and do the schema contracts still hold?"""
     from pf.vendor.verify import verify
 
@@ -1996,8 +2968,9 @@ def _render_drift(reports: list) -> None:
             console.print(f"[red]{d.upstream_id}[/] not checked out")
             continue
         if not d.locked:
-            console.print(f"[yellow]{d.upstream_id}[/] never reviewed "
-                          f"({d.current[:8]}) — `pf vendor approve {d.upstream_id}`")
+            console.print(
+                f"[yellow]{d.upstream_id}[/] never reviewed ({d.current[:8]}) — `pf vendor approve {d.upstream_id}`"
+            )
             any_drift = True
             continue
         # Paths are rendered even when the commit matches: same commit, different
@@ -2007,9 +2980,9 @@ def _render_drift(reports: list) -> None:
             continue
         any_drift = True
         behind = f"{d.commits_behind} commit(s)" if d.commits_behind >= 0 else "shallow"
-        head = (f"[{_SEV_COLOUR[d.severity]}]{d.upstream_id}[/] "
-                + (f"{d.locked[:8]} → {d.current[:8]} ({behind})" if d.moved
-                   else f"{d.current[:8]} [red]lock inconsistent[/]"))
+        head = f"[{_SEV_COLOUR[d.severity]}]{d.upstream_id}[/] " + (
+            f"{d.locked[:8]} → {d.current[:8]} ({behind})" if d.moved else f"{d.current[:8]} [red]lock inconsistent[/]"
+        )
         if not d.paths:
             console.print(f"{head} [dim]— nothing we adopted changed[/]")
             continue
@@ -2035,13 +3008,16 @@ def cmd_report_build(group: str, project: str) -> None:
     d = pdir(group, project)
     r = build_evidence(d, group, project)
     console.print(f"[green]✓[/] {r['path']}")
-    console.print(f"  {r['metrics']} metric(s) compiled · {r['pages']} page(s) · "
-                  f"{r['sources']} source extract(s)")
+    console.print(f"  {r['metrics']} metric(s) compiled · {r['pages']} page(s) · {r['sources']} source extract(s)")
     if r["unbacked"]:
         console.print(f"  [yellow]![/] no time dimension: {', '.join(r['unbacked'])}")
+    if r.get("skipped_empty"):
+        console.print(f"  [yellow]![/] empty relation, no extract: {', '.join(r['skipped_empty'])}")
     if not r["metrics"]:
-        console.print("  [yellow]![/] no metrics in the semantic layer yet — "
-                      "add them in transform/models/semantic/, then `pf seed`")
+        console.print(
+            "  [yellow]![/] no metrics in the semantic layer yet — "
+            "add them in transform/models/semantic/, then `pf seed`"
+        )
 
 
 @report_app.command("audit")
@@ -2054,9 +3030,11 @@ def cmd_report_audit(group: str, project: str) -> None:
         colour = {"error": "red", "warning": "yellow", "info": "dim"}[f.severity]
         console.print(f"  [{colour}]{f}[/]")
     colour = "green" if score >= 90 else "yellow" if score >= 70 else "red"
-    console.print(f"[{colour}]Report score: {score}/100[/] "
-                  f"({sum(1 for f in findings if f.severity == 'error')} error(s), "
-                  f"{sum(1 for f in findings if f.severity == 'warning')} warning(s))")
+    console.print(
+        f"[{colour}]Report score: {score}/100[/] "
+        f"({sum(1 for f in findings if f.severity == 'error')} error(s), "
+        f"{sum(1 for f in findings if f.severity == 'warning')} warning(s))"
+    )
     raise typer.Exit(1 if any(f.severity == "error" for f in findings) else 0)
 
 
@@ -2077,13 +3055,13 @@ app.add_typer(pr_app, name="pr")
 
 
 @pr_app.command("report")
-def cmd_pr_report(number: int = typer.Option(0, help="PR number (defaults to $GITHUB_REF)"),
-                  base: str = typer.Option("", help="base ref to diff against"),
-                  title: str = typer.Option(""),
-                  markdown_out: str = typer.Option("", "--markdown",
-                                                   help="also write the comment body here"),
-                  fail: bool = typer.Option(False, "--fail",
-                                            help="exit 1 when the verdict is `block`")) -> None:
+def cmd_pr_report(
+    number: int = typer.Option(0, help="PR number (defaults to $GITHUB_REF)"),
+    base: str = typer.Option("", help="base ref to diff against"),
+    title: str = typer.Option(""),
+    markdown_out: str = typer.Option("", "--markdown", help="also write the comment body here"),
+    fail: bool = typer.Option(False, "--fail", help="exit 1 when the verdict is `block`"),
+) -> None:
     """Blast radius, conformance, readiness and vendor drift for this change."""
     from pf.pr import build as build_pr
     from pf.pr import markdown as pr_markdown
@@ -2093,7 +3071,7 @@ def cmd_pr_report(number: int = typer.Option(0, help="PR number (defaults to $GI
     body = pr_markdown(r)
     path = save(root(), r)
     if markdown_out:
-        Path(markdown_out).write_text(body + "\n")
+        Path(markdown_out).write_text(body + "\n", encoding="utf-8")
     console.print(body)
     console.print(f"\n[dim]{path}[/]")
     if fail and r.verdict == "block":
@@ -2114,9 +3092,14 @@ def cmd_pr_list() -> None:
         t.add_column(c)
     for r in rows:
         colour = {"block": "red", "review": "yellow", "clear": "green"}[r["verdict"]]
-        t.add_row(str(r["number"] or "-"), f"[{colour}]{r['verdict']}[/]", r["branch"],
-                  ", ".join(f"{p['group']}/{p['project']}" for p in r["projects"]) or "-",
-                  str(len(r["files"])), r["generated_at"][:19])
+        t.add_row(
+            str(r["number"] or "-"),
+            f"[{colour}]{r['verdict']}[/]",
+            r["branch"],
+            ", ".join(f"{p['group']}/{p['project']}" for p in r["projects"]) or "-",
+            str(len(r["files"])),
+            r["generated_at"][:19],
+        )
     console.print(t)
 
 
@@ -2124,6 +3107,7 @@ def cmd_pr_list() -> None:
 def ui(host: str = "127.0.0.1", port: int = 8787) -> None:
     """Serve the control-plane dashboard."""
     from pf.ui.app import serve
+
     console.print(f"[green]Control plane →[/] http://{host}:{port}")
     serve(host, port)
 
@@ -2132,6 +3116,7 @@ def ui(host: str = "127.0.0.1", port: int = 8787) -> None:
 def mcp() -> None:
     """Run the MCP server over stdio."""
     from pf.mcp.server import main
+
     main()
 
 
@@ -2158,12 +3143,25 @@ def _recce_or_exit():  # the pf.tools.recce module, for its key semantics
 
 
 def _targets(group: str, project: str) -> list[tuple[str, str, Path]]:
-    """One project, or every project when neither argument is given."""
+    """One project, one group, or every project when nothing is given.
+
+    The widening from "both or neither" is what lets the graph commands be run
+    the way they are actually needed — `pf kg build` after adding a project
+    anywhere, `pf kg build acme` after changing something a family shares. A
+    command that can only be pointed at one project at a time gets run for the
+    project you remembered, which is how seven graphs end up a month stale.
+    """
     if group and project:
         return [(group, project, pdir(group, project))]
-    if group or project:
-        console.print("[red]give both group and project, or neither[/]")
+    if project:
+        console.print("[red]a project needs its group[/]")
         raise typer.Exit(1)
+    if group:
+        hits = [(g, p, d) for g, p, d in all_projects() if g == group]
+        if not hits:
+            console.print(f"[red]group {group} has no projects[/]")
+            raise typer.Exit(1)
+        return hits
     return all_projects()
 
 
@@ -2190,7 +3188,9 @@ def cmd_artifacts_status() -> None:
     if store is None:
         console.print("[yellow]not configured[/]")
         console.print(f"  {art.SETUP_HINT}")
-        console.print(f"  [dim]endpoint would be {art.DEFAULT_ENDPOINT}[/]")
+        console.print(
+            "  [dim]endpoint comes from PF_ARTIFACTS_ENDPOINT — https://<account-id>.r2.cloudflarestorage.com[/]"
+        )
         console.print(f"  [dim]bucket   would be {art.DEFAULT_BUCKET}[/]")
         raise typer.Exit(1)
 
@@ -2210,10 +3210,13 @@ def cmd_artifacts_status() -> None:
 
 
 @artifacts_app.command("push")
-def cmd_artifacts_push(group: str = typer.Argument(""), project: str = typer.Argument(""),
-                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
-                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
-                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+def cmd_artifacts_push(
+    group: str = typer.Argument(""),
+    project: str = typer.Argument(""),
+    ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+    baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+    review: bool = typer.Option(True, "--review/--no-review"),
+) -> None:
     """Upload a project's recce artefacts. No arguments → every project."""
     from pf import artifacts as art
 
@@ -2237,10 +3240,13 @@ def cmd_artifacts_push(group: str = typer.Argument(""), project: str = typer.Arg
 
 
 @artifacts_app.command("pull")
-def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Argument(""),
-                       ref: str = typer.Option("", "--ref", help="override the ref key segment"),
-                       baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
-                       review: bool = typer.Option(True, "--review/--no-review")) -> None:
+def cmd_artifacts_pull(
+    group: str = typer.Argument(""),
+    project: str = typer.Argument(""),
+    ref: str = typer.Option("", "--ref", help="override the ref key segment"),
+    baseline: bool = typer.Option(True, "--baseline/--no-baseline"),
+    review: bool = typer.Option(True, "--review/--no-review"),
+) -> None:
     """Download a project's recce artefacts. No arguments → every project.
 
     Overwrites what is on disk. That is the point — this is how a fresh clone
@@ -2264,8 +3270,9 @@ def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Arg
         except art.ArtifactStoreError as exc:
             console.print(f"[red]{exc}[/]")
             raise typer.Exit(1)
-        console.print(f"[green]✓[/] {g}/{p}" if any(t.ok for t in rows)
-                      else f"[yellow]·[/] {g}/{p} [dim]nothing published[/]")
+        console.print(
+            f"[green]✓[/] {g}/{p}" if any(t.ok for t in rows) else f"[yellow]·[/] {g}/{p} [dim]nothing published[/]"
+        )
         for t in rows:
             if t.ok:
                 console.print(f"  ↓ {t.path} [dim]({art.human(t.size)})[/]")
@@ -2277,9 +3284,11 @@ def cmd_artifacts_pull(group: str = typer.Argument(""), project: str = typer.Arg
 
 
 @artifacts_app.command("ls")
-def cmd_artifacts_ls(group: str = typer.Argument(""), project: str = typer.Argument(""),
-                     prefix: str = typer.Option("", "--prefix",
-                                                help="raw key prefix, instead of a project")) -> None:
+def cmd_artifacts_ls(
+    group: str = typer.Argument(""),
+    project: str = typer.Argument(""),
+    prefix: str = typer.Option("", "--prefix", help="raw key prefix, instead of a project"),
+) -> None:
     """What is in the bucket."""
     from pf import artifacts as art
 
@@ -2299,14 +3308,15 @@ def cmd_artifacts_ls(group: str = typer.Argument(""), project: str = typer.Argum
     for r in sorted(rows, key=lambda r: str(r["key"])):
         t.add_row(str(r["key"]), art.human(int(r["size"])), str(r["modified"])[:19])
     console.print(t)
-    console.print(f"[dim]{len(rows)} object(s), "
-                  f"{art.human(sum(int(r['size']) for r in rows))}[/]")
+    console.print(f"[dim]{len(rows)} object(s), {art.human(sum(int(r['size']) for r in rows))}[/]")
 
 
 @artifacts_app.command("migrate")
-def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.Argument(""),
-                          apply: bool = typer.Option(False, "--apply",
-                                                     help="actually push and untrack")) -> None:
+def cmd_artifacts_migrate(
+    group: str = typer.Argument(""),
+    project: str = typer.Argument(""),
+    apply: bool = typer.Option(False, "--apply", help="actually push and untrack"),
+) -> None:
     """Move committed recce artefacts out of git and into the store.
 
     Push, verify every key landed, and only then `git rm --cached`. The order is
@@ -2325,9 +3335,7 @@ def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.
     plan: list[tuple[str, str, list[tuple[str, Path]]]] = []
 
     for g, p, d in _targets(group, project):
-        pairs = [(k, f) for k, f in
-                 recce.baseline_pairs(d, g, p) + recce.review_pairs(d, g, p)
-                 if f.is_file()]
+        pairs = [(k, f) for k, f in recce.baseline_pairs(d, g, p) + recce.review_pairs(d, g, p) if f.is_file()]
         tracked = [(k, f) for k, f in pairs if _git_tracked(f, rel)]
         if tracked:
             plan.append((g, p, tracked))
@@ -2340,10 +3348,8 @@ def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.
     for g, p, tracked in plan:
         console.print(f"[bold]{g}/{p}[/]")
         for k, f in tracked:
-            console.print(f"  {f.relative_to(rel)} [dim]({art.human(f.stat().st_size)})"
-                          f" → {store.url(k)}[/]")
-    console.print(f"[dim]{sum(len(t) for _, _, t in plan)} file(s), "
-                  f"{art.human(total)}[/]")
+            console.print(f"  {f.relative_to(rel)} [dim]({art.human(f.stat().st_size)}) → {store.url(k)}[/]")
+    console.print(f"[dim]{sum(len(t) for _, _, t in plan)} file(s), {art.human(total)}[/]")
 
     if not apply:
         console.print("\n[yellow]dry run[/] — re-run with --apply to push and untrack")
@@ -2357,28 +3363,33 @@ def cmd_artifacts_migrate(group: str = typer.Argument(""), project: str = typer.
         # round trip to the bucket rather than trust in the call that returned.
         absent = [k for k, _ in tracked if not store.exists(k)]
         if absent:
-            console.print(f"[red]{g}/{p}: not in the bucket after upload — "
-                          f"{', '.join(absent)}. Left tracked.[/]")
+            console.print(f"[red]{g}/{p}: not in the bucket after upload — {', '.join(absent)}. Left tracked.[/]")
             raise typer.Exit(1)
         paths = [str(f.relative_to(rel)) for _, f in tracked]
-        proc = subprocess.run(["git", "rm", "--cached", "-q", "--", *paths],
-                              cwd=str(rel), capture_output=True, text=True,
-                              check=False)
+        proc = subprocess.run(
+            ["git", "rm", "--cached", "-q", "--", *paths], cwd=str(rel), capture_output=True, text=True, check=False
+        )
         if proc.returncode != 0:
-            console.print(f"[red]{g}/{p}: git rm --cached failed: "
-                          f"{proc.stderr.strip()}[/]")
+            console.print(f"[red]{g}/{p}: git rm --cached failed: {proc.stderr.strip()}[/]")
             raise typer.Exit(1)
         console.print(f"[green]✓[/] {g}/{p} — {len(tracked)} published and untracked")
 
-    console.print("\n[bold]Next:[/] add the ignore rules, drop the "
-                  "`denylist_except` entries for these paths in gate.yaml, and "
-                  "commit the removals. `pf check` will flag any that are still "
-                  "tracked.")
+    console.print(
+        "\n[bold]Next:[/] add the ignore rules, drop the "
+        "`denylist_except` entries for these paths in gate.yaml, and "
+        "commit the removals. `pf check` will flag any that are still "
+        "tracked."
+    )
 
 
 def _git_tracked(path: Path, cwd: Path) -> bool:
-    proc = subprocess.run(["git", "ls-files", "--error-unmatch", "--", str(path)],
-                          cwd=str(cwd), capture_output=True, text=True, check=False)
+    proc = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", "--", str(path)],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     return proc.returncode == 0
 
 
@@ -2386,21 +3397,202 @@ def _git_tracked(path: Path, cwd: Path) -> bool:
 # Tools are capabilities that also *run*. The sub-app below knows about tools in
 # general and about no tool in particular: every row comes from the registry, so
 # a tool installed from outside this repo appears here without an edit.
+quack_app = typer.Typer(help="The dev database, served over DuckDB's quack protocol.")
+app.add_typer(quack_app, name="quack")
+
+
+@quack_app.command("serve")
+def cmd_quack_serve(
+    group: str,
+    project: str,
+    show_token: bool = typer.Option(False, "--show-token", help="print the auth token instead of redacting it"),
+) -> None:
+    """Serve the project's dev database at quack:localhost:<port>.
+
+    Idempotent — an already-running server is reported, not duplicated. While
+    served, the wire is read-only (the server holds the file read-only, the
+    engine refuses writes) and dbt/dlt borrow the file back per build;
+    `pf quack stop` hands the file back for anything that needs it directly.
+
+    The token is redacted by default: a token echoed into a terminal outlives
+    the server in scrollback and session transcripts. It lives in the 0600
+    state file beside the database; `--show-token` prints it when a human
+    needs to paste it somewhere.
+    """
+    from pf.runtime.quack import ensure
+    from pf.runtime.warehouse import Warehouse
+
+    wh = Warehouse.for_project(pdir(group, project), group, project)
+    state = ensure(wh.path)
+    console.print(f"[green]serving[/] {wh.path}")
+    console.print(f"  endpoint [bold]{state.endpoint}[/]  pid {state.pid}  [dim](read-only wire)[/]")
+    console.print("  from any DuckDB client:")
+    for stmt in state.attach_sql(project.replace("-", "_"), redact=not show_token):
+        console.print(f"    [dim]{stmt};[/]")
+
+
+@quack_app.command("stop")
+def cmd_quack_stop(group: str, project: str) -> None:
+    """Stop the project's quack dev server; the database file is released."""
+    from pf.runtime.quack import stop
+    from pf.runtime.warehouse import Warehouse
+
+    wh = Warehouse.for_project(pdir(group, project), group, project)
+    if stop(wh.path):
+        console.print(f"[green]stopped[/] — {wh.path} is a plain file again")
+    else:
+        console.print("[dim]no server was running[/]")
+
+
+@quack_app.command("status")
+def cmd_quack_status() -> None:
+    """Every project's dev database, and whether it is currently served."""
+    from pf.runtime.quack import running_state
+    from pf.runtime.warehouse import Warehouse
+
+    t = Table("group/project", "served", "endpoint", "pid", title="quack dev servers")
+    for proj_dir in sorted(root().glob("groups/*/projects/*")):
+        group, project = proj_dir.parent.parent.name, proj_dir.name
+        wh = Warehouse.for_project(proj_dir, group, project)
+        state = running_state(wh.path)
+        if state is None:
+            t.add_row(f"{group}/{project}", "[dim]no[/]", "—", "—")
+        else:
+            t.add_row(f"{group}/{project}", "[green]yes[/]", state.endpoint, str(state.pid))
+    console.print(t)
+
+
 tool_app = typer.Typer(help="Pluggable tools: dbt review, BI, whatever is installed.")
 app.add_typer(tool_app, name="tool")
 
+# ---------------------------------------------------------- architecture --
+class _ArchGroup(TyperGroup):
+    """`pf arch build|check` is the repository's map; any other `pf arch` is a project's.
+
+    Two maps shipped under one name: `pf arch <group> <project> [--all] [--check]`
+    draws a project, and `pf arch build|check` draws the repository. Registered
+    as a command and a group, the group won without a word — every project's
+    CI `architecture` job then failed on "No such command 'acme'", and nothing
+    else noticed, because bootstrap calls the map directly rather than through
+    the CLI. Routing keeps every call site that exists: eight generated
+    workflows, the docs and the skill use the project form, CI the repository's.
+    """
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        if args and args[0] not in self.commands and args[0] not in ctx.help_option_names:
+            args = ["project", *args]
+        return super().parse_args(ctx, args)
+
+
+arch_app = typer.Typer(
+    cls=_ArchGroup,
+    help="Architecture maps: `build`/`check` for the repository, "
+         "`pf arch <group> <project>` or `--all` for projects.")
+app.add_typer(arch_app, name="arch")
+arch_app.command("project", help="A project's map (the form `pf arch <group> <project>` "
+                                 "runs).")(cmd_arch)
+
+
+@arch_app.command("build")
+def cmd_arch_build() -> None:
+    """Regenerate `docs/ARCHITECTURE.md` from the repository itself."""
+    from pf.archmap import doc_path, gather, render
+
+    facts = gather(root())
+    out = doc_path(root())
+    content = render(facts)
+    current = out.exists() and out.read_text() == content
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(content)
+    console.print(
+        f"[green]✓[/] {out.relative_to(root())}  "
+        f"[dim]({facts.projects} project(s), {len(facts.toolkits)} toolkit(s), "
+        f"~{len(content) // 4} tokens{'' if not current else ' · already current'})[/]")
+
+
+@arch_app.command("check")
+def cmd_arch_check() -> None:
+    """Is the committed map current with the repository?
+
+    A stale map is worse than none: it sends a reader confidently to a path that
+    moved, which is exactly the cost this document exists to remove.
+    """
+    from pf.archmap import drift
+
+    reason = drift(root())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the architecture map matches the repository")
+
+
+# ------------------------------------------------------------- test index --
+test_app = typer.Typer(help="What the test suite guards, without reading it.")
+app.add_typer(test_app, name="test")
+
+
+def _tests_dir() -> Path:
+    return root() / "platform" / "tests"
+
+
+@test_app.command("index")
+def cmd_test_index() -> None:
+    """Regenerate `platform/tests/README.md` from the suite's own docstrings."""
+    from pf.testmap import index_path, render_index, scan
+
+    files = scan(_tests_dir())
+    out = index_path(_tests_dir())
+    content = render_index(files)
+    changed = not out.exists() or out.read_text() != content
+    out.write_text(content)
+    console.print(f"[green]✓[/] {out.relative_to(root())}  "
+                  f"[dim]({len(files)} files, {sum(f.tests for f in files)} tests"
+                  f"{'' if changed else ' · already current'})[/]")
+
+
+@test_app.command("where")
+def cmd_test_where(term: str) -> None:
+    """Which tests cover this? Searches subjects, filenames and imported modules."""
+    from pf.testmap import scan, where
+
+    hits = where(scan(_tests_dir()), term)
+    if not hits:
+        console.print(f"No test file mentions '{term}'.")
+        raise typer.Exit(1)
+    t = Table("file", "guards", "tests", title=f"{len(hits)} file(s) for '{term}'")
+    for f in hits:
+        t.add_row(f"{f.group}/{f.path.name}" if f.group else f.path.name,
+                  f.subject[:64], str(f.tests))
+    console.print(t)
+
+
+@test_app.command("check")
+def cmd_test_check() -> None:
+    """Is the committed index current with the suite?
+
+    An index generated before a test file was added answers "where is that
+    tested" with confident silence, which is worse than having no index.
+    """
+    from pf.testmap import drift
+
+    reason = drift(_tests_dir())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the test index matches the suite")
+
 
 @tool_app.command("list")
-def cmd_tool_list(group: str = typer.Argument("", help="show enablement for a project"),
-                  project: str = typer.Argument("")) -> None:
+def cmd_tool_list(
+    group: str = typer.Argument("", help="show enablement for a project"), project: str = typer.Argument("")
+) -> None:
     """Every registered tool, and where it is enabled."""
     from pf.tools import discover, readiness
 
     found, errors = discover()
     if group and project:
         rows = readiness(root(), group, project)
-        t = Table("tool", "enabled", "from", "installed", "ready", "blockers",
-                  title=f"tools · {group}/{project}")
+        t = Table("tool", "enabled", "from", "installed", "ready", "blockers", title=f"tools · {group}/{project}")
         for r in rows:
             t.add_row(
                 r["name"],
@@ -2414,21 +3606,30 @@ def cmd_tool_list(group: str = typer.Argument("", help="show enablement for a pr
     else:
         t = Table("tool", "scope", "installed", "surface", "description")
         for name, tool in sorted(found.items()):
-            t.add_row(name, ",".join(sorted(tool.scope)),
-                      "[green]yes[/]" if tool.installed else "[yellow]no[/]",
-                      tool.surface.url() if tool.surface else "—", tool.summary)
+            t.add_row(
+                name,
+                ",".join(sorted(tool.scope)),
+                "[green]yes[/]" if tool.installed else "[yellow]no[/]",
+                tool.surface.url() if tool.surface else "—",
+                tool.summary,
+            )
         console.print(t)
     for e in errors:
         console.print(f"  [red]✗[/] {e}")
-    console.print("[dim]Adding one is a `TOOL` object plus an entry in "
-                  "pf.tools.registry.BUILTIN_MODULES — or a `pf.tools` entry point "
-                  "in any installed package, which needs no edit here.[/]")
+    console.print(
+        "[dim]Adding one is a `TOOL` object plus an entry in "
+        "pf.tools.registry.BUILTIN_MODULES — or a `pf.tools` entry point "
+        "in any installed package, which needs no edit here.[/]"
+    )
 
 
 @tool_app.command("enable")
-def cmd_tool_enable(tool: str, group: str,
-                    project: str = typer.Argument("", help="omit to enable for the whole group"),
-                    scaffold: bool = typer.Option(True, help="apply the capability and bootstrap")) -> None:
+def cmd_tool_enable(
+    tool: str,
+    group: str,
+    project: str = typer.Argument("", help="omit to enable for the whole group"),
+    scaffold: bool = typer.Option(True, help="apply the capability and bootstrap"),
+) -> None:
     """Turn a tool on for a group (every sister) or one project."""
     from pf.tools import get as get_tool
     from pf.tools import write as write_tool_config
@@ -2442,13 +3643,11 @@ def cmd_tool_enable(tool: str, group: str,
 
     level = "project" if project else "group"
     if not t.supports(level):
-        console.print(f"[red]{tool} cannot be enabled at {level} level[/] "
-                      f"(scope: {', '.join(sorted(t.scope))})")
+        console.print(f"[red]{tool} cannot be enabled at {level} level[/] (scope: {', '.join(sorted(t.scope))})")
         raise typer.Exit(1)
 
     path = write_tool_config(root(), group, project, tool, on=True)
-    console.print(f"[green]✓[/] {tool} enabled for "
-                  f"[bold]{group}{'/' + project if project else ' (all sisters)'}[/]")
+    console.print(f"[green]✓[/] {tool} enabled for [bold]{group}{'/' + project if project else ' (all sisters)'}[/]")
     console.print(f"  [dim]{path}[/]")
 
     if not scaffold:
@@ -2456,8 +3655,7 @@ def cmd_tool_enable(tool: str, group: str,
     # The capability half — files, settings, gate rules — goes through exactly the
     # same path `pf capability-add` uses, so there is one scaffolder and one gate
     # merge rather than a second way to write into a project.
-    targets = [(group, project)] if project else [
-        (g, p) for g, p, _ in all_projects() if g == group]
+    targets = [(group, project)] if project else [(g, p) for g, p, _ in all_projects() if g == group]
     for g, p in targets:
         d = pdir(g, p)
         if t.capability is not None:
@@ -2478,14 +3676,14 @@ def cmd_tool_disable(tool: str, group: str, project: str = typer.Argument("")) -
     from pf.tools import write as write_tool_config
 
     path = write_tool_config(root(), group, project, tool, on=False)
-    console.print(f"[green]✓[/] {tool} disabled for "
-                  f"{group}{'/' + project if project else ' (group default)'}")
+    console.print(f"[green]✓[/] {tool} disabled for {group}{'/' + project if project else ' (group default)'}")
     console.print(f"  [dim]{path}[/]")
 
 
 @tool_app.command("doctor")
-def cmd_tool_doctor(group: str = typer.Argument(""), project: str = typer.Argument(""),
-                    all_: bool = typer.Option(False, "--all")) -> None:
+def cmd_tool_doctor(
+    group: str = typer.Argument(""), project: str = typer.Argument(""), all_: bool = typer.Option(False, "--all")
+) -> None:
     """Why is a tool not doing anything? Registered, enabled, installed, ready."""
     from pf.tools import readiness
 
@@ -2506,8 +3704,7 @@ def cmd_tool_doctor(group: str = typer.Argument(""), project: str = typer.Argume
                 console.print(f"  [green]✓[/] {r['name']:12} ready  [dim]{r['surface']}[/]")
                 continue
             problems += 1
-            reason = ("; ".join(r["blockers"]) or r["hint"]
-                      or f"missing {', '.join(r['missing'])}")
+            reason = "; ".join(r["blockers"]) or r["hint"] or f"missing {', '.join(r['missing'])}"
             console.print(f"  [yellow]![/] {r['name']:12} {reason}")
     raise typer.Exit(1 if problems else 0)
 
@@ -2527,8 +3724,287 @@ def _register_tool_commands() -> None:
             if hook is not None:
                 hook(tool_app)
         except Exception as exc:  # noqa: BLE001 — a broken tool CLI is not fatal
-            console.print(f"[dim]tool '{name}' registered no commands: "
-                          f"{type(exc).__name__}[/]", highlight=False)
+            console.print(f"[dim]tool '{name}' registered no commands: {type(exc).__name__}[/]", highlight=False)
+
+
+prov_app = typer.Typer(help="Agent action provenance: intent, decision, execution, chain, timestamp.")
+app.add_typer(prov_app, name="provenance")
+
+_STAGE_COLOUR = {"intent": "cyan", "decision": "yellow", "execution": "green"}
+_LEVEL_COLOUR = {"ok": "green", "warn": "yellow", "fail": "red"}
+
+
+@prov_app.command("log")
+def cmd_prov_log(
+    limit: int = typer.Option(20, "--limit", "-n"),
+    action: str = typer.Option("", "--action", help="show one action id in full"),
+    stage: str = typer.Option("", "--stage", help="intent | decision | execution"),
+) -> None:
+    """Recent agent actions, newest last, as the chain recorded them."""
+    from pf.provenance import read_all
+
+    records = read_all(root())
+    if action:
+        records = [r for r in records if r.action_id.startswith(action)]
+    if stage:
+        records = [r for r in records if r.stage == stage]
+    if not records:
+        console.print("[dim]no records — the ledger is empty[/]")
+        return
+
+    t = Table(box=None, pad_edge=False)
+    for c in ("seq", "stage", "action", "actor", "tool", "target", "outcome"):
+        t.add_column(c)
+    for r in records[-limit:]:
+        p = r.payload
+        outcome = p.get("verdict") or p.get("status") or p.get("summary", "")
+        colour = _STAGE_COLOUR.get(r.stage, "white")
+        t.add_row(
+            str(r.seq), f"[{colour}]{r.stage}[/]", r.action_id[:8], r.actor, r.tool, r.target[:40], str(outcome)[:40]
+        )
+    console.print(t)
+    console.print(f"\n[dim]{len(records)} record(s); showing {min(limit, len(records))}[/]")
+
+
+@prov_app.command("verify")
+def cmd_prov_verify(
+    anchors: bool = typer.Option(False, "--anchors", help="also check timestamp tokens (needs openssl/ots)"),
+) -> None:
+    """Audit the ledger: integrity, completeness, anchor coverage, oversight.
+
+    Exits non-zero on a failure, so CI can gate a merge on it.
+    """
+    from pf.provenance import report
+
+    rep = report(root(), check_anchors=anchors)
+    console.print(
+        f"[bold]Provenance audit[/]  {rep.records} records, {rep.actions_total} actions, head seq {rep.head_seq}"
+    )
+    if rep.unanchored:
+        console.print(f"[yellow]{rep.unanchored} record(s) written since the last anchor[/]")
+    console.print()
+    for f in rep.findings:
+        console.print(f"  [{_LEVEL_COLOUR[f.level]}]{f.level.upper():<5}[/] {f.code:<26} {f.detail}")
+    if rep.breaks:
+        console.print("\n[red]chain breaks[/]")
+        for b in rep.breaks[:20]:
+            console.print(f"  seq {b.seq:<8} {b.kind:<10} {b.detail}")
+    console.print(f"\n[{'green' if rep.ok else 'red'}]{'PASS' if rep.ok else 'FAIL'}[/]")
+    raise typer.Exit(rep.exit_code)
+
+
+@prov_app.command("anchor")
+def cmd_prov_anchor(
+    kind: str = typer.Option("rfc3161", "--kind", help="rfc3161 | opentimestamps | both"),
+    url: str = typer.Option("", "--tsa", help="override the TSA endpoint"),
+) -> None:
+    """Timestamp the current chain head with a party outside this repository."""
+    from pf.provenance import anchor as anchor_mod
+
+    picked = ("rfc3161", "opentimestamps") if kind == "both" else (kind,)
+    failed = False
+    for k in picked:
+        if k == "rfc3161":
+            a = anchor_mod.stamp_rfc3161(root(), url=url or anchor_mod.DEFAULT_TSA)
+        elif k == "opentimestamps":
+            a = anchor_mod.stamp_ots(root())
+        else:
+            console.print(f"[red]unknown anchor kind: {k}[/]")
+            raise typer.Exit(2)
+        colour = {"ok": "green", "pending": "yellow"}.get(a.status, "red")
+        console.print(f"[{colour}]{a.status:<8}[/] {a.kind:<15} seq {a.seq}  {a.path or '-'}")
+        if a.detail:
+            console.print(f"          [dim]{a.detail}[/]")
+        failed = failed or a.status == "failed"
+    raise typer.Exit(1 if failed else 0)
+
+
+@prov_app.command("upgrade")
+def cmd_prov_upgrade() -> None:
+    """Fetch confirmed Bitcoin attestations for pending OpenTimestamps receipts."""
+    from pf.provenance import anchor as anchor_mod
+
+    pending = [a for a in anchor_mod.anchors(root()) if a.kind == "opentimestamps" and a.status == "pending"]
+    if not pending:
+        console.print("[dim]no pending OpenTimestamps receipts[/]")
+        return
+    for a in pending:
+        ok, detail = anchor_mod.upgrade_ots(root(), a)
+        console.print(f"[{'green' if ok else 'yellow'}]seq {a.seq}[/] {detail}")
+
+
+@prov_app.command("status")
+def cmd_prov_status() -> None:
+    """Head, anchor coverage, kill-switch state — the one-screen summary."""
+    from pf.provenance import anchors, head, is_revoked
+    from pf.provenance.ledger import enforcing
+
+    h = head(root())
+    console.print(f"[bold]head[/]        seq {h.seq}  {h.hash[:24]}…")
+    mode = "yes (unrecordable actions are denied)" if enforcing() else "no (fail-open)"
+    console.print(f"[bold]enforcing[/]   {mode}")
+    stopped, why = is_revoked(root())
+    console.print("[bold]kill switch[/] " + (f"[red]ENGAGED[/] — {why}" if stopped else "clear"))
+    good = [a for a in anchors(root()) if a.status in ("ok", "pending")]
+    if good:
+        last = max(good, key=lambda a: a.seq)
+        lag = h.seq - last.seq
+        console.print(
+            f"[bold]anchored[/]    through seq {last.seq} "
+            f"({last.kind}, {last.status})" + (f"  [yellow]{lag} record(s) behind[/]" if lag > 0 else "")
+        )
+    else:
+        console.print("[bold]anchored[/]    [yellow]never[/]")
+
+
+@prov_app.command("revoke")
+def cmd_prov_revoke(
+    actor: str = typer.Argument("*", help="actor to stop, or * for all"),
+    reason: str = typer.Option("", "--reason", "-r"),
+) -> None:
+    """Kill switch. A revoked actor is refused at INTENT, before the gate runs."""
+    from pf.provenance import revoke
+
+    revoke(root(), actor=actor, reason=reason)
+    console.print(
+        f"[red]revoked[/] {actor} — agent actions will be refused. Undo with `pf provenance reinstate {actor}`."
+    )
+
+
+@prov_app.command("reinstate")
+def cmd_prov_reinstate(actor: str = typer.Argument("*")) -> None:
+    """Release the kill switch for an actor."""
+    from pf.provenance import reinstate
+
+    reinstate(root(), actor=actor)
+    console.print(f"[green]reinstated[/] {actor}")
+
+
+@prov_app.command("approve")
+def cmd_prov_approve(action_id: str = typer.Argument(...), note: str = typer.Option("", "--note", "-m")) -> None:
+    """Record human approval for an action held for oversight."""
+    from pf.provenance import approve
+
+    entry = approve(root(), action_id, note=note)
+    console.print(f"[green]approved[/] {action_id[:12]}… by {entry['approver']}")
+
+
+@prov_app.command("export")
+def cmd_prov_export(
+    dest: Path = typer.Argument(..., help="directory to write the bundle to"),
+) -> None:
+    """Write a self-contained evidence bundle: chain, anchors, and a verifier.
+
+    What an auditor receives. The verifier is stdlib-only and does not import
+    this platform, so checking the evidence never requires trusting the system
+    that produced it.
+    """
+    import shutil
+
+    from pf.provenance.chain import chain_dir
+
+    src = chain_dir(root())
+    if not src.exists():
+        console.print("[red]no ledger to export[/]")
+        raise typer.Exit(1)
+    dest.mkdir(parents=True, exist_ok=True)
+
+    copied = []
+    for name in ("chain.jsonl", "anchors.jsonl", "approvals.jsonl", "revoked.json"):
+        p = src / name
+        if p.exists():
+            shutil.copy2(p, dest / name)
+            copied.append(name)
+    if (src / "anchors").is_dir():
+        shutil.copytree(src / "anchors", dest / "anchors", dirs_exist_ok=True)
+        copied.append("anchors/")
+
+    verifier = root() / "platform" / "entrypoints" / "verify_provenance.py"
+    if verifier.exists():
+        shutil.copy2(verifier, dest / "verify_provenance.py")
+        copied.append("verify_provenance.py")
+
+    (dest / "README.md").write_text(
+        "# Agent action provenance — evidence bundle\n\n"
+        "Every action an AI agent took, in five stages: what it intended, what\n"
+        "the policy gate decided, what it executed, how the records are linked,\n"
+        "and who attested to when they existed.\n\n"
+        "## Check it yourself\n\n"
+        "```\npython3 verify_provenance.py .\n```\n\n"
+        "Stdlib only. It does not import the platform that produced this bundle:\n"
+        "recompute the SHA-256 of each record's canonical JSON, confirm each\n"
+        "`prev` matches the previous record's `hash`, and the chain is proved\n"
+        "internally consistent without trusting us.\n\n"
+        "## Check the timestamps\n\n"
+        "The chain alone proves nobody edited the middle. The anchors in\n"
+        "`anchors/` prove when the end existed, signed by a party with no stake\n"
+        "in this record:\n\n"
+        "```\nopenssl ts -verify -digest <head-hash> -in anchors/<n>.tsr "
+        "-CAfile <tsa-ca.pem>\nots verify anchors/<n>.head.ots\n```\n\n"
+        "`anchors.jsonl` names the head hash each token covers.\n",
+        encoding="utf-8",
+    )
+    copied.append("README.md")
+
+    console.print(f"[green]exported[/] {len(copied)} item(s) to {dest}")
+    for c in copied:
+        console.print(f"  {c}")
+
+
+@prov_app.command("sync")
+def cmd_prov_sync() -> None:
+    """Replay the chain into DuckDB so the UI and SQL can query it.
+
+    The chain is the record; this is a mirror. It is rebuilt from scratch every
+    time rather than appended to, because a mirror that has drifted from the
+    chain should be replaced by the chain, not reconciled with it.
+    """
+    from pf import obs
+    from pf.provenance import read_all
+
+    records = read_all(root())
+    with obs.connect() as con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS provenance_records (
+                seq BIGINT PRIMARY KEY, action_id TEXT, stage TEXT,
+                ts TIMESTAMP, actor TEXT, session TEXT, "group" TEXT,
+                project TEXT, tool TEXT, target TEXT, verdict TEXT,
+                status TEXT, payload JSON, prev TEXT, hash TEXT
+            );
+        """)
+        con.execute("DELETE FROM provenance_records")
+        for r in records:
+            con.execute(
+                "INSERT INTO provenance_records VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [
+                    r.seq,
+                    r.action_id,
+                    r.stage,
+                    r.ts,
+                    r.actor,
+                    r.session,
+                    r.group,
+                    r.project,
+                    r.tool,
+                    r.target,
+                    r.payload.get("verdict"),
+                    r.payload.get("status"),
+                    json.dumps(r.payload),
+                    r.prev,
+                    r.hash,
+                ],
+            )
+    console.print(f"[green]synced[/] {len(records)} record(s) into provenance_records")
+
+
+# ------------------------------------------------------------------- AIR --
+# The command group lives in `pf.air.cli`, not here. This module is already the
+# longest in the package, and the AIR surface grows with the catalogue layer
+# rather than with the CLI — keeping it beside the code it drives means adding a
+# command is one file, the same property `Tool.commands` gives a tool.
+from pf.air.cli import air_app  # noqa: E402 — registered after `app` exists
+
+app.add_typer(air_app, name="air")
 
 
 _register_tool_commands()

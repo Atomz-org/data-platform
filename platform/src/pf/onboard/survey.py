@@ -190,7 +190,7 @@ def survey(root: Path) -> Survey:
         # vendored packages; the top-level project is the one being onboarded.
         s.dbt_project = min(dbt_projects, key=lambda p: len(p.parts))
         try:
-            doc = yaml.safe_load(s.dbt_project.read_text()) or {}
+            doc = yaml.safe_load(s.dbt_project.read_text(encoding="utf-8")) or {}
             s.dbt_name = str(doc.get("name", ""))
             s.dbt_config = doc if isinstance(doc, dict) else {}
         except yaml.YAMLError:
@@ -198,7 +198,7 @@ def survey(root: Path) -> Survey:
         _survey_dbt(s, s.dbt_project.parent)
 
     for path in _walk(root, (".py",)):
-        text = path.read_text(errors="ignore")
+        text = path.read_text(errors="ignore", encoding="utf-8")
         hits = {name for name, rx in ORCHESTRATOR_MARKERS.items() if rx.search(text)}
         if hits:
             s.orchestrators |= hits
@@ -274,7 +274,7 @@ def _survey_dbt(s: Survey, dbt_dir: Path) -> None:
         s.profiles = found[0] if found else None
 
     if s.profiles is not None:
-        text = s.profiles.read_text(errors="ignore").lower()
+        text = s.profiles.read_text(errors="ignore", encoding="utf-8").lower()
         s.warehouses = {w for w in WAREHOUSES if re.search(rf"\b{w}\b", text)}
 
 
@@ -302,12 +302,12 @@ def _package_namespaces(entry: dict) -> tuple[str, list[str]]:
 def _survey_packages(s: Survey) -> None:
     """Count what each declared package is actually used for, and how it is pinned."""
     try:
-        entries = (yaml.safe_load(s.packages.read_text()) or {}).get("packages") or []
+        entries = (yaml.safe_load(s.packages.read_text(encoding="utf-8")) or {}).get("packages") or []
     except yaml.YAMLError:
         return
 
     corpus = " ".join(
-        f.read_text(errors="ignore")
+        f.read_text(errors="ignore", encoding="utf-8")
         for f in [*(x for v in s.models.values() for x in v), *s.macros, *s.tests]
     )
 
@@ -347,7 +347,7 @@ def _detect_capabilities(root: Path) -> set[str]:
     for pkg in root.rglob("package.json"):
         if SKIP_DIRS & set(pkg.relative_to(root).parts):
             continue
-        if "@evidence-dev" in pkg.read_text(errors="ignore"):
+        if "@evidence-dev" in pkg.read_text(errors="ignore", encoding="utf-8"):
             present.add("evidence")
             break
 

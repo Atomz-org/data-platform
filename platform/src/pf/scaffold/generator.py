@@ -16,12 +16,13 @@ def render(text: str, ctx: dict[str, Any]) -> str:
     def sub(m: re.Match) -> str:
         key = m.group(1).strip()
         return str(ctx.get(key, m.group(0)))
+
     return re.sub(r"\{\{\s*([a-z_]+)\s*\}\}", sub, text)
 
 
 def write(path: Path, content: str, ctx: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render(content, ctx))
+    path.write_text(render(content, ctx), encoding="utf-8")
     return path
 
 
@@ -40,10 +41,13 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
     ctx = {"group": group, "domain": domain,
+           "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
            "classes_yaml": "\n".join(f"  - {c}" for c in classes),
            "tools_yaml": _default_tools_yaml()}
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "notify.yaml", GROUP_NOTIFY, ctx),
+        write(gdir / "air.yaml", GROUP_AIR, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
@@ -68,8 +72,8 @@ def _default_tools_yaml() -> str:
     """
     try:
         from pf.tools import all_tools
-        names = sorted(n for n, t in all_tools().items()
-                       if t.default_enabled and "group" in t.scope)
+
+        names = sorted(n for n, t in all_tools().items() if t.default_enabled and "group" in t.scope)
     except Exception:  # noqa: BLE001 — a broken plugin must not block scaffolding
         names = []
     if not names:
@@ -78,8 +82,9 @@ def _default_tools_yaml() -> str:
 
 
 # ---------------------------------------------------------------- project --
-def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
-                sisters: list[str] | None = None) -> list[Path]:
+def new_project(
+    root: Path, group: str, project: str, is_rollup: bool = False, sisters: list[str] | None = None
+) -> list[Path]:
     """Scaffold one project.
 
     The `hooks.PreToolUse` block in PROJECT_SETTINGS is load-bearing, not
@@ -99,12 +104,14 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
     module = project.replace("-", "_")
     sisters = sisters or []
     ctx = {
-        "group": group, "project": project, "module": module,
-        "sisters_py": ", ".join(f'"{s.replace("-", "_")}": "../{s}/data/{s.replace("-", "_")}.duckdb"'
-                                for s in sisters),
+        "group": group,
+        "project": project,
+        "module": module,
+        "sisters_py": ", ".join(
+            f'"{s.replace("-", "_")}": "../{s}/data/{s.replace("-", "_")}.duckdb"' for s in sisters
+        ),
         "sister_list": ", ".join(sisters) or "none",
-        "deny_siblings": ", ".join(
-            f'"Read(../{s}/**)"' for s in sisters) or '"Read(../*/src/**)"',
+        "deny_siblings": ", ".join(f'"Read(../{s}/**)"' for s in sisters) or '"Read(../*/src/**)"',
     }
 
     created = [
@@ -112,14 +119,14 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / ".claude" / "settings.json", PROJECT_SETTINGS, ctx),
         write(pdir / "pyproject.toml", PROJECT_PYPROJECT, ctx),
         write(pdir / "src" / module / "__init__.py", '"""{{project}} — business logic only."""\n', ctx),
-        write(pdir / "src" / module / "definitions.py",
-              ROLLUP_DEFS if is_rollup else PROJECT_DEFS, ctx),
-        write(pdir / "src" / module / "sources" / "__init__.py",
-              '"""Annotated dlt sources."""\n', ctx),
-        write(pdir / "src" / module / "defs" / "__init__.py",
-              '"""Extra Dagster assets collected by the factory."""\n', ctx),
-        write(pdir / "src" / module / "agents" / "__init__.py",
-              '"""Project-specific agent logic."""\n', ctx),
+        write(pdir / "src" / module / "definitions.py", ROLLUP_DEFS if is_rollup else PROJECT_DEFS, ctx),
+        write(pdir / "src" / module / "sources" / "__init__.py", '"""Annotated dlt sources."""\n', ctx),
+        write(
+            pdir / "src" / module / "defs" / "__init__.py",
+            '"""Extra Dagster assets collected by the factory."""\n',
+            ctx,
+        ),
+        write(pdir / "src" / module / "agents" / "__init__.py", '"""Project-specific agent logic."""\n', ctx),
         write(pdir / "transform" / "dbt_project.yml", PROJECT_DBT, ctx),
         write(pdir / "transform" / "profiles.yml", render_profiles(module), ctx),
         write(pdir / "transform" / "packages.yml", PROJECT_PACKAGES, ctx),
@@ -134,6 +141,7 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
         write(pdir / ".memory" / "notes" / "README.md", PROJECT_MEMORY, ctx),
         write(pdir / "kg" / "context_card.md", EMPTY_CARD, ctx),
         write(pdir / "tools.yaml", PROJECT_TOOLS, ctx),
+        write(pdir / "docs" / "quack.md", PROJECT_QUACK_DOC, ctx),
     ]
     for d in ("data", "kg", "contracts"):
         (pdir / d).mkdir(parents=True, exist_ok=True)
@@ -141,6 +149,49 @@ def new_project(root: Path, group: str, project: str, is_rollup: bool = False,
 
 
 # ================================================================ templates ==
+GROUP_AIR = """\
+# Which AI controls the {{group}} family commits to.
+#
+# Read, not generated — `governance/air-register.md` is the generated half.
+# Control ids come from whichever catalogues are registered; `pf air catalogues`
+# lists them, `pf air controls` lists the ids, `pf air show <id>` explains one.
+#
+# Declared here means declared for **every sister project** in {{group}}. A
+# project may add to `baseline` in its own air.yaml; it cannot remove from it.
+# The way to drop a control is `accepted:`, which requires a reason and an owner.
+#
+#   pf air coverage {{group}} <project>    # what this entity enforces today
+#   pf air baseline {{group}} --suggest    # the controls that already pass
+#   pf air gate {{group}} <project>        # blocks on a failing commitment
+#
+# `baseline` starts empty on purpose. A scaffolder that pre-commits a family to
+# a set of controls produces commitments nobody made, and the first gate run
+# fails on a decision never taken. Fill it from `--suggest`, which proposes only
+# what already passes — a ratchet against regression rather than a wall of work.
+version: 1
+
+# Where this family sits in the catalogue's taxonomy, if it declares one.
+# `pf air catalogues` names the corpus; its deployment-model data file lists the
+# vocabulary. Free-form until then.
+profile: {}
+
+# Controls this family commits to. `pf air gate` blocks the merge when one of
+# these is failing; everything outside this list is reported and advisory.
+baseline: []
+
+# Controls consciously not taken. `reason` and `owner` are both required: an
+# acceptance without a reason is a gap with better formatting, and one without
+# an owner is a decision nobody can be asked about.
+#
+# accepted:
+#   - control: <id>
+#     reason: >
+#       Why this family does not take it, in a sentence somebody can disagree with.
+#     owner: someone@example.com
+#     review_by: 2027-01-01
+accepted: []
+"""
+
 GROUP_TOOLS = """\
 # Which platform tools this group runs. `pf tool list` shows what is available.
 #
@@ -161,6 +212,20 @@ GROUP_TOOLS = """\
 # new family, not a fixed set. Turn any of it off; it is your file now.
 version: 1
 tools:{{tools_yaml}}
+"""
+
+GROUP_NOTIFY = """\
+# Where {{group}}'s loops and answers are delivered. Slack and Teams both accept
+# an incoming webhook with a `text` payload; nothing else is required.
+#
+# Values are environment-variable names, never URLs: a webhook is a credential
+# and this file is committed. Set PF_NOTIFY_WEBHOOK_{{group_upper}} (or the
+# per-channel variables below) in the environment that runs the loops.
+# `PF_NOTIFY_WEBHOOK` overrides everything, for CI and laptops.
+channels:
+  default: ${PF_NOTIFY_WEBHOOK_{{group_upper}}}
+  loops:   ${PF_NOTIFY_WEBHOOK_{{group_upper}}_LOOPS}
+  ask:     ${PF_NOTIFY_WEBHOOK_{{group_upper}}_ASK}
 """
 
 PROJECT_TOOLS = """\
@@ -277,27 +342,54 @@ derivable rather than guessed. `pf check` fails on an undeclared join.
 - Run `impact_analysis` before changing a column, a model or a metric.
 """
 
-PROJECT_SETTINGS = """\
+#: The platform toolkits every project gets, in the order they read.
+#:
+#: One list because it feeds two places that must not disagree: the settings a
+#: new project is scaffolded with, and `pf.scaffold.claude_settings.ensure_plugins`,
+#: which brings an existing project up to the current set. When those were the
+#: same JSON typed twice, adding a toolkit reached the projects created after it
+#: and no others — the same failure `Capability.default_enabled` exists to stop.
+#:
+#: A project's own group plugin is appended per project and is not listed here.
+DEFAULT_TOOLKITS: tuple[str, ...] = (
+    "platform-init",
+    "dlt-ingest",
+    "dlt-quality",
+    "dlt-explore",
+    "duckdb-ops",
+    "dbt-modeling",
+    "dbt-semantic",
+    "dbt-testing",
+    "dbt-expectations",
+    "dbt-elementary",
+    "dbt-govern",
+    "dagster-orchestrate",
+    "python-standards",
+    "power-tools",
+)
+
+
+def default_plugins(group: str) -> dict[str, bool]:
+    """The full `enabledPlugins` record for a project in `group`."""
+    plugins = {f"{name}@platform": True for name in DEFAULT_TOOLKITS}
+    plugins[f"{group}-group@{group}"] = True
+    return plugins
+
+
+_PLUGIN_LINES = "\n".join(
+    f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
+
+PROJECT_SETTINGS = ("""\
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "{{group}}": { "source": { "source": "../.." } }
+    "platform": { "source": { "source": "directory", "path": "../../../../platform" } },
+    "{{group}}": { "source": { "source": "directory", "path": "../.." } }
   },
-  "enabledPlugins": [
-    "platform-init@platform",
-    "dlt-ingest@platform",
-    "dlt-quality@platform",
-    "dlt-explore@platform",
-    "duckdb-ops@platform",
-    "dbt-modeling@platform",
-    "dbt-semantic@platform",
-    "dbt-testing@platform",
-    "dbt-govern@platform",
-    "dagster-orchestrate@platform",
-    "python-standards@platform",
-    "power-tools@platform",
-    "{{group}}-group@{{group}}"
-  ],
+  "enabledPlugins": {
+"""
+    + _PLUGIN_LINES + """
+    "{{group}}-group@{{group}}": true
+  },
   "permissions": {
     "deny": [{{deny_siblings}}, "Read(../../../*/projects/**)",
       "Read(./.env)", "Read(./.env.*)",
@@ -324,7 +416,7 @@ PROJECT_SETTINGS = """\
     ]
   }
 }
-"""
+""")
 
 PROJECT_PYPROJECT = """\
 [project]
@@ -427,37 +519,71 @@ models:
 #: able to build the entire project on a laptop with no credentials, or they
 #: stop building it. Production is declared per project — `pf capability-add
 #: <group> <project> snowflake` rewrites this `prod` entry.
+#:
+#: `pf quack serve` puts a server in front of the dev file without changing
+#: these targets: readers reach the database over the quack protocol, and dbt
+#: keeps writing to the file inside `pf.runtime.quack.write_window` — the
+#: profile stays a plain path on purpose, because the experimental quack
+#: client cannot carry a dbt build (schema DDL and schema-qualified table
+#: fetches do not cross the wire).
 PROJECT_TARGETS: dict[str, dict[str, object]] = {
-    "dev":  {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 4},
-    "ci":   {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
+    "dev": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 4},
+    "ci": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
     "prod": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "threads": 8},
     # Recce compares two *built* states, so there has to be somewhere to build
     # the second one. Same file, different schema: a separate database would mean
     # loading the seeds twice and would put the two states out of reach of a
     # single connection. The per-layer `+schema:` config appends to this, so
     # staging lands in `base_staging` and never collides with `main_staging`.
-    "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}",
-             "schema": "base", "threads": 4},
+    "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "schema": "base", "threads": 4},
 }
+
 
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
     """One dbt output block. The unit `pf align` checks and bootstrap appends."""
-    lines = [f"{indent}{name}:"]
+    return "\n".join([f"{indent}{name}:", *_render_map(spec, indent + "  ")]) + "\n"
+
+
+def _render_scalar(value: object) -> object:
+    if isinstance(value, bool):
+        # Before booleans appeared here every value was a string or an int,
+        # and Python's `True` reached the file verbatim. YAML 1.1 does read
+        # it as a boolean, so nothing was broken — but a generated file that
+        # nobody can copy an idiom from is a generated file people edit by
+        # hand, and `secure: True` beside `threads: 8` reads as a mistake.
+        return "true" if value else "false"
+    if isinstance(value, str) and "{{" in value:
+        return f'"{value}"'
+    return value
+
+
+def _render_map(spec: dict[str, object], indent: str) -> list[str]:
+    """Block-YAML lines for one mapping, nesting two spaces per level.
+
+    Flat targets render exactly as they always have. The nesting exists for
+    catalog-attached targets — dbt-duckdb's `secrets:` and `attach:` are lists
+    of mappings, and a list item puts its first key on the `- ` line the way
+    every hand-written dbt profile does, so the generated block is one a person
+    can copy an idiom from.
+    """
+    lines: list[str] = []
     for key, value in spec.items():
-        if isinstance(value, bool):
-            # Before booleans appeared here every value was a string or an int,
-            # and Python's `True` reached the file verbatim. YAML 1.1 does read
-            # it as a boolean, so nothing was broken — but a generated file that
-            # nobody can copy an idiom from is a generated file people edit by
-            # hand, and `secure: True` beside `threads: 8` reads as a mistake.
-            rendered: object = "true" if value else "false"
-        elif isinstance(value, str) and "{{" in value:
-            rendered = f'"{value}"'
+        if isinstance(value, dict):
+            lines.append(f"{indent}{key}:")
+            lines.extend(_render_map(value, indent + "  "))
+        elif isinstance(value, (list, tuple)):
+            lines.append(f"{indent}{key}:")
+            for item in value:
+                if isinstance(item, dict):
+                    entry = _render_map(item, indent + "    ")
+                    lines.append(f"{indent}  - {entry[0].lstrip()}")
+                    lines.extend(entry[1:])
+                else:
+                    lines.append(f"{indent}  - {_render_scalar(item)}")
         else:
-            rendered = value
-        lines.append(f"{indent}  {key}: {rendered}")
-    return "\n".join(lines) + "\n"
+            lines.append(f"{indent}{key}: {_render_scalar(value)}")
+    return lines
 
 
 def replace_target(text: str, name: str, spec: dict[str, object]) -> tuple[str, bool]:
@@ -522,15 +648,48 @@ def target_type(text: str, name: str) -> str:
 def render_profiles(module: str, targets: dict[str, dict[str, object]] | None = None) -> str:
     """A whole profiles.yml. `DBT_TARGET` selects; nothing else switches warehouse."""
     targets = PROJECT_TARGETS if targets is None else targets
-    head = (f"{module}:\n"
-            f"  target: \"{{{{ env_var('DBT_TARGET', 'dev') }}}}\"\n"
-            f"  outputs:\n")
+    head = f"{module}:\n  target: \"{{{{ env_var('DBT_TARGET', 'dev') }}}}\"\n  outputs:\n"
     return head + "".join(render_target(n, s) for n, s in targets.items())
+
 
 PROJECT_PACKAGES = """\
 packages:
   - package: dbt-labs/dbt_utils
     version: [">=1.3.0", "<2.0.0"]
+"""
+
+PROJECT_QUACK_DOC = """\
+# The dev database, served — {{project}}
+
+<!-- Generated by `pf bootstrap` from pf.scaffold.generator; edits are
+     overwritten. The runtime is pf.runtime.quack; the upstream protocol is
+     pinned at vendor/duckdb-quack. -->
+
+Development builds into one DuckDB file (`data/{{module}}.duckdb`). Serve it and
+every reader — MCP tools, previews, sister roll-ups, any DuckDB client — reaches
+it over DuckDB's quack protocol instead of opening the file:
+
+    pf quack serve {{group}} {{project}}     # idempotent; prints the endpoint
+    pf quack status                          # every project, served or not
+    pf quack stop {{group}} {{project}}      # hand the file back
+
+Writers never queue behind readers: dbt, dlt, MetricFlow, Elementary and Recce
+borrow the file for exactly the duration of a run (`pf.runtime.quack
+.write_window`) and the server resumes behind them. You run builds exactly as
+before; the borrowing is automatic.
+
+## Guardrails (enforced, not advisory — `policy.yaml`, dev serving section)
+
+- **The wire is read-only.** The server holds the database read-only, so the
+  engine refuses any write arriving over the protocol; the client also refuses
+  non-read statements before the network hop, using DuckDB's own parser.
+- **localhost only.** The host is not a parameter of the serving path; a
+  routable dev server cannot be configured into existence.
+- **The token stays on the machine.** Fresh per server, in the 0600 state file
+  `data/{{module}}.quack.json` — gitignored, denied to agent edits by
+  `gate.yaml`, redacted from CLI output (`--show-token` when you need it).
+- **Custody is recorded.** Serving, stopping and every write-window borrow are
+  full actions in the provenance ledger — `pf provenance verify` audits them.
 """
 
 PROJECT_DLT_CONFIG = """\
@@ -655,9 +814,16 @@ compound instead of accumulating notes nobody reads.
 
 TIME_SPINE = """\
 -- Required by MetricFlow for time-based metrics. Platform-standard daily grain.
+--
+-- dbt_utils.date_spine, not DuckDB's range() table function: this model builds
+-- on every target the project has, and range() exists only on DuckDB — on a
+-- Postgres prod it was the one scaffolded model that failed the build.
 {{ config(materialized='table') }}
-select cast(range as date) as date_day
-from range(date '2020-01-01', date '2030-01-01', interval 1 day)
+select cast(date_day as date) as date_day
+from ({{ dbt_utils.date_spine(
+    datepart="day",
+    start_date="cast('2020-01-01' as date)",
+    end_date="cast('2030-01-01' as date)") }}) as spine
 """
 
 TIME_SPINE_YML = """\

@@ -285,5 +285,5 @@ def export(project_dir: str | Path, group: str, project: str,
     manifest = build_manifest(project_dir, group, project)
     path = Path(out) if out else Path(project_dir) / "mdl" / "mdl.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(manifest, indent=2) + "\n")
+    path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     return path

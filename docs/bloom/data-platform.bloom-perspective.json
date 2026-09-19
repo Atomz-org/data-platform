@@ -1,0 +1,1227 @@
+{
+  "name": "data-platform",
+  "id": "perspective:data-platform",
+  "version": "2.0.0",
+  "parentPerspectiveId": null,
+  "createdAt": 0,
+  "lastEditedAt": 0,
+  "categories": [
+    {
+      "id": 1,
+      "name": "Evidence",
+      "labels": [
+        "Evidence"
+      ],
+      "color": "#64748b",
+      "icon": "file-alt",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Policy",
+      "labels": [
+        "Policy"
+      ],
+      "color": "#334155",
+      "icon": "gavel",
+      "size": 3,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Column",
+      "labels": [
+        "Column"
+      ],
+      "color": "#7fd4cc",
+      "icon": "columns",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Dimension",
+      "labels": [
+        "Dimension"
+      ],
+      "color": "#2dd4bf",
+      "icon": "filter",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Exposure",
+      "labels": [
+        "Exposure"
+      ],
+      "color": "#042f2e",
+      "icon": "tv",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Metric",
+      "labels": [
+        "Metric"
+      ],
+      "color": "#0d9488",
+      "icon": "chart-line",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Model",
+      "labels": [
+        "Model"
+      ],
+      "color": "#19a89f",
+      "icon": "cube",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Project",
+      "labels": [
+        "Project"
+      ],
+      "color": "#0b4f4a",
+      "icon": "sitemap",
+      "size": 3,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Source",
+      "labels": [
+        "Source"
+      ],
+      "color": "#0f766e",
+      "icon": "database",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Table",
+      "labels": [
+        "Table"
+      ],
+      "color": "#14918a",
+      "icon": "table",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Test",
+      "labels": [
+        "Test"
+      ],
+      "color": "#5eead4",
+      "icon": "check-circle",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Concept",
+      "labels": [
+        "Concept"
+      ],
+      "color": "#5b21b6",
+      "icon": "lightbulb",
+      "size": 3,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Property",
+      "labels": [
+        "Property"
+      ],
+      "color": "#a78bfa",
+      "icon": "tag",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Relation",
+      "labels": [
+        "Relation"
+      ],
+      "color": "#7c3aed",
+      "icon": "link",
+      "size": 2,
+      "caption": [
+        {
+          "key": "name"
+        }
+      ],
+      "createdAt": 0,
+      "lastEditedAt": 0,
+      "properties": [
+        {
+          "name": "name",
+          "exclude": false,
+          "isCaption": true,
+          "dataType": "string"
+        },
+        {
+          "name": "local_id",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "layer",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "group",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "project",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "plane",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "id",
+          "exclude": true,
+          "isCaption": false,
+          "dataType": "string"
+        },
+        {
+          "name": "props",
+          "exclude": false,
+          "isCaption": false,
+          "dataType": "string"
+        }
+      ]
+    }
+  ],
+  "relationshipTypes": [
+    {
+      "name": "contains",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    },
+    {
+      "name": "domain_of",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "evidenced_by",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "feeds",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    },
+    {
+      "name": "governs",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "grouped_by",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    },
+    {
+      "name": "has_column",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    },
+    {
+      "name": "has_property",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "instantiates",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "links_to",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "measures",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    },
+    {
+      "name": "range_of",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "realises",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 1
+    },
+    {
+      "name": "tested_by",
+      "caption": [
+        {
+          "key": "kind"
+        }
+      ],
+      "size": 2
+    }
+  ],
+  "hiddenRelationshipTypes": [],
+  "hiddenCategories": [
+    "Column"
+  ],
+  "hideUncategorisedData": false,
+  "palette": {
+    "colors": [
+      "#0b4f4a",
+      "#0f766e",
+      "#14918a",
+      "#19a89f",
+      "#7fd4cc",
+      "#0d9488",
+      "#2dd4bf",
+      "#5eead4",
+      "#042f2e",
+      "#5b21b6",
+      "#a78bfa",
+      "#7c3aed",
+      "#334155",
+      "#64748b"
+    ],
+    "currentIndex": 0
+  },
+  "templates": [
+    {
+      "id": "tmpl:blast-radius",
+      "name": "What breaks if I change $model",
+      "text": "What breaks if I change $model",
+      "cypher": "MATCH (m:Model {name: $model})-[:feeds|measures|grouped_by|tested_by*1..6]->(d)\n          RETURN m, d",
+      "hasCypherErrors": false,
+      "params": [
+        {
+          "name": "model",
+          "dataType": "string",
+          "suggestionLabel": "Model",
+          "suggestionProp": "name"
+        }
+      ],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:column-consumers",
+      "name": "Who consumes column $column",
+      "text": "Who consumes column $column",
+      "cypher": "MATCH (c:Column {name: $column})<-[:has_column]-(t)-[:feeds*0..4]->(d)\n          RETURN c, t, d",
+      "hasCypherErrors": false,
+      "params": [
+        {
+          "name": "column",
+          "dataType": "string",
+          "suggestionLabel": "Column",
+          "suggestionProp": "name"
+        }
+      ],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:concept-across-estate",
+      "name": "Where $concept is instantiated, in every project",
+      "text": "Where $concept is instantiated, in every project",
+      "cypher": "MATCH (k:Concept {name: $concept})<-[:instantiates]-(t)\n          RETURN k, t, t.project AS project",
+      "hasCypherErrors": false,
+      "params": [
+        {
+          "name": "concept",
+          "dataType": "string",
+          "suggestionLabel": "Concept",
+          "suggestionProp": "name"
+        }
+      ],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:policy-reach",
+      "name": "Everything policy $policy governs",
+      "text": "Everything policy $policy governs",
+      "cypher": "MATCH (p:Policy {name: $policy})-[:governs]->(a)\n          OPTIONAL MATCH (p)-[:evidenced_by]->(e)\n          RETURN p, a, e",
+      "hasCypherErrors": false,
+      "params": [
+        {
+          "name": "policy",
+          "dataType": "string",
+          "suggestionLabel": "Policy",
+          "suggestionProp": "name"
+        }
+      ],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:ungoverned-marts",
+      "name": "Marts no policy governs",
+      "text": "Marts no policy governs",
+      "cypher": "MATCH (m:Model) WHERE m.layer = 'marts'\n            AND NOT (m)<-[:governs]-(:Policy)\n          RETURN m",
+      "hasCypherErrors": false,
+      "params": [],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:untested-models",
+      "name": "Models with no test",
+      "text": "Models with no test",
+      "cypher": "MATCH (m:Model) WHERE NOT (m)-[:tested_by]->(:Test)\n          RETURN m",
+      "hasCypherErrors": false,
+      "params": [],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:unmapped-tables",
+      "name": "Physical tables that instantiate no concept",
+      "text": "Physical tables that instantiate no concept",
+      "cypher": "MATCH (t) WHERE (t:Table OR t:Model)\n            AND NOT (t)-[:instantiates]->(:Concept)\n          RETURN t",
+      "hasCypherErrors": false,
+      "params": [],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:exposure-lineage",
+      "name": "What feeds exposure $exposure",
+      "text": "What feeds exposure $exposure",
+      "cypher": "MATCH path = (up)-[:feeds*1..8]->(x:Exposure {name: $exposure})\n          RETURN path",
+      "hasCypherErrors": false,
+      "params": [
+        {
+          "name": "exposure",
+          "dataType": "string",
+          "suggestionLabel": "Exposure",
+          "suggestionProp": "name"
+        }
+      ],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:same-name-different-project",
+      "name": "One name, two projects — check they mean the same thing",
+      "text": "One name, two projects — check they mean the same thing",
+      "cypher": "MATCH (a), (b)\n          WHERE a.name = b.name AND a.project < b.project\n            AND labels(a) = labels(b)\n          RETURN a, b LIMIT 200",
+      "hasCypherErrors": false,
+      "params": [],
+      "createdAt": 0
+    },
+    {
+      "id": "tmpl:evidence-chain",
+      "name": "Policy to evidence, end to end",
+      "text": "Policy to evidence, end to end",
+      "cypher": "MATCH (p:Policy)-[:evidenced_by]->(e:Evidence)\n          RETURN p, e",
+      "hasCypherErrors": false,
+      "params": [],
+      "createdAt": 0
+    }
+  ]
+}
