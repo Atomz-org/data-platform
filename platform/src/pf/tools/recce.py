@@ -381,10 +381,10 @@ def write_config(project_dir: Path) -> tuple[Path, bool]:
             "#\n"
             "# Regenerate with `pf tool recce config <group> <project>`.\n"
             + yaml.safe_dump(generate_config(project_dir), sort_keys=False))
-    if path.exists() and path.read_text() == body:
+    if path.exists() and path.read_text(encoding="utf-8") == body:
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(body)
+    path.write_text(body, encoding="utf-8")
     return path, True
 
 
@@ -404,7 +404,7 @@ def ensure_base_target(project_dir: Path, project: str = "") -> bool:
     path = dbt_dir(project_dir) / "profiles.yml"
     if path.exists():
         try:
-            doc = yaml.safe_load(path.read_text()) or {}
+            doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             doc = {}
         for cfg in doc.values():
@@ -670,7 +670,7 @@ def run(project_dir: Path, *, skip_query: bool = False) -> dict[str, Any]:
     result.update(read_state(project_dir))
     summary = summary_file(project_dir)
     if summary.exists():
-        result["summary_markdown"] = summary.read_text()[:20000]
+        result["summary_markdown"] = summary.read_text(encoding="utf-8")[:20000]
     return result
 
 
@@ -680,7 +680,7 @@ def read_state(project_dir: Path) -> dict[str, Any]:
     if not p.exists():
         return {}
     try:
-        state = json.loads(p.read_text())
+        state = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
     checks = state.get("checks") or []
@@ -693,7 +693,7 @@ def read_state(project_dir: Path) -> dict[str, Any]:
 
 def summary_markdown(project_dir: Path) -> str:
     p = summary_file(project_dir)
-    return p.read_text() if p.exists() else ""
+    return p.read_text(encoding="utf-8") if p.exists() else ""
 
 
 #: Which model a run was about. A recorded run carries its `check_id` and its
@@ -731,7 +731,7 @@ def model_diffs(project_dir: Path) -> dict[str, dict[str, Any]]:
     if not p.exists():
         return {}
     try:
-        state = json.loads(p.read_text())
+        state = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
 
@@ -813,7 +813,7 @@ def check_results(project_dir: Path) -> list[dict[str, Any]]:
     if not p.exists():
         return []
     try:
-        state = json.loads(p.read_text())
+        state = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return []
 
@@ -1025,14 +1025,14 @@ def _mart_models(project_dir: Path) -> list[str]:
     """Mart model names from the dbt manifest."""
     p = dbt_dir(project_dir) / "target" / "manifest.json"
     try:
-        manifest = json.loads(p.read_text())
+        manifest = json.loads(p.read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return []
     out = []
     for node in (manifest.get("nodes") or {}).values():
         if node.get("resource_type") != "model":
             continue
-        if (node.get("path") or "").split("/")[0] == "marts":
+        if (node.get("path") or "").replace("\\", "/").split("/")[0] == "marts":
             out.append(node["name"])
     return sorted(out)
 
@@ -1427,7 +1427,7 @@ def register_commands(app: Any) -> None:
                     "Run `pf seed` and then `pf tool recce baseline "
                     f"{group} {project}` on a known-good build of the base "
                     "branch. That publishes the baseline this job pulls.\n"
-                )
+                , encoding="utf-8")
                 _publish_ci_review(d, group, project)
                 raise typer.Exit(0)
             console.print("[yellow]no baseline — capturing the current build[/]")

@@ -46,6 +46,7 @@ ENTRY_POINT_GROUP = "pf.tools"
 #: dependencies installed — the Tool object is declarative and its hooks are
 #: dotted strings, so nothing heavy is needed to describe it.
 BUILTIN_MODULES: tuple[str, ...] = (
+    "pf.tools.evidence",
     "pf.tools.elementary",
     "pf.tools.expectations",
     "pf.tools.openmetadata",

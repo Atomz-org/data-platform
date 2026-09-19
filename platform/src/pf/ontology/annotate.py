@@ -150,7 +150,7 @@ def export_annotations(path: str | Path) -> Path:
         "version": load_ontology().version,
         "resources": [a.to_dict() for a in sorted(_REGISTRY.values(), key=lambda a: a.resource)],
     }
-    out.write_text(yaml.safe_dump(payload, sort_keys=False))
+    out.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     return out
 
 
@@ -244,7 +244,7 @@ def merge_annotations(path: str | Path, incoming: list[Annotation]) -> tuple[int
     if unmodelled:
         payload["unmodelled"] = unmodelled
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(yaml.safe_dump(payload, sort_keys=False))
+    out.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     return len(added), len(existing)
 
 
@@ -266,7 +266,7 @@ def load_unmodelled(path: str | Path) -> dict[str, str]:
     p = Path(path)
     if not p.exists():
         return {}
-    payload = yaml.safe_load(p.read_text()) or {}
+    payload = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     return {str(k): str(v) for k, v in (payload.get("unmodelled") or {}).items()
             if str(v).strip()}
 
@@ -276,7 +276,7 @@ def load_annotations(path: str | Path) -> list[Annotation]:
     p = Path(path)
     if not p.exists():
         return []
-    payload = yaml.safe_load(p.read_text()) or {}
+    payload = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     return [
         Annotation(
             resource=r["resource"],

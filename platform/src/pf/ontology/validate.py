@@ -178,7 +178,7 @@ def validate_instance(instance_path: str | Path, ontology: Ontology | None = Non
     if not p.exists():
         return [ValidationIssue("error", "missing-instance", str(p), "instance.yaml not found")]
 
-    payload = yaml.safe_load(p.read_text()) or {}
+    payload = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     issues: list[ValidationIssue] = []
     for cls in payload.get("classes", []) or []:
         if not onto.has_class(cls):

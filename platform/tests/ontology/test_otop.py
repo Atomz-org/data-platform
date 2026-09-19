@@ -32,7 +32,7 @@ def repo(tmp_path: Path) -> Path:
     git("init", "-q")
     git("config", "user.email", "t@example.com")
     git("config", "user.name", "t")
-    (tmp_path / "policy.yaml").write_text("policies: []\n")
+    (tmp_path / "policy.yaml").write_text("policies: []\n", encoding="utf-8")
     git("add", "policy.yaml")
     # 22:01:06 at +02:00 is 20:01:06Z. The two are what the bug confused.
     stamp = "2026-08-13T22:01:06+02:00"

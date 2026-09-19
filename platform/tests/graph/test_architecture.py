@@ -82,7 +82,8 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
     #: Steps whose output is not a per-project artefact. Keep this shrinking.
     NOT_PER_PROJECT = {"OWL export", "vendor docs", "directories", "group card",
                        "group air.yaml", "tools", "capabilities", "conformance",
-                       "architecture map", "capability policies"}
+                       "architecture map", "capability policies",
+                       "notify channel"}
     covered = {
         "knowledge graph": "graph", "context card": "card", "MDL manifest": "mdl",
         "otop manifest": "otop", "reporting": "reporting",

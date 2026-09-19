@@ -100,7 +100,7 @@ def test_requirements_report_missing_without_raising() -> None:
 # ----------------------------------------------------------- inheritance --
 def _write(path: Path, body: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(textwrap.dedent(body))
+    path.write_text(textwrap.dedent(body), encoding="utf-8")
 
 
 def test_group_enablement_reaches_a_sister(tmp_path: Path) -> None:
@@ -213,7 +213,7 @@ def test_baseline_is_a_build_not_a_copy(tmp_path: Path, monkeypatch) -> None:
 
     target = tmp_path / "transform" / "target"
     target.mkdir(parents=True)
-    (target / "manifest.json").write_text("{}")
+    (target / "manifest.json").write_text("{}", encoding="utf-8")
 
     calls: list[dict] = []
 
@@ -241,7 +241,7 @@ def test_baseline_build_failure_is_fatal(tmp_path: Path, monkeypatch) -> None:
 
     target = tmp_path / "transform" / "target"
     target.mkdir(parents=True)
-    (target / "manifest.json").write_text("{}")
+    (target / "manifest.json").write_text("{}", encoding="utf-8")
 
     class _Proc:
         returncode = 1
@@ -414,7 +414,7 @@ def test_server_argv_uses_review_mode_only_with_state(tmp_path: Path) -> None:
 
     (tmp_path / "transform").mkdir()
     assert "--review" not in server_argv(tmp_path)
-    (tmp_path / "transform" / STATE_FILE).write_text("{}")
+    (tmp_path / "transform" / STATE_FILE).write_text("{}", encoding="utf-8")
     argv = server_argv(tmp_path)
     assert "--review" in argv
     # Positional, and last — `recce server --review <state>`. It was passed as
@@ -448,7 +448,7 @@ def _state(tmp_path: Path, payload: dict) -> Path:
     from pf.tools.recce import STATE_FILE
 
     (tmp_path / "transform").mkdir(exist_ok=True)
-    (tmp_path / "transform" / STATE_FILE).write_text(json.dumps(payload))
+    (tmp_path / "transform" / STATE_FILE).write_text(json.dumps(payload), encoding="utf-8")
     return tmp_path
 
 
@@ -500,7 +500,7 @@ def test_unparseable_state_is_not_an_exception(tmp_path: Path) -> None:
     from pf.tools.recce import STATE_FILE, model_diffs
 
     (tmp_path / "transform").mkdir()
-    (tmp_path / "transform" / STATE_FILE).write_text("{not json")
+    (tmp_path / "transform" / STATE_FILE).write_text("{not json", encoding="utf-8")
     assert model_diffs(tmp_path) == {}
 
 

@@ -125,10 +125,10 @@ def built(tmp_path_factory) -> dict:
 
     d = tmp_path_factory.mktemp("probe")
     (d / "models").mkdir()
-    (d / "models" / "probe.sql").write_text(PROBE)
-    (d / "dbt_project.yml").write_text(DBT_PROJECT.format(toolkit=TOOLKIT))
+    (d / "models" / "probe.sql").write_text(PROBE, encoding="utf-8")
+    (d / "dbt_project.yml").write_text(DBT_PROJECT.format(toolkit=TOOLKIT), encoding="utf-8")
     db = d / "probe.duckdb"
-    (d / "profiles.yml").write_text(PROFILES.format(db=db))
+    (d / "profiles.yml").write_text(PROFILES.format(db=db), encoding="utf-8")
 
     proc = subprocess.run(
         ["dbt", "run", "--project-dir", str(d), "--profiles-dir", str(d)],
