@@ -43,6 +43,71 @@ PROFILE_TEMPLATE = """\
 """
 
 
+#: dbt project keys whose files dbt writes back out under `target/`. Each file's
+#: path relative to the project is joined onto target/ verbatim, so an entry that
+#: climbs out of the project (`../../shared/seeds`) puts compiled SQL and seed
+#: copies *beside* the project — generated files no ignore rule covers.
+#: `macro-paths` and `docs-paths` are only read, and may point anywhere.
+WRITTEN_PATH_KEYS = ("model-paths", "seed-paths", "test-paths", "snapshot-paths",
+                     "analysis-paths", "asset-paths")
+
+
+def escaping_paths(project_dir: str | Path) -> list[tuple[str, str]]:
+    """(key, path) for every written-to dbt path that resolves outside the project.
+
+    To share seeds across projects, install the directory holding them as a
+    local package instead: a package's files compile under target/<package>/.
+    `pf bootstrap` does that for a group's `shared/transform/seeds`.
+    """
+    import yaml
+
+    transform = Path(project_dir) / "transform"
+    spec = transform / "dbt_project.yml"
+    if not spec.exists():
+        return []
+    try:
+        doc = yaml.safe_load(spec.read_text()) or {}
+    except yaml.YAMLError:
+        return []
+    base = transform.resolve()
+    out: list[tuple[str, str]] = []
+    for key in WRITTEN_PATH_KEYS:
+        for entry in doc.get(key) or []:
+            resolved = (base / str(entry)).resolve()
+            if resolved != base and base not in resolved.parents:
+                out.append((key, str(entry)))
+    return out
+
+
+def validate_paths(project_dir: str | Path) -> list[Any]:
+    """`escaping_paths` as conformance issues, for `pf check` and bootstrap."""
+    from pf.ontology.validate import ValidationIssue
+
+    return [ValidationIssue(
+        "error", "dbt-path-escapes-project", f"dbt_project.yml {key}",
+        f"'{entry}' is outside the project, so dbt writes its compiled files "
+        f"outside target/. Share seeds as a local package instead — "
+        f"`pf bootstrap` wires groups/<group>/shared/transform when it has seeds.")
+        for key, entry in escaping_paths(project_dir)]
+
+
+def declared_packages(project_dir: str | Path) -> int:
+    """How many packages `packages.yml` / `dependencies.yml` declare."""
+    import yaml
+
+    transform = Path(project_dir) / "transform"
+    total = 0
+    for name in ("packages.yml", "dependencies.yml"):
+        f = transform / name
+        if not f.exists():
+            continue
+        try:
+            total += len((yaml.safe_load(f.read_text()) or {}).get("packages") or [])
+        except yaml.YAMLError:
+            continue
+    return total
+
+
 def write_profiles(project_dir: str | Path, project: str) -> Path:
     out = Path(project_dir) / "transform" / "profiles.yml"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -143,27 +208,34 @@ def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = No
 
     Installs packages first: dbt refuses to parse at all when `packages.yml`
     names packages that `dbt_packages/` does not hold, which is the state of
-    every fresh checkout.
+    every fresh checkout — and of a checkout whose packages.yml gained a group
+    package after its last parse, which is why the count is checked even when
+    a manifest already exists.
 
     Returns whether a manifest exists afterwards. Never raises — a project with
     no dbt project underneath it is a legitimate caller, and the old degraded
     behaviour is the right answer there.
     """
     transform = Path(project_dir) / "transform"
-    if (transform / "target" / "manifest.json").exists():
-        return True
+    manifest_path = transform / "target" / "manifest.json"
     if not (transform / "dbt_project.yml").exists():
-        return False
+        return manifest_path.exists()
 
-    declared = any((transform / f).exists() for f in ("packages.yml", "dependencies.yml"))
+    # Counted, not merely checked for emptiness: a checkout that has dbt_utils
+    # installed but not a newly declared local package fails to parse exactly as
+    # a fresh one does.
+    declared = declared_packages(project_dir)
     installed = transform / "dbt_packages"
+    have = sum(1 for _ in installed.iterdir()) if installed.is_dir() else 0
     try:
-        if declared and not (installed.is_dir() and any(installed.iterdir())):
+        if declared > have:
             deps(project_dir, duckdb_path=duckdb_path)
-        parse(project_dir, duckdb_path=duckdb_path)
+            parse(project_dir, duckdb_path=duckdb_path)
+        elif not manifest_path.exists():
+            parse(project_dir, duckdb_path=duckdb_path)
     except FileNotFoundError:
-        return False  # dbt is not installed — the caller degrades as it always did
-    return (transform / "target" / "manifest.json").exists()
+        pass  # dbt is not installed — the caller degrades as it always did
+    return manifest_path.exists()
 
 
 def manifest(project_dir: str | Path) -> dict[str, Any]:
