@@ -129,6 +129,34 @@ policies:
     evidence: [pf tool recce config]
     controls: [AIR-DET-1, AIR-PREV-12]
 
+  - id: builds-record-observability
+    intent: >
+      A dbt build that leaves no queryable record cannot be triaged; failures
+      get diagnosed from whichever log happened to survive. Every build must
+      record its run and test results into the warehouse with history — for
+      every test framework at once — so "is this new, recurring, or flaky?"
+      is a query, not an archaeology dig.
+    applies_to: {artifact_glob: "**/transform/packages.yml"}
+    constraint: observability_recorded
+    severity: warning
+    enforced_by: [pf.tools.elementary:bootstrap_project, pf.tools.elementary:ensure_package]
+    evidence: [pf tool elementary report, loop-ledger.json]
+    controls: [AIR-DET-4, AIR-PREV-6]
+
+  - id: quality-floor-derived-from-ontology
+    intent: >
+      Hand-written test coverage decays to whichever models someone remembered.
+      The floor — an annotated mart is never empty, a declared identity
+      identifies — must be derived from the ontology roles, so coverage is a
+      function of annotation rather than of memory, and a wrong test is a wrong
+      role rather than a stale file.
+    applies_to: {artifact_glob: "**/transform/tests/expectations/**"}
+    constraint: tests_derived_from_roles
+    severity: warning
+    enforced_by: [pf.tools.expectations:write_tests, pf.tools.expectations:bootstrap_project]
+    evidence: [pf tool expectations run]
+    controls: [AIR-PREV-6, AIR-PREV-5]
+
   - id: secrets-never-in-context
     intent: >
       A credential placed in a prompt, a model file or a committed artefact is
@@ -297,6 +325,12 @@ evidence_kinds:
   - {id: "pf loop run pii-audit", produces: PII findings, durable: false}
   - {id: "pf tool recce run",    produces: data diff against baseline, durable: true}
   - {id: "pf tool recce config", produces: derived review checks, durable: true}
+  # The quality-stack pair. The report is durable because the tables it renders
+  # are — Elementary's history is append-only in the warehouse. The expectations
+  # run is a dbt test invocation whose verdicts land in that same history, so
+  # the command itself stores nothing.
+  - {id: "pf tool elementary report",  produces: observability report over recorded history, durable: true}
+  - {id: "pf tool expectations run",   produces: quality floor verdicts, durable: false}
   # Added with the agent-governance policies above. `pf provenance verify` is
   # durable because the thing it audits is: the ledger is append-only and
   # anchored, so re-running the audit next year reads the same records. The
