@@ -88,6 +88,7 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
         "otop manifest": "otop", "reporting": "reporting",
         "ci workflow": "ci", "dagster code location": "code_location",
         "dbt wiring": "profiles", "claude settings": "settings",
+        "project atlas": "atlas",
     }
     keys = {f.key for f in arch.features()}
 

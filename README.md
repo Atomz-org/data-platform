@@ -32,6 +32,7 @@ uv run pf status                   # every group and project
 | `pf seed <g> <p>` | dlt → DuckDB → annotations → monitors → dbt → graph → card |
 | `pf run-all <g>` | Every sister in parallel, then the roll-up |
 | `pf impact <g> <p> <node>` | Blast radius. Exits 1 on breaking. **The merge gate.** |
+| `pf atlas <g> <p>` | Publish a project's own atlas beside its graph ([docs](docs/PROJECT-ATLAS.md)) |
 | `pf arch <g> <p>` | Per-project architecture map — every feature, present or not ([docs](docs/ARCHITECTURE-MAPS.md)) |
 | `pf check` | Ontology conformance across every project |
 | `pf tokens` | Always-on token budget; fails if a card is over |
