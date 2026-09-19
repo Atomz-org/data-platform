@@ -3011,6 +3011,10 @@ def cmd_report_build(group: str, project: str) -> None:
     console.print(f"  {r['metrics']} metric(s) compiled · {r['pages']} page(s) · {r['sources']} source extract(s)")
     if r["unbacked"]:
         console.print(f"  [yellow]![/] no time dimension: {', '.join(r['unbacked'])}")
+    if r["skipped"]:
+        console.print(f"  [yellow]![/] MetricFlow only, no page: {', '.join(r['skipped'])}")
+    if r["removed"]:
+        console.print(f"  stale page(s) removed: {', '.join(r['removed'])}")
     if r.get("skipped_empty"):
         console.print(f"  [yellow]![/] empty relation, no extract: {', '.join(r['skipped_empty'])}")
     if not r["metrics"]:
