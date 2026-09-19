@@ -8,6 +8,8 @@ testable without a lake, so all of it is tested without one.
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 from pf.housekeeping import Report, detect, run
 from pf.housekeeping import ducklake as dl
@@ -109,6 +111,81 @@ def test_run_executes_automated_tasks_in_plan_order(monkeypatch) -> None:
                             "expire_snapshots", "cleanup_old_files")
     assert executed[0].startswith("CALL ducklake_flush_inlined_data")
     assert executed[-1].startswith("CALL ducklake_cleanup_old_files")
+
+
+# --------------------------------------------------------------- platform ----
+def test_workspace_automates_only_the_regenerable(tmp_path, monkeypatch) -> None:
+    """dbt logs and PR reports are rebuilt by their tools, so they may be
+    deleted; a WAL is somebody's un-checkpointed writes, so it may not."""
+    import os
+
+    from pf.housekeeping import workspace
+
+    monkeypatch.setenv("PF_HOUSEKEEPING_LOG_MB", "0")
+    proj = tmp_path / "groups" / "g" / "projects" / "p"
+    (proj / "transform" / "logs").mkdir(parents=True)
+    (proj / "transform" / "logs" / "dbt.log").write_text("x" * 10)
+    (proj / "data").mkdir()
+    wal = proj / "data" / "p.duckdb.wal"
+    wal.write_text("wal")
+    pr = tmp_path / "data" / "pr"
+    pr.mkdir(parents=True)
+    old, fresh = pr / "1.json", pr / "2.json"
+    old.write_text("{}")
+    os.utime(old, (0, 0))
+    fresh.write_text("{}")
+
+    tasks, _notes = workspace.plan(tmp_path, days=14)
+    by = {t.name: t for t in tasks}
+    assert by["truncate_dbt_logs"].automated
+    assert by["prune_pr_reports"].automated
+    assert not by["checkpoint_stray_wals"].automated
+    assert "replay" in by["checkpoint_stray_wals"].manual
+
+    done = run(Report(engine="platform", group="", project="", tasks=tuple(tasks)))
+    assert (proj / "transform" / "logs" / "dbt.log").read_text() == ""
+    assert not old.exists() and fresh.exists()
+    assert wal.exists()
+    assert "checkpoint_stray_wals" not in done.applied
+
+
+def test_dagster_prune_deletes_until_the_cutoff_query_drains() -> None:
+    """`prune_records` pages with a limit; a fake instance proves it drains
+    the query rather than stopping after one page."""
+    from datetime import datetime
+    from types import SimpleNamespace
+
+    from pf.housekeeping import dagster_home
+
+    class FakeInstance:
+        def __init__(self, run_ids):
+            self.remaining = list(run_ids)
+            self.deleted = []
+
+        def get_run_records(self, filters=None, limit=None):
+            return [SimpleNamespace(dagster_run=SimpleNamespace(run_id=r))
+                    for r in self.remaining[:limit]]
+
+        def delete_run(self, run_id):
+            self.remaining.remove(run_id)
+            self.deleted.append(run_id)
+
+    instance = FakeInstance([f"run-{i}" for i in range(250)])  # 3 pages of 100
+    detail = dagster_home.prune_records(
+        instance, datetime(2026, 1, 1, tzinfo=UTC))
+    assert len(instance.deleted) == 250
+    assert not instance.remaining
+    assert "250 run record(s)" in detail
+
+
+def test_platform_plan_survives_an_empty_repo(tmp_path) -> None:
+    """A checkout with no Dagster home, no logs and no reports plans nothing
+    automated and does not raise — housekeeping must be safe to point anywhere."""
+    from pf.housekeeping import plan_platform
+
+    report = plan_platform(tmp_path, 14)
+    assert report.engine == "platform"
+    assert not [t for t in report.tasks if t.automated]
 
 
 # ----------------------------------------------------------- integration ----

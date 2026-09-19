@@ -35,6 +35,7 @@ uv run pf status                   # every group and project
 | `pf tokens` | Always-on token budget; fails if a card is over |
 | `pf kg build/card/search/neighbors` | Knowledge graph operations |
 | `pf vendor list/sync/drift/verify/why` | Vendored upstreams and their provenance |
+| `pf housekeeping [g p] [--apply]` | Maintenance the engines skip: lakehouse compaction and snapshot expiry per project, Dagster history and stale artefacts platform-wide |
 | `pf pr report` | Blast radius, conformance and drift for the current change |
 | `pf ui` / `pf mcp` | Dashboard / MCP server |
 

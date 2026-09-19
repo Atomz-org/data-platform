@@ -23,12 +23,26 @@ rather than papering over it:
   snapshot growth per table and says exactly what to enable or run where —
   it never pretends to a capability the connection does not have.
 
+A third scope covers the platform itself — `pf housekeeping` with no
+arguments. Dagster's local run history grows per build and slows the UI;
+dbt logs, rendered Elementary reports and PR verdict JSON are regenerable
+and only ever grow. The same split applies there: what a tool can rebuild
+is automated, what holds unrecoverable state (a stray `.duckdb.wal`, the
+append-only `provenance/`) gets an instruction or is never named at all.
+
 Plan and apply are separate on purpose. Expiring snapshots deletes time
 travel, and a platform that does that as a side effect of a status command is
 a platform nobody trusts near production. The default is a plan; `--apply`
 executes only the tasks the plan marked automated.
 """
 
-from pf.housekeeping.core import Report, Task, detect, plan_for_project, run
+from pf.housekeeping.core import (
+    Report,
+    Task,
+    detect,
+    plan_for_project,
+    plan_platform,
+    run,
+)
 
-__all__ = ["Report", "Task", "detect", "plan_for_project", "run"]
+__all__ = ["Report", "Task", "detect", "plan_for_project", "plan_platform", "run"]
