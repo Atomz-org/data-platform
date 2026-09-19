@@ -25,7 +25,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 Autonomy = Literal["L1", "L2", "L3"]
-Outcome = Literal["ok", "noop", "escalated", "circuit_open", "gate_blocked", "error"]
+Outcome = Literal["ok", "noop", "proposed", "accepted", "reverted", "escalated",
+                  "circuit_open", "gate_blocked", "error"]
 
 MAX_ATTEMPTS = 3
 
@@ -62,9 +63,24 @@ class LoopRun:
     duration_ms: int = 0
     attempt: int = 1
     message: str = ""
+    #: The level the run was executed at — earned, not born. See `pf.loops.levels`.
+    level: str = ""
+    #: Proposals the body made, and what `pf.loops.actions` did with each.
+    proposals: list[dict[str, Any]] = field(default_factory=list)
+    #: Findings memory dropped, kept for the audit trail but out of STATE.md.
+    suppressed: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    # Bodies call this; the runner executes the queue after the body returns, so
+    # a body that raises halfway leaves no half-made branch behind. The queue is
+    # not a field: it is transient, and a field would ride into the ledger.
+    def propose(self, proposal: Any) -> None:
+        self.__dict__.setdefault("_pending", []).append(proposal)
+
+    def pending(self) -> list[Any]:
+        return list(self.__dict__.get("_pending") or [])
 
 
 def _now() -> str:
@@ -81,14 +97,14 @@ class Ledger:
         if not self.path.exists():
             return []
         try:
-            return json.loads(self.path.read_text())
+            return json.loads(self.path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             return []
 
     def append(self, run: LoopRun) -> None:
         entries = self.read()
         entries.append(run.to_dict())
-        self.path.write_text(json.dumps(entries[-500:], indent=2))
+        self.path.write_text(json.dumps(entries[-500:], indent=2), encoding="utf-8")
 
     def recent(self, loop: str, project: str, n: int = 5) -> list[dict[str, Any]]:
         return [e for e in self.read()
@@ -171,42 +187,93 @@ def run_loop(
     dry_run: bool = False,
 ) -> LoopRun:
     """Execute one loop iteration with state, breaker and ledger around it."""
-    from pf import obs
+    from pf import obs, trace
+    from pf.loops import levels, memory
 
     ledger = Ledger(root)
     breaker = CircuitBreaker(ledger, spec, daily_budget)
+    level = levels.effective(root, spec, project)
+    tr = trace.start(root, "loop", spec.name, group=group, project=project)
+    tr.intent(spec.description, loop=spec.name, born=spec.autonomy, earned=level,
+              budget=spec.token_budget, cadence=spec.cadence, dry_run=dry_run)
 
     run = LoopRun(run_id=str(uuid.uuid4())[:8], loop=spec.name, group=group,
                   project=project, started_at=_now(),
-                  attempt=ledger.consecutive_failures(spec.name, project) + 1)
+                  attempt=ledger.consecutive_failures(spec.name, project) + 1,
+                  level=level)
 
     allowed, why = breaker.check(group, project)
+    tr.step("circuit_breaker", "open" if not allowed else "closed", attempt=run.attempt,
+            detail=why)
     if not allowed:
         run.outcome, run.message = "circuit_open", why
         ledger.append(run)
+        tr.close(run.outcome, message=why)
         return run
 
     if dry_run:
         run.outcome, run.message = "noop", "dry run"
+        tr.close(run.outcome, message="dry run")
         return run
 
     from pf.agents.base import reset_spend, spend
 
     reset_spend()
     t0 = time.time()
+    pdir = root / "groups" / group / "projects" / project
+    token = trace._current.set(tr)
     try:
-        run.findings = body(run) or []
+        raw = body(run) or []
+        tr.step("body", findings=len(raw), proposals=len(run.pending()))
         run.tokens_used = spend()
         if spec.token_budget and run.tokens_used > spec.token_budget:
             run.message = (f"over budget: {run.tokens_used:,} tokens vs "
                            f"{spec.token_budget:,} allowed — tighten the prompt "
                            f"or lower effort")
-        run.outcome = "ok" if run.findings else "noop"
+
+        # Memory before the ledger: a suppressed finding is a decision already
+        # made, and re-recording it every run is how STATE.md stops being read.
+        applied = memory.apply(pdir, spec.name, list(raw)) if pdir.exists() \
+            else memory.Applied(kept=list(raw))
+        run.findings = applied.kept
+        run.suppressed = [f for f, _ in applied.suppressed]
+        tr.step("memory", kept=len(run.findings), suppressed=len(run.suppressed),
+                annotated=len(applied.annotated),
+                suppressed_by=[e.id for _, e in applied.suppressed])
+        for f in run.findings:
+            tr.finding(f)
+
+        # Then the proposals, at the level the loop has earned. `execute` is
+        # what decides whether "earned" means a record or a pull request.
+        from pf.loops import actions
+        for proposal in run.pending():
+            out = actions.execute(root, group, project, proposal, level=level,
+                                  dry_run=dry_run)
+            run.proposals.append(out.to_dict())
+            tr.proposal(proposal, out)
+        statuses = {o["status"] for o in run.proposals}
+        if statuses & {"proposed", "branched", "recorded"}:
+            run.outcome = "proposed"
+        elif "gate_blocked" in statuses:
+            run.outcome = "gate_blocked"
+            run.message = "; ".join(o["message"] for o in run.proposals
+                                    if o["status"] == "gate_blocked")[:400]
+        elif "error" in statuses:
+            run.outcome = "error"
+            run.message = "; ".join(o["message"] for o in run.proposals
+                                    if o["status"] == "error")[:400]
+        else:
+            run.outcome = "ok" if run.findings else "noop"
     except Exception as exc:  # a loop must never take the platform down
         run.outcome, run.message = "error", f"{type(exc).__name__}: {exc}"[:400]
+        tr.error(exc, step="body")
+    finally:
+        trace._current.reset(token)
     run.duration_ms = int((time.time() - t0) * 1000)
 
     ledger.append(run)
+    tr.close(run.outcome, message=run.message, tokens=run.tokens_used,
+             ms=run.duration_ms, ledger=str(ledger.path.name))
     obs.record_pipeline_run(group=group, project=project, kind="loop",
                             name=spec.name, status=run.outcome,
                             duration_ms=run.duration_ms,
@@ -234,5 +301,5 @@ def update_state(root: Path, entries: list[str], watch: list[str] | None = None)
         "Written by `pf loop run`. Cadence, autonomy and budgets live in `LOOP.md`;",
         "binding constraints in `loop-constraints.md`; path policy in `gate.yaml`.",
     ]
-    p.write_text("\n".join(lines) + "\n")
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return p

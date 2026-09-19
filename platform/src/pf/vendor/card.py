@@ -26,7 +26,13 @@ from pf.vendor.model import Upstream, load_registry
 #: deliberate act with a reason attached, so raise it the same way: recalibrate
 #: when the roster genuinely grows, and trim summaries when it is prose that grew.
 #: One row costs roughly 15 tokens, so this leaves room for about five more.
-VENDOR_CARD_BUDGET = 800
+#:
+#: Raised from 800 for the governance trio — `asqav-compliance`,
+#: `public-sector-ai-playbook` and `ai-governance-framework` — which took the
+#: card to ~839. The roster grew by three, which is the case this comment says to
+#: recalibrate for rather than to trim prose for; the summaries are already one
+#: line each. Room for about four more before the next deliberate look.
+VENDOR_CARD_BUDGET = 900
 
 ROLE_ORDER = {"spec": 0, "skills": 1, "shape": 2, "reference": 3}
 
@@ -79,7 +85,7 @@ def render_card(root: str | Path, out: str | Path | None = None) -> Path:
     ]
     path = Path(out) if out else root / "docs" / "VENDOR-CARD.md"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8")
     return path
 
 
@@ -191,5 +197,5 @@ def render_doc(root: str | Path, out: str | Path | None = None) -> Path:
 
     path = Path(out) if out else root / "docs" / "VENDOR.md"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines))
+    path.write_text("\n".join(lines), encoding="utf-8")
     return path

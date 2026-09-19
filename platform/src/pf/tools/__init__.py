@@ -125,6 +125,58 @@ def bootstrap_order(enabled_cfg: dict[str, Any],
     return out
 
 
+def _apply_capability(tool: Any, root: Path, group: str, project: str,
+                      d: Path) -> Any | None:
+    """Backfill one enabled tool's capability — files, settings, gate rules.
+
+    This is what makes enabling a tool in `tools.yaml` *sufficient*: a project
+    scaffolded into a group whose family already decided on a tool gets that
+    tool's docs, permissions and gate rules from plain `pf bootstrap`, with no
+    separate `pf tool enable` pass to remember. `pf.capabilities.defaults()`
+    deliberately excludes tool capabilities so they are not applied twice; this
+    is the single place that applies them, keyed on the same decision
+    (`tools.yaml`) that drives every other tool consumer.
+
+    Same all-or-nothing rule as `_bootstrap_capabilities`, for the same reason:
+    `apply` rewrites targets wholesale, and a partially-present capability
+    means somebody edited one of its files — rewriting that is a decision for
+    `pf tool enable`, taken deliberately, not for a background retrofit.
+
+    Returns a StepResult when something happened or is blocked; None when the
+    capability is fully present, which is the steady state and not worth a row.
+    """
+    from pf.capabilities import apply as apply_cap
+    from pf.capabilities import gate_additions, render
+    from pf.scaffold.bootstrap import StepResult
+
+    cap = tool.capability
+    if cap is None or not cap.files:
+        return None
+    # `.github/**` belongs to the repository, not the project — the same split
+    # `pf.capabilities.apply` makes when writing.
+    rendered = [render(rel, {"group": group, "project": project,
+                             "module": project.replace("-", "_")})
+                for rel in cap.files]
+    targets = [(root if rel.startswith(".github/") else d) / rel
+               for rel in rendered]
+    present = [t for t in targets if t.exists()]
+    if len(present) == len(targets):
+        return None
+    if present:
+        return StepResult(
+            f"tool:{tool.name}", "skipped",
+            f"capability {len(present)}/{len(targets)} file(s) already exist — "
+            f"`pf tool enable {tool.name} {group} {project}` to apply deliberately")
+    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
+    written = apply_cap(cap, root, d, ctx)
+    # The gate half travels with the files, or the capability is present with
+    # its guard rail absent — the exact failure `_bootstrap_capabilities` names.
+    from pf.cli import _merge_gate_rules
+    _merge_gate_rules(gate_additions([cap]))
+    return StepResult(f"tool:{tool.name}", "ok",
+                      f"capability applied ({len(written)} file(s))")
+
+
 def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     """Run every enabled tool's bootstrap hook. Idempotent, never raises.
 
@@ -136,6 +188,10 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
     A bootstrap that only projects the project into a file needs nothing
     installed, and skipping it made the artefacts depend on which machine ran
     the scaffolder — the one thing scaffolding must not do.
+
+    Before each hook, the tool's *capability* is backfilled if wholly absent
+    (see `_apply_capability`) — capability first, because the hook may assume
+    the settings and docs the capability writes.
     """
     from pf.scaffold.bootstrap import StepResult
 
@@ -148,6 +204,14 @@ def bootstrap_tools(root: Path, group: str, project: str) -> list[Any]:
         if tool is None:
             results.append(StepResult(f"tool:{name}", "failed",
                                       "enabled but not registered"))
+            continue
+        try:
+            cap_result = _apply_capability(tool, root, group, project, d)
+            if cap_result is not None:
+                results.append(cap_result)
+        except Exception as exc:  # noqa: BLE001 — a broken capability is data
+            results.append(StepResult(f"tool:{name}", "failed",
+                                      f"capability: {type(exc).__name__}: {exc}"[:160]))
             continue
         missing = tool.missing()
         if missing and not tool.offline:

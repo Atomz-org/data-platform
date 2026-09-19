@@ -194,7 +194,7 @@ def build_payload(project_dir: Path, group: str, project: str) -> dict[str, Any]
     graph = Path(project_dir) / "kg" / "graph.json"
     if graph.exists():
         try:
-            nodes = json.loads(graph.read_text()).get("nodes") or []
+            nodes = json.loads(graph.read_text(encoding="utf-8")).get("nodes") or []
             metrics = [
                 {"name": n.get("name") or n.get("id", ""),
                  "description": (n.get("props") or {}).get("description", ""),
@@ -356,10 +356,10 @@ def write_workflows(project_dir: Path, group: str, project: str,
         text = header + yaml.safe_dump(workflow, sort_keys=False)
         path = ingestion_path(project_dir, name)
         written.append(path)
-        if path.exists() and path.read_text() == text:
+        if path.exists() and path.read_text(encoding="utf-8") == text:
             continue
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text)
+        path.write_text(text, encoding="utf-8")
         changed.append(name)
 
     legacy = legacy_workflow_path(project_dir)
@@ -381,10 +381,10 @@ def write_payload(project_dir: Path, group: str, project: str) -> tuple[Path, bo
     text = json.dumps(build_payload(Path(project_dir), group, project),
                       indent=2, sort_keys=True) + "\n"
     path = payload_path(project_dir)
-    if path.exists() and path.read_text() == text:
+    if path.exists() and path.read_text(encoding="utf-8") == text:
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     return path, True
 
 
@@ -562,7 +562,7 @@ def column_roles(project_dir: Path) -> dict[str, str]:
     if not p.exists():
         return {}
     try:
-        doc = yaml.safe_load(p.read_text()) or {}
+        doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError:
         return {}
     out: dict[str, str] = {}
@@ -598,7 +598,7 @@ def publish_tables(project_dir: Path, group: str, project: str,
         return {"ok": False, "reason": "no_manifest",
                 "message": "no dbt manifest — run `pf seed` first"}
     cat_path = dbt_dir(d) / "target" / "catalog.json"
-    catalog = json.loads(cat_path.read_text()) if cat_path.exists() else {}
+    catalog = json.loads(cat_path.read_text(encoding="utf-8")) if cat_path.exists() else {}
 
     s = settings(config, group, project)
     built = build_database_entities(
@@ -705,7 +705,7 @@ def _published_descriptions(project_dir: Path) -> dict[str, str]:
     if not p.exists():
         return {}
     try:
-        doc = yaml.safe_load(p.read_text()) or {}
+        doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     except yaml.YAMLError:
         return {}
     out: dict[str, str] = {}
@@ -785,10 +785,10 @@ def write_edits(project_dir: Path, result: dict[str, Any]) -> tuple[Path, bool]:
         sort_keys=False, allow_unicode=True)
     path = edits_path(project_dir)
     text = header + body
-    if path.exists() and path.read_text() == text:
+    if path.exists() and path.read_text(encoding="utf-8") == text:
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    path.write_text(text, encoding="utf-8")
     return path, True
 
 
@@ -971,7 +971,7 @@ def _mart_models(project_dir: Path) -> list[str]:
         str(n.get("name"))
         for n in (man.get("nodes") or {}).values()
         if n.get("resource_type") == "model"
-        and "marts" in str(n.get("path") or "").split("/")[:1]
+        and "marts" in str(n.get("path") or "").replace("\\", "/").split("/")[:1]
     })
 
 
