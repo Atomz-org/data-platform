@@ -1,0 +1,2215 @@
+{
+  "otop_version": 0.2,
+  "graph": {
+    "id": "otop.pf.platform",
+    "title": "Policy and evidence \u2014 platform",
+    "repository": "https://github.com/suresh-enhanza/data-platform.git",
+    "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+    "metadata": {
+      "created_at": "2026-08-21T19:26:43Z",
+      "actor": "pf.projections.otop"
+    }
+  },
+  "objects": [
+    {
+      "id": "policy.pf.data-platform",
+      "kind": "policy",
+      "title": "Agentic Data Platform governance policy",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "scope": "platform",
+        "source": "platform/src/pf/ontology/policy.yaml",
+        "rules": 16
+      }
+    },
+    {
+      "id": "intent.pf.money-requires-currency",
+      "kind": "intent",
+      "title": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+      }
+    },
+    {
+      "id": "constraint.pf.money-requires-currency",
+      "kind": "constraint",
+      "title": "money-requires-currency",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "sibling_role_present",
+      "checkability": "automated",
+      "assertion": "sibling_role_present (sibling=currency_code, scope=resource) on role=money_amount",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "role": "money_amount"
+        },
+        "params": {
+          "sibling": "currency_code",
+          "scope": "resource"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.money-requires-currency.pf-check",
+      "kind": "evidence",
+      "title": "pf check for money-requires-currency",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "observed_at": "2026-08-21T19:26:42Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "conformance_report",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.money-requires-currency",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.entity-requires-identity",
+      "kind": "intent",
+      "title": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+      }
+    },
+    {
+      "id": "constraint.pf.entity-requires-identity",
+      "kind": "constraint",
+      "title": "entity-requires-identity",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "identity_declared",
+      "checkability": "automated",
+      "assertion": "identity_declared (exclude_abstract=True) on class=*",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "class": "*"
+        },
+        "params": {
+          "exclude_abstract": true
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.entity-requires-identity.pf-check",
+      "kind": "evidence",
+      "title": "pf check for entity-requires-identity",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "observed_at": "2026-08-21T19:26:42Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "conformance_report",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.entity-requires-identity",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.link-must-be-in-topology",
+      "kind": "intent",
+      "title": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from th...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+      }
+    },
+    {
+      "id": "constraint.pf.link-must-be-in-topology",
+      "kind": "constraint",
+      "title": "link-must-be-in-topology",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "relation_exists",
+      "checkability": "automated",
+      "assertion": "relation_exists on annotation=links",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "annotation": "links"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.link-must-be-in-topology.pf-check",
+      "kind": "evidence",
+      "title": "pf check for link-must-be-in-topology",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "observed_at": "2026-08-21T19:26:42Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "conformance_report",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.link-must-be-in-topology",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.pii-not-in-consumption",
+      "kind": "intent",
+      "title": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+      }
+    },
+    {
+      "id": "constraint.pf.pii-not-in-consumption",
+      "kind": "constraint",
+      "title": "pii-not-in-consumption",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "not_in_layer",
+      "checkability": "automated",
+      "assertion": "not_in_layer (layers=['marts', 'semantic', 'consumption']) on role_glob=pii_*",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "role_glob": "pii_*"
+        },
+        "params": {
+          "layers": [
+            "marts",
+            "semantic",
+            "consumption"
+          ]
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
+      "kind": "evidence",
+      "title": "pf loop run pii-audit for pii-not-in-consumption",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-12T17:42:41Z",
+        "observed_at": "2026-08-12T17:42:41Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "PII_findings",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.pii-not-in-consumption",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "pii-audit: noop"
+      }
+    },
+    {
+      "id": "evidence.pf.pii-not-in-consumption.state-md",
+      "kind": "evidence",
+      "title": "STATE.md for pii-not-in-consumption",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T22:24:53Z",
+        "observed_at": "2026-08-17T22:24:53Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "open_findings",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.pii-not-in-consumption",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "STATE.md"
+      }
+    },
+    {
+      "id": "intent.pf.mart-declares-grain",
+      "kind": "intent",
+      "title": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+      }
+    },
+    {
+      "id": "constraint.pf.mart-declares-grain",
+      "kind": "constraint",
+      "title": "mart-declares-grain",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "meta_field_present",
+      "checkability": "automated",
+      "assertion": "meta_field_present (field=grain) on layer=marts",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "layer": "marts"
+        },
+        "params": {
+          "field": "grain"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.mart-declares-grain.kg-context-card-md",
+      "kind": "evidence",
+      "title": "kg/context_card.md for mart-declares-grain",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "project_index",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.mart-declares-grain",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "kg/context_card.md not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.metric-owns-aggregation",
+      "kind": "intent",
+      "title": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a secon...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+      }
+    },
+    {
+      "id": "constraint.pf.metric-owns-aggregation",
+      "kind": "constraint",
+      "title": "metric-owns-aggregation",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "no_metric_shaped_columns",
+      "checkability": "automated",
+      "assertion": "no_metric_shaped_columns (forbidden_names=['revenue', 'mrr', 'arr', 'churn_rate', 'ltv']) on layer=marts",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "layer": "marts"
+        },
+        "params": {
+          "forbidden_names": [
+            "revenue",
+            "mrr",
+            "arr",
+            "churn_rate",
+            "ltv"
+          ]
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.metric-owns-aggregation.pf-check",
+      "kind": "evidence",
+      "title": "pf check for metric-owns-aggregation",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "conformance_report",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.metric-owns-aggregation",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.change-declares-blast-radius",
+      "kind": "intent",
+      "title": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+      }
+    },
+    {
+      "id": "constraint.pf.change-declares-blast-radius",
+      "kind": "constraint",
+      "title": "change-declares-blast-radius",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "impact_reported",
+      "checkability": "automated",
+      "assertion": "impact_reported on artifact_glob=**/transform/models/**",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/transform/models/**"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.change-declares-blast-radius.impact-reports",
+      "kind": "evidence",
+      "title": "impact_reports for change-declares-blast-radius",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "blast_radius_history",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.change-declares-blast-radius",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "9 recorded"
+      }
+    },
+    {
+      "id": "evidence.pf.change-declares-blast-radius.loop-ledger-json",
+      "kind": "evidence",
+      "title": "loop-ledger.json for change-declares-blast-radius",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T22:24:54Z",
+        "observed_at": "2026-08-17T22:24:54Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "run_history",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.change-declares-blast-radius",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "loop-ledger.json"
+      }
+    },
+    {
+      "id": "intent.pf.change-verified-against-baseline",
+      "kind": "intent",
+      "title": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against ...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+      }
+    },
+    {
+      "id": "constraint.pf.change-verified-against-baseline",
+      "kind": "constraint",
+      "title": "change-verified-against-baseline",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "diff_reported",
+      "checkability": "automated",
+      "assertion": "diff_reported on artifact_glob=**/transform/models/marts/**",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/transform/models/marts/**"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.change-verified-against-baseline.pf-tool-recce-run",
+      "kind": "evidence",
+      "title": "pf tool recce run for change-verified-against-baseline",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "data_diff_against_baseline",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.change-verified-against-baseline",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.review-artifacts-exclude-pii",
+      "kind": "intent",
+      "title": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore p...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+      }
+    },
+    {
+      "id": "constraint.pf.review-artifacts-exclude-pii",
+      "kind": "constraint",
+      "title": "review-artifacts-exclude-pii",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "pii_excluded_from_review",
+      "checkability": "automated",
+      "assertion": "pii_excluded_from_review on artifact_glob=**/transform/recce.yml",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/transform/recce.yml"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.review-artifacts-exclude-pii.pf-tool-recce-config",
+      "kind": "evidence",
+      "title": "pf tool recce config for review-artifacts-exclude-pii",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "derived_review_checks",
+      "result": "not_applicable",
+      "subjects": [
+        {
+          "id": "constraint.pf.review-artifacts-exclude-pii",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "platform-scope export"
+      }
+    },
+    {
+      "id": "intent.pf.secrets-never-in-context",
+      "kind": "intent",
+      "title": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+      }
+    },
+    {
+      "id": "constraint.pf.secrets-never-in-context",
+      "kind": "constraint",
+      "title": "secrets-never-in-context",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "path_denied",
+      "checkability": "automated",
+      "assertion": "path_denied on artifact_glob=**/secrets.toml",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/secrets.toml"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.secrets-never-in-context.pf-gate",
+      "kind": "evidence",
+      "title": "pf gate for secrets-never-in-context",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "path_verdict",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.secrets-never-in-context",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "denylist present"
+      }
+    },
+    {
+      "id": "intent.pf.money-amount-bounded",
+      "kind": "intent",
+      "title": "A monetary column with no lower bound accepts the negative row that a refund, a sign flip or a bad join produces, and it reaches a metric as a quietly smalle...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A monetary column with no lower bound accepts the negative row that a refund, a sign flip or a bad join produces, and it reaches a metric as a quietly smaller number. The currency rule makes the amount interpretable; this makes it credible."
+      }
+    },
+    {
+      "id": "constraint.pf.money-amount-bounded",
+      "kind": "constraint",
+      "title": "money-amount-bounded",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "range_asserted",
+      "checkability": "manual",
+      "assertion": "range_asserted (suggested=dbt_expectations.expect_column_values_to_be_between) on role=money_amount",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "role": "money_amount"
+        },
+        "params": {
+          "suggested": "dbt_expectations.expect_column_values_to_be_between"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.money-amount-bounded.dbt-test",
+      "kind": "evidence",
+      "title": "dbt test for money-amount-bounded",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.money-amount-bounded",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "dbt test not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.source-declares-freshness",
+      "kind": "intent",
+      "title": "A mart is stale because its source was. Monitoring the mart names the wrong artefact to go fix, and monitoring nothing means the first report of a stopped pi...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A mart is stale because its source was. Monitoring the mart names the wrong artefact to go fix, and monitoring nothing means the first report of a stopped pipeline comes from whoever opened the dashboard."
+      }
+    },
+    {
+      "id": "constraint.pf.source-declares-freshness",
+      "kind": "constraint",
+      "title": "source-declares-freshness",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "SHOULD",
+      "constraint_type": "freshness_declared",
+      "checkability": "manual",
+      "assertion": "freshness_declared on artifact_glob=**/transform/models/**/_*__sources.yml",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "warning",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/transform/models/**/_*__sources.yml"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.source-declares-freshness.dbt-source-freshness",
+      "kind": "evidence",
+      "title": "dbt source freshness for source-declares-freshness",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.source-declares-freshness",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "dbt source freshness not produced yet"
+      }
+    },
+    {
+      "id": "evidence.pf.source-declares-freshness.dbt-test",
+      "kind": "evidence",
+      "title": "dbt test for source-declares-freshness",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.source-declares-freshness",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "dbt test not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.anomaly-tests-do-not-gate-merge",
+      "kind": "intent",
+      "title": "An anomaly test judges data; a merge gate judges code. Wiring a statistical test into the gate blocks a correct change because yesterday's load was small, an...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "An anomaly test judges data; a merge gate judges code. Wiring a statistical test into the gate blocks a correct change because yesterday's load was small, and the cure is always to weaken the test \u2014 which is how the monitoring stops working."
+      }
+    },
+    {
+      "id": "constraint.pf.anomaly-tests-do-not-gate-merge",
+      "kind": "constraint",
+      "title": "anomaly-tests-do-not-gate-merge",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "not_in_gate",
+      "checkability": "automated",
+      "assertion": "not_in_gate (excludes=elementary anomaly tests) on artifact_glob=**/.github/workflows/**",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/.github/workflows/**"
+        },
+        "params": {
+          "excludes": "elementary anomaly tests"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.anomaly-tests-do-not-gate-merge.pf-impact-gate",
+      "kind": "evidence",
+      "title": "pf impact-gate for anomaly-tests-do-not-gate-merge",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.anomaly-tests-do-not-gate-merge",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "pf impact-gate not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.entity-isolation-enforced",
+      "kind": "intent",
+      "title": "Business logic does not transfer between entities. A session that can read a sister project will carry an assumption across \u2014 a grain, a status enum, a reven...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "Business logic does not transfer between entities. A session that can read a sister project will carry an assumption across \u2014 a grain, a status enum, a revenue definition \u2014 and the bug that results is invisible, because the code it came from is correct in the project it came from."
+      }
+    },
+    {
+      "id": "constraint.pf.entity-isolation-enforced",
+      "kind": "constraint",
+      "title": "entity-isolation-enforced",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "path_denied",
+      "checkability": "automated",
+      "assertion": "path_denied (denies=sibling and cross-group reads) on artifact_glob=**/groups/*/projects/*/**",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/groups/*/projects/*/**"
+        },
+        "params": {
+          "denies": "sibling and cross-group reads"
+        }
+      }
+    },
+    {
+      "id": "evidence.pf.entity-isolation-enforced.pf-gate",
+      "kind": "evidence",
+      "title": "pf gate for entity-isolation-enforced",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "path_verdict",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.entity-isolation-enforced",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "denylist present"
+      }
+    },
+    {
+      "id": "intent.pf.vendor-is-read-only",
+      "kind": "intent",
+      "title": "A vendored upstream is evidence of what an external project actually does. Editing one turns it into a fork wearing a submodule's name, and every later diff ...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A vendored upstream is evidence of what an external project actually does. Editing one turns it into a fork wearing a submodule's name, and every later diff against upstream reads as drift that nobody introduced."
+      }
+    },
+    {
+      "id": "constraint.pf.vendor-is-read-only",
+      "kind": "constraint",
+      "title": "vendor-is-read-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "path_denied",
+      "checkability": "automated",
+      "assertion": "path_denied on artifact_glob=vendor/**",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "vendor/**"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.vendor-is-read-only.pf-gate",
+      "kind": "evidence",
+      "title": "pf gate for vendor-is-read-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "path_verdict",
+      "result": "pass",
+      "subjects": [
+        {
+          "id": "constraint.pf.vendor-is-read-only",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "denylist present"
+      }
+    },
+    {
+      "id": "evidence.pf.vendor-is-read-only.pf-vendor-drift",
+      "kind": "evidence",
+      "title": "pf vendor drift for vendor-is-read-only",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.vendor-is-read-only",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "pf vendor drift not produced yet"
+      }
+    },
+    {
+      "id": "intent.pf.agent-settings-schema-valid",
+      "kind": "intent",
+      "title": "A settings file the client rejects loads none of the plugins it declares, and says so nowhere a session can see. The platform's own retrieval tools arrive as...",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "extensions": {
+        "statement": "A settings file the client rejects loads none of the plugins it declares, and says so nowhere a session can see. The platform's own retrieval tools arrive as plugins, so a schema error silently removes kg_search and impact_analysis \u2014 and an agent with no graph reads files instead and never reports why."
+      }
+    },
+    {
+      "id": "constraint.pf.agent-settings-schema-valid",
+      "kind": "constraint",
+      "title": "agent-settings-schema-valid",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "actor": "pf.projections.otop"
+      },
+      "modality": "MUST",
+      "constraint_type": "schema_current",
+      "checkability": "automated",
+      "assertion": "schema_current on artifact_glob=**/.claude/settings.json",
+      "expression_language": "pf.ontology.policy/1",
+      "severity": "error",
+      "extensions": {
+        "applies_to": {
+          "artifact_glob": "**/.claude/settings.json"
+        },
+        "params": {}
+      }
+    },
+    {
+      "id": "evidence.pf.agent-settings-schema-valid.pf-bootstrap",
+      "kind": "evidence",
+      "title": "pf bootstrap for agent-settings-schema-valid",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "observed_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "evidence_type": "observation",
+      "result": "unknown",
+      "subjects": [
+        {
+          "id": "constraint.pf.agent-settings-schema-valid",
+          "kind": "constraint",
+          "relationship_type": "verified_by"
+        }
+      ],
+      "provenance": {
+        "actor": "pf.projections.otop",
+        "scope": "platform",
+        "detail": "pf bootstrap not produced yet"
+      }
+    },
+    {
+      "id": "artifact.pf.pf.ontology.validate.money-without-currency",
+      "kind": "artifact",
+      "title": "pf.ontology.validate:money-without-currency",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T15:20:58Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/ontology/validate.py",
+        "language": "python",
+        "symbol": "money-without-currency",
+        "digest": "git:e4123f547c61452a29ed8bfb7ab0bd52f822dfc6"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.ontology.validate.class-without-identity",
+      "kind": "artifact",
+      "title": "pf.ontology.validate:class-without-identity",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T15:20:58Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/ontology/validate.py",
+        "language": "python",
+        "symbol": "class-without-identity",
+        "digest": "git:e4123f547c61452a29ed8bfb7ab0bd52f822dfc6"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.ontology.validate.illegal-edge",
+      "kind": "artifact",
+      "title": "pf.ontology.validate:illegal-edge",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T15:20:58Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/ontology/validate.py",
+        "language": "python",
+        "symbol": "illegal-edge",
+        "digest": "git:e4123f547c61452a29ed8bfb7ab0bd52f822dfc6"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.loops.registry.pii-audit",
+      "kind": "artifact",
+      "title": "pf.loops.registry:pii_audit",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T21:24:35Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "loop",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/loops/registry.py",
+        "language": "python",
+        "symbol": "pii_audit",
+        "digest": "git:e81ff725c18b4ff2a8187f5fb953a9dc003a56f4"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.kg.build.model-grain",
+      "kind": "artifact",
+      "title": "pf.kg.build:model-grain",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T11:55:34Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/kg/build.py",
+        "language": "python",
+        "symbol": "model-grain",
+        "digest": "git:7915a2e06d47aa04e53f2089de680461405b8faa"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.ontology.validate.metric-shaped-column",
+      "kind": "artifact",
+      "title": "pf.ontology.validate:metric-shaped-column",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T15:20:58Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/ontology/validate.py",
+        "language": "python",
+        "symbol": "metric-shaped-column",
+        "digest": "git:e4123f547c61452a29ed8bfb7ab0bd52f822dfc6"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.platform.hooks.pre-tool-use.py",
+      "kind": "artifact",
+      "title": "platform/hooks/pre_tool_use.py",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-12T22:11:17Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "hook",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/hooks/pre_tool_use.py",
+        "language": "python",
+        "digest": "git:2cb586ed58222bcb50e9cd0013d536cb2c9e6856"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.platform.hooks.pre-commit.sh",
+      "kind": "artifact",
+      "title": "platform/hooks/pre_commit.sh",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T18:42:56Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "hook",
+      "language": "bash",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/hooks/pre_commit.sh",
+        "language": "bash",
+        "digest": "git:b0293da1e8ad9d25bc61b150649a0fab86473ad2"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.tools.recce.dagster-assets",
+      "kind": "artifact",
+      "title": "pf.tools.recce:dagster_assets",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T23:50:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/tools/recce.py",
+        "language": "python",
+        "symbol": "dagster_assets",
+        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.tools.recce.register-commands",
+      "kind": "artifact",
+      "title": "pf.tools.recce:register_commands",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T23:50:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/tools/recce.py",
+        "language": "python",
+        "symbol": "register_commands",
+        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.ontology.model.Role.review-intent",
+      "kind": "artifact",
+      "title": "pf.ontology.model:Role.review_intent",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-19T15:20:58Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/ontology/model.py",
+        "language": "python",
+        "symbol": "Role.review_intent",
+        "digest": "git:43411b149e548c0772087023c2fc03ad72dc49c3"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.tools.recce.generate-config",
+      "kind": "artifact",
+      "title": "pf.tools.recce:generate_config",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T23:50:05Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/tools/recce.py",
+        "language": "python",
+        "symbol": "generate_config",
+        "digest": "git:6d6c7a4515c5aa68b9642ca221805c28a15f4fc1"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.gate.yaml.denylist",
+      "kind": "artifact",
+      "title": "gate.yaml:denylist",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T18:42:56Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "configuration",
+      "language": "yaml",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "gate.yaml",
+        "language": "yaml",
+        "symbol": "denylist",
+        "digest": "git:8dbb299829a3e037b909d2cd8287e8a79ac87105"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.capabilities.IMPACT-JOB",
+      "kind": "artifact",
+      "title": "pf.capabilities:IMPACT_JOB",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T11:55:34Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/capabilities.py",
+        "language": "python",
+        "symbol": "IMPACT_JOB",
+        "digest": "git:7b5c1ab0ff2be9f5c7379db3a904f4368ea23830"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.scaffold.generator.PROJECT-SETTINGS",
+      "kind": "artifact",
+      "title": "pf.scaffold.generator:PROJECT_SETTINGS",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-17T22:54:04Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/scaffold/generator.py",
+        "language": "python",
+        "symbol": "PROJECT_SETTINGS",
+        "digest": "git:5a944045df2c930f41dff81a91f6a2f24841ca88"
+      },
+      "extensions": {
+        "exists": true
+      }
+    },
+    {
+      "id": "artifact.pf.pf.scaffold.claude-settings.normalize",
+      "kind": "artifact",
+      "title": "pf.scaffold.claude_settings:normalize",
+      "lifecycle": "active",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "actor": "pf.projections.otop"
+      },
+      "artifact_type": "check",
+      "language": "python",
+      "locator": {
+        "repository": "https://github.com/suresh-enhanza/data-platform.git",
+        "commit": "d0dcb648429524dcbef60f9f7747eb86952c75ee",
+        "path": "platform/src/pf/scaffold/claude_settings.py",
+        "language": "python",
+        "symbol": "normalize"
+      },
+      "extensions": {
+        "exists": true
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel.constraint.pf.money-requires-currency.derived-from.intent.pf.money-requires-currency",
+      "from": "constraint.pf.money-requires-currency",
+      "to": "intent.pf.money-requires-currency",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-requires-currency.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.money-requires-currency",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-requires-currency.implemented-by.artifact.pf.pf.ontology.validate.money-without-currency",
+      "from": "constraint.pf.money-requires-currency",
+      "to": "artifact.pf.pf.ontology.validate.money-without-currency",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-requires-currency.verified-by.evidence.pf.money-requires-currency.pf-check",
+      "from": "constraint.pf.money-requires-currency",
+      "to": "evidence.pf.money-requires-currency.pf-check",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "verified_at": "2026-08-21T19:26:42Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-requires-identity.derived-from.intent.pf.entity-requires-identity",
+      "from": "constraint.pf.entity-requires-identity",
+      "to": "intent.pf.entity-requires-identity",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-requires-identity.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.entity-requires-identity",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-requires-identity.implemented-by.artifact.pf.pf.ontology.validate.class-without-identity",
+      "from": "constraint.pf.entity-requires-identity",
+      "to": "artifact.pf.pf.ontology.validate.class-without-identity",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-requires-identity.verified-by.evidence.pf.entity-requires-identity.pf-check",
+      "from": "constraint.pf.entity-requires-identity",
+      "to": "evidence.pf.entity-requires-identity.pf-check",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "verified_at": "2026-08-21T19:26:42Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.link-must-be-in-topology.derived-from.intent.pf.link-must-be-in-topology",
+      "from": "constraint.pf.link-must-be-in-topology",
+      "to": "intent.pf.link-must-be-in-topology",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.link-must-be-in-topology.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.link-must-be-in-topology",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.link-must-be-in-topology.implemented-by.artifact.pf.pf.ontology.validate.illegal-edge",
+      "from": "constraint.pf.link-must-be-in-topology",
+      "to": "artifact.pf.pf.ontology.validate.illegal-edge",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.link-must-be-in-topology.verified-by.evidence.pf.link-must-be-in-topology.pf-check",
+      "from": "constraint.pf.link-must-be-in-topology",
+      "to": "evidence.pf.link-must-be-in-topology.pf-check",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:42Z",
+        "verified_at": "2026-08-21T19:26:42Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.pii-not-in-consumption.derived-from.intent.pf.pii-not-in-consumption",
+      "from": "constraint.pf.pii-not-in-consumption",
+      "to": "intent.pf.pii-not-in-consumption",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.pii-not-in-consumption.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.pii-not-in-consumption",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.pii-not-in-consumption.implemented-by.artifact.pf.pf.loops.registry.pii-audit",
+      "from": "constraint.pf.pii-not-in-consumption",
+      "to": "artifact.pf.pf.loops.registry.pii-audit",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.pii-not-in-consumption.verified-by.evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
+      "from": "constraint.pf.pii-not-in-consumption",
+      "to": "evidence.pf.pii-not-in-consumption.pf-loop-run-pii-audit",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-12T17:42:41Z",
+        "verified_at": "2026-08-12T17:42:41Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.pii-not-in-consumption.verified-by.evidence.pf.pii-not-in-consumption.state-md",
+      "from": "constraint.pf.pii-not-in-consumption",
+      "to": "evidence.pf.pii-not-in-consumption.state-md",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-17T22:24:53Z",
+        "verified_at": "2026-08-17T22:24:53Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.mart-declares-grain.derived-from.intent.pf.mart-declares-grain",
+      "from": "constraint.pf.mart-declares-grain",
+      "to": "intent.pf.mart-declares-grain",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.mart-declares-grain.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.mart-declares-grain",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.mart-declares-grain.implemented-by.artifact.pf.pf.kg.build.model-grain",
+      "from": "constraint.pf.mart-declares-grain",
+      "to": "artifact.pf.pf.kg.build.model-grain",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.mart-declares-grain.verified-by.evidence.pf.mart-declares-grain.kg-context-card-md",
+      "from": "constraint.pf.mart-declares-grain",
+      "to": "evidence.pf.mart-declares-grain.kg-context-card-md",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.metric-owns-aggregation.derived-from.intent.pf.metric-owns-aggregation",
+      "from": "constraint.pf.metric-owns-aggregation",
+      "to": "intent.pf.metric-owns-aggregation",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.metric-owns-aggregation.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.metric-owns-aggregation",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.metric-owns-aggregation.implemented-by.artifact.pf.pf.ontology.validate.metric-shaped-column",
+      "from": "constraint.pf.metric-owns-aggregation",
+      "to": "artifact.pf.pf.ontology.validate.metric-shaped-column",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.metric-owns-aggregation.verified-by.evidence.pf.metric-owns-aggregation.pf-check",
+      "from": "constraint.pf.metric-owns-aggregation",
+      "to": "evidence.pf.metric-owns-aggregation.pf-check",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.derived-from.intent.pf.change-declares-blast-radius",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "intent.pf.change-declares-blast-radius",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.implemented-by.artifact.pf.platform.hooks.pre-tool-use.py",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "artifact.pf.platform.hooks.pre-tool-use.py",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.implemented-by.artifact.pf.platform.hooks.pre-commit.sh",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "artifact.pf.platform.hooks.pre-commit.sh",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.verified-by.evidence.pf.change-declares-blast-radius.impact-reports",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "evidence.pf.change-declares-blast-radius.impact-reports",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-declares-blast-radius.verified-by.evidence.pf.change-declares-blast-radius.loop-ledger-json",
+      "from": "constraint.pf.change-declares-blast-radius",
+      "to": "evidence.pf.change-declares-blast-radius.loop-ledger-json",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-17T22:24:54Z",
+        "verified_at": "2026-08-17T22:24:54Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-verified-against-baseline.derived-from.intent.pf.change-verified-against-baseline",
+      "from": "constraint.pf.change-verified-against-baseline",
+      "to": "intent.pf.change-verified-against-baseline",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-verified-against-baseline.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.change-verified-against-baseline",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-verified-against-baseline.implemented-by.artifact.pf.pf.tools.recce.dagster-assets",
+      "from": "constraint.pf.change-verified-against-baseline",
+      "to": "artifact.pf.pf.tools.recce.dagster-assets",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-verified-against-baseline.implemented-by.artifact.pf.pf.tools.recce.register-commands",
+      "from": "constraint.pf.change-verified-against-baseline",
+      "to": "artifact.pf.pf.tools.recce.register-commands",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.change-verified-against-baseline.verified-by.evidence.pf.change-verified-against-baseline.pf-tool-recce-run",
+      "from": "constraint.pf.change-verified-against-baseline",
+      "to": "evidence.pf.change-verified-against-baseline.pf-tool-recce-run",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.review-artifacts-exclude-pii.derived-from.intent.pf.review-artifacts-exclude-pii",
+      "from": "constraint.pf.review-artifacts-exclude-pii",
+      "to": "intent.pf.review-artifacts-exclude-pii",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.review-artifacts-exclude-pii.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.review-artifacts-exclude-pii",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.review-artifacts-exclude-pii.implemented-by.artifact.pf.pf.ontology.model.Role.review-intent",
+      "from": "constraint.pf.review-artifacts-exclude-pii",
+      "to": "artifact.pf.pf.ontology.model.Role.review-intent",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.review-artifacts-exclude-pii.implemented-by.artifact.pf.pf.tools.recce.generate-config",
+      "from": "constraint.pf.review-artifacts-exclude-pii",
+      "to": "artifact.pf.pf.tools.recce.generate-config",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.review-artifacts-exclude-pii.verified-by.evidence.pf.review-artifacts-exclude-pii.pf-tool-recce-config",
+      "from": "constraint.pf.review-artifacts-exclude-pii",
+      "to": "evidence.pf.review-artifacts-exclude-pii.pf-tool-recce-config",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.secrets-never-in-context.derived-from.intent.pf.secrets-never-in-context",
+      "from": "constraint.pf.secrets-never-in-context",
+      "to": "intent.pf.secrets-never-in-context",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.secrets-never-in-context.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.secrets-never-in-context",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.secrets-never-in-context.implemented-by.artifact.pf.gate.yaml.denylist",
+      "from": "constraint.pf.secrets-never-in-context",
+      "to": "artifact.pf.gate.yaml.denylist",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.secrets-never-in-context.implemented-by.artifact.pf.platform.hooks.pre-tool-use.py",
+      "from": "constraint.pf.secrets-never-in-context",
+      "to": "artifact.pf.platform.hooks.pre-tool-use.py",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.secrets-never-in-context.verified-by.evidence.pf.secrets-never-in-context.pf-gate",
+      "from": "constraint.pf.secrets-never-in-context",
+      "to": "evidence.pf.secrets-never-in-context.pf-gate",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-amount-bounded.derived-from.intent.pf.money-amount-bounded",
+      "from": "constraint.pf.money-amount-bounded",
+      "to": "intent.pf.money-amount-bounded",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-amount-bounded.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.money-amount-bounded",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.money-amount-bounded.verified-by.evidence.pf.money-amount-bounded.dbt-test",
+      "from": "constraint.pf.money-amount-bounded",
+      "to": "evidence.pf.money-amount-bounded.dbt-test",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.source-declares-freshness.derived-from.intent.pf.source-declares-freshness",
+      "from": "constraint.pf.source-declares-freshness",
+      "to": "intent.pf.source-declares-freshness",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.source-declares-freshness.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.source-declares-freshness",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.source-declares-freshness.verified-by.evidence.pf.source-declares-freshness.dbt-source-freshness",
+      "from": "constraint.pf.source-declares-freshness",
+      "to": "evidence.pf.source-declares-freshness.dbt-source-freshness",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.source-declares-freshness.verified-by.evidence.pf.source-declares-freshness.dbt-test",
+      "from": "constraint.pf.source-declares-freshness",
+      "to": "evidence.pf.source-declares-freshness.dbt-test",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.anomaly-tests-do-not-gate-merge.derived-from.intent.pf.anomaly-tests-do-not-gate-merge",
+      "from": "constraint.pf.anomaly-tests-do-not-gate-merge",
+      "to": "intent.pf.anomaly-tests-do-not-gate-merge",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.anomaly-tests-do-not-gate-merge.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.anomaly-tests-do-not-gate-merge",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.anomaly-tests-do-not-gate-merge.implemented-by.artifact.pf.pf.capabilities.IMPACT-JOB",
+      "from": "constraint.pf.anomaly-tests-do-not-gate-merge",
+      "to": "artifact.pf.pf.capabilities.IMPACT-JOB",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.anomaly-tests-do-not-gate-merge.verified-by.evidence.pf.anomaly-tests-do-not-gate-merge.pf-impact-gate",
+      "from": "constraint.pf.anomaly-tests-do-not-gate-merge",
+      "to": "evidence.pf.anomaly-tests-do-not-gate-merge.pf-impact-gate",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-isolation-enforced.derived-from.intent.pf.entity-isolation-enforced",
+      "from": "constraint.pf.entity-isolation-enforced",
+      "to": "intent.pf.entity-isolation-enforced",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-isolation-enforced.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.entity-isolation-enforced",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-isolation-enforced.implemented-by.artifact.pf.pf.scaffold.generator.PROJECT-SETTINGS",
+      "from": "constraint.pf.entity-isolation-enforced",
+      "to": "artifact.pf.pf.scaffold.generator.PROJECT-SETTINGS",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-isolation-enforced.implemented-by.artifact.pf.platform.hooks.pre-tool-use.py",
+      "from": "constraint.pf.entity-isolation-enforced",
+      "to": "artifact.pf.platform.hooks.pre-tool-use.py",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.entity-isolation-enforced.verified-by.evidence.pf.entity-isolation-enforced.pf-gate",
+      "from": "constraint.pf.entity-isolation-enforced",
+      "to": "evidence.pf.entity-isolation-enforced.pf-gate",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.derived-from.intent.pf.vendor-is-read-only",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "intent.pf.vendor-is-read-only",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.implemented-by.artifact.pf.gate.yaml.denylist",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "artifact.pf.gate.yaml.denylist",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.implemented-by.artifact.pf.platform.hooks.pre-tool-use.py",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "artifact.pf.platform.hooks.pre-tool-use.py",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.verified-by.evidence.pf.vendor-is-read-only.pf-gate",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "evidence.pf.vendor-is-read-only.pf-gate",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.vendor-is-read-only.verified-by.evidence.pf.vendor-is-read-only.pf-vendor-drift",
+      "from": "constraint.pf.vendor-is-read-only",
+      "to": "evidence.pf.vendor-is-read-only.pf-vendor-drift",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.agent-settings-schema-valid.derived-from.intent.pf.agent-settings-schema-valid",
+      "from": "constraint.pf.agent-settings-schema-valid",
+      "to": "intent.pf.agent-settings-schema-valid",
+      "type": "derived_from",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "confidence": "high",
+        "method": "human_review"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.agent-settings-schema-valid.governed-by.policy.pf.data-platform",
+      "from": "constraint.pf.agent-settings-schema-valid",
+      "to": "policy.pf.data-platform",
+      "type": "governed_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.agent-settings-schema-valid.implemented-by.artifact.pf.pf.scaffold.claude-settings.normalize",
+      "from": "constraint.pf.agent-settings-schema-valid",
+      "to": "artifact.pf.pf.scaffold.claude-settings.normalize",
+      "type": "implemented_by",
+      "metadata": {
+        "created_at": "2026-08-13T20:01:06Z",
+        "implemented_at": "2026-08-13T20:01:06Z"
+      }
+    },
+    {
+      "id": "rel.constraint.pf.agent-settings-schema-valid.verified-by.evidence.pf.agent-settings-schema-valid.pf-bootstrap",
+      "from": "constraint.pf.agent-settings-schema-valid",
+      "to": "evidence.pf.agent-settings-schema-valid.pf-bootstrap",
+      "type": "verified_by",
+      "metadata": {
+        "created_at": "2026-08-21T19:26:43Z",
+        "verified_at": "2026-08-21T19:26:43Z"
+      }
+    }
+  ],
+  "extensions": {
+    "pf": {
+      "scope": "platform",
+      "group": "",
+      "project": "",
+      "unenforced": [
+        "money-amount-bounded",
+        "source-declares-freshness"
+      ]
+    }
+  }
+}

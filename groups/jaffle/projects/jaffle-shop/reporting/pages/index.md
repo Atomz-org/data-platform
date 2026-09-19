@@ -1,6 +1,15 @@
 ---
 title: jaffle-shop — Overview
 queries:
+  - metrics/lifetime_spend_pretax.sql
+  - metrics/count_lifetime_orders.sql
+  - metrics/average_order_value.sql
+  - metrics/order_total.sql
+  - metrics/new_customer_orders.sql
+  - metrics/large_orders.sql
+  - metrics/orders.sql
+  - metrics/food_orders.sql
+  - metrics/drink_orders.sql
   - metrics/revenue.sql
   - metrics/order_cost.sql
   - metrics/median_revenue.sql
@@ -10,15 +19,6 @@ queries:
   - metrics/drink_revenue_pct.sql
   - metrics/revenue_growth_mom.sql
   - metrics/order_gross_profit.sql
-  - metrics/order_total.sql
-  - metrics/new_customer_orders.sql
-  - metrics/large_orders.sql
-  - metrics/orders.sql
-  - metrics/food_orders.sql
-  - metrics/drink_orders.sql
-  - metrics/lifetime_spend_pretax.sql
-  - metrics/count_lifetime_orders.sql
-  - metrics/average_order_value.sql
 ---
 
 Every number on this page is a governed metric compiled from the dbt
@@ -29,62 +29,62 @@ not SQL in this page.
 ```sql date_bounds
 -- DateRange reads min()/max() from ONE column, so both bounds must
 -- arrive as two rows in that column — not two columns of one row.
-select min(metric_time) as metric_time from ${metrics_revenue}
+select min(metric_time) as metric_time from ${metrics_lifetime_spend_pretax}
 union all
-select max(metric_time) from ${metrics_revenue}
+select max(metric_time) from ${metrics_lifetime_spend_pretax}
 ```
 
 <DateRange name=period data={date_bounds} dates=metric_time/>
 
-```sql kpi_revenue
-select sum(revenue) as revenue
-from ${metrics_revenue}
+```sql kpi_lifetime_spend_pretax
+select sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
 ```
 
-```sql kpi_order_cost
-select sum(order_cost) as order_cost
-from ${metrics_order_cost}
+```sql kpi_count_lifetime_orders
+select sum(count_lifetime_orders) as count_lifetime_orders
+from ${metrics_count_lifetime_orders}
 ```
 
-```sql kpi_median_revenue
-select sum(median_revenue) as median_revenue
-from ${metrics_median_revenue}
+```sql kpi_order_total
+select sum(order_total) as order_total
+from ${metrics_order_total}
 ```
 
-```sql kpi_food_revenue
-select sum(food_revenue) as food_revenue
-from ${metrics_food_revenue}
+```sql kpi_new_customer_orders
+select sum(new_customer_orders) as new_customer_orders
+from ${metrics_new_customer_orders}
 ```
 
 <Grid cols=4>
 
-<BigValue data={kpi_revenue} value=revenue title='Revenue' fmt=usd0/>
-<BigValue data={kpi_order_cost} value=order_cost title='Order Cost' fmt=num0/>
-<BigValue data={kpi_median_revenue} value=median_revenue title='Median Revenue' fmt=usd0/>
-<BigValue data={kpi_food_revenue} value=food_revenue title='Food Revenue' fmt=usd0/>
+<BigValue data={kpi_lifetime_spend_pretax} value=lifetime_spend_pretax title='LTV Pre-tax' fmt=num0/>
+<BigValue data={kpi_count_lifetime_orders} value=count_lifetime_orders title='Count Lifetime Orders' fmt=num0/>
+<BigValue data={kpi_order_total} value=order_total title='Order Total' fmt=num0/>
+<BigValue data={kpi_new_customer_orders} value=new_customer_orders title='New Customers' fmt=num0/>
 
 </Grid>
 
-## Revenue over time
+## LTV Pre-tax over time
 
 ```sql trend
-select metric_time, sum(revenue) as revenue
-from ${metrics_revenue}
+select metric_time, sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
 group by 1 order by 1
 ```
 
-<LineChart data={trend} x=metric_time y=revenue yFmt=usd0/>
+<LineChart data={trend} x=metric_time y=lifetime_spend_pretax yFmt=num0/>
 
-## Revenue by is food item
+## LTV Pre-tax by customer name
 
 ```sql breakdown
-select is_food_item, sum(revenue) as revenue
-from ${metrics_revenue}
-where is_food_item is not null
+select customer_name, sum(lifetime_spend_pretax) as lifetime_spend_pretax
+from ${metrics_lifetime_spend_pretax}
+where customer_name is not null
 group by 1 order by 2 desc
 ```
 
-<BarChart data={breakdown} x=is_food_item y=revenue swapXY=true xFmt=usd0/>
+<BarChart data={breakdown} x=customer_name y=lifetime_spend_pretax swapXY=true xFmt=num0/>
 
 ## Detail
 

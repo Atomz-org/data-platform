@@ -96,7 +96,7 @@ class Upstream:
 
 
 def load_registry(path: Path | None = None) -> list[Upstream]:
-    doc = yaml.safe_load((path or REGISTRY).read_text()) or {}
+    doc = yaml.safe_load((path or REGISTRY).read_text(encoding="utf-8")) or {}
     out: list[Upstream] = []
     for u in doc.get("upstreams") or []:
         out.append(Upstream(
@@ -153,12 +153,12 @@ def lock_path(root: Path) -> Path:
 
 def read_lock(root: Path) -> dict[str, Any]:
     p = lock_path(root)
-    return json.loads(p.read_text()) if p.exists() else {"version": 1, "upstreams": {}}
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {"version": 1, "upstreams": {}}
 
 
 def write_lock(root: Path, data: dict[str, Any]) -> Path:
     p = lock_path(root)
-    p.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+    p.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return p
 
 

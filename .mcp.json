@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "graphify": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "graphifyy",
+        "graphify-mcp",
+        "${CLAUDE_PROJECT_DIR}/graphify-out/graph.json"
+      ]
+    }
+  }
+}

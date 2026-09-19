@@ -2,6 +2,7 @@
 name: build-assets
 description: Add or modify Dagster assets, schedules, sensors and partitions in this platform.
 ---
+<!-- Adapted from dagster-io/skills (vendor/dagster-skills, Apache-2.0) — see registry.yaml. -->
 # Dagster in this platform
 
 **Override — this supersedes generic Dagster scaffolding guidance.**

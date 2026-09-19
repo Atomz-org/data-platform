@@ -2,6 +2,7 @@
 name: query
 description: Run SQL against the project warehouse. Read-only, truncated, and subordinate to the metrics layer.
 ---
+<!-- Adapted from duckdb/duckdb-skills (vendor/duckdb-skills, MIT) — see registry.yaml. -->
 # Querying
 
 Check ROUTING.md first. This skill is **tier 3** — below the knowledge graph and
