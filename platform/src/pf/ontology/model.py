@@ -472,7 +472,7 @@ def load_ontology(directory: str | Path | None = None) -> Ontology:
 
     policies = _parse_policies(policy_doc, scope="platform")
 
-    return Ontology(
+    onto = Ontology(
         version=int(concepts.get("version", 1)),
         namespace=concepts.get("namespace", ""),
         prefix=concepts.get("prefix", "pf"),
@@ -480,6 +480,15 @@ def load_ontology(directory: str | Path | None = None) -> Ontology:
         policies=policies,
         evidence_kinds=policy_doc.get("evidence_kinds") or [],
     )
+
+    # Capability-declared obligations, generated from `Capability.policies`. They
+    # layer here rather than being pasted into policy.yaml so that installing a
+    # capability and inheriting its rules are the same act — and so removing it
+    # removes them, which a hand-merged floor could never do reliably.
+    #
+    # Same `_overlay_policy` every other layer uses, so the tightening-only guard
+    # applies: a capability cannot relax the floor it sits on.
+    return _overlay_policy(onto, base / "policy.capabilities.yaml", "capability")
 
 
 def load_group_ontology(root: str | Path, group: str) -> Ontology:
