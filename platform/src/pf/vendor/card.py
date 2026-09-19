@@ -32,7 +32,10 @@ from pf.vendor.model import Upstream, load_registry
 #: card to ~839. The roster grew by three, which is the case this comment says to
 #: recalibrate for rather than to trim prose for; the summaries are already one
 #: line each. Room for about four more before the next deliberate look.
-VENDOR_CARD_BUDGET = 900
+# Raised from 900 when the twenty-second upstream was pinned: the card is one
+# row per upstream, so it grows with the estate rather than with prose, and
+# the rows are what make it useful. `pf tokens` checks it on every PR.
+VENDOR_CARD_BUDGET = 1000
 
 ROLE_ORDER = {"spec": 0, "skills": 1, "shape": 2, "reference": 3}
 
