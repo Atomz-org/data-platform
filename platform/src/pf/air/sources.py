@@ -163,14 +163,44 @@ class CatalogueSource:
 
 
 # --------------------------------------------------------------- built-ins --
-#: Catalogues registered by this package itself.
+#: The FINOS AI Governance Framework, pinned at `vendor/ai-governance-framework`.
 #:
-#: Empty on purpose. `pf.air` is a reader of control catalogues, not of one
-#: framework, and nothing here should have to change to carry a different one.
-#: A catalogue reaches this platform either as an entry on `pf.catalogues` from
-#: any installed distribution, or as an entry here when the corpus is vendored
-#: into this repository.
-BUILTIN: tuple[CatalogueSource, ...] = ()
+#: Everything framework-specific in `pf.air` is in this object. The type
+#: vocabularies are copied from upstream's `_config.yml` rather than read from it
+#: — they are five literals, and depending on a Jekyll config at runtime to learn
+#: an enum is the site-generator dependency the vendor registry declines.
+#:
+#: `RESP` is declared in upstream's `mi-template.md` and used by nothing yet. It
+#: is admitted so the first response control to land upstream parses instead of
+#: failing the build.
+FINOS_AIR = CatalogueSource(
+    name="finos-air",
+    title="FINOS AI Governance Framework",
+    path="vendor/ai-governance-framework",
+    prefix="AIR",
+    url="https://github.com/finos/ai-governance-framework",
+    licence="CC-BY-4.0",
+    attribution=(
+        "Derived from the [FINOS AI Governance Framework]"
+        "(https://github.com/finos/ai-governance-framework), "
+        "© FINOS, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). "
+        "Risk and control definitions are quoted and summarised; the coverage "
+        "assessment, control-to-policy mapping and all verdicts are this platform's "
+        "own additions. Changes were made."
+    ),
+    risk_types={
+        "RC": "Regulatory & Compliance",
+        "OP": "Operational",
+        "SEC": "Security",
+    },
+    control_types={
+        "PREV": "Preventative",
+        "DET": "Detective",
+        "RESP": "Response",
+    },
+)
+
+BUILTIN: tuple[CatalogueSource, ...] = (FINOS_AIR,)
 
 
 # --------------------------------------------------------------- discovery --

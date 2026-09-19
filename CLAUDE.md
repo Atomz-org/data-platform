@@ -9,10 +9,10 @@ Multi-tenant agentic data platform. Infra is shared; business logic is not.
 - `groups/<group>/projects/<project>/` — one entity. Own warehouse, own dlt
   pipelines, own dbt project. Sisters run in parallel.
 
-- `vendor/` — fourteen upstreams pinned as submodules (the Recce family is
+- `vendor/` — twenty-one upstreams pinned as submodules (the Recce family is
   grouped under `vendor/recce/`). **Read-only, always.** What we took from each
   is recorded in `platform/src/pf/vendor/registry.yaml`; `docs/VENDOR-CARD.md`
-  (~520 tokens) is the index, `pf vendor why <file>` the reverse lookup. Bumping
+  is the index, `pf vendor why <file>` the reverse lookup. Bumping
   a pin is a human decision, never an agent's.
 
 - **Tools** (`pf tool list`) are capabilities that also run: scaffolded files,
@@ -31,6 +31,16 @@ transfer between entities — an assumption carried across is a bug.
   `pf.provenance.action()` for everything else. `provenance/**` is denied to
   every agent: you may not edit the record of what you did. `pf provenance
   verify` is the audit and blocks CI; `docs/GOVERNANCE.md` is the reference.
+
+- **Controls are named, not asserted.** `policy.yaml` entries carry a
+  `controls:` list of ids from the vendored FINOS AI Governance Framework
+  (`AIR-DET-21`), which cross-walks them to the EU AI Act, ISO 42001, NIST and
+  OWASP. `pf air coverage` derives — never stores — whether each control's
+  named enforcement actually resolves, and `pf air gate <group> <project>`
+  blocks the merge on the controls that entity committed to in its `air.yaml`.
+  Adding enforcement means adding a policy that names a real artefact; a
+  `controls:` entry whose `enforced_by` resolves to nothing reports as failing,
+  which is the point. `docs/AIR.md` is the reference.
 
 - **The session layer** ships as the `power-tools` toolkit: audit and shipping
   commands, read-only verification subagents, format/notify hooks, and the `pf`
