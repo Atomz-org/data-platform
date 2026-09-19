@@ -63,7 +63,7 @@ jobs:
         # The attack tests: edit a record, re-seal it, drop one, claim a denial
         # that ran. A chain whose tamper detection is broken would otherwise
         # report a clean ledger for the rest of this job.
-        run: uv run pytest platform/tests/test_provenance.py -q
+        run: uv run pytest platform/tests/gate/test_provenance.py -q
 
       - name: Verify the ledger
         # Non-zero on a broken chain, an ungated execution, an unenforced
@@ -86,7 +86,7 @@ jobs:
         # who cannot check our work.
         run: |
           if [ -f provenance/chain.jsonl ]; then
-            python3 platform/scripts/verify_provenance.py provenance
+            python3 platform/entrypoints/verify_provenance.py provenance
           fi
 
   compliance-scan:
@@ -139,7 +139,7 @@ jobs:
         run: uv sync
 
       - name: Unit tests for the catalogue
-        run: uv run pytest platform/tests/test_air.py -q
+        run: uv run pytest platform/tests/gate/test_air.py -q
 
       - name: Verify the vendored corpus
         # Fails when a pin bump renamed a control, retired a risk something still

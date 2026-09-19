@@ -1,0 +1,447 @@
+<title>Jaffle Shop Evidence Layer</title>
+<style>
+  :root {
+    --paper:      #f5f6f8;
+    --card:       #ffffff;
+    --ink:        #101418;
+    --muted:      #5b6570;
+    --rule:       #dfe3e8;
+    --teal:       #0f766e;
+    --teal-wash:  #d9f4ee;
+    --violet:     #5b21b6;
+    --violet-wash:#e9e1fb;
+    --slate:      #334155;
+    --slate-wash: #e0e6ed;
+    --amber:      #b45309;
+    --amber-wash: #fdf0dc;
+
+    --display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #14171c;
+      --card:       #1b1f26;
+      --ink:        #e8eaed;
+      --muted:      #98a2ad;
+      --rule:       #2b313a;
+      --teal:       #5eead4;
+      --teal-wash:  #10312c;
+      --violet:     #c4b5fd;
+      --violet-wash:#241a3d;
+      --slate:      #cbd5e1;
+      --slate-wash: #232a34;
+      --amber:      #fbbf24;
+      --amber-wash: #3a2a0d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #14171c;
+    --card:       #1b1f26;
+    --ink:        #e8eaed;
+    --muted:      #98a2ad;
+    --rule:       #2b313a;
+    --teal:       #5eead4;
+    --teal-wash:  #10312c;
+    --violet:     #c4b5fd;
+    --violet-wash:#241a3d;
+    --slate:      #cbd5e1;
+    --slate-wash: #232a34;
+    --amber:      #fbbf24;
+    --amber-wash: #3a2a0d;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  /* ---- header ---- */
+  header { display: flex; flex-direction: column; gap: .75rem; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2rem, 5.5vw, 3.1rem);
+    line-height: 1.08;
+    font-weight: 600;
+    text-wrap: balance;
+    letter-spacing: -.015em;
+  }
+  .standfirst {
+    font-size: 1.08rem;
+    color: var(--muted);
+    max-width: 46ch;
+  }
+
+  /* ---- figures strip ---- */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .fig { background: var(--card); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .15rem; }
+  .fig b {
+    font-family: var(--mono);
+    font-size: 1.7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em;
+  }
+  .fig span { font-size: .78rem; color: var(--muted); }
+  .fig.flag b { color: var(--amber); }
+
+  /* ---- sections ---- */
+  section { display: flex; flex-direction: column; gap: 1.1rem; }
+  h2 {
+    font-family: var(--display);
+    font-size: 1.55rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  h3 {
+    font-size: .8rem;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  p { max-width: 68ch; }
+  a { color: var(--teal); text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--slate-wash);
+    padding: .1em .35em;
+    border-radius: 2px;
+  }
+
+  /* ---- the finding ---- */
+  .finding {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--amber);
+    border-radius: 3px;
+    padding: 1.4rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+  }
+  .finding .tag {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .finding h2 { font-size: 1.35rem; }
+  .chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--mono);
+    font-size: .82rem;
+  }
+  .chain i { font-style: normal; color: var(--muted); }
+  .pill {
+    background: var(--slate-wash);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: .2rem .5rem;
+  }
+  .pill.bad { background: var(--amber-wash); border-color: var(--amber); color: var(--amber); }
+
+  /* ---- tables ---- */
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--card); }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { padding: .55rem .8rem; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  th {
+    font-family: var(--mono);
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  td.name { font-family: var(--mono); font-size: .84rem; }
+  tr.gap td { background: var(--amber-wash); }
+  tr.gap td.name { color: var(--amber); font-weight: 600; }
+
+  .kind {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: .1rem .4rem;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+  .kind.simple  { background: var(--teal-wash);   border-color: var(--teal);   color: var(--teal); }
+  .kind.ratio   { background: var(--violet-wash); border-color: var(--violet); color: var(--violet); }
+  .kind.derived { background: var(--slate-wash);  border-color: var(--slate);  color: var(--slate); }
+  .kind.cumulative { background: var(--amber-wash); border-color: var(--amber); color: var(--amber); }
+
+  .status { font-family: var(--mono); font-size: .78rem; }
+  .status.ok  { color: var(--teal); }
+  .status.no  { color: var(--amber); font-weight: 600; }
+
+  /* ---- diagram ---- */
+  pre.mermaid {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  /* ---- lists ---- */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+  .cardlet {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+  }
+  .cardlet b { font-size: .92rem; }
+  .cardlet span { font-size: .8rem; color: var(--muted); }
+  .cardlet .who { font-family: var(--mono); font-size: .72rem; color: var(--teal); }
+
+  pre.sh {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .9rem 1.1rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: .84rem;
+    line-height: 1.7;
+  }
+  pre.sh .c { color: var(--muted); }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+    font-size: .82rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">jaffle · jaffle-shop · reporting layer</div>
+  <h1>Jaffle Shop Evidence Layer</h1>
+  <p class="standfirst">Eighteen metrics reach the report. Nineteen are defined. The score is 100/100, and it is structurally unable to notice the difference.</p>
+</header>
+
+<div class="figures">
+  <div class="fig"><b>19</b><span>metrics defined</span></div>
+  <div class="fig flag"><b>18</b><span>metrics compiled</span></div>
+  <div class="fig"><b>19</b><span>pages</span></div>
+  <div class="fig"><b>996</b><span>source extracts</span></div>
+  <div class="fig"><b>6</b><span>semantic models</span></div>
+  <div class="fig"><b>100</b><span>audit score</span></div>
+</div>
+
+<section>
+  <div class="finding">
+    <div class="tag">Finding · one metric never arrives</div>
+    <h2><code>cumulative_revenue</code> is defined, compiled by dbt, and silently dropped on the way to the report</h2>
+    <p>It exists in <code>semantic_manifest.json</code> as a <code>cumulative</code> metric over the <code>revenue</code> measure. It has no query, no page, and no mention anywhere in <code>reporting/</code>. Nothing failed, and nothing warned.</p>
+
+    <div class="chain">
+      <span class="pill">sem_order_items.yml</span><i>→</i>
+      <span class="pill">dbt parse</span><i>→</i>
+      <span class="pill">semantic_manifest</span><i>→</i>
+      <span class="pill bad">pf report build</span><i>✕</i>
+      <span class="pill bad">dropped</span>
+    </div>
+
+    <h3>Why</h3>
+    <p>In <code>platform/src/pf/projections/evidence.py</code>, the dispatch has three arms: <code>simple</code>, <code>ratio</code>, and an <code>else</code> that catches everything remaining. That <code>else</code> resolves its base by reading <code>type_params.metrics</code> — correct for a <code>derived</code> metric, which is built from other metrics.</p>
+    <p>A <code>cumulative</code> metric is not. It references <code>type_params.measure</code>, and its <code>metrics</code> list is empty. So the lookup returns nothing, the branch hits its <code>continue</code>, and the metric leaves no trace. The two metric kinds share an arm because they share a shape in the type system, not because they share a shape in the manifest.</p>
+
+    <h3>Why the score is still 100</h3>
+    <p><code>report_audit.py</code> builds its metric set from <code>queries/metrics/*.sql</code> — the generator's own output. Every rule it applies is a rule about what was produced. There is no rule comparing what was produced against what was defined, so a metric the generator never emitted is not a low score; it is invisible. The audit is a check on the report, and this is a defect in the step before it.</p>
+    <p>Both are worth fixing, and they are separate fixes. Handling <code>cumulative</code> restores this one metric. Auditing <em>defined vs. compiled</em> is what would have caught it — and catches the next kind the dispatch does not know about.</p>
+  </div>
+</section>
+
+<section>
+  <h2>The nineteen</h2>
+  <p>Every metric in the semantic layer, and whether it reaches a page. Types are the manifest's own.</p>
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>Metric</th><th>Kind</th><th>Page</th><th>Definition</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="name">revenue</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Sum of product revenue per order item, excluding tax</td></tr>
+        <tr><td class="name">order_cost</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Sum of cost per order item</td></tr>
+        <tr><td class="name">median_revenue</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Median revenue per order item, excluding tax</td></tr>
+        <tr><td class="name">food_revenue</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Revenue from food in each order</td></tr>
+        <tr><td class="name">drink_revenue</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Revenue from drinks in each order</td></tr>
+        <tr><td class="name">order_total</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Total order amount, tax included</td></tr>
+        <tr><td class="name">orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Count of orders</td></tr>
+        <tr><td class="name">food_orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Orders containing a food item</td></tr>
+        <tr><td class="name">drink_orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Orders containing a drink item</td></tr>
+        <tr><td class="name">large_orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Orders with a total over 20</td></tr>
+        <tr><td class="name">new_customer_orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>A customer's first order</td></tr>
+        <tr><td class="name">lifetime_spend_pretax</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Customer lifetime spend before tax</td></tr>
+        <tr><td class="name">count_lifetime_orders</td><td><span class="kind simple">simple</span></td><td class="status ok">✓</td><td>Count of lifetime orders</td></tr>
+        <tr><td class="name">food_revenue_pct</td><td><span class="kind ratio">ratio</span></td><td class="status ok">✓</td><td>Share of order revenue from food</td></tr>
+        <tr><td class="name">drink_revenue_pct</td><td><span class="kind ratio">ratio</span></td><td class="status ok">✓</td><td>Share of order revenue from drinks</td></tr>
+        <tr><td class="name">revenue_growth_mom</td><td><span class="kind derived">derived</span></td><td class="status ok">✓</td><td>Revenue growth against one month ago</td></tr>
+        <tr><td class="name">order_gross_profit</td><td><span class="kind derived">derived</span></td><td class="status ok">✓</td><td>Gross profit per order</td></tr>
+        <tr><td class="name">average_order_value</td><td><span class="kind derived">derived</span></td><td class="status ok">✓</td><td>Pre-tax lifetime value over order count</td></tr>
+        <tr class="gap"><td class="name">cumulative_revenue</td><td><span class="kind cumulative">cumulative</span></td><td class="status no">✕ absent</td><td>Cumulative revenue across all orders</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Ratios carry both sides.</strong> <code>food_revenue_pct</code> compiles to <code>sum(food_revenue) / nullif(sum(revenue), 0)</code> and its page ships the numerator and denominator rather than the quotient, so it re-divides correctly at whatever grain a reader groups by. Averaging a stored ratio is wrong at every grain except the one it was computed at, and the generated page says so in the prose beside the chart.</p>
+</section>
+
+<section>
+  <h2>How a number reaches the page</h2>
+  <p>A genuine sequence, so it is drawn as one. Each stage narrows: 2,234 warehouse tables become 996 marts, six semantic models, nineteen metric definitions, eighteen queries.</p>
+  <p><strong>996 appears twice on purpose.</strong> There are 996 mart models, 996 tables in the <code>main_marts</code> schema, and 996 source extracts &mdash; because Evidence pre-renders exactly one extract per mart. The repetition is a one-to-one mapping, not one figure standing in for two different things.</p>
+<pre class="mermaid">
+flowchart LR
+  raw["main_raw<br/>58 tables"]:::phys
+  stg["main_staging<br/>58 models"]:::phys
+  marts["main_marts<br/>996 models"]:::phys
+  sem["6 semantic models<br/>25 dimensions · 13 measures"]:::sem
+  met["19 metric definitions"]:::sem
+  q["18 compiled queries<br/>queries/metrics/*.sql"]:::rep
+  pg["19 pages<br/>pages/**/*.md"]:::rep
+  exp["6 exposures"]:::gov
+  drop["cumulative_revenue<br/>dropped, unreported"]:::bad
+
+  raw --> stg --> marts --> sem --> met
+  met --> q --> pg --> exp
+  met -.-> drop
+
+  classDef phys fill:#d9f4ee,stroke:#0f766e,stroke-width:1.5px,color:#0b0b0b
+  classDef sem  fill:#e9e1fb,stroke:#5b21b6,stroke-width:1.5px,color:#0b0b0b
+  classDef rep  fill:#e0e6ed,stroke:#334155,stroke-width:1.5px,color:#0b0b0b
+  classDef gov  fill:#e0e6ed,stroke:#334155,stroke-width:1.5px,stroke-dasharray:4 3,color:#0b0b0b
+  classDef bad  fill:#fdf0dc,stroke:#b45309,stroke-width:2px,color:#0b0b0b
+</pre>
+</section>
+
+<section>
+  <h2>What the numbers are measured on</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Mart</th><th>Rows</th><th>Grain</th></tr></thead>
+      <tbody>
+        <tr><td class="name">order_items</td><td class="num">90,900</td><td>one line per item on an order — the revenue fact</td></tr>
+        <tr><td class="name">orders</td><td class="num">61,948</td><td>one per order, 2024-09-01 → 2025-08-31</td></tr>
+        <tr><td class="name">customers</td><td class="num">935</td><td>one per customer</td></tr>
+        <tr><td class="name">supplies</td><td class="num">65</td><td>one per supply line</td></tr>
+        <tr><td class="name">products</td><td class="num">10</td><td>one per product</td></tr>
+        <tr><td class="name">locations</td><td class="num">6</td><td>one per store</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>One trading year, 61,948 orders, <strong>637,444.00</strong> in pre-tax subtotal. The warehouse behind them holds 2,234 tables across 20,986 columns in a single 566 MB DuckDB file — one file per project, which is what lets sister companies build in parallel. The reporting layer opens it <strong>read-only</strong>.</p>
+</section>
+
+<section>
+  <h2>Who reads it</h2>
+  <p>Six exposures declare a downstream consumer, so a change to a mart has a named owner to warn rather than an unknown blast radius.</p>
+  <div class="cards">
+    <div class="cardlet"><b>weekly_business_review</b><span>dashboard · 4 dependencies</span><span class="who">Finance Team</span></div>
+    <div class="cardlet"><b>store_manager_portal</b><span>application · 4 dependencies</span><span class="who">Operations Team</span></div>
+    <div class="cardlet"><b>marketing_analytics</b><span>dashboard · 4 dependencies</span><span class="who">Marketing Team</span></div>
+    <div class="cardlet"><b>inventory_reorder_system</b><span>application · 2 dependencies</span><span class="who">Supply Chain Team</span></div>
+    <div class="cardlet"><b>ml_churn_prediction</b><span>ml · 2 dependencies</span><span class="who">Data Science Team</span></div>
+    <div class="cardlet"><b>crm_sync</b><span>application · 3 dependencies</span><span class="who">Marketing Ops</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>The 996 extracts</h2>
+  <p>Evidence pre-renders each mart into a source extract at build time. Forty distinct prefixes; the largest families:</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Prefix</th><th>Extracts</th><th>What they hold</th></tr></thead>
+      <tbody>
+        <tr><td class="name">int_</td><td class="num">194</td><td>intermediate joins and reshapes</td></tr>
+        <tr><td class="name">rpt_</td><td class="num">156</td><td>report-shaped marts, already aggregated</td></tr>
+        <tr><td class="name">trend_</td><td class="num">40</td><td>time series over the trading year</td></tr>
+        <tr><td class="name">kpi_</td><td class="num">35</td><td>single-figure indicators</td></tr>
+        <tr><td class="name">poc_</td><td class="num">35</td><td>proof-of-concept models</td></tr>
+        <tr><td class="name">view_ · sum_ · stg_ · rank_ · alert_ · adv_</td><td class="num">180</td><td>30 each — views, roll-ups, staging mirrors, rankings, alert conditions, advanced SQL</td></tr>
+        <tr><td class="name">sc_</td><td class="num">25</td><td>supply chain</td></tr>
+        <tr><td class="name">28 further prefixes</td><td class="num">331</td><td>cohorts, funnels, geo, ML features, reverse ETL, role views</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Reproducing this</h2>
+  <pre class="sh"><span class="c"># regenerate the report from the semantic layer — idempotent, 0 files changed</span>
+uv run pf report build jaffle jaffle-shop
+
+<span class="c"># mechanical score: 100/100, 0 errors, 0 warnings</span>
+uv run pf report audit jaffle jaffle-shop
+
+<span class="c"># the gap, from the manifest itself &mdash; runs as written, from the repo root</span>
+python3 - &lt;&lt;'PY'
+import json, pathlib
+p = pathlib.Path("groups/jaffle/projects/jaffle-shop")
+defined = {m["name"] for m in
+           json.loads((p / "transform/target/semantic_manifest.json").read_text())["metrics"]}
+compiled = {q.stem for q in (p / "reporting/queries/metrics").glob("*.sql")}
+print(sorted(defined - compiled))
+PY
+<span class="c"># &rarr; ['cumulative_revenue']</span></pre>
+  <p><strong>The static site was not rendered here.</strong> <code>evidence build</code> requires Node 20 — <code>.nvmrc</code> pins it, and the capability documents that Evidence 40 fails on Node 24 / npm 11, verified against a pristine upstream template. This machine has Node 24 and no Node 20 installed, so <code>npm run build</code> would fail on a supported-runtime boundary rather than on anything in this project. <code>npm run sources</code> and <code>npm run dev</code> do work on Node 24.</p>
+</section>
+
+<footer>
+  <div>Generated from <code>groups/jaffle/projects/jaffle-shop</code> — semantic manifest, Evidence project, and the project's own DuckDB warehouse, read directly.</div>
+  <div>Metric counts are the manifest's; row counts are <code>select count(*)</code> against <code>main_marts</code>; the audit score is <code>pf report audit</code> unmodified.</div>
+</footer>
+
+</div>

@@ -18,6 +18,7 @@ has no sources, no models and no warehouse, and bootstrapping it must still work
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -80,7 +81,7 @@ def _render_card(root: Path, group: str, project: str) -> StepResult:
     from pf.kg.card import PROJECT_CARD_BUDGET, estimate_tokens, render_project_card
 
     p = render_project_card(_pdir(root, group, project), group, project)
-    n = estimate_tokens(p.read_text())
+    n = estimate_tokens(p.read_text(encoding="utf-8"))
     status: Status = "ok" if n <= PROJECT_CARD_BUDGET else "failed"
     return StepResult("context card", status, f"~{n} tokens / {PROJECT_CARD_BUDGET}")
 
@@ -100,7 +101,7 @@ def _export_mdl(root: Path, group: str, project: str) -> StepResult:
     path = export_mdl(_pdir(root, group, project), group, project)
     import json
 
-    m = json.loads(path.read_text())
+    m = json.loads(path.read_text(encoding="utf-8"))
     return StepResult("MDL manifest", "ok", f"{len(m['models'])} model(s), {len(m['relationships'])} relationship(s)")
 
 
@@ -127,7 +128,7 @@ def _vendor_docs(root: Path, group: str, project: str) -> StepResult:
 
     render_doc(root)
     card = render_card(root)
-    n = estimate_tokens(card.read_text())
+    n = estimate_tokens(card.read_text(encoding="utf-8"))
     status: Status = "ok" if n <= VENDOR_CARD_BUDGET else "failed"
     return StepResult("vendor docs", status, f"card ~{n} / {VENDOR_CARD_BUDGET} tokens")
 
@@ -160,13 +161,100 @@ def _build_reporting(root: Path, group: str, project: str) -> StepResult:
     Skipped rather than created when `reporting/` is absent: the reporting layer
     is a capability, and bootstrap must not silently enable one nobody asked for.
     """
-    d = _pdir(root, group, project)
-    if not (d / "reporting").exists():
-        return StepResult("reporting", "skipped", "no reporting/ (add --with evidence)")
-    from pf.projections.evidence import build as build_evidence
+    from pf.tools.evidence import bootstrap_project
 
-    r = build_evidence(d, group, project)
-    return StepResult("reporting", "ok", f"{r['metrics']} metric(s), {r['pages']} page(s)")
+    d = _pdir(root, group, project)
+    r = bootstrap_project(root, group, project, d, {})
+    return StepResult("reporting", r.status, r.detail)
+
+
+def _group_notify(root: Path, group: str, project: str) -> StepResult:
+    """The group's delivery channel file, for groups scaffolded before it existed.
+
+    Group-level, so it is written once per family and not once per sister; the
+    step is still per project because bootstrap is, and the second sister finds
+    it present.
+    """
+    import re
+
+    from pf.scaffold.generator import GROUP_NOTIFY, render
+
+    f = root / "groups" / group / "notify.yaml"
+    if f.exists():
+        return StepResult("notify channel", "ok", "present")
+    ctx = {"group": group, "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper())}
+    f.write_text(render(GROUP_NOTIFY, ctx), encoding="utf-8")
+    return StepResult("notify channel", "ok", f"wrote {f.relative_to(root)}")
+
+
+def _capability_policies(root: Path, group: str, project: str) -> StepResult:
+    """Regenerate the capability policy overlay from the registry.
+
+    Platform-scope, not project-scope: the file is one per repository and a pure
+    function of `CAPABILITIES`. It runs inside the per-project loop anyway because
+    that is where every other regeneration runs, and writing an identical file
+    eight times is cheaper than a second place for steps to live.
+
+    Idempotent by construction — same registry, same bytes. The step reports the
+    policy count rather than a diff, because a changed count is the thing worth
+    noticing in a bootstrap log.
+    """
+    from pf.capabilities import (
+        defaults,
+        policy_additions,
+        resolve,
+        write_capability_policies,
+    )
+
+    caps = resolve(defaults())
+    before = (root / "platform" / "src" / "pf" / "ontology"
+              / "policy.capabilities.yaml").read_text() if (
+        root / "platform" / "src" / "pf" / "ontology"
+        / "policy.capabilities.yaml").exists() else ""
+    path = write_capability_policies(root, caps)
+    n = len(policy_additions(caps))
+    verb = "unchanged" if path.read_text() == before else "rewritten"
+    return StepResult("capability policies", "ok",
+                      f"{n} policy(ies) from {len(caps)} capability(ies), {verb}")
+
+
+def _claude_settings(root: Path, group: str, project: str) -> StepResult:
+    """Migrate this project's `.claude/settings.json` to the current schema.
+
+    The scaffolder wrote two keys in shapes Claude Code rejects — `enabledPlugins`
+    as a list, and marketplace sources holding a bare path where the source *kind*
+    belongs. Fixing the template only helps projects written after it, and this is
+    the failure the module docstring above describes: a hole that stays silent
+    until someone notices. A rejected settings file loads none of the plugins it
+    declares, `power-tools@platform` among them, so the project loses `kg_search`
+    and `impact_analysis` without ever saying so.
+
+    Runs before `tools` and `capabilities` because both merge into this file, and
+    merging into settings one schema version behind is what turns a repair into a
+    crash. Idempotent: `normalize` reports no changes for a current file, and the
+    file is only rewritten when there is something to change.
+    """
+    from pf.scaffold.claude_settings import ensure_plugins, normalize
+    from pf.scaffold.generator import default_plugins
+
+    path = _pdir(root, group, project) / ".claude" / "settings.json"
+    if not path.exists():
+        return StepResult("claude settings", "skipped", "no .claude/settings.json")
+    try:
+        settings = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        # Reported, not raised: a hand-edited file with a stray comma must not
+        # stop the twelve steps after this one.
+        return StepResult("claude settings", "failed", f"invalid JSON: {exc}")
+
+    changes = normalize(settings)
+    # Order matters: `ensure_plugins` writes into `enabledPlugins` as a record,
+    # which is only what it is once `normalize` has migrated it.
+    changes += ensure_plugins(settings, default_plugins(group))
+    if not changes:
+        return StepResult("claude settings", "ok", "current")
+    path.write_text(json.dumps(settings, indent=2) + "\n")
+    return StepResult("claude settings", "ok", "; ".join(changes))
 
 
 def _bootstrap_tools(root: Path, group: str, project: str) -> list[StepResult]:
@@ -321,9 +409,9 @@ def _ci_workflow(root: Path, group: str, project: str) -> StepResult:
 
     target.parent.mkdir(parents=True, exist_ok=True)
     content = render_project_workflow(group, project, jobs)
-    changed = not target.exists() or target.read_text() != content
+    changed = not target.exists() or target.read_text(encoding="utf-8") != content
     if changed:
-        target.write_text(content)
+        target.write_text(content, encoding="utf-8")
 
     removed = []
     for rel in legacy_paths(project):
@@ -363,7 +451,7 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
             f"      location_name: {g}__{p}",
         ]
         n += 1
-    (root / "platform" / "workspace.yaml").write_text("\n".join(lines) + "\n")
+    (root / "platform" / "workspace.yaml").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return StepResult("dagster code location", "ok", f"{n} location(s)")
 
 
@@ -397,7 +485,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
 
     dbt_yml = d / "transform" / "dbt_project.yml"
     if dbt_yml.exists():
-        text = dbt_yml.read_text()
+        text = dbt_yml.read_text(encoding="utf-8")
         try:
             paths = [str(p) for p in (yaml.safe_load(text) or {}).get("macro-paths") or []]
         except yaml.YAMLError:
@@ -419,12 +507,12 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
                     out += [f'  - "{m}"' for m in missing]
                     inserted = True
             if inserted:
-                dbt_yml.write_text("\n".join(out) + "\n")
+                dbt_yml.write_text("\n".join(out) + "\n", encoding="utf-8")
                 changed.append(f"macro-paths += {len(missing)}")
 
     profiles = d / "transform" / "profiles.yml"
     if profiles.exists():
-        text = profiles.read_text()
+        text = profiles.read_text(encoding="utf-8")
         try:
             doc = yaml.safe_load(text) or {}
         except yaml.YAMLError:
@@ -436,7 +524,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
         absent = [n for n in PROJECT_TARGETS if outputs and n not in outputs]
         if absent:
             text = text.rstrip("\n") + "\n" + "".join(render_target(n, PROJECT_TARGETS[n]) for n in absent)
-            profiles.write_text(text)
+            profiles.write_text(text, encoding="utf-8")
             changed.append(f"profiles += {', '.join(absent)}")
 
         # Point `prod` at the production warehouse, if it is still the DuckDB
@@ -465,7 +553,7 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
             if placeholder:
                 new_text, swapped = replace_target(text, "prod", wh.output)
                 if swapped:
-                    profiles.write_text(new_text)
+                    profiles.write_text(new_text, encoding="utf-8")
                     changed.append(f"prod -> {wh.name}")
             elif prod:
                 # Name the engine the way an operator would. DuckLake reports as
@@ -479,6 +567,57 @@ def _dbt_wiring(root: Path, group: str, project: str) -> StepResult:
     if not changed:
         return StepResult("dbt wiring", "ok", "macro-paths and targets current")
     return StepResult("dbt wiring", "ok", "; ".join(changed))
+
+
+def _project_atlas(root: Path, group: str, project: str) -> StepResult:
+    """The project's own atlas, and the config that decides when it refreshes.
+
+    The config is written only when absent — it is a decision a project owns,
+    and a bootstrap that reset it every run would quietly undo an opt-out. The
+    page itself is regenerated every time, because it is a projection.
+    """
+    from pf import atlas
+
+    d = _pdir(root, group, project)
+    cfg_path = d / atlas.CONFIG_NAME
+    seeded = ""
+    if not cfg_path.exists():
+        cfg_path.write_text(atlas.default_yaml())
+        seeded = "atlas.yaml written; "
+
+    cfg = atlas.load_config(root, group, project)
+    out = atlas.write(root, group, project, cfg)
+    if out is None:
+        return StepResult("project atlas", "skipped", f"{seeded}disabled in atlas.yaml")
+    f = atlas.gather(root, group, project)
+    return StepResult("project atlas", "ok",
+                      f"{seeded}{out.name} · {f.nodes} node(s) · on: "
+                      f"{', '.join(cfg.phases) or 'request only'}")
+
+
+def _render_architecture(root: Path, group: str, project: str) -> StepResult:
+    """The on-demand map of this project — every feature, present or not.
+
+    Runs near the end deliberately: it reports on the CI workflow, the Dagster
+    registration and the dbt targets that earlier steps create, so running it
+    first would draw a project as missing three things it acquired seconds later.
+
+    Unmapped entries are reported but do not fail the step. A directory the
+    feature registry does not know about is a gap in `pf.architecture.FEATURES`,
+    which is platform code — failing eight projects' bootstrap for one missing
+    registry entry blames the wrong person. `pf arch --check` fails on it, in CI,
+    where the platform is what is being changed.
+    """
+    from pf.architecture import ARCHITECTURE_BUDGET, write
+    from pf.kg.card import estimate_tokens
+
+    path, a = write(root, group, project)
+    n = estimate_tokens(path.read_text())
+    status: Status = "ok" if n <= ARCHITECTURE_BUDGET else "failed"
+    detail = f"~{n} tokens / {ARCHITECTURE_BUDGET}, {len(a.gaps)} gap(s)"
+    if a.unmapped:
+        detail += f" · {len(a.unmapped)} unmapped: {', '.join(a.unmapped[:3])}"
+    return StepResult("architecture map", status, detail)
 
 
 def _validate(root: Path, group: str, project: str) -> StepResult:
@@ -522,54 +661,41 @@ STEPS: list[Step] = [
     Step("group card", "sister roster, so a new project is visible to its siblings", _render_group_card),
     Step("MDL manifest", "the BI / WrenAI projection; stable path before first model", _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
-    Step(
-        "otop manifest",
-        "policy and evidence as an OpenTopology 0.2 graph; validated against the vendored schema",
-        _export_otop,
-    ),
-    Step(
-        "vendor docs",
-        "provenance stays generated, so it cannot drift from the registry the tooling reads",
-        _vendor_docs,
-    ),
-    Step(
-        "reporting",
-        "dashboards are a projection of the metrics, regenerated rather than hand-maintained",
-        _build_reporting,
-    ),
-    Step(
-        "tools",
-        "a tool enabled for the group must reach every sister, including projects created before it existed",
-        _bootstrap_tools,
-    ),
-    Step(
-        "capabilities",
-        "a default-enabled capability must reach every project, including ones scaffolded before it was a default",
-        _bootstrap_capabilities,
-    ),
-    Step(
-        "group air.yaml",
-        "a family with no control declaration has a gate that passes by finding nothing to check",
-        _group_air,
-    ),
-    Step(
-        "ci workflow",
-        "one workflow per project, composed from the jobs its capabilities declare, so CI is readable in one place",
-        _ci_workflow,
-    ),
-    Step("dagster code location", "an unregistered project never runs", _register_code_location),
-    Step(
-        "dbt wiring",
-        "a project scaffolded before a toolkit existed cannot "
-        "compile its macros, and one with no base target cannot "
-        "be diffed",
-        _dbt_wiring,
-    ),
-    Step(
-        "dev serving",
-        "the served dev database and its guardrails, documented in the project rather than assumed",
-        _dev_serving,
-    ),
+    Step("otop manifest", "policy and evidence as an OpenTopology 0.2 graph; "
+                          "validated against the vendored schema", _export_otop),
+    Step("vendor docs", "provenance stays generated, so it cannot drift from the "
+                        "registry the tooling reads", _vendor_docs),
+    Step("reporting", "dashboards are a projection of the metrics, regenerated "
+                      "rather than hand-maintained", _build_reporting),
+    Step("capability policies", "an obligation a capability introduces must be "
+                                "inspectable and enforceable, not prose in a skill",
+         _capability_policies),
+    Step("claude settings", "a settings file the schema rejects loads none of "
+                            "the plugins it declares, silently", _claude_settings),
+    Step("tools", "a tool enabled for the group must reach every sister, "
+                  "including projects created before it existed", _bootstrap_tools),
+    Step("capabilities", "a default-enabled capability must reach every project, "
+                         "including ones scaffolded before it was a default",
+         _bootstrap_capabilities),
+    Step("notify channel", "where loops and answers are delivered; names an env "
+                           "var, never a URL", _group_notify),
+    Step("group air.yaml", "a family with no control declaration has a gate that "
+                           "passes by finding nothing to check", _group_air),
+    Step("ci workflow", "one workflow per project, composed from the jobs its "
+                        "capabilities declare, so CI is readable in one place",
+         _ci_workflow),
+    Step("dagster code location", "an unregistered project never runs",
+         _register_code_location),
+    Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
+                       "compile its macros, and one with no base target cannot "
+                       "be diffed", _dbt_wiring),
+    Step("dev serving", "the served dev database and its guardrails, documented "
+                        "in the project rather than assumed", _dev_serving),
+    Step("project atlas", "each project publishes a picture of its own graph, "
+                          "refreshed around its own dbt runs", _project_atlas),
+    Step("architecture map", "every feature of this project, present or absent, "
+                             "so an agent routes instead of reading the tree",
+         _render_architecture),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 

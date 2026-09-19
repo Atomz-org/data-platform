@@ -2,12 +2,14 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "../../../../platform"
+        "source": "directory",
+        "path": "../../../../platform"
       }
     },
     "acme": {
       "source": {
-        "source": "../.."
+        "source": "directory",
+        "path": "../.."
       }
     }
   },
@@ -26,6 +28,8 @@
     "acme-group@acme": true,
     "power-tools@platform": true,
     "evidence-bi@platform": true,
+    "dbt-expectations@platform": true,
+    "dbt-elementary@platform": true,
     "elementary-observe@platform": true
   },
   "permissions": {

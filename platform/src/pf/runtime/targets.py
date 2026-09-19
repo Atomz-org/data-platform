@@ -71,6 +71,16 @@ class ProductionWarehouse:
     default_enabled: bool = False
     #: Anything an operator has to know that is neither credentials nor auth.
     caveats: tuple[str, ...] = field(default_factory=tuple)
+    #: MCP server definition(s) for querying this warehouse directly, merged into
+    #: the project's `.mcp.json` by `capability()`. Declared beside the dbt target
+    #: for the same reason `om_connection` is: the engine dbt writes to and the
+    #: engine an agent reads from must be the same engine, and two definitions in
+    #: two files is how they end up not being.
+    #:
+    #: Credentials here are **not** added to `env`. That tuple is what `pf doctor`
+    #: demands before `DBT_TARGET=prod` will connect, and a missing MCP token must
+    #: not read as a broken warehouse — the models still build without it.
+    mcp: dict[str, object] = field(default_factory=dict)
     #: OpenMetadata's connection `type` for this engine, and the config it
     #: expects. Declared beside the dbt target on purpose: a warehouse the
     #: platform can deploy to but not catalogue is half a warehouse, and keeping
@@ -112,6 +122,17 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "`SNOWFLAKE_PRIVATE_KEY_PATH`. Set `SNOWFLAKE_PASSWORD` instead only "
             "if key-pair is not available to you; dbt uses whichever is present."
         ),
+        # Snowflake's own MCP server is a *hosted* endpoint, not a local process:
+        # you create an MCP server object in a database/schema and reach it over
+        # HTTP with OAuth. So this is a `url`, not a `command` — and it is the one
+        # warehouse here an agent cannot reach without server-side setup first.
+        mcp={"snowflake": {
+            "url": "${SNOWFLAKE_MCP_URL}",
+            "auth": {
+                "CLIENT_ID": "${SNOWFLAKE_MCP_CLIENT_ID}",
+                "CLIENT_SECRET": "${SNOWFLAKE_MCP_CLIENT_SECRET}",
+            },
+        }},
         om_type="Snowflake",
         om_connection={
             "type": "Snowflake",
@@ -154,6 +175,15 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
                 "compile here."
             ),
         ),
+        # Google's MCP Toolbox, run through npx so nothing has to be installed
+        # first. `--prebuilt bigquery` is their maintained toolset; the alternative
+        # is downloading the `toolbox` binary and pinning it per platform, which
+        # is a second install path to keep current for no extra capability.
+        mcp={"bigquery": {
+            "command": "npx",
+            "args": ["-y", "@toolbox-sdk/server", "--prebuilt", "bigquery", "--stdio"],
+            "env": {"BIGQUERY_PROJECT": "${BIGQUERY_PROJECT}"},
+        }},
         om_type="BigQuery",
         om_connection={
             "type": "BigQuery",
@@ -280,6 +310,7 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "threads": "{{ env_var('DUCKLAKE_THREADS', '1') | int }}",
         },
         env=("DUCKLAKE_METADATA",),
+        plugins=("duckdb-ops@platform",),
         default_enabled=True,
         auth_note=(
             "`DUCKLAKE_METADATA` is the catalog: a path like "
@@ -314,6 +345,17 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
                 "not catalogued; `om_type` is empty on purpose."
             ),
         ),
+        # MotherDuck's DuckDB server, pointed at the same catalog dbt opens — one
+        # `DUCKLAKE_METADATA`, so the lake an agent queries cannot drift from the
+        # lake the models build into.
+        #
+        # Read-only is the default and is left alone deliberately: this target is
+        # production. `--read-write` exists, and turning it on means an agent can
+        # DROP a production table with one tool call.
+        mcp={"ducklake": {
+            "command": "uvx",
+            "args": ["mcp-server-motherduck", "--db-path", "ducklake:${DUCKLAKE_METADATA}"],
+        }},
     ),
     "iceberg": ProductionWarehouse(
         name="iceberg",

@@ -61,7 +61,8 @@ def _load(project_dir: Path) -> tuple[dict, dict]:
     target = project_dir / "transform" / "target"
     sm = target / "semantic_manifest.json"
     mdl = project_dir / "mdl" / "mdl.json"
-    return (json.loads(sm.read_text()) if sm.exists() else {}, json.loads(mdl.read_text()) if mdl.exists() else {})
+    return (json.loads(sm.read_text(encoding="utf-8")) if sm.exists() else {},
+            json.loads(mdl.read_text(encoding="utf-8")) if mdl.exists() else {})
 
 
 _DIM_REF = re.compile(r"\{\{\s*Dimension\(\s*'([^']+)'\s*\)\s*\}\}")
@@ -512,12 +513,13 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     (out / "sources" / project.replace("-", "_")).mkdir(parents=True, exist_ok=True)
 
     for spec in specs:
-        (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(_metric_sql(spec, schema))
-        (out / "pages" / "metrics" / f"{spec.name}.md").write_text(_metric_page(project, spec))
+        (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(_metric_sql(spec, schema), encoding="utf-8")
+        (out / "pages" / "metrics" / f"{spec.name}.md").write_text(_metric_page(project, spec), encoding="utf-8")
 
-    (out / "pages" / "index.md").write_text(_index_page(project, specs))
-    (out / "evidence.config.yaml").write_text(_config(project, warehouse))
-    (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(_source_conn(project, warehouse))
+    (out / "pages" / "index.md").write_text(_index_page(project, specs), encoding="utf-8")
+    (out / "evidence.config.yaml").write_text(_config(project, warehouse), encoding="utf-8")
+    (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(
+        _source_conn(project, warehouse), encoding="utf-8")
 
     counts = _row_counts(
         root, group, project, [(m["tableReference"]["schema"], m["name"]) for m in mdl.get("models", [])]
@@ -552,8 +554,7 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
             f"-- contract with the pages reading it, and a star changes shape silently.\n"
             f"select\n"
             + ",\n".join(f"    {c}" for c in visible)
-            + f"\nfrom {model['tableReference']['schema']}.{name}\n"
-        )
+            + f"\nfrom {model['tableReference']['schema']}.{name}\n", encoding="utf-8")
         extracted += 1
 
     # Dependency set is evidence-dev/template's package.json verbatim, not a
@@ -564,66 +565,60 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # `overrides` block is what actually resolves the peer conflict — reaching for
     # legacy-peer-deps instead suppresses the error and then omits the peers the
     # build needs.
-    (out / "package.json").write_text(
-        json.dumps(
-            {
-                "name": f"{project}-reporting",
-                "version": "0.0.1",
-                "private": True,
-                "type": "module",
-                "scripts": {
-                    "build": "evidence build",
-                    "build:strict": "evidence build:strict",
-                    "dev": "evidence dev",
-                    "sources": "evidence sources",
-                    "preview": "evidence preview",
-                },
-                "dependencies": {
-                    "@evidence-dev/bigquery": "^2.0.12",
-                    "@evidence-dev/core-components": "^5.4.2",
-                    "@evidence-dev/csv": "^1.0.16",
-                    "@evidence-dev/databricks": "^1.0.10",
-                    "@evidence-dev/duckdb": "^2.0.1",
-                    "@evidence-dev/evidence": "^40.1.8",
-                    "@evidence-dev/motherduck": "^1.0.6",
-                    "@evidence-dev/mssql": "^1.1.4",
-                    "@evidence-dev/mysql": "^1.1.6",
-                    "@evidence-dev/postgres": "^1.0.10",
-                    "@evidence-dev/snowflake": "^1.2.4",
-                    "@evidence-dev/source-javascript": "^0.0.3",
-                    "@evidence-dev/sqlite": "^2.0.9",
-                    "@evidence-dev/trino": "^1.0.11",
-                },
-                # The one peer legacy-peer-deps skips that the build genuinely needs.
-                # Version comes from evidence@40.1.8's own peerDependencies, not a guess.
-                "devDependencies": {
-                    "@sveltejs/vite-plugin-svelte": "3.1.2",
-                    # Build-time requires the template resolves from the project
-                    # root, not from its own node_modules — absent, the build
-                    # dies at the settings route (git-remote-origin-url) or at
-                    # PostCSS config load (autoprefixer/postcss). Measured, not
-                    # theoretical: both happened on the first clean build.
-                    "git-remote-origin-url": "^4.0.0",
-                    "autoprefixer": "^10.4.20",
-                    "postcss": "^8.4.47",
-                },
-                "overrides": {
-                    "jsonwebtoken": "9.0.0",
-                    "trim@<0.0.3": ">0.0.3",
-                    "sqlite3": "5.1.5",
-                    "axios": "^1.7.4",
-                },
-            },
-            indent=2,
-        )
-        + "\n"
-    )
+    (out / "package.json").write_text(json.dumps({
+        "name": f"{project}-reporting",
+        "version": "0.0.1",
+        "private": True,
+        "type": "module",
+        "scripts": {
+            "build": "evidence build",
+            "build:strict": "evidence build:strict",
+            "dev": "evidence dev",
+            "sources": "evidence sources",
+            "preview": "evidence preview",
+        },
+        "dependencies": {
+            "@evidence-dev/bigquery": "^2.0.12",
+            "@evidence-dev/core-components": "^5.4.2",
+            "@evidence-dev/csv": "^1.0.16",
+            "@evidence-dev/databricks": "^1.0.10",
+            "@evidence-dev/duckdb": "^2.0.1",
+            "@evidence-dev/evidence": "^40.1.8",
+            "@evidence-dev/motherduck": "^1.0.6",
+            "@evidence-dev/mssql": "^1.1.4",
+            "@evidence-dev/mysql": "^1.1.6",
+            "@evidence-dev/postgres": "^1.0.10",
+            "@evidence-dev/snowflake": "^1.2.4",
+            "@evidence-dev/source-javascript": "^0.0.3",
+            "@evidence-dev/sqlite": "^2.0.9",
+            "@evidence-dev/trino": "^1.0.11",
+        },
+        # The one peer legacy-peer-deps skips that the build genuinely needs.
+        # Version comes from evidence@40.1.8's own peerDependencies, not a guess.
+        "devDependencies": {
+            "@sveltejs/vite-plugin-svelte": "3.1.2",
+            # Build-time requires the template resolves from the project
+            # root, not from its own node_modules — absent, the build
+            # dies at the settings route (git-remote-origin-url) or at
+            # PostCSS config load (autoprefixer/postcss). Measured, not
+            # theoretical: both happened on the first clean build.
+            "git-remote-origin-url": "^4.0.0",
+            "autoprefixer": "^10.4.20",
+            "postcss": "^8.4.47",
+        },
+        "overrides": {
+            "jsonwebtoken": "9.0.0",
+            "trim@<0.0.3": ">0.0.3",
+            "sqlite3": "5.1.5",
+            "axios": "^1.7.4",
+        },
+    }, indent=2) + "\n", encoding="utf-8")
 
     # legacy-peer-deps is required on npm >= 11, which resolves Evidence's own
     # peer graph more strictly than the npm the upstream template targets. It is
     # safe *because* the dependency block above is the complete canonical set —
     # nothing the build needs is left to peer resolution.
-    (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\nlegacy-peer-deps=true\n")
+    (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\nlegacy-peer-deps=true\n", encoding="utf-8")
 
     # Toolchain note, verified by controlled experiment rather than assumed:
     # a pristine `degit evidence-dev/template` fails to build identically on
@@ -631,7 +626,7 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # supported-runtime boundary, not this generator. `evidence sources` and
     # `evidence dev` both work. Recorded next to the code so the next person
     # does not repeat the bisection.
-    (out / ".nvmrc").write_text("20\n")
+    (out / ".nvmrc").write_text("20\n", encoding="utf-8")
 
     return {
         "metrics": len(specs),

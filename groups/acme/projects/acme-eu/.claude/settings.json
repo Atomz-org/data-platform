@@ -2,12 +2,14 @@
   "extraKnownMarketplaces": {
     "platform": {
       "source": {
-        "source": "../../../../platform"
+        "source": "directory",
+        "path": "../../../../platform"
       }
     },
     "acme": {
       "source": {
-        "source": "../.."
+        "source": "directory",
+        "path": "../.."
       }
     }
   },
@@ -27,6 +29,8 @@
     "evidence-bi@platform": true,
     "power-tools@platform": true,
     "dbt-snowflake@platform": true,
+    "dbt-expectations@platform": true,
+    "dbt-elementary@platform": true,
     "elementary-observe@platform": true
   },
   "permissions": {
@@ -64,6 +68,10 @@
       "Bash(pf align:*)",
       "Bash(pf dialect:*)",
       "Bash(pf artifacts:*)",
+      "Bash(pf loop:*)",
+      "Bash(pf ask:*)",
+      "Bash(pf logs:*)",
+      "Bash(pf evals-gate:*)",
       "Bash(pf tool expectations:*)",
       "Bash(pf air:*)",
       "Bash(pf tool elementary:*)",

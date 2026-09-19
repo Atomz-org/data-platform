@@ -46,14 +46,25 @@ PROFILE_TEMPLATE = """\
 def write_profiles(project_dir: str | Path, project: str) -> Path:
     out = Path(project_dir) / "transform" / "profiles.yml"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(PROFILE_TEMPLATE.format(project=project.replace("-", "_")))
+    out.write_text(PROFILE_TEMPLATE.format(project=project.replace("-", "_")), encoding="utf-8")
     return out
 
 
-def dbt(
-    project_dir: str | Path, *args: str, target: str = "dev", duckdb_path: str | Path | None = None, check: bool = False
-) -> subprocess.CompletedProcess:
+def dbt(project_dir: str | Path, *args: str, target: str = "dev",
+        duckdb_path: str | Path | None = None, check: bool = False,
+        hooks: bool = True) -> subprocess.CompletedProcess:
     """Invoke dbt Core in a project's transform/ directory.
+
+    Every dbt invocation in this platform comes through here — `seed.py`,
+    `pf seed`, `deps`, `parse` — which is what makes it the one place a
+    before/after hook can be attached without each caller remembering to.
+
+    The hooks fire only for `run` and `build`. `parse`, `deps`, `ls` and `debug`
+    change nothing a per-project artefact would show, and firing on those would
+    put three identical regenerations in front of every real one.
+
+    `hooks=False` is for a caller that is *inside* a hook. Nothing does that
+    today; it exists so that the first thing which does cannot recurse.
 
     dbt is a writer, so when the project's dev database is served by a quack
     server (`pf quack serve`), the invocation runs inside the write window —
@@ -70,15 +81,37 @@ def dbt(
     if duckdb_path:
         env["PF_DUCKDB_PATH"] = str(duckdb_path)
     transform = Path(project_dir) / "transform"
+    command = args[0] if args else ""
+
+    if hooks:
+        _run_hooks(project_dir, "before_dbt_run", command)
+    # Hooks stay outside the window: they draw from the graph, not the served
+    # database, and a slow hook must not hold the file away from the server.
     windowed = None if target == "prod" else env.get("PF_DUCKDB_PATH")
     with write_window(windowed):
-        return subprocess.run(
+        proc = subprocess.run(
             ["dbt", *args, "--project-dir", str(transform), "--profiles-dir", str(transform)],
-            env=env,
-            capture_output=True,
-            text=True,
-            check=check,
+            env=env, capture_output=True, text=True, check=check,
         )
+    if hooks:
+        _run_hooks(project_dir, "after_dbt_run", command)
+    return proc
+
+
+def _run_hooks(project_dir: str | Path, phase: str, command: str) -> None:
+    """Per-project work bracketing a dbt run.
+
+    Imported lazily and swallowed whole. A hook is a convenience — publishing a
+    picture of the graph — and a broken one must never be able to fail a build
+    that otherwise succeeded. The run is the thing that matters; the artefact is
+    not, and the two must not share a fate.
+    """
+    try:
+        from pf.atlas import run_phase
+
+        run_phase(project_dir, phase, command)
+    except Exception:  # noqa: BLE001 — see the docstring
+        pass
 
 
 def deps(project_dir: str | Path, duckdb_path: str | Path | None = None) -> subprocess.CompletedProcess:
@@ -135,14 +168,14 @@ def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = No
 
 def manifest(project_dir: str | Path) -> dict[str, Any]:
     p = Path(project_dir) / "transform" / "target" / "manifest.json"
-    return json.loads(p.read_text()) if p.exists() else {}
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
 
 def run_results(project_dir: str | Path) -> dict[str, Any]:
     """run_results.json — the dbt Core replacement for the Cloud Jobs API.
     This is what the triage agent reads."""
     p = Path(project_dir) / "transform" / "target" / "run_results.json"
-    return json.loads(p.read_text()) if p.exists() else {}
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
 
 
 def failed_nodes(project_dir: str | Path) -> list[dict[str, Any]]:
@@ -179,23 +212,61 @@ def modified_nodes(project_dir: str | Path, state_dir: str | Path, duckdb_path: 
     return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip() and " " not in ln.strip()]
 
 
-def mf_query(
-    project_dir: str | Path, metrics: list[str], group_by: list[str], where: str = "", limit: int = 100
-) -> subprocess.CompletedProcess:
-    """MetricFlow CLI — the dbt Core stand-in for the Cloud Semantic Layer API.
+def mf_env(project_dir: str | Path, target: str = "dev") -> dict[str, str]:
+    """The environment MetricFlow needs: the same one `dbt()` builds.
+
+    `mf` reads `profiles.yml`, and the profile resolves its DuckDB path from
+    `PF_DUCKDB_PATH`. Running `mf` with the caller's environment left that
+    unset, so every query — from `pf ask`, the MCP `query_metrics` tool and the
+    onboarding metrics check — failed profile validation while `dbt build` in
+    the same project succeeded. One function, used by every `mf` invocation.
+    """
+    import os
+
+    project_dir = Path(project_dir).resolve()   # mf joins a relative dir onto cwd
+    env = dict(os.environ)
+    env.setdefault("DBT_TARGET", target)
+    if not env.get("PF_DUCKDB_PATH"):
+        module = project_dir.name.replace("-", "_")
+        env["PF_DUCKDB_PATH"] = str((project_dir / "data" / f"{module}.duckdb").resolve())
+    transform = project_dir / "transform"
+    env.setdefault("DBT_PROFILES_DIR", str(transform))
+    env.setdefault("DBT_PROJECT_DIR", str(transform))
+    return env
+
+
+def mf(project_dir: str | Path, *args: str, timeout: int = 300) -> subprocess.CompletedProcess:
+    """Invoke the MetricFlow CLI in a project's transform/ with the right env.
 
     mf reads through dbt's adapter — a direct file open — so while a quack
     server owns the dev database, the file is borrowed for the query.
     """
-    import os
-
     from pf.runtime.quack import write_window
 
-    args = ["mf", "query", "--metrics", ",".join(metrics)]
+    transform = Path(project_dir) / "transform"
+    env = mf_env(project_dir)
+    try:
+        # utf-8 explicitly: mf prints ✔ and ✗, and on Windows the default codec
+        # for a pipe is cp1252, which turns a successful query into a decode error.
+        with write_window(env.get("PF_DUCKDB_PATH")):
+            return subprocess.run(["mf", *args], cwd=str(transform), env=env,
+                                  capture_output=True, text=True, encoding="utf-8",
+                                  errors="replace", timeout=timeout)
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(["mf", *args], 127, "",
+                                           "mf not found — `uv sync` installs metricflow")
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(["mf", *args], 124, "",
+                                           f"mf timed out after {timeout}s")
+
+
+def mf_query(project_dir: str | Path, metrics: list[str], group_by: list[str],
+             where: str = "", limit: int = 100) -> subprocess.CompletedProcess:
+    """MetricFlow CLI — the dbt Core stand-in for the Cloud Semantic Layer API."""
+    args = ["query", "--metrics", ",".join(metrics)]
     if group_by:
         args += ["--group-by", ",".join(group_by)]
     if where:
         args += ["--where", where]
     args += ["--limit", str(limit)]
-    with write_window(os.environ.get("PF_DUCKDB_PATH")):
-        return subprocess.run(args, cwd=str(Path(project_dir) / "transform"), capture_output=True, text=True)
+    return mf(project_dir, *args)

@@ -22,7 +22,7 @@ def render(text: str, ctx: dict[str, Any]) -> str:
 
 def write(path: Path, content: str, ctx: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(render(content, ctx))
+    path.write_text(render(content, ctx), encoding="utf-8")
     return path
 
 
@@ -40,14 +40,13 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
     if gdir.exists():
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
-    ctx = {
-        "group": group,
-        "domain": domain,
-        "classes_yaml": "\n".join(f"  - {c}" for c in classes),
-        "tools_yaml": _default_tools_yaml(),
-    }
+    ctx = {"group": group, "domain": domain,
+           "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
+           "classes_yaml": "\n".join(f"  - {c}" for c in classes),
+           "tools_yaml": _default_tools_yaml()}
     created = [
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "notify.yaml", GROUP_NOTIFY, ctx),
         write(gdir / "air.yaml", GROUP_AIR, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
@@ -215,6 +214,20 @@ version: 1
 tools:{{tools_yaml}}
 """
 
+GROUP_NOTIFY = """\
+# Where {{group}}'s loops and answers are delivered. Slack and Teams both accept
+# an incoming webhook with a `text` payload; nothing else is required.
+#
+# Values are environment-variable names, never URLs: a webhook is a credential
+# and this file is committed. Set PF_NOTIFY_WEBHOOK_{{group_upper}} (or the
+# per-channel variables below) in the environment that runs the loops.
+# `PF_NOTIFY_WEBHOOK` overrides everything, for CI and laptops.
+channels:
+  default: ${PF_NOTIFY_WEBHOOK_{{group_upper}}}
+  loops:   ${PF_NOTIFY_WEBHOOK_{{group_upper}}_LOOPS}
+  ask:     ${PF_NOTIFY_WEBHOOK_{{group_upper}}_ASK}
+"""
+
 PROJECT_TOOLS = """\
 # Tools for {{project}}, merged over groups/{{group}}/tools.yaml.
 #
@@ -329,25 +342,52 @@ derivable rather than guessed. `pf check` fails on an undeclared join.
 - Run `impact_analysis` before changing a column, a model or a metric.
 """
 
-PROJECT_SETTINGS = """\
+#: The platform toolkits every project gets, in the order they read.
+#:
+#: One list because it feeds two places that must not disagree: the settings a
+#: new project is scaffolded with, and `pf.scaffold.claude_settings.ensure_plugins`,
+#: which brings an existing project up to the current set. When those were the
+#: same JSON typed twice, adding a toolkit reached the projects created after it
+#: and no others — the same failure `Capability.default_enabled` exists to stop.
+#:
+#: A project's own group plugin is appended per project and is not listed here.
+DEFAULT_TOOLKITS: tuple[str, ...] = (
+    "platform-init",
+    "dlt-ingest",
+    "dlt-quality",
+    "dlt-explore",
+    "duckdb-ops",
+    "dbt-modeling",
+    "dbt-semantic",
+    "dbt-testing",
+    "dbt-expectations",
+    "dbt-elementary",
+    "dbt-govern",
+    "dagster-orchestrate",
+    "python-standards",
+    "power-tools",
+)
+
+
+def default_plugins(group: str) -> dict[str, bool]:
+    """The full `enabledPlugins` record for a project in `group`."""
+    plugins = {f"{name}@platform": True for name in DEFAULT_TOOLKITS}
+    plugins[f"{group}-group@{group}"] = True
+    return plugins
+
+
+_PLUGIN_LINES = "\n".join(
+    f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
+
+PROJECT_SETTINGS = ("""\
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "{{group}}": { "source": { "source": "../.." } }
+    "platform": { "source": { "source": "directory", "path": "../../../../platform" } },
+    "{{group}}": { "source": { "source": "directory", "path": "../.." } }
   },
   "enabledPlugins": {
-    "platform-init@platform": true,
-    "dlt-ingest@platform": true,
-    "dlt-quality@platform": true,
-    "dlt-explore@platform": true,
-    "duckdb-ops@platform": true,
-    "dbt-modeling@platform": true,
-    "dbt-semantic@platform": true,
-    "dbt-testing@platform": true,
-    "dbt-govern@platform": true,
-    "dagster-orchestrate@platform": true,
-    "python-standards@platform": true,
-    "power-tools@platform": true,
+"""
+    + _PLUGIN_LINES + """
     "{{group}}-group@{{group}}": true
   },
   "permissions": {
@@ -376,7 +416,7 @@ PROJECT_SETTINGS = """\
     ]
   }
 }
-"""
+""")
 
 PROJECT_PYPROJECT = """\
 [project]
@@ -497,6 +537,7 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
     # staging lands in `base_staging` and never collides with `main_staging`.
     "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "schema": "base", "threads": 4},
 }
+
 
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:

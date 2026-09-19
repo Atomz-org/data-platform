@@ -1,6 +1,8 @@
 {
   "name": "platform",
-  "owner": { "name": "data-platform" },
+  "owner": {
+    "name": "data-platform"
+  },
   "description": "Shared toolkits for the agentic data platform: ingestion, modelling, semantics, orchestration, review and the power-user command layer.",
   "plugins": [
     {
@@ -47,6 +49,16 @@
       "name": "dbt-testing",
       "source": "./toolkits/dbt-testing",
       "description": "Data tests and unit tests"
+    },
+    {
+      "name": "dbt-elementary",
+      "source": "./toolkits/dbt-elementary",
+      "description": "Anomaly detection and test-result triage with Elementary"
+    },
+    {
+      "name": "dbt-expectations",
+      "source": "./toolkits/dbt-expectations",
+      "description": "Distribution, range and type tests with dbt_expectations"
     },
     {
       "name": "dbt-govern",

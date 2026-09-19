@@ -1,0 +1,98 @@
+# GENERATED from `Capability.policies` — do not edit.
+#
+# Written by `pf bootstrap` (step: capability policies) and by `pf new-project`.
+# Layered over policy.yaml at load time by `pf.ontology.model.load_ontology`,
+# through the same `merge_policies` guard every other overlay goes through: a
+# capability may tighten the floor and may never relax it.
+#
+# To change a rule here, change the `policies=` on the capability that declares
+# it — the `_capability` key on each entry names which one.
+policies:
+- id: money-amount-bounded
+  intent: A monetary column with no lower bound accepts the negative row that a refund, a
+    sign flip or a bad join produces, and it reaches a metric as a quietly smaller number.
+    The currency rule makes the amount interpretable; this makes it credible.
+  applies_to:
+    role: money_amount
+  constraint: range_asserted
+  params:
+    suggested: dbt_expectations.expect_column_values_to_be_between
+  severity: warning
+  enforced_by: []
+  evidence:
+  - dbt test
+  _capability: data-quality
+- id: source-declares-freshness
+  intent: A mart is stale because its source was. Monitoring the mart names the wrong artefact
+    to go fix, and monitoring nothing means the first report of a stopped pipeline comes from
+    whoever opened the dashboard.
+  applies_to:
+    artifact_glob: '**/transform/models/**/_*__sources.yml'
+  constraint: freshness_declared
+  severity: warning
+  enforced_by: []
+  evidence:
+  - dbt source freshness
+  - dbt test
+  _capability: data-quality
+- id: anomaly-tests-do-not-gate-merge
+  intent: "An anomaly test judges data; a merge gate judges code. Wiring a statistical test\
+    \ into the gate blocks a correct change because yesterday's load was small, and the cure\
+    \ is always to weaken the test \u2014 which is how the monitoring stops working."
+  applies_to:
+    artifact_glob: '**/.github/workflows/**'
+  constraint: not_in_gate
+  params:
+    excludes: elementary anomaly tests
+  severity: error
+  enforced_by:
+  - pf.capabilities:IMPACT_JOB
+  evidence:
+  - pf impact-gate
+  _capability: data-quality
+- id: entity-isolation-enforced
+  intent: "Business logic does not transfer between entities. A session that can read a sister\
+    \ project will carry an assumption across \u2014 a grain, a status enum, a revenue definition\
+    \ \u2014 and the bug that results is invisible, because the code it came from is correct\
+    \ in the project it came from."
+  applies_to:
+    artifact_glob: '**/groups/*/projects/*/**'
+  constraint: path_denied
+  params:
+    denies: sibling and cross-group reads
+  severity: error
+  enforced_by:
+  - pf.scaffold.generator:PROJECT_SETTINGS
+  - platform/hooks/pre_tool_use.py
+  evidence:
+  - pf gate
+  _capability: governance
+- id: vendor-is-read-only
+  intent: A vendored upstream is evidence of what an external project actually does. Editing
+    one turns it into a fork wearing a submodule's name, and every later diff against upstream
+    reads as drift that nobody introduced.
+  applies_to:
+    artifact_glob: vendor/**
+  constraint: path_denied
+  severity: error
+  enforced_by:
+  - gate.yaml:denylist
+  - platform/hooks/pre_tool_use.py
+  evidence:
+  - pf gate
+  - pf vendor drift
+  _capability: governance
+- id: agent-settings-schema-valid
+  intent: "A settings file the client rejects loads none of the plugins it declares, and says\
+    \ so nowhere a session can see. The platform's own retrieval tools arrive as plugins,\
+    \ so a schema error silently removes kg_search and impact_analysis \u2014 and an agent\
+    \ with no graph reads files instead and never reports why."
+  applies_to:
+    artifact_glob: '**/.claude/settings.json'
+  constraint: schema_current
+  severity: error
+  enforced_by:
+  - pf.scaffold.claude_settings:normalize
+  evidence:
+  - pf bootstrap
+  _capability: governance
