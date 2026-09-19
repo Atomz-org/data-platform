@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: yahoo_finance
+    schema: yahoo_finance
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: futures_prices
+      - name: fx_rates

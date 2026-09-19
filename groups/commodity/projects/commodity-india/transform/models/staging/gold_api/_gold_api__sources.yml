@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: gold_api
+    schema: gold_api
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: spot_prices

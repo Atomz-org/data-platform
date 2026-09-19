@@ -1,0 +1,77 @@
+version: 2
+resources:
+- resource: commodities
+  concept: Commodity
+  source: reference
+  roles:
+    commodity_id: natural_key
+    commodity_name: free_text
+    category: status_enum
+    segment: status_enum
+    exchange: status_enum
+    quote_unit: unit_of_measure
+    price_basis: status_enum
+    yahoo_symbol: free_text
+    spot_symbol: free_text
+  rename: {}
+  links: {}
+  description: Every commodity the tracker prices, with its benchmark, exchange and
+    the unit the benchmark is quoted per
+  grain: one tracked commodity
+- resource: futures_prices
+  concept: PriceObservation
+  source: yahoo_finance
+  roles:
+    quote_id: natural_key
+    open: unit_price
+    high: unit_price
+    low: unit_price
+    close: unit_price
+    currency: currency_code
+    trade_date: event_time
+    volume: quantity
+  rename:
+    open: open_price
+    high: high_price
+    low: low_price
+    close: close_price
+    currency: currency_code
+    trade_date: traded_at
+  links:
+    commodity_id: Commodity
+  description: Daily front-month futures candles from Yahoo Finance, in the exchange's
+    quote currency and contract unit (unconverted)
+  grain: one commodity per trading day
+- resource: fx_rates
+  concept: FxRate
+  source: yahoo_finance
+  roles:
+    fx_rate_id: natural_key
+    base_currency: currency_code
+    quote_currency: currency_code
+    rate: exchange_rate
+    rate_date: event_time
+  rename:
+    base_currency: base_currency_code
+    quote_currency: quote_currency_code
+    rate_date: rate_at
+  links: {}
+  description: Daily USD fixes from Yahoo Finance; rate = quote currency per 1 USD
+  grain: one currency pair per day
+- resource: spot_prices
+  concept: PriceObservation
+  source: gold_api
+  roles:
+    spot_quote_id: natural_key
+    price: unit_price
+    currency: currency_code
+    quote_unit: unit_of_measure
+    updated_at: event_time
+  rename:
+    price: spot_price
+    currency: currency_code
+    updated_at: quoted_at
+  links:
+    commodity_id: Commodity
+  description: Latest precious-metal spot quotes from gold-api.com, USD per troy ounce
+  grain: one precious metal per gold-api update

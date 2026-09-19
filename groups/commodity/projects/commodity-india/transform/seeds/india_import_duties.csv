@@ -1,0 +1,36 @@
+tariff_id,commodity_id,market_country,valid_from,valid_to,confirmed_from,is_import_prohibited,bcd_rate,aidc_rate,sws_rate,other_levy_rate,effective_duty_rate,duty_basis
+IN:gold:base,gold,IN,1900-01-01,,2026-06-01,false,0.10,0.05,0,0,0.15,BCD 10% + AIDC 5% (May 2026 bullion hike)
+IN:silver:base,silver,IN,1900-01-01,,2026-06-01,false,0.10,0.05,0,0,0.15,BCD 10% + AIDC 5% (May 2026 bullion hike)
+IN:platinum:base,platinum,IN,1900-01-01,,2026-06-01,false,0.10,0.054,0,0,0.154,BCD 10% + AIDC 5.4%
+IN:palladium:base,palladium,IN,1900-01-01,,2026-06-01,false,0.10,0.054,0,0,0.154,HS 7110 - BCD 10% + AIDC 5.4%
+IN:crude_oil_wti:base,crude_oil_wti,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,BCD Re 1/tonne (specific) - effectively 0%
+IN:crude_oil_brent:base,crude_oil_brent,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,BCD Re 1/tonne (specific) - effectively 0%
+IN:natural_gas:base,natural_gas,IN,1900-01-01,,2026-06-01,false,0.025,0,0.0025,0,0.0275,BCD 2.5% + SWS
+IN:copper:base,copper,IN,1900-01-01,,2026-06-01,false,0.05,0,0.005,0,0.055,BCD 5% + SWS
+IN:aluminium:base,aluminium,IN,1900-01-01,,2026-06-01,false,0.075,0,0.0075,0,0.0825,BCD 7.5% + SWS
+IN:zinc:base,zinc,IN,1900-01-01,,2026-06-01,false,0.05,0,0.005,0,0.055,BCD 5% + SWS
+IN:nickel:base,nickel,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,Duty free
+IN:lead:base,lead,IN,1900-01-01,,2026-06-01,false,0.05,0,0.005,0,0.055,BCD 5% + SWS
+IN:tin:base,tin,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,BCD free (critical mineral)
+IN:steel_hrc:base,steel_hrc,IN,1900-01-01,,2026-06-01,false,0.075,0,0.0075,0.115,0.1975,BCD 7.5% + SWS + safeguard (residual of the published 19.75% total)
+IN:iron_ore:base,iron_ore,IN,1900-01-01,,2026-06-01,false,0.025,0,0.0025,0,0.0275,BCD 2.5% + SWS
+IN:lithium_carbonate:base,lithium_carbonate,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,BCD free (critical mineral)
+IN:cobalt:base,cobalt,IN,1900-01-01,,2026-06-01,false,0,0,0,0,0,BCD free (critical mineral)
+IN:wheat:base,wheat,IN,1900-01-01,,2026-06-01,false,0.40,0,0.04,0,0.44,BCD 40% + SWS
+IN:corn:base,corn,IN,1900-01-01,,2026-06-01,false,0.50,0,0,0,0.50,BCD 50% (out-of-quota; TRQ imports 15%)
+IN:rice:base,rice,IN,1900-01-01,,2026-06-01,false,0.70,0,0,0,0.70,BCD 70% (non-basmati)
+IN:soybean:base,soybean,IN,1900-01-01,,2026-06-01,false,0.30,0,0,0,0.30,BCD ~30% (indicative)
+IN:soybean_meal:base,soybean_meal,IN,1900-01-01,,2026-06-01,false,0.15,0,0.015,0,0.165,BCD 15% + SWS
+IN:soybean_oil:base,soybean_oil,IN,1900-01-01,,2026-06-01,false,0.10,0.05,0.015,0,0.165,BCD 10% + AIDC 5% + SWS
+IN:canola_oil:base,canola_oil,IN,1900-01-01,,2026-06-01,false,0.20,0.05,0.025,0,0.275,BCD 20% + AIDC 5% + SWS
+IN:palm_oil:base,palm_oil,IN,1900-01-01,,2026-06-01,false,0.10,0.05,0.015,0,0.165,BCD 10% + AIDC 5% + SWS
+IN:sugar:base,sugar,IN,1900-01-01,,2026-06-01,false,1.00,0,0,0,1.00,BCD 100%
+IN:cotton:pre-2026-exemption,cotton,IN,1900-01-01,2026-05-31,,false,0.05,0.05,0.01,0,0.11,BCD 5% + AIDC 5% + SWS
+IN:cotton:2026-exemption,cotton,IN,2026-06-01,2026-10-31,2026-06-01,false,0,0,0,0,0,Duty-free window Jun 1 - Oct 31 2026
+IN:cotton:post-2026-exemption,cotton,IN,2026-11-01,,2026-11-01,false,0.05,0.05,0.01,0,0.11,BCD 5% + AIDC 5% + SWS (reverts after exemption)
+IN:coffee:base,coffee,IN,1900-01-01,,2026-06-01,false,1.00,0,0,0,1.00,BCD 100%
+IN:cocoa:base,cocoa,IN,1900-01-01,,2026-06-01,false,0.30,0,0.03,0,0.33,BCD 30% + SWS
+IN:orange_juice:base,orange_juice,IN,1900-01-01,,2026-06-01,false,0.30,0,0.03,0,0.33,BCD 30% + SWS
+IN:lumber:base,lumber,IN,1900-01-01,,2026-06-01,false,0.10,0,0.01,0,0.11,BCD 10% + SWS (sawn wood)
+IN:lean_hogs:base,lean_hogs,IN,1900-01-01,,2026-06-01,false,0.30,0,0.03,0,0.33,BCD 30% + SWS
+IN:live_cattle:base,live_cattle,IN,1900-01-01,,2026-06-01,true,,,,,,Import prohibited (DGFT)

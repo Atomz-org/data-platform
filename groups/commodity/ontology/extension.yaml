@@ -1,0 +1,158 @@
+# Group ontology extension — commodity market vocabulary.
+#
+# Layers over the platform ontology; never replaces it. Authored by hand when the
+# group was created, because no platform class describes a traded benchmark or a
+# customs tariff. Hand edits are expected and preserved.
+#
+# The roles below exist because the platform's `money_amount` is the wrong
+# contract for a price. `money_amount` is additive (it gets a sum-drift monitor
+# and `sum` measures) and staging rounds it to two decimals. A price is neither:
+# summing gold and copper prices means nothing, and NYMEX natural gas trades in
+# tenths of a cent. `unit_price` passes through staging untouched.
+
+classes:
+  Commodity:
+    label: Commodity
+    parent: Product
+    description: A traded raw material with an international benchmark, quoted per a physical unit.
+    identity: commodity_id
+    properties:
+      commodity_id:
+        datatype: string
+        role: natural_key
+        required: true
+      commodity_name:
+        datatype: string
+        role: free_text
+      category:
+        datatype: string
+        role: status_enum
+      segment:
+        datatype: string
+        role: status_enum
+      quote_unit:
+        datatype: string
+        role: unit_of_measure
+        required: true
+
+  PriceObservation:
+    label: PriceObservation
+    parent: Event
+    description: One benchmark price for one commodity at one point in time. Never summed.
+    identity: quote_id
+    properties:
+      quote_id:
+        datatype: string
+        role: natural_key
+        required: true
+      commodity_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      close_price:
+        datatype: decimal
+        role: unit_price
+        required: true
+      currency_code:
+        datatype: string
+        role: currency_code
+        required: true
+      traded_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      volume:
+        datatype: integer
+        role: quantity
+
+  FxRate:
+    label: FxRate
+    parent: Event
+    description: A daily exchange-rate fix — units of quote currency per one unit of base currency.
+    identity: fx_rate_id
+    properties:
+      fx_rate_id:
+        datatype: string
+        role: natural_key
+        required: true
+      base_currency_code:
+        datatype: string
+        role: currency_code
+        required: true
+      quote_currency_code:
+        datatype: string
+        role: currency_code
+        required: true
+      rate:
+        datatype: decimal
+        role: exchange_rate
+        required: true
+      rate_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+
+  ImportTariff:
+    label: ImportTariff
+    description: Customs duty a jurisdiction levies on importing a commodity, valid over an interval.
+    identity: tariff_id
+    properties:
+      tariff_id:
+        datatype: string
+        role: natural_key
+        required: true
+      commodity_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      market_country:
+        datatype: string
+        role: geo_country
+        required: true
+      effective_duty_rate:
+        datatype: decimal
+        role: rate_fraction
+      valid_from:
+        datatype: timestamp
+        role: valid_from
+        required: true
+      valid_to:
+        datatype: timestamp
+        role: valid_to
+
+roles:
+  unit_price:
+    datatype: decimal
+    review: distribution
+    description: Price of one unit of measure. Non-additive — never summed across rows. Qualified by a sibling currency_code and a unit_of_measure.
+  unit_of_measure:
+    datatype: string
+    review: categories
+    description: Physical unit a quantity or price is expressed per (troy_oz, lb, metric_ton, ...). Codes are the group units_of_measure seed.
+  exchange_rate:
+    datatype: decimal
+    review: distribution
+    description: Units of quote currency per one unit of base currency.
+  rate_fraction:
+    datatype: decimal
+    review: distribution
+    description: A proportion stored as a fraction — 0.15 means 15%.
+
+relations:
+  - name: price_observation_of_commodity
+    label: prices
+    inverse: is priced by
+    domain: PriceObservation
+    range: Commodity
+    cardinality: MANY_TO_ONE
+    description: Every benchmark price belongs to exactly one commodity.
+
+  - name: import_tariff_on_commodity
+    label: is levied on
+    inverse: is subject to
+    domain: ImportTariff
+    range: Commodity
+    cardinality: MANY_TO_ONE
+    description: A tariff row applies to one commodity for one validity interval.
+
+version: 1

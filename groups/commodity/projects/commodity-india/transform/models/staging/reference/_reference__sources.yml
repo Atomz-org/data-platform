@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: reference
+    schema: reference
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: commodities
