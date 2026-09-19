@@ -65,7 +65,7 @@ flowchart LR
 flowchart TB
     A["annotations<br/>contracts/annotations.yaml<br/>none yet"]:::neutral
     O["ontology<br/>platform + group + project"]:::platform
-    P["policy rules<br/>28"]:::platform
+    P["policy rules<br/>32"]:::platform
     K["knowledge graph<br/>kg_search · impact_analysis"]:::platform
     subgraph LG["what it stops"]
         direction TB
@@ -116,8 +116,8 @@ flowchart TB
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | **governance** | | | |
-| project policy | ✓ 28 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
-| otop manifest | ✓ 14 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
+| project policy | ✓ 32 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
+| otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ | `decisions/README.md` | why this project is shaped the way it is, where code cannot say so |

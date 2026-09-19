@@ -1,6 +1,2138 @@
 {
   "nodes": [
     {
+      "id": "col:model:dbt_invocations.account_id",
+      "kind": "Column",
+      "name": "account_id",
+      "layer": "edr",
+      "label": "The ID of the account, defined in the `account_id` var or in the `ACCOUNT_ID` env var or by the orchestrator.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.adapter_response",
+      "kind": "Column",
+      "name": "adapter_response",
+      "layer": "edr",
+      "label": "Response returned by the adapter (Fields will be different for each adapters).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.cause",
+      "kind": "Column",
+      "name": "cause",
+      "layer": "edr",
+      "label": "The cause of the invocation. For example, if the invocation was triggered by a manual run, the cause would be _\"Kicked off by Joe.\"_.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.cause_category",
+      "kind": "Column",
+      "name": "cause_category",
+      "layer": "edr",
+      "label": "The category of the cause of the invocation. For example, if the invocation was triggered by a schedule, the cause category would be schedule.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.checksum",
+      "kind": "Column",
+      "name": "checksum",
+      "layer": "edr",
+      "label": "Model file checksum.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.checksum",
+      "kind": "Column",
+      "name": "checksum",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.command",
+      "kind": "Column",
+      "name": "command",
+      "layer": "edr",
+      "label": "dbt command that was used. For example, run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compile_completed_at",
+      "kind": "Column",
+      "name": "compile_completed_at",
+      "layer": "edr",
+      "label": "End time of resource compile action.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compile_started_at",
+      "kind": "Column",
+      "name": "compile_started_at",
+      "layer": "edr",
+      "label": "Start time of resource compile action.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compiled_code",
+      "kind": "Column",
+      "name": "compiled_code",
+      "layer": "edr",
+      "label": "The compiled code (SQL / Python) executed against the database.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "The model database name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "The tested model database name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.dbt_version",
+      "kind": "Column",
+      "name": "dbt_version",
+      "layer": "edr",
+      "label": "Version of dbt that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "The macros the model directly depends on.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "The nodes the model directly depends on.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "Model description.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.dimensions",
+      "kind": "Column",
+      "name": "dimensions",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.elementary_version",
+      "kind": "Column",
+      "name": "elementary_version",
+      "layer": "edr",
+      "label": "Version of the elementary package that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.env",
+      "kind": "Column",
+      "name": "env",
+      "layer": "edr",
+      "label": "The environment's name, defined in the `DBT_ENV` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.env_id",
+      "kind": "Column",
+      "name": "env_id",
+      "layer": "edr",
+      "label": "The ID of an environment, defined in the `DBT_ENV_ID` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.error_if",
+      "kind": "Column",
+      "name": "error_if",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execute_completed_at",
+      "kind": "Column",
+      "name": "execute_completed_at",
+      "layer": "edr",
+      "label": "End time of the execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execute_started_at",
+      "kind": "Column",
+      "name": "execute_started_at",
+      "layer": "edr",
+      "label": "Start time of the execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execution_time",
+      "kind": "Column",
+      "name": "execution_time",
+      "layer": "edr",
+      "label": "Resource execution duration in seconds.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "float"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.failures",
+      "kind": "Column",
+      "name": "failures",
+      "layer": "edr",
+      "label": "Number of failures in this run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "bigint"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.filters",
+      "kind": "Column",
+      "name": "filters",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_error_after",
+      "kind": "Column",
+      "name": "freshness_error_after",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_filter",
+      "kind": "Column",
+      "name": "freshness_filter",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_warn_after",
+      "kind": "Column",
+      "name": "freshness_warn_after",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.full_refresh",
+      "kind": "Column",
+      "name": "full_refresh",
+      "layer": "edr",
+      "label": "Was this a full refresh execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "boolean"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.full_refresh",
+      "kind": "Column",
+      "name": "full_refresh",
+      "layer": "edr",
+      "label": "Whether or not this invocation was executed as a full-refresh.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "boolean"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "Update time of the table.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "The time this invocation was uploaded to the database.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.git_sha",
+      "kind": "Column",
+      "name": "git_sha",
+      "layer": "edr",
+      "label": "The git SHA of the commit that was used in this invocation, defined in the `DBT_GIT_SHA` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.identifier",
+      "kind": "Column",
+      "name": "identifier",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.invocation_id",
+      "kind": "Column",
+      "name": "invocation_id",
+      "layer": "edr",
+      "label": "Primary key of this table.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.invocation_id",
+      "kind": "Column",
+      "name": "invocation_id",
+      "layer": "edr",
+      "label": "The unique id of the invocation (would be similar for all resources executed on the same invocation). FK to dbt_invocations.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.invocation_vars",
+      "kind": "Column",
+      "name": "invocation_vars",
+      "layer": "edr",
+      "label": "Dictionary of the variables (and values) that were declared in the invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_id",
+      "kind": "Column",
+      "name": "job_id",
+      "layer": "edr",
+      "label": "The ID of a job, defined in the `job_id` var or in the `JOB_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_name",
+      "kind": "Column",
+      "name": "job_name",
+      "layer": "edr",
+      "label": "The name of a job, defined in the `job_name` var or in the `JOB_NAME` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_run_id",
+      "kind": "Column",
+      "name": "job_run_id",
+      "layer": "edr",
+      "label": "The run ID of a job, defined in the `job_run_id` var or in the `DBT_JOB_RUN_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_url",
+      "kind": "Column",
+      "name": "job_url",
+      "layer": "edr",
+      "label": "The name of a job, defined in the `job_url` var or in the `JOB_URL` env var or by the orchestrator. For GitHub Actions orchestrator, the value is calculated.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.label",
+      "kind": "Column",
+      "name": "label",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.loaded_at_field",
+      "kind": "Column",
+      "name": "loaded_at_field",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.materialization",
+      "kind": "Column",
+      "name": "materialization",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.materialization",
+      "kind": "Column",
+      "name": "materialization",
+      "layer": "edr",
+      "label": "The model materialization config.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.maturity",
+      "kind": "Column",
+      "name": "maturity",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.message",
+      "kind": "Column",
+      "name": "message",
+      "layer": "edr",
+      "label": "Execution results message returned by dbt.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "The content of 'meta' property key.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.model",
+      "kind": "Column",
+      "name": "model",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.model_execution_id",
+      "kind": "Column",
+      "name": "model_execution_id",
+      "layer": "edr",
+      "label": "Execution id generated by joining the unique_id of the resource and the invocation_id. This is the unique key of each row in this model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.model_owners",
+      "kind": "Column",
+      "name": "model_owners",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.model_tags",
+      "kind": "Column",
+      "name": "model_tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "The test name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "Model name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "Resource name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.orchestrator",
+      "kind": "Column",
+      "name": "orchestrator",
+      "layer": "edr",
+      "label": "The orchestrator that was used to run this invocation, defined in the `orchestrator` var or in the `ORCHESTRATOR` env var or by the orchestrator env vars. For example, dbt Cloud, GitHub Actions, etc.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "Full path of the model file.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "Model owner property (configured under 'meta' key).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.owner_email",
+      "kind": "Column",
+      "name": "owner_email",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.owner_name",
+      "kind": "Column",
+      "name": "owner_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "Package name of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.parent_model_unique_id",
+      "kind": "Column",
+      "name": "parent_model_unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "Short path of the model file.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.project_id",
+      "kind": "Column",
+      "name": "project_id",
+      "layer": "edr",
+      "label": "The ID of a project, defined in the `DBT_PROJECT_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.pull_request_id",
+      "kind": "Column",
+      "name": "pull_request_id",
+      "layer": "edr",
+      "label": "The ID of a pull request, defined in the `DBT_PULL_REQUEST_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.query_id",
+      "kind": "Column",
+      "name": "query_id",
+      "layer": "edr",
+      "label": "Query ID in the data warehouse, if returned by the adapter (currently only supported in Snowflake and ClickHouse, is null for any other adapter).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.relation_name",
+      "kind": "Column",
+      "name": "relation_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.resource_type",
+      "kind": "Column",
+      "name": "resource_type",
+      "layer": "edr",
+      "label": "Resource type (model, test, snapshot, seed, etc)",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.rows_affected",
+      "kind": "Column",
+      "name": "rows_affected",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "bigint"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.run_completed_at",
+      "kind": "Column",
+      "name": "run_completed_at",
+      "layer": "edr",
+      "label": "Timestamp the invocation was completed",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.run_started_at",
+      "kind": "Column",
+      "name": "run_started_at",
+      "layer": "edr",
+      "label": "Timestamp the invocation was started.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "The model schema name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "The tested model schema name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.selected",
+      "kind": "Column",
+      "name": "selected",
+      "layer": "edr",
+      "label": "The selected resources in the dbt command. While this is a string in the database, this can easily be converted to an array.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.severity",
+      "kind": "Column",
+      "name": "severity",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.short_name",
+      "kind": "Column",
+      "name": "short_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.source_description",
+      "kind": "Column",
+      "name": "source_description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.source_name",
+      "kind": "Column",
+      "name": "source_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.sql",
+      "kind": "Column",
+      "name": "sql",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.status",
+      "kind": "Column",
+      "name": "status",
+      "layer": "edr",
+      "label": "Execution result status (success, error, pass, fail)",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "Model tags property.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_database",
+      "kind": "Column",
+      "name": "target_database",
+      "layer": "edr",
+      "label": "Name of the target database that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_name",
+      "kind": "Column",
+      "name": "target_name",
+      "layer": "edr",
+      "label": "Name of the target used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_profile_name",
+      "kind": "Column",
+      "name": "target_profile_name",
+      "layer": "edr",
+      "label": "Name of the dbt profile that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_schema",
+      "kind": "Column",
+      "name": "target_schema",
+      "layer": "edr",
+      "label": "Name of the target schema that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_column_name",
+      "kind": "Column",
+      "name": "test_column_name",
+      "layer": "edr",
+      "label": "The name of the tested column.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_namespace",
+      "kind": "Column",
+      "name": "test_namespace",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_params",
+      "kind": "Column",
+      "name": "test_params",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.thread_id",
+      "kind": "Column",
+      "name": "thread_id",
+      "layer": "edr",
+      "label": "Id of the thread of this resource run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.threads",
+      "kind": "Column",
+      "name": "threads",
+      "layer": "edr",
+      "label": "Number of threads that were used to run this dbt invocation. (This number could impact the performance of a dbt invocation).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "integer"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.time_grains",
+      "kind": "Column",
+      "name": "time_grains",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.timestamp",
+      "kind": "Column",
+      "name": "timestamp",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the resource (would be similar for all executions of the same resource).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the test.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.url",
+      "kind": "Column",
+      "name": "url",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.vars",
+      "kind": "Column",
+      "name": "vars",
+      "layer": "edr",
+      "label": "Dictionary of all variables (and values) in the dbt project. If none were declared at runtime, these are the variables declared in dbt_project yml",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.warn_if",
+      "kind": "Column",
+      "name": "warn_if",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.yaml_selector",
+      "kind": "Column",
+      "name": "yaml_selector",
+      "layer": "edr",
+      "label": "The yaml selector that was passed in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "concept:Agreement",
       "kind": "Concept",
       "name": "Agreement",
@@ -219,6 +2351,16 @@
       }
     },
     {
+      "id": "evidence:governance/air-register.md",
+      "kind": "Evidence",
+      "name": "governance/air-register.md",
+      "layer": "governance",
+      "label": "per-entity risk register",
+      "props": {
+        "durable": true
+      }
+    },
+    {
       "id": "evidence:impact_reports",
       "kind": "Evidence",
       "name": "impact_reports",
@@ -246,6 +2388,16 @@
       "label": "run history",
       "props": {
         "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf air coverage",
+      "kind": "Evidence",
+      "name": "pf air coverage",
+      "layer": "governance",
+      "label": "control coverage verdicts",
+      "props": {
+        "durable": false
       }
     },
     {
@@ -279,6 +2431,36 @@
       }
     },
     {
+      "id": "evidence:pf provenance verify",
+      "kind": "Evidence",
+      "name": "pf provenance verify",
+      "layer": "governance",
+      "label": "ledger audit",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool elementary report",
+      "kind": "Evidence",
+      "name": "pf tool elementary report",
+      "layer": "governance",
+      "label": "observability report over recorded history",
+      "props": {
+        "durable": true
+      }
+    },
+    {
+      "id": "evidence:pf tool expectations run",
+      "kind": "Evidence",
+      "name": "pf tool expectations run",
+      "layer": "governance",
+      "label": "quality floor verdicts",
+      "props": {
+        "durable": false
+      }
+    },
+    {
       "id": "evidence:pf tool recce config",
       "kind": "Evidence",
       "name": "pf tool recce config",
@@ -299,6 +2481,546 @@
       }
     },
     {
+      "id": "evidence:pytest platform/tests",
+      "kind": "Evidence",
+      "name": "pytest platform/tests",
+      "layer": "governance",
+      "label": "dev-serving guardrail verdicts",
+      "props": {
+        "durable": false
+      }
+    },
+    {
+      "id": "model:alerts_anomaly_detection",
+      "kind": "Model",
+      "name": "alerts_anomaly_detection",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate alerts on data anomalies detected using the elementary anomaly detection tests. The view filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_models",
+      "kind": "Model",
+      "name": "alerts_dbt_models",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate models alerts, including all the fields the alert will include such as owner, tags, error message, etc. It joins data about models and snapshots run results, and filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_source_freshness",
+      "kind": "Model",
+      "name": "alerts_dbt_source_freshness",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_tests",
+      "kind": "Model",
+      "name": "alerts_dbt_tests",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate dbt tests alerts, including all the fields the alert will include such as owner, tags, error message, etc. This view includes data about all dbt tests except elementary tests. It filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_schema_changes",
+      "kind": "Model",
+      "name": "alerts_schema_changes",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate alerts on schema changes detected using elementary tests. The view filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:anomaly_threshold_sensitivity",
+      "kind": "Model",
+      "name": "anomaly_threshold_sensitivity",
+      "layer": "edr",
+      "label": "This is a view on `metrics_anomaly_score` that calculates if values of metrics from latest runs would have been considered anomalies in different anomaly scores. This can help you decide if there is a need to adjust the `anomaly_score_threshold`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:data_monitoring_metrics",
+      "kind": "Model",
+      "name": "data_monitoring_metrics",
+      "layer": "edr",
+      "label": "Elementary anomaly detection tests monitor metrics such as volume, freshness and data quality metrics. This incremental table is used to store the metrics over time. On each anomaly detection test, the test queries this table for historical metrics, and compares to the latest values. The table is updated with new metrics on the on-run-end named handle_test_results that is executed at the end of dbt test invocations.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_artifacts_hashes",
+      "kind": "Model",
+      "name": "dbt_artifacts_hashes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_columns",
+      "kind": "Model",
+      "name": "dbt_columns",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_exposures",
+      "kind": "Model",
+      "name": "dbt_exposures",
+      "layer": "edr",
+      "label": "Metadata about exposures in the project, including configuration and properties from the dbt graph. Each row contains information about a single exposure. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_groups",
+      "kind": "Model",
+      "name": "dbt_groups",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_invocations",
+      "kind": "Model",
+      "name": "dbt_invocations",
+      "layer": "edr",
+      "label": "Attributes associated with each dbt invocation. Inserted at the end of each invocation.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_metrics",
+      "kind": "Model",
+      "name": "dbt_metrics",
+      "layer": "edr",
+      "label": "Metadata about metrics in the project, including configuration and properties from the dbt graph. Each row contains information about a single metric. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_models",
+      "kind": "Model",
+      "name": "dbt_models",
+      "layer": "edr",
+      "label": "Metadata about models in the project, including configuration and properties from the dbt graph. Each row contains information about a single model. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_run_results",
+      "kind": "Model",
+      "name": "dbt_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt invocations, inserted at the end of each invocation. Each row is the invocation result of a single resource (model, test, snapshot, etc). New data is loaded to this model on an on-run-end hook named 'elementary.upload_run_results' from each invocation that produces a result object. This is an incremental model.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_seeds",
+      "kind": "Model",
+      "name": "dbt_seeds",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_snapshots",
+      "kind": "Model",
+      "name": "dbt_snapshots",
+      "layer": "edr",
+      "label": "Metadata about snapshots in the project, including configuration and properties from the dbt graph. Each row contains information about a single snapshot. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_source_freshness_results",
+      "kind": "Model",
+      "name": "dbt_source_freshness_results",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_sources",
+      "kind": "Model",
+      "name": "dbt_sources",
+      "layer": "edr",
+      "label": "Metadata about sources in the project, including configuration and properties from the dbt graph. Each row contains information about a single source. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_tests",
+      "kind": "Model",
+      "name": "dbt_tests",
+      "layer": "edr",
+      "label": "Metadata about tests in the project, including configuration and properties from the dbt graph. Each row contains information about a single test. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:elementary_test_results",
+      "kind": "Model",
+      "name": "elementary_test_results",
+      "layer": "edr",
+      "label": "Run results of all dbt tests, with fields and metadata needed to produce the Elementary report UI. Each row is the result of a single test, including native dbt tests, packages tests and elementary tests. New data is loaded to this model on an on-run-end hook named `elementary.handle_tests_results`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:job_run_results",
+      "kind": "Model",
+      "name": "job_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt invocations, enriched with jobs metadata. Each row is the result of a single job. This is a view on `dbt_invocations`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metadata",
+      "kind": "Model",
+      "name": "metadata",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "table",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metrics_anomaly_score",
+      "kind": "Model",
+      "name": "metrics_anomaly_score",
+      "layer": "edr",
+      "label": "This is a view on `data_monitoring_metrics` that runs the same query the anomaly detection tests run to calculate anomaly scores. The purpose of this view is to provide visibility to the results of anomaly detection tests.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:model_run_results",
+      "kind": "Model",
+      "name": "model_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt models, enriched with models metadata. Each row is the result of a single model. This is a view that joins data from `dbt_run_results` and `dbt_models`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:monitors_runs",
+      "kind": "Model",
+      "name": "monitors_runs",
+      "layer": "edr",
+      "label": "This is a view on `data_monitoring_metrics` that is used to determine when a specific anomaly detection test was last executed. Each anomaly detection test queries this view to decide on a start time for collecting metrics.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:schema_columns_snapshot",
+      "kind": "Model",
+      "name": "schema_columns_snapshot",
+      "layer": "edr",
+      "label": "Stores the schema details for tables that are monitored with elementary schema changes test. In order to compare current schema to previous state, we must store the previous state. The data is from a view that queries the data warehouse information schema. This is an incremental table.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:seed_run_results",
+      "kind": "Model",
+      "name": "seed_run_results",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:snapshot_run_results",
+      "kind": "Model",
+      "name": "snapshot_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt snapshots, enriched with snapshots metadata. Each row is the result of a single snapshot. This is a view that joins data from `dbt_run_results` and `dbt_snapshots`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:test_result_rows",
+      "kind": "Model",
+      "name": "test_result_rows",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "policy:agent-authority-is-least-privilege",
+      "kind": "Policy",
+      "name": "agent-authority-is-least-privilege",
+      "layer": "governance",
+      "label": "An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a pro",
+      "props": {
+        "constraint": "path_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:denylist",
+          "gate.yaml:platform_denylist",
+          "pf.loops.gate:check_path"
+        ],
+        "enforced": true,
+        "intent": "An agent reaches the filesystem through one path gate, and the paths it may never write are declared rather than remembered. Least privilege that lives in a prompt is a request; in a denylist it is a control.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:agent-authority-is-revocable",
+      "kind": "Policy",
+      "name": "agent-authority-is-revocable",
+      "layer": "governance",
+      "label": "A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreadable",
+      "props": {
+        "constraint": "revocable",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.ledger:revoke",
+          "pf.provenance.ledger:is_revoked"
+        ],
+        "enforced": true,
+        "intent": "A control that cannot be switched off mid-incident is a control you find out about afterwards. Revocation is checked before intent is written, and an unreadable revocation file fails closed.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:agent-decisions-are-recorded",
+      "kind": "Policy",
+      "name": "agent-decisions-are-recorded",
+      "layer": "governance",
+      "label": "Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No rule",
+      "props": {
+        "constraint": "action_recorded",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {
+          "stages": [
+            "intent",
+            "decision",
+            "execution"
+          ]
+        },
+        "enforced_by": [
+          "pf.provenance.ledger:decision",
+          "platform/hooks/pre_tool_use.py",
+          "platform/hooks/post_tool_use.py"
+        ],
+        "enforced": true,
+        "intent": "Every tool call an agent makes is written down before it happens and after it happens, and the gate's verdict is recorded for allows as well as denies. \"No rule applied\" and \"a rule allowed it\" are different facts, and only a record that carries both can answer what an agent was permitted to do.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:agent-settings-schema-valid",
+      "kind": "Policy",
+      "name": "agent-settings-schema-valid",
+      "layer": "governance",
+      "label": "A settings file the client rejects loads none of the plugins it declares, and says so nowhere a session can see. The platform's own retrieval tools arrive as pl",
+      "props": {
+        "constraint": "schema_current",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/.claude/settings.json"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.scaffold.claude_settings:normalize"
+        ],
+        "enforced": true,
+        "intent": "A settings file the client rejects loads none of the plugins it declares, and says so nowhere a session can see. The platform's own retrieval tools arrive as plugins, so a schema error silently removes kg_search and impact_analysis \u2014 and an agent with no graph reads files instead and never reports why.",
+        "scope": "capability"
+      }
+    },
+    {
+      "id": "policy:anomaly-tests-do-not-gate-merge",
+      "kind": "Policy",
+      "name": "anomaly-tests-do-not-gate-merge",
+      "layer": "governance",
+      "label": "An anomaly test judges data; a merge gate judges code. Wiring a statistical test into the gate blocks a correct change because yesterday's load was small, and t",
+      "props": {
+        "constraint": "not_in_gate",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/.github/workflows/**"
+        },
+        "params": {
+          "excludes": "elementary anomaly tests"
+        },
+        "enforced_by": [
+          "pf.capabilities:IMPACT_JOB"
+        ],
+        "enforced": true,
+        "intent": "An anomaly test judges data; a merge gate judges code. Wiring a statistical test into the gate blocks a correct change because yesterday's load was small, and the cure is always to weaken the test \u2014 which is how the monitoring stops working.",
+        "scope": "capability"
+      }
+    },
+    {
+      "id": "policy:builds-record-observability",
+      "kind": "Policy",
+      "name": "builds-record-observability",
+      "layer": "governance",
+      "label": "A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run an",
+      "props": {
+        "constraint": "observability_recorded",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/packages.yml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.elementary:bootstrap_project",
+          "pf.tools.elementary:ensure_package"
+        ],
+        "enforced": true,
+        "intent": "A dbt build that leaves no queryable record cannot be triaged; failures get diagnosed from whichever log happened to survive. Every build must record its run and test results into the warehouse with history \u2014 for every test framework at once \u2014 so \"is this new, recurring, or flaky?\" is a query, not an archaeology dig.",
+        "scope": "platform"
+      }
+    },
+    {
       "id": "policy:change-declares-blast-radius",
       "kind": "Policy",
       "name": "change-declares-blast-radius",
@@ -316,7 +3038,8 @@
           "platform/hooks/pre_commit.sh"
         ],
         "enforced": true,
-        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure."
+        "intent": "A model or column change must report what it breaks before it lands, including the human who owns each affected exposure.",
+        "scope": "platform"
       }
     },
     {
@@ -337,7 +3060,97 @@
           "pf.tools.recce:register_commands"
         ],
         "enforced": true,
-        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\"."
+        "intent": "A blast radius is a prediction made from lineage. Lineage cannot say whether the numbers actually moved, so a change to a mart must also be compared against a built baseline before it lands \u2014 otherwise \"safe\" means \"nothing downstream references it\", not \"nothing downstream changed\".",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:control-baseline-is-declared",
+      "kind": "Policy",
+      "name": "control-baseline-is-declared",
+      "layer": "governance",
+      "label": "A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from the r",
+      "props": {
+        "constraint": "baseline_declared",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/air.yaml"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.air.coverage:assess",
+          "pf.air.register:render_register"
+        ],
+        "enforced": true,
+        "intent": "A risk register that names controls nobody enforces is a document. Each entity declares in `air.yaml` which controls it commits to; those are derived from the repository on every run and block the merge when they fail, while everything outside the baseline is reported and does not.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:dev-server-binds-localhost-only",
+      "kind": "Policy",
+      "name": "dev-server-binds-localhost-only",
+      "layer": "governance",
+      "label": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host is n",
+      "props": {
+        "constraint": "localhost_binding",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever"
+        ],
+        "enforced": true,
+        "intent": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host is not a parameter of the serving path, so a routable dev server cannot be configured into existence, only programmed, which is a review event rather than a config drift.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:dev-serving-wire-is-read-only",
+      "kind": "Policy",
+      "name": "dev-serving-wire-is-read-only",
+      "layer": "governance",
+      "label": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not a p",
+      "props": {
+        "constraint": "read_only_wire",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever",
+          "pf.runtime.quack:assert_read_only"
+        ],
+        "enforced": true,
+        "intent": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not a parser, not a callback, nothing that can be argued with \u2014 and the client refuses non-read statements before the network hop, using DuckDB's own parser rather than string prefixes. Writers exist; they borrow the file through the write window and never meet the wire.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:entity-isolation-enforced",
+      "kind": "Policy",
+      "name": "entity-isolation-enforced",
+      "layer": "governance",
+      "label": "Business logic does not transfer between entities. A session that can read a sister project will carry an assumption across \u2014 a grain, a status enum, a revenue ",
+      "props": {
+        "constraint": "path_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**/groups/*/projects/*/**"
+        },
+        "params": {
+          "denies": "sibling and cross-group reads"
+        },
+        "enforced_by": [
+          "pf.scaffold.generator:PROJECT_SETTINGS",
+          "platform/hooks/pre_tool_use.py"
+        ],
+        "enforced": true,
+        "intent": "Business logic does not transfer between entities. A session that can read a sister project will carry an assumption across \u2014 a grain, a status enum, a revenue definition \u2014 and the bug that results is invisible, because the code it came from is correct in the project it came from.",
+        "scope": "capability"
       }
     },
     {
@@ -359,7 +3172,53 @@
           "pf.ontology.validate:class-without-identity"
         ],
         "enforced": true,
-        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess."
+        "intent": "A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:evidence-chain-is-tamper-evident",
+      "kind": "Policy",
+      "name": "evidence-chain-is-tamper-evident",
+      "layer": "governance",
+      "label": "A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake in w",
+      "props": {
+        "constraint": "hash_chained",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "provenance/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.chain:verify",
+          "pf.provenance.anchor:stamp_rfc3161",
+          "gate.yaml:denylist"
+        ],
+        "enforced": true,
+        "intent": "A log an agent can edit is not evidence. Each record carries the hash of the one before it, and the head is anchored to a timestamp authority with no stake in what it says \u2014 so editing the middle requires editing the end, and the end is countersigned.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:high-impact-actions-need-a-human",
+      "kind": "Policy",
+      "name": "high-impact-actions-need-a-human",
+      "layer": "governance",
+      "label": "Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an actor",
+      "props": {
+        "constraint": "approval_recorded",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.provenance.ledger:approve",
+          "pf.provenance.audit:report"
+        ],
+        "enforced": true,
+        "intent": "Human oversight is a chain that shows the approval, not a document that asserts it. Approvals are append-only and bound to the action they approve, and an actor approving their own action is a finding rather than an approval.",
+        "scope": "platform"
       }
     },
     {
@@ -379,7 +3238,8 @@
           "pf.ontology.validate:illegal-edge"
         ],
         "enforced": true,
-        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse."
+        "intent": "A foreign key pointing at a class the topology does not relate to is an undeclared join. Undeclared joins are how two teams compute different revenue from the same warehouse.",
+        "scope": "platform"
       }
     },
     {
@@ -401,7 +3261,8 @@
           "pf.kg.build:model-grain"
         ],
         "enforced": true,
-        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out."
+        "intent": "Grain is the one fact a downstream consumer cannot infer and cannot survive guessing. An undeclared grain is how a join silently fans out.",
+        "scope": "platform"
       }
     },
     {
@@ -429,7 +3290,50 @@
           "pf.ontology.validate:metric-shaped-column"
         ],
         "enforced": true,
-        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first."
+        "intent": "Aggregation policy \u2014 which statuses count, which timestamp, which filter \u2014 belongs to exactly one metric definition. A mart column named `revenue` is a second definition that will drift from the first.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:model-routing-is-declared",
+      "kind": "Policy",
+      "name": "model-routing-is-declared",
+      "layer": "governance",
+      "label": "Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matches w",
+      "props": {
+        "constraint": "routing_declared",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/agents/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.agents.base:AGENTS"
+        ],
+        "enforced": true,
+        "intent": "Which model answers which step is a declared table, not whatever the caller passed. An unregistered step is recorded as such, and the recorded verdict matches what actually happened rather than what policy would have preferred.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:money-amount-bounded",
+      "kind": "Policy",
+      "name": "money-amount-bounded",
+      "layer": "governance",
+      "label": "A monetary column with no lower bound accepts the negative row that a refund, a sign flip or a bad join produces, and it reaches a metric as a quietly smaller n",
+      "props": {
+        "constraint": "range_asserted",
+        "severity": "warning",
+        "applies_to": {
+          "role": "money_amount"
+        },
+        "params": {
+          "suggested": "dbt_expectations.expect_column_values_to_be_between"
+        },
+        "enforced_by": [],
+        "enforced": false,
+        "intent": "A monetary column with no lower bound accepts the negative row that a refund, a sign flip or a bad join produces, and it reaches a metric as a quietly smaller number. The currency rule makes the amount interpretable; this makes it credible.",
+        "scope": "capability"
       }
     },
     {
@@ -452,7 +3356,8 @@
           "pf.ontology.validate:money-without-currency"
         ],
         "enforced": true,
-        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded."
+        "intent": "A monetary amount without its currency is not a number, it is a bug waiting for a second entity to be onboarded.",
+        "scope": "platform"
       }
     },
     {
@@ -478,7 +3383,53 @@
           "pf.loops.registry:pii_audit"
         ],
         "enforced": true,
-        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver."
+        "intent": "PII may land in raw and staging. It must not reach a mart or an exposure without a masking policy or an explicit, recorded waiver.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:quack-token-never-leaves-the-machine",
+      "kind": "Policy",
+      "name": "quack-token-never-leaves-the-machine",
+      "layer": "governance",
+      "label": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is gitign",
+      "props": {
+        "constraint": "credential_containment",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.quack.json"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever",
+          "gate.yaml:denylist",
+          ".gitignore"
+        ],
+        "enforced": true,
+        "intent": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is gitignored, is denied to agent edits by the gate, and is redacted from CLI output by default \u2014 a token echoed into a terminal outlives the server in scrollback and session transcripts.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:quality-floor-derived-from-ontology",
+      "kind": "Policy",
+      "name": "quality-floor-derived-from-ontology",
+      "layer": "governance",
+      "label": "Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must be",
+      "props": {
+        "constraint": "tests_derived_from_roles",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/tests/expectations/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.tools.expectations:write_tests",
+          "pf.tools.expectations:bootstrap_project"
+        ],
+        "enforced": true,
+        "intent": "Hand-written test coverage decays to whichever models someone remembered. The floor \u2014 an annotated mart is never empty, a declared identity identifies \u2014 must be derived from the ontology roles, so coverage is a function of annotation rather than of memory, and a wrong test is a wrong role rather than a stale file.",
+        "scope": "platform"
       }
     },
     {
@@ -499,7 +3450,8 @@
           "pf.tools.recce:generate_config"
         ],
         "enforced": true,
-        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out."
+        "intent": "A value-level diff writes the rows it compared into the review tool's state file, which is durable and shared. Diffing a column whose role is PII therefore persists real addresses into an artefact that gets committed and passed around \u2014 the same failure `pii-not-in-consumption` prevents in the warehouse, one layer further out.",
+        "scope": "platform"
       }
     },
     {
@@ -520,7 +3472,141 @@
           "platform/hooks/pre_tool_use.py"
         ],
         "enforced": true,
-        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session."
+        "intent": "A credential placed in a prompt, a model file or a committed artefact is durably persisted and replayed into every later session.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:sister-projects-are-isolated",
+      "kind": "Policy",
+      "name": "sister-projects-are-isolated",
+      "layer": "governance",
+      "label": "Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session may",
+      "props": {
+        "constraint": "cross_tenant_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "groups/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:platform_denylist",
+          "pf.loops.gate:project_for"
+        ],
+        "enforced": true,
+        "intent": "Business logic does not transfer between entities, so an assumption carried from one sister company into another is a bug by construction. A project session may not read or write another project, and may not write shared infra at all.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:source-declares-freshness",
+      "kind": "Policy",
+      "name": "source-declares-freshness",
+      "layer": "governance",
+      "label": "A mart is stale because its source was. Monitoring the mart names the wrong artefact to go fix, and monitoring nothing means the first report of a stopped pipel",
+      "props": {
+        "constraint": "freshness_declared",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/transform/models/**/_*__sources.yml"
+        },
+        "params": {},
+        "enforced_by": [],
+        "enforced": false,
+        "intent": "A mart is stale because its source was. Monitoring the mart names the wrong artefact to go fix, and monitoring nothing means the first report of a stopped pipeline comes from whoever opened the dashboard.",
+        "scope": "capability"
+      }
+    },
+    {
+      "id": "policy:tool-contribution-may-only-tighten",
+      "kind": "Policy",
+      "name": "tool-contribution-may-only-tighten",
+      "layer": "governance",
+      "label": "A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any lo",
+      "props": {
+        "constraint": "tightening_only",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "gate.capabilities.yaml"
+        },
+        "params": {
+          "sections": [
+            "denylist",
+            "platform_denylist",
+            "impact_required"
+          ]
+        },
+        "enforced_by": [
+          "pf.tools.spec:Tool.gate_sections"
+        ],
+        "enforced": true,
+        "intent": "A tool contributes gate rules, and a plugin system that can widen the policy judging it is not a policy. `Tool.gate_sections()` rejects a contribution to any loosening section at construction, so an unsafe tool fails at import rather than silently permitting more.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:upstream-licences-are-reviewed",
+      "kind": "Policy",
+      "name": "upstream-licences-are-reviewed",
+      "layer": "governance",
+      "label": "Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfaced ",
+      "props": {
+        "constraint": "licence_reviewed",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "vendor/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.vendor.model:load_registry",
+          "pf.vendor.verify:verify"
+        ],
+        "enforced": true,
+        "intent": "Every upstream this platform borrowed from carries a licence, and some of them constrain what we may ship. The review is written down per upstream and surfaced in the listing, so a constraint is a fact in the registry rather than something someone once checked.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:vendor-is-read-only",
+      "kind": "Policy",
+      "name": "vendor-is-read-only",
+      "layer": "governance",
+      "label": "A vendored upstream is evidence of what an external project actually does. Editing one turns it into a fork wearing a submodule's name, and every later diff aga",
+      "props": {
+        "constraint": "path_denied",
+        "severity": "error",
+        "applies_to": {
+          "artifact_glob": "vendor/**"
+        },
+        "params": {},
+        "enforced_by": [
+          "gate.yaml:denylist",
+          "platform/hooks/pre_tool_use.py"
+        ],
+        "enforced": true,
+        "intent": "A vendored upstream is evidence of what an external project actually does. Editing one turns it into a fork wearing a submodule's name, and every later diff against upstream reads as drift that nobody introduced.",
+        "scope": "capability"
+      }
+    },
+    {
+      "id": "policy:warehouse-custody-is-recorded",
+      "kind": "Policy",
+      "name": "warehouse-custody-is-recorded",
+      "layer": "governance",
+      "label": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, deci",
+      "props": {
+        "constraint": "custody_recorded",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:_custody"
+        ],
+        "enforced": true,
+        "intent": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, decision, execution, chained \u2014 so \"who held the warehouse when\" is a query over records, not a reconstruction from process tables. The ledger's kill switch is honoured by construction: a revoked ledger refuses the custody record and with it the custody change.",
+        "scope": "platform"
       }
     },
     {
@@ -567,22 +3653,6 @@
       }
     },
     {
-      "id": "property:Refund.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Refund",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Payment.amount",
       "kind": "Property",
       "name": "amount",
@@ -595,6 +3665,22 @@
         "concept": "Payment",
         "mdl_type": "DOUBLE",
         "xsd_type": "xsd:double",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Refund.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
         "is_identity": false
       }
     },
@@ -647,22 +3733,6 @@
       }
     },
     {
-      "id": "property:Customer.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Organization.country",
       "kind": "Property",
       "name": "country",
@@ -673,6 +3743,22 @@
         "role": "geo_country",
         "required": false,
         "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Customer.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -695,22 +3781,6 @@
       }
     },
     {
-      "id": "property:Payment.created",
-      "kind": "Property",
-      "name": "created",
-      "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
-      "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Customer.created",
       "kind": "Property",
       "name": "created",
@@ -721,6 +3791,22 @@
         "role": "event_time",
         "required": true,
         "concept": "Customer",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.created",
+      "kind": "Property",
+      "name": "created",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -743,7 +3829,7 @@
       }
     },
     {
-      "id": "property:Order.currency",
+      "id": "property:Refund.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -752,23 +3838,7 @@
         "datatype": "string",
         "role": "currency_code",
         "required": false,
-        "concept": "Order",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Payment.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
+        "concept": "Refund",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -791,7 +3861,23 @@
       }
     },
     {
-      "id": "property:Refund.currency",
+      "id": "property:Payment.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.currency",
       "kind": "Property",
       "name": "currency",
       "layer": "ontology",
@@ -800,7 +3886,7 @@
         "datatype": "string",
         "role": "currency_code",
         "required": false,
-        "concept": "Refund",
+        "concept": "Order",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -823,7 +3909,7 @@
       }
     },
     {
-      "id": "property:Payment.customer_id",
+      "id": "property:Subscription.customer_id",
       "kind": "Property",
       "name": "customer_id",
       "layer": "ontology",
@@ -832,7 +3918,7 @@
         "datatype": "string",
         "role": "foreign_key",
         "required": true,
-        "concept": "Payment",
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -855,7 +3941,7 @@
       }
     },
     {
-      "id": "property:Subscription.customer_id",
+      "id": "property:Payment.customer_id",
       "kind": "Property",
       "name": "customer_id",
       "layer": "ontology",
@@ -864,7 +3950,7 @@
         "datatype": "string",
         "role": "foreign_key",
         "required": true,
-        "concept": "Subscription",
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -935,22 +4021,6 @@
       }
     },
     {
-      "id": "property:Customer.id",
-      "kind": "Property",
-      "name": "id",
-      "layer": "ontology",
-      "label": "string \u00b7 natural_key",
-      "props": {
-        "datatype": "string",
-        "role": "natural_key",
-        "required": true,
-        "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": true
-      }
-    },
-    {
       "id": "property:Subscription.id",
       "kind": "Property",
       "name": "id",
@@ -961,6 +4031,22 @@
         "role": "natural_key",
         "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
+      }
+    },
+    {
+      "id": "property:Customer.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": true
@@ -1031,22 +4117,6 @@
       }
     },
     {
-      "id": "property:Customer.name",
-      "kind": "Property",
-      "name": "name",
-      "layer": "ontology",
-      "label": "string \u00b7 pii_name",
-      "props": {
-        "datatype": "string",
-        "role": "pii_name",
-        "required": true,
-        "concept": "Customer",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Organization.name",
       "kind": "Property",
       "name": "name",
@@ -1079,18 +4149,18 @@
       }
     },
     {
-      "id": "property:Event.occurred_at",
+      "id": "property:Customer.name",
       "kind": "Property",
-      "name": "occurred_at",
+      "name": "name",
       "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
+      "label": "string \u00b7 pii_name",
       "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
+        "datatype": "string",
+        "role": "pii_name",
         "required": true,
-        "concept": "Event",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
         "is_identity": false
       }
     },
@@ -1105,6 +4175,22 @@
         "role": "event_time",
         "required": false,
         "concept": "Interaction",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Event.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Event",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -1367,7 +4453,7 @@
       }
     },
     {
-      "id": "property:Payment.status",
+      "id": "property:Agreement.status",
       "kind": "Property",
       "name": "status",
       "layer": "ontology",
@@ -1375,8 +4461,8 @@
       "props": {
         "datatype": "string",
         "role": "status_enum",
-        "required": true,
-        "concept": "Payment",
+        "required": false,
+        "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1399,22 +4485,6 @@
       }
     },
     {
-      "id": "property:Agreement.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": false,
-        "concept": "Agreement",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Subscription.status",
       "kind": "Property",
       "name": "status",
@@ -1425,6 +4495,22 @@
         "role": "status_enum",
         "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.status",
+      "kind": "Property",
+      "name": "status",
+      "layer": "ontology",
+      "label": "string \u00b7 status_enum",
+      "props": {
+        "datatype": "string",
+        "role": "status_enum",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2472,9 +5558,1275 @@
       "props": {}
     },
     {
+      "src": "policy:builds-record-observability",
+      "dst": "evidence:pf tool elementary report",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:builds-record-observability",
+      "dst": "evidence:loop-ledger.json",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:quality-floor-derived-from-ontology",
+      "dst": "evidence:pf tool expectations run",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
       "src": "policy:secrets-never-in-context",
       "dst": "evidence:pf gate",
       "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:agent-authority-is-least-privilege",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:tool-contribution-may-only-tighten",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:agent-decisions-are-recorded",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:evidence-chain-is-tamper-evident",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:sister-projects-are-isolated",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:agent-authority-is-revocable",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:high-impact-actions-need-a-human",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:model-routing-is-declared",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:upstream-licences-are-reviewed",
+      "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:dev-serving-wire-is-read-only",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:dev-server-binds-localhost-only",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:quack-token-never-leaves-the-machine",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:warehouse-custody-is-recorded",
+      "dst": "evidence:pf provenance verify",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:control-baseline-is-declared",
+      "dst": "evidence:pf air coverage",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:control-baseline-is-declared",
+      "dst": "evidence:governance/air-register.md",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:entity-isolation-enforced",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:vendor-is-read-only",
+      "dst": "evidence:pf gate",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.short_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_column_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.severity",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.warn_if",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.error_if",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_params",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_namespace",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.model_tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.model_owners",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.parent_model_unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.checksum",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.materialization",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.source_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.identifier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.loaded_at_field",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_warn_after",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_error_after",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_filter",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.relation_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.source_description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.checksum",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.materialization",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.invocation_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.run_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.run_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.command",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.dbt_version",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.elementary_version",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.full_refresh",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.invocation_vars",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.vars",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_database",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_schema",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_profile_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.threads",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.selected",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.yaml_selector",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_run_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.env",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.env_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.project_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.cause_category",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.cause",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.pull_request_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.git_sha",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.orchestrator",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_url",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.account_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.label",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.model",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.sql",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.timestamp",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.filters",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.time_grains",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.dimensions",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.model_execution_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.invocation_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.message",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.resource_type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execution_time",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execute_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execute_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compile_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compile_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.rows_affected",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.full_refresh",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compiled_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.failures",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.query_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.thread_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.adapter_response",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.maturity",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.owner_email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.owner_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.url",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:snapshot_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "model:snapshot_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "model:job_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "model:model_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:model_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:test_result_rows",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:seed_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_seeds",
+      "dst": "model:seed_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_dbt_tests",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_schema_changes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_source_freshness_results",
+      "dst": "model:alerts_dbt_source_freshness",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "model:alerts_dbt_source_freshness",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_anomaly_detection",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:model_run_results",
+      "dst": "model:alerts_dbt_models",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:snapshot_run_results",
+      "dst": "model:alerts_dbt_models",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:data_monitoring_metrics",
+      "dst": "model:monitors_runs",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_columns",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_groups",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_seeds",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:data_monitoring_metrics",
+      "dst": "model:metrics_anomaly_score",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:metrics_anomaly_score",
+      "dst": "model:anomaly_threshold_sensitivity",
+      "kind": "feeds",
       "props": {}
     }
   ]
