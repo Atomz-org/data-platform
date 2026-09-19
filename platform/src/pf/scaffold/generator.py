@@ -321,25 +321,52 @@ derivable rather than guessed. `pf check` fails on an undeclared join.
 - Run `impact_analysis` before changing a column, a model or a metric.
 """
 
-PROJECT_SETTINGS = """\
+#: The platform toolkits every project gets, in the order they read.
+#:
+#: One list because it feeds two places that must not disagree: the settings a
+#: new project is scaffolded with, and `pf.scaffold.claude_settings.ensure_plugins`,
+#: which brings an existing project up to the current set. When those were the
+#: same JSON typed twice, adding a toolkit reached the projects created after it
+#: and no others — the same failure `Capability.default_enabled` exists to stop.
+#:
+#: A project's own group plugin is appended per project and is not listed here.
+DEFAULT_TOOLKITS: tuple[str, ...] = (
+    "platform-init",
+    "dlt-ingest",
+    "dlt-quality",
+    "dlt-explore",
+    "duckdb-ops",
+    "dbt-modeling",
+    "dbt-semantic",
+    "dbt-testing",
+    "dbt-expectations",
+    "dbt-elementary",
+    "dbt-govern",
+    "dagster-orchestrate",
+    "python-standards",
+    "power-tools",
+)
+
+
+def default_plugins(group: str) -> dict[str, bool]:
+    """The full `enabledPlugins` record for a project in `group`."""
+    plugins = {f"{name}@platform": True for name in DEFAULT_TOOLKITS}
+    plugins[f"{group}-group@{group}"] = True
+    return plugins
+
+
+_PLUGIN_LINES = "\n".join(
+    f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
+
+PROJECT_SETTINGS = ("""\
 {
   "extraKnownMarketplaces": {
-    "platform": { "source": { "source": "../../../../platform" } },
-    "{{group}}": { "source": { "source": "../.." } }
+    "platform": { "source": { "source": "directory", "path": "../../../../platform" } },
+    "{{group}}": { "source": { "source": "directory", "path": "../.." } }
   },
   "enabledPlugins": {
-    "platform-init@platform": true,
-    "dlt-ingest@platform": true,
-    "dlt-quality@platform": true,
-    "dlt-explore@platform": true,
-    "duckdb-ops@platform": true,
-    "dbt-modeling@platform": true,
-    "dbt-semantic@platform": true,
-    "dbt-testing@platform": true,
-    "dbt-govern@platform": true,
-    "dagster-orchestrate@platform": true,
-    "python-standards@platform": true,
-    "power-tools@platform": true,
+"""
+    + _PLUGIN_LINES + """
     "{{group}}-group@{{group}}": true
   },
   "permissions": {
@@ -368,7 +395,7 @@ PROJECT_SETTINGS = """\
     ]
   }
 }
-"""
+""")
 
 PROJECT_PYPROJECT = """\
 [project]
@@ -483,6 +510,7 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
     "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}",
              "schema": "base", "threads": 4},
 }
+
 
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:

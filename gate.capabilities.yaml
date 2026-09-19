@@ -19,5 +19,6 @@ denylist:
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'
+- '**/governance/policy.yaml'
 - '**/transform/tests/expectations/**'
 - '**/air.yaml'
