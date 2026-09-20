@@ -116,15 +116,15 @@ question falls back to raw SQL.
 
 | Project | Table | Model | Metric | Exposure | Policy | nodes |
 |---|--:|--:|--:|--:|--:|--:|
-| `acme/acme-eu` | 3 | 37 | 6 | 2 | 33 | 434 |
-| `acme/acme-rollup` | 0 | 30 | 0 | 0 | 32 | 334 |
-| `acme/acme-us` | 3 | 37 | 6 | 2 | 32 | 455 |
-| `commodity/commodity-india` | 4 | 15 | 16 | 1 | 32 | 464 |
-| `globex/globex-core` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `globex/globex-eu` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 4558 |
-| `zenith/zenith-de` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `zenith/zenith-uk` | 0 | 31 | 0 | 0 | 32 | 325 |
+| `acme/acme-eu` | 3 | 0 | 0 | 0 | 33 | 168 |
+| `acme/acme-rollup` | 0 | 0 | 0 | 0 | 32 | 140 |
+| `acme/acme-us` | 3 | 0 | 0 | 0 | 32 | 168 |
+| `commodity/commodity-india` | 4 | 15 | 16 | 16 | 32 | 479 |
+| `globex/globex-core` | 0 | 0 | 0 | 0 | 32 | 127 |
+| `globex/globex-eu` | 0 | 0 | 0 | 0 | 32 | 127 |
+| `jaffle/jaffle-shop` | 57 | 0 | 0 | 0 | 32 | 737 |
+| `zenith/zenith-de` | 0 | 0 | 0 | 0 | 32 | 127 |
+| `zenith/zenith-uk` | 0 | 0 | 0 | 0 | 32 | 127 |
 
 Every graph carries the same 16 ontology classes and 14 relations — vocabulary is shared at the group, so a project instantiates only the part of it it needs.
 
