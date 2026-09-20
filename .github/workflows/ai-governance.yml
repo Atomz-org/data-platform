@@ -41,9 +41,15 @@ permissions:
   contents: read
   pull-requests: write
 
+# On a pull request the ref is the branch, so a new push should supersede the
+# run it replaced. On `main` the ref is the same string for every merge, so the
+# same rule made each merge cancel the audit of the merge before it — 17 of the
+# 47 post-merge runs between 18 and 20 September died that way, and the faster
+# the queue landed, the less of this ran. Pushes are keyed by commit instead, so
+# every merge keeps its own record.
 concurrency:
-  group: ai-governance-${{ github.ref }}
-  cancel-in-progress: true
+  group: ai-governance-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   provenance:
@@ -94,11 +100,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
+
+      # The scanner is pinned as a submodule and run from the checkout rather
+      # than by tag, so the code judging our compliance cannot change without a
+      # commit here. That pin is currently unreachable: the upstream
+      # `jagmarques/asqav-compliance` was deleted and there is no fork of it.
+      #
+      # A scanner nobody can fetch is not a failure of this repository, and a
+      # job that stays red for a reason nobody here can fix teaches people to
+      # ignore the whole workflow — including the two checks in it that do
+      # block. So a missing scanner is an annotated warning and the scan is
+      # skipped; restoring the pin makes it run again with no other change.
+      # Nothing enforced is lost, because this scan reports and never blocks.
+      - name: Vendored scanner
+        id: pin
+        run: |
+          if git submodule update --init --depth 1 vendor/asqav-compliance 2>/dev/null \
+             && { [ -f vendor/asqav-compliance/action.yml ] || [ -f vendor/asqav-compliance/action.yaml ]; }; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=ASQAV scan skipped::vendor/asqav-compliance could not be checked out — its upstream no longer exists. The static scan did not run; the blocking checks are unaffected."
+          fi
 
       - name: Scan agent code for governance gaps
         id: scan
+        if: steps.pin.outputs.present == 'true'
         uses: ./vendor/asqav-compliance
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -114,22 +141,33 @@ jobs:
         run: |
           echo "### AI agent governance scan" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Compliance score | ${{ steps.scan.outputs.score }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Agent files | ${{ steps.scan.outputs.agent-files }} |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Gaps | ${{ steps.scan.outputs.gaps }} |" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.pin.outputs.present }}" != "true" ]; then
+            echo "**Not run.** \`vendor/asqav-compliance\` is unreachable — its upstream was deleted." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "This scan reports and never blocks. The checks that do block are unaffected:" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`pf provenance verify\` and \`pf air gate\`." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Compliance score | ${{ steps.scan.outputs.score }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Agent files | ${{ steps.scan.outputs.agent-files }} |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Gaps | ${{ steps.scan.outputs.gaps }} |" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   air-baseline:
     name: AI control baseline
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Load-bearing, and unique to this job: the control catalogue is
-          # vendored. Without it every control assesses as `unexercised` and the
-          # gate passes for the wrong reason.
-          submodules: true
+
+      # Load-bearing, and unique to this job: the control catalogue is vendored,
+      # and without it every control assesses as `unexercised` and the gate
+      # passes for the wrong reason. Initialised by name rather than with
+      # `submodules: true`, so an unreachable pin elsewhere under `vendor/`
+      # cannot take the blocking gate down with it. This step still fails the
+      # job if the catalogue itself cannot be fetched, which is the point.
+      - name: Vendored control catalogue
+        run: git submodule update --init --depth 1 vendor/ai-governance-framework
 
       - uses: astral-sh/setup-uv@v5
         with:
