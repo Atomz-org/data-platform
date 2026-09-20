@@ -82,7 +82,7 @@
 	shallow = true
 [submodule "vendor/asqav-compliance"]
 	path = vendor/asqav-compliance
-	url = https://github.com/jagmarques/asqav-compliance
+	url = https://github.com/Atomz-org/asqav-compliance
 	branch = main
 	shallow = true
 [submodule "vendor/public-sector-ai-playbook"]

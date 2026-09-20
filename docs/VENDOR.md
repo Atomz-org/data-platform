@@ -377,9 +377,9 @@ It closes the fourth side of the governance question, and it is the only side th
 
 ## ASQAV Compliance Scanner
 
-`asqav-compliance` · [https://github.com/jagmarques/asqav-compliance](https://github.com/jagmarques/asqav-compliance) · `vendor/asqav-compliance` @ `main` · reference · Elastic-2.0
+`asqav-compliance` · [https://github.com/Atomz-org/asqav-compliance](https://github.com/Atomz-org/asqav-compliance) · `vendor/asqav-compliance` @ `main` · reference · Elastic-2.0
 
-It is a second opinion with a different failure mode. `pf provenance` is runtime evidence: it proves what the ledger recorded and can say nothing about code no agent has exercised yet. The scanner is static: it reads agent source and asks whether the controls are present at all, mapped to EU AI Act, DORA and ISO 42001. A control that exists but never runs is invisible to us and visible to it, and the reverse is equally true — which is the only reason to carry both.
+It is a second opinion with a different failure mode. `pf provenance` is runtime evidence: it proves what the ledger recorded and can say nothing about code no agent has exercised yet. The scanner is static: it reads agent source and asks whether the controls are present at all, mapped to EU AI Act, DORA and ISO 42001. A control that exists but never runs is invisible to us and visible to it, and the reverse is equally true — which is the only reason to carry both. The url is our own fork, and deliberately so. `jagmarques/asqav-compliance` was deleted on 18 September 2026 — the account with it — and for two days every `submodules: true` checkout in this repository failed at step one. The pinned commit `d57fccc` survived in GitHub's marketplace-validation mirror, `actions-marketplace-validations/jagmarques_asqav-compliance`, and `Atomz-org/asqav-compliance` is a fork of that at the same sha. Nothing was bumped: a git object name is a hash of the tree and its whole history, so a repository that can produce `d57fccc` is producing the bytes we already ran — that is the check, not the mirror owner's word. The fork exists because the mirror is no more permanent than the upstream was, and an unreachable pin costs the scan silently.
 
 ### Adopted (2)
 

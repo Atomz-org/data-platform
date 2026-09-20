@@ -25,10 +25,17 @@
 # sound and something new is not. Neither result is the other's evidence.
 #
 # The action is pinned as a submodule and run from the checkout (`uses: ./…`)
-# rather than by tag. `jagmarques/asqav-compliance@v1` is a moving reference:
-# the code that judges our compliance would change without a commit here, which
-# is the same objection this repo already makes to unpinned vendored upstreams.
-# Bumping it is `git submodule update --remote` in a reviewed PR.
+# rather than by tag. A tag is a moving reference: the code that judges our
+# compliance would change without a commit here, which is the same objection
+# this repo already makes to unpinned vendored upstreams. Bumping it is
+# `git submodule update --remote` in a reviewed PR.
+#
+# The pin resolves against `Atomz-org/asqav-compliance`, our fork, because the
+# original `jagmarques/asqav-compliance` was deleted on 18 September 2026 — the
+# account with it. Same sha, `d57fccc`: a git object name hashes the tree and
+# its whole history, so a repository that can produce it is producing the bytes
+# we already ran, and nothing about what runs here changed with the url.
+# `pf vendor why` and `docs/VENDOR.md` carry the provenance.
 name: AI governance
 
 on:
