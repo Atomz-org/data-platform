@@ -91,6 +91,31 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
+
+      # Build every project's graph before anything is compared.
+      #
+      # The architecture maps and the generated expectations tests are rendered
+      # from `transform/target/manifest.json`, which `dbt parse` writes out of
+      # committed sources — annotations and dbt models, no warehouse anywhere in
+      # it. Without this step the graph holds no models, every count reads zero,
+      # nine maps regenerate as "none yet" and the job reports drift that is
+      # really a missing build. The per-project `architecture` job already says
+      # exactly this in its own comment and builds first for exactly this
+      # reason; this job did not, and was red on all nine maps at once.
+      #
+      # Not best-effort: a build that fails here would send the comparison back
+      # to measuring an empty graph, which is the bug rather than a degraded
+      # version of the check.
+      - name: Build the graphs the maps are generated from
+        run: |
+          for d in groups/*/projects/*/; do
+            g=$(basename "$(dirname "$(dirname "$d")")")
+            p=$(basename "$d")
+            echo "::group::$g/$p"
+            uv run pf kg build "$g" "$p"
+            echo "::endgroup::"
+          done
+
       - run: uv run pf bootstrap --all
       - name: The generated tree matches the committed one
         # --ignore-submodules=dirty: a vendored submodule with local build
@@ -98,20 +123,29 @@ jobs:
         # and bootstrap never writes into vendor/.
         #
         # The exclusions are projections of a *built warehouse*, not of the
-        # scaffold. The graph is read from `transform/target/manifest.json` and
-        # the DuckDB file, and MDL, the catalogue, recce's plan and the whole
-        # reporting layer are read from the graph in turn. None of those inputs
-        # are in git, so a bare checkout regenerates them empty — an 8-line MDL
-        # against a committed 1654-line one — and the gate would fail on every
-        # PR forever while reporting nothing about drift.
+        # scaffold. MDL, the catalogue, recce's plan and the whole reporting
+        # layer are read from the DuckDB file, which is not in git, so a bare
+        # checkout regenerates them empty — an 8-line MDL against a committed
+        # 1654-line one — and the gate would fail on every PR forever while
+        # reporting nothing about drift. Those are covered by `tests` and
+        # `recce`, which build a warehouse before they compare.
         #
-        # What is left is what a fresh clone can actually reproduce, which is
-        # also what this gate was for: the plugin manifest, the loop overrides,
-        # the cards, the CI wiring. Four of five groups went months without
-        # those. The warehouse-derived artefacts are covered by `tests` and
-        # `recce`, which build before they compare.
+        # The architecture maps are deliberately *not* excluded, though they
+        # were long assumed to belong here. They come from the dbt manifest,
+        # which the build step above writes from committed sources, so a fresh
+        # clone reproduces them exactly — once it builds. Excluding them would
+        # have left the one artefact a platform change can silently invalidate
+        # across all nine projects unchecked, since the per-project workflows
+        # only fire on their own project's paths.
+        #
+        # `package-lock.yml` is excluded for the opposite reason to the rest: it
+        # is reproducible, just not from this repository. `packages.yml` pins
+        # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
+        # registry at the moment it runs and the lock changes when dbt-labs
+        # publishes, not when anyone here commits. Gating on it would fail this
+        # job on somebody else's release.
         run: |
-          if ! git diff --exit-code --ignore-submodules=dirty -- .               ':(exclude)**/kg/graph.json'               ':(exclude)**/mdl/mdl.json'               ':(exclude)**/catalog/*.json'               ':(exclude)**/governance/otop.json'               ':(exclude)**/transform/recce.yml'               ':(exclude)**/reporting/**'               ':(exclude)**/transform/models/_reporting__exposures.yml'; then
+          if ! git diff --exit-code --ignore-submodules=dirty -- .               ':(exclude)**/kg/graph.json'               ':(exclude)**/mdl/mdl.json'               ':(exclude)**/catalog/*.json'               ':(exclude)**/governance/otop.json'               ':(exclude)**/transform/recce.yml'               ':(exclude)**/reporting/**'               ':(exclude)**/transform/models/_reporting__exposures.yml'               ':(exclude)**/transform/package-lock.yml'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"
             echo "::error::locally and commit what it writes."
