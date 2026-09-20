@@ -24,11 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-#: `created` is distinct from `ok` on purpose: a step that wrote a file the
-#: repository did not have is a change a reader should see, not a no-op. It is
-#: still a pass — `StepResult.ok` is "not failed" — but printing it as a tick
-#: would hide the one run in which the file appeared.
-Status = Literal["ok", "created", "skipped", "failed"]
+Status = Literal["ok", "skipped", "failed"]
 
 
 @dataclass
@@ -617,19 +613,6 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-
-      # The maps `pf bootstrap` writes are projections of each project's
-      # knowledge graph, and the graph is read from `transform/target/
-      # manifest.json`. Without this step the reconciler regenerates all nine
-      # `kg/architecture.md` from an empty graph — real dependency graphs
-      # become "run `pf seed`" and every count becomes "none yet" — so this
-      # job demanded the committed maps be the degraded ones while each
-      # project's own `architecture` job, which does build first, demanded the
-      # opposite. The two gates could not both pass. No warehouse is needed:
-      # `--parse` reads the dbt manifest, which is what the counts come from.
-      - name: Build the graphs the maps are generated from
-        run: uv run pf kg build
-
       - run: uv run pf bootstrap --all
       - name: The generated tree matches the committed one
         # --ignore-submodules=dirty: a vendored submodule with local build
@@ -656,7 +639,6 @@ jobs:
               ':(exclude)**/catalog/*.json' \
               ':(exclude)**/governance/otop.json' \
               ':(exclude)**/transform/recce.yml' \
-              ':(exclude)**/transform/package-lock.yml' \
               ':(exclude)**/reporting/**' \
               ':(exclude)**/transform/models/_reporting__exposures.yml'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"

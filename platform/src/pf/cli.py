@@ -890,12 +890,7 @@ def bootstrap_cmd(
 def _print_bootstrap(results) -> bool:
     ok = True
     for r in results:
-        # `.get`, not `[...]`: a step returning a status this map has not been
-        # taught yet is a display problem, and crashing the whole reconciler over
-        # one glyph turns it into an outage. `group air.yaml` returned "created"
-        # and took `pf bootstrap --all` down with a KeyError.
-        mark = {"ok": "[green]✓[/]", "created": "[green]+[/]",
-                "skipped": "[dim]·[/]", "failed": "[red]✗[/]"}.get(r.status, "[yellow]?[/]")
+        mark = {"ok": "[green]✓[/]", "skipped": "[dim]·[/]", "failed": "[red]✗[/]"}[r.status]
         console.print(f"  {mark} {r.name:24} [dim]{r.detail}[/]")
         ok = ok and r.ok
     return ok

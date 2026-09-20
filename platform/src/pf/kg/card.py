@@ -7,6 +7,7 @@ budget, because the always-on tier is what silently inflates every session.
 from __future__ import annotations
 
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -172,7 +173,7 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
         gaps.append("no exposures declared — impact analysis stops at the mart")
 
     lines = [
-        f"## {project} — data index",
+        f"## {project} — data index (generated {datetime.now(UTC).date().isoformat()})",
         "",
         f"**Group:** {group} · **Concepts in use:** {_capped(used_concepts, 15)}",
         f"**Sources ({len(sources)}):** {_capped(sources, 12)}",
@@ -234,7 +235,7 @@ def render_group_card(group_dir: str | Path, group: str) -> Path:
     shared = instance.get("shared_sources") or []
 
     lines = [
-        f"## {group} — group index",
+        f"## {group} — group index (generated {datetime.now(UTC).date().isoformat()})",
         "",
         f"**Sister projects ({len(projects)}):** " + (", ".join(f"`{p}`" for p in projects) or "none"),
         f"**Ontology classes in scope:** {', '.join(classes) or 'none'}",
