@@ -1,4 +1,4 @@
-## commodity — group index (generated 2026-09-18)
+## commodity — group index (generated 2026-09-20)
 
 **Sister projects (1):** `commodity-india`
 **Ontology classes in scope:** Product, Currency, Location
