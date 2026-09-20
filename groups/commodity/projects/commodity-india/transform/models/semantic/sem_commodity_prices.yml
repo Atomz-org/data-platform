@@ -1,4 +1,7 @@
 version: 2
+# Conformed across every sister: the same semantic models over the same marts,
+# so a metric asked of one market can be asked of another by name.
+#
 # Prices are non-additive, so every measure here is a sum, count, max or min
 # that a ratio metric divides at query grain — never `average`, which cannot be
 # re-aggregated by a page that rolls days up into months.
@@ -8,7 +11,7 @@ version: 2
 # grouped by anything coarser than a commodity mixes ounces with bushels.
 semantic_models:
   - name: commodities
-    description: Commodity dimension.
+    description: Commodity dimension, with this market's unit and duty beside the catalog.
     model: ref('dim_commodities')
     entities:
       - {name: commodity, type: primary, expr: commodity_id}
@@ -19,6 +22,8 @@ semantic_models:
       - {name: exchange, type: categorical}
       - {name: price_basis, type: categorical}
       - {name: quote_unit, type: categorical}
+      - {name: market_code, type: categorical}
+      - {name: currency_code, type: categorical}
       - {name: market_unit, type: categorical}
       - {name: is_import_prohibited, type: categorical}
 
@@ -43,9 +48,9 @@ semantic_models:
       - {name: low_price_usd_min, agg: min, expr: "coalesce(low_price, close_price)"}
       - {name: contract_volume, agg: sum, expr: volume}
 
-  - name: india_landed_prices
-    description: Daily India import landed prices, ₹ per Indian market unit.
-    model: ref('fct_india_landed_prices_daily')
+  - name: landed_prices
+    description: Daily import landed prices, this market's currency per its market unit.
+    model: ref('fct_landed_prices_daily')
     defaults:
       agg_time_dimension: price_date
     entities:
@@ -56,13 +61,16 @@ semantic_models:
         type: time
         type_params: {time_granularity: day}
       - {name: commodity_id, type: categorical}
+      - {name: market_code, type: categorical}
+      - {name: currency_code, type: categorical}
       - {name: market_unit, type: categorical}
       - {name: is_duty_rate_confirmed, type: categorical}
       - {name: price_basis, type: categorical}
     measures:
-      - {name: landed_price_inr_sum, agg: sum, expr: landed_price_inr}
-      - {name: landed_price_count, agg: count, expr: landed_price_inr}
-      - {name: duty_inr_sum, agg: sum, expr: duty_inr}
+      - {name: landed_price_local_sum, agg: sum, expr: landed_price_local}
+      - {name: landed_price_count, agg: count, expr: landed_price_local}
+      - {name: duty_local_sum, agg: sum, expr: duty_local}
+      - {name: usd_fx_rate_sum, agg: sum, expr: usd_fx_rate}
 
   - name: fx_rates
     description: Daily USD fixes, quote currency per 1 USD.
