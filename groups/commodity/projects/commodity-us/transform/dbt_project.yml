@@ -1,0 +1,53 @@
+name: 'commodity_us'
+version: '1.0.0'
+config-version: 2
+profile: 'commodity_us'
+
+model-paths: ["models"]
+# Platform cleaning macros load as root-project macros, not as a package:
+# `pf_clean` dispatches to its `clean_*` siblings unqualified, and dbt namespaces
+# package macros, so a package install fails on the inner dispatch.
+#
+# dbt-snowflake is the cross-database function layer: `{{ sf_iff(...) }}` and its
+# siblings compile to whatever the *target* adapter understands, so one model
+# runs on DuckDB in development and Snowflake in production. `pf dialect` lists
+# what is covered. Adding a sibling toolkit (dbt-bigquery) means adding its
+# macros directory here.
+#
+# The group's shared macros are on the path for the same reason as the
+# platform's: unit factors and minor-currency rules are conformed across every
+# commodity sister, so they are defined once, in groups/commodity/shared. The
+# group's shared seeds arrive as a local package (packages.yml), never through
+# seed-paths — `pf check` fails a seed path outside the project.
+macro-paths:
+  - "macros"
+  - "../../../../../platform/dbt/macros"
+  - "../../../../../platform/toolkits/dbt-snowflake/macros"
+  - "../../../shared/transform/macros"
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+target-path: "target"
+
+# The one place this project says which market it is. Every model that needs the
+# currency or the country joins the group's `markets` seed on this code; a
+# literal `USD` in a model is a bug.
+vars:
+  market_code: US
+
+models:
+  commodity_us:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  commodity_us:
+    +schema: reference
+  commodity_shared:
+    +schema: reference
