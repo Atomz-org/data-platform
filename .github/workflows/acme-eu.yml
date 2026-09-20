@@ -173,10 +173,17 @@ jobs:
       # `pf kg build` parses the dbt project first. Without a manifest the graph
       # holds no models, every blast-radius query comes back empty, and the gate
       # passes because it found nothing rather than because there is nothing.
+      #
+      # Only the *group* is taken from the base — its projects and its shared
+      # package — while `platform/` stays at this PR's version. Checking the
+      # whole base out ran the base's `pf` against the PR's arguments, so a gate
+      # option added in the same PR was unknown to the job that needed it, and
+      # the platform change that fixed a gate could never pass that gate.
       - name: Blast radius against the base
         if: steps.changed.outputs.models != ''
         run: |
-          git checkout --detach origin/${{ github.base_ref }}
+          git rm -rq --cached groups/acme && rm -rf groups/acme
+          git checkout origin/${{ github.base_ref }} -- groups/acme 2>/dev/null || true
           if [ ! -f "groups/acme/projects/acme-eu/transform/dbt_project.yml" ]; then
             echo "acme/acme-eu does not exist on ${{ github.base_ref }} yet — nothing there to break"
             exit 0
