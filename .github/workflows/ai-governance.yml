@@ -115,7 +115,7 @@ jobs:
       - name: Vendored scanner
         id: pin
         run: |
-          if git submodule update --init --depth 1 vendor/asqav-compliance 2>/dev/null \
+          if git submodule update --init vendor/asqav-compliance 2>/dev/null \
              && { [ -f vendor/asqav-compliance/action.yml ] || [ -f vendor/asqav-compliance/action.yaml ]; }; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
@@ -167,7 +167,7 @@ jobs:
       # cannot take the blocking gate down with it. This step still fails the
       # job if the catalogue itself cannot be fetched, which is the point.
       - name: Vendored control catalogue
-        run: git submodule update --init --depth 1 vendor/ai-governance-framework
+        run: git submodule update --init vendor/ai-governance-framework
 
       - uses: astral-sh/setup-uv@v5
         with:

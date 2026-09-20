@@ -422,7 +422,7 @@ AIR_JOB = """\
     steps:
       - uses: actions/checkout@v4
       - name: Vendored control catalogue
-        run: git submodule update --init --depth 1 vendor/ai-governance-framework
+        run: git submodule update --init vendor/ai-governance-framework
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
 
