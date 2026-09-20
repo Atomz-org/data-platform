@@ -196,7 +196,7 @@ def _card_regeneration_does_not_bust_the_cache(root: Path, group: str,
         return ContractResult("card_regeneration_does_not_bust_the_cache", "warn",
                               "no context card yet — run `pf kg card`")
 
-    text = card.read_text()
+    text = card.read_text(encoding="utf-8")
     today = _stable(text)
     # The same card, regenerated tomorrow with no content change.
     import re
@@ -335,7 +335,7 @@ def _toolkit_skills_declare_themselves(root: Path, group: str,
     for skill in sorted((root / "platform" / "toolkits").glob("*/skills/*/SKILL.md")):
         count += 1
         rel = f"{skill.parents[2].name}/{skill.parent.name}"
-        text = skill.read_text()
+        text = skill.read_text(encoding="utf-8")
         if not text.startswith("---"):
             bad.append(f"{rel}: no frontmatter")
             continue

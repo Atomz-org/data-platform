@@ -160,18 +160,18 @@ def generate(project_dir: str | Path, prefix: str = "stg",
                     "    description: Raw data landed by dlt. Schema owned by the source.",
                     "    tables:"]
             body += [f"      - name: {a.resource}" for a in group]
-            sources_yml.write_text("\n".join(body) + "\n")
+            sources_yml.write_text("\n".join(body) + "\n", encoding="utf-8")
             written.append(sources_yml)
 
         for ann in group:
             f = sdir / f"{prefix}_{src}__{ann.resource}.sql"
             if overwrite or not f.exists():
-                f.write_text(render_staging_sql(ann, prefix))
+                f.write_text(render_staging_sql(ann, prefix), encoding="utf-8")
                 written.append(f)
 
         schema = sdir / f"_{src}__models.yml"
         if overwrite or not schema.exists():
-            schema.write_text(render_staging_yml(group, prefix))
+            schema.write_text(render_staging_yml(group, prefix), encoding="utf-8")
             written.append(schema)
 
     return written

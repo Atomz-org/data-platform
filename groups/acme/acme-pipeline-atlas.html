@@ -1,0 +1,410 @@
+<title>Acme Pipeline Atlas</title>
+<style>
+  /* Palette is lifted from the repo's own MM_CLASSDEF in platform/src/pf/pr.py,
+     so this page and the per-PR architecture chart read as one system. */
+  :root {
+    --ground:      #f4f4f2;
+    --surface:     #ffffff;
+    --surface-2:   #fafaf9;
+    --ink:         #0b0b0b;
+    --ink-muted:   #5c5a55;
+    --ink-faint:   #898781;
+    --rule:        #e2e1dc;
+    --accent:      #4a3aa7;
+    --accent-soft: #ded9f7;
+    --diagram-bg:  #fdfdfc;
+
+    --src:    #eda100;
+    --duck:   #2a78d6;
+    --model:  #1baf7a;
+    --metric: #e87ba4;
+    --expo:   #eb6834;
+    --plat:   #4a3aa7;
+
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #15141a;
+      --surface:     #1c1b22;
+      --surface-2:   #232229;
+      --ink:         #f2f1ee;
+      --ink-muted:   #a8a59d;
+      --ink-faint:   #7d7a73;
+      --rule:        #302e3a;
+      --accent:      #a99bf0;
+      --accent-soft: #2b2545;
+      --src:    #f0b53a;
+      --duck:   #6aa6ea;
+      --model:  #4ac79a;
+      --metric: #f09cbc;
+      --expo:   #f28a5e;
+      --plat:   #a99bf0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #15141a;
+    --surface:     #1c1b22;
+    --surface-2:   #232229;
+    --ink:         #f2f1ee;
+    --ink-muted:   #a8a59d;
+    --ink-faint:   #7d7a73;
+    --rule:        #302e3a;
+    --accent:      #a99bf0;
+    --accent-soft: #2b2545;
+    --src:    #f0b53a;
+    --duck:   #6aa6ea;
+    --model:  #4ac79a;
+    --metric: #f09cbc;
+    --expo:   #f28a5e;
+    --plat:   #a99bf0;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    margin: 0;
+    padding: clamp(1.5rem, 4vw, 4rem) clamp(1rem, 4vw, 2rem) 5rem;
+  }
+  .wrap { max-width: 78rem; margin: 0 auto; display: flex; flex-direction: column; gap: 3rem; }
+  .prose { max-width: 40rem; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 .75rem;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.9rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    font-weight: 640;
+    text-wrap: balance;
+    margin: 0 0 .75rem;
+  }
+  h2 {
+    font-size: 1.25rem; letter-spacing: -.01em; font-weight: 620;
+    text-wrap: balance; margin: 0 0 .5rem;
+  }
+  .lede { font-size: 1.08rem; color: var(--ink-muted); margin: 0; text-wrap: pretty; }
+  p { margin: 0 0 1rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; padding: 0; list-style: none; }
+  .chip {
+    font-family: var(--font-mono); font-size: .78rem;
+    padding: .3rem .7rem; border-radius: 999px;
+    border: 1px solid var(--rule); background: var(--surface); color: var(--ink-muted);
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  .panel {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-radius: 10px; padding: clamp(1rem, 3vw, 1.75rem);
+  }
+
+  .diagram { background: var(--diagram-bg); overflow-x: auto; padding: 1.25rem; }
+  .diagram pre.mermaid { margin: 0; min-width: 40rem; }
+
+  .legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .85rem 1.25rem; padding: 0; margin: 0; list-style: none; }
+  .legend li { display: flex; gap: .6rem; align-items: baseline; font-size: .9rem; }
+  .swatch { width: .85rem; height: .85rem; border-radius: 3px; flex: none; transform: translateY(.1rem); border: 2px solid; }
+  .legend b { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; }
+  .legend span { color: var(--ink-muted); }
+
+  .stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem; }
+  .stage { border-top: 3px solid; padding-top: .9rem; }
+  .stage h3 { font-size: .95rem; margin: 0 0 .4rem; letter-spacing: -.005em; }
+  .stage p { font-size: .9rem; color: var(--ink-muted); margin: 0; }
+  .stage .who { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-faint); letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: .3rem; }
+
+  .rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+  .rules li { padding-left: 1rem; border-left: 2px solid var(--accent-soft); }
+  .rules strong { display: block; font-size: .95rem; }
+  .rules span { font-size: .92rem; color: var(--ink-muted); }
+
+  code {
+    font-family: var(--font-mono); font-size: .86em;
+    background: var(--surface-2); border: 1px solid var(--rule);
+    padding: .1em .35em; border-radius: 4px;
+  }
+  details { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+  summary {
+    cursor: pointer; padding: 1rem clamp(1rem, 3vw, 1.75rem);
+    font-family: var(--font-mono); font-size: .82rem;
+    letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted);
+  }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
+  details[open] summary { border-bottom: 1px solid var(--rule); color: var(--ink); }
+  pre.source {
+    margin: 0; padding: clamp(1rem, 3vw, 1.75rem);
+    overflow-x: auto; font-family: var(--font-mono);
+    font-size: .78rem; line-height: 1.55; color: var(--ink);
+  }
+  footer { color: var(--ink-faint); font-size: .84rem; border-top: 1px solid var(--rule); padding-top: 1.25rem; }
+</style>
+
+<div class="wrap">
+
+  <header class="prose">
+    <p class="eyebrow">groups / acme</p>
+    <h1>Acme Pipeline Atlas</h1>
+    <p class="lede">
+      Two sister companies that never read each other, one roll-up that reads both
+      read-only, and a platform layer that owns every piece of wiring the three have
+      in common.
+    </p>
+    <ul class="chips">
+      <li class="chip"><b>dlt</b> ingest</li>
+      <li class="chip"><b>DuckDB</b> warehouse</li>
+      <li class="chip"><b>dbt</b> transform</li>
+      <li class="chip"><b>Dagster</b> orchestrate</li>
+    </ul>
+  </header>
+
+  <section class="panel diagram" aria-label="Acme group architecture diagram">
+<pre class="mermaid">
+flowchart TB
+
+  subgraph PLAT["platform/ — shared by every project, edited by none of them"]
+    direction LR
+    PF2["pf.ontology.annotate<br/>x-ontology-class · x-role · x-links-to"]:::plat
+    PF1["pf.runtime.dlt_runtime<br/>pipeline factory · schema contract"]:::plat
+    PF4["pf.runtime.warehouse<br/>DuckDB path · ATTACH · writer pool"]:::plat
+    PF3["pf.runtime.dagster_runtime<br/>build_definitions · lineage stitch"]:::plat
+  end
+
+  subgraph GUS["acme-us — own warehouse, own pipelines"]
+    direction TB
+    USSRC["stripe_source<br/>dlt.source"]:::src
+    USC["customers<br/>merge on id · Customer"]:::src
+    USS["subscriptions<br/>merge on id · Subscription"]:::src
+    USH["charges<br/>merge on id · Payment"]:::src
+    USDB[("acme_us.duckdb<br/>raw dataset: stripe")]:::duck
+    USG1["stg_stripe__customers"]:::model
+    USG2["stg_stripe__subscriptions"]:::model
+    USG3["stg_stripe__charges"]:::model
+    USM1["dim_customers"]:::model
+    USM2["fct_payments"]:::model
+    USM3["fct_revenue"]:::model
+    USSEM["sem_payments · metrics_revenue<br/>MetricFlow semantic layer"]:::metric
+    USEV["Evidence pages"]:::expo
+
+    USSRC --> USC & USS & USH
+    USC & USS & USH -- "dlt.pipeline · merge" --> USDB
+    USDB -- "dbt source" --> USG1 & USG2 & USG3
+    USG1 --> USM1
+    USG3 --> USM2
+    USG2 --> USM3
+    USM2 --> USM3
+    USM1 & USM3 --> USSEM
+    USSEM --> USEV
+  end
+
+  subgraph GEU["acme-eu — same shape, separate business logic"]
+    direction TB
+    EUSRC["stripe_source<br/>dlt.source"]:::src
+    EURES["3 annotated resources<br/>customers · subscriptions · charges"]:::src
+    EUDB[("acme_eu.duckdb<br/>raw dataset: stripe")]:::duck
+    EUSTG["staging · 3 models"]:::model
+    EUM3["fct_revenue"]:::model
+    EUSEM["semantic layer"]:::metric
+    EUEV["Evidence pages"]:::expo
+
+    EUSRC --> EURES
+    EURES -- "dlt.pipeline · merge" --> EUDB
+    EUDB -- "dbt source" --> EUSTG
+    EUSTG --> EUM3
+    EUM3 --> EUSEM
+    EUSEM --> EUEV
+  end
+
+  subgraph GRU["acme-rollup — cross-entity, reads sisters READ_ONLY"]
+    direction TB
+    RUAS["rollup asset<br/>compute_kind duckdb"]:::orch
+    RUDB[("acme_rollup.duckdb<br/>us · eu attached")]:::duck
+    RUAS --> RUDB
+  end
+
+  USM3 -- "AssetKey dep" --> RUAS
+  EUM3 -- "AssetKey dep" --> RUAS
+  USDB -. "ATTACH AS us (READ_ONLY)" .-> RUAS
+  EUDB -. "ATTACH AS eu (READ_ONLY)" .-> RUAS
+
+  PF2 -.-> USC
+  PF1 -.-> USDB
+  PF3 -.-> USG1
+  PF4 -.-> RUAS
+
+  classDef src    fill:#fbe8bd,stroke:#eda100,stroke-width:2px,color:#0b0b0b
+  classDef duck   fill:#e3eefc,stroke:#2a78d6,stroke-width:2px,color:#0b0b0b
+  classDef model  fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+  classDef metric fill:#fadfe8,stroke:#e87ba4,stroke-width:2px,color:#0b0b0b
+  classDef expo   fill:#fbdccf,stroke:#eb6834,stroke-width:2px,color:#0b0b0b
+  classDef plat   fill:#ded9f7,stroke:#4a3aa7,stroke-width:2px,color:#0b0b0b
+  classDef orch   fill:#ded9f7,stroke:#4a3aa7,stroke-width:2px,color:#0b0b0b
+
+  class PLAT,GUS,GEU,GRU grp
+  classDef grp fill:#f6f6f4,stroke:#898781,stroke-width:1px,color:#0b0b0b
+</pre>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">Legend</p>
+    <ul class="legend">
+      <li><span class="swatch" style="background:#fbe8bd;border-color:#eda100"></span><div><b>dlt</b><br><span>Annotated sources and resources</span></div></li>
+      <li><span class="swatch" style="background:#e3eefc;border-color:#2a78d6"></span><div><b>DuckDB</b><br><span>One file per project</span></div></li>
+      <li><span class="swatch" style="background:#d6f2e6;border-color:#1baf7a"></span><div><b>dbt</b><br><span>Staging and mart models</span></div></li>
+      <li><span class="swatch" style="background:#fadfe8;border-color:#e87ba4"></span><div><b>MetricFlow</b><br><span>Semantic models and metrics</span></div></li>
+      <li><span class="swatch" style="background:#fbdccf;border-color:#eb6834"></span><div><b>Evidence</b><br><span>Reporting exposures</span></div></li>
+      <li><span class="swatch" style="background:#ded9f7;border-color:#4a3aa7"></span><div><b>platform / Dagster</b><br><span>Shared runtime and assets</span></div></li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="eyebrow">What each layer owns</p>
+    <div class="stages">
+      <div class="stage" style="border-color:#eda100">
+        <span class="who">dlt</span>
+        <h3>Projects declare, the platform wires</h3>
+        <p>A project writes <code>@dlt.resource</code> plus <code>@annotate</code>. It never names a destination — <code>build_pipeline()</code> does, as <code>{project}_{source}</code> against the project's DuckDB file.</p>
+      </div>
+      <div class="stage" style="border-color:#2a78d6">
+        <span class="who">DuckDB</span>
+        <h3>One file, one entity</h3>
+        <p><code>acme_us.duckdb</code> and <code>acme_eu.duckdb</code> never meet except through the roll-up, which attaches both <code>READ_ONLY</code> and detaches after. Each project gets its own writer pool so sisters never queue behind each other.</p>
+      </div>
+      <div class="stage" style="border-color:#1baf7a">
+        <span class="who">dbt</span>
+        <h3>Staging mirrors the source</h3>
+        <p>One staging model per dlt resource, then marts. The dbt <em>source</em> is what ties back to the dlt asset that landed it.</p>
+      </div>
+      <div class="stage" style="border-color:#4a3aa7">
+        <span class="who">Dagster</span>
+        <h3>One code location per project</h3>
+        <p><code>definitions.py</code> is ten lines; <code>build_definitions()</code> assembles everything. dbt models are emitted through <code>@dbt_assets</code> rather than one shelled-out <code>dbt build</code> — because a single opaque asset draws no edges.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">Four decisions worth knowing</p>
+    <ul class="rules">
+      <li>
+        <strong>The annotation is the contract, not a hint.</strong>
+        <span>Roles attached at ingest drive staging generation, PII policy, statistical monitors, graph edges and conformance. <code>money_amount</code> becomes a sum-drift monitor; <code>event_time</code> becomes a freshness check.</span>
+      </li>
+      <li>
+        <strong>Columns evolve, data types freeze.</strong>
+        <span>The default schema contract is <code>tables: evolve, columns: evolve, data_type: freeze</code>. Resilient to a new field; unwilling to let a renamed endpoint quietly create a parallel table nobody models.</span>
+      </li>
+      <li>
+        <strong>Lineage is why dbt is not shelled out.</strong>
+        <span>The translator maps each dbt source onto the dlt asset that lands it. That mapping is the only thing stitching ingestion and transformation into one graph.</span>
+      </li>
+      <li>
+        <strong>The roll-up never imports a sister.</strong>
+        <span>It depends on plain <code>AssetKey</code>s pointing into the sisters' code locations, and reads their data through a read-only <code>ATTACH</code>. Business logic does not cross the boundary — only numbers do.</span>
+      </li>
+    </ul>
+  </section>
+
+  <details>
+    <summary>Mermaid source</summary>
+    <pre class="source"><code>flowchart TB
+
+  subgraph PLAT["platform/ — shared by every project, edited by none of them"]
+    direction LR
+    PF2["pf.ontology.annotate&lt;br/&gt;x-ontology-class · x-role · x-links-to"]:::plat
+    PF1["pf.runtime.dlt_runtime&lt;br/&gt;pipeline factory · schema contract"]:::plat
+    PF4["pf.runtime.warehouse&lt;br/&gt;DuckDB path · ATTACH · writer pool"]:::plat
+    PF3["pf.runtime.dagster_runtime&lt;br/&gt;build_definitions · lineage stitch"]:::plat
+  end
+
+  subgraph GUS["acme-us — own warehouse, own pipelines"]
+    direction TB
+    USSRC["stripe_source&lt;br/&gt;dlt.source"]:::src
+    USC["customers&lt;br/&gt;merge on id · Customer"]:::src
+    USS["subscriptions&lt;br/&gt;merge on id · Subscription"]:::src
+    USH["charges&lt;br/&gt;merge on id · Payment"]:::src
+    USDB[("acme_us.duckdb&lt;br/&gt;raw dataset: stripe")]:::duck
+    USG1["stg_stripe__customers"]:::model
+    USG2["stg_stripe__subscriptions"]:::model
+    USG3["stg_stripe__charges"]:::model
+    USM1["dim_customers"]:::model
+    USM2["fct_payments"]:::model
+    USM3["fct_revenue"]:::model
+    USSEM["sem_payments · metrics_revenue&lt;br/&gt;MetricFlow semantic layer"]:::metric
+    USEV["Evidence pages"]:::expo
+
+    USSRC --&gt; USC &amp; USS &amp; USH
+    USC &amp; USS &amp; USH -- "dlt.pipeline · merge" --&gt; USDB
+    USDB -- "dbt source" --&gt; USG1 &amp; USG2 &amp; USG3
+    USG1 --&gt; USM1
+    USG3 --&gt; USM2
+    USG2 --&gt; USM3
+    USM2 --&gt; USM3
+    USM1 &amp; USM3 --&gt; USSEM
+    USSEM --&gt; USEV
+  end
+
+  subgraph GEU["acme-eu — same shape, separate business logic"]
+    direction TB
+    EUSRC["stripe_source&lt;br/&gt;dlt.source"]:::src
+    EURES["3 annotated resources&lt;br/&gt;customers · subscriptions · charges"]:::src
+    EUDB[("acme_eu.duckdb&lt;br/&gt;raw dataset: stripe")]:::duck
+    EUSTG["staging · 3 models"]:::model
+    EUM3["fct_revenue"]:::model
+    EUSEM["semantic layer"]:::metric
+    EUEV["Evidence pages"]:::expo
+
+    EUSRC --&gt; EURES
+    EURES -- "dlt.pipeline · merge" --&gt; EUDB
+    EUDB -- "dbt source" --&gt; EUSTG
+    EUSTG --&gt; EUM3
+    EUM3 --&gt; EUSEM
+    EUSEM --&gt; EUEV
+  end
+
+  subgraph GRU["acme-rollup — cross-entity, reads sisters READ_ONLY"]
+    direction TB
+    RUAS["rollup asset&lt;br/&gt;compute_kind duckdb"]:::orch
+    RUDB[("acme_rollup.duckdb&lt;br/&gt;us · eu attached")]:::duck
+    RUAS --&gt; RUDB
+  end
+
+  USM3 -- "AssetKey dep" --&gt; RUAS
+  EUM3 -- "AssetKey dep" --&gt; RUAS
+  USDB -. "ATTACH AS us (READ_ONLY)" .-&gt; RUAS
+  EUDB -. "ATTACH AS eu (READ_ONLY)" .-&gt; RUAS
+
+  PF2 -.-&gt; USC
+  PF1 -.-&gt; USDB
+  PF3 -.-&gt; USG1
+  PF4 -.-&gt; RUAS
+
+  classDef src    fill:#fbe8bd,stroke:#eda100,stroke-width:2px,color:#0b0b0b
+  classDef duck   fill:#e3eefc,stroke:#2a78d6,stroke-width:2px,color:#0b0b0b
+  classDef model  fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+  classDef metric fill:#fadfe8,stroke:#e87ba4,stroke-width:2px,color:#0b0b0b
+  classDef expo   fill:#fbdccf,stroke:#eb6834,stroke-width:2px,color:#0b0b0b
+  classDef plat   fill:#ded9f7,stroke:#4a3aa7,stroke-width:2px,color:#0b0b0b
+  classDef orch   fill:#ded9f7,stroke:#4a3aa7,stroke-width:2px,color:#0b0b0b
+
+  class PLAT,GUS,GEU,GRU grp
+  classDef grp fill:#f6f6f4,stroke:#898781,stroke-width:1px,color:#0b0b0b</code></pre>
+  </details>
+
+  <footer>
+    Colours are the repo's own <code>MM_CLASSDEF</code> from <code>platform/src/pf/pr.py</code>, so this reads
+    as one system with the per-PR architecture chart. Pale fill, saturated stroke, near-black ink —
+    theme-invariant by design, which is why the diagram keeps a light canvas on a dark page.
+  </footer>
+
+</div>

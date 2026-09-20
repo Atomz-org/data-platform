@@ -49,15 +49,13 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
 
 import yaml
 
+from pf.checks import Check, Status, failed, passed, unexercised  # noqa: F401 — Status re-exported
 from pf.onboard.audit import Risk
 from pf.onboard.dialect import Report, analyse
 from pf.onboard.survey import RESERVED_MACROS
-
-Status = Literal["pass", "fail", "unexercised"]
 
 #: The layers this platform reasons about. `semantic` is not a model directory in
 #: the same sense as the others — it holds MetricFlow YAML — but it lives under
@@ -78,34 +76,11 @@ _REF = re.compile(r"\{\{\s*(?:ref|source)\s*\(([^)]*)\)", re.IGNORECASE)
 
 
 # ------------------------------------------------------------------ checks --
-@dataclass(frozen=True)
-class Check:
-    """One gate condition, with the evidence for its verdict.
-
-    `evidence` is not a restatement of `name`. A check that says only "failed"
-    forces whoever reads it to reproduce the check by hand, which is how a gate
-    stops being read at all.
-    """
-
-    name: str
-    status: Status
-    evidence: str
-
-    @property
-    def ok(self) -> bool:
-        return self.status != "fail"
-
-
-def passed(name: str, evidence: str) -> Check:
-    return Check(name, "pass", evidence)
-
-
-def failed(name: str, evidence: str) -> Check:
-    return Check(name, "fail", evidence)
-
-
-def unexercised(name: str, evidence: str) -> Check:
-    return Check(name, "unexercised", evidence)
+# `Check`, `Status`, `passed`, `failed` and `unexercised` now live in
+# `pf.checks` — imported above and re-exported here, because this module defined
+# them first and `from pf.onboard.ladder import Check` is what the callers write.
+# `pf.air` needed the same vocabulary without this module's imports; the move is
+# the whole change.
 
 
 @dataclass
@@ -173,7 +148,7 @@ class Ctx:
         if not p.exists():
             return {}
         try:
-            return yaml.safe_load(p.read_text()) or {}
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             return {}
 
@@ -183,7 +158,7 @@ class Ctx:
         if not p.exists():
             return {}
         try:
-            return yaml.safe_load(p.read_text()) or {}
+            return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except yaml.YAMLError:
             return {}
 
@@ -223,7 +198,7 @@ class Ctx:
         out = []
         for f in sorted((self.transform / "models" / "semantic").rglob("*.yml")):
             try:
-                doc = yaml.safe_load(f.read_text())
+                doc = yaml.safe_load(f.read_text(encoding="utf-8"))
             except yaml.YAMLError:
                 continue
             if isinstance(doc, dict):
@@ -283,7 +258,7 @@ def _upstreams(path: Path) -> set[str]:
     why the manifest will not build is no use.
     """
     try:
-        text = path.read_text(errors="ignore")
+        text = path.read_text(errors="ignore", encoding="utf-8")
     except OSError:
         return set()
     return {m.group(1).strip() for m in _REF.finditer(text)}
@@ -361,7 +336,7 @@ def _raw_resources(c: Ctx) -> set[str]:
     names = {f.stem for f in (c.transform / "seeds").rglob("*.csv")}
     for f in (c.transform / "models").rglob("*.yml"):
         try:
-            doc = yaml.safe_load(f.read_text())
+            doc = yaml.safe_load(f.read_text(encoding="utf-8"))
         except yaml.YAMLError:
             continue
         if not isinstance(doc, dict):
@@ -743,7 +718,7 @@ def check_metrics(c: Ctx) -> list[Check]:
         else:
             mf = c.transform / "target" / "semantic_manifest.json"
             if mf.exists():
-                doc = json.loads(mf.read_text())
+                doc = json.loads(mf.read_text(encoding="utf-8"))
                 checks.append(passed(
                     "semantic manifest validates",
                     f"{len(doc.get('semantic_models') or [])} semantic model(s), "
@@ -812,8 +787,8 @@ def eval_review(c: Ctx) -> list[Risk]:
 
     if base.exists() and current.exists():
         try:
-            b = set(json.loads(base.read_text()).get("nodes", {}))
-            n = set(json.loads(current.read_text()).get("nodes", {}))
+            b = set(json.loads(base.read_text(encoding="utf-8")).get("nodes", {}))
+            n = set(json.loads(current.read_text(encoding="utf-8")).get("nodes", {}))
         except (json.JSONDecodeError, OSError):
             b = n = set()
         added, removed = n - b, b - n

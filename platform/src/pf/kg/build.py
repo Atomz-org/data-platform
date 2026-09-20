@@ -5,19 +5,21 @@ Inputs (each optional — the builder degrades gracefully):
   transform/target/manifest.json    dbt models, columns, tests, exposures, lineage
   transform/target/semantic_manifest.json   MetricFlow metrics and dimensions
   decisions/ADR-*.md                the decision log, linked to what it governs
-  the platform ontology             concept nodes and the topology
+  governance/policy.yaml            this project's own policy overlay
+  the project ontology              concept nodes, the topology, the policy chain
 """
 
 from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from pf.kg.store import Edge, Node, open_graph
 from pf.ontology.annotate import load_annotations
-from pf.ontology.model import load_group_ontology, load_ontology
+from pf.ontology.model import load_group_ontology, load_ontology, load_project_ontology
 
 
 def cid(name: str) -> str: return f"concept:{name}"
@@ -122,11 +124,26 @@ def build_graph(project_dir: str | Path, group: str = "", project: str = "") -> 
     nodes: list[Node] = []
     edges: list[Edge] = []
 
-    # The group ontology, not the platform one: a term a steward approved into
-    # groups/<g>/ontology/extension.yaml is not usable by dbt, Wren, BI or an
-    # agent until it is in the graph, and building from the platform ontology
+    # The *project* ontology, not the platform one: a term a steward approved
+    # into groups/<g>/ontology/extension.yaml is not usable by dbt, Wren, BI or
+    # an agent until it is in the graph, and building from the platform ontology
     # silently drops every approved extension.
-    onto = load_group_ontology(_repo_root(root), group) if group else load_ontology()
+    #
+    # Resolving only as far as the group made the same mistake one layer in. The
+    # governance plane is what an agent walks to ask "what constrains this, and
+    # what proves it ran" — built at group scope it answers with the family's
+    # floor, so a project that raised a severity or declared an obligation of its
+    # own (acme-eu's GDPR erasure path) is governed by rules its own graph does
+    # not contain. The overlay may only tighten, so the project scope is always
+    # the stricter and truer answer.
+    repo = _repo_root(root)
+    name = project or root.name
+    if group and name:
+        onto = load_project_ontology(repo, group, name)
+    elif group:
+        onto = load_group_ontology(repo, group)
+    else:
+        onto = load_ontology()
 
     _add_ontology(nodes, edges, onto)
     _add_annotations(root, nodes, edges, onto)
@@ -229,7 +246,11 @@ def _add_policy(onto, nodes: list[Node], edges: list[Edge]) -> None:
             props={"constraint": p.constraint, "severity": p.severity,
                    "applies_to": p.applies_to, "params": p.params,
                    "enforced_by": p.enforced_by, "enforced": p.enforced,
-                   "intent": p.intent},
+                   "intent": p.intent,
+                   # Which layer set this severity. Without it the graph shows a
+                   # policy raised to error but not who raised it, which is the
+                   # one question `Policy.scope` exists to answer.
+                   "scope": p.scope},
         ))
         for e in p.evidence:
             edges.append(Edge(src=polid(p.id), dst=evid(e), kind="evidenced_by"))
@@ -320,7 +341,7 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     manifest_path = root / "transform" / "target" / "manifest.json"
     if not manifest_path.exists():
         return
-    manifest = json.loads(manifest_path.read_text())
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     by_unique: dict[str, str] = {}
 
@@ -330,8 +351,12 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             name = node["name"]
             n_id = mid(name)
             by_unique[uid] = n_id
-            path_parts = (node.get("path") or "").split("/")
-            layer = path_parts[0] if path_parts else "marts"
+            # dbt writes `path` with the OS separator — backslashes on Windows —
+            # and a layer of `martsct_x.sql` matched nothing downstream: the
+            # MDL manifest, the metric-gap loop and the PII audit all saw zero
+            # marts. Normalise before splitting, the same way the gate does.
+            path_parts = (node.get("path") or "").replace("\\", "/").split("/")
+            layer = path_parts[0] if path_parts and path_parts[0] else "marts"
             nodes.append(Node(
                 id=n_id, kind="Model", name=name, layer=layer,
                 label=(node.get("description") or "").strip().split("\n")[0],
@@ -409,7 +434,7 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     sm_path = root / "transform" / "target" / "semantic_manifest.json"
     if not sm_path.exists():
         return
-    sm = json.loads(sm_path.read_text())
+    sm = json.loads(sm_path.read_text(encoding="utf-8"))
 
     measure_owner: dict[str, str] = {}
     #: What the semantic layer says a measure *is* — its aggregation and the
@@ -562,6 +587,91 @@ def _add_decisions(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             edges.append(Edge(src=d_id, dst=dst, kind="decides"))
 
 
+@dataclass
+class GraphDrift:
+    """dbt resources the manifest declares that the tracked graph does not hold.
+
+    Deliberately compares **only what a runner without a warehouse can see**.
+    Models, metrics and exposures come from the dbt manifests, which any checkout
+    has; columns are backfilled from `information_schema`, which CI does not. A
+    check that compared columns too would be red on every pull request forever,
+    and a permanently red check is one nobody reads.
+
+    `exercised` is the honest third answer. A project with no manifest cannot be
+    judged either way, and reporting that as "no drift" would be the same green
+    tick for "found nothing" that `GateNotExercised` exists to refuse.
+    """
+
+    project: str
+    exercised: bool
+    reason: str = ""
+    models: list[str] = field(default_factory=list)
+    metrics: list[str] = field(default_factory=list)
+    exposures: list[str] = field(default_factory=list)
+
+    @property
+    def total(self) -> int:
+        return len(self.models) + len(self.metrics) + len(self.exposures)
+
+    def render(self) -> str:
+        if not self.exercised:
+            return f"?  {self.project} — not exercised: {self.reason}"
+        if not self.total:
+            return f"✓  {self.project} — graph is current"
+        parts = [f"⛔ {self.project} — {self.total} resource(s) missing from the graph"]
+        for label, names in (("models", self.models), ("metrics", self.metrics),
+                             ("exposures", self.exposures)):
+            if names:
+                head = ", ".join(sorted(names)[:8])
+                rest = f", +{len(names) - 8} more" if len(names) > 8 else ""
+                parts.append(f"     {label}: {head}{rest}")
+        parts.append("     run `pf kg build` and commit kg/graph.json")
+        return "\n".join(parts)
+
+
+def graph_drift(project_dir: str | Path, project: str = "") -> GraphDrift:
+    """Is the committed graph current with the dbt project beside it?
+
+    This is the question a merge gate needs and `pf kg build` cannot answer:
+    the graph is a build artefact with no clock, so one built before a model
+    landed answers confidently and wrongly. Nothing else in the repo notices —
+    the graph simply has fewer nodes than the project has models.
+    """
+    root = Path(project_dir)
+    name = project or root.name
+
+    manifest_path = root / "transform" / "target" / "manifest.json"
+    if not manifest_path.exists():
+        return GraphDrift(name, exercised=False,
+                          reason="no dbt manifest; run `pf kg build` (which parses first)")
+
+    graph_json = root / "kg" / "graph.json"
+    if not graph_json.exists():
+        return GraphDrift(name, exercised=False,
+                          reason="no kg/graph.json; the graph has never been built")
+
+    payload = json.loads(graph_json.read_text())
+    have = {(n.get("kind"), n.get("name")) for n in payload.get("nodes") or []}
+
+    manifest = json.loads(manifest_path.read_text())
+    drift = GraphDrift(name, exercised=True)
+
+    for node in (manifest.get("nodes") or {}).values():
+        if node.get("resource_type") == "model" and ("Model", node["name"]) not in have:
+            drift.models.append(node["name"])
+    for exp in (manifest.get("exposures") or {}).values():
+        if ("Exposure", exp["name"]) not in have:
+            drift.exposures.append(exp["name"])
+
+    sm_path = root / "transform" / "target" / "semantic_manifest.json"
+    if sm_path.exists():
+        sm = json.loads(sm_path.read_text())
+        for metric in sm.get("metrics") or []:
+            if ("Metric", metric["name"]) not in have:
+                drift.metrics.append(metric["name"])
+    return drift
+
+
 def _export_json(graph_path: Path, out_path: Path) -> None:
     with open_graph(graph_path, read_only=True) as g:
         payload = {
@@ -576,4 +686,4 @@ def _export_json(graph_path: Path, out_path: Path) -> None:
             ],
         }
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(payload, indent=2))
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

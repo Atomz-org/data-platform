@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/format_edit.py",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/format_edit.py",
             "timeout": 60,
             "statusMessage": "Formatting"
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session_start.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session_start.sh",
             "timeout": 20
           },
           {
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/notify.sh stop",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/notify.sh stop",
             "timeout": 15
           }
         ]
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/notify.sh permission",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/notify.sh permission",
             "timeout": 15
           }
         ]

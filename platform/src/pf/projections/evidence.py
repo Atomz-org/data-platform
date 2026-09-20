@@ -132,8 +132,8 @@ def _load(project_dir: Path) -> tuple[dict, dict]:
     target = project_dir / "transform" / "target"
     sm = target / "semantic_manifest.json"
     mdl = project_dir / "mdl" / "mdl.json"
-    return (json.loads(sm.read_text()) if sm.exists() else {},
-            json.loads(mdl.read_text()) if mdl.exists() else {})
+    return (json.loads(sm.read_text(encoding="utf-8")) if sm.exists() else {},
+            json.loads(mdl.read_text(encoding="utf-8")) if mdl.exists() else {})
 
 
 _DIM_REF = re.compile(r"\{\{\s*Dimension\(\s*'([^']+)'\s*\)\s*\}\}")
@@ -668,7 +668,7 @@ def _exposures(out: Path, project: str, group: str, specs: list[MetricSpec],
 
     for page in sorted((out / "pages").rglob("*.md")):
         rel = page.relative_to(out / "pages")
-        text = page.read_text()
+        text = page.read_text(encoding="utf-8")
         title = next((ln.split(":", 1)[1].strip().strip("'\"")
                       for ln in text.splitlines()[:12] if ln.startswith("title:")),
                      page.stem)
@@ -712,7 +712,7 @@ def _owner(root: Path) -> dict[str, str]:
         return fallback
     try:
         import yaml
-        data = yaml.safe_load(manifest.read_text()) or {}
+        data = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
     except Exception:
         return fallback
     owner = data.get("owner")
@@ -731,6 +731,30 @@ def _owner(root: Path) -> dict[str, str]:
     return fallback
 
 
+def _row_counts(root: Path, group: str, project: str,
+                relations: list[tuple[str, str]]) -> dict[str, int] | None:
+    """Row count per (schema, name) relation, or None when the warehouse
+    does not exist yet. A relation that cannot be counted (not built yet) is
+    simply absent — its extract stays, and `npm run sources` reports it."""
+    from pf.runtime.warehouse import Warehouse
+
+    wh = Warehouse.for_project(root, group, project)
+    if not wh.path.exists():
+        return None
+    counts: dict[str, int] = {}
+    try:
+        with wh.connect(read_only=True) as con:
+            for schema, name in relations:
+                try:
+                    counts[name] = con.execute(
+                        f'SELECT count(*) FROM "{schema}"."{name}"').fetchone()[0]
+                except Exception:
+                    continue
+    except Exception:
+        return None
+    return counts
+
+
 def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     """Generate the Evidence project. Returns a summary."""
     root = Path(project_dir)
@@ -747,9 +771,9 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
 
     for spec in specs:
         (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(
-            _metric_sql(spec, source))
+            _metric_sql(spec, source), encoding="utf-8")
         (out / "pages" / "metrics" / f"{spec.name}.md").write_text(
-            _metric_page(project, spec))
+            _metric_page(project, spec), encoding="utf-8")
 
     # Both directories are generated in full, so a file for a metric that is
     # no longer rendered is stale, not someone's work.
@@ -761,17 +785,46 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
                 f.unlink()
                 removed.append(f.stem)
 
-    (out / "pages" / "index.md").write_text(_index_page(project, specs))
-    (out / "evidence.config.yaml").write_text(_config(project, warehouse))
+    (out / "pages" / "index.md").write_text(_index_page(project, specs), encoding="utf-8")
+    (out / "evidence.config.yaml").write_text(_config(project, warehouse), encoding="utf-8")
     (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(
-        _source_conn(project, warehouse))
+        _source_conn(project, warehouse), encoding="utf-8")
 
+    counts = _row_counts(
+        root, group, project,
+        [(m["tableReference"]["schema"], m["name"]) for m in mdl.get("models", [])])
+
+    extracted = 0
+    skipped_empty: list[str] = []
     for model in mdl.get("models", []):
         name = model["name"]
-        cols = ", ".join(c["name"] for c in model["columns"] if not c.get("isHidden"))
-        (out / "sources" / project.replace("-", "_") / f"{name}.sql").write_text(
+        visible = [c["name"] for c in model["columns"] if not c.get("isHidden")]
+        target = out / "sources" / source / f"{name}.sql"
+        if counts is not None and counts.get(name) == 0:
+            # Evidence's duckdb connector writes a zero-row extract as a
+            # zero-byte file, and duckdb-wasm then kills the whole site build
+            # with "too small to be a Parquet file". An empty relation gets no
+            # extract and is reported instead; it comes back the moment the
+            # model has data and this build runs again.
+            target.unlink(missing_ok=True)
+            skipped_empty.append(name)
+            continue
+        if not visible:
+            # Never `select *`. The old fallback did exactly that when the MDL
+            # carried no visible columns — which made the comment below a lie:
+            # the star re-includes every column the projection hid, PII first.
+            # A model the MDL cannot enumerate gets no extract at all, and a
+            # stale extract from a previous generation is removed with it.
+            target.unlink(missing_ok=True)
+            continue
+        target.write_text(
             f"-- source extract for {name} (PII columns excluded by the MDL projection)\n"
-            f"select {cols or '*'}\nfrom {model['tableReference']['schema']}.{name}\n")
+            f"-- Columns are enumerated, never `select *`: the extract's shape is a\n"
+            f"-- contract with the pages reading it, and a star changes shape silently.\n"
+            f"select\n"
+            + ",\n".join(f"    {c}" for c in visible)
+            + f"\nfrom {model['tableReference']['schema']}.{name}\n", encoding="utf-8")
+        extracted += 1
 
     # Dependency set is evidence-dev/template's package.json verbatim, not a
     # hand-assembled subset. Two earlier attempts failed here: pinning
@@ -831,14 +884,14 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
             "sqlite3": "5.1.5",
             "axios": "^1.7.4",
         },
-    }, indent=2) + "\n")
+    }, indent=2) + "\n", encoding="utf-8")
 
     # legacy-peer-deps is required on npm >= 11, which resolves Evidence's own
     # peer graph more strictly than the npm the upstream template targets. It is
     # safe *because* the dependency block above is the complete canonical set —
     # nothing the build needs is left to peer resolution.
     (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\n"
-                                "legacy-peer-deps=true\n")
+                                "legacy-peer-deps=true\n", encoding="utf-8")
 
     # Toolchain note, verified by controlled experiment rather than assumed:
     # a pristine `degit evidence-dev/template` fails to build identically on
@@ -846,19 +899,23 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # supported-runtime boundary, not this generator. `evidence sources` and
     # `evidence dev` both work. Recorded next to the code so the next person
     # does not repeat the bisection.
-    (out / ".nvmrc").write_text("20\n")
+    (out / ".nvmrc").write_text("20\n", encoding="utf-8")
 
     exposures = root / "transform" / "models" / "_reporting__exposures.yml"
     if (root / "transform" / "models").exists():
-        exposures.write_text(_exposures(out, project, group, specs, _owner(root)))
+        exposures.write_text(_exposures(out, project, group, specs, _owner(root)),
+                             encoding="utf-8")
 
     return {
         "metrics": len(specs),
         "pages": sum(1 for _ in (out / "pages").rglob("*.md")),
-        "sources": len(mdl.get("models", [])),
+        # What was actually written, not what the MDL listed — the two differ
+        # by exactly the models whose extract was refused above.
+        "sources": extracted,
         "path": out,
         "unbacked": [s.name for s in specs if not s.time_column],
         "skipped": skipped,
         "removed": sorted(set(removed)),
+        "skipped_empty": skipped_empty,
         "exposures": exposures if exposures.exists() else None,
     }

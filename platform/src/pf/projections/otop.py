@@ -32,7 +32,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from pf.ontology.model import Policy, load_ontology
+from pf.ontology.model import (
+    Policy,
+    load_group_ontology,
+    load_ontology,
+    load_project_ontology,
+)
 
 OTOP_VERSION = 0.2
 NS = "pf"
@@ -254,7 +259,7 @@ def _from_ledger(root: Path, loop: str, now: str,
     if not p.exists():
         return Observation("unknown", now, "no ledger")
     try:
-        doc = json.loads(p.read_text())
+        doc = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return Observation("unknown", now, "ledger unreadable")
     runs = doc.get("runs") if isinstance(doc, dict) else doc
@@ -314,15 +319,25 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
                    project_dir: str | Path | None = None) -> dict[str, Any]:
     """Emit the policy layer as an otop-core 0.2 manifest.
 
-    Scope is a choice, not an accident. Policies and their enforcing artifacts
-    are platform-wide, so they are identical in every project; evidence is not,
-    because `pf check` passes in one project and fails in another. Passing a
-    project produces the same governance skeleton with that project's observed
-    results attached.
+    Scope is a choice, not an accident, and it now applies to the constraints as
+    well as the evidence. This used to assume policies were platform-wide and so
+    identical everywhere; they are not. A group or a project may layer its own
+    `policy.yaml` over the platform floor — acme-eu carries obligations acme-us
+    does not — so the manifest resolves the ontology at the scope it was asked
+    for. Exporting a project's governance against the platform policy set would
+    understate exactly the obligations that project was given.
+
+    Evidence remains per-project for the original reason: `pf check` passes in
+    one project and fails in another.
     """
     root = Path(root)
     pdir = Path(project_dir) if project_dir else None
-    onto = load_ontology()
+    if group and project:
+        onto = load_project_ontology(root, group, project)
+    elif group:
+        onto = load_group_ontology(root, group)
+    else:
+        onto = load_ontology()
     commit = _commit(root)
     anchor = _anchor(root)
     policy_created = _authored(root, "platform/src/pf/ontology/policy.yaml")
@@ -356,7 +371,8 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
             assertion=_assertion(p),
             expression_language="pf.ontology.policy/1",
             severity=p.severity,
-            extensions={"applies_to": p.applies_to, "params": p.params}))
+            extensions={"applies_to": p.applies_to, "params": p.params,
+                        **_control_extensions(root, p)}))
 
         relationships.append(_rel(constraint_id, "derived_from", intent_id,
                                   policy_created, confidence="high",
@@ -415,6 +431,62 @@ def build_manifest(root: str | Path, group: str = "", project: str = "",
                    "unenforced": [p.id for p in onto.unenforced_policies()]},
         },
     }
+
+
+def _control_extensions(root: Path, p: Policy) -> dict[str, Any]:
+    """The external controls a policy discharges, and every regulation they cite.
+
+    This is what makes the otop manifest legible to somebody outside this
+    platform. Without it a constraint says `pii-not-in-consumption`, which means
+    nothing to an assessor; with it the same constraint carries "EU AI Act
+    Article 10, ISO 42001 A-7-2, NIST SI-12" — the vocabulary they came to check.
+
+    Resolved from the vendored FINOS catalogue at export time rather than stored
+    on the policy, for the same reason coverage is derived: a citation copied
+    into `policy.yaml` would outlive the pin bump that changed it. An absent
+    submodule yields the bare control ids and no citations, never an error — the
+    manifest is still valid, just less useful.
+    """
+    if not p.controls:
+        return {}
+    out: dict[str, Any] = {"controls": list(p.controls)}
+    try:
+        from pf.air.catalogue import available, load
+
+        if not available(root):
+            return out
+        cat = load(root)
+    except Exception:  # noqa: BLE001 — a manifest must export without the catalogue
+        return out
+
+    # Deduplicated by (framework, key): two controls on one policy routinely cite
+    # the same article — AIR-DET-21 and AIR-DET-4 both cite NIST AU-2 — and an
+    # assessor counting a provision twice is worse than not listing it.
+    citations: dict[str, dict[str, dict[str, str]]] = {}
+    titles: dict[str, str] = {}
+    for cid in p.controls:
+        ctl = cat.controls.get(cid.upper())
+        if ctl is None:
+            continue
+        titles[ctl.id] = ctl.title
+        for ref in ctl.references:
+            if ref.resolved:
+                citations.setdefault(ref.framework, {}).setdefault(
+                    ref.key, {"key": ref.key, "title": ref.title, "url": ref.url})
+    if titles:
+        out["control_titles"] = titles
+    if citations:
+        out["regulatory_citations"] = {
+            fw: sorted(refs.values(), key=lambda r: r["key"])
+            for fw, refs in sorted(citations.items())
+        }
+        out["catalogue"] = {
+            "source": "finos/ai-governance-framework",
+            "path": "vendor/ai-governance-framework",
+            "commit": cat.commit,
+            "licence": "CC-BY-4.0",
+        }
+    return out
 
 
 def _headline(p: Policy) -> str:
