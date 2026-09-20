@@ -29,7 +29,7 @@ flowchart LR
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>4"]:::exposure
+        D1["exposures<br/>19"]:::exposure
         D2["Evidence pages<br/>18"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
@@ -115,9 +115,9 @@ flowchart TB
 | metrics | ✓ 16 | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL |
 | dimensions | ✓ 19 | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
+| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
-| project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
+| project atlas | **gap** | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs — `pf atlas` |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | **governance** | | | |
@@ -127,28 +127,32 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ 5 | `decisions/ADR-0001-duty-rates-are-back-applied-and-flagged.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | ✓ 4 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
+| exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 2 | `docs/github.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
+| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
 | CI workflow | ✓ | `.github/workflows/commodity-india.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
-| duckdb memories | ✓ | `.duckdb-skills` | query patterns the duckdb-ops toolkit reuses |
+| duckdb memories | — | `.duckdb-skills/**` | query patterns the duckdb-ops toolkit reuses — `pf bootstrap` |
 | tool overrides | ✓ | `tools.yaml` | opt out of a group tool or retune one; merged over the group's |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
-| air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
+| air | **gap** | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. — `pf capability-add air` |
 
-**Capabilities:** `air`, `evidence`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `evidence`, `github`, `snowflake`
 
 **Tools enabled:** `openmetadata`, `recce`, `wren`
 
 ## Gaps
 
+- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
+- **project atlas** — a picture of this project's own graph, refreshed around its dbt runs. Fix: `pf atlas`
+- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
+- **air** — AI control baseline: declare it in air.yaml, gate the merge on it.. Fix: `pf capability-add air`
 
 ---
 
