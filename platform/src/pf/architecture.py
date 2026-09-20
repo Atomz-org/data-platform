@@ -199,6 +199,11 @@ CORE: tuple[Feature, ...] = (
     Feature("settings", "agent permissions", "governance",
             "the deny list and the PreToolUse hook — sisters unreadable by policy",
             (".claude/settings.json",), made_by="pf new-project"),
+    # Optional because it exists only once a capability needs it: a warehouse
+    # capability merges its MCP server in, and a project may add its own.
+    Feature("mcp_servers", "MCP servers", "governance",
+            "the servers a capability wires into the agent's session; merged, never overwritten",
+            (".mcp.json",), optional=True, made_by="pf capability-add"),
     Feature("decisions", "decision records", "governance",
             "why this project is shaped the way it is, where code cannot say so",
             ("decisions/*.md",), optional=True, made_by="written by hand"),
