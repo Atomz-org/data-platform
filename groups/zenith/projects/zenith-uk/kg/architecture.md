@@ -19,7 +19,7 @@ flowchart LR
         direction TB
         T1["staging<br/>none yet"]:::neutral
         T2["marts<br/>none yet"]:::neutral
-        T3["data tests<br/>none yet"]:::neutral
+        T3["data tests<br/>2"]:::model
     end
     subgraph LS["semantics"]
         direction TB
@@ -51,7 +51,13 @@ flowchart LR
 
 ## A real path through it
 
-_the graph holds no tables yet — run `pf seed`_
+```mermaid
+flowchart LR
+    X0["Model<br/>elementary_test_results"]:::model
+    X1["Model<br/>alerts_anomaly_detection"]:::model
+    X0 --> X1
+    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+```
 
 ## What enforces what
 
@@ -96,7 +102,7 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | **gap** | `transform/models/staging/**/*.sql` | one per raw table, generated from the annotations — `pf gen-staging` |
 | marts | **gap** | `transform/models/marts/**/*.sql` | business entities at a declared grain — what metrics are built on — `/using-dbt` |
-| data tests | **gap** | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make — `/add-tests` |
+| data tests | ✓ 2 | `transform/models/utils/_utils__models.yml` | the assumptions the models are allowed to make |
 | project macros | — | `transform/macros/**/*.sql` | project-local SQL; dialect macros come from the platform toolkits — `/using-dbt` |
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
@@ -116,7 +122,7 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ | `decisions/README.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | **gap** | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
+| exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
@@ -142,7 +148,6 @@ flowchart TB
 - **raw tables** — what the pipeline actually landed. Fix: `pf seed`
 - **staging models** — one per raw table, generated from the annotations. Fix: `pf gen-staging`
 - **marts** — business entities at a declared grain — what metrics are built on. Fix: `/using-dbt`
-- **data tests** — the assumptions the models are allowed to make. Fix: `/add-tests`
 - **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
 - **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`

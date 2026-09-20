@@ -19,17 +19,17 @@ flowchart LR
         direction TB
         T1["staging<br/>3"]:::model
         T2["marts<br/>3"]:::model
-        T3["data tests<br/>none yet"]:::neutral
+        T3["data tests<br/>18"]:::model
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>6"]:::metric
+        S2["dimensions<br/>8"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>none yet"]:::neutral
+        D1["exposures<br/>2"]:::exposure
         D2["Evidence pages<br/>1"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
@@ -53,12 +53,15 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    X0["Table<br/>charges"]:::raw
-    X0
+    X0["Table<br/>customers"]:::raw
+    X1["Model<br/>stg_stripe__customers"]:::model
+    X2["Model<br/>dim_customers"]:::model
+    X3["Exposure<br/>crm_customer_sync"]:::exposure
+    X0 --> X1 --> X2 --> X3
+    classDef exposure fill:#fbdccf,stroke:#eb6834,stroke-width:2px,color:#0b0b0b
+    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
     classDef raw fill:#fbe8bd,stroke:#eda100,stroke-width:2px,color:#0b0b0b
 ```
-
-_nothing upstream — this node has no lineage yet_
 
 ## What enforces what
 
@@ -103,13 +106,13 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | ✓ 3 | `transform/models/staging/stripe/stg_stripe__charges.sql` | one per raw table, generated from the annotations |
 | marts | ✓ 3 | `transform/models/marts/dim_customers.sql` | business entities at a declared grain — what metrics are built on |
-| data tests | **gap** | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make — `/add-tests` |
+| data tests | ✓ 18 | `transform/models/marts/_core__models.yml` | the assumptions the models are allowed to make |
 | project macros | — | `transform/macros/**/*.sql` | project-local SQL; dialect macros come from the platform toolkits — `/using-dbt` |
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 6 | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 8 | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
@@ -123,7 +126,7 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ | `decisions/README.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | **gap** | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
+| exposures | ✓ 2 | `transform/models/marts/_core__models.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
@@ -142,15 +145,11 @@ flowchart TB
 
 **Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
 
-**PII columns:** 3 — masked by policy, never selected into a mart unaggregated
+**PII columns:** 6 — masked by policy, never selected into a mart unaggregated
 
 ## Gaps
 
-- **data tests** — the assumptions the models are allowed to make. Fix: `/add-tests`
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
-- **exposures** — who reads the output — impact analysis stops at the mart without them. Fix: `/using-dbt`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 

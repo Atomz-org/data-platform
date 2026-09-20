@@ -53,7 +53,13 @@ flowchart LR
 
 ## A real path through it
 
-_the graph holds no tables yet — run `pf seed`_
+```mermaid
+flowchart LR
+    X0["Model<br/>elementary_test_results"]:::model
+    X1["Model<br/>alerts_anomaly_detection"]:::model
+    X0 --> X1
+    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+```
 
 ## What enforces what
 
@@ -98,7 +104,7 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | **gap** | `transform/models/staging/**/*.sql` | one per raw table, generated from the annotations — `pf gen-staging` |
 | marts | **gap** | `transform/models/marts/**/*.sql` | business entities at a declared grain — what metrics are built on — `/using-dbt` |
-| data tests | **gap** | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make — `/add-tests` |
+| data tests | **gap** | `transform/models/**/*.yml` | the assumptions the models are allowed to make — `/add-tests` |
 | project macros | — | `transform/macros/**/*.sql` | project-local SQL; dialect macros come from the platform toolkits — `/using-dbt` |
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
@@ -118,7 +124,7 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ | `decisions/README.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | **gap** | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
+| exposures | **gap** | `transform/models/**/*.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
