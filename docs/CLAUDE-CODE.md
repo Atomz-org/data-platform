@@ -270,6 +270,17 @@ capability declares — do not hand-edit it; change the capability. A `changes` 
 diffs the PR once and publishes a boolean per area, and every job guards on it,
 so editing a page never starts a dbt review.
 
+Three of those jobs judge the *repository*, not the runner, and it pays to know
+how. `architecture` re-renders `kg/architecture.md` from tracked and staged
+files only — run `git add` before `pf arch`, or an untracked note makes your
+render disagree with CI's; artefacts regenerated per machine (the context card,
+`platform/workspace.yaml`) show as `⟳` rows. `impact-gate` restores the group
+from the base under the PR's own `platform/` and blocks on a radius that
+reaches a metric or an exposure — unless the same PR adds or edits a decision
+record under `decisions/`, in which case it reports and passes: the radius and
+its owners are still printed, and the ADR is what the reviewer reads. `recce`
+needs the branch to contain its base, and says so in a PR comment.
+
 Repo-wide workflows sit alongside: `pr-report.yml` (impact report on every PR),
 `vendor-sync.yml`, and `claude-review.yml` — the last is opt-in, triggered by
 adding the `claude-review` label, because it is billed per run.
