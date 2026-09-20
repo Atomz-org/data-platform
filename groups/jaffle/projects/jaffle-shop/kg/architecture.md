@@ -19,18 +19,18 @@ flowchart LR
         direction TB
         T1["staging<br/>58"]:::model
         T2["marts<br/>996"]:::model
-        T3["data tests<br/>none yet"]:::neutral
+        T3["data tests<br/>538"]:::model
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>19"]:::metric
+        S2["dimensions<br/>25"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>none yet"]:::neutral
-        D2["Evidence pages<br/>1"]:::exposure
+        D1["exposures<br/>6"]:::exposure
+        D2["Evidence pages<br/>16"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -53,12 +53,18 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    X0["Table<br/>raw_accounts_receivable"]:::raw
-    X0
-    classDef raw fill:#fbe8bd,stroke:#eda100,stroke-width:2px,color:#0b0b0b
+    XU["… further upstream"]:::neutral
+    X0["Model<br/>order_items"]:::model
+    X1["Model<br/>orders"]:::model
+    X2["Model<br/>customers"]:::model
+    X3["Model<br/>dim_customer_360"]:::model
+    X4["Model<br/>rev_etl_crm_customer_sync"]:::model
+    X5["Exposure<br/>crm_sync"]:::exposure
+    XU --> X0 --> X1 --> X2 --> X3 --> X4 --> X5
+    classDef exposure fill:#fbdccf,stroke:#eb6834,stroke-width:2px,color:#0b0b0b
+    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+    classDef neutral fill:#e8e7e2,stroke:#898781,stroke-width:2px,color:#0b0b0b
 ```
-
-_nothing upstream — this node has no lineage yet_
 
 ## What enforces what
 
@@ -103,13 +109,13 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | ✓ 58 | `transform/models/staging/finance/stg_accounts_receivable.sql` | one per raw table, generated from the annotations |
 | marts | ✓ 996 | `transform/models/marts/advanced/int_customer_first_purchase_context.sql` | business entities at a declared grain — what metrics are built on |
-| data tests | **gap** | `transform/models/marts/_exposures.yml` | the assumptions the models are allowed to make — `/add-tests` |
+| data tests | ✓ 538 | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make |
 | project macros | ✓ 21 | `transform/macros/bucket_values.sql` | project-local SQL; dialect macros come from the platform toolkits |
 | snapshots | ✓ 2 | `transform/snapshots/snp_dim_employees.sql` | slowly-changing dimensions captured over time |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/sem_customers.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/sem_customers.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 19 | `transform/models/semantic/sem_customers.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 25 | `transform/models/semantic/sem_customers.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
@@ -123,7 +129,7 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ 3 | `decisions/ADR-0002-snowflake-semantics-on-every-adapter.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | **gap** | `transform/models/marts/_exposures.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
+| exposures | ✓ 6 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 11 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | ✓ 2 | `jaffle-shop-evidence-layer.html` | standalone HTML about this project, kept beside what it describes |
@@ -145,10 +151,6 @@ flowchart TB
 ## Gaps
 
 - **dlt sources** — the only place raw data enters; each declares its ontology concept. Fix: `/create-sql-pipeline`
-- **data tests** — the assumptions the models are allowed to make. Fix: `/add-tests`
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
-- **exposures** — who reads the output — impact analysis stops at the mart without them. Fix: `/using-dbt`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---

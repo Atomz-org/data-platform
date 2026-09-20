@@ -53,7 +53,13 @@ flowchart LR
 
 ## A real path through it
 
-_the graph holds no tables yet — run `pf seed`_
+```mermaid
+flowchart LR
+    X0["Model<br/>elementary_test_results"]:::model
+    X1["Model<br/>alerts_anomaly_detection"]:::model
+    X0 --> X1
+    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
+```
 
 ## What enforces what
 
