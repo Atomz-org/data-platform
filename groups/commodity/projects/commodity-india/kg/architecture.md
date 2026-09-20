@@ -30,7 +30,7 @@ flowchart LR
     subgraph LD["delivery"]
         direction TB
         D1["exposures<br/>19"]:::exposure
-        D2["Evidence pages<br/>4"]:::exposure
+        D2["Evidence pages<br/>18"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -115,7 +115,7 @@ flowchart TB
 | metrics | **gap** | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
 | dimensions | **gap** | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
+| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
@@ -129,11 +129,11 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 7 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
+| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
 | CI workflow | ✓ | `.github/workflows/commodity-india.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
@@ -150,6 +150,8 @@ flowchart TB
 
 - **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
 - **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
+- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
+- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---

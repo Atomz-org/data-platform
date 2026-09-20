@@ -117,7 +117,7 @@ flowchart TB
 | metrics | **gap** | `transform/models/semantic/sem_customers.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
 | dimensions | **gap** | `transform/models/semantic/sem_customers.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
+| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
@@ -135,7 +135,7 @@ flowchart TB
 | published pages | ✓ 2 | `jaffle-shop-evidence-layer.html` | standalone HTML about this project, kept beside what it describes |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/jaffle_shop/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
+| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
 | CI workflow | ✓ | `.github/workflows/jaffle-shop.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
@@ -153,6 +153,8 @@ flowchart TB
 - **dlt sources** — the only place raw data enters; each declares its ontology concept. Fix: `/create-sql-pipeline`
 - **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
 - **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
+- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
+- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---
