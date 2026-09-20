@@ -69,12 +69,7 @@
       "Bash(pf air:*)",
       "Bash(pf tool elementary:*)",
       "Bash(edr report:*)",
-      "Bash(edr monitor:*)",
-      "Bash(pf loop:*)",
-      "Bash(pf ask:*)",
-      "Bash(pf logs:*)",
-      "Bash(pf align:*)",
-      "Bash(pf evals-gate:*)"
+      "Bash(edr monitor:*)"
     ],
     "ask": [
       "Bash(git push:*)",
