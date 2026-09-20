@@ -302,16 +302,24 @@ def test_a_graph_with_no_tables_is_not_papered_over_by_a_file_count(
 
     A roll-up reported "raw tables: 1" on the strength of an empty warehouse
     file while its graph held no tables at all.
+
+    The file used to count when there was no graph to contradict it, which is
+    the same claim in a weaker position: `pf seed` writes that file and CI never
+    does, so the fallback made the rendered map differ between a developer's
+    checkout and a runner. `Feature.build_output` removes it, and the row now
+    says the same thing in both places.
     """
     from pf.kg.store import Node, open_graph
 
     root = _bare(tmp_path)
     d = root / "groups" / "demo" / "projects" / "demo-us"
+
+    # The same project with and without the local warehouse file. Two renders,
+    # one answer: that is the whole point of the flag.
+    without = arch.gather(root, "demo", "demo-us").n("raw_tables")
     (d / "data").mkdir()
     (d / "data" / "demo_us.duckdb").write_bytes(b"")
-
-    # No graph at all: the file is the only evidence there is, so it counts.
-    assert arch.gather(root, "demo", "demo-us").n("raw_tables") == 1
+    assert arch.gather(root, "demo", "demo-us").n("raw_tables") == without == 0
 
     # A graph holding no Table is positive evidence that nothing was loaded, and
     # it outranks the file. Falling back on a missing *kind* rather than a
@@ -322,7 +330,50 @@ def test_a_graph_with_no_tables_is_not_papered_over_by_a_file_count(
     assert arch.gather(root, "demo", "demo-us").n("raw_tables") == 0
 
 
+def test_build_output_keeps_the_count_and_drops_only_the_local_filename(
+        tmp_path: Path) -> None:
+    """Ignoring the disk must not cost the row its number.
+
+    The tables are nodes in the graph whether or not the DuckDB file is on this
+    machine, and that count is what the row is for — dropping it too would have
+    traded a map that differs by machine for one that says nothing. Only the
+    printed location changes: the declared pattern, which belongs to the
+    project, instead of the filename, which belongs to whoever built it.
+    """
+    from pf.kg.store import Node, open_graph
+
+    root = _bare(tmp_path)
+    d = root / "groups" / "demo" / "projects" / "demo-us"
+    (d / "data").mkdir()
+    (d / "data" / "demo_us.duckdb").write_bytes(b"")
+    with open_graph(d / "kg" / "graph.duckdb") as g:
+        g.add_nodes([Node(id="table:orders", kind="Table", name="orders")])
+
+    found = arch.gather(root, "demo", "demo-us").by_key("raw_tables")
+    assert found.count == 1
+    assert found.where == "data/*.duckdb"
+
+
 # ----------------------------------------------------------------- drift -----
+def test_a_stale_map_says_what_differs(tmp_path: Path) -> None:
+    """"The project changed since it was written" is true of every stale map.
+
+    Which is to say it identifies nothing. The check runs on a runner, and when
+    the render disagrees there because of the runner's own environment, the
+    failing job is the only place the difference exists — reproducing it
+    locally is precisely what does not work. So the drift carries the diff.
+    """
+    root = _bare(tmp_path)
+    arch.write(root, "demo", "demo-us")
+    out = root / "groups" / "demo" / "projects" / "demo-us" / arch.DOC_REL
+    out.write_text(out.read_text().replace("# demo-us", "# somebody-else", 1))
+
+    d = arch.drift(root, "demo", "demo-us")
+    assert d.stale
+    assert "somebody-else" in d.diff and "somebody-else" in str(d)
+    assert "--- committed" in d.diff and "+++ would render" in d.diff
+
+
 def test_drift_reports_a_missing_map_separately_from_a_stale_one(
         tmp_path: Path) -> None:
     """They have different fixes, so they cannot be the same message."""

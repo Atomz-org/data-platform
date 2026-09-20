@@ -1,0 +1,9 @@
+# Loop memory for zenith/zenith-uk — decisions about recurring findings.
+#
+# An entry: pattern (glob, or /regex/), loop (or "*"), a REQUIRED note saying
+# why, and ideally an expiry. `verb: annotate` keeps the finding and appends the
+# note; the default `suppress` drops it. `pf loop memory add|list|forget|audit`.
+#
+# This file is reviewed in pull requests: a suppression is the statement
+# "we will stop looking at this", and that belongs in a diff.
+entries: []

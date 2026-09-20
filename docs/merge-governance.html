@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root { color-scheme: light dark; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Merge-Time Governance Path</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  :root {
+    --ground: #f4f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f4;
+    --ink: #161a20;
+    --muted: #5b6472;
+    --faint: #8b94a2;
+    --rule: #dde2e8;
+    --rule-strong: #c3cbd4;
+    --accent: #17575f;
+    --accent-soft: #e2eef0;
+    --ok: #2d7a4d;
+    --ok-soft: #e3f1e8;
+    --warn: #8f6712;
+    --warn-soft: #f7edd8;
+    --fail: #a63c23;
+    --fail-soft: #f8e6e1;
+    --idle: #8b94a2;
+    --idle-soft: #eceff2;
+    --shadow: 0 1px 2px rgba(22,26,32,.06), 0 8px 24px -16px rgba(22,26,32,.28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0f1216;
+      --surface: #171b21;
+      --surface-2: #1f242c;
+      --ink: #e4e8ee;
+      --muted: #9aa4b2;
+      --faint: #6d7684;
+      --rule: #272d36;
+      --rule-strong: #39414c;
+      --accent: #6fc6ce;
+      --accent-soft: #14343a;
+      --ok: #6cc38a;
+      --ok-soft: #14301f;
+      --warn: #d9ab4e;
+      --warn-soft: #332715;
+      --fail: #e08063;
+      --fail-soft: #37190f;
+      --idle: #6d7684;
+      --idle-soft: #1d222a;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0f1216;
+    --surface: #171b21;
+    --surface-2: #1f242c;
+    --ink: #e4e8ee;
+    --muted: #9aa4b2;
+    --faint: #6d7684;
+    --rule: #272d36;
+    --rule-strong: #39414c;
+    --accent: #6fc6ce;
+    --accent-soft: #14343a;
+    --ok: #6cc38a;
+    --ok-soft: #14301f;
+    --warn: #d9ab4e;
+    --warn-soft: #332715;
+    --fail: #e08063;
+    --fail-soft: #37190f;
+    --idle: #6d7684;
+    --idle-soft: #1d222a;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 72px; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; letter-spacing: -.025em; line-height: 1.08; }
+  h2 { font-size: clamp(20px, 3vw, 25px); font-weight: 600; letter-spacing: -.015em; }
+  h3 { font-size: 15px; font-weight: 600; letter-spacing: -.005em; }
+  p { margin: 0; }
+  .prose { font-family: "Source Serif 4", Georgia, serif; font-size: 16.5px; line-height: 1.62; color: var(--muted); max-width: 64ch; }
+  .prose strong { color: var(--ink); font-weight: 600; }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; }
+  code { font-size: .89em; background: var(--surface-2); padding: 1px 5px; border-radius: 3px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--faint);
+  }
+
+  header.top { border-bottom: 2px solid var(--ink); padding-bottom: 28px; display: flex; flex-direction: column; gap: 16px; }
+  .lede { font-family: "Source Serif 4", Georgia, serif; font-size: 19px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  .headline-stat {
+    margin-top: 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule); border-radius: 6px; overflow: hidden;
+  }
+  .stat { background: var(--surface); padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 3px; }
+  .stat .n { font-family: "IBM Plex Mono", monospace; font-size: 30px; font-weight: 600; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .stat .k { font-size: 12.5px; color: var(--muted); }
+  .stat.is-fail .n { color: var(--fail); }
+  .stat.is-idle .n { color: var(--idle); }
+  .stat.is-warn .n { color: var(--warn); }
+
+  section { margin-top: 64px; }
+  .sec-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+
+  /* ---- funnel ---- */
+  .funnel { display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 760px) { .funnel { grid-template-columns: 1fr; } .funnel .gate-col { justify-self: start; } }
+  .phase { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .phase > .ph-head { padding: 14px 16px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 3px; }
+  .phase .ph-title { font-size: 14px; font-weight: 600; }
+  .phase .ph-sub { font-size: 12px; color: var(--faint); }
+  .wf-list { display: flex; flex-direction: column; }
+  .wf {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline;
+    padding: 9px 16px; border-bottom: 1px solid var(--rule); font-size: 13px;
+  }
+  .wf:last-child { border-bottom: 0; }
+  .wf .nm { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+  .wf .ct { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .wf.dim .nm { color: var(--muted); }
+  .wf.keep { background: var(--accent-soft); }
+  .wf.keep .nm { color: var(--accent); font-weight: 600; }
+
+  .gate-col { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 52px; }
+  .gate-badge {
+    writing-mode: horizontal-tb; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--surface); background: var(--ink); padding: 7px 12px; border-radius: 4px; white-space: nowrap;
+  }
+  .gate-note { font-size: 11.5px; color: var(--faint); text-align: center; max-width: 130px; line-height: 1.4; }
+
+  /* ---- job ledger ---- */
+  .ledger { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .ledger-row { display: grid; grid-template-columns: 8px 1fr; }
+  .stripe { width: 8px; }
+  .stripe.ok { background: var(--ok); } .stripe.warn { background: var(--warn); } .stripe.fail { background: var(--fail); }
+  .job { padding: 18px 20px; border-bottom: 1px solid var(--rule); display: flex; flex-direction: column; gap: 12px; }
+  .ledger-row:last-child .job { border-bottom: 0; }
+  .job-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .job-name { font-size: 15.5px; font-weight: 600; }
+  .pill {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 500; letter-spacing: .07em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.fail { background: var(--fail-soft); color: var(--fail); }
+  .pill.idle { background: var(--idle-soft); color: var(--idle); }
+  .steps { display: flex; flex-direction: column; gap: 0; border-left: 2px solid var(--rule); }
+  .step { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; padding: 5px 0 5px 14px; font-size: 13px; }
+  .step .mk { font-family: "IBM Plex Mono", monospace; font-size: 11px; width: 4ch; }
+  .step.ran .mk { color: var(--ok); } .step.skip .mk { color: var(--warn); } .step.never .mk { color: var(--fail); }
+  .step .cmd { font-family: "IBM Plex Mono", monospace; font-size: 12.3px; color: var(--ink); }
+  .step.never .cmd, .step.skip .cmd { color: var(--muted); }
+  .verdict { font-family: "Source Serif 4", Georgia, serif; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
+  .verdict strong { color: var(--ink); font-weight: 600; }
+  .quote {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted);
+    background: var(--surface-2); border-radius: 5px; padding: 10px 12px; overflow-x: auto; white-space: pre;
+  }
+
+  /* ---- findings ---- */
+  .findings { display: flex; flex-direction: column; gap: 14px; }
+  .finding { background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--fail); border-radius: 0 7px 7px 0; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .finding.sev-med { border-left-color: var(--warn); }
+  .finding.sev-low { border-left-color: var(--idle); }
+  .f-top { display: flex; flex-wrap: wrap; gap: 9px; align-items: baseline; }
+  .f-id { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 600; color: var(--faint); }
+  .f-title { font-size: 15px; font-weight: 600; flex: 1 1 260px; }
+  .f-body { font-family: "Source Serif 4", Georgia, serif; font-size: 15px; line-height: 1.58; color: var(--muted); }
+  .f-body strong { color: var(--ink); font-weight: 600; }
+  .f-fix { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+  .f-fix .lbl { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); white-space: nowrap; }
+
+  /* ---- misc ---- */
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 9px; }
+  .card h3 { color: var(--accent); }
+  .card p { font-family: "Source Serif 4", Georgia, serif; font-size: 14.5px; line-height: 1.56; color: var(--muted); }
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 520px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); font-weight: 600; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.mono { font-family: "IBM Plex Mono", monospace; font-size: 12.3px; }
+  footer { margin-top: 68px; padding-top: 22px; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: 9px; }
+  .method { font-size: 12.5px; color: var(--faint); line-height: 1.6; max-width: 72ch; }
+  @media (prefers-reduced-motion: no-preference) { .finding, .stat { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span class="eyebrow">Atomz-org / data-platform &middot; verified against main @ 055d187</span>
+    <h1>What a merge actually sets off</h1>
+    <p class="lede">Almost all of this repository's AI governance runs <strong>before</strong> a pull request merges. The merge itself starts exactly two workflows — and of the three governance jobs in them, <strong>one passes without examining anything and two never reach their first line of code.</strong></p>
+  </header>
+
+  <div class="headline-stat">
+    <div class="stat is-idle"><span class="n">2</span><span class="k">workflows fire on merge, out of 17</span></div>
+    <div class="stat is-fail"><span class="n">47</span><span class="k">post-merge governance runs since 18 Sep</span></div>
+    <div class="stat is-fail"><span class="n">0</span><span class="k">of them succeeded</span></div>
+    <div class="stat is-warn"><span class="n">23</span><span class="k">unit tests — the only governance code that ran</span></div>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">01 &middot; The funnel</span>
+      <h2>Merging is a narrowing, not a trigger</h2>
+      <p class="prose">Every workflow below fires on <code>pull_request</code>. Only two of them also declare <code>push: branches: [main]</code>, so only two survive the merge. That is a deliberate design — the per-project checks exist to judge a diff against its base, and a merge commit has no base to judge against. The consequence is still worth seeing plainly.</p>
+    </div>
+
+    <div class="funnel">
+      <div class="phase">
+        <div class="ph-head">
+          <span class="ph-title">While the PR is open</span>
+          <span class="ph-sub">on: pull_request</span>
+        </div>
+        <div class="wf-list">
+          <div class="wf keep"><span class="nm">ai-governance.yml</span><span class="ct">3 jobs</span></div>
+          <div class="wf dim"><span class="nm">platform.yml</span><span class="ct">tests · gates · converged</span></div>
+          <div class="wf dim"><span class="nm">platform-tests.yml</span><span class="ct">suite</span></div>
+          <div class="wf dim"><span class="nm">&times;9 project workflows</span><span class="ct">up to 6 jobs each</span></div>
+          <div class="wf dim"><span class="nm">pr-report.yml</span><span class="ct">impact report</span></div>
+          <div class="wf dim"><span class="nm">claude-review.yml</span><span class="ct">on label only</span></div>
+          <div class="wf dim"><span class="nm">bot-findings.yml</span><span class="ct">review comments &rarr; issues</span></div>
+        </div>
+      </div>
+
+      <div class="gate-col">
+        <span class="gate-badge">merge &rarr; push main</span>
+        <span class="gate-note">Nothing carries over. Each side is triggered by its own event.</span>
+      </div>
+
+      <div class="phase">
+        <div class="ph-head">
+          <span class="ph-title">The moment it merges</span>
+          <span class="ph-sub">on: push &middot; branches: [main]</span>
+        </div>
+        <div class="wf-list">
+          <div class="wf keep"><span class="nm">ai-governance.yml</span><span class="ct">3 jobs</span></div>
+          <div class="wf keep"><span class="nm">loop-observations.yml</span><span class="ct">observe</span></div>
+        </div>
+        <div class="ph-head" style="border-top:1px solid var(--rule); border-bottom:0;">
+          <span class="ph-title" style="font-size:13px;">Not re-run at merge</span>
+          <span class="ph-sub">every path gate, every project check, the platform suite</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">02 &middot; The three jobs</span>
+      <h2>What the governance workflow did on the last real merge</h2>
+      <p class="prose">Run <code>35509055692</code>, triggered by the push of <code>055d187</code> — the merge of PR #342. The three jobs are designed to fail in different directions: runtime evidence, static analysis, and an external control catalogue. On this run, two of the three failed in the same direction instead.</p>
+    </div>
+
+    <div class="ledger">
+      <div class="ledger-row">
+        <div class="stripe warn"></div>
+        <div class="job">
+          <div class="job-top">
+            <span class="job-name">Provenance chain</span>
+            <span class="pill ok">conclusion: success</span>
+            <span class="pill warn">nothing verified</span>
+          </div>
+          <div class="steps">
+            <div class="step ran"><span class="mk">ran</span><span class="cmd">pytest platform/tests/gate/test_provenance.py &rarr; 23 passed in 0.19s</span></div>
+            <div class="step skip"><span class="mk">skip</span><span class="cmd">pf provenance verify --anchors</span></div>
+            <div class="step skip"><span class="mk">skip</span><span class="cmd">python3 platform/entrypoints/verify_provenance.py provenance</span></div>
+          </div>
+          <div class="quote">No ledger in this checkout — nothing to verify.
+(The ledger is runtime state and is gitignored by design;
+ archived evidence comes from `pf provenance export`.)</div>
+          <p class="verdict">Both verification steps are guarded by <code>if [ -f provenance/chain.jsonl ]</code>, and <code>provenance/*</code> is gitignored with nothing tracked beneath it. A CI checkout can therefore never contain a ledger. <strong>The green tick means the tamper-detection logic is correct, not that any agent action was audited.</strong></p>
+        </div>
+      </div>
+
+      <div class="ledger-row">
+        <div class="stripe fail"></div>
+        <div class="job">
+          <div class="job-top">
+            <span class="job-name">ASQAV compliance scan</span>
+            <span class="pill fail">failed at checkout</span>
+          </div>
+          <div class="steps">
+            <div class="step never"><span class="mk">✕</span><span class="cmd">actions/checkout@v4 &nbsp;[submodules: true]</span></div>
+            <div class="step never"><span class="mk">—</span><span class="cmd">uses: ./vendor/asqav-compliance</span></div>
+          </div>
+          <p class="verdict">The scanner is pinned as a submodule and run from the checkout rather than by tag, so the code judging our compliance cannot change without a commit here. That is the right call — but the upstream repository no longer exists, so the recursive checkout dies before the action is reached. <strong>The job's own findings would not have blocked anything either way</strong>: it runs with <code>fail-on-gaps: false</code> by design.</p>
+        </div>
+      </div>
+
+      <div class="ledger-row">
+        <div class="stripe fail"></div>
+        <div class="job">
+          <div class="job-top">
+            <span class="job-name">AI control baseline</span>
+            <span class="pill fail">failed at checkout</span>
+            <span class="pill idle">the blocking one</span>
+          </div>
+          <div class="steps">
+            <div class="step never"><span class="mk">✕</span><span class="cmd">actions/checkout@v4 &nbsp;[submodules: true]</span></div>
+            <div class="step never"><span class="mk">—</span><span class="cmd">pytest platform/tests/gate/test_air.py</span></div>
+            <div class="step never"><span class="mk">—</span><span class="cmd">pf air verify</span></div>
+            <div class="step never"><span class="mk">—</span><span class="cmd">pf air coverage --markdown</span></div>
+            <div class="step never"><span class="mk">—</span><span class="cmd">pf air gate &lt;group&gt; &lt;project&gt;</span></div>
+          </div>
+          <p class="verdict">This is the job that can fail a merge on a control an entity committed to. Its checkout comment calls the submodule <em>load-bearing, and unique to this job</em> — without the catalogue every control assesses as <code>unexercised</code> and <strong>the gate passes for the wrong reason</strong>. Here it does not even get that far: the same dead submodule takes it down at step one.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">03 &middot; Concurrency</span>
+      <h2>A fast queue cancels its own audit trail</h2>
+      <p class="prose">The workflow declares <code>concurrency: ai-governance-${{ github.ref }}</code> with <code>cancel-in-progress: true</code>. On a pull request the ref is unique per branch, so this is exactly right. On <code>main</code> the ref is always <code>refs/heads/main</code> — so every merge cancels the still-running governance check of the merge before it.</p>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>17 cancelled</h3>
+        <p>Post-merge runs terminated by a later merge landing first. During a batch landing, the governance check for almost every commit is discarded before it finishes.</p>
+      </div>
+      <div class="card">
+        <h3>30 failed</h3>
+        <p>Runs that survived long enough to fail — all at the submodule checkout, in the two jobs that need <code>vendor/</code>.</p>
+      </div>
+      <div class="card">
+        <h3>0 succeeded</h3>
+        <p>Across all 47 push-triggered runs on <code>main</code> since 18 September. Not one post-merge governance check has completed green.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">04 &middot; Before the merge</span>
+      <h2>Where the governance that works actually happens</h2>
+      <p class="prose">This is the reassuring half. On a pull request, each project workflow first runs a <code>changes</code> job that turns the diff into five booleans, and every downstream job is conditioned on one of them — so governance scales with what was touched rather than running everywhere every time.</p>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Job</th><th>Runs when</th><th>What it enforces</th><th>Blocks?</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">changes</td><td class="mono">always</td><td>Derives <span class="mono">any · models · sources · transform · reporting</span> from the diff against the base</td><td>no — it routes</td></tr>
+          <tr><td class="mono">air-baseline</td><td class="mono">any</td><td><span class="mono">pf air verify</span>, coverage to the summary, then <span class="mono">pf air gate</span> on the entity's committed controls</td><td><strong>yes</strong></td></tr>
+          <tr><td class="mono">kg-current</td><td class="mono">any</td><td><span class="mono">pf kg check --strict</span> — the committed graph still matches the dbt project</td><td><strong>yes</strong></td></tr>
+          <tr><td class="mono">architecture</td><td class="mono">any</td><td>Rebuilds the graph, then <span class="mono">pf arch --check</span></td><td><strong>yes</strong></td></tr>
+          <tr><td class="mono">impact-gate</td><td class="mono">models ∥ sources</td><td>Blast radius of the changed models, computed against the base branch</td><td><strong>yes</strong></td></tr>
+          <tr><td class="mono">recce</td><td class="mono">transform</td><td>Diffs the built data against the base build; publishes a summary</td><td>reports</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose" style="margin-top:16px;">Eight of the nine projects carry all six. <strong>commodity-india carries three</strong> — it has <code>changes</code>, <code>impact-gate</code> and <code>recce</code>, but no <code>air-baseline</code>, no <code>kg-current</code> and no <code>architecture</code>. The newest entity in the fleet is the least governed, and nothing reports that.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="eyebrow">05 &middot; Findings</span>
+      <h2>Five things to change</h2>
+    </div>
+    <div class="findings">
+
+      <div class="finding">
+        <div class="f-top"><span class="f-id">M1</span><span class="f-title">The post-merge governance check has never passed</span><span class="pill fail">critical</span></div>
+        <p class="f-body">47 runs, 30 failed, 17 cancelled, <strong>0 succeeded</strong>. Two of three jobs die at a recursive checkout because the <code>vendor/asqav-compliance</code> upstream is gone. A permanently red required-looking check is worse than no check: it trains everyone to ignore the one signal that is supposed to mean something.</p>
+        <p class="f-fix"><span class="lbl">fix</span><span>Re-point or drop the dead submodule. Bumping a pin is a human decision, so this one needs an owner, not an agent.</span></p>
+      </div>
+
+      <div class="finding">
+        <div class="f-top"><span class="f-id">M2</span><span class="f-title">Merges cancel each other's governance run</span><span class="pill fail">high</span></div>
+        <p class="f-body">The concurrency group keys on <code>github.ref</code>, which is constant on <code>main</code>. Correct for pull requests, wrong for pushes: during a batch landing, each merge kills the audit of the one before it. <strong>The faster the team ships, the less of this runs.</strong></p>
+        <p class="f-fix"><span class="lbl">fix</span><span>Key the group on <code>github.sha</code> for pushes, or set <code>cancel-in-progress: ${{ github.event_name == 'pull_request' }}</code>.</span></p>
+      </div>
+
+      <div class="finding sev-med">
+        <div class="f-top"><span class="f-id">M3</span><span class="f-title">The ledger audit runs where the evidence isn't</span><span class="pill warn">medium</span></div>
+        <p class="f-body">The docs call <code>pf provenance verify</code> the blocking check in CI. In practice the ledger is gitignored runtime state, so a checkout never has one and the step always skips. The reasoning is sound — a source checkout holds no runtime evidence — but the effect is that <strong>the audit never runs anywhere CI can see.</strong></p>
+        <p class="f-fix"><span class="lbl">fix</span><span>Verify an exported bundle, or run the audit on a schedule against a long-lived environment that actually has a chain.</span></p>
+      </div>
+
+      <div class="finding sev-med">
+        <div class="f-top"><span class="f-id">M4</span><span class="f-title">One project is missing three governance jobs</span><span class="pill warn">medium</span></div>
+        <p class="f-body">commodity-india has no <code>air-baseline</code>, no <code>kg-current</code> and no <code>architecture</code> job. The workflows are generated by <code>pf bootstrap</code> from each project's capabilities, so this is a capability gap showing through — but <strong>nothing in CI compares one project's job list to its siblings'</strong>, so it stays invisible.</p>
+        <p class="f-fix"><span class="lbl">fix</span><span>Regenerate the workflow, and add a check that every project's generated jobs match its declared capabilities.</span></p>
+      </div>
+
+      <div class="finding sev-low">
+        <div class="f-top"><span class="f-id">M5</span><span class="f-title">A green tick that means "nothing to check"</span><span class="pill idle">low</span></div>
+        <p class="f-body">The Provenance chain job reports success having verified no ledger. It is honest in its log and misleading on the checks list. The 23 tamper tests it does run are real and valuable — they are just a test of the detector, not of the evidence.</p>
+        <p class="f-fix"><span class="lbl">fix</span><span>Report the skip as a distinct neutral conclusion, so "passed" and "had nothing to look at" are not the same tick.</span></p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span class="eyebrow">Method</span>
+    <p class="method">Trigger topology parsed from all 17 files in <code>.github/workflows/</code> on <code>main</code> at <code>055d187</code>. Run outcomes read from the GitHub Actions API for push events on <code>main</code> (47 AI-governance runs, 18–20 Sep 2026). The step-level results and the quoted log line come from run <code>35509055692</code>, the merge of PR #342. Job inventories per project compared by parsing each workflow's <code>jobs:</code> map. Nothing here is inferred from documentation — where the docs and the runs disagreed, the runs are what is reported.</p>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -117,7 +117,7 @@ flowchart TB
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
-| project atlas | **gap** | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs — `pf atlas` |
+| project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | **governance** | | | |
@@ -129,7 +129,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 2 | `docs/github.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 7 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -140,19 +140,17 @@ flowchart TB
 | duckdb memories | — | `.duckdb-skills/**` | query patterns the duckdb-ops toolkit reuses — `pf bootstrap` |
 | tool overrides | ✓ | `tools.yaml` | opt out of a group tool or retune one; merged over the group's |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
-| air | **gap** | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. — `pf capability-add air` |
+| air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
 
-**Capabilities:** `evidence`, `github`, `snowflake`
+**Capabilities:** `air`, `evidence`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
 
 **Tools enabled:** `openmetadata`, `recce`, `wren`
 
 ## Gaps
 
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
-- **project atlas** — a picture of this project's own graph, refreshed around its dbt runs. Fix: `pf atlas`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
-- **air** — AI control baseline: declare it in air.yaml, gate the merge on it.. Fix: `pf capability-add air`
 
 ---
 
