@@ -84,7 +84,7 @@ jobs:
         run: |
           failed=""
           for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
-            git submodule update --init --depth 1 "$path" >/dev/null 2>&1 || failed="$failed $path"
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
           done
           [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
       - uses: astral-sh/setup-uv@v5
