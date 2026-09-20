@@ -23,8 +23,8 @@ flowchart LR
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>19"]:::metric
+        S2["dimensions<br/>25"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
@@ -114,8 +114,8 @@ flowchart TB
 | snapshots | ✓ 2 | `transform/snapshots/snp_dim_employees.sql` | slowly-changing dimensions captured over time |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/sem_customers.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/sem_customers.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 19 | `transform/models/semantic/sem_customers.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 25 | `transform/models/semantic/sem_customers.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
@@ -151,8 +151,6 @@ flowchart TB
 ## Gaps
 
 - **dlt sources** — the only place raw data enters; each declares its ontology concept. Fix: `/create-sql-pipeline`
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`

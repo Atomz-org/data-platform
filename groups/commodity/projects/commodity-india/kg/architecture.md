@@ -23,8 +23,8 @@ flowchart LR
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>16"]:::metric
+        S2["dimensions<br/>19"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
@@ -112,12 +112,12 @@ flowchart TB
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 16 | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 19 | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
-| project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
+| project atlas | **gap** | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs — `pf atlas` |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | **governance** | | | |
@@ -129,7 +129,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 7 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 2 | `docs/github.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -140,19 +140,19 @@ flowchart TB
 | duckdb memories | — | `.duckdb-skills/**` | query patterns the duckdb-ops toolkit reuses — `pf bootstrap` |
 | tool overrides | ✓ | `tools.yaml` | opt out of a group tool or retune one; merged over the group's |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
-| air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
+| air | **gap** | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. — `pf capability-add air` |
 
-**Capabilities:** `air`, `evidence`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `evidence`, `github`, `snowflake`
 
 **Tools enabled:** `openmetadata`, `recce`, `wren`
 
 ## Gaps
 
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
+- **project atlas** — a picture of this project's own graph, refreshed around its dbt runs. Fix: `pf atlas`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
+- **air** — AI control baseline: declare it in air.yaml, gate the merge on it.. Fix: `pf capability-add air`
 
 ---
 

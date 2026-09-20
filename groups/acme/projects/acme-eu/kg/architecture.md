@@ -23,8 +23,8 @@ flowchart LR
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>6"]:::metric
+        S2["dimensions<br/>8"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
@@ -111,8 +111,8 @@ flowchart TB
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 6 | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 8 | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
@@ -145,12 +145,10 @@ flowchart TB
 
 **Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
 
-**PII columns:** 3 — masked by policy, never selected into a mart unaggregated
+**PII columns:** 6 — masked by policy, never selected into a mart unaggregated
 
 ## Gaps
 
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`

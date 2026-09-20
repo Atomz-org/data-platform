@@ -23,8 +23,8 @@ flowchart LR
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>none yet"]:::neutral
-        S2["dimensions<br/>none yet"]:::neutral
+        S1["metrics<br/>6"]:::metric
+        S2["dimensions<br/>8"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
@@ -111,8 +111,8 @@ flowchart TB
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | **gap** | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
-| dimensions | **gap** | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
+| metrics | ✓ 6 | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 8 | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
 | context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
@@ -128,7 +128,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 2 | `transform/models/marts/_core__models.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/acme_us/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -141,16 +141,14 @@ flowchart TB
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
 
-**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `openmetadata`, `recce`, `snowflake`, `wren`
 
 **Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
 
-**PII columns:** 3 — masked by policy, never selected into a mart unaggregated
+**PII columns:** 6 — masked by policy, never selected into a mart unaggregated
 
 ## Gaps
 
-- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
-- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
 - **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
