@@ -43,6 +43,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # For the anchor check below, which asks a question about the repository
+  # rather than about a change: has anybody timestamped the chain lately.
+  schedule:
+    - cron: "23 7 * * *"
 
 permissions:
   contents: read
@@ -100,6 +104,89 @@ jobs:
         run: |
           if [ -f provenance/chain.jsonl ]; then
             python3 platform/entrypoints/verify_provenance.py provenance
+          fi
+
+  # Stage 05 — TIMESTAMP. This job does not anchor, and cannot: the ledger is
+  # `provenance/chain.jsonl`, which is gitignored runtime state, so a fresh
+  # checkout has no chain to timestamp. Anchoring runs where the records are
+  # written; see "Scheduling the anchor" in docs/GOVERNANCE.md.
+  #
+  # What CI *can* do is notice that nobody has. The anchor tokens are the one
+  # thing under `provenance/` that is committed, precisely so an auditor gets
+  # them alongside the chain — which also means this job can read them.
+  #
+  # Not on pull requests, and never blocking. A stale anchor is a fact about
+  # the repository, not about the change under review: failing a PR for it
+  # would block an author from merging over something they cannot fix, and the
+  # fastest way to make that stop hurting is to stop anchoring.
+  anchor:
+    name: Timestamp anchor coverage
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report the newest anchor
+        env:
+          # How old the newest token may be before this says so. The anchoring
+          # cadence should be shorter than this; the gap between them is the
+          # slack for a missed run.
+          MAX_AGE_DAYS: ${{ vars.PROVENANCE_ANCHOR_MAX_AGE_DAYS || '2' }}
+        run: |
+          shopt -s nullglob
+          tokens=(provenance/anchors/*.tsr)
+
+          if [ ${#tokens[@]} -eq 0 ]; then
+            echo "::warning title=Chain never anchored::No timestamp tokens are committed under provenance/anchors/. The chain is self-consistent, but its age rests entirely on this repository's own word. See 'Scheduling the anchor' in docs/GOVERNANCE.md."
+            {
+              echo "## Timestamp anchor coverage"
+              echo
+              echo "**Never anchored.** Stages 01-04 are intact and entirely ours;"
+              echo "stage 05 is what removes us from the trust set, and it has not run."
+              echo
+              echo "\`pf provenance anchor\` writes a token here. It runs where the"
+              echo "ledger lives, not in CI -- the chain is gitignored runtime state."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Zero-padded sequence numbers, so the last one sorted is the newest.
+          newest=$(printf '%s\n' "${tokens[@]}" | sort | tail -1)
+
+          # The token's own signed genTime, not the file's mtime: a git checkout
+          # does not preserve mtimes, so the filesystem cannot answer this. The
+          # timestamp is the one thing a TSA token exists to carry.
+          stamped=$(openssl ts -reply -in "$newest" -text 2>/dev/null \
+                    | sed -n 's/^ *Time stamp: *//p' | head -1)
+
+          if [ -z "$stamped" ]; then
+            echo "::warning title=Anchor unreadable::${#tokens[@]} token(s) present, but the newest ($newest) could not be read by openssl. The tokens are still valid evidence; only this report failed."
+            exit 0
+          fi
+
+          now=$(date -u +%s)
+          then_=$(date -u -d "$stamped" +%s 2>/dev/null || echo "")
+          if [ -z "$then_" ]; then
+            echo "::warning title=Anchor time unparsed::Newest anchor reads '$stamped', which this runner could not parse."
+            exit 0
+          fi
+          age_days=$(( (now - then_) / 86400 ))
+
+          {
+            echo "## Timestamp anchor coverage"
+            echo
+            echo "| | |"
+            echo "|---|--:|"
+            echo "| tokens committed | ${#tokens[@]} |"
+            echo "| newest | \`$(basename "$newest")\` |"
+            echo "| stamped | $stamped |"
+            echo "| age | ${age_days}d |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$age_days" -gt "$MAX_AGE_DAYS" ]; then
+            echo "::warning title=Anchor is stale::The newest timestamp is ${age_days} days old (threshold ${MAX_AGE_DAYS}). Everything written since then rests on this repository's own word."
+          else
+            echo "Newest anchor is ${age_days}d old — within ${MAX_AGE_DAYS}d."
           fi
 
   compliance-scan:

@@ -121,9 +121,57 @@ Bitcoin attestation answers it in twenty years.
 Anchoring is **not** in the hook. Both anchors need the network, and a PreToolUse
 hook that makes a network call adds its latency and its failure modes to every
 tool call the agent makes. The hot path only appends locally; anchoring runs
-separately, from a scheduler or CI. Anchoring the head anchors everything under
+separately. Anchoring the head anchors everything under
 it, so batching costs no coverage — the un-anchored window is the exposure, and
 `pf provenance status` reports it rather than assuming it is zero.
+
+### Scheduling the anchor
+
+**Anchoring runs where the ledger is, and that is not CI.** `provenance/chain.jsonl`
+is gitignored runtime state, so a CI checkout has no chain to timestamp — the
+anchor tokens are the only part of `provenance/` that is committed, and they are
+the *output* of anchoring, not its input.
+
+This paragraph used to say "from a scheduler or CI" and name neither, which is
+why the answer for a long time was *neither*: the chain reached 2,875 records
+with `anchored: never`, and nothing failed, because nothing was watching. Stages
+01–04 stayed perfectly consistent the whole time — which is exactly what a chain
+made entirely of our own bytes can do.
+
+Schedule it on each machine that writes records. On macOS, via `launchd`:
+
+```xml
+<!-- ~/Library/LaunchAgents/com.atomz.pf-provenance-anchor.plist -->
+<key>ProgramArguments</key>
+<array>
+  <string>/bin/sh</string><string>-lc</string>
+  <string>cd /path/to/data-platform && uv run pf provenance anchor</string>
+</array>
+<key>StartCalendarInterval</key><dict><key>Hour</key><integer>3</integer></dict>
+```
+
+or on Linux, via `cron`:
+
+```cron
+0 3 * * *  cd /path/to/data-platform && uv run pf provenance anchor
+```
+
+`--kind rfc3161` is the default and needs only `openssl`. `--kind both` adds the
+Bitcoin attestation and needs the `ots` client installed; without it that half
+is skipped, so check for it before relying on the twenty-year answer.
+
+Then **commit the tokens** — `provenance/anchors/*.tsr` is tracked precisely so
+an auditor gets them alongside the chain. A token that stays on one laptop
+proves nothing to anybody else.
+
+The `Timestamp anchor coverage` job in `.github/workflows/ai-governance.yml`
+reads those committed tokens on a daily schedule and on every push to `main`,
+and reports the age of the newest one from its own signed `genTime` — not the
+file's mtime, which a git checkout does not preserve. It **warns and never
+blocks**, and it does not run on pull requests: a stale anchor is a fact about
+the repository rather than about the change under review, and failing an author
+for it would block a merge over something they cannot fix. The fastest way to
+make a governance check stop hurting is to stop doing the thing it checks.
 
 Set `PF_TSA_URL` to your own authority. The default is freetsa.org, which is
 free and public; an organisation with a qualified TSA should point at it, since
