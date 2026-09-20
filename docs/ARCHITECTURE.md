@@ -114,19 +114,19 @@ clone. A `0` is the finding: no Model means the dbt manifest was never
 parsed and the merge gate cannot run; no Metric means every business
 question falls back to raw SQL.
 
-| Project | Table | Model | Metric | Exposure | Policy | nodes |
+| Project | Table | Model | Metric | Exposure | Policy | nodes (columns excluded) |
 |---|--:|--:|--:|--:|--:|--:|
-| `acme/acme-eu` | 3 | 37 | 6 | 2 | 33 | 434 |
-| `acme/acme-rollup` | 0 | 30 | 0 | 0 | 32 | 334 |
-| `acme/acme-us` | 3 | 37 | 6 | 2 | 32 | 455 |
-| `commodity/commodity-india` | 3 | 14 | 15 | 18 | 32 | 579 |
-| `commodity/commodity-rollup` | 1 | 8 | 11 | 13 | 32 | 419 |
-| `commodity/commodity-us` | 3 | 13 | 15 | 17 | 32 | 557 |
-| `globex/globex-core` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `globex/globex-eu` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 4558 |
-| `zenith/zenith-de` | 0 | 31 | 0 | 0 | 32 | 325 |
-| `zenith/zenith-uk` | 0 | 31 | 0 | 0 | 32 | 325 |
+| `acme/acme-eu` | 3 | 37 | 6 | 2 | 33 | 216 |
+| `acme/acme-rollup` | 0 | 30 | 0 | 0 | 32 | 170 |
+| `acme/acme-us` | 3 | 37 | 6 | 2 | 32 | 223 |
+| `commodity/commodity-india` | 3 | 14 | 15 | 18 | 32 | 382 |
+| `commodity/commodity-rollup` | 1 | 8 | 11 | 13 | 32 | 285 |
+| `commodity/commodity-us` | 3 | 13 | 15 | 17 | 32 | 371 |
+| `globex/globex-core` | 0 | 31 | 0 | 0 | 32 | 160 |
+| `globex/globex-eu` | 0 | 31 | 0 | 0 | 32 | 160 |
+| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 2166 |
+| `zenith/zenith-de` | 0 | 31 | 0 | 0 | 32 | 160 |
+| `zenith/zenith-uk` | 0 | 31 | 0 | 0 | 32 | 160 |
 
 Every graph carries the same 16 ontology classes and 14 relations — vocabulary is shared at the group, so a project instantiates only the part of it it needs.
 

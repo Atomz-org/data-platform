@@ -410,9 +410,14 @@ def render(f: Facts) -> str:
     rows = []
     for name in sorted(f.project_shape):
         c = f.project_shape[name]
+        # Columns are left out of the total on purpose. `pf kg build` backfills
+        # them from the warehouse's information_schema, so a graph built where
+        # the warehouse exists carries columns a runner's build does not, and a
+        # total that includes them turns `pf arch check` into a question about
+        # who last built the graph rather than about the project.
         rows.append([f"`{name}`", *[str(c.get(k, 0)) for k in kinds],
-                     str(sum(c.values()))])
-    out += _table(["Project", *kinds, "nodes"], rows,
+                     str(sum(n for k, n in c.items() if k != "Column"))])
+    out += _table(["Project", *kinds, "nodes (columns excluded)"], rows,
                   align="---|" + "|".join(["--:"] * (len(kinds) + 1)))
 
     out += [
