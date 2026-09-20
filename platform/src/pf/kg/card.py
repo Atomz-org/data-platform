@@ -7,7 +7,6 @@ budget, because the always-on tier is what silently inflates every session.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -173,7 +172,7 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
         gaps.append("no exposures declared — impact analysis stops at the mart")
 
     lines = [
-        f"## {project} — data index (generated {datetime.now(UTC).date().isoformat()})",
+        f"## {project} — data index",
         "",
         f"**Group:** {group} · **Concepts in use:** {_capped(used_concepts, 15)}",
         f"**Sources ({len(sources)}):** {_capped(sources, 12)}",
@@ -235,7 +234,16 @@ def render_group_card(group_dir: str | Path, group: str) -> Path:
     shared = instance.get("shared_sources") or []
 
     lines = [
-        f"## {group} — group index (generated {datetime.now(UTC).date().isoformat()})",
+        # No generation date in either header. `group_card.md` is committed and
+        # `pf bootstrap` rewrites it, so a wall-clock stamp made the file differ
+        # from itself the day after it was written — which is what the
+        # `converged` CI job compares. Five group cards drifting on a date turned
+        # a gate that means "the committed tree is behind the scaffold" into one
+        # that fired on the calendar, and a check that is red for a reason nobody
+        # caused is a check people learn to merge past. Git already records when
+        # the content last changed, which is the question the stamp was answering
+        # badly: it recorded when someone last *ran* the generator.
+        f"## {group} — group index",
         "",
         f"**Sister projects ({len(projects)}):** " + (", ".join(f"`{p}`" for p in projects) or "none"),
         f"**Ontology classes in scope:** {', '.join(classes) or 'none'}",

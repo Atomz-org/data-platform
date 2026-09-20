@@ -1,4 +1,4 @@
-## zenith — group index (generated 2026-09-18)
+## zenith — group index
 
 **Sister projects (2):** `zenith-de`, `zenith-uk`
 **Ontology classes in scope:** Customer, Organization, Contract, Payment, Refund, Currency
