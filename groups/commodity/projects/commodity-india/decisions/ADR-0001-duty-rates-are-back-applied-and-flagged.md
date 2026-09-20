@@ -21,7 +21,7 @@ Three options were considered:
 
 ## Decision
 
-Option 3. `india_import_duties` has one base row per commodity valid from
+Option 3. `import_duties` has one base row per commodity valid from
 `1900-01-01`, or, where the notifications are dated (cotton), a chain of dated
 rows that starts there.
 `confirmed_from` records the first date a row is known to be in force; a
