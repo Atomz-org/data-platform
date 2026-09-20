@@ -48,9 +48,9 @@ it found two policies claiming enforcement that does not exist.
 ```mermaid
 flowchart TB
     subgraph P["Prevention — before the action"]
-        H["Harness permissions<br/><code>.claude/settings.json</code><br/>7 deny · 4 ask · 13 allow"]
-        G["Path gate<br/><code>gate.yaml</code> + <code>gate.capabilities.yaml</code><br/>41 denied · 12 excepted · maxFiles 12"]
-        O["Ontology policy layer<br/><code>policy.yaml</code> · 26 policies<br/>overlays may only tighten"]
+        H["Harness permissions — .claude/settings.json<br/>7 deny · 4 ask · 13 allow"]
+        G["Path gate — gate.yaml + gate.capabilities.yaml<br/>41 denied · 12 excepted · maxFiles 12"]
+        O["Ontology policy layer — policy.yaml<br/>26 policies, overlays may only tighten"]
     end
     subgraph E["Evidence — as it happens"]
         L["Ledger<br/>intent · decision · execution"]
