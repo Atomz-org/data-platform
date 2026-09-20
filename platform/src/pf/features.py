@@ -88,6 +88,19 @@ class Feature:
     #: the file never matches what the project would produce and the drift check
     #: fails forever.
     self_reporting: bool = False
+    #: Produced by *running* the project rather than by scaffolding it: a seeded
+    #: warehouse, a toolkit's on-disk memories. This is `self_reporting`'s
+    #: problem from the other direction. Detected like any other, the row says
+    #: "present" on the machine that ran the pipeline and "absent" on a runner
+    #: that never could, so the committed map depends on who last generated it
+    #: and the converged gate fails on every PR raised from a built checkout —
+    #: which is every developer's.
+    #:
+    #: So the row is rendered from what is reproducible: the declared pattern
+    #: for the location, and the graph for the count when `count_kind` gives
+    #: one. `raw tables` keeps its honest count that way, because the tables are
+    #: in the graph even when the DuckDB file is somebody's local build.
+    build_output: bool = False
     #: Who contributed it: `platform`, `capability:<name>`, `tool:<name>`. Shown
     #: nowhere; used to explain an unexpected row and to keep derivation from
     #: overwriting a hand-written entry.

@@ -127,7 +127,8 @@ CORE: tuple[Feature, ...] = (
             ("contracts/annotations.yaml",), made_by="pf semantic annotate"),
     Feature("raw_tables", "raw tables", "ingest",
             "what the pipeline actually landed",
-            ("data/*.duckdb",), count_kind="Table", made_by="pf seed"),
+            ("data/*.duckdb",), count_kind="Table", made_by="pf seed",
+            build_output=True),
     # ---------------------------------------------------------- transform --
     Feature("dbt_project", "dbt project", "transform",
             "the transform runtime; macro-paths reach the platform's macros",
@@ -237,7 +238,8 @@ CORE: tuple[Feature, ...] = (
             (".memory/notes/**",), optional=True, made_by="written by the agent"),
     Feature("duckdb_skills", "duckdb memories", "operate",
             "query patterns the duckdb-ops toolkit reuses",
-            (".duckdb-skills/**",), optional=True, made_by="pf bootstrap"),
+            (".duckdb-skills/**",), optional=True, made_by="pf bootstrap",
+            build_output=True),
     # Optional because absence means "inherits the group's", not "missing". The
     # eight projects that predate the scaffolder writing one have no file and
     # are correctly configured; a fresh scaffold has an empty one.
@@ -597,11 +599,18 @@ def gather(root: str | Path, group: str, project: str) -> Arch:
 
     registry = features()
     for f in registry:
-        n, where = _count(pdir, f.paths) if f.paths else (0, "")
-        if f.repo_paths:
-            rn, rwhere = _count(root, tuple(g.format(project=project, group=group)
-                                            for g in f.repo_paths))
-            n, where = n + rn, where or rwhere
+        if f.build_output:
+            # Never detected from disk — see `Feature.build_output`. Left at
+            # zero so `count_kind` below can still answer from the graph, and
+            # with no `where`, so the row prints the declared pattern rather
+            # than whichever file this particular machine happens to have built.
+            n, where = 0, ""
+        else:
+            n, where = _count(pdir, f.paths) if f.paths else (0, "")
+            if f.repo_paths:
+                rn, rwhere = _count(root, tuple(g.format(project=project, group=group)
+                                                for g in f.repo_paths))
+                n, where = n + rn, where or rwhere
         # A graph, when there is one, is the authority — including when its
         # answer is zero. Falling back to the file count on a missing *kind*
         # rather than a missing *graph* reported "raw tables: 1" for a roll-up
