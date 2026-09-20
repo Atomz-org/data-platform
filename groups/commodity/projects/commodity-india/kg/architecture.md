@@ -29,8 +29,8 @@ flowchart LR
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>16"]:::exposure
-        D2["Evidence pages<br/>15"]:::exposure
+        D1["exposures<br/>19"]:::exposure
+        D2["Evidence pages<br/>18"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -127,7 +127,7 @@ flowchart TB
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | decision records | ✓ 5 | `decisions/ADR-0001-duty-rates-are-back-applied-and-flagged.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | ✓ 16 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
+| exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 2 | `docs/github.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
