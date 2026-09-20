@@ -17,6 +17,20 @@
 # `security:`, `blocker:`, `must fix`, `finding:`, `defect:`). Everything else a
 # reviewer writes stays conversation.
 #
+# Both halves of a review are read, and they are not the same thing:
+#
+#   the threads    one comment pinned to one line of the diff
+#   the body       everything GitHub would not take inline — CodeRabbit's
+#                  "Outside diff range" and "Nitpick" sections, and, on older
+#                  reviews, the severity-named ones it batched everything into
+#
+# The body half used to be skipped. Those are the findings with no thread
+# behind them: nothing to resolve, nothing to reopen, and nothing that carried
+# them once the PR closed — so they were exactly the ones this workflow exists
+# to keep, and the only ones it lost. They are labelled `outside-diff` or
+# `nitpick` for where they were raised, and a nitpick is filed at P3 so that
+# the most numerous thing a review produces does not bury the rest.
+#
 # Two speeds, on purpose:
 #
 #   as it lands   a new comment is tracked immediately, so nothing is lost if
