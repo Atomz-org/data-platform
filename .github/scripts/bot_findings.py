@@ -185,9 +185,20 @@ def strip_noise(body: str) -> str:
     """Drop the parts of a bot comment that are scaffolding, not the finding."""
     b = body
     for s in ("🧩 Analysis chain", "🤖 Prompt for AI Agents",
-              "📝 Committable suggestion", "🛠️ Refactor suggestion"):
+              "📝 Committable suggestion", "🛠️ Refactor suggestion",
+              # The rest appear only inside a *review body* finding, which
+              # nothing used to read. Each one is a restatement of the fix, not
+              # of the defect, and a couple of them carry a whole diff.
+              "🤖 Prompt for all review comments with AI agents",
+              "🤖 Prompt to fix review comments", "🧰 Tools", "🪛 Tools",
+              "✅ Verification successful", "🧪 Verification"):
         b = re.sub(rf"<details>\s*<summary>{re.escape(s)}</summary>.*?</details>",
                    "", b, flags=re.S)
+    # `🛡️ Proposed fix`, `🐛 Proposed fix`, `♻️ Proposed rewrite` — one block per
+    # emoji, and CodeRabbit picks the emoji from the finding's own category, so
+    # naming them exhaustively above would go stale on the next category it adds.
+    b = re.sub(r"<details>\s*<summary>[^<]*?Proposed (?:fix|rewrite)</summary>.*?</details>",
+               "", b, flags=re.S)
     b = re.sub(r"<!--.*?-->", "", b, flags=re.S)
     b = re.sub(r"<sub>.*?</sub>", "", b, flags=re.S)
     b = re.sub(r"^\s*- \[ \] Apply fix\s*$", "", b, flags=re.M)
@@ -216,6 +227,16 @@ class Finding:
     #: Deliberately not part of the fingerprint: a PR retitled mid-review must
     #: not fork its findings into a second set of issues.
     pr_title: str = ""
+    #: Which collapsible section of a review body this came out of —
+    #: `outside-diff`, `nitpick`, `duplicate`, `additional`. Empty for an
+    #: inline comment, which *is* the diff and so belongs to no section.
+    #: It sets a label and it tempers the priority; it is not in the
+    #: fingerprint, because CodeRabbit moves a finding between sections as the
+    #: diff moves under it and the defect is the same one either way.
+    section: str = ""
+    #: `307-312` when the finding names a span rather than a line. Cited, not
+    #: fingerprinted — a span shifts with every rebase.
+    span: str = ""
 
     @property
     def origin(self) -> str:
@@ -327,6 +348,191 @@ def parse(body: str, path: str, line: int | None, login: str,
     return out
 
 
+#: The collapsible sections of a CodeRabbit *review body*, and the name this
+#: script files them under. A finding lands in one of these rather than inline
+#: whenever GitHub will not take the comment on the line — the span is outside
+#: the diff, or the file was not touched by this push — which is precisely when
+#: it is most likely to be lost, because there is no thread to resolve and
+#: nothing to carry it once the PR closes.
+#:
+#: `Additional comments` is deliberately absent: it is where CodeRabbit repeats
+#: what it already posted inline, so reading it would file a second copy of a
+#: finding this script has already tracked under its own thread.
+CR_SECTIONS = {
+    # Named for what they are.
+    "outside diff range comments": "outside-diff",
+    "nitpick comments": "nitpick",
+    "duplicate comments": "duplicate",
+    "potential issues": "outside-diff",
+    "refactor suggestions": "nitpick",
+    # Named for their severity. An older CodeRabbit batched everything it found
+    # into these rather than posting inline — PR #55 raised three comments on
+    # the diff and forty-five in here — so skipping them loses the bulk of what
+    # that review said. The severity is read from each finding's own header, so
+    # these carry no section tag of their own.
+    "critical comments": "",
+    "major comments": "",
+    "minor comments": "",
+    "trivial comments": "",
+}
+
+#: The review-level headings that *end* a run of findings. Everything else that
+#: is neither a section nor a file is scaffolding written inside a finding —
+#: `🤖 Prompt for AI Agents`, `♻️ Proposed change to keep the first source's
+#: entries` — and must leave the current section alone.
+#:
+#: Enumerated in this direction on purpose. Treating every unrecognised heading
+#: as the end of the section looks safer and is not: CodeRabbit phrases those
+#: `Proposed …` summaries freely, so one of them ended the section early and
+#: every file after it was swallowed into the previous file's block — which is
+#: how `catalogue.py-462-472` came to be credited with four other files'
+#: findings. A missed reset costs nothing by comparison, because a heading that
+#: opens no findings has no `` `N-M`: `` headers under it to parse.
+#:
+#: `Additional comments` is here rather than in `CR_SECTIONS`: it repeats what
+#: CodeRabbit already posted inline, which this script tracks from the thread.
+CR_RESET = re.compile(
+    r"files (?:selected for processing|with no reviewable changes|skipped from review)"
+    r"|additional comments|review info|run configuration|commits|autofix"
+    r"|prompt (?:for all review comments|to fix review comments)", re.I)
+
+#: `<summary>.github/scripts/bot_findings.py (3)</summary>` — the file a run of
+#: findings belongs to, and how many of them there are. The older format glues
+#: the span onto the path (`acme-eu.yml-76-80 (1)`); `_parse_file_block` takes
+#: that back off, where the finding's own header says what the span was.
+CR_FILE_SUMMARY = re.compile(r"^(?P<path>[^\s<>()]+?)\s*\((?P<n>\d+)\)$")
+
+SUMMARY = re.compile(r"<summary>(.*?)</summary>", re.S)
+
+#: Every finding in a body section opens with its span and its classification:
+#: `` `307-312`: _🎯 Functional Correctness_ | _🟡 Minor_ | _⚡ Quick win_ ``.
+#: Note this is *not* `CR_HEAD`, which anchors on the classification at the
+#: start of a line: here the span comes first, so `CR_HEAD` never matches and
+#: `parse` returns nothing for a review body. That is the whole reason these
+#: findings went unfiled.
+CR_BODY_HEAD = re.compile(r"^`(?P<start>\d+)(?:-(?P<end>\d+))?`:\s*(?P<rest>.*)$", re.M)
+
+
+def _deblockquote(text: str) -> str:
+    """Undo one level of `> ` quoting.
+
+    CodeRabbit wraps the outside-diff section in a `[!CAUTION]` admonition,
+    which quotes every line of it — tags included. Nitpicks are not wrapped.
+    One level, not all of them: a reviewer quoting code in a finding is content,
+    and stripping to a fixed point would eat it.
+    """
+    return "\n".join(re.sub(r"^ {0,3}> ?", "", ln) for ln in text.splitlines())
+
+
+def _section_of(summary: str) -> str | None:
+    """The section this summary opens, or None if it opens none."""
+    plain = re.sub(r"\(\d+\)", "", re.sub(r"<[^>]+>", "", summary)).strip().lower()
+    plain = re.sub(r"[^a-z ]+", "", plain).strip()
+    return CR_SECTIONS.get(plain)
+
+
+def parse_review_body(body: str, login: str, url: str, pr: int) -> list[Finding]:
+    """Findings CodeRabbit filed in the review body rather than on a line.
+
+    `collect` used to skip bot review bodies outright, so everything in here —
+    every "Outside diff range" and every "Nitpick" — was dropped. They are
+    ordinary findings: they name a file, a span and a defect, and they are the
+    ones with no review thread to resolve, so nothing else would ever carry
+    them once the PR merged.
+
+    The body nests `<details>` several deep, so this does not try to match tags
+    into pairs. It walks the `<summary>` lines in order instead, which is
+    enough: a summary either names a section, names a file, or is scaffolding,
+    and a file's findings are the text between its summary and the next
+    section-or-file summary.
+    """
+    if "coderabbit" not in login:
+        return []
+    text = _deblockquote(body)
+
+    # Where each file's run of findings starts and stops, and which section it
+    # was gathered under.
+    marks: list[tuple[int, str, str]] = []      # (offset, kind, value)
+    section: str | None = None
+    for m in SUMMARY.finditer(text):
+        raw = m.group(1).strip()
+        plain = re.sub(r"<[^>]+>", "", raw).strip()
+        sec = _section_of(raw)
+        if sec is not None:
+            section = sec
+            marks.append((m.end(), "section", sec))
+            continue
+        if CR_RESET.search(plain):
+            section = None
+            continue
+        # A path, not a heading: it has an extension or a directory in it. Only
+        # collected inside a section — the same shape appears under `📒 Files
+        # selected for processing`, which is a list of what was read, not of
+        # what was found.
+        fm = CR_FILE_SUMMARY.match(plain)
+        if fm and section is not None and ("/" in fm.group("path")
+                                           or "." in fm.group("path")):
+            marks.append((m.end(), "file", fm.group("path")))
+        # Anything else is scaffolding inside a finding: leave the section be.
+
+    out: list[Finding] = []
+    for i, (start, kind, value) in enumerate(marks):
+        if kind != "file":
+            continue
+        stop = next((o for o, _, _ in marks[i + 1:]), len(text))
+        sec = next((v for o, k, v in reversed(marks[:i + 1]) if k == "section"), "")
+        assert kind == "file"
+        out += _parse_file_block(text[start:stop], value, sec, url, pr)
+    return out
+
+
+def _parse_file_block(block: str, path: str, section: str, url: str,
+                      pr: int) -> list[Finding]:
+    """The findings in one file's run, split on their span headers."""
+    heads = list(CR_BODY_HEAD.finditer(block))
+    out: list[Finding] = []
+    # `acme-eu.yml-76-80` is `acme-eu.yml`, span 76-80 — the older format writes
+    # the first finding's span into the file summary as well as its own header.
+    # Taken off once for the whole run, not per finding: a run can hold several,
+    # and only the first one's span is the one glued on, so matching each
+    # finding against its own span left the rest of them filed under a path with
+    # a line range in it — which is not a path, and matches no other report of
+    # the same defect.
+    if heads:
+        first = heads[0].group("start") + (
+            f"-{heads[0].group('end')}" if heads[0].group("end") else "")
+        if path.endswith(f"-{first}"):
+            path = path[:-len(first) - 1]
+    for j, h in enumerate(heads):
+        chunk = block[h.end():heads[j + 1].start() if j + 1 < len(heads) else len(block)]
+        clean = strip_noise(chunk)
+        if not clean:
+            continue
+        cat = re.sub(r"[_*`]", "", h.group("rest")).strip()
+        title = ""
+        for cand in CR_TITLE.findall(clean):
+            c = " ".join(cand.split())
+            # A bold run ending in a colon is a label above the claim
+            # ("Reachability:"), not the claim.
+            if not c.endswith(":"):
+                title = c
+                break
+        # No bold claim: CodeRabbit wrote the finding as prose. Take its first
+        # sentence rather than dropping the finding.
+        if not title:
+            first = next((ln.strip(" *_>#-") for ln in clean.splitlines() if ln.strip()), "")
+            title = " ".join(first.split())[:160]
+        title = title.strip().rstrip(".")
+        if len(title) < 8:
+            continue
+        span = h.group("start") + (f"-{h.group('end')}" if h.group("end") else "")
+        out.append(Finding(
+            "CodeRabbit", path, int(h.group("start")), title,
+            _severity(cat), _kind(cat + " " + clean, path), clean, url, pr,
+            section=section, span=span))
+    return out
+
+
 def parse_human(body: str, path: str, line: int | None, login: str, url: str,
                 pr: int, requested_changes: bool = False) -> list[Finding]:
     """A human reviewer's finding, if the comment is one.
@@ -385,6 +591,11 @@ def priority(f: Finding) -> str:
         return "P1 — High"
     if f.kind == "docs":
         return "P3 — Low"
+    # A nitpick that is neither a bug nor a security finding is polish. Left at
+    # the default it would sit level with real defects and, since nitpicks are
+    # the most numerous thing a review produces, bury them.
+    if f.section == "nitpick":
+        return "P3 — Low"
     return "P2 — Medium"
 
 
@@ -414,6 +625,11 @@ def labels_for(f: Finding) -> list[str]:
     src = {"CodeRabbit": "coderabbit", "Gitar": "gitar"}.get(f.bot, "reviewer")
     out = [TRACKING_LABEL, src]
     out.append("severity:major" if f.severity in ("critical", "major") else "severity:minor")
+    # Where it was raised, so triage can separate the two populations. A
+    # nitpick and a defect outside the diff arrive through the same door and
+    # read alike on a board; only the label says which is which.
+    if f.section in ("nitpick", "outside-diff"):
+        out.append(f.section)
     if f.kind == "security":
         out.append("security")
     if f.kind in ("bug", "edge-case"):
@@ -440,6 +656,8 @@ LABELS = [
     ("security", "b60205", "Security or secrets"),
     ("bug", "d73a4a", "Defect or edge case"),
     ("documentation", "0075ca", "Prose"),
+    ("nitpick", "ededed", "Style or polish, raised in a review body"),
+    ("outside-diff", "fef2c0", "Outside the diff — no review thread carries it"),
     (EPIC_LABEL, "0e8a16", "Gathers every finding in one category"),
 ]
 
@@ -501,12 +719,19 @@ def locate(f: "Finding") -> dict | None:
     if len(live) != 1:
         return hit
     cand = next(iter(live.values()))
-    if f.path and issue_path(cand):
+    # Two paths that *disagree* are two defects in two files, which the
+    # fingerprint is right to have separated. Two paths that agree, under one
+    # title, are one defect — and declining those was the second half of why a
+    # hand-filed issue could never be matched: both sides name the file, so the
+    # fallback refused every body finding it was needed for.
+    if f.path and issue_path(cand) and f.path != issue_path(cand):
         return hit
     if cand.get("state") != "open" and dup:
         return hit          # every candidate is closed too; nothing to redirect to
-    print(f"  matched #{cand['number']} on title "
-          f"({'no path here' if not f.path else 'none recorded there'})")
+    why = ("no path here" if not f.path
+           else "same file" if issue_path(cand)
+           else "none recorded there")
+    print(f"  matched #{cand['number']} on title ({why})")
     return cand
 
 
@@ -526,9 +751,15 @@ FILE_LINE = re.compile(r"^\*\*File:\*\* `([^`]+)`", re.M)
 
 
 def issue_path(issue: dict) -> str:
-    """The file an existing issue names, or "" if it names none."""
+    """The file an existing issue names, or "" if it names none.
+
+    A span is stripped. Issues filed by hand before this script read review
+    bodies wrote `**File:** `path/to/x.py:307-312``, and a path carrying a span
+    equals no path this script will ever produce — so `locate` could not match
+    one and filed a second copy of a finding that was already tracked.
+    """
     m = FILE_LINE.search(issue.get("body") or "")
-    return m.group(1) if m else ""
+    return re.sub(r":\d+(?:-\d+)?$", "", m.group(1)) if m else ""
 
 
 def _already_filed(fp: str) -> int | None:
@@ -548,8 +779,16 @@ def _already_filed(fp: str) -> int | None:
 
 
 def canonical_title(issue: dict) -> str:
-    """The finding's own title, with any file-stem prefix `upsert` added removed."""
+    """The finding's own title, with whatever was prefixed to it removed.
+
+    Two prefixes exist. `upsert` adds a file stem to a terse title. Issues filed
+    by hand add the originating PR — `[#254] Keep the original …` — and that one
+    is hashed into the alias key unless it comes off, which put fifty-two
+    tracked issues under keys no `Finding.title_key` can produce: unreachable by
+    the fallback, and so refiled the next time the same defect was read.
+    """
     title = issue.get("title") or ""
+    title = re.sub(r"^\[#\d+\]\s*", "", title)
     stem = pathlib.Path(issue_path(issue)).name
     prefix = f"{stem}: " if stem else ""
     return title[len(prefix):] if prefix and title.startswith(prefix) else title
@@ -642,7 +881,8 @@ def related(path: str, skip_fp: str) -> list[dict]:
 
 
 def render(f: Finding, prior: str | None = None) -> str:
-    cite = (f"### {f.origin} — [`{f.path}:{f.line}`]({f.url}) (PR #{f.pr})\n\n"
+    where = f"{f.path}:{f.span or f.line}"
+    cite = (f"### {f.origin} — [`{where}`]({f.url}) (PR #{f.pr})\n\n"
             if f.path else f"### {f.origin} — [PR #{f.pr}]({f.url})\n\n")
     block = cite + f.body
     if prior:
@@ -682,6 +922,12 @@ def upsert(f: Finding) -> int | None:
             m = re.search(rf"<!-- {re.escape(MARK)}[0-9a-f]+ -->", body)
             if m:
                 body = f"{body[:m.end()]}\n<!-- {MARK}{f.fingerprint} -->{body[m.end():]}"
+            else:
+                # An issue filed by hand carries no marker at all, so there is
+                # nothing to anchor to and it would stay reachable only by the
+                # title — one retitle away from being refiled. Adopt it: put the
+                # key in now, and the next run hits the exact index instead.
+                body = f"<!-- {MARK}{f.fingerprint} -->\n\n{body}"
         if DRY_RUN:
             changed = "body" if body != (found.get("body") or "") else "nothing"
             missing = [x for x in labels
@@ -1254,15 +1500,31 @@ def collect(pr: int) -> list[Finding]:
                 requested_changes=reviews.get(c.get("pull_request_review_id"))
                 == "CHANGES_REQUESTED")
 
-    # A review's own body — the summary a reviewer writes above the inline
-    # comments — is not in the comments endpoint and is where a blocker is most
-    # often stated.
+    # A review's own body is not in the comments endpoint, and it carries
+    # findings from both kinds of reviewer:
+    #
+    #   a person   the summary written above the inline comments, which is
+    #              where a blocker is most often stated
+    #   a bot      everything GitHub would not take inline — CodeRabbit's
+    #              "Outside diff range" and "Nitpick" sections
+    #
+    # The bot half used to be skipped outright, and those are the findings with
+    # no review thread behind them: nothing marks them resolved, nothing else
+    # reads them, and they died with the PR. That is the gap this closes.
     for r in api(f"repos/{REPO}/pulls/{pr}/reviews?per_page=100", jq=".[]"):
         login = (r.get("user") or {}).get("login", "")
-        if not (r.get("body") or "").strip() or any(b in login for b in BOTS):
+        body = (r.get("body") or "").strip()
+        if not body:
             continue
-        out += parse_human(r["body"], "", None, login, r.get("html_url", ""), pr,
-                           requested_changes=r.get("state") == "CHANGES_REQUESTED")
+        url = r.get("html_url", "")
+        if any(b in login for b in BOTS):
+            found = parse_review_body(body, login, url, pr)
+            # Gitar states a finding in the body directly, with no sections to
+            # walk; so does CodeRabbit when the review holds exactly one.
+            out += found or parse(body, "", None, login, url, pr)
+        else:
+            out += parse_human(body, "", None, login, url, pr,
+                               requested_changes=r.get("state") == "CHANGES_REQUESTED")
 
     for c in api(f"repos/{REPO}/issues/{pr}/comments?per_page=100", jq=".[]"):
         login = c["user"]["login"]
@@ -1342,7 +1604,14 @@ def main() -> int:
         args = (c.get("path", ""), c.get("line") or c.get("original_line"),
                 login, c.get("html_url", ""), pr)
         if any(b in login for b in BOTS):
-            track(parse(c.get("body", ""), *args))
+            body = c.get("body", "")
+            # A `pull_request_review` from a bot is the sectioned kind; an
+            # inline comment or a walkthrough is not. Try the sections first
+            # and fall back, rather than branching on the event name — Gitar
+            # sends a review with no sections in it at all.
+            found = (parse_review_body(body, login, c.get("html_url", ""), pr)
+                     if not c.get("path") else [])
+            track(found or parse(body, *args))
         else:
             track(parse_human(c.get("body", ""), *args,
                               requested_changes=c.get("state") == "changes_requested"))
