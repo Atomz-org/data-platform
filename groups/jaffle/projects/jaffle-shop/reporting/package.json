@@ -31,10 +31,7 @@
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "3.1.2",
-    "git-remote-origin-url": "^4.0.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47"
+    "@sveltejs/vite-plugin-svelte": "3.1.2"
   },
   "overrides": {
     "jsonwebtoken": "9.0.0",
