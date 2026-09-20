@@ -67,19 +67,19 @@ jobs:
   converged:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       # Submodules, because `docs/VENDOR-CARD.md` reports each upstream `ok` or
       # `drift` by comparing the vendored checkout against the lock. Without them
       # every upstream reads `ok` — not because nothing drifted, but because
       # there is nothing to compare — so the card regenerated here disagreed with
       # the one a developer commits, and the gate failed on a difference it had
       # manufactured itself.
-      - uses: actions/checkout@v4
-
-      # Pin by pin, not `submodules: recursive`, which is all-or-nothing: the
-      # deleted `asqav-compliance` upstream aborted this checkout and the job
-      # never reached `pf bootstrap`. Each pin is fetched on its own so the card
-      # is compared against every upstream that can still be read, and the ones
-      # that cannot are named rather than silently taking the job down.
+      #
+      # Fetched pin by pin, because `submodules: recursive` is all-or-nothing:
+      # the deleted `asqav-compliance` upstream aborted this checkout and the job
+      # never reached `pf bootstrap`. An unreachable pin is named in a warning
+      # instead of taking the comparison down with it.
       - name: Vendored upstreams
         run: |
           failed=""

@@ -24,7 +24,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-Status = Literal["ok", "skipped", "failed"]
+#: `created` is distinct from `ok` on purpose: a step that wrote a file the
+#: repository did not have is a change a reader should see, not a no-op. It is
+#: still a pass — `StepResult.ok` is "not failed" — but printing it as a tick
+#: would hide the one run in which the file appeared.
+Status = Literal["ok", "created", "skipped", "failed"]
 
 
 @dataclass
@@ -139,16 +143,13 @@ def _group_manifest(root: Path, group: str, project: str) -> StepResult:
         if groups.exists(root, group):
             manifest = groups.load(root, group)
             if not manifest.behind_template:
-                return StepResult("group manifest", "ok",
-                                  f"v{manifest.template_version}, {manifest.lifecycle}")
+                return StepResult("group manifest", "ok", f"v{manifest.template_version}, {manifest.lifecycle}")
             was = manifest.template_version
             manifest.template_version = groups.TEMPLATE_VERSION
             # In place, so the family's own comments survive a template bump.
-            if not groups.set_key(manifest.path, "template_version",
-                                  groups.TEMPLATE_VERSION):
+            if not groups.set_key(manifest.path, "template_version", groups.TEMPLATE_VERSION):
                 groups.save(manifest)
-            return StepResult("group manifest", "ok",
-                              f"template v{was} -> v{groups.TEMPLATE_VERSION}")
+            return StepResult("group manifest", "ok", f"template v{was} -> v{groups.TEMPLATE_VERSION}")
         # The archetype already lives in the ontology instance for every group
         # scaffolded before the manifest; carry it over rather than asking again.
         domain = ""
@@ -160,9 +161,15 @@ def _group_manifest(root: Path, group: str, project: str) -> StepResult:
                 domain = str((yaml.safe_load(instance.read_text()) or {}).get("domain", "") or "")
             except yaml.YAMLError:
                 domain = ""
-        groups.save(groups.Manifest(
-            group=group, path=groups.manifest_path(root, group), domain=domain,
-            lifecycle="provisioned", template_version=groups.TEMPLATE_VERSION))
+        groups.save(
+            groups.Manifest(
+                group=group,
+                path=groups.manifest_path(root, group),
+                domain=domain,
+                lifecycle="provisioned",
+                template_version=groups.TEMPLATE_VERSION,
+            )
+        )
         return StepResult("group manifest", "ok", "created, lifecycle: provisioned")
     except groups.GroupError as exc:
         return StepResult("group manifest", "failed", str(exc))
@@ -186,13 +193,14 @@ def _group_plugin_and_loops(root: Path, group: str, project: str) -> StepResult:
 
     gdir = root / "groups" / group
     created = []
-    for rel, template in ((Path(".claude") / ".claude-plugin" / "plugin.json", GROUP_PLUGIN),
-                          (Path("loops.yaml"), GROUP_LOOPS)):
+    for rel, template in (
+        (Path(".claude") / ".claude-plugin" / "plugin.json", GROUP_PLUGIN),
+        (Path("loops.yaml"), GROUP_LOOPS),
+    ):
         if not (gdir / rel).exists():
             write(gdir / rel, template, {"group": group})
             created.append(rel.as_posix())
-    return StepResult("group plugin + loops", "ok",
-                      f"created {', '.join(created)}" if created else "present")
+    return StepResult("group plugin + loops", "ok", f"created {', '.join(created)}" if created else "present")
 
 
 def _export_mdl(root: Path, group: str, project: str) -> StepResult:
@@ -309,15 +317,15 @@ def _capability_policies(root: Path, group: str, project: str) -> StepResult:
     )
 
     caps = resolve(defaults())
-    before = (root / "platform" / "src" / "pf" / "ontology"
-              / "policy.capabilities.yaml").read_text() if (
-        root / "platform" / "src" / "pf" / "ontology"
-        / "policy.capabilities.yaml").exists() else ""
+    before = (
+        (root / "platform" / "src" / "pf" / "ontology" / "policy.capabilities.yaml").read_text()
+        if (root / "platform" / "src" / "pf" / "ontology" / "policy.capabilities.yaml").exists()
+        else ""
+    )
     path = write_capability_policies(root, caps)
     n = len(policy_additions(caps))
     verb = "unchanged" if path.read_text() == before else "rewritten"
-    return StepResult("capability policies", "ok",
-                      f"{n} policy(ies) from {len(caps)} capability(ies), {verb}")
+    return StepResult("capability policies", "ok", f"{n} policy(ies) from {len(caps)} capability(ies), {verb}")
 
 
 def _claude_settings(root: Path, group: str, project: str) -> StepResult:
@@ -600,15 +608,26 @@ jobs:
   converged:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       # Submodules, because `docs/VENDOR-CARD.md` reports each upstream `ok` or
       # `drift` by comparing the vendored checkout against the lock. Without them
       # every upstream reads `ok` — not because nothing drifted, but because
       # there is nothing to compare — so the card regenerated here disagreed with
       # the one a developer commits, and the gate failed on a difference it had
       # manufactured itself.
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
+      #
+      # Fetched pin by pin, because `submodules: recursive` is all-or-nothing:
+      # the deleted `asqav-compliance` upstream aborted this checkout and the job
+      # never reached `pf bootstrap`. An unreachable pin is named in a warning
+      # instead of taking the comparison down with it.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\\..*\\.path$' | awk '{print $2}'); do
+            git submodule update --init --depth 1 "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -670,18 +689,20 @@ def _register_code_location(root: Path, group: str, project: str) -> StepResult:
     """An unregistered project silently never runs in Dagster."""
     from pf.cli import all_projects
 
-    lines = ["# GENERATED by `pf bootstrap`. Re-run after adding a project.",
-             "#",
-             "# One code location per project: a failure or reload in one sister never",
-             "# affects another, and each gets its own process.",
-             "#",
-             "# Absolute on purpose: Dagster resolves a relative working_directory",
-             "# against the process cwd, not against this file, so a relative path",
-             "# silently resolves outside the repo. That makes the file machine",
-             "# specific, which is why it is generated and not committed — tracked,",
-             "# it recorded whose checkout last ran bootstrap and conflicted on every",
-             "# onboarding.",
-             "load_from:"]
+    lines = [
+        "# GENERATED by `pf bootstrap`. Re-run after adding a project.",
+        "#",
+        "# One code location per project: a failure or reload in one sister never",
+        "# affects another, and each gets its own process.",
+        "#",
+        "# Absolute on purpose: Dagster resolves a relative working_directory",
+        "# against the process cwd, not against this file, so a relative path",
+        "# silently resolves outside the repo. That makes the file machine",
+        "# specific, which is why it is generated and not committed — tracked,",
+        "# it recorded whose checkout last ran bootstrap and conflicted on every",
+        "# onboarding.",
+        "load_from:",
+    ]
     n = 0
     for g, p, d in all_projects():
         module = p.replace("-", "_")
@@ -887,9 +908,9 @@ def _project_atlas(root: Path, group: str, project: str) -> StepResult:
     if out is None:
         return StepResult("project atlas", "skipped", f"{seeded}disabled in atlas.yaml")
     f = atlas.gather(root, group, project)
-    return StepResult("project atlas", "ok",
-                      f"{seeded}{out.name} · {f.nodes} node(s) · on: "
-                      f"{', '.join(cfg.phases) or 'request only'}")
+    return StepResult(
+        "project atlas", "ok", f"{seeded}{out.name} · {f.nodes} node(s) · on: {', '.join(cfg.phases) or 'request only'}"
+    )
 
 
 def _render_architecture(root: Path, group: str, project: str) -> StepResult:
@@ -957,56 +978,99 @@ STEPS: list[Step] = [
         _build_graph,
     ),
     Step("context card", "the always-on index every session loads", _render_card),
-    Step("group card", "sister roster, so a new project is visible to its siblings",
-         _render_group_card),
-    Step("pre-commit gate", "git does not clone .git/hooks, so on a fresh "
-         "checkout the gate is absent and nothing says so", _install_git_hook),
-    Step("group manifest", "a group is an object with an owner, a lifecycle and "
-         "a template version, not just a directory", _group_manifest),
-    Step("group plugin + loops", "a group scaffolded before either existed has a "
-                                 "plugin that never loads and no loop overrides file",
-         _group_plugin_and_loops),
-    Step("MDL manifest", "the BI / WrenAI projection; stable path before first model",
-         _export_mdl),
+    Step("group card", "sister roster, so a new project is visible to its siblings", _render_group_card),
+    Step(
+        "pre-commit gate",
+        "git does not clone .git/hooks, so on a fresh checkout the gate is absent and nothing says so",
+        _install_git_hook,
+    ),
+    Step(
+        "group manifest",
+        "a group is an object with an owner, a lifecycle and a template version, not just a directory",
+        _group_manifest,
+    ),
+    Step(
+        "group plugin + loops",
+        "a group scaffolded before either existed has a plugin that never loads and no loop overrides file",
+        _group_plugin_and_loops,
+    ),
+    Step("MDL manifest", "the BI / WrenAI projection; stable path before first model", _export_mdl),
     Step("OWL export", "RDF-XML for external ontology tooling", _export_owl),
-    Step("otop manifest", "policy and evidence as an OpenTopology 0.2 graph; "
-                          "validated against the vendored schema", _export_otop),
-    Step("vendor docs", "provenance stays generated, so it cannot drift from the "
-                        "registry the tooling reads", _vendor_docs),
-    Step("capability policies", "an obligation a capability introduces must be "
-                                "inspectable and enforceable, not prose in a skill",
-         _capability_policies),
-    Step("claude settings", "a settings file the schema rejects loads none of "
-                            "the plugins it declares, silently", _claude_settings),
-    Step("tools", "a tool enabled for the group must reach every sister, "
-                  "including projects created before it existed", _bootstrap_tools),
-    Step("capabilities", "a default-enabled capability must reach every project, "
-                         "including ones scaffolded before it was a default",
-         _bootstrap_capabilities),
-    Step("reporting", "dashboards are a projection of the metrics, regenerated "
-                      "rather than hand-maintained", _build_reporting),
-    Step("platform CI", "the change with fleet-wide blast radius was the only "
-         "one with no CI, and the enforcing commands were wired to nothing",
-         _platform_workflow),
-    Step("notify channel", "where loops and answers are delivered; names an env "
-                           "var, never a URL", _group_notify),
-    Step("group air.yaml", "a family with no control declaration has a gate that "
-                           "passes by finding nothing to check", _group_air),
-    Step("ci workflow", "one workflow per project, composed from the jobs its "
-                        "capabilities declare, so CI is readable in one place",
-         _ci_workflow),
-    Step("dagster code location", "an unregistered project never runs",
-         _register_code_location),
-    Step("dbt wiring", "a project scaffolded before a toolkit existed cannot "
-                       "compile its macros, and one with no base target cannot "
-                       "be diffed", _dbt_wiring),
-    Step("dev serving", "the served dev database and its guardrails, documented "
-                        "in the project rather than assumed", _dev_serving),
-    Step("project atlas", "each project publishes a picture of its own graph, "
-                          "refreshed around its own dbt runs", _project_atlas),
-    Step("architecture map", "every feature of this project, present or absent, "
-                             "so an agent routes instead of reading the tree",
-         _render_architecture),
+    Step(
+        "otop manifest",
+        "policy and evidence as an OpenTopology 0.2 graph; validated against the vendored schema",
+        _export_otop,
+    ),
+    Step(
+        "vendor docs",
+        "provenance stays generated, so it cannot drift from the registry the tooling reads",
+        _vendor_docs,
+    ),
+    Step(
+        "capability policies",
+        "an obligation a capability introduces must be inspectable and enforceable, not prose in a skill",
+        _capability_policies,
+    ),
+    Step(
+        "claude settings",
+        "a settings file the schema rejects loads none of the plugins it declares, silently",
+        _claude_settings,
+    ),
+    Step(
+        "tools",
+        "a tool enabled for the group must reach every sister, including projects created before it existed",
+        _bootstrap_tools,
+    ),
+    Step(
+        "capabilities",
+        "a default-enabled capability must reach every project, including ones scaffolded before it was a default",
+        _bootstrap_capabilities,
+    ),
+    Step(
+        "reporting",
+        "dashboards are a projection of the metrics, regenerated rather than hand-maintained",
+        _build_reporting,
+    ),
+    Step(
+        "platform CI",
+        "the change with fleet-wide blast radius was the only "
+        "one with no CI, and the enforcing commands were wired to nothing",
+        _platform_workflow,
+    ),
+    Step("notify channel", "where loops and answers are delivered; names an env var, never a URL", _group_notify),
+    Step(
+        "group air.yaml",
+        "a family with no control declaration has a gate that passes by finding nothing to check",
+        _group_air,
+    ),
+    Step(
+        "ci workflow",
+        "one workflow per project, composed from the jobs its capabilities declare, so CI is readable in one place",
+        _ci_workflow,
+    ),
+    Step("dagster code location", "an unregistered project never runs", _register_code_location),
+    Step(
+        "dbt wiring",
+        "a project scaffolded before a toolkit existed cannot "
+        "compile its macros, and one with no base target cannot "
+        "be diffed",
+        _dbt_wiring,
+    ),
+    Step(
+        "dev serving",
+        "the served dev database and its guardrails, documented in the project rather than assumed",
+        _dev_serving,
+    ),
+    Step(
+        "project atlas",
+        "each project publishes a picture of its own graph, refreshed around its own dbt runs",
+        _project_atlas,
+    ),
+    Step(
+        "architecture map",
+        "every feature of this project, present or absent, so an agent routes instead of reading the tree",
+        _render_architecture,
+    ),
     Step("conformance", "fail here rather than in BI", _validate),
 ]
 
