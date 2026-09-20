@@ -7,7 +7,7 @@ with futures as (
 ),
 
 commodities as (
-    select commodity_id, quote_unit from {{ ref('stg_reference__commodities') }}
+    select commodity_id, quote_unit from {{ ref('commodities') }}
 ),
 
 indicative as (
