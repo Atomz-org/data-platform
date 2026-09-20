@@ -1149,13 +1149,29 @@ def wait_for_checks(pr: int, budget: int = 900, grace: int = 180) -> None:
     So: wait for the pipeline to *appear* (bounded by `grace`, since a PR whose
     paths trigger no workflow legitimately has no checks at all), and only then
     wait for it to *finish*.
+
+    This job's own check is excluded, because it is the one check that can never
+    clear while this function runs: `track` appears in `gh pr checks` as
+    `pending` from the moment it starts, so waiting for "no pending checks"
+    meant waiting for itself. Every PR-event run therefore sat here until the
+    full `budget` expired — fifteen minutes, on a pass whose real work takes
+    seconds — and then reconciled anyway on the timeout warning, so the bug
+    cost time rather than correctness and nothing ever reported it.
+
+    Matched on `GITHUB_RUN_ID` in the check's URL rather than on the job's name:
+    the name is a string in a workflow file that anyone may rename, while the
+    run id is what actually identifies this run.
     """
     started = time.time()
     seen = False
     deadline = started + budget
+    mine = os.environ.get("GITHUB_RUN_ID", "")
+    self_check = f"/runs/{mine}/" if mine else None
     while time.time() < deadline:
         out = run(["gh", "pr", "checks", str(pr), "--repo", REPO], check=False)
         rows = [x for x in out.splitlines() if "\t" in x]
+        if self_check:
+            rows = [x for x in rows if self_check not in x]
         pending = [x for x in rows if "\tpending\t" in x]
         seen = seen or bool(rows)
         if not pending:
