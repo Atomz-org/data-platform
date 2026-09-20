@@ -19,7 +19,7 @@ flowchart LR
         direction TB
         T1["staging<br/>none yet"]:::neutral
         T2["marts<br/>none yet"]:::neutral
-        T3["data tests<br/>2"]:::model
+        T3["data tests<br/>none yet"]:::neutral
     end
     subgraph LS["semantics"]
         direction TB
@@ -51,13 +51,7 @@ flowchart LR
 
 ## A real path through it
 
-```mermaid
-flowchart LR
-    X0["Model<br/>elementary_test_results"]:::model
-    X1["Model<br/>alerts_anomaly_detection"]:::model
-    X0 --> X1
-    classDef model fill:#d6f2e6,stroke:#1baf7a,stroke-width:2px,color:#0b0b0b
-```
+_the graph holds no tables yet — run `pf seed`_
 
 ## What enforces what
 
@@ -102,7 +96,7 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | **gap** | `transform/models/staging/**/*.sql` | one per raw table, generated from the annotations — `pf gen-staging` |
 | marts | **gap** | `transform/models/marts/**/*.sql` | business entities at a declared grain — what metrics are built on — `/using-dbt` |
-| data tests | ✓ 2 | `transform/models/utils/_utils__models.yml` | the assumptions the models are allowed to make |
+| data tests | **gap** | `transform/models/utils/_utils__models.yml` | the assumptions the models are allowed to make — `/add-tests` |
 | project macros | — | `transform/macros/**/*.sql` | project-local SQL; dialect macros come from the platform toolkits — `/using-dbt` |
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
@@ -110,7 +104,7 @@ flowchart TB
 | metrics | **gap** | `transform/models/semantic/**/*.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
 | dimensions | **gap** | `transform/models/semantic/**/*.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
+| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
@@ -124,20 +118,20 @@ flowchart TB
 | **delivery** | | | |
 | exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 10 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/globex_core/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
+| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
 | CI workflow | ✓ | `.github/workflows/globex-core.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
-| duckdb memories | — | `.duckdb-skills/**` | query patterns the duckdb-ops toolkit reuses — `pf bootstrap` |
+| duckdb memories | ✓ | `.duckdb-skills` | query patterns the duckdb-ops toolkit reuses |
 | tool overrides | — | `tools.yaml` | opt out of a group tool or retune one; merged over the group's — `pf tool enable` |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
 
-**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
 
 **Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
 
@@ -148,11 +142,10 @@ flowchart TB
 - **raw tables** — what the pipeline actually landed. Fix: `pf seed`
 - **staging models** — one per raw table, generated from the annotations. Fix: `pf gen-staging`
 - **marts** — business entities at a declared grain — what metrics are built on. Fix: `/using-dbt`
+- **data tests** — the assumptions the models are allowed to make. Fix: `/add-tests`
 - **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
 - **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
-- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
 - **exposures** — who reads the output — impact analysis stops at the mart without them. Fix: `/using-dbt`
-- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---
