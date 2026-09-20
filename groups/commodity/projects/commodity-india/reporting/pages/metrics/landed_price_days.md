@@ -4,7 +4,7 @@ queries:
   - metrics/landed_price_days.sql
 ---
 
-Days a landed price exists — never for commodities India prohibits importing, **unfiltered** — every row in the underlying fact counts, measured over `price_date` from `fct_india_landed_prices_daily`. Defined once in the dbt semantic layer and compiled to `queries/metrics/` — this page does not restate it.
+Days a landed price exists — never for commodities this market prohibits importing, **unfiltered** — every row in the underlying fact counts, measured over `price_date` from `fct_landed_prices_daily`. Defined once in the dbt semantic layer and compiled to `queries/metrics/` — this page does not restate it.
 
 ```sql series
 select metric_time, sum(landed_price_days) as landed_price_days
