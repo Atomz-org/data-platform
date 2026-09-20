@@ -145,6 +145,19 @@ jobs:
           [ -z "$CHANGED" ] && echo "no model changes"
           echo "models=$CHANGED" >> "$GITHUB_OUTPUT"
 
+      # A breaking radius — a mart that feeds a metric or an exposure — needs a
+      # decision record in the same change to pass. The gate still prints the
+      # whole radius and names the owners; the decision is what the reviewer
+      # reads instead of overriding a red job. `decisions/README.md` is the
+      # scaffold's, not a decision.
+      - name: Decisions this PR adds or changes
+        id: decided
+        run: |
+          DECIDED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            -- 'groups/commodity/projects/commodity-rollup/decisions/*.md' \
+            | grep -v '/README\.md$' | paste -sd, -)
+          echo "decisions=$DECIDED" >> "$GITHUB_OUTPUT"
+
       # Gate against the *base*, not the branch. The question a merge gate
       # answers is "what does this break in commodity/commodity-rollup as it stands",
       # and only the base graph can answer it:
@@ -169,7 +182,8 @@ jobs:
             exit 0
           fi
           uv run pf kg build commodity commodity-rollup
-          uv run pf impact-gate commodity commodity-rollup "${{ steps.changed.outputs.models }}"
+          uv run pf impact-gate commodity commodity-rollup "${{ steps.changed.outputs.models }}" \
+            --decisions "${{ steps.decided.outputs.decisions }}"
 
   # The graph has no clock. One built before a model landed answers every query
   # confidently and wrongly, and nothing else notices — it simply holds fewer
@@ -218,6 +232,13 @@ jobs:
     needs: changes
     if: needs.changes.outputs.transform == 'true'
     runs-on: ubuntu-latest
+    # The workflow's token is read-only. PR-Update comments on the pull request
+    # when the branch is behind its base, and a read-only token fails that step
+    # with "Resource not accessible by integration" — a red job about a
+    # comment, on every PR whose base has moved, in every group.
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       PF_ARTIFACTS_ACCESS_KEY_ID: ${{ secrets.PF_ARTIFACTS_ACCESS_KEY_ID }}
       PF_ARTIFACTS_SECRET_ACCESS_KEY: ${{ secrets.PF_ARTIFACTS_SECRET_ACCESS_KEY }}
