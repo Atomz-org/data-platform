@@ -33,8 +33,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
+
+      # This job exists to read every pin, so it wants them all — but
+      # `submodules: recursive` is all-or-nothing, and a single deleted upstream
+      # stopped the weekly sync from reporting on the twenty that are fine. An
+      # unreachable pin is exactly the kind of drift this job should surface, so
+      # it is named in a warning and the sync continues.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init --depth 1 "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
 
       - uses: astral-sh/setup-uv@v5
         with:

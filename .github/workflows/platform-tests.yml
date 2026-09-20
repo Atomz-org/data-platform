@@ -38,11 +38,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # The suite reads the vendored OpenMetadata JSON schemas; without the
-          # submodule those tests skip rather than fail, which would quietly
-          # shrink CI's coverage relative to a developer's checkout.
-          submodules: recursive
+
+      # The suite reads the vendored OpenMetadata JSON schemas; without the
+      # submodule those tests skip rather than fail, which would quietly shrink
+      # CI's coverage relative to a developer's checkout.
+      #
+      # Initialised pin by pin rather than with `submodules: recursive`, which
+      # is all-or-nothing: when the `asqav-compliance` upstream was deleted, one
+      # unreachable pin aborted the checkout and took the entire suite with it.
+      # Each pin is now fetched on its own and the unreachable ones are named in
+      # a warning, so the job runs with everything that can be fetched.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init --depth 1 "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
 

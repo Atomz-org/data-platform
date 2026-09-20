@@ -48,10 +48,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # vendor-drift reads the submodules; without them every upstream
-          # reports "not checked out", which is a fact about the runner.
-          submodules: recursive
           fetch-depth: 0
+
+      # vendor-drift reads the submodules; without them every upstream reports
+      # "not checked out", which is a fact about the runner rather than about
+      # the pin. Fetched pin by pin because `submodules: recursive` is
+      # all-or-nothing: one deleted upstream aborted the checkout and this job
+      # has not completed since. An upstream that cannot be fetched is now
+      # named in a warning and the loop still observes the other twenty.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init --depth 1 "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
