@@ -18,7 +18,7 @@ flowchart TB
     direction LR
     ENG["src/pf/<br/>31 commands · 18 groups"]
     TK["toolkits/<br/>23 craft toolkits"]
-    TST["tests/<br/>6 groups · 831 tests"]
+    TST["tests/<br/>5 groups · 831 tests"]
     ENT["entrypoints/<br/>container entrypoints"]
   end
 
