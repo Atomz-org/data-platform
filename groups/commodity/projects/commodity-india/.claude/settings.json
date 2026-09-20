@@ -65,7 +65,16 @@
       "Bash(pf loop:*)",
       "Bash(pf ask:*)",
       "Bash(pf logs:*)",
-      "Bash(pf evals-gate:*)"
+      "Bash(pf evals-gate:*)",
+      "Bash(pf tool recce:*)",
+      "Bash(pf artifacts:*)",
+      "Bash(recce run:*)",
+      "Bash(recce server:*)",
+      "Bash(recce debug:*)",
+      "Bash(pf tool wren:*)",
+      "Bash(wren:*)",
+      "Bash(pf tool openmetadata:*)",
+      "Bash(metadata:*)"
     ]
   },
   "hooks": {
