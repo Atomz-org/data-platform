@@ -1,0 +1,25 @@
+{
+  "name": "futures_midweek_gap_is_a_feed_failure",
+  "agent": "freshness_triage",
+  "why": "The counterpart to the weekend case. A market-calendar explanation must not stretch to a Thursday with Monday's prices: the Yahoo chart endpoint answers 429 without a browser User-Agent and delists expired contract symbols, and either one stops the feed without failing the load, because per-symbol failures are logged rather than raised.",
+  "tags": ["anomaly", "calibration", "market-calendar"],
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "futures_prices",
+        "column_name": "trade_date",
+        "monitor": "freshness",
+        "status": "fail",
+        "observed": 84.0,
+        "expected": 26.0,
+        "deviation_pct": 223.1,
+        "message": "Hours since max(trade_date) is 84.0 at Thursday 12:00 UTC; max(trade_date) is Monday. Loads ran Tuesday, Wednesday and Thursday with status ok and merged 0 new rows each. No exchange holiday falls in the window."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": false,
+    "severity": {"one_of": ["warn", "critical"]},
+    "likely_cause": {"contains_any": ["feed", "source", "yahoo", "api", "ingest", "stale", "symbol", "rate"]}
+  }
+}
