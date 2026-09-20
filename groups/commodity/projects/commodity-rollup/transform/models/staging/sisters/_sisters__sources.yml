@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: sisters
+    schema: sisters
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: landed_prices
