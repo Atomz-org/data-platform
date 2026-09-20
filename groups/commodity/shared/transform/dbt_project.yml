@@ -3,9 +3,12 @@ version: '1.0.0'
 config-version: 2
 profile: 'commodity_shared'
 # `macros` reach every sister through the sister's own macro-paths, so calls
-# stay unqualified. `seeds` are conformed reference data: `pf bootstrap`
-# installs this directory in each sister as a local dbt package, which keeps its
-# compiled files inside that sister's target/. Never point a sister's
-# seed-paths here directly.
+# stay unqualified. `seeds` are conformed reference data — the commodity
+# catalog, the market registry, units, indicative benchmark levels: `pf
+# bootstrap` installs this directory in each sister as a local dbt package,
+# which keeps its compiled files inside that sister's target/. Never point a
+# sister's seed-paths here directly. `tests` are the conformance checks on that
+# data; a package's singular tests run inside every sister's build.
 macro-paths: ["macros"]
 seed-paths: ["seeds"]
+test-paths: ["tests"]
