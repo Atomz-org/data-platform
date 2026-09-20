@@ -4,8 +4,8 @@
 -- lot (100 g, 30 kg, 1 MT, 5 MT). Equivalents computed from international
 -- benchmarks — not MCX quotes; no MCX data is used.
 with landed as (
-    select * from {{ ref('fct_india_landed_prices_daily') }}
-    where landed_price_inr is not null
+    select * from {{ ref('fct_landed_prices_daily') }}
+    where landed_price_local is not null
 ),
 
 lots as (
@@ -30,13 +30,13 @@ select
     lots.quote_unit,
     cast(round(
         lots.quote_size
-        * {{ reprice_per_unit('l.landed_price_inr', 'mu.base_units_per_unit', 'qu.base_units_per_unit') }}, 4
+        * {{ reprice_per_unit('l.landed_price_local', 'mu.base_units_per_unit', 'qu.base_units_per_unit') }}, 4
     ) as decimal(18, 4))                                                    as quote_equivalent_inr,
     lots.lot_size,
     lots.lot_unit,
     cast(round(
         lots.lot_size
-        * {{ reprice_per_unit('l.landed_price_inr', 'mu.base_units_per_unit', 'lu.base_units_per_unit') }}, 2
+        * {{ reprice_per_unit('l.landed_price_local', 'mu.base_units_per_unit', 'lu.base_units_per_unit') }}, 2
     ) as decimal(18, 2))                                                    as lot_value_inr
 from lots
 inner join landed as l on l.commodity_id = lots.commodity_id

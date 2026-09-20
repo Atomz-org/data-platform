@@ -1,5 +1,6 @@
 -- Grain: one tracked commodity. The tracker's dashboard as a table: the latest
--- benchmark, its move, the landed ₹ price, and how old each number is.
+-- benchmark, its move, the landed price in this market's currency, and how
+-- old each number is.
 with commodities as (
     select * from {{ ref('dim_commodities') }}
 ),
@@ -11,7 +12,7 @@ latest_price as (
 
 latest_landed as (
     select *
-    from {{ ref('fct_india_landed_prices_daily') }}
+    from {{ ref('fct_landed_prices_daily') }}
     qualify row_number() over (partition by commodity_id order by price_date desc) = 1
 ),
 
@@ -38,12 +39,14 @@ select
     p.high_252d,
     p.low_252d,
     c.market_unit,
-    l.usd_inr_rate,
+    c.market_code,
+    c.currency_code,
+    l.usd_fx_rate,
     l.effective_duty_rate,
     l.duty_basis,
     c.is_import_prohibited,
     l.is_duty_rate_confirmed,
-    l.landed_price_inr,
+    l.landed_price_local,
     l.landed_price_change_pct,
     s.spot_price_usd,
     s.quoted_at                                                             as spot_quoted_at,
