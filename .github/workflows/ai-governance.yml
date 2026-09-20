@@ -103,15 +103,18 @@ jobs:
 
       # The scanner is pinned as a submodule and run from the checkout rather
       # than by tag, so the code judging our compliance cannot change without a
-      # commit here. That pin is currently unreachable: the upstream
-      # `jagmarques/asqav-compliance` was deleted and there is no fork of it.
+      # commit here. That pin was unreachable for two days: the upstream
+      # `jagmarques/asqav-compliance` was deleted, account and all, and this job
+      # went red on every pull request for a reason nobody here could fix. A
+      # check like that teaches people to ignore the whole workflow — including
+      # the two in it that do block.
       #
-      # A scanner nobody can fetch is not a failure of this repository, and a
-      # job that stays red for a reason nobody here can fix teaches people to
-      # ignore the whole workflow — including the two checks in it that do
-      # block. So a missing scanner is an annotated warning and the scan is
-      # skipped; restoring the pin makes it run again with no other change.
-      # Nothing enforced is lost, because this scan reports and never blocks.
+      # So the guard below stays even now that the pin resolves again. It is not
+      # a workaround for that outage; it is what makes the next one cost a
+      # warning instead of a fortnight. Read the warning as "no scan ran", never
+      # as "no gaps found" — the two look identical from a green tick, which is
+      # how the first disappearance went unnoticed. Nothing enforced is lost
+      # either way, because this scan reports and never blocks.
       - name: Vendored scanner
         id: pin
         run: |
