@@ -1,0 +1,42 @@
+version: 2
+
+seeds:
+  - name: markets
+    description: >
+      The tenant registry: one row per market this family prices in, keyed on
+      the ISO country code, with the currency a landed price is expressed in
+      and the sister project that owns it. Adding a country is a row here and a
+      `pf new-project commodity commodity-<cc>`; the roll-up reads this to know
+      which sisters exist and what currency each reports in.
+    meta:
+      concept: Market
+      grain: one market
+    config:
+      column_types:
+        market_code: varchar
+        market_name: varchar
+        country_code: varchar
+        currency_code: varchar
+        home_exchange: varchar
+        timezone: varchar
+        project: varchar
+    columns:
+      - name: market_code
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: market_name
+        meta: {role: free_text}
+        data_tests: [not_null]
+      - name: country_code
+        meta: {role: geo_country}
+        data_tests: [not_null]
+      - name: currency_code
+        description: ISO 4217. Landed prices in this market are per unit in this currency.
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: home_exchange
+        meta: {role: status_enum}
+      - name: project
+        description: The sister project (`groups/commodity/projects/<project>`) that owns this market.
+        meta: {role: free_text}
+        data_tests: [unique, not_null]
