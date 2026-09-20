@@ -91,31 +91,6 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-
-      # Build every project's graph before anything is compared.
-      #
-      # The architecture maps and the generated expectations tests are rendered
-      # from `transform/target/manifest.json`, which `dbt parse` writes out of
-      # committed sources — annotations and dbt models, no warehouse anywhere in
-      # it. Without this step the graph holds no models, every count reads zero,
-      # nine maps regenerate as "none yet" and the job reports drift that is
-      # really a missing build. The per-project `architecture` job already says
-      # exactly this in its own comment and builds first for exactly this
-      # reason; this job did not, and was red on all nine maps at once.
-      #
-      # Not best-effort: a build that fails here would send the comparison back
-      # to measuring an empty graph, which is the bug rather than a degraded
-      # version of the check.
-      - name: Build the graphs the maps are generated from
-        run: |
-          for d in groups/*/projects/*/; do
-            g=$(basename "$(dirname "$(dirname "$d")")")
-            p=$(basename "$d")
-            echo "::group::$g/$p"
-            uv run pf kg build "$g" "$p"
-            echo "::endgroup::"
-          done
-
       - run: uv run pf bootstrap --all
       - name: The generated tree matches the committed one
         # --ignore-submodules=dirty: a vendored submodule with local build
@@ -130,22 +105,26 @@ jobs:
         # reporting nothing about drift. Those are covered by `tests` and
         # `recce`, which build a warehouse before they compare.
         #
-        # The architecture maps are deliberately *not* excluded, though they
-        # were long assumed to belong here. They come from the dbt manifest,
-        # which the build step above writes from committed sources, so a fresh
-        # clone reproduces them exactly — once it builds. Excluding them would
-        # have left the one artefact a platform change can silently invalidate
-        # across all nine projects unchecked, since the per-project workflows
-        # only fire on their own project's paths.
+        # `kg/architecture.md` and the generated expectations tests join them,
+        # measured rather than assumed: the same commit rendered in a bare clone
+        # and on a checkout with a warehouse produced different maps for four of
+        # nine projects. Metrics and dimensions come from
+        # `target/semantic_manifest.json`, which a real dbt build writes and
+        # `dbt parse` on a bare runner does not; the Evidence page count and the
+        # printed location of `data tests` come from generated files that are
+        # never committed. Building the graph first narrows the gap and does not
+        # close it, so the map is checked where it can be: the per-project
+        # `architecture` job runs `pf kg build` and `pf arch --check` in the one
+        # environment that is the same every time, a runner with no warehouse.
         #
-        # `package-lock.yml` is excluded for the opposite reason to the rest: it
-        # is reproducible, just not from this repository. `packages.yml` pins
+        # `package-lock.yml` is excluded for the opposite reason to all of them:
+        # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
         # registry at the moment it runs and the lock changes when dbt-labs
         # publishes, not when anyone here commits. Gating on it would fail this
         # job on somebody else's release.
         run: |
-          if ! git diff --exit-code --ignore-submodules=dirty -- .               ':(exclude)**/kg/graph.json'               ':(exclude)**/mdl/mdl.json'               ':(exclude)**/catalog/*.json'               ':(exclude)**/governance/otop.json'               ':(exclude)**/transform/recce.yml'               ':(exclude)**/reporting/**'               ':(exclude)**/transform/models/_reporting__exposures.yml'               ':(exclude)**/transform/package-lock.yml'; then
+          if ! git diff --exit-code --ignore-submodules=dirty -- .               ':(exclude)**/kg/graph.json'               ':(exclude)**/mdl/mdl.json'               ':(exclude)**/catalog/*.json'               ':(exclude)**/governance/otop.json'               ':(exclude)**/transform/recce.yml'               ':(exclude)**/reporting/**'               ':(exclude)**/transform/models/_reporting__exposures.yml'               ':(exclude)**/transform/package-lock.yml'               ':(exclude)**/kg/architecture.md'               ':(exclude)**/transform/tests/expectations/*.sql'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"
             echo "::error::locally and commit what it writes."
