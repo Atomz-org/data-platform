@@ -1,6 +1,9 @@
 version: 2
-# Query every price metric grouped by commodity (`commodity__commodity_id`): a
-# mean across commodities averages dollars per ounce with dollars per bushel.
+# Conformed across every sister. Query every price metric grouped by commodity
+# (`commodity__commodity_id`): a mean across commodities averages dollars per
+# ounce with dollars per bushel. Landed metrics are in the market's own currency
+# (`landed_price__currency_code`), so they compare across sisters only after the
+# roll-up has put them in USD per quote unit.
 #
 # Means are ratio metrics, so they stay correct at any grain. Their components
 # come first — a ratio can only reference a metric already defined — and the
@@ -19,37 +22,29 @@ metrics:
     type: simple
     type_params: {measure: benchmark_price_count}
 
-  - name: landed_price_inr_total
+  - name: landed_price_local_total
     label: Landed Price Total (component)
-    description: Building block for avg_landed_price_inr. A sum of prices means nothing on its own.
+    description: Building block for avg_landed_price_local. A sum of prices means nothing on its own.
     type: simple
-    type_params: {measure: landed_price_inr_sum}
+    type_params: {measure: landed_price_local_sum}
 
   - name: landed_price_days
     label: Days With a Landed Price
-    description: Days a landed price exists — never for commodities India prohibits importing.
+    description: Days a landed price exists — never for commodities this market prohibits importing.
     type: simple
     type_params: {measure: landed_price_count}
 
-  - name: duty_inr_total
+  - name: duty_local_total
     label: Customs Duty Total (component)
-    description: Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own.
+    description: Building block for avg_duty_local. A sum of per-unit duties means nothing on its own.
     type: simple
-    type_params: {measure: duty_inr_sum}
+    type_params: {measure: duty_local_sum}
 
-  - name: usd_inr_rate_total
-    label: USD/INR Total (component)
-    description: Building block for avg_usd_inr_rate.
+  - name: usd_fx_rate_total
+    label: Applied FX Rate Total (component)
+    description: Building block for avg_usd_fx_rate — the rate each landed price actually used.
     type: simple
-    type_params: {measure: usd_rate_sum}
-    filter: "{{ Dimension('fx_day__quote_currency_code') }} = 'INR'"
-
-  - name: usd_inr_rate_days
-    label: USD/INR Days
-    description: Calendar days with a USD/INR rate, including carried-forward days.
-    type: simple
-    type_params: {measure: usd_rate_count}
-    filter: "{{ Dimension('fx_day__quote_currency_code') }} = 'INR'"
+    type_params: {measure: usd_fx_rate_sum}
 
   # -- benchmark ---------------------------------------------------------
   - name: avg_benchmark_price_usd
@@ -92,43 +87,44 @@ metrics:
           offset_window: 1 month
           alias: price_prev
 
-  # -- India landed ------------------------------------------------------
-  - name: avg_landed_price_inr
-    label: Avg India Landed Price (INR)
+  # -- landed, in this market's currency ----------------------------------
+  - name: avg_landed_price_local
+    label: Avg Landed Price (market currency)
     description: >-
-      Mean India import landed price, ₹ per Indian market unit (benchmark × USD/INR
-      × (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed
-      to exclude history priced at a back-applied duty rate.
+      Mean import landed price in this market's currency per its market unit
+      (benchmark × USD/local × (1 + duty)). Group by commodity; filter
+      landed_price__is_duty_rate_confirmed to exclude history priced at a
+      back-applied duty rate.
     type: ratio
     type_params:
-      numerator: landed_price_inr_total
+      numerator: landed_price_local_total
       denominator: landed_price_days
 
-  - name: avg_duty_inr
-    label: Avg Customs Duty (INR)
-    description: Mean customs duty per Indian market unit. Group by commodity.
+  - name: avg_duty_local
+    label: Avg Customs Duty (market currency)
+    description: Mean customs duty per market unit, in this market's currency. Group by commodity.
     type: ratio
     type_params:
-      numerator: duty_inr_total
+      numerator: duty_local_total
+      denominator: landed_price_days
+
+  - name: avg_usd_fx_rate
+    label: Avg Applied FX Rate
+    description: Mean units of this market's currency per US dollar, as applied to landed prices; 1 for a USD market.
+    type: ratio
+    type_params:
+      numerator: usd_fx_rate_total
       denominator: landed_price_days
 
   - name: landed_price_mom_change
     label: Landed Price MoM Change
-    description: Month-over-month change in the mean landed price; moves with both the benchmark and the rupee.
+    description: Month-over-month change in the mean landed price; moves with both the benchmark and the currency.
     type: derived
     type_params:
       expr: (landed - landed_prev) / nullif(landed_prev, 0)
       metrics:
-        - name: avg_landed_price_inr
+        - name: avg_landed_price_local
           alias: landed
-        - name: avg_landed_price_inr
+        - name: avg_landed_price_local
           offset_window: 1 month
           alias: landed_prev
-
-  - name: avg_usd_inr_rate
-    label: Avg USD/INR
-    description: Mean rupees per US dollar, the rate every landed price uses.
-    type: ratio
-    type_params:
-      numerator: usd_inr_rate_total
-      denominator: usd_inr_rate_days

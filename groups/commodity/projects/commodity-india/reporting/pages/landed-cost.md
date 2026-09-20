@@ -2,9 +2,9 @@
 title: India Landed Cost
 queries:
   - metrics/avg_benchmark_price_usd.sql
-  - metrics/avg_usd_inr_rate.sql
-  - metrics/avg_duty_inr.sql
-  - metrics/avg_landed_price_inr.sql
+  - metrics/avg_usd_fx_rate.sql
+  - metrics/avg_duty_local.sql
+  - metrics/avg_landed_price_local.sql
 ---
 
 How a USD benchmark becomes an INR landed price for one commodity: the settlement price,
@@ -21,9 +21,9 @@ order by commodity_name
 <Dropdown data={commodity_list} name=commodity value=commodity_id label=commodity_name defaultValue=gold title='Commodity'/>
 
 ```sql period_bounds
-select min(metric_time) as metric_time from ${metrics_avg_landed_price_inr}
+select min(metric_time) as metric_time from ${metrics_avg_landed_price_local}
 union all
-select max(metric_time) from ${metrics_avg_landed_price_inr}
+select max(metric_time) from ${metrics_avg_landed_price_local}
 ```
 
 <DateRange name=period data={period_bounds} dates=metric_time/>
@@ -39,24 +39,25 @@ with benchmark as (
 ),
 fx as (
     select
-        sum(usd_inr_rate_total) as num,
-        sum(usd_inr_rate_days)  as den
-    from ${metrics_avg_usd_inr_rate}
-    where metric_time between '${inputs.period.start}' and '${inputs.period.end}'
+        sum(usd_fx_rate_total) as num,
+        sum(landed_price_days) as den
+    from ${metrics_avg_usd_fx_rate}
+    where commodity_id = '${inputs.commodity.value}'
+      and metric_time between '${inputs.period.start}' and '${inputs.period.end}'
 ),
 landed as (
     select
-        sum(landed_price_inr_total) as num,
+        sum(landed_price_local_total) as num,
         sum(landed_price_days)      as den
-    from ${metrics_avg_landed_price_inr}
+    from ${metrics_avg_landed_price_local}
     where commodity_id = '${inputs.commodity.value}'
       and metric_time between '${inputs.period.start}' and '${inputs.period.end}'
 ),
 duty as (
     select
-        sum(duty_inr_total)    as num,
+        sum(duty_local_total)    as num,
         sum(landed_price_days) as den
-    from ${metrics_avg_duty_inr}
+    from ${metrics_avg_duty_local}
     where commodity_id = '${inputs.commodity.value}'
       and metric_time between '${inputs.period.start}' and '${inputs.period.end}'
 )
@@ -86,8 +87,8 @@ thin trading week the same as a full one.
 ```sql landed_series
 select
     metric_time,
-    sum(landed_price_inr_total) / nullif(sum(landed_price_days), 0) as landed_inr
-from ${metrics_avg_landed_price_inr}
+    sum(landed_price_local_total) / nullif(sum(landed_price_days), 0) as landed_inr
+from ${metrics_avg_landed_price_local}
 where commodity_id = '${inputs.commodity.value}'
   and metric_time between '${inputs.period.start}' and '${inputs.period.end}'
 group by 1
@@ -120,9 +121,9 @@ order by 1
 ```sql monthly
 select
     date_trunc('month', metric_time)                                     as month,
-    sum(landed_price_inr_total) / nullif(sum(landed_price_days), 0)      as landed_inr,
+    sum(landed_price_local_total) / nullif(sum(landed_price_days), 0)      as landed_inr,
     sum(landed_price_days)                                               as priced_days
-from ${metrics_avg_landed_price_inr}
+from ${metrics_avg_landed_price_local}
 where commodity_id = '${inputs.commodity.value}'
   and metric_time between '${inputs.period.start}' and '${inputs.period.end}'
 group by 1
@@ -138,5 +139,5 @@ order by 1 desc
 ---
 
 _Generated queries only: every number comes from `queries/metrics/`. The conversion and
-duty logic lives in `fct_india_landed_prices_daily`; this page re-divides, it does not
+duty logic lives in `fct_landed_prices_daily`; this page re-divides, it does not
 recompute._
