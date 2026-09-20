@@ -1,0 +1,72 @@
+version: 2
+# Cross-market semantics. Every measure is a sum or count a ratio divides at
+# query grain; a price is never averaged directly. Group by commodity always,
+# and by market to compare — a mean across markets of a landed price mixes
+# duty regimes as surely as a mean across commodities mixes units.
+semantic_models:
+  - name: markets
+    description: Market dimension — the group registry and whether each sister reports.
+    model: ref('dim_markets')
+    entities:
+      - {name: market, type: primary, expr: market_code}
+    dimensions:
+      - {name: market_name, type: categorical}
+      - {name: country_code, type: categorical}
+      - {name: currency_code, type: categorical}
+      - {name: is_reporting, type: categorical}
+
+  - name: commodities
+    description: Commodity dimension — the group catalog.
+    model: ref('dim_commodities')
+    entities:
+      - {name: commodity, type: primary, expr: commodity_id}
+    dimensions:
+      - {name: commodity_name, type: categorical}
+      - {name: category, type: categorical}
+      - {name: segment, type: categorical}
+      - {name: quote_unit, type: categorical}
+
+  - name: market_landed_prices
+    description: Every market's daily landed price, in USD per the benchmark's quote unit.
+    model: ref('fct_landed_prices_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: market_landed_price, type: primary, expr: landed_price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+      - {name: market, type: foreign, expr: market_code}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: market_code, type: categorical}
+      - {name: price_basis, type: categorical}
+      - {name: is_duty_rate_confirmed, type: categorical}
+    measures:
+      - {name: landed_usd_sum, agg: sum, expr: landed_price_usd_per_quote_unit}
+      - {name: landed_usd_count, agg: count, expr: landed_price_usd_per_quote_unit}
+      - {name: benchmark_usd_sum_where_landed, agg: sum, expr: "case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end"}
+
+  - name: market_spreads
+    description: Each market's landed price against the cheapest market's, on days two or more markets priced a commodity.
+    model: ref('fct_market_spreads_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: market_spread, type: primary, expr: landed_price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+      - {name: market, type: foreign, expr: market_code}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: market_code, type: categorical}
+      - {name: cheapest_market_code, type: categorical}
+      - {name: is_cheapest_market, type: categorical}
+    measures:
+      - {name: spread_usd_sum, agg: sum, expr: spread_to_cheapest_usd}
+      - {name: cheapest_usd_sum, agg: sum, expr: cheapest_landed_usd}
+      - {name: spread_days, agg: count, expr: spread_to_cheapest_usd}
+      - {name: cheapest_days, agg: sum, expr: "case when is_cheapest_market then 1 else 0 end"}

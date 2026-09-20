@@ -1,0 +1,80 @@
+version: 2
+# Query every metric here grouped by commodity and market
+# (`commodity__commodity_id`, `market__market_code`). Means are ratios so they
+# hold at any grain; the `*_total` components are building blocks only.
+metrics:
+  # -- components --------------------------------------------------------
+  - name: landed_usd_total
+    label: Landed USD Total (component)
+    description: Building block for avg_landed_price_usd. A sum of prices means nothing on its own.
+    type: simple
+    type_params: {measure: landed_usd_sum}
+
+  - name: landed_usd_days
+    label: Days With a Comparable Landed Price
+    description: Days a market landed a commodity, restated in USD per quote unit.
+    type: simple
+    type_params: {measure: landed_usd_count}
+
+  - name: benchmark_usd_total_where_landed
+    label: Benchmark USD Total, landed days (component)
+    description: Building block for avg_import_parity_ratio — the benchmark on exactly the days a landed price exists.
+    type: simple
+    type_params: {measure: benchmark_usd_sum_where_landed}
+
+  - name: spread_usd_total
+    label: Spread Total (component)
+    description: Building block for avg_spread_to_cheapest_usd.
+    type: simple
+    type_params: {measure: spread_usd_sum}
+
+  - name: cheapest_usd_total
+    label: Cheapest Landed Total (component)
+    description: Building block for avg_spread_to_cheapest_ratio.
+    type: simple
+    type_params: {measure: cheapest_usd_sum}
+
+  - name: spread_days
+    label: Days Compared
+    description: Days at least two markets priced the commodity.
+    type: simple
+    type_params: {measure: spread_days}
+
+  # -- comparison --------------------------------------------------------
+  - name: avg_landed_price_usd
+    label: Avg Landed Price (USD per quote unit)
+    description: Mean landed price on the benchmark's footing. Group by commodity and market; this is the number that compares.
+    type: ratio
+    type_params:
+      numerator: landed_usd_total
+      denominator: landed_usd_days
+
+  - name: avg_import_parity_ratio
+    label: Avg Import Parity Ratio
+    description: Landed over benchmark, both in USD per quote unit — 1.15 means landing adds 15%. Group by commodity and market.
+    type: ratio
+    type_params:
+      numerator: landed_usd_total
+      denominator: benchmark_usd_total_where_landed
+
+  - name: avg_spread_to_cheapest_usd
+    label: Avg Spread to Cheapest Market (USD)
+    description: Mean USD per quote unit a market pays over the cheapest market that day. Group by commodity and market.
+    type: ratio
+    type_params:
+      numerator: spread_usd_total
+      denominator: spread_days
+
+  - name: avg_spread_to_cheapest_ratio
+    label: Avg Spread to Cheapest Market (ratio)
+    description: Mean spread as a share of the cheapest landed price, re-divided at query grain. Group by commodity and market.
+    type: ratio
+    type_params:
+      numerator: spread_usd_total
+      denominator: cheapest_usd_total
+
+  - name: days_as_cheapest_market
+    label: Days as Cheapest Market
+    description: Days a market was the cheapest place to land a commodity. Group by commodity and market.
+    type: simple
+    type_params: {measure: cheapest_days}
