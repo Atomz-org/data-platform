@@ -73,6 +73,7 @@ makes `pf arch --check` worth wiring into CI.
 
 from __future__ import annotations
 
+import difflib
 import fnmatch
 import json
 from dataclasses import dataclass, field
@@ -877,6 +878,13 @@ class Drift:
     missing: bool = False
     stale: bool = False
     unmapped: list[str] = field(default_factory=list)
+    #: What actually differs, committed against freshly rendered. Carried on the
+    #: result and printed, because "the project changed since it was written" is
+    #: true of every stale map and tells whoever reads the failing job nothing.
+    #: On a runner it is the only view of the render that disagreed — it cannot
+    #: be reproduced locally when the cause is the runner's own environment, and
+    #: three projects cost a CI round each proving exactly that.
+    diff: str = ""
 
     @property
     def ok(self) -> bool:
@@ -893,7 +901,8 @@ class Drift:
                         + ", ".join(self.unmapped))
         if not bits:
             return f"{self.project}: ok"
-        return f"{self.project}: " + "; ".join(bits)
+        line = f"{self.project}: " + "; ".join(bits)
+        return f"{line}\n{self.diff}" if self.diff else line
 
 
 def drift(root: str | Path, group: str, project: str) -> Drift:
@@ -903,8 +912,27 @@ def drift(root: str | Path, group: str, project: str) -> Drift:
     if not out.exists():
         d.missing = True
         return d
-    d.stale = out.read_text() != render(a)
+    committed, fresh = out.read_text(), render(a)
+    d.stale = committed != fresh
+    if d.stale:
+        d.diff = _diff(committed, fresh)
     return d
+
+
+#: Enough to see which rows moved without burying the rest of a CI log. A map
+#: that differs by more than this has been regenerated wholesale, and the first
+#: hunks say so just as well as all of them.
+DIFF_LINES = 60
+
+
+def _diff(committed: str, fresh: str) -> str:
+    lines = list(difflib.unified_diff(
+        committed.splitlines(), fresh.splitlines(),
+        fromfile="committed", tofile="would render", lineterm="", n=1))
+    if len(lines) > DIFF_LINES:
+        lines = [*lines[:DIFF_LINES],
+                 f"... {len(lines) - DIFF_LINES} more line(s)"]
+    return "\n".join(lines)
 
 
 def lint_doc(text: str) -> list[str]:

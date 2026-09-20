@@ -355,6 +355,25 @@ def test_build_output_keeps_the_count_and_drops_only_the_local_filename(
 
 
 # ----------------------------------------------------------------- drift -----
+def test_a_stale_map_says_what_differs(tmp_path: Path) -> None:
+    """"The project changed since it was written" is true of every stale map.
+
+    Which is to say it identifies nothing. The check runs on a runner, and when
+    the render disagrees there because of the runner's own environment, the
+    failing job is the only place the difference exists — reproducing it
+    locally is precisely what does not work. So the drift carries the diff.
+    """
+    root = _bare(tmp_path)
+    arch.write(root, "demo", "demo-us")
+    out = root / "groups" / "demo" / "projects" / "demo-us" / arch.DOC_REL
+    out.write_text(out.read_text().replace("# demo-us", "# somebody-else", 1))
+
+    d = arch.drift(root, "demo", "demo-us")
+    assert d.stale
+    assert "somebody-else" in d.diff and "somebody-else" in str(d)
+    assert "--- committed" in d.diff and "+++ would render" in d.diff
+
+
 def test_drift_reports_a_missing_map_separately_from_a_stale_one(
         tmp_path: Path) -> None:
     """They have different fixes, so they cannot be the same message."""
