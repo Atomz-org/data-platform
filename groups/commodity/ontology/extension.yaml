@@ -92,6 +92,25 @@ classes:
         role: event_time
         required: true
 
+  Market:
+    label: Market
+    parent: Location
+    description: A jurisdiction commodities are landed in — one sister project, one currency, one customs regime. The tenant of this family.
+    identity: market_code
+    properties:
+      market_code:
+        datatype: string
+        role: natural_key
+        required: true
+      country_code:
+        datatype: string
+        role: geo_country
+        required: true
+      currency_code:
+        datatype: string
+        role: currency_code
+        required: true
+
   ImportTariff:
     label: ImportTariff
     description: Customs duty a jurisdiction levies on importing a commodity, valid over an interval.
@@ -137,6 +156,12 @@ roles:
     datatype: decimal
     review: distribution
     description: A proportion stored as a fraction — 0.15 means 15%.
+  flag:
+    datatype: boolean
+    description: A true/false state of the row (prohibited, confirmed). Passes through staging; never aggregated.
+  reference_date:
+    datatype: date
+    description: A date the row refers to that is not its own event time — the FX fix a price used, the day a duty was confirmed. No freshness monitor.
 
 relations:
   - name: price_observation_of_commodity
@@ -154,5 +179,13 @@ relations:
     range: Commodity
     cardinality: MANY_TO_ONE
     description: A tariff row applies to one commodity for one validity interval.
+
+  - name: price_observation_in_market
+    label: is landed in
+    inverse: lands
+    domain: PriceObservation
+    range: Market
+    cardinality: MANY_TO_ONE
+    description: A landed price is one market's price; the benchmark it derives from belongs to none.
 
 version: 1

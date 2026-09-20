@@ -1,6 +1,6 @@
 ---
 name: add-a-commodity
-description: Add a tracked commodity in two halves, the group half (unit, classes, annotation roles) and the sister half (catalog entry or indicative row, market unit, duty, contract lot), then seed and read the card.
+description: Add a tracked commodity in two halves, the group half (catalog row or indicative level, unit, classes, annotation roles) and the sister half (market unit, duty, contract lot), then seed every sister and read the cards.
 ---
 # Add a commodity
 
@@ -9,6 +9,18 @@ The sister half is one market's facts; the group never holds them.
 
 ## Group half (`groups/commodity`)
 
+- **Catalog row.** One line in `shared/transform/seeds/commodities.csv`:
+  `commodity_id`, name, category, segment, `quote_unit`, exchange, then either
+  a `yahoo_symbol` (daily futures candles) or, for a precious metal, a
+  `spot_symbol` too (the gold-api backup). Every sister builds this seed and
+  reads it from Python (`commodity_shared.catalog`), so one row is fetched,
+  modelled and priced in every market at once.
+- **No free feed.** Leave both symbols empty and append a row to the group's
+  `indicative_prices` seed (`commodity_id`, `as_of_date`, `price`,
+  `currency_code`, `quote_unit`, `benchmark`). A benchmark level is the same in
+  every market, so it lives here. Its `quote_unit` must equal the catalog's
+  (`assert_indicative_prices_use_the_catalog_unit`). Refresh by appending a
+  newer `as_of_date`, never by overwriting a past level.
 - **Unit.** The benchmark's `quote_unit` code must exist in
   `shared/transform/seeds/units_of_measure.csv` with a `dimension` (mass,
   volume_oil, energy, volume_timber) and a `base_units_per_unit` in that
@@ -30,23 +42,15 @@ The sister half is one market's facts; the group never holds them.
 
 ## Sister half (`projects/<sister>`)
 
-- **Catalog.** One entry in `src/<module>/catalog.py`: `commodity_id`, name,
-  category, segment, `quote_unit`, exchange, then either a `yahoo_symbol`
-  (daily futures candles) or, for a precious metal, a `spot_symbol` too (the
-  gold-api backup). One list drives what the sources fetch and what
-  `dim_commodities` holds, so a benchmark cannot be fetched without being
-  modelled or modelled without being fetched.
-- **No free feed.** Leave both symbols empty and append a row to the sister's
-  `indicative_prices` seed (`commodity_id`, `as_of_date`, `price`,
-  `currency_code`, `quote_unit`, `benchmark`). Its `quote_unit` must equal the
-  catalog's (`assert_indicative_prices_use_the_catalog_unit`). Refresh by
-  appending a newer `as_of_date`, never by overwriting a past level.
+- **Tracking.** A sister tracks the whole catalog unless its `catalog.py`
+  narrows it with `commodities(tracked=[...])`. Nothing else to add: the
+  sources fetch what the catalog lists.
 - **Market facts, in the sister's seeds.** The unit the local market quotes in
-  (`india_market_units` in commodity-india; same dimension as the quote unit
-  or the unit test fails), a duty row valid from a date (a change is a new
+  (`market_units`; same dimension as the quote unit or the unit test fails), a duty row valid from a date (a change is a new
   dated row and the old row only has its interval closed, ADR-0001), an
   exchange contract's quote basis and lot only if one trades it
-  (`mcx_contract_lots`), purities only for retail precious metals. Read the
+  (`mcx_contract_lots` in India, `us_contract_lots` in the US), purities only
+  for retail precious metals. Read the
   sister's `transform/seeds/_seeds.yml` for the columns and tests; never copy
   another market's values.
 - **Seed and read back.** `pf seed commodity <sister>` lands the raw datasets,
