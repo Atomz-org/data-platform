@@ -9,8 +9,6 @@ because no test had ever loaded the file.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from conftest import REPO_ROOT
 from pf.vendor.model import REGISTRY, load_registry
 

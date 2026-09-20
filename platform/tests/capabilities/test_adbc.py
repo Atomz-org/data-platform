@@ -33,7 +33,7 @@ def test_read_only_is_enforced_by_the_engine(tmp_path) -> None:
     ro = adbc.connect(tmp_path / "t.duckdb", read_only=True)
     try:
         assert ro.execute("SELECT a FROM t").fetchone() == (1,)
-        with pytest.raises(Exception, match="read-only|Cannot execute"):
+        with pytest.raises(Exception, match=r"read-only|Cannot execute"):
             ro.execute("CREATE TABLE t2 AS SELECT 2 b")
     finally:
         ro.close()

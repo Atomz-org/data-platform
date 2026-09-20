@@ -120,7 +120,7 @@ class Warehouse:
         return self.path
 
     @contextmanager
-    def connect(self, read_only: bool = False) -> Iterator["adbc.Connection | quack.ReadConnection"]:
+    def connect(self, read_only: bool = False) -> Iterator[adbc.Connection | quack.ReadConnection]:
         self.ensure_dir()
         served = None if self.motherduck else quack.running_state(self.path)
 
@@ -151,7 +151,7 @@ class Warehouse:
             yield con
 
     @contextmanager
-    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator["adbc.Connection"]:
+    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator[adbc.Connection]:
         """Attach sibling project databases READ_ONLY for cross-entity roll-ups.
 
         A served sister's file is borrowed for the duration — her server

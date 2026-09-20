@@ -26,7 +26,6 @@ window.
 
 from __future__ import annotations
 
-import glob
 import sysconfig
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -53,13 +52,13 @@ def driver_path() -> str:
 
     site = Path(duckdb.__file__).resolve().parent.parent
     suffix = sysconfig.get_config_var("EXT_SUFFIX") or ".so"
-    candidates = glob.glob(str(site / f"_duckdb*{suffix}")) or glob.glob(str(site / "_duckdb*.so"))
+    candidates = sorted(site.glob(f"_duckdb*{suffix}")) or sorted(site.glob("_duckdb*.so"))
     if not candidates:
         raise RuntimeError(
             f"no _duckdb extension module under {site} — the installed duckdb "
             "wheel is expected to carry the ADBC entrypoint"
         )
-    _driver_cache = candidates[0]
+    _driver_cache = str(candidates[0])
     return _driver_cache
 
 
@@ -86,7 +85,7 @@ class Connection:
     def sql(self, sql: str):
         return self.execute(sql)
 
-    def fetch_arrow(self, sql: str, parameters: Any | None = None) -> "pa.Table":
+    def fetch_arrow(self, sql: str, parameters: Any | None = None) -> pa.Table:
         """One statement, straight to an Arrow table."""
         return self.execute(sql, parameters).fetch_arrow_table()
 

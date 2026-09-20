@@ -142,7 +142,7 @@ def test_statement_gate_uses_the_real_parser() -> None:
 
 def test_wire_is_read_only(served) -> None:
     """Two independent refusals: the client's parser and the engine itself."""
-    db, state = served
+    _db, state = served
     con = quack.read_connection(state)
     try:
         with pytest.raises(PermissionError, match="cannot cross the quack read path"):
@@ -150,7 +150,7 @@ def test_wire_is_read_only(served) -> None:
         # Bypass the client gate entirely: raw passthrough with the real token.
         # The server holds the database read-only, so the engine refuses.
         quoted = "CREATE TABLE smuggled AS SELECT 1".replace("'", "''")
-        with pytest.raises(Exception, match="read-only|Cannot execute"):
+        with pytest.raises(Exception, match=r"read-only|Cannot execute"):
             con._con.execute(f"SELECT * FROM quack_query('{state.endpoint}', '{quoted}')").fetchall()
         assert con.execute("SELECT answer FROM seeded").fetchone() == (42,)
     finally:
