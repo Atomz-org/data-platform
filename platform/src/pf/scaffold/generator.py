@@ -87,6 +87,12 @@ def _default_tools_yaml() -> str:
 
 
 # ---------------------------------------------------------------- project --
+def _sister_alias(group: str, sister: str) -> str:
+    """`acme-us` in group `acme` is `us`; a sister named without the prefix keeps her name."""
+    prefix = f"{group}-"
+    return sister[len(prefix):] if sister.startswith(prefix) and len(sister) > len(prefix) else sister
+
+
 def new_project(
     root: Path, group: str, project: str, is_rollup: bool = False, sisters: list[str] | None = None
 ) -> list[Path]:
@@ -112,8 +118,12 @@ def new_project(
         "group": group,
         "project": project,
         "module": module,
+        # A sister's alias is her project name without the group prefix
+        # (`acme-us` -> `us`): the roll-up asset rebuilds `<group>-<alias>` to
+        # find her code location, so any other spelling draws dependencies on
+        # assets that do not exist.
         "sisters_py": ", ".join(
-            f'"{s.replace("-", "_")}": "../{s}/data/{s.replace("-", "_")}.duckdb"' for s in sisters
+            f'"{_sister_alias(group, s)}": "../{s}/data/{s.replace("-", "_")}.duckdb"' for s in sisters
         ),
         "sister_list": ", ".join(sisters) or "none",
         "deny_siblings": ", ".join(f'"Read(../{s}/**)"' for s in sisters) or '"Read(../*/src/**)"',
