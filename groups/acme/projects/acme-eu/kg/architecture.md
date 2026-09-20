@@ -23,8 +23,8 @@ flowchart LR
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>6"]:::metric
-        S2["dimensions<br/>8"]:::metric
+        S1["metrics<br/>none yet"]:::neutral
+        S2["dimensions<br/>none yet"]:::neutral
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
@@ -111,10 +111,10 @@ flowchart TB
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | ✓ 6 | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL |
-| dimensions | ✓ 8 | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group |
+| metrics | **gap** | `transform/models/semantic/metrics_revenue.yml` | the governed answer to a business question; never ad-hoc SQL — `/build-semantic-layer` |
+| dimensions | **gap** | `transform/models/semantic/metrics_revenue.yml` | how a metric may be sliced; conformed ones come from the group — `/build-semantic-layer` |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
+| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
@@ -128,11 +128,11 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 2 | `transform/models/marts/_core__models.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 10 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/acme_eu/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
+| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
 | CI workflow | ✓ | `.github/workflows/acme-eu.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
@@ -145,12 +145,12 @@ flowchart TB
 
 **Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
 
-**PII columns:** 6 — masked by policy, never selected into a mart unaggregated
+**PII columns:** 3 — masked by policy, never selected into a mart unaggregated
 
 ## Gaps
 
-- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
-- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
+- **metrics** — the governed answer to a business question; never ad-hoc SQL. Fix: `/build-semantic-layer`
+- **dimensions** — how a metric may be sliced; conformed ones come from the group. Fix: `/build-semantic-layer`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---
