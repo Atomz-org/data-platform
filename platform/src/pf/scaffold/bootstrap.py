@@ -24,7 +24,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-Status = Literal["ok", "skipped", "failed"]
+#: `created` is distinct from `ok` on purpose: a step that wrote a file the
+#: repository did not have is a change a reader should see, not a no-op. It is
+#: still a pass — `StepResult.ok` is "not failed" — but printing it as a tick
+#: would hide the one run in which the file appeared.
+Status = Literal["ok", "created", "skipped", "failed"]
 
 
 @dataclass
