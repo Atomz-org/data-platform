@@ -437,10 +437,19 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     sm = json.loads(sm_path.read_text(encoding="utf-8"))
 
     measure_owner: dict[str, str] = {}
+    #: What the semantic layer says a measure *is* — its aggregation and the
+    #: expression it aggregates. Stored as facts, not as SQL: the graph does not
+    #: know which dialect will read it, and every projection composes its own.
+    measure_facts: dict[str, dict[str, Any]] = {}
     for model in sm.get("semantic_models") or []:
         model_ref = (model.get("node_relation") or {}).get("alias") or model.get("name")
         for measure in model.get("measures") or []:
             measure_owner[measure["name"]] = model_ref
+            measure_facts[measure["name"]] = {
+                "agg": (measure.get("agg") or "sum").lower(),
+                "expr": measure.get("expr") or measure["name"],
+                "agg_params": measure.get("agg_params") or {},
+            }
         for dim in model.get("dimensions") or []:
             d_id = dimid(f"{model.get('name')}__{dim['name']}")
             nodes.append(Node(
@@ -451,19 +460,31 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
             if model_ref:
                 edges.append(Edge(src=mid(model_ref), dst=d_id, kind="grouped_by"))
 
+    def _ref(v: Any) -> str:
+        return (v.get("name") if isinstance(v, dict) else v) or ""
+
     for metric in sm.get("metrics") or []:
         name = metric["name"]
         n_id = metid(name)
-        nodes.append(Node(
-            id=n_id, kind="Metric", name=name, layer="semantic",
-            label=metric.get("label") or metric.get("description") or "",
-            props={"type": metric.get("type"),
-                   "description": metric.get("description") or ""},
-        ))
         tp = metric.get("type_params") or {}
         measures = []
         if tp.get("measure"):
-            measures.append(tp["measure"].get("name") if isinstance(tp["measure"], dict) else tp["measure"])
+            measures.append(_ref(tp["measure"]))
+        # Carry the aggregation through to the node. Without it a projection that
+        # needs a SQL measure — the MDL cube — has nothing to emit, and emitting
+        # a placeholder made the cube's own base object unplannable.
+        props: dict[str, Any] = {"type": metric.get("type"),
+                                 "description": metric.get("description") or "",
+                                 "numerator": _ref(tp.get("numerator")),
+                                 "denominator": _ref(tp.get("denominator"))}
+        facts = measure_facts.get(measures[0]) if measures else None
+        if facts:
+            props.update(facts)
+        nodes.append(Node(
+            id=n_id, kind="Metric", name=name, layer="semantic",
+            label=metric.get("label") or metric.get("description") or "",
+            props=props,
+        ))
         for key in ("numerator", "denominator"):
             v = tp.get(key)
             if isinstance(v, dict) and v.get("name"):

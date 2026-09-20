@@ -37,9 +37,26 @@ from typing import Any
 # light and dark stepped separately). Do not hand-edit: these values come from a
 # run of the palette validator, and re-picking them by eye is how a chart becomes
 # unreadable for ~8% of readers.
-PALETTE_LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
-PALETTE_DARK = ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"]
-STATUS = {"good": "#0ca30c", "warning": "#fab219", "serious": "#ec835a", "critical": "#d03b3b"}
+PALETTE_LIGHT = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
+                 "#e87ba4", "#008300", "#4a3aa7", "#e34948"]
+PALETTE_DARK = ["#3987e5", "#d95926", "#199e70", "#c98500",
+                "#d55181", "#008300", "#9085e9", "#e66767"]
+#: Sequential ramp for magnitude (heatmaps, colorscale table columns). One hue,
+#: light->dark; reversed on the dark surface so "near zero" recedes into it.
+SCALE_LIGHT = ["#cde2fb", "#3987e5", "#0d366b"]
+SCALE_DARK = ["#104281", "#3987e5", "#9ec5f4"]
+
+#: Named theme colours. Evidence reads `positive`/`negative`/`warning`/`info` for
+#: deltas and alerts; they are reserved and never reused as a series colour.
+COLORS = {
+    "primary": ("#256abf", "#3987e5"),
+    "accent": ("#eb6834", "#d95926"),
+    "base": ("#ffffff", "#09090b"),
+    "info": ("#2a78d6", "#3987e5"),
+    "positive": ("#0ca30c", "#0ca30c"),
+    "warning": ("#fab219", "#fab219"),
+    "negative": ("#d03b3b", "#d03b3b"),
+}
 
 
 #: MetricFlow's aggregation names are not SQL. `average(x)`, `count_distinct(x)`
@@ -87,12 +104,12 @@ def agg_sql(agg: str, expr: str, params: dict[str, Any] | None = None,
 class MetricSpec:
     name: str
     label: str
-    kind: str  # simple | ratio | derived | cumulative
-    model: str  # physical table the measure sits on
-    expression: str  # aggregate expression
+    kind: str                       # simple | ratio | derived | cumulative
+    model: str                      # physical table the measure sits on
+    expression: str                 # aggregate expression
     filter_sql: str = ""
     time_column: str = ""
-    dimensions: list[str] = None  # categorical dimensions available
+    dimensions: list[str] = None    # categorical dimensions available
     numerator: str = ""
     denominator: str = ""
     description: str = ""
@@ -146,7 +163,8 @@ def collect_metrics(project_dir: Path,
     for model in sm.get("semantic_models") or []:
         table = (model.get("node_relation") or {}).get("alias") or model.get("name")
         time_col = (model.get("defaults") or {}).get("agg_time_dimension") or ""
-        dims = [d["name"] for d in (model.get("dimensions") or []) if d.get("type") != "time"]
+        dims = [d["name"] for d in (model.get("dimensions") or [])
+                if d.get("type") != "time"]
         for m in model.get("measures") or []:
             agg = (m.get("agg") or "sum").lower()
             expr = m.get("expr") or m["name"]
@@ -292,6 +310,17 @@ def _metric_name(v: Any) -> str:
 
 # --------------------------------------------------------------- writing ----
 def _metric_sql(spec: MetricSpec, schema: str) -> str:
+    """Compile one metric to a query Evidence can run.
+
+    `schema` is the **Evidence source name**, not the warehouse schema. The two
+    look interchangeable and are not: a source extract under `sources/<name>/`
+    runs against the warehouse connection, so it selects `main_marts.<model>`,
+    but a file in `queries/` runs against the extracted parquet, where the only
+    namespace that exists is the source's. Writing the warehouse schema here
+    compiled, passed the mechanical audit, and executed correctly against DuckDB
+    by hand — then failed every single query at `evidence build` with "Table with
+    name fct_commodity_prices_daily does not exist".
+    """
     where = f"\nwhere {spec.filter_sql}" if spec.filter_sql else ""
     dims = list(spec.dimensions)[:3]
     dim_sql = "".join(f",\n    {d}" for d in dims)
@@ -389,7 +418,8 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
         lines += ["<Grid cols=" + str(min(len(kpis), 4)) + ">", ""]
         for s in kpis:
             fmt = "usd0" if _is_money(s) else "num0"
-            lines.append(f"<BigValue data={{kpi_{s.name}}} value={s.name} title='{s.label}' fmt={fmt}/>")
+            lines.append(f"<BigValue data={{kpi_{s.name}}} value={s.name} "
+                         f"title='{s.label}' fmt={fmt}/>")
         lines += ["", "</Grid>", ""]
 
     if trend:
@@ -401,7 +431,8 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             f"from ${{metrics_{trend.name}}}",
             "group by 1 order by 1",
             "```",
-            (f"<LineChart data={{trend}} x=metric_time y={trend.name} yFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
+            (f"<LineChart data={{trend}} x=metric_time y={trend.name} "
+            f"yFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
             "",
         ]
 
@@ -415,10 +446,8 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             f"where {dim} is not null",
             "group by 1 order by 2 desc",
             "```",
-            (
-                f"<BarChart data={{breakdown}} x={dim} y={trend.name} swapXY=true "
-                f"xFmt={'usd0' if _is_money(trend) else 'num0'}/>"
-            ),
+            (f"<BarChart data={{breakdown}} x={dim} y={trend.name} swapXY=true "
+            f"xFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
             "",
             "## Detail",
             "",
@@ -439,12 +468,8 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
     fmt = "usd0" if _is_money(spec) else "num0"
     dim = spec.dimensions[0] if spec.dimensions else None
     lines = [
-        "---",
-        f"title: {spec.label}",
-        "queries:",
-        f"  - metrics/{spec.name}.sql",
-        "---",
-        "",
+        "---", f"title: {spec.label}",
+        "queries:", f"  - metrics/{spec.name}.sql", "---", "",
         _context_sentence(spec),
         "",
     ]
@@ -481,14 +506,13 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
         series,
         tail,
         "```",
-        "",  # a component on the line after a fence is swallowed by the block
+        "",   # a component on the line after a fence is swallowed by the block
         f"<LineChart data={{series}} x=metric_time y={spec.name} yFmt={fmt}/>",
         "",
     ]
     if dim and rollup:
         lines += [
-            f"## By {dim.replace('_', ' ')}",
-            "",
+            f"## By {dim.replace('_', ' ')}", "",
             "```sql by_dim",
             f"select {dim}, {rollup} as {spec.name}",
             f"from ${{metrics_{spec.name}}} where {dim} is not null group by 1 order by 2 desc",
@@ -506,7 +530,8 @@ def _context_sentence(spec: MetricSpec) -> str:
     A page without this forces the reader to open the SQL to know whether a
     number counts refunds — which is the moment they stop trusting the number.
     """
-    parts = [spec.description.rstrip(".") if spec.description else f"The `{spec.name}` metric"]
+    parts = [spec.description.rstrip(".") if spec.description
+             else f"The `{spec.name}` metric"]
     if spec.filter_sql:
         parts.append(f"**restricted to `{spec.filter_sql}`**")
     else:
@@ -530,40 +555,55 @@ def _fence_spacing(lines: list[str]) -> list[str]:
     out: list[str] = []
     for i, line in enumerate(lines):
         out.append(line)
-        if line.strip() == "```" and i + 1 < len(lines) and lines[i + 1].lstrip().startswith("<"):
+        if line.strip() == "```" and i + 1 < len(lines) \
+                and lines[i + 1].lstrip().startswith("<"):
             out.append("")
     return out
 
 
 def _is_money(spec: MetricSpec) -> bool:
-    return any(
-        t in spec.name.lower() or t in spec.label.lower()
-        for t in ("revenue", "amount", "value", "volume", "mrr", "arr", "aov")
-    )
+    return any(t in spec.name.lower() or t in spec.label.lower()
+               for t in ("revenue", "amount", "value", "volume", "mrr", "arr", "aov"))
 
 
 def _config(project: str, warehouse: Path) -> str:
-    def block(name: str, colors: list[str]) -> str:
-        return f"      {name}:\n" + "".join(f"        - '{c}'\n" for c in colors)
+    """Evidence project config.
 
-    # Theme keys follow @evidence-dev/tailwind's zod schema: categorical
-    # palettes live under `colorPalettes.default.{light,dark}`, and single
-    # colors under `colors` — built-in names where a semantic match exists
-    # (positive/warning/negative drive components like BigValue deltas), a
-    # custom name where none does. The previous `colors.categorical` /
-    # `status` shape validated as *nothing*: zod warned and dropped it, and
-    # the CVD-checked palette silently never applied.
+    The theme keys are Evidence's, not ours: the categorical palette lives at
+    `theme.colorPalettes.default`, the sequential ramp at
+    `theme.colorScales.default`, and named colours at `theme.colors.<name>`,
+    each as a `{light, dark}` pair. An earlier shape here nested the palette
+    under `theme.colors.categorical` — valid YAML that Evidence silently ignores,
+    so every chart rendered in the stock palette while the config claimed
+    otherwise. A theme that is not read is worse than no theme: it reports a
+    guarantee it is not making.
+    """
+    def pair(name: str, light: str, dark: str, indent: str) -> str:
+        return (f"{indent}{name}:\n"
+                f"{indent}  light: '{light}'\n"
+                f"{indent}  dark: '{dark}'\n")
+
+    def ramp(light: list[str], dark: list[str], indent: str) -> str:
+        out = f"{indent}default:\n{indent}  light:\n"
+        out += "".join(f"{indent}    - '{c}'\n" for c in light)
+        out += f"{indent}  dark:\n"
+        out += "".join(f"{indent}    - '{c}'\n" for c in dark)
+        return out
+
     return f"""# Generated by `pf report build`. Palette values are validated —
 # adjacent-pair CVD deltaE >= 8, normal-vision >= 15, contrast checked on both
-# surfaces. Re-picking them by eye makes charts unreadable for ~8% of readers.
+# surfaces (#ffffff light, #09090b dark). Re-picking them by eye makes charts
+# unreadable for ~8% of readers, and slot ORDER is the CVD-safety mechanism:
+# never reorder, never append. Light-mode slots 3-5 (aqua, yellow, magenta) are
+# below 3:1 on white — a chart leaning on them needs visible labels or a
+# companion table.
 title: {project}
 
+appearance:
+  default: system
+  switcher: true
+
 plugins:
-  # Both sections are load-bearing. Without `components`, Evidence's
-  # injectComponents() discovers zero component plugins, silently injects no
-  # imports, and every generated page dies in the build with
-  # "'QueryViewer' is not defined" — naming a component no page mentions,
-  # because the preprocessor wraps each sql fence in one.
   components:
     "@evidence-dev/core-components": {{}}
   datasources:
@@ -571,13 +611,9 @@ plugins:
 
 theme:
   colorPalettes:
-    default:
-{block("light", PALETTE_LIGHT)}{block("dark", PALETTE_DARK)}  colors:
-    positive: '{STATUS["good"]}'
-    warning: '{STATUS["warning"]}'
-    negative: '{STATUS["critical"]}'
-    status-serious: '{STATUS["serious"]}'
-"""
+{ramp(PALETTE_LIGHT, PALETTE_DARK, "    ")}  colorScales:
+{ramp(SCALE_LIGHT, SCALE_DARK, "    ")}  colors:
+{"".join(pair(n, lt, dk, "    ") for n, (lt, dk) in COLORS.items())}"""
 
 
 def _source_conn(project: str, warehouse: Path) -> str:
@@ -591,14 +627,118 @@ def _source_conn(project: str, warehouse: Path) -> str:
     return f"""# DuckDB connector for this project's warehouse.
 # One warehouse file per project is what lets sister companies run in parallel;
 # the reporting layer only ever reads.
-name: {project.replace("-", "_")}
+name: {project.replace('-', '_')}
 type: duckdb
 options:
-  filename: ../../../data/{project.replace("-", "_")}.duckdb
+  filename: ../../../data/{project.replace('-', '_')}.duckdb
 """
 
 
-def _row_counts(root: Path, group: str, project: str, relations: list[tuple[str, str]]) -> dict[str, int] | None:
+# ------------------------------------------------------------- exposures ----
+#: A page reads the warehouse two ways: through a compiled metric
+#: (`${metrics_<name>}`) or straight from a source extract
+#: (`from <source>.<table>`). Both are dependencies; only the first was ever
+#: visible to lineage.
+_PAGE_METRIC = re.compile(r"\$\{metrics_(\w+)\}")
+
+
+def _page_sources(text: str, source: str) -> set[str]:
+    return set(re.findall(rf"\bfrom\s+{re.escape(source)}\.(\w+)", text, re.I))
+
+
+def _exposures(out: Path, project: str, group: str, specs: list[MetricSpec],
+               owner: dict[str, str]) -> str:
+    """A dbt exposure per rendered page.
+
+    Without this the loop is open at exactly the point it matters. Marts, metrics
+    and MDL are all in the graph; the pages that consume them are not, so
+    `pf impact` on a column reports "nothing downstream" while a dashboard is
+    reading it. An exposure is the only dbt object that says *a person looks at
+    this*, and a generated page deserves one as much as a hand-written one —
+    more, since nobody remembers to declare what a generator wrote.
+
+    Written into the dbt project rather than `reporting/`, because it is dbt that
+    must parse it. It lands one parse behind: `pf report build` writes the file,
+    the next dbt parse picks it up, and the graph build after that sees the
+    edges. That is the same lag every generated dbt artefact has.
+    """
+    model_of = {s.name: s.model for s in specs}
+    source = project.replace("-", "_")
+    blocks: list[str] = []
+
+    for page in sorted((out / "pages").rglob("*.md")):
+        rel = page.relative_to(out / "pages")
+        text = page.read_text(encoding="utf-8")
+        title = next((ln.split(":", 1)[1].strip().strip("'\"")
+                      for ln in text.splitlines()[:12] if ln.startswith("title:")),
+                     page.stem)
+        deps = {model_of[m] for m in _PAGE_METRIC.findall(text) if m in model_of}
+        deps |= _page_sources(text, source)
+        if not deps:
+            # A page that reads nothing is a landing page, not an exposure.
+            continue
+        name = "report_" + str(rel.with_suffix("")).replace("/", "_").replace("-", "_")
+        refs = "\n".join(f"      - ref('{d}')" for d in sorted(deps))
+        blocks.append(
+            f"  - name: {name}\n"
+            f"    label: {json.dumps(title, ensure_ascii=False)}\n"
+            f"    type: dashboard\n"
+            f"    maturity: high\n"
+            f"    url: reporting/pages/{rel.as_posix()}\n"
+            f"    description: >\n"
+            f"      Evidence page generated by `pf report build`. Edit the metric or the\n"
+            f"      page, never this file.\n"
+            f"    depends_on:\n{refs}\n"
+            f"    owner:\n"
+            f"      name: {json.dumps(owner['name'], ensure_ascii=False)}\n"
+            f"      email: {json.dumps(owner['email'])}\n")
+
+    if not blocks:
+        # dbt refuses a schema file whose `exposures` key holds nothing —
+        # "the value of 'exposures' is not a list" — and that one parse error
+        # takes down every command that reads the manifest, `pf kg check`
+        # included. A project whose pages read nothing yet gets no file.
+        return ""
+    return (
+        "# Generated by `pf report build` — do not edit.\n"
+        "#\n"
+        "# One exposure per Evidence page, so `pf impact` on a column or a model\n"
+        "# reaches the dashboards that read it and names who to tell. Deleting a\n"
+        "# page removes its exposure on the next build; editing this file by hand\n"
+        "# is overwritten.\n"
+        f"# group: {group}  project: {project}\n"
+        "version: 2\n\nexposures:\n" + "\n".join(blocks))
+
+
+def _owner(root: Path) -> dict[str, str]:
+    """Owner for a generated exposure, from the group manifest."""
+    fallback = {"name": "Data Platform", "email": "data-platform@example.com"}
+    manifest = root.parent.parent / "group.yaml"
+    if not manifest.exists():
+        return fallback
+    try:
+        import yaml
+        data = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return fallback
+    owner = data.get("owner")
+    if isinstance(owner, dict):
+        # `group.yaml` spells this team/contact; dbt spells it name/email. Accept
+        # both rather than silently falling back to a placeholder address, which
+        # is how an exposure ends up telling nobody.
+        name = owner.get("name") or owner.get("team")
+        email = owner.get("email") or owner.get("contact")
+        return {"name": str(name or fallback["name"]),
+                "email": str(email or fallback["email"])}
+    if isinstance(owner, str):
+        return {"name": owner,
+                "email": str(data.get("email") or data.get("contact")
+                             or fallback["email"])}
+    return fallback
+
+
+def _row_counts(root: Path, group: str, project: str,
+                relations: list[tuple[str, str]]) -> dict[str, int] | None:
     """Row count per (schema, name) relation, or None when the warehouse
     does not exist yet. A relation that cannot be counted (not built yet) is
     simply absent — its extract stays, and `npm run sources` reports it."""
@@ -612,7 +752,8 @@ def _row_counts(root: Path, group: str, project: str, relations: list[tuple[str,
         with wh.connect(read_only=True) as con:
             for schema, name in relations:
                 try:
-                    counts[name] = con.execute(f'SELECT count(*) FROM "{schema}"."{name}"').fetchone()[0]
+                    counts[name] = con.execute(
+                        f'SELECT count(*) FROM "{schema}"."{name}"').fetchone()[0]
                 except Exception:
                     continue
     except Exception:
@@ -627,7 +768,7 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     skipped: list[str] = []
     specs = collect_metrics(root, skipped)
     _, mdl = _load(root)
-    schema = "main_marts"
+    source = project.replace("-", "_")
     warehouse = (root / "data" / f"{project.replace('-', '_')}.duckdb").resolve()
 
     (out / "queries" / "metrics").mkdir(parents=True, exist_ok=True)
@@ -635,8 +776,10 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     (out / "sources" / project.replace("-", "_")).mkdir(parents=True, exist_ok=True)
 
     for spec in specs:
-        (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(_metric_sql(spec, schema), encoding="utf-8")
-        (out / "pages" / "metrics" / f"{spec.name}.md").write_text(_metric_page(project, spec), encoding="utf-8")
+        (out / "queries" / "metrics" / f"{spec.name}.sql").write_text(
+            _metric_sql(spec, source), encoding="utf-8")
+        (out / "pages" / "metrics" / f"{spec.name}.md").write_text(
+            _metric_page(project, spec), encoding="utf-8")
 
     # Both directories are generated in full, so a file for a metric that is
     # no longer rendered is stale, not someone's work.
@@ -654,15 +797,15 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
         _source_conn(project, warehouse), encoding="utf-8")
 
     counts = _row_counts(
-        root, group, project, [(m["tableReference"]["schema"], m["name"]) for m in mdl.get("models", [])]
-    )
+        root, group, project,
+        [(m["tableReference"]["schema"], m["name"]) for m in mdl.get("models", [])])
 
     extracted = 0
     skipped_empty: list[str] = []
     for model in mdl.get("models", []):
         name = model["name"]
         visible = [c["name"] for c in model["columns"] if not c.get("isHidden")]
-        target = out / "sources" / project.replace("-", "_") / f"{name}.sql"
+        target = out / "sources" / source / f"{name}.sql"
         if counts is not None and counts.get(name) == 0:
             # Evidence's duckdb connector writes a zero-row extract as a
             # zero-byte file, and duckdb-wasm then kills the whole site build
@@ -724,19 +867,22 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
             "@evidence-dev/source-javascript": "^0.0.3",
             "@evidence-dev/sqlite": "^2.0.9",
             "@evidence-dev/trino": "^1.0.11",
+            # Not connectors: the four modules Evidence's own template requires
+            # at build time and npm >= 11 no longer hoists into the project root.
+            # Without them `evidence build` dies in order — first
+            # `git-remote-origin-url` from the settings endpoint, then
+            # `autoprefixer` and `postcss` from the template's postcss config.
+            # tailwindcss is pinned to 3: the config imports
+            # `tailwindcss/nesting`, which v4 removed from its exports map.
+            "autoprefixer": "^10.4.20",
+            "git-remote-origin-url": "^4.0.0",
+            "postcss": "^8.4.49",
+            "tailwindcss": "^3.4.17",
         },
         # The one peer legacy-peer-deps skips that the build genuinely needs.
         # Version comes from evidence@40.1.8's own peerDependencies, not a guess.
         "devDependencies": {
             "@sveltejs/vite-plugin-svelte": "3.1.2",
-            # Build-time requires the template resolves from the project
-            # root, not from its own node_modules — absent, the build
-            # dies at the settings route (git-remote-origin-url) or at
-            # PostCSS config load (autoprefixer/postcss). Measured, not
-            # theoretical: both happened on the first clean build.
-            "git-remote-origin-url": "^4.0.0",
-            "autoprefixer": "^10.4.20",
-            "postcss": "^8.4.47",
         },
         "overrides": {
             "jsonwebtoken": "9.0.0",
@@ -750,7 +896,8 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # peer graph more strictly than the npm the upstream template targets. It is
     # safe *because* the dependency block above is the complete canonical set —
     # nothing the build needs is left to peer resolution.
-    (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\nlegacy-peer-deps=true\n", encoding="utf-8")
+    (out / ".npmrc").write_text("loglevel=error\naudit=false\nfund=false\n"
+                                "legacy-peer-deps=true\n", encoding="utf-8")
 
     # Toolchain note, verified by controlled experiment rather than assumed:
     # a pristine `degit evidence-dev/template` fails to build identically on
@@ -760,9 +907,19 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
     # does not repeat the bisection.
     (out / ".nvmrc").write_text("20\n", encoding="utf-8")
 
+    exposures = root / "transform" / "models" / "_reporting__exposures.yml"
+    if (root / "transform" / "models").exists():
+        text = _exposures(out, project, group, specs, _owner(root))
+        if text:
+            exposures.write_text(text, encoding="utf-8")
+        else:
+            # Nothing to declare — and a leftover file from a build that had
+            # something to declare is now a parse error, not a stale fact.
+            exposures.unlink(missing_ok=True)
+
     return {
         "metrics": len(specs),
-        "pages": len(specs) + 1,
+        "pages": sum(1 for _ in (out / "pages").rglob("*.md")),
         # What was actually written, not what the MDL listed — the two differ
         # by exactly the models whose extract was refused above.
         "sources": extracted,
@@ -771,4 +928,5 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
         "skipped": skipped,
         "removed": sorted(set(removed)),
         "skipped_empty": skipped_empty,
+        "exposures": exposures if exposures.exists() else None,
     }

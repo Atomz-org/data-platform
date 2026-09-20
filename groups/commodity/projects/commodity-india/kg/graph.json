@@ -39,28 +39,15 @@
       }
     },
     {
-      "id": "col:model:stg_reference__commodities.category",
-      "kind": "Column",
-      "name": "category",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.category",
+      "id": "col:model:dim_commodities.category",
       "kind": "Column",
       "name": "category",
       "layer": "marts",
-      "label": "",
+      "label": "precious | industrial | energy | agri \u2014 the tracker's tabs.",
       "props": {
         "role": "status_enum",
         "pii": false,
-        "model": "rpt_commodity_price_board",
+        "model": "dim_commodities",
         "data_type": null
       }
     },
@@ -77,15 +64,28 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.category",
+      "id": "col:model:rpt_commodity_price_board.category",
       "kind": "Column",
       "name": "category",
       "layer": "marts",
-      "label": "precious | industrial | energy | agri \u2014 the tracker's tabs.",
+      "label": "",
       "props": {
         "role": "status_enum",
         "pii": false,
-        "model": "dim_commodities",
+        "model": "rpt_commodity_price_board",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_reference__commodities.category",
+      "kind": "Column",
+      "name": "category",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_reference__commodities",
         "data_type": null
       }
     },
@@ -102,15 +102,15 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.close_price",
+      "id": "col:model:stg_yahoo_finance__futures_prices.close_price",
       "kind": "Column",
       "name": "close_price",
-      "layer": "marts",
+      "layer": "staging",
       "label": "",
       "props": {
         "role": "unit_price",
         "pii": false,
-        "model": "fct_commodity_prices_daily",
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null
       }
     },
@@ -128,16 +128,84 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.close_price",
+      "id": "col:model:fct_commodity_prices_daily.close_price",
       "kind": "Column",
       "name": "close_price",
-      "layer": "staging",
+      "layer": "marts",
       "label": "",
       "props": {
         "role": "unit_price",
         "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
+        "model": "fct_commodity_prices_daily",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:yahoo_finance.futures_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "futures_prices",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_prices_daily.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:int_commodity_prices__usd.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "intermediate",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "int_commodity_prices__usd",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "staging",
+      "label": "Foreign key to Commodity.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_gold_api__spot_prices",
+        "data_type": null,
+        "links_to": "Commodity"
       }
     },
     {
@@ -155,16 +223,16 @@
       }
     },
     {
-      "id": "col:table:gold_api.spot_prices.commodity_id",
+      "id": "col:model:stg_reference__commodities.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
-      "layer": "raw",
-      "label": "foreign_key",
+      "layer": "staging",
+      "label": "",
       "props": {
-        "role": "foreign_key",
+        "role": "natural_key",
         "pii": false,
-        "table": "spot_prices",
-        "links_to": "Commodity"
+        "model": "stg_reference__commodities",
+        "data_type": null
       }
     },
     {
@@ -196,19 +264,6 @@
       }
     },
     {
-      "id": "col:table:yahoo_finance.futures_prices.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "futures_prices",
-        "links_to": "Commodity"
-      }
-    },
-    {
       "id": "col:model:dim_commodities.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
@@ -222,71 +277,15 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.commodity_id",
+      "id": "col:table:reference.commodities.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
+      "layer": "raw",
+      "label": "natural_key",
       "props": {
         "role": "natural_key",
         "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:int_commodity_prices__usd.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_prices_daily.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:stg_reference__commodities.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
+        "table": "commodities"
       }
     },
     {
@@ -304,29 +303,30 @@
       }
     },
     {
-      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
+      "id": "col:table:gold_api.spot_prices.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
-      "layer": "staging",
-      "label": "Foreign key to Commodity.",
+      "layer": "raw",
+      "label": "foreign_key",
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "stg_gold_api__spot_prices",
-        "data_type": null,
+        "table": "spot_prices",
         "links_to": "Commodity"
       }
     },
     {
-      "id": "col:table:reference.commodities.commodity_id",
+      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
-      "layer": "raw",
-      "label": "natural_key",
+      "layer": "marts",
+      "label": "",
       "props": {
-        "role": "natural_key",
+        "role": "foreign_key",
         "pii": false,
-        "table": "commodities"
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": null,
+        "links_to": "Commodity"
       }
     },
     {
@@ -405,19 +405,6 @@
       }
     },
     {
-      "id": "col:model:stg_gold_api__spot_prices.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "stg_gold_api__spot_prices",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__futures_prices.currency_code",
       "kind": "Column",
       "name": "currency_code",
@@ -453,6 +440,19 @@
         "role": "currency_code",
         "pii": false,
         "model": "int_commodity_prices__usd",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_gold_api__spot_prices.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_gold_api__spot_prices",
         "data_type": null
       }
     },
@@ -522,6 +522,18 @@
       }
     },
     {
+      "id": "col:table:reference.commodities.exchange",
+      "kind": "Column",
+      "name": "exchange",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
       "id": "col:model:stg_reference__commodities.exchange",
       "kind": "Column",
       "name": "exchange",
@@ -532,18 +544,6 @@
         "pii": false,
         "model": "stg_reference__commodities",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:reference.commodities.exchange",
-      "kind": "Column",
-      "name": "exchange",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "commodities"
       }
     },
     {
@@ -560,19 +560,6 @@
       }
     },
     {
-      "id": "col:model:fct_fx_rates_daily.fx_day_id",
-      "kind": "Column",
-      "name": "fx_day_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_fx_rates_daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:int_fx_rates__daily.fx_day_id",
       "kind": "Column",
       "name": "fx_day_id",
@@ -582,6 +569,19 @@
         "role": "natural_key",
         "pii": false,
         "model": "int_fx_rates__daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_fx_rates_daily.fx_day_id",
+      "kind": "Column",
+      "name": "fx_day_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_fx_rates_daily",
         "data_type": null
       }
     },
@@ -623,19 +623,6 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.high_price",
-      "kind": "Column",
-      "name": "high_price",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.high_price",
       "kind": "Column",
       "name": "high_price",
@@ -645,6 +632,19 @@
         "role": "unit_price",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.high_price",
+      "kind": "Column",
+      "name": "high_price",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null
       }
     },
@@ -688,19 +688,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.is_stale",
-      "kind": "Column",
-      "name": "is_stale",
-      "layer": "marts",
-      "label": "The latest benchmark is more than four days old. Always true for indicative levels until refreshed.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:rpt_mcx_contract_board.is_stale",
       "kind": "Column",
       "name": "is_stale",
@@ -710,6 +697,19 @@
         "role": "",
         "pii": false,
         "model": "rpt_mcx_contract_board",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.is_stale",
+      "kind": "Column",
+      "name": "is_stale",
+      "layer": "marts",
+      "label": "The latest benchmark is more than four days old. Always true for indicative levels until refreshed.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
         "data_type": null
       }
     },
@@ -791,19 +791,6 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.low_price",
-      "kind": "Column",
-      "name": "low_price",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__futures_prices.low_price",
       "kind": "Column",
       "name": "low_price",
@@ -817,15 +804,15 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.market_unit",
+      "id": "col:model:fct_commodity_prices_daily.low_price",
       "kind": "Column",
-      "name": "market_unit",
+      "name": "low_price",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "unit_of_measure",
+        "role": "unit_price",
         "pii": false,
-        "model": "dim_commodities",
+        "model": "fct_commodity_prices_daily",
         "data_type": null
       }
     },
@@ -839,6 +826,19 @@
         "role": "unit_of_measure",
         "pii": false,
         "model": "fct_india_landed_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.market_unit",
+      "kind": "Column",
+      "name": "market_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_of_measure",
+        "pii": false,
+        "model": "dim_commodities",
         "data_type": null
       }
     },
@@ -880,6 +880,31 @@
       }
     },
     {
+      "id": "col:table:reference.commodities.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "futures (live Yahoo feed) or indicative (manual seed level).",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "dim_commodities",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:stg_reference__commodities.price_basis",
       "kind": "Column",
       "name": "price_basis",
@@ -906,19 +931,6 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "futures (live Yahoo feed) or indicative (manual seed level).",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "dim_commodities",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:int_commodity_prices__usd.price_basis",
       "kind": "Column",
       "name": "price_basis",
@@ -929,18 +941,6 @@
         "pii": false,
         "model": "int_commodity_prices__usd",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:reference.commodities.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "commodities"
       }
     },
     {
@@ -957,7 +957,7 @@
       }
     },
     {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.price_date",
+      "id": "col:model:fct_mcx_lot_equivalents_daily.price_date",
       "kind": "Column",
       "name": "price_date",
       "layer": "marts",
@@ -965,7 +965,7 @@
       "props": {
         "role": "event_time",
         "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
+        "model": "fct_mcx_lot_equivalents_daily",
         "data_type": null
       }
     },
@@ -983,6 +983,19 @@
       }
     },
     {
+      "id": "col:model:fct_precious_metal_retail_prices_daily.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_commodity_prices_daily.price_date",
       "kind": "Column",
       "name": "price_date",
@@ -996,15 +1009,15 @@
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.price_date",
+      "id": "col:model:fct_commodity_prices_daily.price_id",
       "kind": "Column",
-      "name": "price_date",
+      "name": "price_id",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "event_time",
+        "role": "natural_key",
         "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
+        "model": "fct_commodity_prices_daily",
         "data_type": null
       }
     },
@@ -1031,19 +1044,6 @@
         "role": "natural_key",
         "pii": false,
         "model": "fct_india_landed_prices_daily",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_prices_daily.price_id",
-      "kind": "Column",
-      "name": "price_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
         "data_type": null
       }
     },
@@ -1138,19 +1138,6 @@
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_equivalent_inr",
-      "kind": "Column",
-      "name": "quote_equivalent_inr",
-      "layer": "marts",
-      "label": "Landed \u20b9 for one MCX quote basis (quote_size \u00d7 quote_unit).",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:rpt_mcx_contract_board.quote_equivalent_inr",
       "kind": "Column",
       "name": "quote_equivalent_inr",
@@ -1164,15 +1151,15 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.quote_id",
+      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_equivalent_inr",
       "kind": "Column",
-      "name": "quote_id",
-      "layer": "staging",
-      "label": "",
+      "name": "quote_equivalent_inr",
+      "layer": "marts",
+      "label": "Landed \u20b9 for one MCX quote basis (quote_size \u00d7 quote_unit).",
       "props": {
-        "role": "natural_key",
+        "role": "unit_price",
         "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
+        "model": "fct_mcx_lot_equivalents_daily",
         "data_type": null
       }
     },
@@ -1189,15 +1176,16 @@
       }
     },
     {
-      "id": "col:table:reference.commodities.quote_unit",
+      "id": "col:model:stg_yahoo_finance__futures_prices.quote_id",
       "kind": "Column",
-      "name": "quote_unit",
-      "layer": "raw",
-      "label": "unit_of_measure",
+      "name": "quote_id",
+      "layer": "staging",
+      "label": "",
       "props": {
-        "role": "unit_of_measure",
+        "role": "natural_key",
         "pii": false,
-        "table": "commodities"
+        "model": "stg_yahoo_finance__futures_prices",
+        "data_type": null
       }
     },
     {
@@ -1214,15 +1202,15 @@
       }
     },
     {
-      "id": "col:model:stg_gold_api__spot_prices.quote_unit",
+      "id": "col:model:dim_commodities.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "staging",
+      "layer": "marts",
       "label": "",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "model": "stg_gold_api__spot_prices",
+        "model": "dim_commodities",
         "data_type": null
       }
     },
@@ -1240,16 +1228,28 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.quote_unit",
+      "id": "col:model:stg_gold_api__spot_prices.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "marts",
+      "layer": "staging",
       "label": "",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "model": "dim_commodities",
+        "model": "stg_gold_api__spot_prices",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:reference.commodities.quote_unit",
+      "kind": "Column",
+      "name": "quote_unit",
+      "layer": "raw",
+      "label": "unit_of_measure",
+      "props": {
+        "role": "unit_of_measure",
+        "pii": false,
+        "table": "commodities"
       }
     },
     {
@@ -1316,18 +1316,6 @@
       }
     },
     {
-      "id": "col:table:yahoo_finance.fx_rates.rate_date",
-      "kind": "Column",
-      "name": "rate_date",
-      "layer": "raw",
-      "label": "event_time",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "table": "fx_rates"
-      }
-    },
-    {
       "id": "col:model:fct_fx_rates_daily.rate_date",
       "kind": "Column",
       "name": "rate_date",
@@ -1338,6 +1326,18 @@
         "pii": false,
         "model": "fct_fx_rates_daily",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:yahoo_finance.fx_rates.rate_date",
+      "kind": "Column",
+      "name": "rate_date",
+      "layer": "raw",
+      "label": "event_time",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "table": "fx_rates"
       }
     },
     {
@@ -1366,19 +1366,6 @@
       }
     },
     {
-      "id": "col:model:stg_reference__commodities.segment",
-      "kind": "Column",
-      "name": "segment",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:dim_commodities.segment",
       "kind": "Column",
       "name": "segment",
@@ -1388,6 +1375,19 @@
         "role": "status_enum",
         "pii": false,
         "model": "dim_commodities",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_reference__commodities.segment",
+      "kind": "Column",
+      "name": "segment",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "stg_reference__commodities",
         "data_type": null
       }
     },
@@ -1430,6 +1430,18 @@
       }
     },
     {
+      "id": "col:table:reference.commodities.spot_symbol",
+      "kind": "Column",
+      "name": "spot_symbol",
+      "layer": "raw",
+      "label": "free_text",
+      "props": {
+        "role": "free_text",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
       "id": "col:model:stg_reference__commodities.spot_symbol",
       "kind": "Column",
       "name": "spot_symbol",
@@ -1440,18 +1452,6 @@
         "pii": false,
         "model": "stg_reference__commodities",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:reference.commodities.spot_symbol",
-      "kind": "Column",
-      "name": "spot_symbol",
-      "layer": "raw",
-      "label": "free_text",
-      "props": {
-        "role": "free_text",
-        "pii": false,
-        "table": "commodities"
       }
     },
     {
@@ -2287,6 +2287,201 @@
       }
     },
     {
+      "id": "exposure:report_index",
+      "kind": "Exposure",
+      "name": "report_index",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/index.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_benchmark_price_usd",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_benchmark_price_usd",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_benchmark_price_usd.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_duty_inr",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_duty_inr",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_duty_inr.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_landed_price_inr",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_landed_price_inr",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_landed_price_inr.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_usd_inr_rate",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_usd_inr_rate",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_usd_inr_rate.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_benchmark_price_days",
+      "kind": "Exposure",
+      "name": "report_metrics_benchmark_price_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/benchmark_price_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_benchmark_price_usd_total",
+      "kind": "Exposure",
+      "name": "report_metrics_benchmark_price_usd_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/benchmark_price_usd_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_contracts_traded",
+      "kind": "Exposure",
+      "name": "report_metrics_contracts_traded",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/contracts_traded.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_duty_inr_total",
+      "kind": "Exposure",
+      "name": "report_metrics_duty_inr_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/duty_inr_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_landed_price_days",
+      "kind": "Exposure",
+      "name": "report_metrics_landed_price_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/landed_price_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_landed_price_inr_total",
+      "kind": "Exposure",
+      "name": "report_metrics_landed_price_inr_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/landed_price_inr_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_period_high_price_usd",
+      "kind": "Exposure",
+      "name": "report_metrics_period_high_price_usd",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/period_high_price_usd.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_period_low_price_usd",
+      "kind": "Exposure",
+      "name": "report_metrics_period_low_price_usd",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/period_low_price_usd.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_usd_inr_rate_days",
+      "kind": "Exposure",
+      "name": "report_metrics_usd_inr_rate_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/usd_inr_rate_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_usd_inr_rate_total",
+      "kind": "Exposure",
+      "name": "report_metrics_usd_inr_rate_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/usd_inr_rate_total.md"
+      }
+    },
+    {
       "id": "metric:avg_benchmark_price_usd",
       "kind": "Metric",
       "name": "avg_benchmark_price_usd",
@@ -2294,7 +2489,9 @@
       "label": "Avg Benchmark Price (USD)",
       "props": {
         "type": "ratio",
-        "description": "Mean daily settlement price, USD per quote unit. Group by commodity."
+        "description": "Mean daily settlement price, USD per quote unit. Group by commodity.",
+        "numerator": "benchmark_price_usd_total",
+        "denominator": "benchmark_price_days"
       }
     },
     {
@@ -2305,7 +2502,9 @@
       "label": "Avg Customs Duty (INR)",
       "props": {
         "type": "ratio",
-        "description": "Mean customs duty per Indian market unit. Group by commodity."
+        "description": "Mean customs duty per Indian market unit. Group by commodity.",
+        "numerator": "duty_inr_total",
+        "denominator": "landed_price_days"
       }
     },
     {
@@ -2316,7 +2515,9 @@
       "label": "Avg India Landed Price (INR)",
       "props": {
         "type": "ratio",
-        "description": "Mean India import landed price, \u20b9 per Indian market unit (benchmark \u00d7 USD/INR \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate."
+        "description": "Mean India import landed price, \u20b9 per Indian market unit (benchmark \u00d7 USD/INR \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.",
+        "numerator": "landed_price_inr_total",
+        "denominator": "landed_price_days"
       }
     },
     {
@@ -2327,7 +2528,9 @@
       "label": "Avg USD/INR",
       "props": {
         "type": "ratio",
-        "description": "Mean rupees per US dollar, the rate every landed price uses."
+        "description": "Mean rupees per US dollar, the rate every landed price uses.",
+        "numerator": "usd_inr_rate_total",
+        "denominator": "usd_inr_rate_days"
       }
     },
     {
@@ -2338,7 +2541,12 @@
       "label": "Priced Days",
       "props": {
         "type": "simple",
-        "description": "Days with a benchmark price. Group by commodity to spot feed gaps."
+        "description": "Days with a benchmark price. Group by commodity to spot feed gaps.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "close_price",
+        "agg_params": {}
       }
     },
     {
@@ -2349,7 +2557,9 @@
       "label": "Benchmark Price MoM Change",
       "props": {
         "type": "derived",
-        "description": "Month-over-month change in the mean benchmark price. Group by commodity."
+        "description": "Month-over-month change in the mean benchmark price. Group by commodity.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -2360,7 +2570,12 @@
       "label": "Benchmark Price Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own."
+        "description": "Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "close_price",
+        "agg_params": {}
       }
     },
     {
@@ -2371,7 +2586,12 @@
       "label": "Contracts Traded",
       "props": {
         "type": "simple",
-        "description": "Front-month futures volume from live feeds. Group by commodity."
+        "description": "Front-month futures volume from live feeds. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "volume",
+        "agg_params": {}
       }
     },
     {
@@ -2382,7 +2602,12 @@
       "label": "Customs Duty Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own."
+        "description": "Building block for avg_duty_inr. A sum of per-unit duties means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "duty_inr",
+        "agg_params": {}
       }
     },
     {
@@ -2393,7 +2618,12 @@
       "label": "Days With a Landed Price",
       "props": {
         "type": "simple",
-        "description": "Days a landed price exists \u2014 never for commodities India prohibits importing."
+        "description": "Days a landed price exists \u2014 never for commodities India prohibits importing.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "landed_price_inr",
+        "agg_params": {}
       }
     },
     {
@@ -2404,7 +2634,12 @@
       "label": "Landed Price Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_landed_price_inr. A sum of prices means nothing on its own."
+        "description": "Building block for avg_landed_price_inr. A sum of prices means nothing on its own.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "landed_price_inr",
+        "agg_params": {}
       }
     },
     {
@@ -2415,7 +2650,9 @@
       "label": "Landed Price MoM Change",
       "props": {
         "type": "derived",
-        "description": "Month-over-month change in the mean landed price; moves with both the benchmark and the rupee."
+        "description": "Month-over-month change in the mean landed price; moves with both the benchmark and the rupee.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -2426,7 +2663,12 @@
       "label": "Period High (USD)",
       "props": {
         "type": "simple",
-        "description": "Highest traded price in the period, USD per quote unit. Group by commodity."
+        "description": "Highest traded price in the period, USD per quote unit. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "max",
+        "expr": "coalesce(high_price, close_price)",
+        "agg_params": {}
       }
     },
     {
@@ -2437,7 +2679,12 @@
       "label": "Period Low (USD)",
       "props": {
         "type": "simple",
-        "description": "Lowest traded price in the period, USD per quote unit. Group by commodity."
+        "description": "Lowest traded price in the period, USD per quote unit. Group by commodity.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "min",
+        "expr": "coalesce(low_price, close_price)",
+        "agg_params": {}
       }
     },
     {
@@ -2448,7 +2695,12 @@
       "label": "USD/INR Days",
       "props": {
         "type": "simple",
-        "description": "Calendar days with a USD/INR rate, including carried-forward days."
+        "description": "Calendar days with a USD/INR rate, including carried-forward days.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "usd_rate",
+        "agg_params": {}
       }
     },
     {
@@ -2459,7 +2711,12 @@
       "label": "USD/INR Total (component)",
       "props": {
         "type": "simple",
-        "description": "Building block for avg_usd_inr_rate."
+        "description": "Building block for avg_usd_inr_rate.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "usd_rate",
+        "agg_params": {}
       }
     },
     {
@@ -8515,6 +8772,102 @@
       "src": "model:stg_reference__commodities",
       "dst": "test:test.commodity_india.relationships_mcx_contract_lots_commodity_id__commodity_id__ref_stg_reference__commodities_.2ea639025d",
       "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_index",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_index",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_avg_benchmark_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_metrics_avg_duty_inr",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_metrics_avg_landed_price_inr",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_fx_rates_daily",
+      "dst": "exposure:report_metrics_avg_usd_inr_rate",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_benchmark_price_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_benchmark_price_usd_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_contracts_traded",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_metrics_duty_inr_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_metrics_landed_price_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_metrics_landed_price_inr_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_period_high_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_metrics_period_low_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_fx_rates_daily",
+      "dst": "exposure:report_metrics_usd_inr_rate_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_fx_rates_daily",
+      "dst": "exposure:report_metrics_usd_inr_rate_total",
+      "kind": "feeds",
       "props": {}
     },
     {

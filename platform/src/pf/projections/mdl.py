@@ -193,21 +193,35 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
         dims = g.nodes("Dimension")
         if metrics:
             base = _busiest_model(g, metrics, by_name)
-            measures = [{
-                "name": mt.name,
-                "expression": mt.props.get("expression") or f"-- {mt.name}",
-                "type": "DOUBLE",
-                "description": mt.label or mt.props.get("description", ""),
-                "properties": {"pf.metric_type": mt.props.get("type", "simple")},
-            } for mt in metrics]
-            cube_dims = [{
-                "name": d.name, "expression": d.name, "type": "VARCHAR",
-                "description": d.label or "",
-            } for d in dims if d.props.get("type") != "time"]
-            time_dims = [{
-                "name": d.name, "expression": d.name, "type": "TIMESTAMP",
-                "description": d.label or "",
-            } for d in dims if d.props.get("type") == "time"]
+            by_metric = {mt.name: mt for mt in metrics}
+            measures = []
+            for mt in metrics:
+                expression = _measure_expression(mt, by_metric)
+                if expression is None:
+                    # A cube measure is a SQL aggregate or it is nothing. The
+                    # previous placeholder — the metric name behind `--` — parses
+                    # as a comment, so the whole cube failed to analyse and every
+                    # query against its *base object* died with "Expected: an
+                    # expression, found: EOF". A missing measure costs one metric;
+                    # an unparseable one costs the busiest mart in the project.
+                    continue
+                measures.append({
+                    "name": mt.name,
+                    "expression": expression,
+                    "type": "DOUBLE",
+                    "description": mt.label or mt.props.get("description", ""),
+                    "properties": {"pf.metric_type": mt.props.get("type", "simple")},
+                })
+            # A dimension is declared once per semantic model, so a conformed
+            # one arrives several times over — `commodity_id` on both the price
+            # fact and the landed-price fact, `price_basis` on three. A cube is
+            # a flat namespace: duplicate entries make the manifest invalid and
+            # every planner that reads it picks an arbitrary winner. Fold them,
+            # keeping the first description that is not empty.
+            cube_dims = _dedupe_dims(
+                [d for d in dims if d.props.get("type") != "time"], "VARCHAR")
+            time_dims = _dedupe_dims(
+                [d for d in dims if d.props.get("type") == "time"], "TIMESTAMP")
             if base:
                 cubes.append({
                     "name": f"{project.replace('-', '_')}_core",
@@ -226,19 +240,175 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
                         "values": [{"name": v, "value": v} for v in c.props["values"]],
                     })
 
+    catalog = group.replace("-", "_")
+    schema = project.replace("-", "_")
     manifest: dict[str, Any] = {
-        "catalog": group.replace("-", "_"),
-        "schema": project.replace("-", "_"),
+        "catalog": catalog,
+        "schema": schema,
         "dataSource": "DUCKDB",
         "layoutVersion": LAYOUT_VERSION,
         "models": models,
         "relationships": relationships,
-        "views": [],
+        "views": _views(gp, models, relationships),
         "cubes": cubes,
     }
     if enum_definitions:
         manifest["enumDefinitions"] = enum_definitions
     return manifest
+
+
+def _measure_expression(metric: Node, by_metric: dict[str, Node]) -> str | None:
+    """SQL for one cube measure, or None when the metric is not one aggregate.
+
+    A simple metric is its measure's aggregate. A ratio is its numerator over its
+    denominator, re-divided rather than averaged — the same rule the reporting
+    layer enforces, for the same reason: an average of averages weights a thin
+    day like a full one, and for this platform's commodity groups a price is a
+    unit price that must never be summed across rows.
+
+    Derived and cumulative metrics carry window and offset semantics that a cube
+    measure cannot express. They are omitted rather than approximated.
+    """
+    from pf.projections.evidence import agg_sql
+
+    def aggregate(node: Node | None) -> str | None:
+        if node is None or not node.props.get("agg"):
+            return None
+        return agg_sql(node.props["agg"], node.props["expr"],
+                       node.props.get("agg_params") or {})
+
+    kind = (metric.props.get("type") or "simple").lower()
+    if kind == "simple":
+        return aggregate(metric)
+    if kind == "ratio":
+        num = aggregate(by_metric.get(metric.props.get("numerator") or ""))
+        den = aggregate(by_metric.get(metric.props.get("denominator") or ""))
+        if num and den:
+            return f"{num} / nullif({den}, 0)"
+    return None
+
+
+def _dedupe_dims(dims: list[Node], sql_type: str) -> list[dict[str, Any]]:
+    """Fold dimensions that appear on more than one semantic model into one."""
+    folded: dict[str, dict[str, Any]] = {}
+    for d in dims:
+        entry = folded.get(d.name)
+        if entry is None:
+            folded[d.name] = {"name": d.name, "expression": d.name,
+                              "type": sql_type, "description": d.label or ""}
+        elif not entry["description"] and d.label:
+            entry["description"] = d.label
+    return list(folded.values())
+
+
+def _views(graph_path: Path, models: list[dict[str, Any]],
+           relationships: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One view per mart a dbt exposure names.
+
+    An exposure is the only place in the stack where someone states *this is a
+    surface people consume*. Deriving views from it keeps the same discipline as
+    the relationships above: a projection of a declaration, never a guess from a
+    name prefix. A view denormalises the mart along the relationships already
+    derived — which is the point of having derived them — so the NL layer gets a
+    question-shaped surface instead of a join it has to reconstruct.
+
+    Columns from a joined model are prefixed with that model's name when the
+    bare name would collide, because a view with two `commodity_id` columns is
+    not a surface anyone can query.
+    """
+    by_name = {m["name"]: m for m in models}
+    views: list[dict[str, Any]] = []
+
+    with open_graph(graph_path, read_only=True) as g:
+        exposures = g.nodes("Exposure")
+        if not exposures:
+            return []
+        feeds: dict[str, list[str]] = {}
+        for e in g.edges():
+            if e.kind == "feeds" and e.dst.startswith("exposure:") \
+                    and e.src.startswith("model:"):
+                feeds.setdefault(e.dst.split(":", 1)[1], []).append(
+                    e.src.split(":", 1)[1])
+
+        # A mart is usually named by several exposures — a hand-written board and
+        # the generated page for every metric that sits on it. That is one
+        # surface with several readers, not several surfaces: keyed by exposure
+        # it produced duplicate view names, which is the same flat-namespace
+        # collision the cube had. Key by model, and carry the readers.
+        readers: dict[str, list[Node]] = {}
+        for exp in exposures:
+            for model_name in feeds.get(exp.name, []):
+                readers.setdefault(model_name, []).append(exp)
+
+        for model_name, exps in sorted(readers.items()):
+            model = by_name.get(model_name)
+            if model is None:              # staging, or filtered out of the MDL
+                continue
+            stmt = _view_statement(model, by_name, relationships)
+            if stmt is None:
+                continue
+            exps = sorted(exps, key=lambda n: n.name)
+            owners = sorted({e.props.get("owner") or "" for e in exps} - {""})
+            views.append({
+                "name": f"{model_name}_view",
+                "statement": stmt,
+                "properties": {
+                    "pf.exposures": ", ".join(e.name for e in exps),
+                    "pf.exposure_types": ", ".join(
+                        sorted({e.props.get("type") or "" for e in exps} - {""})),
+                    "pf.owners": ", ".join(owners),
+                    "pf.description": model["properties"].get("description", ""),
+                    "pf.grain": model["properties"].get("grain", ""),
+                },
+            })
+    return views
+
+
+def _view_statement(model: dict[str, Any],
+                    by_name: dict[str, dict[str, Any]],
+                    relationships: list[dict[str, Any]]) -> str | None:
+    """`select` for one view: the mart, left-joined to what it points at.
+
+    Models are named **bare**, not `catalog.schema.model`. Both spellings parse
+    and both plan without error, but the qualified one is passed through to the
+    warehouse verbatim — so the planner emitted SQL selecting from a DuckDB
+    catalog named after the group, and every query against a view died with
+    `Catalog "commodity" does not exist`. Only the bare name is resolved back to
+    a model and rewritten to its `tableReference`.
+    """
+    def visible(m: dict[str, Any]) -> list[str]:
+        # isHidden is the MDL projection's PII flag. A view is a wider surface
+        # than a model, so honouring it here is not belt-and-braces: it is the
+        # only thing standing between a hidden column and an NL query that
+        # selects it back out.
+        return [c["name"] for c in m["columns"]
+                if not c.get("isHidden") and not c.get("relationship")]
+
+    base = model["name"]
+    taken = set(visible(model))
+    select = [f"{base}.{c}" for c in visible(model)]
+    joins: list[str] = []
+
+    for rel in relationships:
+        if rel["models"][0] != base or rel["joinType"] not in ("MANY_TO_ONE", "ONE_TO_ONE"):
+            continue
+        other = by_name.get(rel["models"][1])
+        if other is None:
+            continue
+        joined = other["name"]
+        for col in visible(other):
+            alias = col if col not in taken else f"{joined.removeprefix('dim_')}_{col}"
+            if alias in taken:
+                continue
+            taken.add(alias)
+            select.append(f"{joined}.{col} as {alias}" if alias != col
+                          else f"{joined}.{col}")
+        joins.append(f"  left join {joined} on {rel['condition']}")
+
+    if not select:
+        return None
+    body = ",\n".join(f"  {c}" for c in select)
+    return (f"select\n{body}\nfrom {base}\n" + "\n".join(joins)).strip()
 
 
 def _mdl_type(onto, role: str, data_type: str | None) -> str:

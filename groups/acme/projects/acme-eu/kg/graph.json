@@ -3299,7 +3299,12 @@
       "label": "Active Customers",
       "props": {
         "type": "simple",
-        "description": "Customers with at least one active subscription."
+        "description": "Customers with at least one active subscription.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "case when is_active then 1 else 0 end",
+        "agg_params": {}
       }
     },
     {
@@ -3310,7 +3315,9 @@
       "label": "Average Order Value",
       "props": {
         "type": "ratio",
-        "description": "Revenue divided by succeeded payment count."
+        "description": "Revenue divided by succeeded payment count.",
+        "numerator": "revenue",
+        "denominator": "payment_count"
       }
     },
     {
@@ -3321,7 +3328,12 @@
       "label": "Gross Payment Volume",
       "props": {
         "type": "simple",
-        "description": "All payment attempts regardless of outcome."
+        "description": "All payment attempts regardless of outcome.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "amount",
+        "agg_params": {}
       }
     },
     {
@@ -3332,7 +3344,12 @@
       "label": "Payments",
       "props": {
         "type": "simple",
-        "description": "Count of succeeded payments."
+        "description": "Count of succeeded payments.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "count",
+        "expr": "payment_id",
+        "agg_params": {}
       }
     },
     {
@@ -3343,7 +3360,12 @@
       "label": "Revenue",
       "props": {
         "type": "simple",
-        "description": "Net revenue \u2014 succeeded payments only. The single definition."
+        "description": "Net revenue \u2014 succeeded payments only. The single definition.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "amount",
+        "agg_params": {}
       }
     },
     {
@@ -3354,7 +3376,9 @@
       "label": "Revenue MoM Growth",
       "props": {
         "type": "derived",
-        "description": "Month-over-month change in net revenue."
+        "description": "Month-over-month change in net revenue.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {

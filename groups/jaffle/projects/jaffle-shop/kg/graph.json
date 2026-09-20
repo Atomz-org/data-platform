@@ -32266,7 +32266,9 @@
       "label": "Average Order Value",
       "props": {
         "type": "derived",
-        "description": "LTV pre-tax / number of orders"
+        "description": "LTV pre-tax / number of orders",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -32277,7 +32279,12 @@
       "label": "Count Lifetime Orders",
       "props": {
         "type": "simple",
-        "description": "Count of lifetime orders"
+        "description": "Count of lifetime orders",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "count_lifetime_orders",
+        "agg_params": {}
       }
     },
     {
@@ -32288,7 +32295,12 @@
       "label": "Cumulative Revenue (All Time)",
       "props": {
         "type": "cumulative",
-        "description": "The cumulative revenue for all orders."
+        "description": "The cumulative revenue for all orders.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "product_price",
+        "agg_params": {}
       }
     },
     {
@@ -32299,7 +32311,12 @@
       "label": "Drink Orders",
       "props": {
         "type": "simple",
-        "description": "Count of orders that contain drink order items"
+        "description": "Count of orders that contain drink order items",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "1",
+        "agg_params": {}
       }
     },
     {
@@ -32310,7 +32327,12 @@
       "label": "Drink Revenue",
       "props": {
         "type": "simple",
-        "description": "The revenue from drinks in each order"
+        "description": "The revenue from drinks in each order",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "case when is_drink_item then product_price else 0 end",
+        "agg_params": {}
       }
     },
     {
@@ -32321,7 +32343,9 @@
       "label": "Drink Revenue %",
       "props": {
         "type": "ratio",
-        "description": "The % of order revenue from drinks."
+        "description": "The % of order revenue from drinks.",
+        "numerator": "drink_revenue",
+        "denominator": "revenue"
       }
     },
     {
@@ -32332,7 +32356,12 @@
       "label": "Food Orders",
       "props": {
         "type": "simple",
-        "description": "Count of orders that contain food order items"
+        "description": "Count of orders that contain food order items",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "1",
+        "agg_params": {}
       }
     },
     {
@@ -32343,7 +32372,12 @@
       "label": "Food Revenue",
       "props": {
         "type": "simple",
-        "description": "The revenue from food in each order"
+        "description": "The revenue from food in each order",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "case when is_food_item then product_price else 0 end",
+        "agg_params": {}
       }
     },
     {
@@ -32354,7 +32388,9 @@
       "label": "Food Revenue %",
       "props": {
         "type": "ratio",
-        "description": "The % of order revenue from food."
+        "description": "The % of order revenue from food.",
+        "numerator": "food_revenue",
+        "denominator": "revenue"
       }
     },
     {
@@ -32365,7 +32401,12 @@
       "label": "Large Orders",
       "props": {
         "type": "simple",
-        "description": "Count of orders with order total over 20."
+        "description": "Count of orders with order total over 20.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "1",
+        "agg_params": {}
       }
     },
     {
@@ -32376,7 +32417,12 @@
       "label": "LTV Pre-tax",
       "props": {
         "type": "simple",
-        "description": "Customer's lifetime spend before tax"
+        "description": "Customer's lifetime spend before tax",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "lifetime_spend_pretax",
+        "agg_params": {}
       }
     },
     {
@@ -32387,7 +32433,12 @@
       "label": "Median Revenue",
       "props": {
         "type": "simple",
-        "description": "The median revenue for each order item. Excludes tax."
+        "description": "The median revenue for each order item. Excludes tax.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "median",
+        "expr": "product_price",
+        "agg_params": {}
       }
     },
     {
@@ -32398,7 +32449,12 @@
       "label": "New Customers",
       "props": {
         "type": "simple",
-        "description": "New customer's first order count"
+        "description": "New customer's first order count",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "1",
+        "agg_params": {}
       }
     },
     {
@@ -32409,7 +32465,12 @@
       "label": "Order Cost",
       "props": {
         "type": "simple",
-        "description": "Sum of cost for each order item."
+        "description": "Sum of cost for each order item.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "order_cost",
+        "agg_params": {}
       }
     },
     {
@@ -32420,7 +32481,9 @@
       "label": "Order Gross Profit",
       "props": {
         "type": "derived",
-        "description": "Gross profit from each order."
+        "description": "Gross profit from each order.",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
@@ -32431,7 +32494,12 @@
       "label": "Order Total",
       "props": {
         "type": "simple",
-        "description": "Sum of total order amonunt. Includes tax + revenue."
+        "description": "Sum of total order amonunt. Includes tax + revenue.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "order_total",
+        "agg_params": {}
       }
     },
     {
@@ -32442,7 +32510,12 @@
       "label": "Orders",
       "props": {
         "type": "simple",
-        "description": "Count of orders."
+        "description": "Count of orders.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "1",
+        "agg_params": {}
       }
     },
     {
@@ -32453,7 +32526,12 @@
       "label": "Revenue",
       "props": {
         "type": "simple",
-        "description": "Sum of the product revenue for each order item. Excludes tax."
+        "description": "Sum of the product revenue for each order item. Excludes tax.",
+        "numerator": "",
+        "denominator": "",
+        "agg": "sum",
+        "expr": "product_price",
+        "agg_params": {}
       }
     },
     {
@@ -32464,7 +32542,9 @@
       "label": "Revenue Growth % M/M",
       "props": {
         "type": "derived",
-        "description": "Percentage growth of revenue compared to 1 month ago. Excluded tax"
+        "description": "Percentage growth of revenue compared to 1 month ago. Excluded tax",
+        "numerator": "",
+        "denominator": ""
       }
     },
     {
