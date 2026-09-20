@@ -1,0 +1,12 @@
+[runtime]
+log_level = "WARNING"
+
+[normalize.data_writer]
+disable_compression = false
+
+# How much daily history a symbol backfills on its first load. Later loads only
+# refetch from the last stored day. Changing this re-backfills every symbol.
+# Yahoo ranges: 1mo 3mo 6mo 1y 2y 5y 10y ytd max.
+# Env override: SOURCES__YAHOO_FINANCE__HISTORY_RANGE
+[sources.yahoo_finance]
+history_range = "5y"

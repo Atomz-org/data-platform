@@ -1,0 +1,9 @@
+# Tools for commodity-us, merged over groups/commodity/tools.yaml.
+#
+# Set `enabled: false` here to opt out of something the group turned on. Config
+# dicts deep-merge, so overriding one key (a port, say) keeps the rest.
+#
+#   pf tool list commodity commodity-us      # what is on, and where it came from
+#   pf tool doctor commodity commodity-us    # why a tool is not doing anything
+version: 1
+tools: {}
