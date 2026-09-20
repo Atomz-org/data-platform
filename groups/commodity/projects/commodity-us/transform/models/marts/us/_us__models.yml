@@ -1,0 +1,99 @@
+version: 2
+# The United States' own marts: what a CME Group or ICE contract makes of the
+# conformed landed price. Nothing here is expected in another sister.
+
+models:
+  - name: fct_us_contract_values_daily
+    description: >
+      The import-parity value of each tracked US exchange contract per its quote
+      basis and per lot — GC per troy ounce and per 100 oz lot, HG per pound and
+      per 25,000 lb lot, ALI per tonne with Section 232 duty grossed on.
+      Computed from the benchmark, not a separate contract quote.
+    access: public
+    meta: {grain: one US exchange contract per price date}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [contract_code, price_date]
+    columns:
+      - name: contract_value_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_code
+        description: Exchange product code.
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: exchange
+        meta: {role: status_enum}
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: price_date
+        meta: {role: event_time}
+      - name: price_basis
+        meta: {role: status_enum}
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+      - name: quote_equivalent_usd
+        description: Import-parity USD for one quote basis (quote_size × quote_unit).
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: lot_value_usd
+        description: Import-parity USD for one full lot (lot_size × lot_unit).
+        meta: {role: unit_price}
+        data_tests: [not_null]
+
+  - name: rpt_us_contract_board
+    description: >
+      One row per tracked US exchange contract: the latest import-parity value
+      per quote basis and per lot, and how old its benchmark is.
+    access: public
+    meta: {grain: one US exchange contract}
+    columns:
+      - name: contract_code
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('us_contract_lots')
+                field: contract_code
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: quote_equivalent_usd
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: lot_value_usd
+        meta: {role: unit_price}
+      - name: is_stale
+        description: The underlying benchmark is more than four days old.
+
+unit_tests:
+  - name: contract_values_follow_quote_basis_and_lot
+    description: >
+      Copper lands at $5.05/lb after 1% MFN, so one HG lot of 25,000 lb is
+      $126,250. Aluminium lands per pound and ALI is quoted per tonne, so the
+      quote equivalent reprices lb → t and the 25 t lot is 25 times that.
+    model: fct_us_contract_values_daily
+    given:
+      - input: ref('fct_landed_prices_daily')
+        rows:
+          - {commodity_id: copper, price_date: 2026-09-16, price_basis: futures, market_unit: lb, landed_price_local: 5.05, effective_duty_rate: 0.01, is_duty_rate_confirmed: true}
+          - {commodity_id: aluminium, price_date: 2026-09-16, price_basis: futures, market_unit: lb, landed_price_local: 1.7690, effective_duty_rate: 0.5, is_duty_rate_confirmed: true}
+      - input: ref('us_contract_lots')
+        rows:
+          - {contract_code: HG, exchange: COMEX, commodity_id: copper, contract_name: Copper, lot_size: 25000, lot_unit: lb, quote_size: 1, quote_unit: lb}
+          - {contract_code: ALI, exchange: COMEX, commodity_id: aluminium, contract_name: Aluminum, lot_size: 25, lot_unit: metric_ton, quote_size: 1, quote_unit: metric_ton}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: lb, base_units_per_unit: 0.45359237}
+          - {unit_code: metric_ton, base_units_per_unit: 1000}
+    expect:
+      rows:
+        - {contract_code: HG, quote_equivalent_usd: 5.0500, lot_value_usd: 126250.00}
+        - {contract_code: ALI, quote_equivalent_usd: 3899.9774, lot_value_usd: 97499.44}
