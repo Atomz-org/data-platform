@@ -11,26 +11,26 @@ Generated from this project alone. Sister projects are never read; cross-entity 
 flowchart LR
     subgraph LI["ingest"]
         direction TB
-        I1["dlt sources<br/>gold_api, reference, yahoo_finance<br/>3"]:::ingress
+        I1["dlt sources<br/>gold_api, yahoo_finance<br/>2"]:::ingress
         I2["pipeline<br/>commodity_india"]:::platform
-        I3["raw tables<br/>4"]:::raw
+        I3["raw tables<br/>3"]:::raw
     end
     subgraph LT["transform · dbt"]
         direction TB
-        T1["staging<br/>4"]:::model
+        T1["staging<br/>3"]:::model
         T2["marts<br/>8"]:::model
-        T3["data tests<br/>122"]:::model
+        T3["data tests<br/>142"]:::model
     end
     subgraph LS["semantics"]
         direction TB
-        S1["metrics<br/>16"]:::metric
-        S2["dimensions<br/>19"]:::metric
+        S1["metrics<br/>15"]:::metric
+        S2["dimensions<br/>23"]:::metric
         S3["MDL contract"]:::platform
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>19"]:::exposure
-        D2["Evidence pages<br/>18"]:::exposure
+        D1["exposures<br/>18"]:::exposure
+        D2["Evidence pages<br/>17"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -53,8 +53,8 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    X0["Table<br/>commodities"]:::raw
-    X1["Model<br/>stg_reference__commodities"]:::model
+    X0["Table<br/>futures_prices"]:::raw
+    X1["Model<br/>stg_yahoo_finance__futures_prices"]:::model
     X2["Model<br/>int_commodity_prices__usd"]:::model
     X3["Model<br/>fct_commodity_prices_daily"]:::model
     X4["Exposure<br/>commodity_price_board"]:::exposure
@@ -98,24 +98,24 @@ flowchart TB
 | feature | | where | what it is |
 |---|---|---|---|
 | **ingest** | | | |
-| dlt sources | ✓ 3 | `src/commodity_india/sources/gold_api.py` | the only place raw data enters; each declares its ontology concept |
+| dlt sources | ✓ 2 | `src/commodity_india/sources/gold_api.py` | the only place raw data enters; each declares its ontology concept |
 | dlt config | ✓ | `.dlt/config.toml` | pipeline settings and destination; secrets live beside it, ungitted |
 | ontology annotations | ✓ | `contracts/annotations.yaml` | concept and column roles — drives staging, PII policy and monitors |
-| raw tables | ✓ 4 | `data/*.duckdb` | what the pipeline actually landed |
+| raw tables | ✓ 3 | `data/*.duckdb` | what the pipeline actually landed |
 | **transform** | | | |
 | dbt project | ✓ | `transform/dbt_project.yml` | the transform runtime; macro-paths reach the platform's macros |
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
-| staging models | ✓ 4 | `transform/models/staging/gold_api/stg_gold_api__spot_prices.sql` | one per raw table, generated from the annotations |
+| staging models | ✓ 3 | `transform/models/staging/gold_api/stg_gold_api__spot_prices.sql` | one per raw table, generated from the annotations |
 | marts | ✓ 8 | `transform/models/marts/core/dim_commodities.sql` | business entities at a declared grain — what metrics are built on |
-| data tests | ✓ 122 | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make |
+| data tests | ✓ 142 | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make |
 | project macros | — | `transform/macros/**/*.sql` | project-local SQL; dialect macros come from the platform toolkits — `/using-dbt` |
 | snapshots | — | `transform/snapshots/**/*.sql` | slowly-changing dimensions captured over time — `/using-dbt` |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
 | **semantics** | | | |
-| metrics | ✓ 16 | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL |
-| dimensions | ✓ 19 | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group |
+| metrics | ✓ 15 | `transform/models/semantic/metrics_commodity_prices.yml` | the governed answer to a business question; never ad-hoc SQL |
+| dimensions | ✓ 23 | `transform/models/semantic/metrics_commodity_prices.yml` | how a metric may be sliced; conformed ones come from the group |
 | knowledge graph | ✓ | `kg/graph.duckdb` | kg_search, kg_neighbors and impact analysis read this, not the files |
-| context card | **gap** | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` — `pf kg card` |
+| context card | ✓ | `kg/context_card.md` | the always-on index; ~400 tokens, budgeted by `pf tokens` |
 | architecture map | ✓ | `kg/architecture.md` | this document — the on-demand map, regenerated never hand-edited |
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
@@ -125,15 +125,16 @@ flowchart TB
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
-| decision records | ✓ 5 | `decisions/ADR-0001-duty-rates-are-back-applied-and-flagged.md` | why this project is shaped the way it is, where code cannot say so |
+| MCP servers | — | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten — `pf capability-add` |
+| decision records | ✓ 6 | `decisions/ADR-0001-duty-rates-are-back-applied-and-flagged.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | ✓ 19 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
+| exposures | ✓ 18 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 7 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
-| Dagster registration | **gap** | `platform/workspace.yaml` | an unregistered project silently never runs — `pf bootstrap` |
+| Dagster registration | ✓ | `platform/workspace.yaml` | an unregistered project silently never runs |
 | CI workflow | ✓ | `.github/workflows/commodity-india.yml` | one workflow per project, composed from its capabilities' jobs |
 | eval cases | **gap** | `evals/cases/**/*.yaml` | does an agent still answer this project's questions correctly — `pf evals-gen` |
 | agent memory | ✓ | `.memory/notes` | session notes that survive a compaction |
@@ -148,8 +149,6 @@ flowchart TB
 
 ## Gaps
 
-- **context card** — the always-on index; ~400 tokens, budgeted by `pf tokens`. Fix: `pf kg card`
-- **Dagster registration** — an unregistered project silently never runs. Fix: `pf bootstrap`
 - **eval cases** — does an agent still answer this project's questions correctly. Fix: `pf evals-gen`
 
 ---
