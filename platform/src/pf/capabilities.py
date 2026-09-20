@@ -139,6 +139,19 @@ IMPACT_JOB = """\
           [ -z "$CHANGED" ] && echo "no model changes"
           echo "models=$CHANGED" >> "$GITHUB_OUTPUT"
 
+      # A breaking radius — a mart that feeds a metric or an exposure — needs a
+      # decision record in the same change to pass. The gate still prints the
+      # whole radius and names the owners; the decision is what the reviewer
+      # reads instead of overriding a red job. `decisions/README.md` is the
+      # scaffold's, not a decision.
+      - name: Decisions this PR adds or changes
+        id: decided
+        run: |
+          DECIDED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \\
+            -- 'groups/{{group}}/projects/{{project}}/decisions/*.md' \\
+            | grep -v '/README\\.md$' | paste -sd, -)
+          echo "decisions=$DECIDED" >> "$GITHUB_OUTPUT"
+
       # Gate against the *base*, not the branch. The question a merge gate
       # answers is "what does this break in {{group}}/{{project}} as it stands",
       # and only the base graph can answer it:
@@ -163,7 +176,8 @@ IMPACT_JOB = """\
             exit 0
           fi
           uv run pf kg build {{group}} {{project}}
-          uv run pf impact-gate {{group}} {{project}} "${{ steps.changed.outputs.models }}"
+          uv run pf impact-gate {{group}} {{project}} "${{ steps.changed.outputs.models }}" \\
+            --decisions "${{ steps.decided.outputs.decisions }}"
 """
 
 LOOPS_README = """\
@@ -218,6 +232,9 @@ GITHUB_README = """\
 # GitHub integration — {{group}}/{{project}}
 
 `pf impact-gate` runs on every PR that touches this project's models or sources.
+A radius that reaches a metric or an exposure blocks unless the same PR adds or
+edits a decision record under `decisions/` — the report is still printed and
+the owners still named; the decision is what a reviewer reads.
 A change with a breaking blast radius fails the check and names the exposure
 owners who need to know.
 

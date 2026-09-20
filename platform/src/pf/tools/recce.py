@@ -1152,6 +1152,13 @@ RECCE_JOB = """\
     needs: changes
     if: needs.changes.outputs.transform == 'true'
     runs-on: ubuntu-latest
+    # The workflow's token is read-only. PR-Update comments on the pull request
+    # when the branch is behind its base, and a read-only token fails that step
+    # with "Resource not accessible by integration" — a red job about a
+    # comment, on every PR whose base has moved, in every group.
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       PF_ARTIFACTS_ACCESS_KEY_ID: ${{ secrets.PF_ARTIFACTS_ACCESS_KEY_ID }}
       PF_ARTIFACTS_SECRET_ACCESS_KEY: ${{ secrets.PF_ARTIFACTS_SECRET_ACCESS_KEY }}
