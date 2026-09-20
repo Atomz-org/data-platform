@@ -454,6 +454,18 @@ def _tracked(base: Path) -> set[Path] | None:
     return {(base / p.decode()).resolve() for p in r.stdout.split(b"\0") if p}
 
 
+def _tracked_glob(base: Path, pattern: str) -> list[Path]:
+    """`base.glob(pattern)`, kept to what git knows about — see `_tracked`."""
+    tracked = _tracked(base)
+    hits = base.glob(pattern) if base.is_dir() else iter(())
+    if tracked is None:
+        return sorted(hits, key=str)
+    return sorted((h for h in hits
+                   if h.resolve() in tracked
+                   or (h.is_dir() and any(t.is_relative_to(h.resolve()) for t in tracked))),
+                  key=str)
+
+
 def _count(base: Path, globs: tuple[str, ...]) -> tuple[int, str]:
     """How many paths match, and the one to print.
 
@@ -463,18 +475,10 @@ def _count(base: Path, globs: tuple[str, ...]) -> tuple[int, str]:
     de-duplicated across globs that overlap. Only tracked paths count — see
     `_tracked`; a directory counts when it holds a tracked file.
     """
-    tracked = _tracked(base)
-
-    def known(p: Path) -> bool:
-        if tracked is None:
-            return True
-        rp = p.resolve()
-        return rp in tracked or (p.is_dir() and any(t.is_relative_to(rp) for t in tracked))
-
     seen: set[Path] = set()
     where = ""
     for g in globs:
-        hits = sorted((h for h in base.glob(g) if known(h)), key=str)
+        hits = _tracked_glob(base, g)
         if hits and not where:
             where = str(hits[0].relative_to(base))
         seen.update(hits)
@@ -602,7 +606,7 @@ def _capabilities(root: Path, pdir: Path, group: str, project: str) -> list[str]
         for name, cap in sorted(CAPABILITIES.items()):
             targets = [(root if rel.startswith(".github/") else pdir) / rel
                        for rel in (render(r, ctx) for r in cap.files)]
-            if targets and all(t.exists() for t in targets):
+            if targets and all(_tracked_glob(t.parent, t.name) for t in targets):
                 out.append(name)
         return out
     except Exception:  # noqa: BLE001
@@ -707,9 +711,11 @@ def _node(nid: str, label: str, cls: str, count: int | None = None,
 
 def _spine(a: Arch) -> list[str]:
     """Ingest to delivery, with this project's real counts on every stage."""
-    src_dir = a.pdir / "src" / a.module / "sources"
-    src_names = ", ".join(sorted(p.stem for p in src_dir.glob("[!_]*.py"))[:3])
-    pages = len(list((a.pdir / "reporting" / "pages").rglob("*.md")))
+    # Tracked files only, like every other count here: a page or a source that
+    # exists on one machine and not in the repository is not the project's.
+    src_names = ", ".join(sorted(
+        p.stem for p in _tracked_glob(a.pdir, f"src/{a.module}/sources/[!_]*.py"))[:3])
+    pages = len(_tracked_glob(a.pdir, "reporting/pages/**/*.md"))
     inner = "        "
 
     out = [

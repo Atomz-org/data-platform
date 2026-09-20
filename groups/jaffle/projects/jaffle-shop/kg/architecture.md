@@ -30,7 +30,7 @@ flowchart LR
     subgraph LD["delivery"]
         direction TB
         D1["exposures<br/>6"]:::exposure
-        D2["Evidence pages<br/>16"]:::exposure
+        D2["Evidence pages<br/>1"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
