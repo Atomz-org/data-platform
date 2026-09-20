@@ -1,0 +1,378 @@
+version: 2
+# The conformed marts. Every sister in this family builds these four models and
+# the two intermediates behind them from identical SQL, over its own seeds
+# (`market_units`, `import_duties`) and its own raw stage. Change them in every
+# sister or not at all; the roll-up unions them by name.
+
+models:
+  - name: dim_commodities
+    description: >
+      Every tracked commodity — the group catalog — with this market's facts
+      beside it: the unit the local market quotes in and the duty in force today.
+    access: public
+    meta: {concept: Commodity, grain: one commodity}
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: category
+        description: precious | industrial | energy | agri — the tracker's tabs.
+        meta: {role: status_enum}
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [precious, industrial, energy, agri]
+      - name: segment
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: exchange
+        meta: {role: status_enum}
+      - name: price_basis
+        description: futures (live Yahoo feed) or indicative (group seed level).
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [futures, indicative]
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests: [not_null]
+      - name: market_code
+        description: The market this sister is, from `var('market_code')` — one value per warehouse.
+        meta: {role: foreign_key, links_to: Market}
+        data_tests: [not_null]
+      - name: currency_code
+        description: The currency landed prices in this market are expressed in.
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: market_unit
+        meta: {role: unit_of_measure}
+        data_tests: [not_null]
+      - name: current_duty_rate
+        meta: {role: rate_fraction}
+      - name: is_import_prohibited
+        data_tests: [not_null]
+
+  - name: fct_commodity_prices_daily
+    description: >
+      Daily benchmark price per commodity in USD per quote unit, with day-on-day
+      change, 20/50-day moving averages and a 252-trading-day range. Prices are
+      non-additive: aggregate within one commodity only.
+    access: public
+    meta: {concept: PriceObservation, grain: one commodity per price date}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, price_date]
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: high_price
+        meta: {role: unit_price}
+      - name: low_price
+        meta: {role: unit_price}
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "<= high_price"
+              config:
+                where: "low_price is not null and high_price is not null"
+                severity: warn
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: volume
+        meta: {role: quantity}
+      - name: price_change_pct
+        meta: {role: rate_fraction}
+      - name: is_latest
+        data_tests: [not_null]
+
+  - name: fct_fx_rates_daily
+    description: Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.
+    access: public
+    meta: {concept: FxRate, grain: one currency per calendar day}
+    columns:
+      - name: fx_day_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: quote_currency_code
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: rate_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: usd_rate
+        meta: {role: exchange_rate}
+        data_tests: [not_null]
+
+  - name: fct_landed_prices_daily
+    description: >
+      Import landed price per commodity per day in this market's currency per
+      its market unit: benchmark × USD/local × (1 + customs duty). The benchmark
+      stands in for CIF value — freight, insurance, landing charges and local
+      taxes are excluded. History before a tariff's `confirmed_from` uses today's
+      rate; filter on `is_duty_rate_confirmed` when that matters. The same shape
+      in every sister; `market_code` and `currency_code` say whose it is.
+    access: public
+    meta: {concept: PriceObservation, grain: one commodity per price date}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [market_code, commodity_id, price_date]
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: market_code
+        meta: {role: foreign_key, links_to: Market}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('markets')
+                field: market_code
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: market_unit
+        meta: {role: unit_of_measure}
+        data_tests: [not_null]
+      - name: currency_code
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: benchmark_price_usd
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: usd_fx_rate
+        description: Units of this market's currency per 1 USD on the price date; 1 when the market prices in USD.
+        meta: {role: exchange_rate}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+      - name: tariff_id
+        description: The import_duties row applied on this date.
+        data_tests: [not_null]
+      - name: effective_duty_rate
+        meta: {role: rate_fraction}
+      - name: is_duty_rate_confirmed
+        data_tests: [not_null]
+      - name: landed_price_local
+        meta: {role: unit_price}
+        data_tests:
+          - not_null:
+              config:
+                where: "not is_import_prohibited"
+      - name: duty_local
+        meta: {role: unit_price}
+
+  - name: rpt_commodity_price_board
+    description: >
+      One row per tracked commodity: latest benchmark and move, 252-day range,
+      landed price in this market's currency, duty, precious-metal spot basis,
+      and staleness. The table behind the commodity price board.
+    access: public
+    meta: {grain: one commodity}
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_commodities')
+                field: commodity_id
+      - name: category
+        meta: {role: status_enum}
+      - name: market_code
+        meta: {role: foreign_key, links_to: Market}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: benchmark_price_usd
+        meta: {role: unit_price}
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: usd_fx_rate
+        meta: {role: exchange_rate}
+      - name: landed_price_local
+        meta: {role: unit_price}
+      - name: is_stale
+        description: The latest benchmark is more than four days old. Always true for indicative levels until refreshed.
+
+unit_tests:
+  - name: price_change_is_relative_to_the_previous_close
+    description: >
+      $100 → $110 is +10%, not 109 — what `sf_safe_divide` returned before it
+      bracketed its operands. The first observation has no change.
+    model: fct_commodity_prices_daily
+    given:
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "gold:2026-09-15", commodity_id: gold, price_date: 2026-09-15, price_basis: futures, close_price: 100.0}
+          - {price_id: "gold:2026-09-16", commodity_id: gold, price_date: 2026-09-16, price_basis: futures, close_price: 110.0}
+    expect:
+      rows:
+        - {price_id: "gold:2026-09-15", prev_close_price: null, price_change: null, price_change_pct: null, is_latest: false}
+        - {price_id: "gold:2026-09-16", prev_close_price: 100.0, price_change: 10.0, price_change_pct: 0.1, is_latest: true}
+
+  - name: landed_price_converts_units_fx_and_duty
+    description: >
+      Gold: $4310.80/troy oz → per gram × 95.95 (INR per USD) × 1.15. Wheat
+      arrives already in dollars from the intermediate model and lands per
+      quintal at 44%. The market and its currency come from the `markets` seed.
+    model: fct_landed_prices_daily
+    overrides:
+      vars: {market_code: IN}
+    given:
+      - input: ref('markets')
+        rows:
+          - {market_code: IN, currency_code: INR}
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "gold:2026-09-16", commodity_id: gold, price_date: 2026-09-16, price_basis: futures, quote_unit: troy_oz, close_price: 4310.8}
+          - {price_id: "wheat:2026-09-16", commodity_id: wheat, price_date: 2026-09-16, price_basis: futures, quote_unit: bushel_60lb, close_price: 7.325}
+      - input: ref('int_fx_rates__daily')
+        rows:
+          - {quote_currency_code: INR, rate_date: 2026-09-16, usd_rate: 95.95, fixed_on: 2026-09-16}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: troy_oz, base_units_per_unit: 0.0311034768}
+          - {unit_code: g, base_units_per_unit: 0.001}
+          - {unit_code: bushel_60lb, base_units_per_unit: 27.2155422}
+          - {unit_code: quintal, base_units_per_unit: 100}
+      - input: ref('market_units')
+        rows:
+          - {commodity_id: gold, market_unit: g}
+          - {commodity_id: wheat, market_unit: quintal}
+      - input: ref('import_duties')
+        rows:
+          - {tariff_id: "IN:gold:base", commodity_id: gold, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0.15}
+          - {tariff_id: "IN:wheat:base", commodity_id: wheat, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0.44}
+    expect:
+      rows:
+        - {commodity_id: gold, market_code: IN, currency_code: INR, usd_fx_rate: 95.95, assessable_value_local: 13298.2323, duty_local: 1994.7348, landed_price_local: 15292.9672, is_duty_rate_confirmed: true}
+        - {commodity_id: wheat, market_code: IN, currency_code: INR, usd_fx_rate: 95.95, assessable_value_local: 2582.4720, duty_local: 1136.2877, landed_price_local: 3718.7596, is_duty_rate_confirmed: true}
+
+  - name: landed_price_follows_dated_duty_and_prohibition
+    description: >
+      Cotton is duty-free inside its 2026 exemption window and 11% after it.
+      Live cattle cannot be imported, so it keeps a row but has no landed price.
+      A date before `confirmed_from` is priced but flagged unconfirmed.
+    model: fct_landed_prices_daily
+    overrides:
+      vars: {market_code: IN}
+    given:
+      - input: ref('markets')
+        rows:
+          - {market_code: IN, currency_code: INR}
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "cotton:2026-07-15", commodity_id: cotton, price_date: 2026-07-15, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "cotton:2026-11-02", commodity_id: cotton, price_date: 2026-11-02, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "cotton:2025-01-06", commodity_id: cotton, price_date: 2025-01-06, quote_unit: lb, close_price: 0.8451}
+          - {price_id: "live_cattle:2026-07-15", commodity_id: live_cattle, price_date: 2026-07-15, quote_unit: lb, close_price: 2.2}
+      - input: ref('int_fx_rates__daily')
+        rows:
+          - {quote_currency_code: INR, rate_date: 2026-07-15, usd_rate: 95.95, fixed_on: 2026-07-15}
+          - {quote_currency_code: INR, rate_date: 2026-11-02, usd_rate: 95.95, fixed_on: 2026-11-02}
+          - {quote_currency_code: INR, rate_date: 2025-01-06, usd_rate: 95.95, fixed_on: 2025-01-06}
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: lb, base_units_per_unit: 0.45359237}
+          - {unit_code: kg, base_units_per_unit: 1}
+      - input: ref('market_units')
+        rows:
+          - {commodity_id: cotton, market_unit: kg}
+          - {commodity_id: live_cattle, market_unit: kg}
+      - input: ref('import_duties')
+        rows:
+          - {tariff_id: "IN:cotton:pre", commodity_id: cotton, valid_from: 1900-01-01, valid_to: 2026-05-31, confirmed_from: null, is_import_prohibited: false, effective_duty_rate: 0.11}
+          - {tariff_id: "IN:cotton:exempt", commodity_id: cotton, valid_from: 2026-06-01, valid_to: 2026-10-31, confirmed_from: 2026-06-01, is_import_prohibited: false, effective_duty_rate: 0}
+          - {tariff_id: "IN:cotton:post", commodity_id: cotton, valid_from: 2026-11-01, valid_to: null, confirmed_from: 2026-11-01, is_import_prohibited: false, effective_duty_rate: 0.11}
+          - {tariff_id: "IN:live_cattle:base", commodity_id: live_cattle, valid_from: 1900-01-01, valid_to: null, confirmed_from: 2026-06-01, is_import_prohibited: true, effective_duty_rate: null}
+    expect:
+      rows:
+        - {price_id: "cotton:2026-07-15", tariff_id: "IN:cotton:exempt", duty_local: 0.0000, landed_price_local: 178.7670, is_duty_rate_confirmed: true}
+        - {price_id: "cotton:2026-11-02", tariff_id: "IN:cotton:post", duty_local: 19.6644, landed_price_local: 198.4314, is_duty_rate_confirmed: true}
+        - {price_id: "cotton:2025-01-06", tariff_id: "IN:cotton:pre", duty_local: 19.6644, landed_price_local: 198.4314, is_duty_rate_confirmed: false}
+        - {price_id: "live_cattle:2026-07-15", tariff_id: "IN:live_cattle:base", duty_local: null, landed_price_local: null, is_duty_rate_confirmed: true}
+
+  - name: a_usd_market_lands_at_a_rate_of_one
+    description: >
+      A market that prices in USD needs no fix: the rate is 1, the fix date is the
+      price date, and the landed price is the benchmark grossed up by duty alone.
+      This is what makes the same model serve commodity-us unchanged.
+    model: fct_landed_prices_daily
+    overrides:
+      vars: {market_code: US}
+    given:
+      - input: ref('markets')
+        rows:
+          - {market_code: US, currency_code: USD}
+      - input: ref('int_commodity_prices__usd')
+        rows:
+          - {price_id: "aluminium:2026-09-16", commodity_id: aluminium, price_date: 2026-09-16, price_basis: futures, quote_unit: metric_ton, close_price: 2600.0}
+      - input: ref('int_fx_rates__daily')
+        rows: []
+      - input: ref('units_of_measure')
+        rows:
+          - {unit_code: metric_ton, base_units_per_unit: 1000}
+          - {unit_code: lb, base_units_per_unit: 0.45359237}
+      - input: ref('market_units')
+        rows:
+          - {commodity_id: aluminium, market_unit: lb}
+      - input: ref('import_duties')
+        rows:
+          - {tariff_id: "US:aluminium:232", commodity_id: aluminium, valid_from: 2025-06-04, valid_to: null, confirmed_from: 2025-06-04, is_import_prohibited: false, effective_duty_rate: 0.5}
+    expect:
+      rows:
+        - {price_id: "aluminium:2026-09-16", market_code: US, currency_code: USD, usd_fx_rate: 1.0, fx_fixed_on: 2026-09-16, assessable_value_local: 1.1793, duty_local: 0.5897, landed_price_local: 1.7690}
+
+  - name: cents_quotes_become_dollars
+    description: Yahoo quotes CBOT wheat in US cents (USX); 732.5 must become $7.325.
+    model: int_commodity_prices__usd
+    given:
+      - input: ref('stg_yahoo_finance__futures_prices')
+        rows:
+          - {quote_id: "wheat:2026-09-16", commodity_id: wheat, traded_at: 2026-09-16 00:00:00, currency_code: USX, open_price: 730.0, high_price: 740.0, low_price: 725.0, close_price: 732.5, volume: 100}
+          - {quote_id: "gold:2026-09-16", commodity_id: gold, traded_at: 2026-09-16 00:00:00, currency_code: USD, close_price: 4310.8}
+      - input: ref('commodities')
+        rows:
+          - {commodity_id: wheat, quote_unit: bushel_60lb}
+          - {commodity_id: gold, quote_unit: troy_oz}
+      - input: ref('indicative_prices')
+        rows:
+          - {commodity_id: zinc, as_of_date: 2026-06-12, price: 3500, currency_code: USD, quote_unit: metric_ton}
+    expect:
+      rows:
+        - {price_id: "wheat:2026-09-16", currency_code: USD, close_price: 7.325, high_price: 7.4, price_basis: futures}
+        - {price_id: "gold:2026-09-16", currency_code: USD, close_price: 4310.8, high_price: null, price_basis: futures}
+        - {price_id: "zinc:2026-06-12", currency_code: USD, close_price: 3500, high_price: null, price_basis: indicative}
