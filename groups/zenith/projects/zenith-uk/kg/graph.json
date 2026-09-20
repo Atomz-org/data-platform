@@ -1,6 +1,2151 @@
 {
   "nodes": [
     {
+      "id": "col:model:dbt_invocations.account_id",
+      "kind": "Column",
+      "name": "account_id",
+      "layer": "edr",
+      "label": "The ID of the account, defined in the `account_id` var or in the `ACCOUNT_ID` env var or by the orchestrator.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.adapter_response",
+      "kind": "Column",
+      "name": "adapter_response",
+      "layer": "edr",
+      "label": "Response returned by the adapter (Fields will be different for each adapters).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.alias",
+      "kind": "Column",
+      "name": "alias",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.cause",
+      "kind": "Column",
+      "name": "cause",
+      "layer": "edr",
+      "label": "The cause of the invocation. For example, if the invocation was triggered by a manual run, the cause would be _\"Kicked off by Joe.\"_.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.cause_category",
+      "kind": "Column",
+      "name": "cause_category",
+      "layer": "edr",
+      "label": "The category of the cause of the invocation. For example, if the invocation was triggered by a schedule, the cause category would be schedule.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.checksum",
+      "kind": "Column",
+      "name": "checksum",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.checksum",
+      "kind": "Column",
+      "name": "checksum",
+      "layer": "edr",
+      "label": "Model file checksum.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.command",
+      "kind": "Column",
+      "name": "command",
+      "layer": "edr",
+      "label": "dbt command that was used. For example, run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compile_completed_at",
+      "kind": "Column",
+      "name": "compile_completed_at",
+      "layer": "edr",
+      "label": "End time of resource compile action.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compile_started_at",
+      "kind": "Column",
+      "name": "compile_started_at",
+      "layer": "edr",
+      "label": "Start time of resource compile action.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.compiled_code",
+      "kind": "Column",
+      "name": "compiled_code",
+      "layer": "edr",
+      "label": "The compiled code (SQL / Python) executed against the database.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "The model database name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "The tested model database name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:metricflow_time_spine.date_day",
+      "kind": "Column",
+      "name": "date_day",
+      "layer": "utils",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "metricflow_time_spine",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.dbt_version",
+      "kind": "Column",
+      "name": "dbt_version",
+      "layer": "edr",
+      "label": "Version of dbt that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "The macros the model directly depends on.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "The nodes the model directly depends on.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "Model description.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.dimensions",
+      "kind": "Column",
+      "name": "dimensions",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.elementary_version",
+      "kind": "Column",
+      "name": "elementary_version",
+      "layer": "edr",
+      "label": "Version of the elementary package that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.env",
+      "kind": "Column",
+      "name": "env",
+      "layer": "edr",
+      "label": "The environment's name, defined in the `DBT_ENV` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.env_id",
+      "kind": "Column",
+      "name": "env_id",
+      "layer": "edr",
+      "label": "The ID of an environment, defined in the `DBT_ENV_ID` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.error_if",
+      "kind": "Column",
+      "name": "error_if",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execute_completed_at",
+      "kind": "Column",
+      "name": "execute_completed_at",
+      "layer": "edr",
+      "label": "End time of the execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execute_started_at",
+      "kind": "Column",
+      "name": "execute_started_at",
+      "layer": "edr",
+      "label": "Start time of the execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.execution_time",
+      "kind": "Column",
+      "name": "execution_time",
+      "layer": "edr",
+      "label": "Resource execution duration in seconds.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "float"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.failures",
+      "kind": "Column",
+      "name": "failures",
+      "layer": "edr",
+      "label": "Number of failures in this run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "bigint"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.filters",
+      "kind": "Column",
+      "name": "filters",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_error_after",
+      "kind": "Column",
+      "name": "freshness_error_after",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_filter",
+      "kind": "Column",
+      "name": "freshness_filter",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.freshness_warn_after",
+      "kind": "Column",
+      "name": "freshness_warn_after",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.full_refresh",
+      "kind": "Column",
+      "name": "full_refresh",
+      "layer": "edr",
+      "label": "Whether or not this invocation was executed as a full-refresh.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "boolean"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.full_refresh",
+      "kind": "Column",
+      "name": "full_refresh",
+      "layer": "edr",
+      "label": "Was this a full refresh execution.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "boolean"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "The time this invocation was uploaded to the database.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "Update time of the table.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.git_sha",
+      "kind": "Column",
+      "name": "git_sha",
+      "layer": "edr",
+      "label": "The git SHA of the commit that was used in this invocation, defined in the `DBT_GIT_SHA` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.identifier",
+      "kind": "Column",
+      "name": "identifier",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.invocation_id",
+      "kind": "Column",
+      "name": "invocation_id",
+      "layer": "edr",
+      "label": "Primary key of this table.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.invocation_id",
+      "kind": "Column",
+      "name": "invocation_id",
+      "layer": "edr",
+      "label": "The unique id of the invocation (would be similar for all resources executed on the same invocation). FK to dbt_invocations.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.invocation_vars",
+      "kind": "Column",
+      "name": "invocation_vars",
+      "layer": "edr",
+      "label": "Dictionary of the variables (and values) that were declared in the invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_id",
+      "kind": "Column",
+      "name": "job_id",
+      "layer": "edr",
+      "label": "The ID of a job, defined in the `job_id` var or in the `JOB_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_name",
+      "kind": "Column",
+      "name": "job_name",
+      "layer": "edr",
+      "label": "The name of a job, defined in the `job_name` var or in the `JOB_NAME` env var.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_run_id",
+      "kind": "Column",
+      "name": "job_run_id",
+      "layer": "edr",
+      "label": "The run ID of a job, defined in the `job_run_id` var or in the `DBT_JOB_RUN_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.job_url",
+      "kind": "Column",
+      "name": "job_url",
+      "layer": "edr",
+      "label": "The name of a job, defined in the `job_url` var or in the `JOB_URL` env var or by the orchestrator. For GitHub Actions orchestrator, the value is calculated.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.label",
+      "kind": "Column",
+      "name": "label",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.loaded_at_field",
+      "kind": "Column",
+      "name": "loaded_at_field",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.materialization",
+      "kind": "Column",
+      "name": "materialization",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.materialization",
+      "kind": "Column",
+      "name": "materialization",
+      "layer": "edr",
+      "label": "The model materialization config.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.maturity",
+      "kind": "Column",
+      "name": "maturity",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.message",
+      "kind": "Column",
+      "name": "message",
+      "layer": "edr",
+      "label": "Execution results message returned by dbt.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "The content of 'meta' property key.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.meta",
+      "kind": "Column",
+      "name": "meta",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.model",
+      "kind": "Column",
+      "name": "model",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.model_execution_id",
+      "kind": "Column",
+      "name": "model_execution_id",
+      "layer": "edr",
+      "label": "Execution id generated by joining the unique_id of the resource and the invocation_id. This is the unique key of each row in this model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.model_owners",
+      "kind": "Column",
+      "name": "model_owners",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.model_tags",
+      "kind": "Column",
+      "name": "model_tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "Model name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "Resource name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "The test name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.name",
+      "kind": "Column",
+      "name": "name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.orchestrator",
+      "kind": "Column",
+      "name": "orchestrator",
+      "layer": "edr",
+      "label": "The orchestrator that was used to run this invocation, defined in the `orchestrator` var or in the `ORCHESTRATOR` env var or by the orchestrator env vars. For example, dbt Cloud, GitHub Actions, etc.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "Full path of the model file.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "Model owner property (configured under 'meta' key).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.owner_email",
+      "kind": "Column",
+      "name": "owner_email",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.owner_name",
+      "kind": "Column",
+      "name": "owner_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "Package name of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.parent_model_unique_id",
+      "kind": "Column",
+      "name": "parent_model_unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "Short path of the model file.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.project_id",
+      "kind": "Column",
+      "name": "project_id",
+      "layer": "edr",
+      "label": "The ID of a project, defined in the `DBT_PROJECT_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.pull_request_id",
+      "kind": "Column",
+      "name": "pull_request_id",
+      "layer": "edr",
+      "label": "The ID of a pull request, defined in the `DBT_PULL_REQUEST_ID` env var or by the orchestrator (dbt Cloud, GitHub Actions, etc).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.query_id",
+      "kind": "Column",
+      "name": "query_id",
+      "layer": "edr",
+      "label": "Query ID in the data warehouse, if returned by the adapter (currently only supported in Snowflake and ClickHouse, is null for any other adapter).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.relation_name",
+      "kind": "Column",
+      "name": "relation_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.resource_type",
+      "kind": "Column",
+      "name": "resource_type",
+      "layer": "edr",
+      "label": "Resource type (model, test, snapshot, seed, etc)",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.rows_affected",
+      "kind": "Column",
+      "name": "rows_affected",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "bigint"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.run_completed_at",
+      "kind": "Column",
+      "name": "run_completed_at",
+      "layer": "edr",
+      "label": "Timestamp the invocation was completed",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.run_started_at",
+      "kind": "Column",
+      "name": "run_started_at",
+      "layer": "edr",
+      "label": "Timestamp the invocation was started.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "The tested model schema name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "The model schema name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.selected",
+      "kind": "Column",
+      "name": "selected",
+      "layer": "edr",
+      "label": "The selected resources in the dbt command. While this is a string in the database, this can easily be converted to an array.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.severity",
+      "kind": "Column",
+      "name": "severity",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.short_name",
+      "kind": "Column",
+      "name": "short_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.source_description",
+      "kind": "Column",
+      "name": "source_description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.source_name",
+      "kind": "Column",
+      "name": "source_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.sql",
+      "kind": "Column",
+      "name": "sql",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.status",
+      "kind": "Column",
+      "name": "status",
+      "layer": "edr",
+      "label": "Execution result status (success, error, pass, fail)",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "Model tags property.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_database",
+      "kind": "Column",
+      "name": "target_database",
+      "layer": "edr",
+      "label": "Name of the target database that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_name",
+      "kind": "Column",
+      "name": "target_name",
+      "layer": "edr",
+      "label": "Name of the target used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_profile_name",
+      "kind": "Column",
+      "name": "target_profile_name",
+      "layer": "edr",
+      "label": "Name of the dbt profile that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.target_schema",
+      "kind": "Column",
+      "name": "target_schema",
+      "layer": "edr",
+      "label": "Name of the target schema that was used in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_column_name",
+      "kind": "Column",
+      "name": "test_column_name",
+      "layer": "edr",
+      "label": "The name of the tested column.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_namespace",
+      "kind": "Column",
+      "name": "test_namespace",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.test_params",
+      "kind": "Column",
+      "name": "test_params",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.thread_id",
+      "kind": "Column",
+      "name": "thread_id",
+      "layer": "edr",
+      "label": "Id of the thread of this resource run.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.threads",
+      "kind": "Column",
+      "name": "threads",
+      "layer": "edr",
+      "label": "Number of threads that were used to run this dbt invocation. (This number could impact the performance of a dbt invocation).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "integer"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.time_grains",
+      "kind": "Column",
+      "name": "time_grains",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.timestamp",
+      "kind": "Column",
+      "name": "timestamp",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.type",
+      "kind": "Column",
+      "name": "type",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the test.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_run_results.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the resource (would be similar for all executions of the same resource).",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_run_results",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.url",
+      "kind": "Column",
+      "name": "url",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.vars",
+      "kind": "Column",
+      "name": "vars",
+      "layer": "edr",
+      "label": "Dictionary of all variables (and values) in the dbt project. If none were declared at runtime, these are the variables declared in dbt_project yml",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.warn_if",
+      "kind": "Column",
+      "name": "warn_if",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.yaml_selector",
+      "kind": "Column",
+      "name": "yaml_selector",
+      "layer": "edr",
+      "label": "The yaml selector that was passed in this invocation.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "concept:Agreement",
       "kind": "Concept",
       "name": "Agreement",
@@ -356,6 +2501,409 @@
       "label": "dev-serving guardrail verdicts",
       "props": {
         "durable": false
+      }
+    },
+    {
+      "id": "model:alerts_anomaly_detection",
+      "kind": "Model",
+      "name": "alerts_anomaly_detection",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate alerts on data anomalies detected using the elementary anomaly detection tests. The view filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_models",
+      "kind": "Model",
+      "name": "alerts_dbt_models",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate models alerts, including all the fields the alert will include such as owner, tags, error message, etc. It joins data about models and snapshots run results, and filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_source_freshness",
+      "kind": "Model",
+      "name": "alerts_dbt_source_freshness",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_dbt_tests",
+      "kind": "Model",
+      "name": "alerts_dbt_tests",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate dbt tests alerts, including all the fields the alert will include such as owner, tags, error message, etc. This view includes data about all dbt tests except elementary tests. It filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:alerts_schema_changes",
+      "kind": "Model",
+      "name": "alerts_schema_changes",
+      "layer": "edr",
+      "label": "A view that is used by the Elementary CLI to generate alerts on schema changes detected using elementary tests. The view filters alerts according to configuration.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:anomaly_threshold_sensitivity",
+      "kind": "Model",
+      "name": "anomaly_threshold_sensitivity",
+      "layer": "edr",
+      "label": "This is a view on `metrics_anomaly_score` that calculates if values of metrics from latest runs would have been considered anomalies in different anomaly scores. This can help you decide if there is a need to adjust the `anomaly_score_threshold`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:data_monitoring_metrics",
+      "kind": "Model",
+      "name": "data_monitoring_metrics",
+      "layer": "edr",
+      "label": "Elementary anomaly detection tests monitor metrics such as volume, freshness and data quality metrics. This incremental table is used to store the metrics over time. On each anomaly detection test, the test queries this table for historical metrics, and compares to the latest values. The table is updated with new metrics on the on-run-end named handle_test_results that is executed at the end of dbt test invocations.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_artifacts_hashes",
+      "kind": "Model",
+      "name": "dbt_artifacts_hashes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_columns",
+      "kind": "Model",
+      "name": "dbt_columns",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_exposures",
+      "kind": "Model",
+      "name": "dbt_exposures",
+      "layer": "edr",
+      "label": "Metadata about exposures in the project, including configuration and properties from the dbt graph. Each row contains information about a single exposure. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_groups",
+      "kind": "Model",
+      "name": "dbt_groups",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_invocations",
+      "kind": "Model",
+      "name": "dbt_invocations",
+      "layer": "edr",
+      "label": "Attributes associated with each dbt invocation. Inserted at the end of each invocation.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_metrics",
+      "kind": "Model",
+      "name": "dbt_metrics",
+      "layer": "edr",
+      "label": "Metadata about metrics in the project, including configuration and properties from the dbt graph. Each row contains information about a single metric. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_models",
+      "kind": "Model",
+      "name": "dbt_models",
+      "layer": "edr",
+      "label": "Metadata about models in the project, including configuration and properties from the dbt graph. Each row contains information about a single model. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_run_results",
+      "kind": "Model",
+      "name": "dbt_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt invocations, inserted at the end of each invocation. Each row is the invocation result of a single resource (model, test, snapshot, etc). New data is loaded to this model on an on-run-end hook named 'elementary.upload_run_results' from each invocation that produces a result object. This is an incremental model.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_seeds",
+      "kind": "Model",
+      "name": "dbt_seeds",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_snapshots",
+      "kind": "Model",
+      "name": "dbt_snapshots",
+      "layer": "edr",
+      "label": "Metadata about snapshots in the project, including configuration and properties from the dbt graph. Each row contains information about a single snapshot. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_source_freshness_results",
+      "kind": "Model",
+      "name": "dbt_source_freshness_results",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_sources",
+      "kind": "Model",
+      "name": "dbt_sources",
+      "layer": "edr",
+      "label": "Metadata about sources in the project, including configuration and properties from the dbt graph. Each row contains information about a single source. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:dbt_tests",
+      "kind": "Model",
+      "name": "dbt_tests",
+      "layer": "edr",
+      "label": "Metadata about tests in the project, including configuration and properties from the dbt graph. Each row contains information about a single test. Data is loaded every time this model is executed. It is recommended to execute the model every time a change is merged to the project.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:elementary_test_results",
+      "kind": "Model",
+      "name": "elementary_test_results",
+      "layer": "edr",
+      "label": "Run results of all dbt tests, with fields and metadata needed to produce the Elementary report UI. Each row is the result of a single test, including native dbt tests, packages tests and elementary tests. New data is loaded to this model on an on-run-end hook named `elementary.handle_tests_results`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:job_run_results",
+      "kind": "Model",
+      "name": "job_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt invocations, enriched with jobs metadata. Each row is the result of a single job. This is a view on `dbt_invocations`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metadata",
+      "kind": "Model",
+      "name": "metadata",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "table",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metricflow_time_spine",
+      "kind": "Model",
+      "name": "metricflow_time_spine",
+      "layer": "utils",
+      "label": "Daily time spine required by MetricFlow.",
+      "props": {
+        "schema": "main",
+        "materialized": "table",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:metrics_anomaly_score",
+      "kind": "Model",
+      "name": "metrics_anomaly_score",
+      "layer": "edr",
+      "label": "This is a view on `data_monitoring_metrics` that runs the same query the anomaly detection tests run to calculate anomaly scores. The purpose of this view is to provide visibility to the results of anomaly detection tests.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:model_run_results",
+      "kind": "Model",
+      "name": "model_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt models, enriched with models metadata. Each row is the result of a single model. This is a view that joins data from `dbt_run_results` and `dbt_models`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:monitors_runs",
+      "kind": "Model",
+      "name": "monitors_runs",
+      "layer": "edr",
+      "label": "This is a view on `data_monitoring_metrics` that is used to determine when a specific anomaly detection test was last executed. Each anomaly detection test queries this view to decide on a start time for collecting metrics.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:schema_columns_snapshot",
+      "kind": "Model",
+      "name": "schema_columns_snapshot",
+      "layer": "edr",
+      "label": "Stores the schema details for tables that are monitored with elementary schema changes test. In order to compare current schema to previous state, we must store the previous state. The data is from a view that queries the data warehouse information schema. This is an incremental table.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:seed_run_results",
+      "kind": "Model",
+      "name": "seed_run_results",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:snapshot_run_results",
+      "kind": "Model",
+      "name": "snapshot_run_results",
+      "layer": "edr",
+      "label": "Run results of dbt snapshots, enriched with snapshots metadata. Each row is the result of a single snapshot. This is a view that joins data from `dbt_run_results` and `dbt_snapshots`.",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "view",
+        "grain": "",
+        "tags": []
+      }
+    },
+    {
+      "id": "model:test_result_rows",
+      "kind": "Model",
+      "name": "test_result_rows",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "schema": "main_elementary",
+        "materialized": "incremental",
+        "grain": "",
+        "tags": []
       }
     },
     {
@@ -1131,22 +3679,6 @@
       }
     },
     {
-      "id": "property:Order.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "decimal \u00b7 money_amount",
-      "props": {
-        "datatype": "decimal",
-        "role": "money_amount",
-        "required": false,
-        "concept": "Order",
-        "mdl_type": "DECIMAL",
-        "xsd_type": "xsd:decimal",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Refund.amount",
       "kind": "Property",
       "name": "amount",
@@ -1157,6 +3689,22 @@
         "role": "money_amount",
         "required": false,
         "concept": "Refund",
+        "mdl_type": "DECIMAL",
+        "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "decimal \u00b7 money_amount",
+      "props": {
+        "datatype": "decimal",
+        "role": "money_amount",
+        "required": false,
+        "concept": "Order",
         "mdl_type": "DECIMAL",
         "xsd_type": "xsd:decimal",
         "is_identity": false
@@ -1211,22 +3759,6 @@
       }
     },
     {
-      "id": "property:Organization.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Customer.country",
       "kind": "Property",
       "name": "country",
@@ -1259,6 +3791,22 @@
       }
     },
     {
+      "id": "property:Organization.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Customer.created_at",
       "kind": "Property",
       "name": "created_at",
@@ -1271,22 +3819,6 @@
         "concept": "Customer",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Order.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": false,
-        "concept": "Order",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
         "is_identity": false
       }
     },
@@ -1307,22 +3839,6 @@
       }
     },
     {
-      "id": "property:Subscription.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": false,
-        "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Payment.currency",
       "kind": "Property",
       "name": "currency",
@@ -1333,6 +3849,38 @@
         "role": "currency_code",
         "required": true,
         "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Subscription",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1483,6 +4031,22 @@
       }
     },
     {
+      "id": "property:Customer.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 pii_name",
+      "props": {
+        "datatype": "string",
+        "role": "pii_name",
+        "required": false,
+        "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Product.name",
       "kind": "Property",
       "name": "name",
@@ -1509,22 +4073,6 @@
         "role": "free_text",
         "required": false,
         "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Customer.name",
-      "kind": "Property",
-      "name": "name",
-      "layer": "ontology",
-      "label": "string \u00b7 pii_name",
-      "props": {
-        "datatype": "string",
-        "role": "pii_name",
-        "required": false,
-        "concept": "Customer",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1803,7 +4351,7 @@
       }
     },
     {
-      "id": "property:Agreement.status",
+      "id": "property:Order.status",
       "kind": "Property",
       "name": "status",
       "layer": "ontology",
@@ -1812,7 +4360,7 @@
         "datatype": "string",
         "role": "status_enum",
         "required": false,
-        "concept": "Agreement",
+        "concept": "Order",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -1835,7 +4383,7 @@
       }
     },
     {
-      "id": "property:Order.status",
+      "id": "property:Agreement.status",
       "kind": "Property",
       "name": "status",
       "layer": "ontology",
@@ -1844,7 +4392,7 @@
         "datatype": "string",
         "role": "status_enum",
         "required": false,
-        "concept": "Order",
+        "concept": "Agreement",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -2118,6 +4666,26 @@
         "inverse": "settles",
         "description": "",
         "reverse_label": "Payment settles Subscription"
+      }
+    },
+    {
+      "id": "test:test.zenith_uk.not_null_metricflow_time_spine_date_day.54acf49e8d",
+      "kind": "Test",
+      "name": "not_null_metricflow_time_spine_date_day",
+      "layer": "test",
+      "label": "not_null",
+      "props": {
+        "severity": "ERROR"
+      }
+    },
+    {
+      "id": "test:test.zenith_uk.unique_metricflow_time_spine_date_day.ddb41ceac8",
+      "kind": "Test",
+      "name": "unique_metricflow_time_spine_date_day",
+      "layer": "test",
+      "label": "unique",
+      "props": {
+        "severity": "ERROR"
       }
     }
   ],
@@ -2852,6 +5420,1170 @@
       "src": "policy:vendor-is-read-only",
       "dst": "evidence:pf gate",
       "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "col:model:metricflow_time_spine.date_day",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.short_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_column_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.severity",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.warn_if",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.error_if",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_params",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.test_namespace",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.model_tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.model_owners",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.parent_model_unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "col:model:dbt_tests.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.checksum",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.materialization",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "col:model:dbt_models.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.source_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.identifier",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.loaded_at_field",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_warn_after",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_error_after",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.freshness_filter",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.relation_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.source_description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "col:model:dbt_sources.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.alias",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.checksum",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.materialization",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.owner",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.database_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.schema_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "col:model:dbt_snapshots.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.invocation_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.run_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.run_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.command",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.dbt_version",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.elementary_version",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.full_refresh",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.invocation_vars",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.vars",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_database",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_schema",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.target_profile_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.threads",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.selected",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.yaml_selector",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_run_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.env",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.env_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.project_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.cause_category",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.cause",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.pull_request_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.git_sha",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.orchestrator",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.job_url",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "col:model:dbt_invocations.account_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.label",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.model",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.sql",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.timestamp",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.filters",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.time_grains",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.dimensions",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "col:model:dbt_metrics.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.model_execution_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.invocation_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.message",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.status",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.resource_type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execution_time",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execute_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.execute_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compile_started_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compile_completed_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.rows_affected",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.full_refresh",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.compiled_code",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.failures",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.query_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.thread_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "col:model:dbt_run_results.adapter_response",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.unique_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.maturity",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.type",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.owner_email",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.owner_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.url",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.depends_on_macros",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.depends_on_nodes",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.description",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.tags",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.meta",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.package_name",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.original_path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.path",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "col:model:dbt_exposures.generated_at",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:snapshot_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "model:snapshot_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_invocations",
+      "dst": "model:job_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "model:model_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:model_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:test_result_rows",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_run_results",
+      "dst": "model:seed_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_seeds",
+      "dst": "model:seed_run_results",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_dbt_tests",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_schema_changes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_source_freshness_results",
+      "dst": "model:alerts_dbt_source_freshness",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "model:alerts_dbt_source_freshness",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:elementary_test_results",
+      "dst": "model:alerts_anomaly_detection",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:model_run_results",
+      "dst": "model:alerts_dbt_models",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:snapshot_run_results",
+      "dst": "model:alerts_dbt_models",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:data_monitoring_metrics",
+      "dst": "model:monitors_runs",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_columns",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_exposures",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_groups",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_metrics",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_models",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_seeds",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_snapshots",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_sources",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:dbt_tests",
+      "dst": "model:dbt_artifacts_hashes",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:data_monitoring_metrics",
+      "dst": "model:metrics_anomaly_score",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:metrics_anomaly_score",
+      "dst": "model:anomaly_threshold_sensitivity",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.zenith_uk.unique_metricflow_time_spine_date_day.ddb41ceac8",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.zenith_uk.not_null_metricflow_time_spine_date_day.54acf49e8d",
+      "kind": "tested_by",
       "props": {}
     }
   ]

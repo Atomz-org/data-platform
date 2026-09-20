@@ -8259,6 +8259,30 @@
       "props": {}
     },
     {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_india_import_duties_commodity_id__commodity_id__ref_stg_reference__commodities_.f2e1bbb4eb",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_indicative_prices_commodity_id__commodity_id__ref_stg_reference__commodities_.6bba171688",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_india_market_units_commodity_id__commodity_id__ref_stg_reference__commodities_.1fe2664e8a",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_mcx_contract_lots_commodity_id__commodity_id__ref_stg_reference__commodities_.2ea639025d",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
       "src": "model:stg_yahoo_finance__futures_prices",
       "dst": "test:test.commodity_india.unique_stg_yahoo_finance__futures_prices_quote_id.849061eb5f",
       "kind": "tested_by",
@@ -8747,30 +8771,6 @@
     {
       "src": "model:int_fx_rates__daily",
       "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_fixed_on.f5012dcb08",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_india_import_duties_commodity_id__commodity_id__ref_stg_reference__commodities_.f2e1bbb4eb",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_indicative_prices_commodity_id__commodity_id__ref_stg_reference__commodities_.6bba171688",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_india_market_units_commodity_id__commodity_id__ref_stg_reference__commodities_.1fe2664e8a",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_mcx_contract_lots_commodity_id__commodity_id__ref_stg_reference__commodities_.2ea639025d",
       "kind": "tested_by",
       "props": {}
     },
