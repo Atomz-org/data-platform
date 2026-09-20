@@ -340,19 +340,19 @@ def warehouse_capability(wh: ProductionWarehouse) -> Capability:
     replacing anyone's dbt config. Nothing reads `prod` until `DBT_TARGET`
     selects it, so a project carries it un-credentialed and inert.
     """
-    docs = (WAREHOUSE_README
-            .replace("{{warehouse_title}}", wh.title)
-            .replace("{{warehouse_extra}}", wh.name)
-            .replace("{{warehouse_adapter}}", wh.adapter)
-            .replace("{{env_block}}", _env_block(wh))
-            .replace("{{auth_note}}", wh.auth_note)
-            .replace("{{caveats}}", _caveats(wh)))
+    docs = (
+        WAREHOUSE_README.replace("{{warehouse_title}}", wh.title)
+        .replace("{{warehouse_extra}}", wh.name)
+        .replace("{{warehouse_adapter}}", wh.adapter)
+        .replace("{{env_block}}", _env_block(wh))
+        .replace("{{auth_note}}", wh.auth_note)
+        .replace("{{caveats}}", _caveats(wh))
+    )
     return Capability(
         name=wh.name,
         description=f"Run production on {wh.title} while development stays on DuckDB.",
         files={
-            "transform/profiles.yml": render_profiles(
-                "{{module}}", {**PROJECT_TARGETS, "prod": wh.output}),
+            "transform/profiles.yml": render_profiles("{{module}}", {**PROJECT_TARGETS, "prod": wh.output}),
             f"docs/{wh.name}.md": docs,
         },
         settings={
@@ -405,18 +405,24 @@ AIR_JOB = """\
   # reported into the job summary and does not fail. The platform ships with
   # known gaps and says so, rather than hiding them behind a green check.
   #
-  # `submodules: true` is load-bearing and unique to this job — the control
-  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
-  # every control assesses as `unexercised` and the gate passes for the wrong
-  # reason.
+  # The vendored control catalogue (`vendor/ai-governance-framework`) is
+  # load-bearing and unique to this job: without it every control assesses as
+  # `unexercised` and the gate passes for the wrong reason.
+  #
+  # It is initialised **by name** rather than with `submodules: true`, which
+  # asks for all of them. One unreachable pin anywhere under `vendor/` would
+  # otherwise take this gate down with it — and that is not hypothetical: the
+  # `asqav-compliance` upstream was deleted and every `submodules: true`
+  # checkout in this repository failed at step one for two days. A governance
+  # check that cannot start is indistinguishable from one that passed.
   air-baseline:
     needs: changes
     if: needs.changes.outputs.any == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
+      - name: Vendored control catalogue
+        run: git submodule update --init --depth 1 vendor/ai-governance-framework
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
 
@@ -627,9 +633,11 @@ CAPABILITIES: dict[str, Capability] = {
         },
         ci_jobs={"air-baseline": AIR_JOB},
         settings={
-            "permissions": {"allow": [
-                "Bash(pf air:*)",
-            ]},
+            "permissions": {
+                "allow": [
+                    "Bash(pf air:*)",
+                ]
+            },
         },
         gate={
             # Generated from air.yaml on every run. Hand-editing it makes the
@@ -646,8 +654,7 @@ CAPABILITIES: dict[str, Capability] = {
     ),
     "governance": Capability(
         name="governance",
-        description="Project-scoped policy overlay, layered over the platform "
-                    "and group floors. Tightening only.",
+        description="Project-scoped policy overlay, layered over the platform and group floors. Tightening only.",
         files={"governance/policy.yaml": GOVERNANCE_POLICY},
         # Seeded, never regenerated: this is the one file in the capability a
         # project is expected to own. Re-applying must not overwrite it.
@@ -716,16 +723,21 @@ CAPABILITIES: dict[str, Capability] = {
     "loops": Capability(
         name="loops",
         description="Loop memory, proposal review, trace logs and the metric-question "
-                    "surface — the agentic layer, reaching every project.",
+        "surface — the agentic layer, reaching every project.",
         files={
             "docs/loops.md": LOOPS_README,
             "decisions/loop-memory.yaml": LOOP_MEMORY,
         },
         settings={
-            "permissions": {"allow": [
-                "Bash(pf loop:*)", "Bash(pf ask:*)", "Bash(pf logs:*)",
-                "Bash(pf align:*)", "Bash(pf evals-gate:*)",
-            ]},
+            "permissions": {
+                "allow": [
+                    "Bash(pf loop:*)",
+                    "Bash(pf ask:*)",
+                    "Bash(pf logs:*)",
+                    "Bash(pf align:*)",
+                    "Bash(pf evals-gate:*)",
+                ]
+            },
         },
         gate={
             # Proposals and trace logs are generated, untracked artefacts.
@@ -737,15 +749,15 @@ CAPABILITIES: dict[str, Capability] = {
             # protection is the same as the governance store's: append-only
             # writers, and review of the diff.
             "denylist": [
-                "data/proposals/**", "**/logs/trace/**",
+                "data/proposals/**",
+                "**/logs/trace/**",
             ],
         },
         default_enabled=True,
     ),
     "data-quality": Capability(
         name="data-quality",
-        description="Data-quality obligations served by the dbt-expectations and "
-                    "dbt-elementary toolkits.",
+        description="Data-quality obligations served by the dbt-expectations and dbt-elementary toolkits.",
         # No files. The toolkits ship the skills, `DEFAULT_TOOLKITS` enables them,
         # and what this capability adds is the part neither of those can hold: the
         # obligations they exist to serve. A skill can say "bound a money column";
@@ -803,11 +815,9 @@ CAPABILITIES: dict[str, Capability] = {
     ),
     "github": Capability(
         name="github",
-        description="Run the impact gate and the graph currency check on every "
-                    "pull request touching this project.",
+        description="Run the impact gate and the graph currency check on every pull request touching this project.",
         files={"docs/github.md": GITHUB_README},
-        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB,
-                 "architecture": ARCH_JOB},
+        ci_jobs={"impact-gate": IMPACT_JOB, "kg-current": KG_CURRENT_JOB, "architecture": ARCH_JOB},
         settings={
             "permissions": {"allow": ["Bash(gh pr view:*)", "Bash(gh pr diff:*)"]},
         },
@@ -827,7 +837,6 @@ CAPABILITIES: dict[str, Capability] = {
 # others. `pf capabilities` and `pf new-project --with` see them exactly as if
 # they had been written by hand.
 CAPABILITIES.update({name: warehouse_capability(wh) for name, wh in WAREHOUSES.items()})
-
 
 
 class UnknownCapability(KeyError):
@@ -860,8 +869,8 @@ def resolve(names: list[str]) -> list[Capability]:
             raise ValueError(f"capability cycle: {' -> '.join((*chain, name))}")
         if name not in CAPABILITIES:
             raise UnknownCapability(
-                f"unknown capability '{name}'. Available: "
-                f"{', '.join(sorted(CAPABILITIES)) or '(none)'}")
+                f"unknown capability '{name}'. Available: {', '.join(sorted(CAPABILITIES)) or '(none)'}"
+            )
         cap = CAPABILITIES[name]
         for dep in cap.requires:
             visit(dep, (*chain, name))
@@ -873,8 +882,7 @@ def resolve(names: list[str]) -> list[Capability]:
     return out
 
 
-def apply(cap: Capability, root: Path, project_dir: Path,
-          ctx: dict[str, Any]) -> list[Path]:
+def apply(cap: Capability, root: Path, project_dir: Path, ctx: dict[str, Any]) -> list[Path]:
     """Write one capability's files and merge its settings. Returns what changed.
 
     Files are written relative to the *project*, except `.github/**`, which
@@ -945,7 +953,8 @@ def _merge(base: dict[str, Any], extra: dict[str, Any]) -> None:
                 # a recursive merge says nothing about which setting is at fault.
                 raise TypeError(
                     f"settings key {key!r} is {type(current).__name__}, expected "
-                    f"an object — `pf bootstrap` migrates the known legacy shapes")
+                    f"an object — `pf bootstrap` migrates the known legacy shapes"
+                )
             _merge(current, value)
         elif isinstance(value, list):
             current = base.setdefault(key, [])

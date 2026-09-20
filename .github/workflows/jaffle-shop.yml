@@ -60,18 +60,24 @@ jobs:
   # reported into the job summary and does not fail. The platform ships with
   # known gaps and says so, rather than hiding them behind a green check.
   #
-  # `submodules: true` is load-bearing and unique to this job — the control
-  # catalogue is vendored (`vendor/ai-governance-framework`), and without it
-  # every control assesses as `unexercised` and the gate passes for the wrong
-  # reason.
+  # The vendored control catalogue (`vendor/ai-governance-framework`) is
+  # load-bearing and unique to this job: without it every control assesses as
+  # `unexercised` and the gate passes for the wrong reason.
+  #
+  # It is initialised **by name** rather than with `submodules: true`, which
+  # asks for all of them. One unreachable pin anywhere under `vendor/` would
+  # otherwise take this gate down with it — and that is not hypothetical: the
+  # `asqav-compliance` upstream was deleted and every `submodules: true`
+  # checkout in this repository failed at step one for two days. A governance
+  # check that cannot start is indistinguishable from one that passed.
   air-baseline:
     needs: changes
     if: needs.changes.outputs.any == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
+      - name: Vendored control catalogue
+        run: git submodule update --init --depth 1 vendor/ai-governance-framework
       - uses: astral-sh/setup-uv@v5
       - run: uv sync
 
