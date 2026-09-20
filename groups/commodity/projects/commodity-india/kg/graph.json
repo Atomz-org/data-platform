@@ -39,31 +39,6 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.category",
-      "kind": "Column",
-      "name": "category",
-      "layer": "marts",
-      "label": "precious | industrial | energy | agri \u2014 the tracker's tabs.",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "dim_commodities",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:table:reference.commodities.category",
-      "kind": "Column",
-      "name": "category",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "commodities"
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.category",
       "kind": "Column",
       "name": "category",
@@ -90,6 +65,31 @@
       }
     },
     {
+      "id": "col:model:dim_commodities.category",
+      "kind": "Column",
+      "name": "category",
+      "layer": "marts",
+      "label": "precious | industrial | energy | agri \u2014 the tracker's tabs.",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "dim_commodities",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:table:reference.commodities.category",
+      "kind": "Column",
+      "name": "category",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
       "id": "col:table:yahoo_finance.futures_prices.close",
       "kind": "Column",
       "name": "close",
@@ -99,6 +99,19 @@
         "role": "unit_price",
         "pii": false,
         "table": "futures_prices"
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_prices_daily.close_price",
+      "kind": "Column",
+      "name": "close_price",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": null
       }
     },
     {
@@ -128,15 +141,43 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.close_price",
+      "id": "col:model:fct_commodity_prices_daily.commodity_id",
       "kind": "Column",
-      "name": "close_price",
+      "name": "commodity_id",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "unit_price",
+        "role": "foreign_key",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:fct_india_landed_prices_daily.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "fct_india_landed_prices_daily",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "dim_commodities",
         "data_type": null
       }
     },
@@ -154,61 +195,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_prices_daily.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:int_commodity_prices__usd.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "staging",
-      "label": "Foreign key to Commodity.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_gold_api__spot_prices",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
       "id": "col:model:fct_mcx_lot_equivalents_daily.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
@@ -218,33 +204,6 @@
         "role": "foreign_key",
         "pii": false,
         "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": null,
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:stg_reference__commodities.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:stg_yahoo_finance__futures_prices.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "staging",
-      "label": "Foreign key to Commodity.",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null,
         "links_to": "Commodity"
       }
@@ -264,16 +223,45 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.commodity_id",
+      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "natural_key",
+        "role": "foreign_key",
         "pii": false,
-        "model": "dim_commodities",
-        "data_type": null
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "staging",
+      "label": "Foreign key to Commodity.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_gold_api__spot_prices",
+        "data_type": null,
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "staging",
+      "label": "Foreign key to Commodity.",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
+        "data_type": null,
+        "links_to": "Commodity"
       }
     },
     {
@@ -289,17 +277,16 @@
       }
     },
     {
-      "id": "col:model:fct_india_landed_prices_daily.commodity_id",
+      "id": "col:model:stg_reference__commodities.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
-      "layer": "marts",
+      "layer": "staging",
       "label": "",
       "props": {
-        "role": "foreign_key",
+        "role": "natural_key",
         "pii": false,
-        "model": "fct_india_landed_prices_daily",
-        "data_type": null,
-        "links_to": "Commodity"
+        "model": "stg_reference__commodities",
+        "data_type": null
       }
     },
     {
@@ -316,30 +303,30 @@
       }
     },
     {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
+      "id": "col:model:rpt_commodity_price_board.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "foreign_key",
+        "role": "natural_key",
         "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": null,
-        "links_to": "Commodity"
+        "model": "rpt_commodity_price_board",
+        "data_type": null
       }
     },
     {
-      "id": "col:model:stg_reference__commodities.commodity_name",
+      "id": "col:model:int_commodity_prices__usd.commodity_id",
       "kind": "Column",
-      "name": "commodity_name",
-      "layer": "staging",
+      "name": "commodity_id",
+      "layer": "intermediate",
       "label": "",
       "props": {
-        "role": "free_text",
+        "role": "foreign_key",
         "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
+        "model": "int_commodity_prices__usd",
+        "data_type": null,
+        "links_to": "Commodity"
       }
     },
     {
@@ -355,15 +342,15 @@
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.contract_code",
+      "id": "col:model:stg_reference__commodities.commodity_name",
       "kind": "Column",
-      "name": "contract_code",
-      "layer": "marts",
-      "label": "MCX trading symbol.",
+      "name": "commodity_name",
+      "layer": "staging",
+      "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "free_text",
         "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
+        "model": "stg_reference__commodities",
         "data_type": null
       }
     },
@@ -381,15 +368,16 @@
       }
     },
     {
-      "id": "col:table:yahoo_finance.futures_prices.currency",
+      "id": "col:model:fct_mcx_lot_equivalents_daily.contract_code",
       "kind": "Column",
-      "name": "currency",
-      "layer": "raw",
-      "label": "currency_code",
+      "name": "contract_code",
+      "layer": "marts",
+      "label": "MCX trading symbol.",
       "props": {
-        "role": "currency_code",
+        "role": "status_enum",
         "pii": false,
-        "table": "futures_prices"
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": null
       }
     },
     {
@@ -405,15 +393,27 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.currency_code",
+      "id": "col:table:yahoo_finance.futures_prices.currency",
       "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
+      "name": "currency",
+      "layer": "raw",
+      "label": "currency_code",
       "props": {
         "role": "currency_code",
         "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
+        "table": "futures_prices"
+      }
+    },
+    {
+      "id": "col:model:int_commodity_prices__usd.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "intermediate",
+      "label": "Always a major currency after conversion.",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "int_commodity_prices__usd",
         "data_type": null
       }
     },
@@ -431,19 +431,6 @@
       }
     },
     {
-      "id": "col:model:int_commodity_prices__usd.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "intermediate",
-      "label": "Always a major currency after conversion.",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_gold_api__spot_prices.currency_code",
       "kind": "Column",
       "name": "currency_code",
@@ -453,6 +440,19 @@
         "role": "currency_code",
         "pii": false,
         "model": "stg_gold_api__spot_prices",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null
       }
     },
@@ -509,6 +509,18 @@
       }
     },
     {
+      "id": "col:table:reference.commodities.exchange",
+      "kind": "Column",
+      "name": "exchange",
+      "layer": "raw",
+      "label": "status_enum",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
       "id": "col:model:dim_commodities.exchange",
       "kind": "Column",
       "name": "exchange",
@@ -519,18 +531,6 @@
         "pii": false,
         "model": "dim_commodities",
         "data_type": null
-      }
-    },
-    {
-      "id": "col:table:reference.commodities.exchange",
-      "kind": "Column",
-      "name": "exchange",
-      "layer": "raw",
-      "label": "status_enum",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "table": "commodities"
       }
     },
     {
@@ -560,19 +560,6 @@
       }
     },
     {
-      "id": "col:model:int_fx_rates__daily.fx_day_id",
-      "kind": "Column",
-      "name": "fx_day_id",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "int_fx_rates__daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_fx_rates_daily.fx_day_id",
       "kind": "Column",
       "name": "fx_day_id",
@@ -586,15 +573,15 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__fx_rates.fx_rate_id",
+      "id": "col:model:int_fx_rates__daily.fx_day_id",
       "kind": "Column",
-      "name": "fx_rate_id",
-      "layer": "staging",
+      "name": "fx_day_id",
+      "layer": "intermediate",
       "label": "",
       "props": {
         "role": "natural_key",
         "pii": false,
-        "model": "stg_yahoo_finance__fx_rates",
+        "model": "int_fx_rates__daily",
         "data_type": null
       }
     },
@@ -608,6 +595,19 @@
         "role": "natural_key",
         "pii": false,
         "table": "fx_rates"
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__fx_rates.fx_rate_id",
+      "kind": "Column",
+      "name": "fx_rate_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_yahoo_finance__fx_rates",
+        "data_type": null
       }
     },
     {
@@ -688,19 +688,6 @@
       }
     },
     {
-      "id": "col:model:rpt_mcx_contract_board.is_stale",
-      "kind": "Column",
-      "name": "is_stale",
-      "layer": "marts",
-      "label": "The underlying benchmark is more than four days old.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_mcx_contract_board",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.is_stale",
       "kind": "Column",
       "name": "is_stale",
@@ -714,15 +701,15 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.landed_price_inr",
+      "id": "col:model:rpt_mcx_contract_board.is_stale",
       "kind": "Column",
-      "name": "landed_price_inr",
+      "name": "is_stale",
       "layer": "marts",
-      "label": "",
+      "label": "The underlying benchmark is more than four days old.",
       "props": {
-        "role": "unit_price",
+        "role": "",
         "pii": false,
-        "model": "rpt_commodity_price_board",
+        "model": "rpt_mcx_contract_board",
         "data_type": null
       }
     },
@@ -740,6 +727,19 @@
       }
     },
     {
+      "id": "col:model:rpt_commodity_price_board.landed_price_inr",
+      "kind": "Column",
+      "name": "landed_price_inr",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_mcx_lot_equivalents_daily.lot_equivalent_id",
       "kind": "Column",
       "name": "lot_equivalent_id",
@@ -747,19 +747,6 @@
       "label": "",
       "props": {
         "role": "natural_key",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_value_inr",
-      "kind": "Column",
-      "name": "lot_value_inr",
-      "layer": "marts",
-      "label": "Landed \u20b9 for one full lot (lot_size \u00d7 lot_unit).",
-      "props": {
-        "role": "unit_price",
         "pii": false,
         "model": "fct_mcx_lot_equivalents_daily",
         "data_type": null
@@ -779,6 +766,19 @@
       }
     },
     {
+      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_value_inr",
+      "kind": "Column",
+      "name": "lot_value_inr",
+      "layer": "marts",
+      "label": "Landed \u20b9 for one full lot (lot_size \u00d7 lot_unit).",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:table:yahoo_finance.futures_prices.low",
       "kind": "Column",
       "name": "low",
@@ -791,19 +791,6 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.low_price",
-      "kind": "Column",
-      "name": "low_price",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.low_price",
       "kind": "Column",
       "name": "low_price",
@@ -813,6 +800,19 @@
         "role": "unit_price",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.low_price",
+      "kind": "Column",
+      "name": "low_price",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null
       }
     },
@@ -892,19 +892,6 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "futures (live Yahoo feed) or indicative (manual seed level).",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "dim_commodities",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_reference__commodities.price_basis",
       "kind": "Column",
       "name": "price_basis",
@@ -944,6 +931,19 @@
       }
     },
     {
+      "id": "col:model:dim_commodities.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "futures (live Yahoo feed) or indicative (manual seed level).",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "dim_commodities",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:model:fct_commodity_prices_daily.price_change_pct",
       "kind": "Column",
       "name": "price_change_pct",
@@ -951,6 +951,19 @@
       "label": "",
       "props": {
         "role": "rate_fraction",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_prices_daily.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
         "pii": false,
         "model": "fct_commodity_prices_daily",
         "data_type": null
@@ -970,19 +983,6 @@
       }
     },
     {
-      "id": "col:model:fct_india_landed_prices_daily.price_date",
-      "kind": "Column",
-      "name": "price_date",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "fct_india_landed_prices_daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_precious_metal_retail_prices_daily.price_date",
       "kind": "Column",
       "name": "price_date",
@@ -996,7 +996,7 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.price_date",
+      "id": "col:model:fct_india_landed_prices_daily.price_date",
       "kind": "Column",
       "name": "price_date",
       "layer": "marts",
@@ -1004,7 +1004,20 @@
       "props": {
         "role": "event_time",
         "pii": false,
-        "model": "fct_commodity_prices_daily",
+        "model": "fct_india_landed_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_india_landed_prices_daily.price_id",
+      "kind": "Column",
+      "name": "price_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_india_landed_prices_daily",
         "data_type": null
       }
     },
@@ -1031,19 +1044,6 @@
         "role": "natural_key",
         "pii": false,
         "model": "int_commodity_prices__usd",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_india_landed_prices_daily.price_id",
-      "kind": "Column",
-      "name": "price_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_india_landed_prices_daily",
         "data_type": null
       }
     },
@@ -1112,19 +1112,6 @@
       }
     },
     {
-      "id": "col:model:fct_fx_rates_daily.quote_currency_code",
-      "kind": "Column",
-      "name": "quote_currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "fct_fx_rates_daily",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__fx_rates.quote_currency_code",
       "kind": "Column",
       "name": "quote_currency_code",
@@ -1134,6 +1121,19 @@
         "role": "currency_code",
         "pii": false,
         "model": "stg_yahoo_finance__fx_rates",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:fct_fx_rates_daily.quote_currency_code",
+      "kind": "Column",
+      "name": "quote_currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "fct_fx_rates_daily",
         "data_type": null
       }
     },
@@ -1164,6 +1164,19 @@
       }
     },
     {
+      "id": "col:model:stg_yahoo_finance__futures_prices.quote_id",
+      "kind": "Column",
+      "name": "quote_id",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
+        "data_type": null
+      }
+    },
+    {
       "id": "col:table:yahoo_finance.futures_prices.quote_id",
       "kind": "Column",
       "name": "quote_id",
@@ -1176,15 +1189,27 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.quote_id",
+      "id": "col:table:reference.commodities.quote_unit",
       "kind": "Column",
-      "name": "quote_id",
-      "layer": "staging",
+      "name": "quote_unit",
+      "layer": "raw",
+      "label": "unit_of_measure",
+      "props": {
+        "role": "unit_of_measure",
+        "pii": false,
+        "table": "commodities"
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.quote_unit",
+      "kind": "Column",
+      "name": "quote_unit",
+      "layer": "marts",
       "label": "",
       "props": {
-        "role": "natural_key",
+        "role": "unit_of_measure",
         "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
+        "model": "dim_commodities",
         "data_type": null
       }
     },
@@ -1202,29 +1227,15 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.quote_unit",
+      "id": "col:table:gold_api.spot_prices.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "marts",
-      "label": "",
+      "layer": "raw",
+      "label": "unit_of_measure",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "model": "dim_commodities",
-        "data_type": null
-      }
-    },
-    {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_unit",
-      "kind": "Column",
-      "name": "quote_unit",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_of_measure",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": null
+        "table": "spot_prices"
       }
     },
     {
@@ -1241,27 +1252,16 @@
       }
     },
     {
-      "id": "col:table:reference.commodities.quote_unit",
+      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "raw",
-      "label": "unit_of_measure",
+      "layer": "marts",
+      "label": "",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "table": "commodities"
-      }
-    },
-    {
-      "id": "col:table:gold_api.spot_prices.quote_unit",
-      "kind": "Column",
-      "name": "quote_unit",
-      "layer": "raw",
-      "label": "unit_of_measure",
-      "props": {
-        "role": "unit_of_measure",
-        "pii": false,
-        "table": "spot_prices"
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": null
       }
     },
     {
@@ -1354,15 +1354,16 @@
       }
     },
     {
-      "id": "col:table:reference.commodities.segment",
+      "id": "col:model:stg_reference__commodities.segment",
       "kind": "Column",
       "name": "segment",
-      "layer": "raw",
-      "label": "status_enum",
+      "layer": "staging",
+      "label": "",
       "props": {
         "role": "status_enum",
         "pii": false,
-        "table": "commodities"
+        "model": "stg_reference__commodities",
+        "data_type": null
       }
     },
     {
@@ -1379,16 +1380,15 @@
       }
     },
     {
-      "id": "col:model:stg_reference__commodities.segment",
+      "id": "col:table:reference.commodities.segment",
       "kind": "Column",
       "name": "segment",
-      "layer": "staging",
-      "label": "",
+      "layer": "raw",
+      "label": "status_enum",
       "props": {
         "role": "status_enum",
         "pii": false,
-        "model": "stg_reference__commodities",
-        "data_type": null
+        "table": "commodities"
       }
     },
     {
@@ -1405,18 +1405,6 @@
       }
     },
     {
-      "id": "col:table:gold_api.spot_prices.spot_quote_id",
-      "kind": "Column",
-      "name": "spot_quote_id",
-      "layer": "raw",
-      "label": "natural_key",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "table": "spot_prices"
-      }
-    },
-    {
       "id": "col:model:stg_gold_api__spot_prices.spot_quote_id",
       "kind": "Column",
       "name": "spot_quote_id",
@@ -1427,6 +1415,18 @@
         "pii": false,
         "model": "stg_gold_api__spot_prices",
         "data_type": null
+      }
+    },
+    {
+      "id": "col:table:gold_api.spot_prices.spot_quote_id",
+      "kind": "Column",
+      "name": "spot_quote_id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "spot_prices"
       }
     },
     {
@@ -1544,19 +1544,6 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.volume",
-      "kind": "Column",
-      "name": "volume",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "quantity",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
-        "data_type": null
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.volume",
       "kind": "Column",
       "name": "volume",
@@ -1566,6 +1553,19 @@
         "role": "quantity",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": null
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.volume",
+      "kind": "Column",
+      "name": "volume",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "quantity",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": null
       }
     },
@@ -2300,6 +2300,32 @@
       }
     },
     {
+      "id": "exposure:report_landed_cost",
+      "kind": "Exposure",
+      "name": "report_landed_cost",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/landed-cost.md"
+      }
+    },
+    {
+      "id": "exposure:report_mcx_contracts",
+      "kind": "Exposure",
+      "name": "report_mcx_contracts",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/mcx-contracts.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_avg_benchmark_price_usd",
       "kind": "Exposure",
       "name": "report_metrics_avg_benchmark_price_usd",
@@ -2479,6 +2505,19 @@
         "owner": "data-platform",
         "email": "sureshswaminathan.96@gmail.com",
         "url": "reporting/pages/metrics/usd_inr_rate_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_price_board",
+      "kind": "Exposure",
+      "name": "report_price_board",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/price-board.md"
       }
     },
     {
@@ -8259,6 +8298,30 @@
       "props": {}
     },
     {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_india_import_duties_commodity_id__commodity_id__ref_stg_reference__commodities_.f2e1bbb4eb",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_indicative_prices_commodity_id__commodity_id__ref_stg_reference__commodities_.6bba171688",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_india_market_units_commodity_id__commodity_id__ref_stg_reference__commodities_.1fe2664e8a",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:stg_reference__commodities",
+      "dst": "test:test.commodity_india.relationships_mcx_contract_lots_commodity_id__commodity_id__ref_stg_reference__commodities_.2ea639025d",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
       "src": "model:stg_yahoo_finance__futures_prices",
       "dst": "test:test.commodity_india.unique_stg_yahoo_finance__futures_prices_quote_id.849061eb5f",
       "kind": "tested_by",
@@ -8751,30 +8814,6 @@
       "props": {}
     },
     {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_india_import_duties_commodity_id__commodity_id__ref_stg_reference__commodities_.f2e1bbb4eb",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_indicative_prices_commodity_id__commodity_id__ref_stg_reference__commodities_.6bba171688",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_india_market_units_commodity_id__commodity_id__ref_stg_reference__commodities_.1fe2664e8a",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:stg_reference__commodities",
-      "dst": "test:test.commodity_india.relationships_mcx_contract_lots_commodity_id__commodity_id__ref_stg_reference__commodities_.2ea639025d",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
       "src": "model:fct_commodity_prices_daily",
       "dst": "exposure:report_index",
       "kind": "feeds",
@@ -8783,6 +8822,36 @@
     {
       "src": "model:fct_india_landed_prices_daily",
       "dst": "exposure:report_index",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "exposure:report_landed_cost",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_fx_rates_daily",
+      "dst": "exposure:report_landed_cost",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_india_landed_prices_daily",
+      "dst": "exposure:report_landed_cost",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:rpt_commodity_price_board",
+      "dst": "exposure:report_landed_cost",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:rpt_mcx_contract_board",
+      "dst": "exposure:report_mcx_contracts",
       "kind": "feeds",
       "props": {}
     },
@@ -8867,6 +8936,12 @@
     {
       "src": "model:fct_fx_rates_daily",
       "dst": "exposure:report_metrics_usd_inr_rate_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:rpt_commodity_price_board",
+      "dst": "exposure:report_price_board",
       "kind": "feeds",
       "props": {}
     },

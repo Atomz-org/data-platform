@@ -119,7 +119,7 @@ question falls back to raw SQL.
 | `acme/acme-eu` | 3 | 37 | 6 | 2 | 33 | 434 |
 | `acme/acme-rollup` | 0 | 30 | 0 | 0 | 32 | 334 |
 | `acme/acme-us` | 3 | 37 | 6 | 2 | 32 | 455 |
-| `commodity/commodity-india` | 4 | 15 | 16 | 16 | 32 | 479 |
+| `commodity/commodity-india` | 4 | 15 | 16 | 19 | 32 | 482 |
 | `globex/globex-core` | 0 | 31 | 0 | 0 | 32 | 325 |
 | `globex/globex-eu` | 0 | 31 | 0 | 0 | 32 | 325 |
 | `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 4558 |
