@@ -1,23 +1,5 @@
 version: 2
 resources:
-- resource: commodities
-  concept: Commodity
-  source: reference
-  roles:
-    commodity_id: natural_key
-    commodity_name: free_text
-    category: status_enum
-    segment: status_enum
-    exchange: status_enum
-    quote_unit: unit_of_measure
-    price_basis: status_enum
-    yahoo_symbol: free_text
-    spot_symbol: free_text
-  rename: {}
-  links: {}
-  description: Every commodity the tracker prices, with its benchmark, exchange and
-    the unit the benchmark is quoted per
-  grain: one tracked commodity
 - resource: futures_prices
   concept: PriceObservation
   source: yahoo_finance

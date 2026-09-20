@@ -1,5 +1,8 @@
 """Load this project end to end: dlt → DuckDB → annotations → dbt → manifests.
 
+Identical in every sister but for GROUP/PROJECT and the module it imports: what
+differs between markets is data, not the way it is loaded.
+
 `pf seed commodity commodity-india` runs this. It is deliberately a plain script
 so it works without a Dagster daemon. It needs network access: every price is
 live from Yahoo Finance and gold-api.com.
@@ -14,6 +17,10 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_DIR / "src"))
 
+from pf.runtime.paths import extend_sys_path  # noqa: E402
+
+extend_sys_path(PROJECT_DIR)  # the group's shared connectors, beside this project's own code
+
 from pf import obs  # noqa: E402
 from pf.ontology.annotate import load_annotations  # noqa: E402
 from pf.runtime.dbt_runtime import dbt, deps, parse  # noqa: E402
@@ -26,13 +33,14 @@ PROJECT = "commodity-india"
 
 def main() -> int:
     wh = Warehouse.for_project(PROJECT_DIR, GROUP, PROJECT)
-    from commodity_india.sources import gold_api, reference, yahoo_finance
+    from commodity_india.sources import gold_api, yahoo_finance
 
-    # The raw stage: one dlt dataset per source, which dbt's staging reads.
-    # `required` sources are the sources of record — an empty table there is a
-    # failed seed, not a quiet one. gold_api is a backup feed and only warns.
-    for name, source, required in (("reference", reference.reference_source(), True),
-                                   ("yahoo_finance", yahoo_finance.yahoo_finance_source(), True),
+    # The raw stage: one dlt dataset per source, which dbt's staging reads. The
+    # catalog is not a source — it is the group's `commodities` seed, built by
+    # dbt below. `required` sources are the sources of record — an empty table
+    # there is a failed seed, not a quiet one. gold_api is a backup feed and
+    # only warns.
+    for name, source, required in (("yahoo_finance", yahoo_finance.yahoo_finance_source(), True),
                                    ("gold_api", gold_api.gold_api_source(), False)):
         t0 = time.time()
         try:
