@@ -40,18 +40,23 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
     if gdir.exists():
         raise FileExistsError(f"group '{group}' already exists at {gdir}")
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
-    ctx = {"group": group, "domain": domain,
+    from pf.groups import TEMPLATE_VERSION
+
+    ctx = {"group": group, "domain": domain, "template_version": TEMPLATE_VERSION,
            "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
            "classes_yaml": "\n".join(f"  - {c}" for c in classes),
            "tools_yaml": _default_tools_yaml()}
     created = [
+        write(gdir / "group.yaml", GROUP_MANIFEST, ctx),
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
+        write(gdir / "loops.yaml", GROUP_LOOPS, ctx),
         write(gdir / "notify.yaml", GROUP_NOTIFY, ctx),
         write(gdir / "air.yaml", GROUP_AIR, ctx),
         write(gdir / "ontology" / "instance.yaml", GROUP_INSTANCE, ctx),
         write(gdir / "CLAUDE.md", GROUP_CLAUDE, ctx),
         write(gdir / ".claude-plugin" / "marketplace.json", GROUP_MARKETPLACE, ctx),
         write(gdir / ".claude" / "skills" / "README.md", GROUP_SKILLS_README, ctx),
+        write(gdir / ".claude" / ".claude-plugin" / "plugin.json", GROUP_PLUGIN, ctx),
         write(gdir / "shared" / "transform" / "dbt_project.yml", GROUP_SHARED_DBT, ctx),
         write(gdir / "shared" / "transform" / "macros" / "normalize_currency.sql", GROUP_MACRO, ctx),
         write(gdir / "evals" / "README.md", GROUP_EVALS, ctx),
@@ -149,6 +154,40 @@ def new_project(
 
 
 # ================================================================ templates ==
+GROUP_MANIFEST = """\
+# Who this family is, what state it is in, and what it owns. Hand-owned.
+#
+# `pf group verify {{group}}` grades it, `pf offboard {{group}}` reads it, and the
+# gates take their severity from `lifecycle`: a family still being built is
+# allowed to be incomplete, one declared `active` is not. Promote with
+# `pf group set-state {{group}} active` once the verify report is clean.
+schema_version: 1
+group: {{group}}
+display_name: ""
+domain: {{domain}}
+# proposed -> provisioned -> active -> suspended -> offboarding -> archived
+lifecycle: proposed
+template_version: {{template_version}}
+tier: standard
+owner:
+  team: ""
+  contact: ""            # who to ask when this family's pipelines break
+data:
+  residency: ""          # where this family's data is allowed to live
+  retention_days: null   # null = kept indefinitely
+  erasure_sla_days: null # null = no contractual deletion deadline
+budget:
+  daily_tokens: null     # null = the platform default ceiling
+resources:
+  # Handles for things the repo can write to but cannot enumerate. `pf offboard`
+  # prints these as the manual checklist, so what is not written here is what
+  # gets left behind and billed for.
+  artifact_prefix: groups/{{group}}
+  catalog_services: []
+  warehouses: []
+"""
+
+
 GROUP_AIR = """\
 # Which AI controls the {{group}} family commits to.
 #
@@ -214,6 +253,39 @@ version: 1
 tools:{{tools_yaml}}
 """
 
+GROUP_LOOPS = """\
+# Which platform loops watch this group, and how. `pf loop list` shows the
+# registry as shipped; `pf loop list --group {{group}}` shows it with this file
+# applied.
+#
+# A key here applies to **every sister project** in {{group}}, for the same
+# reason tools.yaml does: sisters share infrastructure and differ only in
+# business logic, so "freshness is judged once a day, after the close" is
+# decided once for the family. Anything not named here inherits the registry.
+#
+# One entry per loop, keyed by its registry name:
+#
+#   loops:
+#     freshness-triage:
+#       enabled: true                # default true; put a `reason` beside false
+#       reason: "why it is off"      # shown by `pf loop list --group {{group}}`
+#       cadence: "daily, after the close"
+#       token_budget: 4000           # a non-negative integer
+#       autonomy: L1                 # may only LOWER the registry level (L2 -> L1)
+#       waivers:                     # findings to suppress; a reason is mandatory
+#         - node: "rpt_*"            # a node name or an fnmatch glob; for
+#           reason: "..."            #   pii-audit, model.column
+#
+# Autonomy is lower-only on purpose: a level is earned in the ledger and granted
+# in LOOP.md, never taken by an entity for itself, so a request to raise one is
+# refused. A waiver without a reason is refused too. The next reader has to know
+# whether a silenced finding was a decision or an accident.
+#
+# Empty means "the registry as shipped". It is your file now.
+version: 1
+loops: {}
+"""
+
 GROUP_NOTIFY = """\
 # Where {{group}}'s loops and answers are delivered. Slack and Teams both accept
 # an incoming webhook with a `text` payload; nothing else is required.
@@ -276,6 +348,14 @@ GROUP_MARKETPLACE = """\
     { "name": "{{group}}-group", "source": "./.claude", "description": "{{group}} group skills" }
   ]
 }
+"""
+
+#: The manifest that makes `.claude/` a plugin. The marketplace above lists
+#: `./.claude` as its source, and a source without one is skipped without a
+#: message: every group scaffolded before this existed had a plugin that was
+#: listed, enabled in each sister's settings and never loaded.
+GROUP_PLUGIN = """\
+{ "name": "{{group}}-group", "version": "0.1.0", "description": "{{group}} group skills" }
 """
 
 GROUP_SKILLS_README = """\

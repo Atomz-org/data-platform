@@ -1,0 +1,30 @@
+# Which platform loops watch this group, and how. `pf loop list` shows the
+# registry as shipped; `pf loop list --group globex` shows it with this file
+# applied.
+#
+# A key here applies to **every sister project** in globex, for the same
+# reason tools.yaml does: sisters share infrastructure and differ only in
+# business logic, so "freshness is judged once a day, after the close" is
+# decided once for the family. Anything not named here inherits the registry.
+#
+# One entry per loop, keyed by its registry name:
+#
+#   loops:
+#     freshness-triage:
+#       enabled: true                # default true; put a `reason` beside false
+#       reason: "why it is off"      # shown by `pf loop list --group globex`
+#       cadence: "daily, after the close"
+#       token_budget: 4000           # a non-negative integer
+#       autonomy: L1                 # may only LOWER the registry level (L2 -> L1)
+#       waivers:                     # findings to suppress; a reason is mandatory
+#         - node: "rpt_*"            # a node name or an fnmatch glob; for
+#           reason: "..."            #   pii-audit, model.column
+#
+# Autonomy is lower-only on purpose: a level is earned in the ledger and granted
+# in LOOP.md, never taken by an entity for itself, so a request to raise one is
+# refused. A waiver without a reason is refused too. The next reader has to know
+# whether a silenced finding was a decision or an accident.
+#
+# Empty means "the registry as shipped". It is your file now.
+version: 1
+loops: {}

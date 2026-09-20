@@ -89,7 +89,8 @@ def freshness_triage(root: Path, group: str, project: str, run: LoopRun) -> list
 
     try:
         report = assess_anomaly(root, group, project, rows)
-    except NoCredentials:
+    except NoCredentials as exc:
+        run.message = str(exc)[:400]  # why the model was not asked, in the ledger
         return raw
     if report is None:
         return raw
@@ -120,7 +121,8 @@ def test_failure_triage(root: Path, group: str, project: str, run: LoopRun) -> l
 
     try:
         d = triage_failures(root, group, project, failures, lineage)
-    except NoCredentials:
+    except NoCredentials as exc:
+        run.message = str(exc)[:400]
         return raw
     if d is None:
         return raw
@@ -193,6 +195,7 @@ def _fix_target(pdir: Path, failure: dict, root_cause: str) -> tuple[str, str] |
 
 def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
     from pf.kg.store import open_graph
+    from pf.loops.config import waived, waivers
 
     gp = root / "groups" / group / "projects" / project / "kg" / "graph.duckdb"
     if not gp.exists():
@@ -203,7 +206,10 @@ def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> 
         for metric in g.nodes("Metric"):
             for e in g.in_edges(metric.id):
                 covered.add(e.src)
-    gaps = [m for m in marts if m.id not in covered]
+    # A waived mart (a report table with nothing to measure, say) is the group's
+    # stated decision, matched on the mart's name so the yaml reads like dbt.
+    skip = waivers(root, group, "metric-gap-harvester")
+    gaps = [m for m in marts if m.id not in covered and waived(m.name, skip) is None]
     # A finding per mart is right at ten gaps and unreadable at a thousand —
     # jaffle-shop's imported marts produced 993 lines and buried every other
     # loop's findings. Past a screenful, the report aggregates: the count is
@@ -211,9 +217,9 @@ def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> 
     # in the graph rather than pasted into STATE.md.
     if len(gaps) > 15:
         sample = ", ".join(m.name for m in gaps[:8])
-        raw = [f"{len(gaps)} of {len(marts)} marts have no metric coverage "
-               f"(e.g. {sample}, …) — start with the marts a dashboard reads; "
-               f"`kg_search` lists the rest"]
+        raw = [(f"{len(gaps)} of {len(marts)} marts have no metric coverage "
+                f"(e.g. {sample}, …) — start with the marts a dashboard reads; "
+                f"`kg_search` lists the rest")]
         return raw
     raw = [f"mart `{m.name}` (grain: {m.props.get('grain', '?')}) has no metric "
            f"measuring it — every question about it falls back to raw SQL"
@@ -234,7 +240,12 @@ def metric_gap_harvester(root: Path, group: str, project: str, run: LoopRun) -> 
     try:
         proposals = propose_metrics(root, group, project,
                                     [m.name for m in gaps], detail)
-    except NoCredentials:
+    except NoCredentials as exc:
+        # The proposer enriches `raw`; it is not the finding. A refused key is
+        # the one failure that must not throw the gap list away: it did, and
+        # three runs later the breaker latched on a loop whose subject was
+        # fine. Anything else the proposer raises is a bug and still trips it.
+        run.message = str(exc)[:400]
         return raw
     if proposals is None or not proposals.proposals:
         return raw
@@ -286,6 +297,7 @@ def impact_sentinel(root: Path, group: str, project: str, run: LoopRun) -> list[
 
 def pii_audit(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
     from pf.kg.store import open_graph
+    from pf.loops.config import waived, waivers
 
     gp = root / "groups" / group / "projects" / project / "kg" / "graph.duckdb"
     if not gp.exists():
@@ -299,8 +311,40 @@ def pii_audit(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
             for e in g.in_edges(col.id):
                 if e.src in marts:
                     leaked.append(f"{col.props.get('model')}.{col.name}")
-    return [f"PII column `{c}` reaches a mart — confirm a masking policy or an "
-            f"explicit waiver" for c in sorted(set(leaked))]
+    # The "explicit waiver" the finding asks for is a `model.column` entry in
+    # the group's loops.yaml, with its reason; matched here so it stops asking.
+    skip = waivers(root, group, "pii-audit")
+    findings = [f"PII column `{c}` reaches a mart — confirm a masking policy or an "
+                f"explicit waiver" for c in sorted(set(leaked)) if waived(c, skip) is None]
+
+    # A label with no policy behind it. The graph knows which columns are PII;
+    # until the group manifest existed, nothing recorded how long this family is
+    # allowed to keep them or how fast it has to delete them on request. Holding
+    # personal data to no stated deadline is the finding, and it is the group's
+    # rather than any one sister's, so it is reported once per project only
+    # because that is the scope this loop runs at.
+    if leaked:
+        from pf import groups as groups_mod
+
+        try:
+            manifest = groups_mod.load(root, group)
+        except groups_mod.GroupError:
+            manifest = None
+        if manifest is None:
+            findings.append(
+                f"{len(set(leaked))} PII column(s) in a group with no group.yaml: "
+                "no retention period and no erasure deadline are recorded anywhere")
+        else:
+            missing = [name for name, value in
+                       (("data.retention_days", manifest.data.retention_days),
+                        ("data.erasure_sla_days", manifest.data.erasure_sla_days))
+                       if value is None]
+            if missing:
+                findings.append(
+                    f"{len(set(leaked))} PII column(s) reach a mart but "
+                    f"{' and '.join(missing)} is unset in groups/{group}/group.yaml — "
+                    "personal data with no stated deadline")
+    return findings
 
 
 def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str]:
@@ -331,6 +375,17 @@ def vendor_drift(root: Path, group: str, project: str, run: LoopRun) -> list[str
         out.append(f"[{d.severity}] {d.upstream_id} moved {behind}; "
                    f"{len(d.paths)} adopted path(s) changed — re-read {files}")
     return out
+
+
+def watch_list() -> list[str]:
+    """The loops above L1, for STATE.md's watch list.
+
+    Read from the registry, not from a group's resolved catalogue: the watch
+    list is one slot for the whole platform, and a group that switches
+    `index-refresher` off would otherwise blank it for every other group until
+    someone else's run wrote it back.
+    """
+    return [s.name for s in SPECS.values() if s.autonomy != "L1"]
 
 
 def observability_triage(root: Path, group: str, project: str, run: LoopRun) -> list[str]:

@@ -170,15 +170,15 @@
       }
     },
     {
-      "id": "col:model:dbt_tests.database_name",
+      "id": "col:model:dbt_snapshots.database_name",
       "kind": "Column",
       "name": "database_name",
       "layer": "edr",
-      "label": "The tested model database name.",
+      "label": "",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_tests",
+        "model": "dbt_snapshots",
         "data_type": "string"
       }
     },
@@ -196,19 +196,6 @@
       }
     },
     {
-      "id": "col:model:dbt_snapshots.database_name",
-      "kind": "Column",
-      "name": "database_name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_models.database_name",
       "kind": "Column",
       "name": "database_name",
@@ -218,6 +205,19 @@
         "role": "",
         "pii": false,
         "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.database_name",
+      "kind": "Column",
+      "name": "database_name",
+      "layer": "edr",
+      "label": "The tested model database name.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
         "data_type": "string"
       }
     },
@@ -235,28 +235,15 @@
       }
     },
     {
-      "id": "col:model:dbt_tests.depends_on_macros",
+      "id": "col:model:dbt_models.depends_on_macros",
       "kind": "Column",
       "name": "depends_on_macros",
       "layer": "edr",
-      "label": "",
+      "label": "The macros the model directly depends on.",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_tests",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_snapshots.depends_on_macros",
-      "kind": "Column",
-      "name": "depends_on_macros",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_snapshots",
+        "model": "dbt_models",
         "data_type": "string"
       }
     },
@@ -274,19 +261,6 @@
       }
     },
     {
-      "id": "col:model:dbt_models.depends_on_macros",
-      "kind": "Column",
-      "name": "depends_on_macros",
-      "layer": "edr",
-      "label": "The macros the model directly depends on.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_models",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_metrics.depends_on_macros",
       "kind": "Column",
       "name": "depends_on_macros",
@@ -300,15 +274,28 @@
       }
     },
     {
-      "id": "col:model:dbt_metrics.depends_on_nodes",
+      "id": "col:model:dbt_snapshots.depends_on_macros",
       "kind": "Column",
-      "name": "depends_on_nodes",
+      "name": "depends_on_macros",
       "layer": "edr",
       "label": "",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_metrics",
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.depends_on_macros",
+      "kind": "Column",
+      "name": "depends_on_macros",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
         "data_type": "string"
       }
     },
@@ -326,7 +313,7 @@
       }
     },
     {
-      "id": "col:model:dbt_tests.depends_on_nodes",
+      "id": "col:model:dbt_snapshots.depends_on_nodes",
       "kind": "Column",
       "name": "depends_on_nodes",
       "layer": "edr",
@@ -334,7 +321,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_tests",
+        "model": "dbt_snapshots",
         "data_type": "string"
       }
     },
@@ -352,7 +339,7 @@
       }
     },
     {
-      "id": "col:model:dbt_snapshots.depends_on_nodes",
+      "id": "col:model:dbt_tests.depends_on_nodes",
       "kind": "Column",
       "name": "depends_on_nodes",
       "layer": "edr",
@@ -360,7 +347,20 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_snapshots",
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.depends_on_nodes",
+      "kind": "Column",
+      "name": "depends_on_nodes",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
         "data_type": "string"
       }
     },
@@ -378,19 +378,6 @@
       }
     },
     {
-      "id": "col:model:dbt_sources.description",
-      "kind": "Column",
-      "name": "description",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_tests.description",
       "kind": "Column",
       "name": "description",
@@ -404,7 +391,7 @@
       }
     },
     {
-      "id": "col:model:dbt_metrics.description",
+      "id": "col:model:dbt_sources.description",
       "kind": "Column",
       "name": "description",
       "layer": "edr",
@@ -412,7 +399,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_metrics",
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -439,6 +426,19 @@
         "role": "",
         "pii": false,
         "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.description",
+      "kind": "Column",
+      "name": "description",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
         "data_type": "string"
       }
     },
@@ -638,32 +638,6 @@
       }
     },
     {
-      "id": "col:model:dbt_exposures.generated_at",
-      "kind": "Column",
-      "name": "generated_at",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_exposures",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_tests.generated_at",
-      "kind": "Column",
-      "name": "generated_at",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_tests",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_run_results.generated_at",
       "kind": "Column",
       "name": "generated_at",
@@ -673,45 +647,6 @@
         "role": "",
         "pii": false,
         "model": "dbt_run_results",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_metrics.generated_at",
-      "kind": "Column",
-      "name": "generated_at",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_metrics",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_invocations.generated_at",
-      "kind": "Column",
-      "name": "generated_at",
-      "layer": "edr",
-      "label": "The time this invocation was uploaded to the database.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_invocations",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.generated_at",
-      "kind": "Column",
-      "name": "generated_at",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -738,6 +673,71 @@
         "role": "",
         "pii": false,
         "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "The time this invocation was uploaded to the database.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.generated_at",
+      "kind": "Column",
+      "name": "generated_at",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -937,7 +937,7 @@
       }
     },
     {
-      "id": "col:model:dbt_sources.meta",
+      "id": "col:model:dbt_snapshots.meta",
       "kind": "Column",
       "name": "meta",
       "layer": "edr",
@@ -945,7 +945,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_sources",
+        "model": "dbt_snapshots",
         "data_type": "string"
       }
     },
@@ -963,7 +963,7 @@
       }
     },
     {
-      "id": "col:model:dbt_snapshots.meta",
+      "id": "col:model:dbt_tests.meta",
       "kind": "Column",
       "name": "meta",
       "layer": "edr",
@@ -971,7 +971,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_snapshots",
+        "model": "dbt_tests",
         "data_type": "string"
       }
     },
@@ -989,7 +989,7 @@
       }
     },
     {
-      "id": "col:model:dbt_tests.meta",
+      "id": "col:model:dbt_sources.meta",
       "kind": "Column",
       "name": "meta",
       "layer": "edr",
@@ -997,7 +997,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_tests",
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1067,19 +1067,6 @@
       }
     },
     {
-      "id": "col:model:dbt_models.name",
-      "kind": "Column",
-      "name": "name",
-      "layer": "edr",
-      "label": "Model name.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_models",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_tests.name",
       "kind": "Column",
       "name": "name",
@@ -1089,19 +1076,6 @@
         "role": "",
         "pii": false,
         "model": "dbt_tests",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.name",
-      "kind": "Column",
-      "name": "name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1119,28 +1093,15 @@
       }
     },
     {
-      "id": "col:model:dbt_snapshots.name",
+      "id": "col:model:dbt_models.name",
       "kind": "Column",
       "name": "name",
       "layer": "edr",
-      "label": "",
+      "label": "Model name.",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_metrics.name",
-      "kind": "Column",
-      "name": "name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_metrics",
+        "model": "dbt_models",
         "data_type": "string"
       }
     },
@@ -1158,22 +1119,9 @@
       }
     },
     {
-      "id": "col:model:dbt_invocations.orchestrator",
+      "id": "col:model:dbt_snapshots.name",
       "kind": "Column",
-      "name": "orchestrator",
-      "layer": "edr",
-      "label": "The orchestrator that was used to run this invocation, defined in the `orchestrator` var or in the `ORCHESTRATOR` env var or by the orchestrator env vars. For example, dbt Cloud, GitHub Actions, etc.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_invocations",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_snapshots.original_path",
-      "kind": "Column",
-      "name": "original_path",
+      "name": "name",
       "layer": "edr",
       "label": "",
       "props": {
@@ -1184,22 +1132,9 @@
       }
     },
     {
-      "id": "col:model:dbt_exposures.original_path",
+      "id": "col:model:dbt_sources.name",
       "kind": "Column",
-      "name": "original_path",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_exposures",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.original_path",
-      "kind": "Column",
-      "name": "original_path",
+      "name": "name",
       "layer": "edr",
       "label": "",
       "props": {
@@ -1210,15 +1145,28 @@
       }
     },
     {
-      "id": "col:model:dbt_metrics.original_path",
+      "id": "col:model:dbt_metrics.name",
       "kind": "Column",
-      "name": "original_path",
+      "name": "name",
       "layer": "edr",
       "label": "",
       "props": {
         "role": "",
         "pii": false,
         "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_invocations.orchestrator",
+      "kind": "Column",
+      "name": "orchestrator",
+      "layer": "edr",
+      "label": "The orchestrator that was used to run this invocation, defined in the `orchestrator` var or in the `ORCHESTRATOR` env var or by the orchestrator env vars. For example, dbt Cloud, GitHub Actions, etc.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_invocations",
         "data_type": "string"
       }
     },
@@ -1236,6 +1184,45 @@
       }
     },
     {
+      "id": "col:model:dbt_sources.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "col:model:dbt_models.original_path",
       "kind": "Column",
       "name": "original_path",
@@ -1245,6 +1232,19 @@
         "role": "",
         "pii": false,
         "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.original_path",
+      "kind": "Column",
+      "name": "original_path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
         "data_type": "string"
       }
     },
@@ -1262,19 +1262,6 @@
       }
     },
     {
-      "id": "col:model:dbt_sources.owner",
-      "kind": "Column",
-      "name": "owner",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_models.owner",
       "kind": "Column",
       "name": "owner",
@@ -1284,6 +1271,19 @@
         "role": "",
         "pii": false,
         "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.owner",
+      "kind": "Column",
+      "name": "owner",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1314,45 +1314,6 @@
       }
     },
     {
-      "id": "col:model:dbt_metrics.package_name",
-      "kind": "Column",
-      "name": "package_name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_metrics",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_exposures.package_name",
-      "kind": "Column",
-      "name": "package_name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_exposures",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_models.package_name",
-      "kind": "Column",
-      "name": "package_name",
-      "layer": "edr",
-      "label": "Package name of the model.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_models",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_snapshots.package_name",
       "kind": "Column",
       "name": "package_name",
@@ -1362,19 +1323,6 @@
         "role": "",
         "pii": false,
         "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.package_name",
-      "kind": "Column",
-      "name": "package_name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1392,6 +1340,58 @@
       }
     },
     {
+      "id": "col:model:dbt_exposures.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_models.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "Package name of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_metrics.package_name",
+      "kind": "Column",
+      "name": "package_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "col:model:dbt_tests.parent_model_unique_id",
       "kind": "Column",
       "name": "parent_model_unique_id",
@@ -1405,7 +1405,7 @@
       }
     },
     {
-      "id": "col:model:dbt_snapshots.path",
+      "id": "col:model:dbt_sources.path",
       "kind": "Column",
       "name": "path",
       "layer": "edr",
@@ -1413,46 +1413,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_exposures.path",
-      "kind": "Column",
-      "name": "path",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_exposures",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_models.path",
-      "kind": "Column",
-      "name": "path",
-      "layer": "edr",
-      "label": "Short path of the model file.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_models",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_tests.path",
-      "kind": "Column",
-      "name": "path",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_tests",
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1470,7 +1431,20 @@
       }
     },
     {
-      "id": "col:model:dbt_sources.path",
+      "id": "col:model:dbt_models.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "Short path of the model file.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.path",
       "kind": "Column",
       "name": "path",
       "layer": "edr",
@@ -1478,7 +1452,33 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_sources",
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_tests.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.path",
+      "kind": "Column",
+      "name": "path",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
         "data_type": "string"
       }
     },
@@ -1587,19 +1587,6 @@
       }
     },
     {
-      "id": "col:model:dbt_sources.schema_name",
-      "kind": "Column",
-      "name": "schema_name",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_models.schema_name",
       "kind": "Column",
       "name": "schema_name",
@@ -1622,6 +1609,19 @@
         "role": "",
         "pii": false,
         "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.schema_name",
+      "kind": "Column",
+      "name": "schema_name",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -1730,45 +1730,6 @@
       }
     },
     {
-      "id": "col:model:dbt_models.tags",
-      "kind": "Column",
-      "name": "tags",
-      "layer": "edr",
-      "label": "Model tags property.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_models",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_snapshots.tags",
-      "kind": "Column",
-      "name": "tags",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.tags",
-      "kind": "Column",
-      "name": "tags",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
-        "data_type": "string"
-      }
-    },
-    {
       "id": "col:model:dbt_tests.tags",
       "kind": "Column",
       "name": "tags",
@@ -1795,6 +1756,19 @@
       }
     },
     {
+      "id": "col:model:dbt_models.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "Model tags property.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "col:model:dbt_metrics.tags",
       "kind": "Column",
       "name": "tags",
@@ -1804,6 +1778,32 @@
         "role": "",
         "pii": false,
         "model": "dbt_metrics",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.tags",
+      "kind": "Column",
+      "name": "tags",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
         "data_type": "string"
       }
     },
@@ -1951,7 +1951,7 @@
       }
     },
     {
-      "id": "col:model:dbt_exposures.type",
+      "id": "col:model:dbt_tests.type",
       "kind": "Column",
       "name": "type",
       "layer": "edr",
@@ -1959,7 +1959,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_exposures",
+        "model": "dbt_tests",
         "data_type": "string"
       }
     },
@@ -1977,61 +1977,9 @@
       }
     },
     {
-      "id": "col:model:dbt_tests.type",
+      "id": "col:model:dbt_exposures.type",
       "kind": "Column",
       "name": "type",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_tests",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_snapshots.unique_id",
-      "kind": "Column",
-      "name": "unique_id",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_snapshots",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_tests.unique_id",
-      "kind": "Column",
-      "name": "unique_id",
-      "layer": "edr",
-      "label": "The unique id of the test.",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_tests",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_sources.unique_id",
-      "kind": "Column",
-      "name": "unique_id",
-      "layer": "edr",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "dbt_sources",
-        "data_type": "string"
-      }
-    },
-    {
-      "id": "col:model:dbt_exposures.unique_id",
-      "kind": "Column",
-      "name": "unique_id",
       "layer": "edr",
       "label": "",
       "props": {
@@ -2055,6 +2003,32 @@
       }
     },
     {
+      "id": "col:model:dbt_models.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "The unique id of the model.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_models",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_snapshots.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_snapshots",
+        "data_type": "string"
+      }
+    },
+    {
       "id": "col:model:dbt_run_results.unique_id",
       "kind": "Column",
       "name": "unique_id",
@@ -2068,15 +2042,41 @@
       }
     },
     {
-      "id": "col:model:dbt_models.unique_id",
+      "id": "col:model:dbt_tests.unique_id",
       "kind": "Column",
       "name": "unique_id",
       "layer": "edr",
-      "label": "The unique id of the model.",
+      "label": "The unique id of the test.",
       "props": {
         "role": "",
         "pii": false,
-        "model": "dbt_models",
+        "model": "dbt_tests",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_exposures.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_exposures",
+        "data_type": "string"
+      }
+    },
+    {
+      "id": "col:model:dbt_sources.unique_id",
+      "kind": "Column",
+      "name": "unique_id",
+      "layer": "edr",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "dbt_sources",
         "data_type": "string"
       }
     },
@@ -2478,6 +2478,16 @@
       "label": "data diff against baseline",
       "props": {
         "durable": true
+      }
+    },
+    {
+      "id": "evidence:pytest platform/tests",
+      "kind": "Evidence",
+      "name": "pytest platform/tests",
+      "layer": "governance",
+      "label": "dev-serving guardrail verdicts",
+      "props": {
+        "durable": false
       }
     },
     {
@@ -3077,6 +3087,49 @@
       }
     },
     {
+      "id": "policy:dev-server-binds-localhost-only",
+      "kind": "Policy",
+      "name": "dev-server-binds-localhost-only",
+      "layer": "governance",
+      "label": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host is n",
+      "props": {
+        "constraint": "localhost_binding",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever"
+        ],
+        "enforced": true,
+        "intent": "A development database served on a routable interface is an exfiltration endpoint with a bearer token. The endpoint is localhost by construction \u2014 the host is not a parameter of the serving path, so a routable dev server cannot be configured into existence, only programmed, which is a review event rather than a config drift.",
+        "scope": "platform"
+      }
+    },
+    {
+      "id": "policy:dev-serving-wire-is-read-only",
+      "kind": "Policy",
+      "name": "dev-serving-wire-is-read-only",
+      "layer": "governance",
+      "label": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not a p",
+      "props": {
+        "constraint": "read_only_wire",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever",
+          "pf.runtime.quack:assert_read_only"
+        ],
+        "enforced": true,
+        "intent": "Whatever arrives over the quack wire cannot mutate the warehouse. The server holds the database read-only, so the engine refuses writes at the catalog \u2014 not a parser, not a callback, nothing that can be argued with \u2014 and the client refuses non-read statements before the network hop, using DuckDB's own parser rather than string prefixes. Writers exist; they borrow the file through the write window and never meet the wire.",
+        "scope": "platform"
+      }
+    },
+    {
       "id": "policy:entity-isolation-enforced",
       "kind": "Policy",
       "name": "entity-isolation-enforced",
@@ -3335,6 +3388,29 @@
       }
     },
     {
+      "id": "policy:quack-token-never-leaves-the-machine",
+      "kind": "Policy",
+      "name": "quack-token-never-leaves-the-machine",
+      "layer": "governance",
+      "label": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is gitign",
+      "props": {
+        "constraint": "credential_containment",
+        "severity": "blocks",
+        "applies_to": {
+          "artifact_glob": "**/data/*.quack.json"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:serve_forever",
+          "gate.yaml:denylist",
+          ".gitignore"
+        ],
+        "enforced": true,
+        "intent": "The serving token is a bearer credential for the dev warehouse. It is generated fresh per server, lives only in a 0600 state file beside the database, is gitignored, is denied to agent edits by the gate, and is redacted from CLI output by default \u2014 a token echoed into a terminal outlives the server in scrollback and session transcripts.",
+        "scope": "platform"
+      }
+    },
+    {
       "id": "policy:quality-floor-derived-from-ontology",
       "kind": "Policy",
       "name": "quality-floor-derived-from-ontology",
@@ -3513,6 +3589,27 @@
       }
     },
     {
+      "id": "policy:warehouse-custody-is-recorded",
+      "kind": "Policy",
+      "name": "warehouse-custody-is-recorded",
+      "layer": "governance",
+      "label": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, deci",
+      "props": {
+        "constraint": "custody_recorded",
+        "severity": "warning",
+        "applies_to": {
+          "artifact_glob": "**/data/*.duckdb"
+        },
+        "params": {},
+        "enforced_by": [
+          "pf.runtime.quack:_custody"
+        ],
+        "enforced": true,
+        "intent": "Serving, stopping and borrowing are the moments the development database changes hands. Each is written to the provenance ledger as a full action \u2014 intent, decision, execution, chained \u2014 so \"who held the warehouse when\" is a query over records, not a reconstruction from process tables. The ledger's kill switch is honoured by construction: a revoked ledger refuses the custody record and with it the custody change.",
+        "scope": "platform"
+      }
+    },
+    {
       "id": "project:acme-rollup",
       "kind": "Project",
       "name": "acme-rollup",
@@ -3520,7 +3617,7 @@
       "label": "acme/acme-rollup",
       "props": {
         "group": "acme",
-        "path": "/Users/sswaminathan/.cache/dp-land/wt/fix_arch-cli/groups/acme/projects/acme-rollup"
+        "path": "groups/acme/projects/acme-rollup"
       }
     },
     {
@@ -3540,22 +3637,6 @@
       }
     },
     {
-      "id": "property:Payment.amount",
-      "kind": "Property",
-      "name": "amount",
-      "layer": "ontology",
-      "label": "float \u00b7 money_amount",
-      "props": {
-        "datatype": "float",
-        "role": "money_amount",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "DOUBLE",
-        "xsd_type": "xsd:double",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.amount",
       "kind": "Property",
       "name": "amount",
@@ -3568,6 +3649,22 @@
         "concept": "Order",
         "mdl_type": "DECIMAL",
         "xsd_type": "xsd:decimal",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.amount",
+      "kind": "Property",
+      "name": "amount",
+      "layer": "ontology",
+      "label": "float \u00b7 money_amount",
+      "props": {
+        "datatype": "float",
+        "role": "money_amount",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "DOUBLE",
+        "xsd_type": "xsd:double",
         "is_identity": false
       }
     },
@@ -3636,22 +3733,6 @@
       }
     },
     {
-      "id": "property:Location.country",
-      "kind": "Property",
-      "name": "country",
-      "layer": "ontology",
-      "label": "string \u00b7 geo_country",
-      "props": {
-        "datatype": "string",
-        "role": "geo_country",
-        "required": false,
-        "concept": "Location",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Organization.country",
       "kind": "Property",
       "name": "country",
@@ -3678,6 +3759,22 @@
         "role": "geo_country",
         "required": false,
         "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Location.country",
+      "kind": "Property",
+      "name": "country",
+      "layer": "ontology",
+      "label": "string \u00b7 geo_country",
+      "props": {
+        "datatype": "string",
+        "role": "geo_country",
+        "required": false,
+        "concept": "Location",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -3732,38 +3829,6 @@
       }
     },
     {
-      "id": "property:Payment.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
-      "id": "property:Order.currency",
-      "kind": "Property",
-      "name": "currency",
-      "layer": "ontology",
-      "label": "string \u00b7 currency_code",
-      "props": {
-        "datatype": "string",
-        "role": "currency_code",
-        "required": false,
-        "concept": "Order",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Refund.currency",
       "kind": "Property",
       "name": "currency",
@@ -3796,6 +3861,38 @@
       }
     },
     {
+      "id": "property:Payment.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": true,
+        "concept": "Payment",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Order.currency",
+      "kind": "Property",
+      "name": "currency",
+      "layer": "ontology",
+      "label": "string \u00b7 currency_code",
+      "props": {
+        "datatype": "string",
+        "role": "currency_code",
+        "required": false,
+        "concept": "Order",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
       "id": "property:Currency.currency_code",
       "kind": "Property",
       "name": "currency_code",
@@ -3809,22 +3906,6 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": true
-      }
-    },
-    {
-      "id": "property:Payment.customer_id",
-      "kind": "Property",
-      "name": "customer_id",
-      "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
-      "props": {
-        "datatype": "string",
-        "role": "foreign_key",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
       }
     },
     {
@@ -3854,6 +3935,22 @@
         "role": "natural_key",
         "required": true,
         "concept": "Customer",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.customer_id",
+      "kind": "Property",
+      "name": "customer_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -3908,22 +4005,6 @@
       }
     },
     {
-      "id": "property:Subscription.id",
-      "kind": "Property",
-      "name": "id",
-      "layer": "ontology",
-      "label": "string \u00b7 natural_key",
-      "props": {
-        "datatype": "string",
-        "role": "natural_key",
-        "required": true,
-        "concept": "Subscription",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": true
-      }
-    },
-    {
       "id": "property:Payment.id",
       "kind": "Property",
       "name": "id",
@@ -3937,6 +4018,22 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
+      }
+    },
+    {
+      "id": "property:Subscription.id",
+      "kind": "Property",
+      "name": "id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
       }
     },
     {
@@ -4020,22 +4117,6 @@
       }
     },
     {
-      "id": "property:Product.name",
-      "kind": "Property",
-      "name": "name",
-      "layer": "ontology",
-      "label": "string \u00b7 free_text",
-      "props": {
-        "datatype": "string",
-        "role": "free_text",
-        "required": false,
-        "concept": "Product",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Organization.name",
       "kind": "Property",
       "name": "name",
@@ -4046,6 +4127,22 @@
         "role": "free_text",
         "required": false,
         "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Product.name",
+      "kind": "Property",
+      "name": "name",
+      "layer": "ontology",
+      "label": "string \u00b7 free_text",
+      "props": {
+        "datatype": "string",
+        "role": "free_text",
+        "required": false,
+        "concept": "Product",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -4068,22 +4165,6 @@
       }
     },
     {
-      "id": "property:Event.occurred_at",
-      "kind": "Property",
-      "name": "occurred_at",
-      "layer": "ontology",
-      "label": "timestamp \u00b7 event_time",
-      "props": {
-        "datatype": "timestamp",
-        "role": "event_time",
-        "required": true,
-        "concept": "Event",
-        "mdl_type": "TIMESTAMP",
-        "xsd_type": "xsd:dateTime",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Interaction.occurred_at",
       "kind": "Property",
       "name": "occurred_at",
@@ -4094,6 +4175,22 @@
         "role": "event_time",
         "required": false,
         "concept": "Interaction",
+        "mdl_type": "TIMESTAMP",
+        "xsd_type": "xsd:dateTime",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Event.occurred_at",
+      "kind": "Property",
+      "name": "occurred_at",
+      "layer": "ontology",
+      "label": "timestamp \u00b7 event_time",
+      "props": {
+        "datatype": "timestamp",
+        "role": "event_time",
+        "required": true,
+        "concept": "Event",
         "mdl_type": "TIMESTAMP",
         "xsd_type": "xsd:dateTime",
         "is_identity": false
@@ -4116,22 +4213,6 @@
       }
     },
     {
-      "id": "property:Organization.organization_id",
-      "kind": "Property",
-      "name": "organization_id",
-      "layer": "ontology",
-      "label": "string \u00b7 natural_key",
-      "props": {
-        "datatype": "string",
-        "role": "natural_key",
-        "required": true,
-        "concept": "Organization",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": true
-      }
-    },
-    {
       "id": "property:Customer.organization_id",
       "kind": "Property",
       "name": "organization_id",
@@ -4145,6 +4226,22 @@
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
+      }
+    },
+    {
+      "id": "property:Organization.organization_id",
+      "kind": "Property",
+      "name": "organization_id",
+      "layer": "ontology",
+      "label": "string \u00b7 natural_key",
+      "props": {
+        "datatype": "string",
+        "role": "natural_key",
+        "required": true,
+        "concept": "Organization",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": true
       }
     },
     {
@@ -4372,22 +4469,6 @@
       }
     },
     {
-      "id": "property:Payment.status",
-      "kind": "Property",
-      "name": "status",
-      "layer": "ontology",
-      "label": "string \u00b7 status_enum",
-      "props": {
-        "datatype": "string",
-        "role": "status_enum",
-        "required": true,
-        "concept": "Payment",
-        "mdl_type": "VARCHAR",
-        "xsd_type": "xsd:string",
-        "is_identity": false
-      }
-    },
-    {
       "id": "property:Order.status",
       "kind": "Property",
       "name": "status",
@@ -4420,14 +4501,14 @@
       }
     },
     {
-      "id": "property:Payment.subscription_id",
+      "id": "property:Payment.status",
       "kind": "Property",
-      "name": "subscription_id",
+      "name": "status",
       "layer": "ontology",
-      "label": "string \u00b7 foreign_key",
+      "label": "string \u00b7 status_enum",
       "props": {
         "datatype": "string",
-        "role": "foreign_key",
+        "role": "status_enum",
         "required": true,
         "concept": "Payment",
         "mdl_type": "VARCHAR",
@@ -4446,6 +4527,22 @@
         "role": "natural_key",
         "required": true,
         "concept": "Subscription",
+        "mdl_type": "VARCHAR",
+        "xsd_type": "xsd:string",
+        "is_identity": false
+      }
+    },
+    {
+      "id": "property:Payment.subscription_id",
+      "kind": "Property",
+      "name": "subscription_id",
+      "layer": "ontology",
+      "label": "string \u00b7 foreign_key",
+      "props": {
+        "datatype": "string",
+        "role": "foreign_key",
+        "required": true,
+        "concept": "Payment",
         "mdl_type": "VARCHAR",
         "xsd_type": "xsd:string",
         "is_identity": false
@@ -5535,6 +5632,30 @@
     {
       "src": "policy:upstream-licences-are-reviewed",
       "dst": "evidence:pf check",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:dev-serving-wire-is-read-only",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:dev-server-binds-localhost-only",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:quack-token-never-leaves-the-machine",
+      "dst": "evidence:pytest platform/tests",
+      "kind": "evidenced_by",
+      "props": {}
+    },
+    {
+      "src": "policy:warehouse-custody-is-recorded",
+      "dst": "evidence:pf provenance verify",
       "kind": "evidenced_by",
       "props": {}
     },

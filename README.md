@@ -35,9 +35,13 @@ uv run pf status                   # every group and project
 | `pf atlas <g> <p>` | Publish a project's own atlas beside its graph ([docs](docs/PROJECT-ATLAS.md)) |
 | `pf arch <g> <p>` | Per-project architecture map — every feature, present or not ([docs](docs/ARCHITECTURE-MAPS.md)) |
 | `pf check` | Ontology conformance across every project |
+| `pf group list/show/verify` | Tenant families: lifecycle, owner, readiness |
+| `pf group set-state <g> <state>` | Move a family through its lifecycle |
+| `pf offboard <g>` | What leaving costs. Enumerates; removes only with `--apply` |
 | `pf tokens` | Always-on token budget; fails if a card is over |
 | `pf kg build/card/search/neighbors` | Knowledge graph operations |
 | `pf vendor list/sync/drift/verify/why` | Vendored upstreams and their provenance |
+| `pf workflow link/list/watch/show` | Claude Code workflow runs, written into `logs/workflows/` as they happen |
 | `pf housekeeping [g p] [--apply]` | Maintenance the engines skip: lakehouse compaction and snapshot expiry per project, Dagster history and stale artefacts platform-wide |
 | `pf pr report` | Blast radius, conformance and drift for the current change |
 | `pf ui` / `pf mcp` | Dashboard / MCP server |
@@ -47,9 +51,11 @@ uv run pf status                   # every group and project
 | You write, per project | You never touch |
 |---|---|
 | `src/<p>/sources/*.py` — annotated dlt sources | `platform/**` (engines, factories, toolkits, MCP) |
-| `transform/models/**` — staging, marts, semantic | Dagster wiring, profiles, executors, pools |
+| `transform/models/**` — staging, intermediate, marts, semantic | Dagster wiring, profiles, executors, pools |
 | `CLAUDE.md` — rules the graph can't encode | `kg/*` — cards and graphs are generated |
 | `groups/<g>/ontology/instance.yaml` | CI, engine pins, extension set |
+| `groups/<g>/.claude/skills/` — domain skills every sister loads | `STATE.md`, `loop-ledger.json` — written by `pf loop` |
+| `groups/<g>/loops.yaml` — which loops watch the family, with waivers | |
 
 Adding a sister company is `pf new-project`, sources and models. Upgrading dbt for
 every entity is one line in `pyproject.toml`. Plan the scaffold before applying
@@ -74,6 +80,16 @@ cannot be quietly left out. See [docs/ARCHITECTURE-MAPS.md](docs/ARCHITECTURE-MA
 **Impact analysis → safety.** `pf impact` walks the graph downstream and names
 every model, metric, dimension and exposure affected — plus the exposure owner.
 Wire it into CI with `pf impact-gate`.
+
+## The layer contract
+
+dlt extracts; dbt transforms; the raw dataset is the line between them. dlt Core
+lands one dataset per source with types frozen and row counts read back, and it
+never transforms. dbt owns everything after: staging is generated 1:1 from the
+annotations (`pf gen-staging`), currency, unit and FX conversion happen once in
+`intermediate` or a mart, marts declare the grain, the semantic layer declares
+the metrics, and reporting is a projection of them. The why, and commodity as
+the worked example: [`docs/ENGINEERING.md`](docs/ENGINEERING.md).
 
 ## Sister companies run genuinely in parallel
 
@@ -129,6 +145,7 @@ uv run pf loop status                     # ledger
 
 Governance files: `LOOP.md` (definitions) · `STATE.md` (generated) ·
 `loop-constraints.md` (binding) · `gate.yaml` (path policy) · `loop-budget.md`.
+A group overrides the registry in `groups/<g>/loops.yaml` (cadence, budget, lower-only autonomy, waivers with a reason); `pf loop list --group <g>` shows the result.
 
 **Three enforcement gates** make the impact check structural rather than a rule
 an agent must remember:

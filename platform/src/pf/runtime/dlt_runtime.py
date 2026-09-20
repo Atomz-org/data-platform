@@ -54,7 +54,22 @@ def run_source(
         "dataset": pipeline.dataset_name,
         "load_ids": list(getattr(info, "loads_ids", []) or []),
         "destination": "duckdb",
+        "rows": row_counts(pipeline),
     }
+
+
+def row_counts(pipeline: Any) -> dict[str, int]:
+    """Rows per data table in the pipeline's dataset, read back after the load.
+
+    A load report says what dlt wrote, not what is there: a resource that
+    yielded nothing loads green and leaves an empty table for dbt to build marts
+    over. Read through dlt's own dataset API so it holds for every destination.
+    Empty on any failure — the count is a check, never the thing that fails.
+    """
+    try:
+        return {str(t): int(n) for t, n in pipeline.dataset().row_counts().fetchall()}
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 def export_project_annotations(project_dir: str | Path) -> Path:

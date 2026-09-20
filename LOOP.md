@@ -48,6 +48,50 @@ them with the registry. A loop about a tool's artefacts belongs to the tool.
 Daily budget across all loops: **200,000 tokens**. The circuit breaker opens on
 depletion, or after 3 consecutive failures of the same loop.
 
+## Group overrides
+
+The table above is the registry: platform code, the same for every company. A
+family changes what it runs in `groups/<group>/loops.yaml`, and only there. A
+project has no loops file: loops watch the family's subjects once, and a
+project's own knowledge reaches a loop through its `CLAUDE.md` (see below).
+
+```yaml
+version: 1
+loops:
+  <loop-name>:            # one of the registry names
+    enabled: true|false   # default true; give a reason when false
+    reason: "<why disabled>"
+    cadence: "<free text>"
+    token_budget: <non-negative int>
+    autonomy: L1          # may only lower the registry level
+    waivers:              # findings to suppress; reason is mandatory
+      - node: "rpt_*"     # a node name or fnmatch glob; for pii-audit, model.column
+        reason: "..."
+```
+
+| Rule | Why |
+|---|---|
+| Autonomy may be lowered, never raised | Promotion is a human decision made in the registry after a ledger track record. |
+| A loop that writes cannot be lowered to L1 | L1 means writes nothing. Lowered, `index-refresher` would still rebuild the graph, inside the read-only `pf loop run-all` sweep. Disable it instead. |
+| A waiver needs a reason | A silenced finding with no stated reason is a monitor nobody acts on. |
+| A disabled loop needs a reason to be shown | `pf loop list --group <g>` prints it, so a switched-off monitor is visible. |
+| An unknown loop or key is refused | A typo that silently does nothing is the failure the file exists to prevent. |
+
+`pf loop list --group <g>` shows the effective loops with a `source` column
+(registry or group) and a waiver count, then the disabled loops with their
+reasons. `pf loop run <loop>` on a disabled loop says why and exits 1.
+
+## What a loop knows
+
+An LLM-backed loop's system prefix is, in order: `platform/toolkits/ROUTING.md`,
+`loop-constraints.md`, the group `CLAUDE.md`, the project `CLAUDE.md`, and the
+project's context card. The card renders the graph; the two `CLAUDE.md` files
+carry what the graph cannot encode. A business rule written there is what
+teaches the loop: "futures do not settle at weekends" is why a Monday freshness
+breach on `futures_prices` is the calendar and not the feed. Findings, run ids
+and timestamps go in the user turn, after the cache breakpoint, never in the
+prefix.
+
 ## Anatomy of a run
 
 ```

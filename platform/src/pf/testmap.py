@@ -113,9 +113,14 @@ def render_index(files: list[TestFile]) -> str:
         heading = f"## `{group}/`" if group else "## (ungrouped)"
         lines += [f"{heading} — {gloss}" if gloss else heading, "",
                   f"*{len(members)} files, {n} tests*", "",
-                  "| File | Guards | Tests |", "|---|---|---:|"]
+                  "| File | Guards |", "|---|---|"]
         for f in members:
-            lines.append(f"| [`{f.path.name}`]({f.rel.as_posix()}) | {f.subject} | {f.tests} |")
+            # The row is `test_` and `.py` shorter than the filename, and carries
+            # no per-file count: the group line above already totals them, and at
+            # fifty files those two columns were 900 characters of the budget.
+            # The link still names the file, which is what `pf test where` prints.
+            short = f.path.name.removeprefix("test_").removesuffix(".py")
+            lines.append(f"| [{short}]({f.rel.as_posix()}) | {f.subject} |")
         lines.append("")
 
     lines += [

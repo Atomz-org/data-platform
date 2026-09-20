@@ -78,6 +78,22 @@ upstreams:
         kind: shape
         ours: [platform/src/pf/runtime/staging.py]
         note: Common-model generation became 1:1 staging with role-driven cleaning.
+      - upstream: workbench/rest-api-pipeline/skills/create-rest-api-pipeline/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dlt-ingest/skills/create-rest-pipeline/SKILL.md
+        note: >
+          Independent rewrite against dlt Core's `rest_api` and `RESTClient`; it
+          names no dltHub command. Ours adds the parent-yields-one-page rule for
+          dependent resources, cursors per key in resource state, and the
+          platform's contract, `rows` check and annotation steps.
+      - upstream: workbench/rest-api-pipeline/skills/debug-pipeline/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/dlt-ingest/skills/debug-pipeline/SKILL.md
+        note: >
+          dlt Core's `dlt pipeline` commands in place of `dlthub local pipeline`,
+          plus the dataset API for row counts, which is what the seed reads.
       - upstream: workbench/sql-database-pipeline/skills/find-source/SKILL.md
         kind: port
         ours: [platform/toolkits/dlt-ingest/skills/find-source/SKILL.md]

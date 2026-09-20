@@ -32,6 +32,32 @@ that broke the laptop build, and the seam exists precisely so that cannot
 happen by accident — `capability()` renders `PROJECT_TARGETS` with one key
 swapped, and has no way to express anything else.
 
+## A destination is per tenant; the credentials reaching it are not
+
+`SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, `SNOWFLAKE_PASSWORD` describe *who is
+connecting*. One estate has one set of them and exports them once, which is
+correct and is left alone here. `schema` describes *where the build lands*, and
+that is not the same kind of thing at all.
+
+It used to be a shared constant — `ANALYTICS` on Snowflake, `analytics` on the
+other four. With credentials exported once, as they are meant to be, acme-eu and
+acme-us then built into the same schema, each dropping and recreating the
+other's tables. Neither run failed: writing to the schema you were configured to
+write to is not an error, so the only symptom is a mart whose numbers change
+when a sister runs. So every destination default now carries `PROJECT_TOKEN` and
+resolves to the project's own slug, and every credential stays exactly as shared
+as it was.
+
+An explicit env var still wins. These are two-argument `env_var` calls exactly
+as before, so an estate that has already carved up its schemas by hand sets
+`SNOWFLAKE_SCHEMA` and nothing here argues — the change is to what happens when
+nobody sets it, which is where the collision lived.
+
+Existing projects are unaffected. `transform/profiles.yml` is seeded once and
+then hand-maintained, and nothing rewrites a `prod` block already pointing at a
+real warehouse; this changes what a *new* render produces and what an unset
+variable resolves to.
+
 ## Portability is claimed here and proved elsewhere
 
 Declaring a BigQuery target does not make the models run on BigQuery. The `sf_*`
@@ -45,6 +71,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+#: The placeholder a destination default carries until a project resolves it.
+#:
+#: `{{module}}` is the *scaffolder's* token, not dbt's. Every file a capability
+#: writes goes through `pf.scaffold.generator.render`, which substitutes it with
+#: the project's module slug, and `transform/profiles.yml` is written through
+#: exactly that path — so `'ANALYTICS_{{module}}'` reaches disk as
+#: `ANALYTICS_acme_eu` and dbt never sees a brace. Reusing the token the
+#: scaffolder already resolves is what keeps this file free of a project
+#: parameter it would otherwise have to thread through `WAREHOUSES`, which is a
+#: module-level constant built before any project exists.
+#:
+#: It appears in the dbt `output` block and nowhere else. `om_connection` is
+#: serialised straight to YAML by `pf.tools.openmetadata` with no render pass,
+#: so a token there would be written verbatim into a workflow file — which is
+#: why the catalogue keeps taking its database from the env var alone.
+#:
+#: A caller that writes a target *without* going through `render` must resolve
+#: it first with `ProductionWarehouse.output_for`.
+PROJECT_TOKEN = "{{module}}"
+
 
 @dataclass(frozen=True)
 class ProductionWarehouse:
@@ -57,6 +103,11 @@ class ProductionWarehouse:
     #: The `prod` output block, verbatim, in the same shape as PROJECT_TARGETS.
     #: Values containing `{{` are emitted quoted by `render_target`, which is how
     #: `env_var` survives the YAML.
+    #:
+    #: The destination key — `schema`, or `dataset` on BigQuery — carries
+    #: `PROJECT_TOKEN` in its default. Read it through `output_for` whenever the
+    #: project is known; read it raw only to write through a renderer that
+    #: resolves the token itself.
     output: dict[str, object]
     #: Credentials that must be set before `DBT_TARGET=prod` can connect. Only
     #: these are reported as missing; anything with a default in `output` is
@@ -93,6 +144,25 @@ class ProductionWarehouse:
     om_type: str = ""
     om_connection: dict[str, object] = field(default_factory=dict)
 
+    def output_for(self, project: str) -> dict[str, object]:
+        """`output` with `PROJECT_TOKEN` resolved for one project.
+
+        The slug convention is `pf.runtime.warehouse.project_slug` — the same
+        one that names the project's DuckDB file and its Dagster writer pool.
+        Spelled out here rather than imported because `pf.runtime.warehouse`
+        pulls in duckdb at import time and this module is read by the CLI on
+        every invocation, including the ones that never open a database.
+
+        Non-string values — `threads: 8`, `secure: True` — are passed through
+        untouched, because `render_target` distinguishes them and a stringified
+        `True` would reach the YAML as something nobody can copy.
+        """
+        slug = project.replace("-", "_")
+        return {
+            key: value.replace(PROJECT_TOKEN, slug) if isinstance(value, str) else value
+            for key, value in self.output.items()
+        }
+
 
 # `type` is dbt's adapter name and must match the installed dbt-<x> package.
 # Every credential is an `env_var` call: this file is rendered into a project
@@ -112,7 +182,14 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "role": "{{ env_var('SNOWFLAKE_ROLE', 'SYSADMIN') }}",
             "warehouse": "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}",
             "database": "{{ env_var('SNOWFLAKE_DATABASE') }}",
-            "schema": "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS') }}",
+            # `ANALYTICS` alone put every project that shares an account in one
+            # schema. The prefix is kept because it is what a Snowflake operator
+            # expects to see; the tenant half arrives lower-case because the
+            # scaffolder's slug is, and that is harmless — dbt-snowflake quotes
+            # nothing by default, so Snowflake folds the whole unquoted
+            # identifier and `ANALYTICS_acme_eu` resolves as
+            # `ANALYTICS_ACME_EU`.
+            "schema": "{{ env_var('SNOWFLAKE_SCHEMA', 'ANALYTICS_{{module}}') }}",
             "threads": 8,
         },
         env=("SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_DATABASE"),
@@ -156,7 +233,10 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "method": "{{ env_var('BIGQUERY_METHOD', 'service-account') }}",
             "keyfile": "{{ env_var('BIGQUERY_KEYFILE', '') }}",
             "project": "{{ env_var('BIGQUERY_PROJECT') }}",
-            "dataset": "{{ env_var('BIGQUERY_DATASET', 'analytics') }}",
+            # The dataset is BigQuery's tenant boundary here: `project` is a
+            # billing and IAM decision an estate usually makes once, so a shared
+            # `analytics` dataset underneath it is two sisters in one namespace.
+            "dataset": "{{ env_var('BIGQUERY_DATASET', 'analytics_{{module}}') }}",
             "location": "{{ env_var('BIGQUERY_LOCATION', 'US') }}",
             "priority": "interactive",
             "threads": 8,
@@ -204,7 +284,10 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "user": "{{ env_var('REDSHIFT_USER') }}",
             "password": "{{ env_var('REDSHIFT_PASSWORD', '') }}",
             "dbname": "{{ env_var('REDSHIFT_DATABASE') }}",
-            "schema": "{{ env_var('REDSHIFT_SCHEMA', 'analytics') }}",
+            # Lower-case on purpose: Redshift folds identifiers down, so a
+            # tenant-scoped schema written any other way comes back different
+            # from how it went in.
+            "schema": "{{ env_var('REDSHIFT_SCHEMA', 'analytics_{{module}}') }}",
             "sslmode": "require",
             "threads": 8,
         },
@@ -253,7 +336,11 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             # Unity Catalog's first level. dbt's `database` is this, which is
             # why the key is spelled `catalog` and there is no `database`.
             "catalog": "{{ env_var('DATABRICKS_CATALOG') }}",
-            "schema": "{{ env_var('DATABRICKS_SCHEMA', 'analytics') }}",
+            # The catalog is where an estate draws its access boundary, so it
+            # stays whatever the operator set. The schema below it is the
+            # project, which is also the level Unity Catalog grants and lineage
+            # read most naturally.
+            "schema": "{{ env_var('DATABRICKS_SCHEMA', 'analytics_{{module}}') }}",
             "threads": 8,
         },
         env=("DATABRICKS_HOST", "DATABRICKS_HTTP_PATH", "DATABRICKS_CATALOG"),
@@ -302,7 +389,7 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "user": "{{ env_var('POSTGRES_USER') }}",
             "password": "{{ env_var('POSTGRES_PASSWORD', '') }}",
             "dbname": "{{ env_var('POSTGRES_DATABASE') }}",
-            "schema": "{{ env_var('POSTGRES_SCHEMA', 'analytics') }}",
+            "schema": "{{ env_var('POSTGRES_SCHEMA', 'analytics_{{module}}') }}",
             # `prefer` connects plain locally and TLS where offered; managed
             # providers (Neon, RDS) want an explicit `require`.
             "sslmode": "{{ env_var('POSTGRES_SSLMODE', 'prefer') }}",
@@ -355,7 +442,7 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             # in the metadata when the lake is first created, so it is not
             # repeated here — see the generated docs.
             "path": "ducklake:{{ env_var('DUCKLAKE_METADATA') }}",
-            "schema": "{{ env_var('DUCKLAKE_SCHEMA', 'analytics') }}",
+            "schema": "{{ env_var('DUCKLAKE_SCHEMA', 'analytics_{{module}}') }}",
             # A literal string, not a list, so it renders as flow YAML the same
             # way the dev target writes it. httpfs rides along for lakes whose
             # DATA_PATH is object storage.
@@ -456,7 +543,7 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             ],
             # Build into the attached catalog, never the scratch database.
             "database": "lake",
-            "schema": "{{ env_var('R2_CATALOG_NAMESPACE', 'analytics') }}",
+            "schema": "{{ env_var('R2_CATALOG_NAMESPACE', 'analytics_{{module}}') }}",
             # Every model is one optimistic-concurrency commit against the REST
             # catalog; commits to *different* tables never conflict, so dbt's
             # parallelism is safe — kept below the in-warehouse engines' 8
@@ -510,7 +597,10 @@ WAREHOUSES: dict[str, ProductionWarehouse] = {
             "port": "{{ env_var('CLICKHOUSE_PORT', '8443') | int }}",
             "user": "{{ env_var('CLICKHOUSE_USER', 'default') }}",
             "password": "{{ env_var('CLICKHOUSE_PASSWORD', '') }}",
-            "schema": "{{ env_var('CLICKHOUSE_DATABASE', 'analytics') }}",
+            # ClickHouse calls this a database (see the caveat below), which
+            # makes it this engine's whole namespace — there is no level above
+            # it to separate two projects, so the tenant has to be in here.
+            "schema": "{{ env_var('CLICKHOUSE_DATABASE', 'analytics_{{module}}') }}",
             # ClickHouse Cloud is TLS-only on 8443. Defaulting these off would
             # produce a connection error that reads like bad credentials.
             "secure": True,

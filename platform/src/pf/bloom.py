@@ -57,7 +57,7 @@ PLANE: dict[str, str] = {
     "Model": "physical", "Metric": "physical", "Dimension": "physical",
     "Test": "physical", "Exposure": "physical", "Project": "physical",
     "Concept": "semantic", "Property": "semantic", "Relation": "semantic",
-    "Policy": "governance", "Evidence": "governance",
+    "Policy": "governance", "Evidence": "governance", "Decision": "governance",
 }
 
 #: Pale fill, saturated stroke of the same hue. The same three colours the KG
@@ -77,7 +77,7 @@ KIND_COLOUR: dict[str, str] = {
     "Model":     "#19a89f", "Column": "#7fd4cc", "Metric": "#0d9488",
     "Dimension": "#2dd4bf", "Test": "#5eead4", "Exposure": "#042f2e",
     "Concept":   "#5b21b6", "Property": "#a78bfa", "Relation": "#7c3aed",
-    "Policy":    "#334155", "Evidence": "#64748b",
+    "Policy":    "#334155", "Evidence": "#64748b", "Decision": "#1e293b",
 }
 
 #: What a person recognises this node by. Bloom captions on the first property
@@ -91,7 +91,7 @@ ICON: dict[str, str] = {
     "Model": "cube", "Column": "columns", "Metric": "chart-line",
     "Dimension": "filter", "Test": "check-circle", "Exposure": "tv",
     "Concept": "lightbulb", "Property": "tag", "Relation": "link",
-    "Policy": "gavel", "Evidence": "file-alt",
+    "Policy": "gavel", "Evidence": "file-alt", "Decision": "balance-scale",
 }
 
 #: Edge kinds that carry lineage. Bloom draws every relationship the same; these

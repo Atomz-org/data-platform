@@ -219,7 +219,7 @@ def test_runner_executes_proposals_at_the_earned_level(tmp_path: Path) -> None:
     run = run_loop(spec, body, root=root, group="g", project="p")
     assert run.outcome == "proposed" and run.level == "L1"
     assert run.proposals[0]["status"] == "recorded"
-    assert Ledger(root).recent(spec.name, "p")[-1]["outcome"] == "proposed"
+    assert Ledger(root, "g").recent(spec.name, "p")[-1]["outcome"] == "proposed"
 
 
 def test_runner_applies_memory_before_the_ledger(tmp_path: Path) -> None:
@@ -229,7 +229,7 @@ def test_runner_applies_memory_before_the_ledger(tmp_path: Path) -> None:
                    root=root, group="g", project="p")
     assert run.findings == ["new thing"]
     assert run.suppressed == ["known thing"]
-    assert Ledger(root).recent("test-loop", "p")[-1]["findings"] == ["new thing"]
+    assert Ledger(root, "g").recent("test-loop", "p")[-1]["findings"] == ["new thing"]
 
 
 def test_runner_reports_noop_when_memory_suppresses_everything(tmp_path: Path) -> None:

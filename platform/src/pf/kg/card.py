@@ -16,10 +16,41 @@ from pf.kg.store import Node, open_graph
 
 PROJECT_CARD_BUDGET = 1500
 GROUP_CARD_BUDGET = 400
+# The two hand-written memory files are budgeted beside the cards they sit
+# next to. The group CLAUDE.md is loaded by every sister's session and, since
+# it entered the loop prefix, by every LLM-backed loop as well.
+PROJECT_CLAUDE_BUDGET = 600
+GROUP_CLAUDE_BUDGET = 400
+# The repo router, loaded by every session. Budgeted because it is the one
+# always-on file that a growing fleet tempts someone to list every group in,
+# and a table there is paid by every tenant's session forever.
+ROUTER_BUDGET = 700
 
 
 COVERAGE_KINDS = ("feeds", "measures")
 
+
+
+def write_if_changed(path: Path, text: str) -> Path:
+    """Write only when the content differs, so an unchanged artefact keeps its
+    mtime.
+
+    A generator that rewrites an identical file every run makes its own mtime
+    meaningless, and other things read it: the OTOP manifest stamps evidence
+    with the observed file's mtime, so a card rewritten byte-for-byte still
+    produced a fresh timestamp, a changed governance manifest and a dirty
+    working tree. That churn is what stops CI asserting the generated tree
+    matches the committed one.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.is_file():
+        try:
+            if path.read_text() == text:
+                return path
+        except OSError:
+            pass
+    path.write_text(text)
+    return path
 
 def _uncovered_tables(g, tables: list[Node]) -> list[str]:
     """Raw tables from which no Metric is reachable.
@@ -122,12 +153,14 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
         dims = g.nodes("Dimension")
         exposures = g.nodes("Exposure")
         columns = g.nodes("Column")
+        decisions = g.nodes("Decision")
         uncovered = _uncovered_tables(g, tables)
 
     used_concepts = sorted({t.props.get("concept") for t in tables if t.props.get("concept")})
     sources = sorted({t.props.get("source") for t in tables if t.props.get("source")})
     marts = [m for m in models if m.layer == "marts"]
     staging = [m for m in models if m.layer == "staging"]
+    intermediate = [m for m in models if m.layer == "intermediate"]
     pii = [c for c in columns if c.props.get("pii")]
 
     gaps: list[str] = []
@@ -151,6 +184,9 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
                                         + (f" — {n.props.get('grain')}" if n.props.get("grain") else ""))
     lines += ["", f"**Staging models ({len(staging)}):** " +
               _capped((f"`{m.name}`" for m in sorted(staging, key=lambda n: n.name)), 15)]
+    if intermediate:
+        lines += ["", f"**Intermediate models ({len(intermediate)}):** " +
+                  _capped((f"`{m.name}`" for m in sorted(intermediate, key=lambda n: n.name)), 15)]
     lines += ["", f"**Marts ({len(marts)}):**"]
     lines += _bullets(marts, lambda n: f"- `{n.name}`"
                                        + (f" — grain: {n.props.get('grain')}" if n.props.get("grain") else "")
@@ -167,6 +203,12 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
     if pii:
         lines += ["", f"**PII columns ({len(pii)}):** " + _capped(
             sorted(f"{c.props.get('table') or c.props.get('model')}.{c.name}" for c in pii), 10)]
+    if decisions:
+        # The log's own README promises kg_search finds these. Naming them here
+        # is what stops an agent re-deciding a grain the project already fixed.
+        lines += ["", f"**Decisions ({len(decisions)}):**"]
+        lines += _bullets(decisions, lambda n: f"- `{n.name}`"
+                                               + (f" — {n.label}" if n.label else ""), limit=8)
     if gaps:
         lines += ["", "**Known gaps:**"] + [f"- {g}" for g in gaps]
 
@@ -177,7 +219,7 @@ def render_project_card(project_dir: str | Path, group: str, project: str) -> Pa
 
     out = root / "kg" / "context_card.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_if_changed(out, "\n".join(lines) + "\n")
     return out
 
 
@@ -211,7 +253,7 @@ def render_group_card(group_dir: str | Path, group: str) -> Path:
     ]
     out = root / "kg" / "group_card.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_if_changed(out, "\n".join(lines) + "\n")
     return out
 
 

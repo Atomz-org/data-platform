@@ -497,38 +497,7 @@
       "provider": "user"
     }
   ],
-  "metrics": [
-    {
-      "description": "Customers with at least one active subscription.",
-      "displayName": "active_customers",
-      "name": "active_customers"
-    },
-    {
-      "description": "Revenue divided by succeeded payment count.",
-      "displayName": "aov",
-      "name": "aov"
-    },
-    {
-      "description": "All payment attempts regardless of outcome.",
-      "displayName": "gross_payment_volume",
-      "name": "gross_payment_volume"
-    },
-    {
-      "description": "Count of succeeded payments.",
-      "displayName": "payment_count",
-      "name": "payment_count"
-    },
-    {
-      "description": "Net revenue \u2014 succeeded payments only. The single definition.",
-      "displayName": "revenue",
-      "name": "revenue"
-    },
-    {
-      "description": "Month-over-month change in net revenue.",
-      "displayName": "revenue_mom_growth",
-      "name": "revenue_mom_growth"
-    }
-  ],
+  "metrics": [],
   "service_name": "acme_acme_us",
   "tags": [
     {

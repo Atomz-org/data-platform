@@ -28,15 +28,34 @@ def main() -> int:
     wh = Warehouse.for_project(PROJECT_DIR, GROUP, PROJECT)
     from commodity_india.sources import gold_api, reference, yahoo_finance
 
-    for name, source in (("reference", reference.reference_source()),
-                         ("yahoo_finance", yahoo_finance.yahoo_finance_source()),
-                         ("gold_api", gold_api.gold_api_source())):
+    # The raw stage: one dlt dataset per source, which dbt's staging reads.
+    # `required` sources are the sources of record — an empty table there is a
+    # failed seed, not a quiet one. gold_api is a backup feed and only warns.
+    for name, source, required in (("reference", reference.reference_source(), True),
+                                   ("yahoo_finance", yahoo_finance.yahoo_finance_source(), True),
+                                   ("gold_api", gold_api.gold_api_source(), False)):
         t0 = time.time()
-        info = run_source(wh, source, source_name=name, dataset=name)
+        try:
+            info = run_source(wh, source, source_name=name, dataset=name)
+        except Exception as exc:  # noqa: BLE001 — recorded, then re-raised if it matters
+            obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt", name=name,
+                                    status="error" if required else "warn",
+                                    duration_ms=int((time.time() - t0) * 1000),
+                                    message=str(exc)[:500])
+            if required:
+                raise
+            print(f"  dlt → dataset={name} failed, backup feed: {str(exc)[:120]}")
+            continue
+        counts = ", ".join(f"{t}={n}" for t, n in sorted(info["rows"].items()))
+        empty = sorted(t for t, n in info["rows"].items() if n == 0)
         obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt", name=name,
-                                status="ok", duration_ms=int((time.time() - t0) * 1000),
-                                message=f"loads={len(info['load_ids'])}")
-        print(f"  dlt → {wh.path.name} dataset={name}")
+                                status="error" if (required and empty) else "ok",
+                                duration_ms=int((time.time() - t0) * 1000),
+                                message=f"loads={len(info['load_ids'])} rows: {counts}")
+        print(f"  dlt → {wh.path.name} dataset={name} ({counts})")
+        if required and empty:
+            print(f"  {name}: nothing landed in {', '.join(empty)} — not building marts over it")
+            return 1
 
     ann_path = export_project_annotations(PROJECT_DIR)
     anns = load_annotations(ann_path)

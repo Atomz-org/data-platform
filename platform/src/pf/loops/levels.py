@@ -83,11 +83,14 @@ def _key(loop: str, project: str) -> str:
 
 
 def effective(root: Path, spec: LoopSpec, project: str) -> Autonomy:
-    """The level the runner must honour: the override if one exists, else birth."""
+    """The level the runner must honour: the override if one exists, else birth,
+    and never above the ceiling a group's loops.yaml set for it."""
     rec = _read(root).get(_key(spec.name, project))
-    if rec and rec.get("level") in LEVELS:
-        return rec["level"]
-    return spec.autonomy
+    level = rec["level"] if rec and rec.get("level") in LEVELS else spec.autonomy
+    ceiling = getattr(spec, "ceiling", None)
+    if ceiling in LEVELS and LEVELS.index(level) > LEVELS.index(ceiling):
+        return ceiling
+    return level
 
 
 def set_level(root: Path, spec: LoopSpec, project: str, level: Autonomy, *,
@@ -152,9 +155,30 @@ def latest_evals(root: Path) -> dict[str, Any]:
         return {}
 
 
+class _Fleet:
+    """Every group's ledger read as one history.
+
+    The runner writes a run to its group's own file (`Ledger(root, group)`), so
+    evidence read from the fleet-wide file alone would find no clean runs and no
+    loop could ever be promoted. Promotion is keyed by loop and project, which
+    `all_entries` carries on every row.
+    """
+
+    def __init__(self, root: Path) -> None:
+        self.root = root
+
+    def read(self) -> list[dict]:
+        from pf.loops.runner import all_entries
+        return all_entries(self.root)
+
+    def recent(self, loop: str, project: str, n: int = 5) -> list[dict]:
+        return [e for e in self.read()
+                if e["loop"] == loop and e["project"] == project][-n:]
+
+
 def eligibility(root: Path, spec: LoopSpec, project: str) -> Evidence:
     """What the ledger says about the next rung, and what still blocks it."""
-    ledger = Ledger(root)
+    ledger = _Fleet(root)
     cur = effective(root, spec, project)
     idx = LEVELS.index(cur)
     target: Autonomy | None = LEVELS[idx + 1] if idx + 1 < len(LEVELS) else None
@@ -246,7 +270,7 @@ def record_revert(root: Path, spec: LoopSpec, group: str, project: str, *,
     from pf import trace
     from pf.loops.runner import LoopRun, _now
 
-    ledger = Ledger(root)
+    ledger = Ledger(root, group)
     run = LoopRun(run_id=str(uuid.uuid4())[:8], loop=spec.name, group=group,
                   project=project, started_at=_now(), outcome="reverted",
                   message=f"reverted by {actor}: {note}")

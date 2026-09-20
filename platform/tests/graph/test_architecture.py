@@ -83,7 +83,8 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
     NOT_PER_PROJECT = {"OWL export", "vendor docs", "directories", "group card",
                        "group air.yaml", "tools", "capabilities", "conformance",
                        "architecture map", "capability policies",
-                       "notify channel"}
+                       "notify channel", "pre-commit gate", "group manifest",
+                       "group plugin + loops", "platform CI"}
     covered = {
         "knowledge graph": "graph", "context card": "card", "MDL manifest": "mdl",
         "otop manifest": "otop", "reporting": "reporting",

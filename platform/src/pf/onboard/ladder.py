@@ -1048,7 +1048,7 @@ def record(root: Path, group: str, project: str, stage: Stage,
     from pf.loops.runner import CircuitBreaker, Ledger, LoopRun, _now
 
     spec = spec_for(stage)
-    ledger = Ledger(root)
+    ledger = Ledger(root, group)
     run = LoopRun(
         run_id=str(uuid.uuid4())[:8], loop=spec.name, group=group, project=project,
         started_at=_now(),

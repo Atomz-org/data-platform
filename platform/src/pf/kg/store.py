@@ -29,6 +29,9 @@ NODE_KINDS = (
     "Concept", "Property", "Relation",
     # governance (OpenTopology: intent -> constraint -> artifact -> evidence)
     "Policy", "Evidence",
+    # a recorded decision (decisions/ADR-*.md): intent a human wrote down, so a
+    # change can be checked against it rather than rediscovering it in review
+    "Decision",
 )
 EDGE_KINDS = (
     # lineage — always upstream -> downstream
@@ -43,6 +46,7 @@ EDGE_KINDS = (
     # governance
     "governs",        # Policy -> anything it constrains
     "evidenced_by",   # Policy -> Evidence
+    "decides",        # Decision -> the node it governs (a model, metric, column, ...)
 )
 
 SCHEMA = """

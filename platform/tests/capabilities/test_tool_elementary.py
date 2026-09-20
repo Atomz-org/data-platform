@@ -224,7 +224,7 @@ def test_retargeting_the_project_retargets_edr(tmp_path: Path) -> None:
     doc = yaml.safe_load((t / "profiles.yml").read_text())
     prod = doc["elementary"]["outputs"]["prod"]
     assert prod["path"] == "ducklake:{{ env_var('DUCKLAKE_METADATA') }}"
-    assert prod["schema"] == "{{ env_var('DUCKLAKE_SCHEMA', 'analytics') }}_elementary"
+    assert prod["schema"] == "{{ env_var('DUCKLAKE_SCHEMA', 'analytics_{{module}}') }}_elementary"
     # The project's own targets are untouched by the derivation.
     assert doc["demo"]["outputs"]["dev"]["path"] == "{{ env_var('PF_DUCKDB_PATH') }}"
 

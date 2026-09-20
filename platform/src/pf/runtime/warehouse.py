@@ -11,6 +11,28 @@ opening the file, and writers take the write window. Both happen inside
 Cross-entity reads go through `attach_sisters`, which mounts sibling databases
 READ_ONLY so a roll-up can never corrupt a sister; a served sister's file is
 borrowed for the duration, exactly as her own writers borrow it.
+
+## MotherDuck is the same arrangement, in the cloud
+
+Which means it has to stay one database per project. `PF_MOTHERDUCK_DB` names
+the **account prefix**, never the database: the database a project opens is
+`<prefix>_<project slug>`, built from the same slug that names the local file
+and the Dagster writer pool.
+
+It used to be the database name outright, and that is the defect this paragraph
+exists to record. One exported variable — in a shell, a CI job, a Dagster
+deployment — pointed every project in every group at a single MotherDuck
+database. Two sisters then built their marts into the same tables, each
+overwriting the other, and *nothing said so*: both runs report success, because
+writing to the database you were configured to write to is not an error. The
+per-file isolation above is load-bearing, and a shared `md:` target throws it
+away while looking like configuration.
+
+`PF_MOTHERDUCK_DATABASE` still names an exact database, for the case where
+somebody genuinely means one — a migration, a scratch space, a single-tenant
+deployment. It is deliberately the longer spelling and it is deliberately not
+the variable anyone already has exported: sharing a database is now something
+you ask for by name.
 """
 
 from __future__ import annotations
@@ -26,6 +48,17 @@ from pf.runtime import adbc, quack
 EXTENSIONS = ("httpfs", "json")
 
 
+def project_slug(project: str) -> str:
+    """The one spelling of a project used as an identifier.
+
+    The DuckDB file, the Dagster writer pool and the MotherDuck database are all
+    named from this. A second convention would be a second answer to "which
+    project is this", and the place that would surface is a cross-entity
+    roll-up, where the two answers are both present and only one is right.
+    """
+    return project.replace("-", "_")
+
+
 @dataclass(frozen=True)
 class Warehouse:
     """Resolved warehouse handle for one project."""
@@ -33,16 +66,32 @@ class Warehouse:
     group: str
     project: str
     path: Path
+    #: The **resolved** MotherDuck database, already tenant-scoped by
+    #: `for_project` — never the raw `PF_MOTHERDUCK_DB` prefix. `dsn` prepends
+    #: `md:` and nothing else, so whatever is here is what gets written to, and
+    #: a handle can be printed and believed.
     motherduck: str | None = None
 
     @classmethod
     def for_project(cls, project_dir: str | Path, group: str, project: str) -> Warehouse:
+        slug = project_slug(project)
         root = Path(project_dir)
-        md = os.environ.get("PF_MOTHERDUCK_DB")
+        # Read here rather than in `dsn` so the scoping happens exactly once, at
+        # the point where the project is known, and every later reader sees a
+        # database name rather than an env var it has to re-interpret.
+        #
+        # Exact beats derived, and the prefix is suffixed rather than inspected:
+        # a `PF_MOTHERDUCK_DB` that was holding a real database name before this
+        # change now resolves to `<that>_<slug>`, which is visibly wrong on the
+        # first run instead of quietly shared forever. The fix that error points
+        # at is the right one — move the value to `PF_MOTHERDUCK_DATABASE`.
+        exact = os.environ.get("PF_MOTHERDUCK_DATABASE")
+        prefix = os.environ.get("PF_MOTHERDUCK_DB")
+        md = exact or (f"{prefix}_{slug}" if prefix else None)
         return cls(
             group=group,
             project=project,
-            path=root / "data" / f"{project.replace('-', '_')}.duckdb",
+            path=root / "data" / f"{slug}.duckdb",
             motherduck=md,
         )
 
@@ -56,7 +105,7 @@ class Warehouse:
     def writer_pool(self) -> str:
         """Dagster concurrency pool — scoped per project so sisters never queue
         behind each other."""
-        return f"duckdb_writer_{self.project.replace('-', '_')}"
+        return f"duckdb_writer_{project_slug(self.project)}"
 
     def ensure_dir(self) -> Path:
         """Create `data/` so something else can open the file inside it.
@@ -71,7 +120,7 @@ class Warehouse:
         return self.path
 
     @contextmanager
-    def connect(self, read_only: bool = False) -> Iterator["adbc.Connection | quack.ReadConnection"]:
+    def connect(self, read_only: bool = False) -> Iterator[adbc.Connection | quack.ReadConnection]:
         self.ensure_dir()
         served = None if self.motherduck else quack.running_state(self.path)
 
@@ -102,7 +151,7 @@ class Warehouse:
             yield con
 
     @contextmanager
-    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator["adbc.Connection"]:
+    def attach_sisters(self, sisters: dict[str, Path]) -> Iterator[adbc.Connection]:
         """Attach sibling project databases READ_ONLY for cross-entity roll-ups.
 
         A served sister's file is borrowed for the duration — her server

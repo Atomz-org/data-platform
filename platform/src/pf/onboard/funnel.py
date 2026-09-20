@@ -89,7 +89,7 @@ def _hours(a: str, b: str) -> float:
 
 
 def funnel(root: Path, group: str, project: str) -> Funnel:
-    rows = [e for e in Ledger(root).read()
+    rows = [e for e in Ledger(root, group).read()
             if e.get("project") == project and str(e.get("loop", "")).startswith("onboard-")]
     f = Funnel(group, project)
     for stage in STAGE_ORDER:
