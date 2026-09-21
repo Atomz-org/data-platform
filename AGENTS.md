@@ -108,6 +108,10 @@ Hand-editing one is silently discarded by the next regeneration.
 | `.memory/MEMORY.md` | `pf memory index` (or `pf memory add`) | the notes |
 | `docs/VENDOR*.md` | `pf vendor docs` | `platform/src/pf/vendor/registry.yaml` |
 
+`pf context refresh` regenerates the memory index, the test index and the
+repo map in one step — the fix the `agent-context` workflow names when a pull
+request leaves any of them stale.
+
 A regenerated artefact is safe to commit only when the generator could see
 everything the committed copy was built from. Without a warehouse, `pf kg
 build` silently drops typed column nodes; without a fresh
@@ -125,6 +129,7 @@ uv run ruff check platform/                       # any platform/** change
 uv run pf test check                              # added or moved a test file → pf test index
 uv run pf memory check                            # added or edited a note   → pf memory index
 uv run pf arch check                              # repo map current
+uv run pf context check                           # entry points still agree; every module has its README
 uv run pytest platform/tests -q                   # the platform suite
 uv run pf kg build <g> <p> && uv run pf arch <g> <p> --check   # any project change
 uv run pf kg check <g> <p> --strict
@@ -150,9 +155,10 @@ uv run pf memory add <module> <kebab-name> "<one line>" --body-file notes.md
 the narrowest scope the lesson is true of. Commit the note and the regenerated
 `.memory/MEMORY.md` together. Do not hand-edit the index.
 
-The note records **who** wrote it: `--agent <name>` if you say, otherwise
-detected from your environment — `PF_AGENT`, else Claude Code's `CLAUDECODE`,
-Gemini CLI's `GEMINI_CLI`, GitHub Actions' actor. A tool the detector does not
+The note records **who** wrote it, and will not be written without: `--agent
+<name>` if you say, otherwise detected from your environment — `PF_AGENT`,
+else Claude Code's `CLAUDECODE`, Gemini CLI's `GEMINI_CLI`, GitHub Actions'
+actor, else a person at a keyboard as `human`. A tool the detector does not
 know exports `PF_AGENT=<name>` once and nothing else changes. The index shows
 it as a column; `pf memory show --toon` prints
 `notes[N]{module,name,type,status,agent,description}`, which is the form the
@@ -196,6 +202,13 @@ branch and its pull request; what an agent did is the provenance chain
 tools, work this checkout at once; one mutable file every session appends to
 is a conflict on every PR, and a second copy of the architecture is stale on
 the first commit after it is written.
+
+**Every pull request is checked for all of this.** The `agent-context`
+workflow runs on every PR, with no path filter: the entry points must agree
+(`pf context check`), and the memory index, the test index and the repo map
+must be current. When they are not, the run summary shows what
+`pf context refresh` would change; with an `AGENT_CONTEXT_TOKEN` secret the
+workflow commits that refresh to the branch itself.
 
 ## 7. Never
 
