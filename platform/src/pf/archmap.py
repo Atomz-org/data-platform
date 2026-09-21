@@ -33,10 +33,10 @@ import yaml
 #: are readable side by side. Pale fill, saturated stroke, near-black ink — the
 #: house rule, and the only one that survives GitHub's light and dark pages.
 PALETTE = {
-    "code":  ("#d9f4ee", "#0f766e"),
-    "data":  ("#e9e1fb", "#5b21b6"),
-    "gov":   ("#e0e6ed", "#334155"),
-    "ext":   ("#fdf6e3", "#8a6d1f"),
+    "code": ("#d9f4ee", "#0f766e"),
+    "data": ("#e9e1fb", "#5b21b6"),
+    "gov": ("#e0e6ed", "#334155"),
+    "ext": ("#fdf6e3", "#8a6d1f"),
 }
 
 
@@ -69,10 +69,11 @@ def gather(root: str | Path) -> Facts:
     if gdir.is_dir():
         for g in sorted(x for x in gdir.iterdir() if x.is_dir() and not x.name.startswith(".")):
             pdir = g / "projects"
-            f.groups[g.name] = sorted(
-                x.name for x in pdir.iterdir()
-                if x.is_dir() and not x.name.startswith(".")
-            ) if pdir.is_dir() else []
+            f.groups[g.name] = (
+                sorted(x.name for x in pdir.iterdir() if x.is_dir() and not x.name.startswith("."))
+                if pdir.is_dir()
+                else []
+            )
 
     # Per-project shape from the committed graph, not the warehouse: graph.json
     # is tracked, so this works in a fresh clone with no DuckDB files.
@@ -97,15 +98,15 @@ def gather(root: str | Path) -> Facts:
         #
         # Idempotent, and it never overwrites a hand-written capability.
         from pf.tools import register_capabilities
+
         register_capabilities()
     except Exception:  # noqa: BLE001 — a broken tool must not empty the map
         pass
 
     try:
         from pf.capabilities import CAPABILITIES
-        f.capabilities = sorted(
-            (c.name, c.default_enabled, _contributes(c)) for c in CAPABILITIES.values()
-        )
+
+        f.capabilities = sorted((c.name, c.default_enabled, _contributes(c)) for c in CAPABILITIES.values())
     except Exception:  # noqa: BLE001 — a broken registry must not stop the map
         pass
 
@@ -119,30 +120,40 @@ def gather(root: str | Path) -> Facts:
 
     try:
         from pf.ontology.model import load_ontology
+
         o = load_ontology()
-        f.ontology = {"classes": len(o.classes), "relations": len(o.relations),
-                      "policies": len(o.policies), "roles": len(o.roles)}
+        f.ontology = {
+            "classes": len(o.classes),
+            "relations": len(o.relations),
+            "policies": len(o.policies),
+            "roles": len(o.roles),
+        }
     except Exception:  # noqa: BLE001
         pass
 
     try:
         from pf.kg.store import EDGE_KINDS, NODE_KINDS
+
         f.kg_kinds = {"nodes": len(NODE_KINDS), "edges": len(EDGE_KINDS)}
     except Exception:  # noqa: BLE001
         pass
 
     try:
         from pf.cli import app
-        f.cli = {"commands": len(app.registered_commands),
-                 "groups": len(app.registered_groups)}
+
+        f.cli = {"commands": len(app.registered_commands), "groups": len(app.registered_groups)}
     except Exception:  # noqa: BLE001
         pass
 
     try:
         from pf.testmap import scan
+
         files = scan(r / "platform" / "tests")
-        f.tests = {"files": len(files), "tests": sum(x.tests for x in files),
-                   "groups": len({x.group for x in files if x.group})}
+        f.tests = {
+            "files": len(files),
+            "tests": sum(x.tests for x in files),
+            "groups": len({x.group for x in files if x.group}),
+        }
     except Exception:  # noqa: BLE001
         pass
 
@@ -170,175 +181,206 @@ def _contributes(cap) -> str:
 
 # --------------------------------------------------------------- render -----
 def _classdefs(*names: str) -> list[str]:
-    return [f"  classDef {n} fill:{PALETTE[n][0]},stroke:{PALETTE[n][1]},"
-            f"stroke-width:1.4px,color:#0b0b0b" for n in names]
+    return [
+        f"  classDef {n} fill:{PALETTE[n][0]},stroke:{PALETTE[n][1]},stroke-width:1.4px,color:#0b0b0b" for n in names
+    ]
 
 
 def _layout(f: Facts) -> str:
     """Where things live. The only diagram that names directories."""
     proj = f.projects
     groups = len(f.groups)
-    return "\n".join([
-        "```mermaid",
-        "flowchart TB",
-        '  subgraph SHARED["platform/ — shared by every project, never edited per company"]',
-        "    direction LR",
-        (f'    ENG["src/pf/<br/>{f.cli.get("commands", 0)} commands · '
-         f'{f.cli.get("groups", 0)} groups"]'),
-        f'    TK["toolkits/<br/>{len(f.toolkits)} craft toolkits"]',
-        (f'    TST["tests/<br/>{f.tests.get("groups", 0)} groups · '
-         f'{f.tests.get("tests", 0)} tests"]'),
-        '    ENT["entrypoints/<br/>container entrypoints"]',
-        "  end",
-        "",
-        f'  subgraph ENTITIES["groups/ — {groups} groups, {proj} projects"]',
-        "    direction LR",
-        '    GRP["&lt;group&gt;/ontology/<br/>extension · instance · policy"]',
-        '    PRJ["&lt;group&gt;/projects/&lt;project&gt;/<br/>src · transform · kg · governance"]',
-        "    GRP --> PRJ",
-        "  end",
-        "",
-        f'  VEN["vendor/<br/>{f.upstreams} pinned upstreams · read-only"]',
-        '  GATE["gate.yaml + gate.capabilities.yaml<br/>pre-commit hook and CI"]',
-        "",
-        "  SHARED --> ENTITIES",
-        "  VEN -.provenance.-> SHARED",
-        "  GATE -.judges.-> ENTITIES",
-        "  GATE -.judges.-> SHARED",
-        "",
-        *_classdefs("code", "data", "gov", "ext"),
-        "  class ENG,TK,TST,ENT code",
-        "  class GRP,PRJ data",
-        "  class GATE gov",
-        "  class VEN ext",
-        '  style SHARED fill:#f4fbf9,stroke:#0f766e,stroke-dasharray:5 4,color:#0b0b0b',
-        '  style ENTITIES fill:#f8f5fe,stroke:#5b21b6,stroke-dasharray:5 4,color:#0b0b0b',
-        "```",
-    ])
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart TB",
+            '  subgraph SHARED["platform/ — shared by every project, never edited per company"]',
+            "    direction LR",
+            (f'    ENG["src/pf/<br/>{f.cli.get("commands", 0)} commands · {f.cli.get("groups", 0)} groups"]'),
+            f'    TK["toolkits/<br/>{len(f.toolkits)} craft toolkits"]',
+            (f'    TST["tests/<br/>{f.tests.get("groups", 0)} groups · {f.tests.get("tests", 0)} tests"]'),
+            '    ENT["entrypoints/<br/>container entrypoints"]',
+            "  end",
+            "",
+            f'  subgraph ENTITIES["groups/ — {groups} groups, {proj} projects"]',
+            "    direction LR",
+            '    GRP["&lt;group&gt;/ontology/<br/>extension · instance · policy"]',
+            '    PRJ["&lt;group&gt;/projects/&lt;project&gt;/<br/>src · transform · kg · governance"]',
+            "    GRP --> PRJ",
+            "  end",
+            "",
+            f'  VEN["vendor/<br/>{f.upstreams} pinned upstreams · read-only"]',
+            '  GATE["gate.yaml + gate.capabilities.yaml<br/>pre-commit hook and CI"]',
+            "",
+            "  SHARED --> ENTITIES",
+            "  VEN -.provenance.-> SHARED",
+            "  GATE -.judges.-> ENTITIES",
+            "  GATE -.judges.-> SHARED",
+            "",
+            *_classdefs("code", "data", "gov", "ext"),
+            "  class ENG,TK,TST,ENT code",
+            "  class GRP,PRJ data",
+            "  class GATE gov",
+            "  class VEN ext",
+            "  style SHARED fill:#f4fbf9,stroke:#0f766e,stroke-dasharray:5 4,color:#0b0b0b",
+            "  style ENTITIES fill:#f8f5fe,stroke:#5b21b6,stroke-dasharray:5 4,color:#0b0b0b",
+            "```",
+        ]
+    )
 
 
 def _pipeline() -> str:
     """One project, source to consumer. Names are conventions, not one company's."""
-    return "\n".join([
-        "```mermaid",
-        "flowchart LR",
-        '  SRC["external source<br/>API · file · database"]',
-        '  DLT["src/&lt;module&gt;/sources.py<br/>dlt @resource"]',
-        '  ANN["contracts/annotations.yaml<br/>concept · roles · links · grain"]',
-        '  DUCK[("data/&lt;project&gt;.duckdb<br/>raw schema")]',
-        '  STG["transform/models/staging/<br/>stg_&lt;source&gt;__&lt;table&gt;.sql"]',
-        '  MART["transform/models/marts/<br/>fct_* · dim_*"]',
-        '  SEM["transform/models/semantic/<br/>MetricFlow measures + metrics"]',
-        '  EXP["exposures<br/>dashboard · application"]',
-        '  KG[("kg/graph.duckdb<br/>+ graph.json (tracked)")]',
-        "",
-        "  SRC --> DLT --> DUCK --> STG --> MART --> SEM --> EXP",
-        "  DLT -.exports.-> ANN",
-        "  ANN --> KG",
-        "  MART --> KG",
-        "  SEM --> KG",
-        "",
-        *_classdefs("code", "data", "gov"),
-        "  class DLT,STG,MART,SEM code",
-        "  class SRC,DUCK,KG data",
-        "  class ANN,EXP gov",
-        "```",
-    ])
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart LR",
+            '  SRC["external source<br/>API · file · database"]',
+            '  DLT["src/&lt;module&gt;/sources.py<br/>dlt @resource"]',
+            '  ANN["contracts/annotations.yaml<br/>concept · roles · links · grain"]',
+            '  DUCK[("data/&lt;project&gt;.duckdb<br/>raw schema")]',
+            '  STG["transform/models/staging/<br/>stg_&lt;source&gt;__&lt;table&gt;.sql"]',
+            '  MART["transform/models/marts/<br/>fct_* · dim_*"]',
+            '  SEM["transform/models/semantic/<br/>MetricFlow measures + metrics"]',
+            '  EXP["exposures<br/>dashboard · application"]',
+            '  KG[("kg/graph.duckdb<br/>+ graph.json (tracked)")]',
+            "",
+            "  SRC --> DLT --> DUCK --> STG --> MART --> SEM --> EXP",
+            "  DLT -.exports.-> ANN",
+            "  ANN --> KG",
+            "  MART --> KG",
+            "  SEM --> KG",
+            "",
+            *_classdefs("code", "data", "gov"),
+            "  class DLT,STG,MART,SEM code",
+            "  class SRC,DUCK,KG data",
+            "  class ANN,EXP gov",
+            "```",
+        ]
+    )
 
 
 def _seams() -> str:
     """How one edit reaches eight projects — the thing worth understanding first."""
-    return "\n".join([
-        "```mermaid",
-        "flowchart LR",
-        '  CAP["Capability<br/>pf/capabilities.py"]',
-        '  TOOL["Tool<br/>pf.tools entry point"]',
-        '  BOOT["pf bootstrap<br/>idempotent, --all"]',
-        '  FILES["scaffolded files"]',
-        '  SETT[".claude/settings.json"]',
-        '  GRULES["gate.capabilities.yaml"]',
-        '  CI[".github/workflows/&lt;project&gt;.yml"]',
-        '  RUN["Dagster assets · CLI · UI"]',
-        "",
-        "  CAP --> BOOT",
-        "  TOOL --> BOOT",
-        "  TOOL --> RUN",
-        "  BOOT --> FILES",
-        "  BOOT --> SETT",
-        "  BOOT --> GRULES",
-        "  BOOT --> CI",
-        "",
-        *_classdefs("code", "gov", "ext"),
-        "  class CAP,TOOL,BOOT code",
-        "  class GRULES,CI gov",
-        "  class FILES,SETT,RUN ext",
-        "```",
-    ])
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart LR",
+            '  CAP["Capability<br/>pf/capabilities.py"]',
+            '  TOOL["Tool<br/>pf.tools entry point"]',
+            '  BOOT["pf bootstrap<br/>idempotent, --all"]',
+            '  FILES["scaffolded files"]',
+            '  SETT[".claude/settings.json"]',
+            '  GRULES["gate.capabilities.yaml"]',
+            '  CI[".github/workflows/&lt;project&gt;.yml"]',
+            '  RUN["Dagster assets · CLI · UI"]',
+            "",
+            "  CAP --> BOOT",
+            "  TOOL --> BOOT",
+            "  TOOL --> RUN",
+            "  BOOT --> FILES",
+            "  BOOT --> SETT",
+            "  BOOT --> GRULES",
+            "  BOOT --> CI",
+            "",
+            *_classdefs("code", "gov", "ext"),
+            "  class CAP,TOOL,BOOT code",
+            "  class GRULES,CI gov",
+            "  class FILES,SETT,RUN ext",
+            "```",
+        ]
+    )
 
 
 def _context() -> str:
     """What an agent is charged for, and what it should ask for instead."""
-    return "\n".join([
-        "```mermaid",
-        "flowchart TB",
-        '  subgraph ALWAYS["always on — paid on every request, budgeted by pf tokens"]',
-        "    direction LR",
-        '    R["CLAUDE.md<br/>the router"]',
-        '    PC["&lt;project&gt;/CLAUDE.md<br/>600 tokens"]',
-        '    CARD["kg/context_card.md<br/>1500 tokens"]',
-        '    GC["kg/group_card.md<br/>400 tokens"]',
-        "  end",
-        '  subgraph ONDEMAND["on demand — free until the description matches"]',
-        "    direction LR",
-        '    SK["toolkit skills"]',
-        '    DOC["docs/*.md<br/>ARCHITECTURE · KG-ATLAS · POLICY"]',
-        "  end",
-        '  subgraph ASKED["queried — never loaded"]',
-        "    direction LR",
-        '    KGQ["kg_search · kg_neighbors · kg_path"]',
-        '    IMP["impact_analysis"]',
-        '    MF["query_metrics"]',
-        "  end",
-        "",
-        "  ALWAYS --> ONDEMAND --> ASKED",
-        "",
-        *_classdefs("gov", "code", "data"),
-        "  class R,PC,CARD,GC gov",
-        "  class SK,DOC code",
-        "  class KGQ,IMP,MF data",
-        '  style ALWAYS fill:#f4f6f9,stroke:#334155,stroke-dasharray:5 4,color:#0b0b0b',
-        '  style ONDEMAND fill:#f4fbf9,stroke:#0f766e,stroke-dasharray:5 4,color:#0b0b0b',
-        '  style ASKED fill:#f8f5fe,stroke:#5b21b6,stroke-dasharray:5 4,color:#0b0b0b',
-        "```",
-    ])
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart TB",
+            '  subgraph ALWAYS["always on — paid on every request, budgeted by pf tokens"]',
+            "    direction LR",
+            '    R["CLAUDE.md<br/>the router"]',
+            '    PC["&lt;project&gt;/CLAUDE.md<br/>600 tokens"]',
+            '    CARD["kg/context_card.md<br/>1500 tokens"]',
+            '    GC["kg/group_card.md<br/>400 tokens"]',
+            "  end",
+            '  subgraph ONDEMAND["on demand — free until the description matches"]',
+            "    direction LR",
+            '    SK["toolkit skills"]',
+            '    DOC["docs/*.md<br/>ARCHITECTURE · KG-ATLAS · POLICY"]',
+            "  end",
+            '  subgraph ASKED["queried — never loaded"]',
+            "    direction LR",
+            '    KGQ["kg_search · kg_neighbors · kg_path"]',
+            '    IMP["impact_analysis"]',
+            '    MF["query_metrics"]',
+            "  end",
+            "",
+            "  ALWAYS --> ONDEMAND --> ASKED",
+            "",
+            *_classdefs("gov", "code", "data"),
+            "  class R,PC,CARD,GC gov",
+            "  class SK,DOC code",
+            "  class KGQ,IMP,MF data",
+            "  style ALWAYS fill:#f4f6f9,stroke:#334155,stroke-dasharray:5 4,color:#0b0b0b",
+            "  style ONDEMAND fill:#f4fbf9,stroke:#0f766e,stroke-dasharray:5 4,color:#0b0b0b",
+            "  style ASKED fill:#f8f5fe,stroke:#5b21b6,stroke-dasharray:5 4,color:#0b0b0b",
+            "```",
+        ]
+    )
 
 
 def _merge_path() -> str:
-    return "\n".join([
-        "```mermaid",
-        "flowchart LR",
-        '  EDIT["an edit"]',
-        '  HOOK["pre-commit<br/>--diff-filter=ACMR"]',
-        '  RULES["denylist · impact_required<br/>maxFiles"]',
-        '  BLAST["impact_analysis<br/>against the base graph"]',
-        '  PRCI["&lt;project&gt;.yml<br/>impact-gate · kg-current · recce"]',
-        '  PLCI["platform-tests.yml<br/>ruff · pf test check · pytest"]',
-        '  MERGE(["merge"])',
-        "",
-        "  EDIT --> HOOK --> RULES --> BLAST --> PRCI --> MERGE",
-        "  EDIT --> PLCI --> MERGE",
-        "",
-        *_classdefs("gov", "code"),
-        "  class HOOK,RULES,BLAST,MERGE gov",
-        "  class PRCI,PLCI code",
-        "```",
-    ])
+    return "\n".join(
+        [
+            "```mermaid",
+            "flowchart LR",
+            '  EDIT["an edit"]',
+            '  HOOK["pre-commit<br/>--diff-filter=ACMR"]',
+            '  RULES["denylist · impact_required<br/>maxFiles"]',
+            '  BLAST["impact_analysis<br/>against the base graph"]',
+            '  PRCI["&lt;project&gt;.yml<br/>impact-gate · kg-current · recce"]',
+            '  PLCI["platform-tests.yml<br/>ruff · pf test check · pytest"]',
+            '  MERGE(["merge"])',
+            "",
+            "  EDIT --> HOOK --> RULES --> BLAST --> PRCI --> MERGE",
+            "  EDIT --> PLCI --> MERGE",
+            "",
+            *_classdefs("gov", "code"),
+            "  class HOOK,RULES,BLAST,MERGE gov",
+            "  class PRCI,PLCI code",
+            "```",
+        ]
+    )
+
+
+def _workflow_provenance(workflow: str, project_shape: dict[str, dict[str, int]]) -> str:
+    """How `workflow` came to exist, for the "What has to pass before a merge" table.
+
+    This used to be a hardcoded set of the hand-written ones, checked against
+    the docstring's own rule that nothing here is "a parallel hand-maintained
+    file" — and it drifted exactly that way. `vendor-pins.yml`, `ai-governance.yml`
+    and `loop-observations.yml` all rendered as "generated per project" despite
+    being hand-written and repo-wide, because the set was never touched when
+    any of the three was added. So this reads the fact it already has instead
+    of a second list: a workflow named after an actual project is generated by
+    `pf bootstrap` for that project; everything else is repo-wide, and
+    `platform.yml` is the one repo-wide file that is *also* generated — see
+    `PLATFORM_WORKFLOW` in `pf.scaffold.bootstrap`.
+    """
+    stem = workflow.removesuffix(".yml")
+    projects = {name.split("/", 1)[1] for name in project_shape}
+    if stem in projects:
+        return "generated per project — `pf bootstrap`"
+    if stem == "platform":
+        return "generated, repo-wide — `pf bootstrap`"
+    return "hand-written, repo-wide"
 
 
 def _table(header: list[str], rows: list[list[str]], align: str = "") -> list[str]:
     sep = align or "|".join(["---"] * len(header))
-    return ["| " + " | ".join(header) + " |", "|" + sep + "|",
-            *["| " + " | ".join(r) + " |" for r in rows], ""]
+    return ["| " + " | ".join(header) + " |", "|" + sep + "|", *["| " + " | ".join(r) + " |" for r in rows], ""]
 
 
 def render(f: Facts) -> str:
@@ -349,9 +391,11 @@ def render(f: Facts) -> str:
         "GENERATED by `pf arch build`. Do not hand-edit — `pf arch check` fails",
         "when this file and the repository disagree, and the repository wins.",
         "",
-        (f"{len(f.groups)} groups · {f.projects} projects · "
-         f"{len(f.toolkits)} toolkits · {f.upstreams} pinned upstreams · "
-         f"{f.tests.get('tests', 0)} tests"),
+        (
+            f"{len(f.groups)} groups · {f.projects} projects · "
+            f"{len(f.toolkits)} toolkits · {f.upstreams} pinned upstreams · "
+            f"{f.tests.get('tests', 0)} tests"
+        ),
         "",
         "Read this instead of grepping. Every diagram is the shape; every table",
         "is the path. Where a question has a fixed answer, it is below.",
@@ -386,7 +430,8 @@ def render(f: Facts) -> str:
                 ["how policy layers", "`docs/POLICY.md`"],
                 ["the session layer, hooks and commands", "`platform/toolkits/power-tools/`"],
                 ["what was taken from each upstream", "`platform/src/pf/vendor/registry.yaml`"],
-            ]),
+            ],
+        ),
         "---",
         "",
         "## One project, source to consumer",
@@ -415,16 +460,20 @@ def render(f: Facts) -> str:
         # the warehouse exists carries columns a runner's build does not, and a
         # total that includes them turns `pf arch check` into a question about
         # who last built the graph rather than about the project.
-        rows.append([f"`{name}`", *[str(c.get(k, 0)) for k in kinds],
-                     str(sum(n for k, n in c.items() if k != "Column"))])
-    out += _table(["Project", *kinds, "nodes (columns excluded)"], rows,
-                  align="---|" + "|".join(["--:"] * (len(kinds) + 1)))
+        rows.append(
+            [f"`{name}`", *[str(c.get(k, 0)) for k in kinds], str(sum(n for k, n in c.items() if k != "Column"))]
+        )
+    out += _table(
+        ["Project", *kinds, "nodes (columns excluded)"], rows, align="---|" + "|".join(["--:"] * (len(kinds) + 1))
+    )
 
     out += [
-        (f"Every graph carries the same {f.ontology.get('classes', 0)} ontology "
-         f"classes and {f.ontology.get('relations', 0)} relations — vocabulary "
-         f"is shared at the group, so a project instantiates only the part of it "
-         f"it needs."),
+        (
+            f"Every graph carries the same {f.ontology.get('classes', 0)} ontology "
+            f"classes and {f.ontology.get('relations', 0)} relations — vocabulary "
+            f"is shared at the group, so a project instantiates only the part of it "
+            f"it needs."
+        ),
         "",
         "Policy is the exception: it layers platform → group → project and may",
         "only ever tighten. A project showing more policies than the floor has",
@@ -441,9 +490,10 @@ def render(f: Facts) -> str:
         "verbs — registered through a `pf.tools` entry point in any installed",
         "package. Adding either touches no scaffolder, no CLI and no workflow.",
         "",
-        *_table(["Capability", "Default", "Contributes"],
-                [[f"`{n}`", "**yes**" if d else "opt-in", c]
-                 for n, d, c in f.capabilities]),
+        *_table(
+            ["Capability", "Default", "Contributes"],
+            [[f"`{n}`", "**yes**" if d else "opt-in", c] for n, d, c in f.capabilities],
+        ),
         "`pf bootstrap --all` is what carries a new one into projects that",
         "already exist. It refuses a partial backfill — a capability applies only",
         "when every file it writes is absent — so it can never overwrite a file",
@@ -465,12 +515,7 @@ def render(f: Facts) -> str:
         "",
         _merge_path(),
         "",
-        *_table(["Workflow", "Runs"],
-                [[f"`{w}`", "generated per project — `pf bootstrap`"
-                  if w not in {"platform-tests.yml", "claude-review.yml",
-                               "bot-findings.yml", "pr-report.yml",
-                               "vendor-sync.yml"} else "hand-written, repo-wide"]
-                 for w in f.workflows]),
+        *_table(["Workflow", "Runs"], [[f"`{w}`", _workflow_provenance(w, f.project_shape)] for w in f.workflows]),
         "---",
         "",
         "## Keeping this true",
