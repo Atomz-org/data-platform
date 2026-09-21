@@ -10,8 +10,12 @@
 name: Vendor sync
 
 on:
+  # Daily at 01:00 UTC. This was Monday-only, which is how a deleted upstream
+  # sat unnoticed for three days: the window between an upstream changing and
+  # anyone here knowing was a week wide. Note the timezone — GitHub cron has no
+  # notion of local time, so this is 01:00 UTC and not 01:00 wherever you are.
   schedule:
-    - cron: "0 6 * * 1"     # Monday morning, before anyone opens a PR
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
       only:
@@ -28,7 +32,94 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Bring each fork level with the upstream it was forked from.
+  #
+  # Every pin resolves against a fork in this organisation rather than the
+  # third-party original, so that an upstream being deleted, renamed or made
+  # private cannot take this repository's checkouts down with it. That is not a
+  # precaution in the abstract: `jagmarques/asqav-compliance` was deleted on 18
+  # September 2026 with its owner's account, and the only reason the pin was
+  # recoverable at all is that a copy existed elsewhere.
+  #
+  # Syncing a fork is deliberately NOT a pin bump. This job moves each fork's
+  # own default branch; it does not touch a single gitlink in this repository.
+  # The pin moves only when a human merges the `vendor/sync` PR the next job
+  # proposes, which is what `vendor/` being read-only means.
+  #
+  # It needs a token this workflow cannot mint. `GITHUB_TOKEN` is scoped to the
+  # repository that runs the workflow, so it cannot write to a sibling repo —
+  # `merge-upstream` against `Atomz-org/<fork>` returns 403 with it. Supply a
+  # fine-grained PAT as `VENDOR_SYNC_TOKEN` with `contents: write` on the forks.
+  # Without it this job says so and skips rather than failing the run, because
+  # the pin comparison below is still worth having on its own.
+  forks:
+    name: Forks level with upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Sync each fork from its source
+        env:
+          GH_TOKEN: ${{ secrets.VENDOR_SYNC_TOKEN }}
+        run: |
+          {
+            echo "### Forks"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            {
+              echo "**Not run.** No \`VENDOR_SYNC_TOKEN\` secret."
+              echo ""
+              echo "\`GITHUB_TOKEN\` is scoped to this repository and cannot write to the"
+              echo "forks, so syncing them needs a fine-grained PAT with \`contents: write\`"
+              echo "on \`Atomz-org/*\`. The pin comparison below is unaffected."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning title=Fork sync skipped::No VENDOR_SYNC_TOKEN secret — the forks were not brought level with their upstreams."
+            exit 0
+          fi
+
+          {
+            echo "| fork | result |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Only forks are synced, and only from the parent GitHub already
+          # records. Nothing here reads a url out of `.gitmodules`, so a pin
+          # repointed at something that is not a fork is skipped rather than
+          # silently merged from a source nobody declared.
+          python3 - <<'PY' > /tmp/forks.tsv
+          import re, pathlib
+          s = pathlib.Path(".gitmodules").read_text()
+          for _, path, url in re.findall(
+                  r'\[submodule "([^"]+)"\]\s*\n\s*path = (\S+)\s*\n\s*url = (\S+)', s):
+              slug = url.replace("https://github.com/", "").removesuffix(".git")
+              if slug.split("/")[0].lower() == "atomz-org":
+                  print(f"{path}\t{slug}")
+          PY
+
+          while IFS=$'\t' read -r path slug; do
+            parent=$(gh api "repos/$slug" --jq '.parent.full_name // empty' 2>/dev/null || true)
+            if [ -z "$parent" ]; then
+              echo "| \`$slug\` | not a fork — skipped |" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            branch=$(gh api "repos/$slug" --jq '.default_branch' 2>/dev/null || echo main)
+            if out=$(gh api -X POST "repos/$slug/merge-upstream" -f "branch=$branch" --jq '.merge_type' 2>&1); then
+              echo "| \`$slug\` | $out from \`$parent\` (\`$branch\`) |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              # A fork that cannot be fast-forwarded is a real signal — someone
+              # committed to it, or upstream rewrote history — and it is the
+              # one case where our copy and the source have genuinely diverged.
+              echo "| \`$slug\` | **diverged or refused** — $(echo "$out" | tail -1 | cut -c1-90) |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::warning title=Fork not synced::$slug could not be fast-forwarded from $parent. Our copy has diverged from the source, or upstream rewrote history."
+            fi
+          done < /tmp/forks.tsv
+
   sync:
+    needs: forks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,8 +163,42 @@ jobs:
             echo "moved=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The report goes to the job summary before anything is attempted with it.
+      # This step used to be the last thing that ran, and when it could not open
+      # a PR the whole run went red with only GitHub's own error in the log — so
+      # the weekly comparison was computed and then thrown away. Five consecutive
+      # scheduled runs failed this way between 17 August and 14 September 2026
+      # and no sync PR was ever opened, which is a large part of why a deleted
+      # upstream went unnoticed for three days. Whatever happens to the PR, the
+      # answer is now recorded where someone can read it.
+      - name: Record the comparison
+        if: always()
+        run: |
+          {
+            echo "### Vendor sync"
+            echo ""
+            if [ "${{ steps.sync.outputs.moved }}" = "true" ]; then
+              echo "Upstreams moved. A \`vendor/sync\` PR is proposed below;"
+              echo "merging it *is* the pin bump, and that stays a human decision."
+            else
+              echo "Every upstream is already on its reviewed commit."
+            fi
+            echo ""
+            echo '```'
+            cat vendor-sync.txt 2>/dev/null || echo "(no report produced)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Open or update the sync PR
+        id: pr
         if: steps.sync.outputs.moved == 'true'
+        # Not fatal. Creating a PR needs "Allow GitHub Actions to create and
+        # approve pull requests", which is an *organisation* setting here — a
+        # repository cannot grant it to itself, and the API refuses with 409
+        # `The organization does not allow GitHub Actions to create or approve
+        # pull requests`. That is a policy decision an owner may well want to
+        # keep, so this job reports rather than fails when it is refused.
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v7
         with:
           branch: vendor/sync
@@ -87,6 +212,20 @@ jobs:
           body-path: vendor-sync.txt
           draft: false
 
-      - name: Nothing moved
-        if: steps.sync.outputs.moved != 'true'
-        run: echo "Every upstream is already on its reviewed commit."
+      - name: The PR could not be opened
+        if: steps.sync.outputs.moved == 'true' && steps.pr.outcome == 'failure'
+        run: |
+          {
+            echo ""
+            echo "**The \`vendor/sync\` PR could not be opened.**"
+            echo ""
+            echo "Almost certainly the organisation setting *Allow GitHub Actions to"
+            echo "create and approve pull requests* (Organisation Settings → Actions →"
+            echo "General → Workflow permissions). Until it is on, the comparison above"
+            echo "is the whole output of this job and no pin bump will be proposed."
+            echo ""
+            echo "The alternative, if that setting should stay off, is to give this"
+            echo "workflow a fine-grained PAT with \`contents: write\` and"
+            echo "\`pull-requests: write\` as a secret and pass it as \`token:\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning title=Vendor sync PR not opened::Upstreams moved but the PR could not be created — see the job summary. No pin bump has been proposed."
