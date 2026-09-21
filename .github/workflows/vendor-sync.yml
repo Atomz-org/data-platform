@@ -72,8 +72,42 @@ jobs:
             echo "moved=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # The report goes to the job summary before anything is attempted with it.
+      # This step used to be the last thing that ran, and when it could not open
+      # a PR the whole run went red with only GitHub's own error in the log — so
+      # the weekly comparison was computed and then thrown away. Five consecutive
+      # scheduled runs failed this way between 17 August and 14 September 2026
+      # and no sync PR was ever opened, which is a large part of why a deleted
+      # upstream went unnoticed for three days. Whatever happens to the PR, the
+      # answer is now recorded where someone can read it.
+      - name: Record the comparison
+        if: always()
+        run: |
+          {
+            echo "### Vendor sync"
+            echo ""
+            if [ "${{ steps.sync.outputs.moved }}" = "true" ]; then
+              echo "Upstreams moved. A \`vendor/sync\` PR is proposed below;"
+              echo "merging it *is* the pin bump, and that stays a human decision."
+            else
+              echo "Every upstream is already on its reviewed commit."
+            fi
+            echo ""
+            echo '```'
+            cat vendor-sync.txt 2>/dev/null || echo "(no report produced)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Open or update the sync PR
+        id: pr
         if: steps.sync.outputs.moved == 'true'
+        # Not fatal. Creating a PR needs "Allow GitHub Actions to create and
+        # approve pull requests", which is an *organisation* setting here — a
+        # repository cannot grant it to itself, and the API refuses with 409
+        # `The organization does not allow GitHub Actions to create or approve
+        # pull requests`. That is a policy decision an owner may well want to
+        # keep, so this job reports rather than fails when it is refused.
+        continue-on-error: true
         uses: peter-evans/create-pull-request@v7
         with:
           branch: vendor/sync
@@ -87,6 +121,20 @@ jobs:
           body-path: vendor-sync.txt
           draft: false
 
-      - name: Nothing moved
-        if: steps.sync.outputs.moved != 'true'
-        run: echo "Every upstream is already on its reviewed commit."
+      - name: The PR could not be opened
+        if: steps.sync.outputs.moved == 'true' && steps.pr.outcome == 'failure'
+        run: |
+          {
+            echo ""
+            echo "**The \`vendor/sync\` PR could not be opened.**"
+            echo ""
+            echo "Almost certainly the organisation setting *Allow GitHub Actions to"
+            echo "create and approve pull requests* (Organisation Settings → Actions →"
+            echo "General → Workflow permissions). Until it is on, the comparison above"
+            echo "is the whole output of this job and no pin bump will be proposed."
+            echo ""
+            echo "The alternative, if that setting should stay off, is to give this"
+            echo "workflow a fine-grained PAT with \`contents: write\` and"
+            echo "\`pull-requests: write\` as a secret and pass it as \`token:\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::warning title=Vendor sync PR not opened::Upstreams moved but the PR could not be created — see the job summary. No pin bump has been proposed."
