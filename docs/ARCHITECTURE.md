@@ -116,15 +116,15 @@ question falls back to raw SQL.
 
 | Project | Table | Model | Metric | Exposure | Policy | nodes (columns excluded) |
 |---|--:|--:|--:|--:|--:|--:|
-| `acme/acme-eu` | 3 | 37 | 6 | 2 | 33 | 216 |
+| `acme/acme-eu` | 3 | 37 | 6 | 8 | 33 | 229 |
 | `acme/acme-rollup` | 0 | 30 | 0 | 0 | 32 | 170 |
-| `acme/acme-us` | 3 | 37 | 6 | 2 | 32 | 223 |
+| `acme/acme-us` | 3 | 37 | 6 | 8 | 32 | 229 |
 | `commodity/commodity-india` | 3 | 14 | 15 | 18 | 32 | 382 |
 | `commodity/commodity-rollup` | 1 | 8 | 11 | 13 | 32 | 285 |
 | `commodity/commodity-us` | 3 | 13 | 15 | 17 | 32 | 371 |
 | `globex/globex-core` | 0 | 31 | 0 | 0 | 32 | 160 |
 | `globex/globex-eu` | 0 | 31 | 0 | 0 | 32 | 160 |
-| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 6 | 32 | 2166 |
+| `jaffle/jaffle-shop` | 57 | 1088 | 19 | 22 | 32 | 2182 |
 | `zenith/zenith-de` | 0 | 31 | 0 | 0 | 32 | 160 |
 | `zenith/zenith-uk` | 0 | 31 | 0 | 0 | 32 | 160 |
 
@@ -267,7 +267,7 @@ flowchart LR
 | `acme-eu.yml` | generated per project — `pf bootstrap` |
 | `acme-rollup.yml` | generated per project — `pf bootstrap` |
 | `acme-us.yml` | generated per project — `pf bootstrap` |
-| `ai-governance.yml` | generated per project — `pf bootstrap` |
+| `ai-governance.yml` | hand-written, repo-wide |
 | `bot-findings.yml` | hand-written, repo-wide |
 | `claude-review.yml` | hand-written, repo-wide |
 | `commodity-india.yml` | generated per project — `pf bootstrap` |
@@ -276,10 +276,11 @@ flowchart LR
 | `globex-core.yml` | generated per project — `pf bootstrap` |
 | `globex-eu.yml` | generated per project — `pf bootstrap` |
 | `jaffle-shop.yml` | generated per project — `pf bootstrap` |
-| `loop-observations.yml` | generated per project — `pf bootstrap` |
+| `loop-observations.yml` | hand-written, repo-wide |
 | `platform-tests.yml` | hand-written, repo-wide |
-| `platform.yml` | generated per project — `pf bootstrap` |
+| `platform.yml` | generated, repo-wide — `pf bootstrap` |
 | `pr-report.yml` | hand-written, repo-wide |
+| `vendor-pins.yml` | hand-written, repo-wide |
 | `vendor-sync.yml` | hand-written, repo-wide |
 | `zenith-de.yml` | generated per project — `pf bootstrap` |
 | `zenith-uk.yml` | generated per project — `pf bootstrap` |
