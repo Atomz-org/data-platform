@@ -3,6 +3,7 @@ name: gen-staging-and-arrow-gotchas
 description: pf gen-staging drops columns with no annotation role; dlt Arrow loads need add_dlt_load_id/add_dlt_id in .dlt/config.toml
 type: project
 status: active
+agent: claude-code
 ---
 
 Two things that cost a seed cycle each on 2026-09-20 (commodity-rollup):

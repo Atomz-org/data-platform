@@ -3,6 +3,7 @@ name: group-shared-python-by-path
 description: Group-shared Python (groups/<g>/shared/python) is found via pf.runtime.paths, never added to the uv workspace glob
 type: project
 status: active
+agent: claude-code
 ---
 
 `groups/commodity/shared/python/src/commodity_shared` holds the connectors and

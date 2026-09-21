@@ -3,6 +3,7 @@ name: floci-vendor-pin-missing
 description: registry.yaml has a full floci entry (adoptions, declines, why) but .gitmodules never got a vendor/floci submodule — pf vendor verify reports it missing
 type: project
 status: active
+agent: claude-code
 ---
 
 `platform/src/pf/vendor/registry.yaml` (id `floci`, ~line 946) documents an S3

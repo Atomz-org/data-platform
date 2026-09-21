@@ -3,6 +3,7 @@ name: commodity-tenants-stack-2026-09
 description: The commodity tenants work (india/us/rollup) is PR
 type: project
 status: resolved
+agent: claude-code
 ---
 
 On 2026-09-20 the commodity group became a family of markets: group seeds

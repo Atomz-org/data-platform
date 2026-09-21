@@ -3,6 +3,7 @@ name: reproducing-ci-locally
 description: Two traps that make a local "CI passes" result wrong in this repo — a stale .venv and a submodule-less clone
 type: project
 status: active
+agent: claude-code
 ---
 
 Reproducing a data-platform CI job locally needs two things that are easy to

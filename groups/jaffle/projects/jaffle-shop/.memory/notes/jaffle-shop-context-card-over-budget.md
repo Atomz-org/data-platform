@@ -3,6 +3,7 @@ name: jaffle-shop-context-card-over-budget
 description: jaffle-shop's committed kg/context_card.md is 1585/1500 tokens on main right now; pf tokens never catches it because platform.yml only triggers on platform/** paths
 type: project
 status: active
+agent: claude-code
 ---
 
 `uv run pf tokens` reports `jaffle/jaffle-shop context_card 1585/1500 OVER` on

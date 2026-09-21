@@ -3,6 +3,7 @@ name: arch-gate-verification-trap
 description: kg/architecture.md used to render differently on a runner (ungitted card, workspace.yaml, untracked files); fixed 2026-09-20 in PR
 type: project
 status: active
+agent: claude-code
 ---
 
 **Resolved 2026-09-20 (PR #475, commit "Make the per-project CI gates judge
