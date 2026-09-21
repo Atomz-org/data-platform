@@ -18,6 +18,7 @@ matches the product. The last section says exactly which parts.
 |---|---|---|
 | Router memory | `CLAUDE.md` | repo-wide, always loaded |
 | Project memory | `groups/<g>/projects/<p>/CLAUDE.md` + `kg/context_card.md` | one entity, always loaded, **budgeted** |
+| Session memory | `.memory/notes/` at root, `platform/`, each group and project · `.memory/MEMORY.md` | per module, on demand, **indexed**, shared with Copilot via `AGENTS.md` |
 | Marketplace | `platform/.claude-plugin/marketplace.json` | lists all 19 plugins |
 | Toolkits | `platform/toolkits/<name>/` | one craft each, enabled per project |
 | Session layer | `platform/toolkits/power-tools/` | commands, agents, hooks, MCP |
@@ -101,6 +102,15 @@ The structure instead:
   that directory a plugin; without it the marketplace entry loads nothing, and
   `pf loop audit` reports it ("group plugins resolve").
 - **Queried** — the knowledge graph. Never loaded; asked.
+- **Remembered, per module** — `.memory/notes/` at the root, under
+  `platform/`, and under each group and project: one lesson per file, the
+  traps that already cost a session. The SessionStart hook prints the ones
+  visible from where you are (root and platform always, your group and project
+  inside one — never a sister), one line each and capped; `pf memory show`
+  reads the bodies. `pf memory add <module> <name> "<line>"` writes one and
+  regenerates the index `.memory/MEMORY.md`, which `pf memory check` gates in
+  CI. It lives in the repo rather than in `~/.claude` so that Copilot, which
+  reads `AGENTS.md`, sees exactly the same notes.
 
 So a new fact goes in the layer that matches how often it is needed. Business
 rules the graph cannot encode go in the project `CLAUDE.md` under that heading.
