@@ -4398,6 +4398,125 @@ def cmd_context_refresh(
     console.print(f"[green]✓[/] {len(changed)} file(s) regenerated — commit them with the change that made them stale")
 
 
+# --------------------------------------------------------------- code graph --
+code_app = typer.Typer(
+    help=(
+        "The code graph: which function calls which, under `platform/` only. "
+        "Models, columns, metrics and lineage are `pf kg` — this is the Python "
+        "structure the data graph has no notion of."
+    )
+)
+app.add_typer(code_app, name="code")
+
+
+def _code_run(subcommand: str, *args: str, json_out: bool = False) -> None:
+    """Shell out to the pinned wheel, scoped to `platform/`.
+
+    Not imported: the tool's dependency set is not one this lockfile resolves,
+    so it runs through `uvx` exactly as the `graphify` MCP server already does.
+    """
+    import subprocess
+
+    from pf import codegraph
+
+    if not codegraph.available():
+        console.print(
+            "[red]✗[/] `uvx` is not on PATH, so the code graph cannot run.\n"
+            "  Install uv (https://docs.astral.sh/uv/), or read the structure from "
+            "`docs/ARCHITECTURE.md` instead."
+        )
+        raise typer.Exit(1)
+    cmd = codegraph.argv(subcommand, *args, root=root())
+    if not codegraph.built(root()) and subcommand not in ("build", "status"):
+        console.print(
+            f"[yellow]no graph yet[/] — building it first is `pf code build` "
+            f"[dim]({codegraph.SCOPE}/{codegraph.MARKER_DIR}/ is empty)[/]"
+        )
+    proc = subprocess.run(cmd, check=False)
+    if proc.returncode != 0:
+        console.print(f"[red]✗[/] {' '.join(cmd)}  [dim](exit {proc.returncode})[/]")
+        raise typer.Exit(proc.returncode)
+
+
+@code_app.command("build")
+def cmd_code_build() -> None:
+    """Parse `platform/` into a fresh code graph."""
+    _code_run("build")
+
+
+@code_app.command("update")
+def cmd_code_update() -> None:
+    """Re-parse only what changed since the last build."""
+    _code_run("update")
+
+
+@code_app.command("impact")
+def cmd_code_impact(path: str = typer.Argument(..., help="a file under platform/")) -> None:
+    """Callers, dependents and covering tests of a platform file — its blast radius."""
+    _code_run("impact", path)
+
+
+@code_app.command("search")
+def cmd_code_search(term: str) -> None:
+    """Find a function, class or import without reading files to locate it."""
+    _code_run("search", term)
+
+
+@code_app.command("architecture")
+def cmd_code_architecture() -> None:
+    """The engine's own shape, as the graph sees it."""
+    _code_run("architecture")
+
+
+@code_app.command("status")
+def cmd_code_status() -> None:
+    """Graph statistics: how much of `platform/` is indexed, and how stale."""
+    _code_run("status")
+
+
+@code_app.command("init")
+def cmd_code_init() -> None:
+    """Create the marker that makes `platform/` the graph's root."""
+    from pf import codegraph
+
+    wrote = codegraph.init(root())
+    if not wrote:
+        console.print("[dim]the marker already exists[/]")
+        return
+    for p in wrote:
+        console.print(f"[green]+[/] {p.relative_to(root())}")
+
+
+@code_app.command("plan")
+def cmd_code_plan() -> None:
+    """Print the exact commands a first build runs, without running them."""
+    from pf import codegraph
+
+    for line in codegraph.plan(root()):
+        console.print(f"  {escape(line)}")
+
+
+@code_app.command("check")
+def cmd_code_check() -> None:
+    """Is the code-graph wiring still true?
+
+    The marker, the ignore rules, the gate entry, the MCP server's scope. A
+    missing marker is the one that matters: it does not fail, it silently
+    builds a graph over every sister project.
+    """
+    from pf import codegraph
+
+    problems = codegraph.check(root())
+    for line in problems:
+        console.print(f"[red]✗[/] {escape(line)}")
+    if problems:
+        raise typer.Exit(1)
+    r = root()
+    state = "built" if codegraph.built(r) else "not built yet — `pf code build`"
+    tool = "uvx present" if codegraph.available() else "uvx MISSING"
+    console.print(f"[green]✓[/] code graph scoped to {codegraph.SCOPE}/  [dim]({state} · {tool})[/]")
+
+
 @tool_app.command("list")
 def cmd_tool_list(
     group: str = typer.Argument("", help="show enablement for a project"), project: str = typer.Argument("")

@@ -101,7 +101,11 @@ The structure instead:
   manifest at `groups/<g>/.claude/.claude-plugin/plugin.json` is what makes
   that directory a plugin; without it the marketplace entry loads nothing, and
   `pf loop audit` reports it ("group plugins resolve").
-- **Queried** — the knowledge graph. Never loaded; asked.
+- **Queried** — two graphs, neither ever loaded. The knowledge graph answers
+  models, columns, metrics and lineage (`pf kg`, `kg_search`,
+  `impact_analysis`). The code graph answers which Python function calls
+  which, under `platform/` only (`pf code`, and its own MCP server). Asking
+  the wrong one gets a confident answer to a different question.
 - **Remembered, per module** — `.memory/notes/` at the root, under
   `platform/`, and under each group and project: one lesson per file, the
   traps that already cost a session. The SessionStart hook prints the ones

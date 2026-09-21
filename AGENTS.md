@@ -57,6 +57,7 @@ back unless asked.
 |---|---|---|
 | what earlier agents learned | `.memory/MEMORY.md`, the index → `.memory/notes/` at the root, under `platform/`, under each group and each project | the traps that already cost a session; a constraint someone established |
 | what the system is | `groups/<g>/projects/<p>/kg/architecture.md` for a project, `docs/ARCHITECTURE.md` for the repo — both projections of `kg/graph.json` | models, columns, metrics, dependencies: ask before changing any of them |
+| what the engine's code does | the code graph over `platform/` — `pf code impact <file>`, `pf code search <name>`, or its MCP tools | callers, dependents and covering tests of a platform file, before you change it |
 | what has been decided | `docs/POLICY.md`, `decisions/`, the project's `CLAUDE.md` | standing rules a person reviewed; business rules the graph cannot encode |
 
 With a shell:
@@ -70,10 +71,20 @@ uv run pf memory show           # what applies where you are, one line each; --f
 Without one, read the index and then the notes for your module; the index is
 one line per note and links to each.
 
+**Ask the right graph.** Two exist and they do not overlap. Models, columns,
+metrics, sources, exposures and lineage are the *data* graph: `pf kg`, and the
+`kg_search` / `kg_neighbors` / `impact_analysis` MCP tools. Which Python
+function calls which is the *code* graph: `pf code`, scoped to `platform/`
+because that is the only module with no sisters. Neither answers the other's
+question, and reading files to work out either is the thing both exist to
+stop.
+
 Visibility is the same for every tool: root and `platform/` always, your
 group and your project when you are inside one, **never a sister project**.
 That is the denylist `.claude/settings.json` enforces for Claude at the tool
-level. Everywhere else it is your discipline.
+level. Everywhere else it is your discipline. The code graph obeys it by
+construction: its root is `platform/`, fixed by a tracked marker directory,
+so a sister's code is not reachable from it at all.
 
 ## 2. Where you may write
 

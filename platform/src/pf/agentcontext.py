@@ -22,10 +22,13 @@ exist in git. Those are the drifts a renumbering or a rename causes silently,
 and a pointer file that points at nothing is worse than none — the tool that
 reads it believes it has been told.
 
-`check` is those rules. `refresh` regenerates the generated pieces in one step,
-so the fix for "stale" is one command whichever piece went stale. Token budgets
-are deliberately not here: `pf tokens` owns them, and an over-budget card is a
-decision for a person, not something a refresh can make.
+`check` is those rules, plus the code-graph wiring (`pf.codegraph`), which
+fails the same way: a missing marker directory does not error, it silently
+widens the graph from `platform/` to every sister project. `refresh`
+regenerates the generated pieces in one step, so the fix for "stale" is one
+command whichever piece went stale. Token budgets are deliberately not here:
+`pf tokens` owns them, and an over-budget card is a decision for a person,
+not something a refresh can make.
 
 The `agent-context` workflow runs `check` and the three drift checks on every
 pull request — no path filter, because the point is *every* PR.
@@ -140,6 +143,13 @@ def check(root: str | Path) -> list[str]:
                 f"{module}: .memory/notes/README.md is missing — the directory is invisible to a clone "
                 f"without it; run `pf memory init` or `pf context refresh`"
             )
+
+    # The other graph an agent is told to ask. Checked here so one command
+    # covers every piece of shared context, rather than each tool owning a
+    # check nobody remembers to run.
+    from pf import codegraph
+
+    problems.extend(codegraph.check(root))
     return problems
 
 

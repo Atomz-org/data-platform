@@ -28,6 +28,12 @@ graphify-out/
 **/.duckdb-skills/
 **/kg/*.duckdb
 **/kg/*.duckdb.wal
+# The code graph (`pf code`). Build output like every other graph here, and
+# rebuilt rather than carried. The README is re-included because it is what
+# scopes the graph to platform/: an empty marker directory is invisible to a
+# clone, and a clone without it indexes every sister project instead.
+platform/.code-review-graph/*
+!platform/.code-review-graph/README.md
 **/kg/context_card.md
 **/kg/atlas.html
 **/kg/atlas.prev.html
