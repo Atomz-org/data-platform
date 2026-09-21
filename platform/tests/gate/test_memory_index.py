@@ -17,6 +17,7 @@ from pf.memory import (
     INDEX_BUDGET,
     README_TEXT,
     add,
+    detect_agent,
     drift,
     index_path,
     init_readmes,
@@ -135,6 +136,8 @@ def test_add_refuses_what_would_make_the_index_lie(tmp_path: Path) -> None:
         add(root, "root", "fine", "")
     with pytest.raises(ValueError):
         add(root, "root", "fine", "x", type_="opinion")
+    with pytest.raises(ValueError):
+        add(root, "root", "fine", "x", agent="not one token")
     with pytest.raises(KeyError):
         add(root, "groups/nope", "fine", "x")
     add(root, "root", "fine", "x")
@@ -171,3 +174,42 @@ def test_every_module_in_this_repo_has_its_readme() -> None:
     """The directory exists in git only because the README does."""
     missing = [m for m, _ in module_roots(REPO_ROOT) if not (notes_dir(REPO_ROOT, m) / "README.md").exists()]
     assert not missing, f"run `uv run pf memory init`: {missing}"
+
+
+def test_who_wrote_a_note_is_on_the_note_and_in_the_index(tmp_path: Path) -> None:
+    """The ledger's *who* column: written into the frontmatter, read back by
+    `scan`, printed by the index — and accepted from Claude's nested shape too."""
+    root = _skeleton(tmp_path)
+    p = add(root, "platform", "written-by", "one line", agent="actions:copilot-swe-agent[bot]")
+    assert "agent: actions:copilot-swe-agent[bot]" in p.read_text(encoding="utf-8")
+    d = notes_dir(root, "root")
+    d.mkdir(parents=True)
+    (d / "nested.md").write_text(
+        "---\nname: nested\ndescription: x\nmetadata:\n  type: feedback\n  agent: gemini-cli\n---\n",
+        encoding="utf-8",
+    )
+    (d / "anonymous.md").write_text("---\nname: anonymous\ndescription: y\n---\n", encoding="utf-8")
+    who = {n.name: n.agent for n in scan(root)}
+    assert who == {"nested": "gemini-cli", "anonymous": "", "written-by": "actions:copilot-swe-agent[bot]"}
+    idx = render_index(scan(root), root)
+    assert (
+        "| [written-by](../platform/.memory/notes/written-by.md) | one line | actions:copilot-swe-agent[bot] |" in idx
+    )
+    assert "| [anonymous](notes/anonymous.md) | y | — |" in idx
+
+
+def test_the_writing_tool_is_detected_from_its_own_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`PF_AGENT` wins; else each tool's own mark; else nothing — never a guess."""
+    for var in ("PF_AGENT", "CLAUDECODE", "GEMINI_CLI", "GITHUB_ACTIONS", "GITHUB_ACTOR"):
+        monkeypatch.delenv(var, raising=False)
+    assert detect_agent() == ""
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    assert detect_agent() == "actions"
+    monkeypatch.setenv("GITHUB_ACTOR", "copilot-swe-agent[bot]")
+    assert detect_agent() == "actions:copilot-swe-agent[bot]"
+    monkeypatch.setenv("GEMINI_CLI", "1")
+    assert detect_agent() == "gemini-cli"
+    monkeypatch.setenv("CLAUDECODE", "1")
+    assert detect_agent() == "claude-code"
+    monkeypatch.setenv("PF_AGENT", "  local-qwen  ")
+    assert detect_agent() == "local-qwen"

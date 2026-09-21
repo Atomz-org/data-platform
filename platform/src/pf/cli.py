@@ -4242,7 +4242,7 @@ def cmd_session_memory_show(
     all_modules: bool = typer.Option(False, "--all", help="every module, not just the ones visible from here"),
     full: bool = typer.Option(False, "--full", help="print bodies, not just the one line"),
     brief: bool = typer.Option(False, "--brief", help="one line per note, no decoration — for hooks"),
-    toon: bool = typer.Option(False, "--toon", help="TOON rows: notes[N]{module,name,type,status,description}"),
+    toon: bool = typer.Option(False, "--toon", help="TOON rows: notes[N]{module,name,type,status,agent,description}"),
     limit: int = typer.Option(0, "--limit", help="with --brief: at most this many lines, then a count"),
 ) -> None:
     """The lessons that apply where you are: root, platform, your group, your project."""
@@ -4258,10 +4258,11 @@ def cmd_session_memory_show(
         # records, which is what the SessionStart hook injects — so this is the
         # form it injects. Descriptions are quoted because they contain commas.
         shown = notes[:limit] if limit else notes
-        print(f"notes[{len(shown)}]{{module,name,type,status,description}}:")
+        print(f"notes[{len(shown)}]{{module,name,type,status,agent,description}}:")
         for n in shown:
             desc = n.description if len(n.description) <= 110 else n.description[:107] + "…"
-            print(f'  {n.module},{n.name},{n.type},{n.status},"{desc.replace(chr(34), chr(39))}"')
+            who = n.agent or "-"
+            print(f'  {n.module},{n.name},{n.type},{n.status},{who},"{desc.replace(chr(34), chr(39))}"')
         if limit and len(notes) > limit:
             print(f"  # +{len(notes) - limit} more — `pf memory show`")
         return
@@ -4279,7 +4280,8 @@ def cmd_session_memory_show(
     console.print(f"[bold]{len(notes)} note(s) visible from {scope}[/]")
     for n in notes:
         tag = " [dim](resolved)[/]" if n.resolved else ""
-        console.print(f"\n[cyan]{n.module}[/] · [bold]{n.name}[/]{tag}  [dim]{n.path.relative_to(r)}[/]")
+        who = f" [dim]by {escape(n.agent)}[/]" if n.agent else ""
+        console.print(f"\n[cyan]{n.module}[/] · [bold]{n.name}[/]{tag}{who}  [dim]{n.path.relative_to(r)}[/]")
         console.print(f"  {escape(n.description)}")
         if full:
             body = n.path.read_text(encoding="utf-8").split("---", 2)[-1].strip()
@@ -4295,17 +4297,29 @@ def cmd_session_memory_add(
     body: str = typer.Option("", "--body", help="the why and how-to-apply, inline"),
     body_file: Path | None = typer.Option(None, "--body-file", help="…or read it from a file ('-' for stdin)"),
     resolved: bool = typer.Option(False, "--resolved", help="record it as already dealt with"),
+    agent: str = typer.Option(
+        "", "--agent", help="who is writing; default: detected — PF_AGENT, else the tool's own environment mark"
+    ),
 ) -> None:
     """Write one note into the right module and regenerate the index."""
     import sys
 
-    from pf.memory import add
+    from pf.memory import add, detect_agent
 
     text = body
     if body_file is not None:
         text = sys.stdin.read() if str(body_file) == "-" else body_file.read_text(encoding="utf-8")
     try:
-        p = add(root(), module, name, description, body=text, type_=type_, status="resolved" if resolved else "active")
+        p = add(
+            root(),
+            module,
+            name,
+            description,
+            body=text,
+            type_=type_,
+            status="resolved" if resolved else "active",
+            agent=agent or detect_agent(),
+        )
     except (ValueError, KeyError, FileExistsError) as exc:
         console.print(f"[red]✗[/] {exc}")
         raise typer.Exit(1) from None

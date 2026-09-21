@@ -2,10 +2,13 @@
 
 A lesson that lives in one tool's private store is a lesson every other tool
 pays for again. Claude Code keeps its own memory under `~/.claude/projects/`,
-which GitHub Copilot cannot see; Copilot has no memory of its own at all. So
+which no other tool can see; most tools have no memory of their own at all. So
 the memory lives in the repository, as tracked markdown, in the module it is
-about — and both tools are told the same thing in `CLAUDE.md` and `AGENTS.md`:
-read it before starting, add to it before finishing.
+about — and every tool is told the same thing by whichever file it reads
+(`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`):
+read it before starting, add to it before finishing. Who wrote a note is
+recorded on the note (`agent:`), detected from the environment, so the ledger
+says which tool learned what without anyone trusting a filename.
 
 Layout mirrors the repository's own structure, and so do the reading rules:
 
@@ -38,6 +41,7 @@ body says why and how to apply it:
     description: pf kg build reads target/manifest.json and never reparses it just because a model changed
     type: project          # project | feedback | reference | user — same vocabulary as Claude's store
     status: active         # or resolved — kept for the record, marked so it is not acted on
+    agent: claude-code     # who wrote it — detected (PF_AGENT, CLAUDECODE, GEMINI_CLI, GITHUB_ACTIONS) or --agent
     ---
     body
 
@@ -111,6 +115,7 @@ class Note:
     description: str
     type: str
     status: str
+    agent: str = ""  # who wrote it; "" when the note predates the field or nothing was detected
 
     @property
     def resolved(self) -> bool:
@@ -182,6 +187,34 @@ def visible_from(module: str) -> list[str]:
     return list(dict.fromkeys(out))
 
 
+# ----------------------------------------------------------------- agent ---
+#: One token, no whitespace or quotes: a name the index can print in a column.
+#: `actions:copilot-swe-agent[bot]` is a valid one, so brackets are allowed.
+_AGENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/@\[\]-]*$")
+
+
+def detect_agent() -> str:
+    """Which tool is writing, from the environment. `PF_AGENT` when the operator
+    says so, else the mark each tool leaves on the shells it spawns, else "".
+
+    Recorded, not trusted: it is the ledger's *who* column, the same way a git
+    author is, and it authorises nothing. A tool this does not know sets
+    `PF_AGENT`; nothing here needs to change for a new model to be named.
+    """
+    env = os.environ
+    explicit = env.get("PF_AGENT", "").strip()
+    if explicit:
+        return explicit
+    if env.get("CLAUDECODE"):
+        return "claude-code"
+    if env.get("GEMINI_CLI"):
+        return "gemini-cli"
+    if env.get("GITHUB_ACTIONS"):
+        actor = env.get("GITHUB_ACTOR", "").strip()
+        return f"actions:{actor}" if actor else "actions"
+    return ""
+
+
 # ----------------------------------------------------------------- notes ---
 _FRONT = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 _SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -213,6 +246,7 @@ def parse_note(path: Path, module: str) -> Note:
         description=description,
         type=str(meta.get("type") or nested.get("type") or "project"),
         status=str(meta.get("status") or "active"),
+        agent=str(meta.get("agent") or nested.get("agent") or "").strip(),
     )
 
 
@@ -245,12 +279,16 @@ def add(
     body: str = "",
     type_: str = "project",
     status: str = "active",
+    agent: str = "",
 ) -> Path:
     """Write one note and regenerate the index. Refuses a bad slug, an unknown
     type, or a name already taken — a second file with the same name is how a
-    correction ends up living beside the mistake it corrects."""
+    correction ends up living beside the mistake it corrects. `agent` is who
+    is writing; callers pass `detect_agent()` unless the operator said."""
     if not _SLUG.match(name):
         raise ValueError(f"name must be a kebab-case slug: {name!r}")
+    if agent and not _AGENT.match(agent):
+        raise ValueError(f"agent must be one token, no spaces or quotes: {agent!r}")
     if type_ not in TYPES:
         raise ValueError(f"type must be one of {TYPES}: {type_!r}")
     if status not in STATUSES:
@@ -262,7 +300,9 @@ def add(
     p = d / f"{name}.md"
     if p.exists():
         raise FileExistsError(f"{p.relative_to(root)} exists — edit it, or pick another name")
-    fm = {"name": name, "description": description.strip(), "type": type_, "status": status}
+    fm: dict[str, str] = {"name": name, "description": description.strip(), "type": type_, "status": status}
+    if agent:
+        fm["agent"] = agent
     front = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True, width=1000)
     text = f"---\n{front}---\n\n{body.strip()}\n" if body.strip() else f"---\n{front}---\n"
     p.write_text(text, encoding="utf-8")
@@ -331,9 +371,10 @@ def render_index(notes: list[Note], root: Path) -> str:
             + " · `uv run pf memory show` for the ones that apply where you are"
         ),
         "",
-        "A lesson is one file: frontmatter (`name`, `description`, `type`, `status`)",
-        "and a body saying why and how to apply it. `pf memory add <module> <name>",
-        '"<one line>"` writes it into the right module and regenerates this index.',
+        "A lesson is one file: frontmatter (`name`, `description`, `type`, `status`,",
+        "`agent` — which tool wrote it) and a body saying why and how to apply it.",
+        '`pf memory add <module> <name> "<one line>"` writes it into the right module',
+        "and regenerates this index.",
         "Root and `platform/` apply everywhere; a group's notes apply to its sisters;",
         "a project's notes apply to it alone and are never read from a sister.",
         "",
@@ -348,15 +389,15 @@ def render_index(notes: list[Note], root: Path) -> str:
             "",
             f"*{len(members)} note(s) · `{rel_dir}/`*",
             "",
-            "| note | one line |",
-            "|---|---|",
+            "| note | one line | by |",
+            "|---|---|---|",
         ]
         for n in members:
             link = os.path.relpath(n.path, idx_dir).replace(os.sep, "/")
             desc = n.description.replace("|", "\\|")
             if n.resolved:
                 desc = f"*(resolved)* {desc}"
-            lines.append(f"| [{n.name}]({link}) | {desc} |")
+            lines.append(f"| [{n.name}]({link}) | {desc} | {n.agent or '—'} |")
         lines.append("")
 
     lines += [
@@ -406,6 +447,8 @@ def drift(root: Path) -> str:
             return f"{n.path.relative_to(root)}: type {n.type!r} is not one of {TYPES}"
         if n.status not in STATUSES:
             return f"{n.path.relative_to(root)}: status {n.status!r} is not one of {STATUSES}"
+        if n.agent and not _AGENT.match(n.agent):
+            return f"{n.path.relative_to(root)}: agent {n.agent!r} must be one token, no spaces or quotes"
     stray = _stray_notes(root)
     if stray:
         return (
