@@ -38,11 +38,13 @@ def _projects() -> list[tuple[str, str]]:
     groups = ROOT / "groups"
     if not groups.exists():
         return []
-    return sorted((g.name, p.name)
-                  for g in groups.iterdir() if g.is_dir()
-                  for p in (g / "projects").iterdir()
-                  if (g / "projects").exists() and p.is_dir()
-                  and not p.name.startswith("."))
+    return sorted(
+        (g.name, p.name)
+        for g in groups.iterdir()
+        if g.is_dir()
+        for p in (g / "projects").iterdir()
+        if (g / "projects").exists() and p.is_dir() and not p.name.startswith(".")
+    )
 
 
 def _bare(tmp_path: Path, group: str = "demo", project: str = "demo-us") -> Path:
@@ -52,8 +54,7 @@ def _bare(tmp_path: Path, group: str = "demo", project: str = "demo-us") -> Path
 
 
 # --------------------------------------------------------------- coverage ----
-@pytest.mark.parametrize(("group", "project"), _projects(),
-                         ids=lambda x: x if isinstance(x, str) else "")
+@pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
 def test_no_directory_in_a_real_project_is_unmapped(group: str, project: str) -> None:
     """The anti-omission guard, run against every project that exists.
 
@@ -66,7 +67,8 @@ def test_no_directory_in_a_real_project_is_unmapped(group: str, project: str) ->
 
     assert not a.unmapped, (
         f"{group}/{project} holds {a.unmapped} that no Feature claims — add an "
-        "entry to pf.architecture.FEATURES (or to IGNORED if it is build output)")
+        "entry to pf.architecture.FEATURES (or to IGNORED if it is build output)"
+    )
 
 
 def test_every_bootstrap_artefact_is_a_feature() -> None:
@@ -80,17 +82,39 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
     from pf.scaffold.bootstrap import STEPS
 
     #: Steps whose output is not a per-project artefact. Keep this shrinking.
-    NOT_PER_PROJECT = {"OWL export", "vendor docs", "directories", "group card",
-                       "group air.yaml", "tools", "capabilities", "conformance",
-                       "architecture map", "capability policies",
-                       "notify channel", "pre-commit gate", "group manifest",
-                       "group plugin + loops", "platform CI"}
+    NOT_PER_PROJECT = {
+        "OWL export",
+        "vendor docs",
+        "directories",
+        "group card",
+        "group air.yaml",
+        "tools",
+        "capabilities",
+        "conformance",
+        "architecture map",
+        "capability policies",
+        "notify channel",
+        "pre-commit gate",
+        "group manifest",
+        "group plugin + loops",
+        "platform CI",
+    }
     covered = {
-        "knowledge graph": "graph", "context card": "card", "MDL manifest": "mdl",
-        "otop manifest": "otop", "reporting": "reporting",
-        "ci workflow": "ci", "dagster code location": "code_location",
-        "dbt wiring": "profiles", "claude settings": "settings",
-        "project atlas": "atlas", "dev serving": "docs",
+        "knowledge graph": "graph",
+        "context card": "card",
+        "MDL manifest": "mdl",
+        "otop manifest": "otop",
+        "reporting": "reporting",
+        "ci workflow": "ci",
+        "dagster code location": "code_location",
+        "dbt wiring": "profiles",
+        "claude settings": "settings",
+        "project atlas": "atlas",
+        "dev serving": "docs",
+        # Writes `.memory/notes/README.md` — the convention's own explanation,
+        # so the directory exists in git. The notes an agent writes there are
+        # the `memory` feature; the README is what makes the feature visible.
+        "memory notes": "memory",
     }
     keys = {f.key for f in arch.features()}
 
@@ -99,13 +123,13 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
             continue
         assert step.name in covered, (
             f"bootstrap step {step.name!r} writes something into a project and no "
-            "Feature reports it — add one to pf.architecture.CORE")
+            "Feature reports it — add one to pf.architecture.CORE"
+        )
         assert covered[step.name] in keys
 
 
 # ------------------------------------------------------------ pluggability ---
-def test_a_third_party_tool_claims_its_own_territory(monkeypatch,
-                                                     tmp_path: Path) -> None:
+def test_a_third_party_tool_claims_its_own_territory(monkeypatch, tmp_path: Path) -> None:
     """The reason the registry is composed rather than listed.
 
     A tool arrives by installing a package with a `pf.tools` entry point, and
@@ -118,12 +142,22 @@ def test_a_third_party_tool_claims_its_own_territory(monkeypatch,
     from pf.tools.spec import Tool
 
     elementary = Tool(
-        name="elementary", title="Elementary", summary="Anomaly monitors on dbt.",
-        features=(Feature("elementary", "anomaly monitors", "operate",
-                          "statistical monitors over dbt test results",
-                          ("elementary/**",), optional=True,
-                          made_by="pf tool enable elementary",
-                          source="tool:elementary"),))
+        name="elementary",
+        title="Elementary",
+        summary="Anomaly monitors on dbt.",
+        features=(
+            Feature(
+                "elementary",
+                "anomaly monitors",
+                "operate",
+                "statistical monitors over dbt test results",
+                ("elementary/**",),
+                optional=True,
+                made_by="pf tool enable elementary",
+                source="tool:elementary",
+            ),
+        ),
+    )
     monkeypatch.setattr(arch, "_installed_tools", lambda: [elementary])
 
     root = _bare(tmp_path)
@@ -138,9 +172,7 @@ def test_a_third_party_tool_claims_its_own_territory(monkeypatch,
     assert "anomaly monitors" in arch.render(a)
 
 
-def test_a_tool_that_declares_nothing_still_claims_what_it_writes(monkeypatch,
-                                                                  tmp_path: Path
-                                                                  ) -> None:
+def test_a_tool_that_declares_nothing_still_claims_what_it_writes(monkeypatch, tmp_path: Path) -> None:
     """Declaring a Feature is the refinement, not the price of entry.
 
     A tool already says where its artefacts go, for `pf tool doctor`. Making it
@@ -149,8 +181,12 @@ def test_a_tool_that_declares_nothing_still_claims_what_it_writes(monkeypatch,
     """
     from pf.tools.spec import DbtBinding, Tool
 
-    mc = Tool(name="montecarlo", title="Monte Carlo", summary="Freshness monitors.",
-              dbt=DbtBinding(artefacts=("montecarlo/state.json",)))
+    mc = Tool(
+        name="montecarlo",
+        title="Monte Carlo",
+        summary="Freshness monitors.",
+        dbt=DbtBinding(artefacts=("montecarlo/state.json",)),
+    )
     monkeypatch.setattr(arch, "_installed_tools", lambda: [mc])
 
     root = _bare(tmp_path)
@@ -176,10 +212,12 @@ def test_a_contribution_never_overwrites_a_platform_feature(monkeypatch) -> None
     from pf.features import Feature
     from pf.tools.spec import Tool
 
-    hostile = Tool(name="x", title="X", summary="s",
-                   features=(Feature("graph", "not the graph", "operate",
-                                     "hijacked", ("elsewhere/**",),
-                                     made_by="nothing"),))
+    hostile = Tool(
+        name="x",
+        title="X",
+        summary="s",
+        features=(Feature("graph", "not the graph", "operate", "hijacked", ("elsewhere/**",), made_by="nothing"),),
+    )
     monkeypatch.setattr(arch, "_installed_tools", lambda: [hostile])
 
     graph = next(f for f in arch.features() if f.key == "graph")
@@ -242,8 +280,7 @@ def test_it_renders_for_a_project_with_nothing_in_it(tmp_path: Path) -> None:
     assert not arch.lint_doc(out)
 
 
-@pytest.mark.parametrize(("group", "project"), _projects(),
-                         ids=lambda x: x if isinstance(x, str) else "")
+@pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
 def test_every_diagram_parses(group: str, project: str) -> None:
     """A malformed diagram renders as a red box while the job still exits 0.
 
@@ -255,16 +292,14 @@ def test_every_diagram_parses(group: str, project: str) -> None:
     assert not problems, f"{group}/{project}: " + "; ".join(problems)
 
 
-@pytest.mark.parametrize(("group", "project"), _projects(),
-                         ids=lambda x: x if isinstance(x, str) else "")
+@pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
 def test_the_map_stays_inside_its_budget(group: str, project: str) -> None:
     """jaffle-shop has 996 marts. Every section is capped for that reason."""
     from pf.kg.card import estimate_tokens
 
     n = estimate_tokens(arch.render(arch.gather(ROOT, group, project)))
 
-    assert n <= arch.ARCHITECTURE_BUDGET, (
-        f"{group}/{project}: ~{n} tokens — cap a section rather than the budget")
+    assert n <= arch.ARCHITECTURE_BUDGET, f"{group}/{project}: ~{n} tokens — cap a section rather than the budget"
 
 
 def test_render_is_byte_stable_for_a_fixed_project() -> None:
@@ -296,8 +331,7 @@ def test_the_map_does_not_report_itself_as_missing(tmp_path: Path) -> None:
     assert arch.drift(root, "demo", "demo-us").ok, "written and immediately stale"
 
 
-def test_a_graph_with_no_tables_is_not_papered_over_by_a_file_count(
-        tmp_path: Path) -> None:
+def test_a_graph_with_no_tables_is_not_papered_over_by_a_file_count(tmp_path: Path) -> None:
     """A `data/*.duckdb` file is not evidence that anything was loaded into it.
 
     A roll-up reported "raw tables: 1" on the strength of an empty warehouse
@@ -330,8 +364,7 @@ def test_a_graph_with_no_tables_is_not_papered_over_by_a_file_count(
     assert arch.gather(root, "demo", "demo-us").n("raw_tables") == 0
 
 
-def test_build_output_keeps_the_count_and_drops_only_the_local_filename(
-        tmp_path: Path) -> None:
+def test_build_output_keeps_the_count_and_drops_only_the_local_filename(tmp_path: Path) -> None:
     """Ignoring the disk must not cost the row its number.
 
     The tables are nodes in the graph whether or not the DuckDB file is on this
@@ -356,7 +389,7 @@ def test_build_output_keeps_the_count_and_drops_only_the_local_filename(
 
 # ----------------------------------------------------------------- drift -----
 def test_a_stale_map_says_what_differs(tmp_path: Path) -> None:
-    """"The project changed since it was written" is true of every stale map.
+    """ "The project changed since it was written" is true of every stale map.
 
     Which is to say it identifies nothing. The check runs on a runner, and when
     the render disagrees there because of the runner's own environment, the
@@ -374,8 +407,7 @@ def test_a_stale_map_says_what_differs(tmp_path: Path) -> None:
     assert "--- committed" in d.diff and "+++ would render" in d.diff
 
 
-def test_drift_reports_a_missing_map_separately_from_a_stale_one(
-        tmp_path: Path) -> None:
+def test_drift_reports_a_missing_map_separately_from_a_stale_one(tmp_path: Path) -> None:
     """They have different fixes, so they cannot be the same message."""
     root = _bare(tmp_path)
 
@@ -438,17 +470,12 @@ def test_gathering_reads_nothing_outside_its_own_project(monkeypatch) -> None:
 # ------------------------------------------------------------------- viz -----
 def test_the_linter_catches_what_it_claims_to() -> None:
     """It is the only thing standing between a bad diagram and a red box."""
-    assert viz.lint('flowchart LR\n    A["ok"] --> B["ok"]\n'
-                    "    classDef x fill:#fff,stroke:#000") == []
+    assert viz.lint('flowchart LR\n    A["ok"] --> B["ok"]\n    classDef x fill:#fff,stroke:#000') == []
 
-    assert any("undeclared" in p for p in
-               viz.lint('flowchart LR\n    A["ok"] --> B'))
-    assert any("declared twice" in p for p in
-               viz.lint('flowchart LR\n    A["one"]\n    A["two"]'))
-    assert any("classDef" in p for p in
-               viz.lint('flowchart LR\n    A["ok"]:::ghost'))
-    assert any("angle bracket" in p for p in
-               viz.lint('flowchart LR\n    A["owner <me@x.test>"]'))
+    assert any("undeclared" in p for p in viz.lint('flowchart LR\n    A["ok"] --> B'))
+    assert any("declared twice" in p for p in viz.lint('flowchart LR\n    A["one"]\n    A["two"]'))
+    assert any("classDef" in p for p in viz.lint('flowchart LR\n    A["ok"]:::ghost'))
+    assert any("angle bracket" in p for p in viz.lint('flowchart LR\n    A["owner <me@x.test>"]'))
 
 
 def test_the_linter_understands_a_labelled_dotted_edge() -> None:
@@ -473,12 +500,15 @@ def test_the_pr_report_and_the_map_share_one_palette() -> None:
         assert (fill, stroke) in set(viz.PALETTE.values())
 
 
-@pytest.mark.parametrize(("args", "reaches"), [
-    (["acme", "acme-eu", "--help"], "[group] [project]"),   # every project's CI job
-    (["--all", "--help"], "[group] [project]"),
-    (["build", "--help"], "docs/ARCHITECTURE.md"),          # platform-tests.yml
-    (["check", "--help"], "committed map"),
-])
+@pytest.mark.parametrize(
+    ("args", "reaches"),
+    [
+        (["acme", "acme-eu", "--help"], "[group] [project]"),  # every project's CI job
+        (["--all", "--help"], "[group] [project]"),
+        (["build", "--help"], "docs/ARCHITECTURE.md"),  # platform-tests.yml
+        (["check", "--help"], "committed map"),
+    ],
+)
 def test_both_maps_answer_to_pf_arch(args: list[str], reaches: str) -> None:
     """`pf arch <group> <project>` and `pf arch build|check` share one name.
 
@@ -548,7 +578,7 @@ def test_a_regenerated_artefact_is_a_row_of_its_own_not_a_gap(tmp_path: Path) ->
     root = _bare(tmp_path)
     d = root / "groups" / "demo" / "projects" / "demo-us"
     (d / "kg").mkdir()
-    (d / "kg" / "context_card.md").write_text("## card\n")   # present here …
+    (d / "kg" / "context_card.md").write_text("## card\n")  # present here …
     a = arch.gather(root, "demo", "demo-us")
     card, registration = a.by_key("card"), a.by_key("code_location")
     assert card.state == "generated" and registration.state == "generated"

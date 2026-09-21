@@ -42,10 +42,14 @@ def new_group(root: Path, group: str, domain: str = "b2b_saas") -> list[Path]:
     classes = DEFAULT_CLASSES.get(domain, DEFAULT_CLASSES["b2b_saas"])
     from pf.groups import TEMPLATE_VERSION
 
-    ctx = {"group": group, "domain": domain, "template_version": TEMPLATE_VERSION,
-           "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
-           "classes_yaml": "\n".join(f"  - {c}" for c in classes),
-           "tools_yaml": _default_tools_yaml()}
+    ctx = {
+        "group": group,
+        "domain": domain,
+        "template_version": TEMPLATE_VERSION,
+        "group_upper": re.sub(r"[^A-Z0-9]+", "_", group.upper()),
+        "classes_yaml": "\n".join(f"  - {c}" for c in classes),
+        "tools_yaml": _default_tools_yaml(),
+    }
     created = [
         write(gdir / "group.yaml", GROUP_MANIFEST, ctx),
         write(gdir / "tools.yaml", GROUP_TOOLS, ctx),
@@ -90,7 +94,7 @@ def _default_tools_yaml() -> str:
 def _sister_alias(group: str, sister: str) -> str:
     """`acme-us` in group `acme` is `us`; a sister named without the prefix keeps her name."""
     prefix = f"{group}-"
-    return sister[len(prefix):] if sister.startswith(prefix) and len(sister) > len(prefix) else sister
+    return sister[len(prefix) :] if sister.startswith(prefix) and len(sister) > len(prefix) else sister
 
 
 def new_project(
@@ -472,10 +476,10 @@ def default_plugins(group: str) -> dict[str, bool]:
     return plugins
 
 
-_PLUGIN_LINES = "\n".join(
-    f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
+_PLUGIN_LINES = "\n".join(f'    "{name}@platform": true,' for name in DEFAULT_TOOLKITS)
 
-PROJECT_SETTINGS = ("""\
+PROJECT_SETTINGS = (
+    """\
 {
   "extraKnownMarketplaces": {
     "platform": { "source": { "source": "directory", "path": "../../../../platform" } },
@@ -483,7 +487,8 @@ PROJECT_SETTINGS = ("""\
   },
   "enabledPlugins": {
 """
-    + _PLUGIN_LINES + """
+    + _PLUGIN_LINES
+    + """
     "{{group}}-group@{{group}}": true
   },
   "permissions": {
@@ -512,7 +517,8 @@ PROJECT_SETTINGS = ("""\
     ]
   }
 }
-""")
+"""
+)
 
 PROJECT_PYPROJECT = """\
 [project]
@@ -633,7 +639,6 @@ PROJECT_TARGETS: dict[str, dict[str, object]] = {
     # staging lands in `base_staging` and never collides with `main_staging`.
     "base": {"type": "duckdb", "path": "{{ env_var('PF_DUCKDB_PATH') }}", "schema": "base", "threads": 4},
 }
-
 
 
 def render_target(name: str, spec: dict[str, object], indent: str = "    ") -> str:
@@ -897,16 +902,11 @@ exclusion rule. The knowledge graph indexes these, so `kg_search` finds them.
 Name them `ADR-0001-short-title.md`. Never delete one; supersede it.
 """
 
-PROJECT_MEMORY = """\
-# Session memory
-
-One lesson per file, one-line summary on top. Written mid-task by agents.
-
-Promotion into `groups/{{group}}/CLAUDE.md` (group-wide) or a platform RULES.md
-(universal) is a reviewed, human step — that promotion is what makes the platform
-compound instead of accumulating notes nobody reads.
-"""
-
+# One source of truth for the convention — `pf.memory.README_TEXT` — so the file
+# `pf new-project` writes here and the one `pf memory init` writes into every
+# other module are byte-identical, and neither can drift from what
+# `pf memory add` actually does.
+from pf.memory import README_TEXT as PROJECT_MEMORY  # noqa: E402
 
 TIME_SPINE = """\
 -- Required by MetricFlow for time-based metrics. Platform-standard daily grain.
