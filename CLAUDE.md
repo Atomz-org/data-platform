@@ -9,7 +9,7 @@ Multi-tenant agentic data platform. Infra is shared; business logic is not.
 - `groups/<group>/projects/<project>/` — one entity: own warehouse, own dlt
   pipelines, own dbt project. Sisters run in parallel.
 
-- `vendor/` — twenty-two upstreams pinned as submodules (Recce's under
+- `vendor/` — twenty-three upstreams pinned as submodules (Recce's under
   `vendor/recce/`). **Read-only, always.** What we took is in
   `platform/src/pf/vendor/registry.yaml`; `docs/VENDOR-CARD.md` indexes it,
   `pf vendor why <file>` is the reverse lookup. Bumping a pin is a human
