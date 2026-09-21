@@ -1219,17 +1219,24 @@ def impact(
 
 @app.command("impact-gate")
 def cmd_impact_gate(
-    group: str, project: str, nodes: str,
+    group: str,
+    project: str,
+    nodes: str,
     decisions: str = typer.Option(
-        "", "--decisions",
+        "",
+        "--decisions",
         help="comma-separated decision records (decisions/*.md) this change adds or edits; "
-             "a breaking radius is reported, not blocked, when there is one"),
+        "a breaking radius is reported, not blocked, when there is one",
+    ),
 ) -> None:
     """CI gate over a comma-separated set of changed nodes."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
     try:
-        code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()],
-                                     decisions=[d.strip() for d in decisions.split(",") if d.strip()])
+        code, rendered = impact_gate(
+            gp,
+            [n.strip() for n in nodes.split(",") if n.strip()],
+            decisions=[d.strip() for d in decisions.split(",") if d.strip()],
+        )
     except GateNotExercised as exc:
         console.print(f"[red]✗[/] gate not exercised — {exc}")
         raise typer.Exit(1) from exc
@@ -4186,6 +4193,209 @@ def cmd_test_check() -> None:
         console.print(f"[red]✗[/] {reason}")
         raise typer.Exit(1)
     console.print("[green]✓[/] the test index matches the suite")
+
+
+# ------------------------------------------------------------ memory index --
+session_memory_app = typer.Typer(
+    help=(
+        "Session memory: lessons in `.memory/notes/` per module, indexed at "
+        "`.memory/MEMORY.md`. Read by every agent, written by any. "
+        "(`pf loop memory` is different — a loop's memory of its own findings.)"
+    )
+)
+app.add_typer(session_memory_app, name="memory")
+
+
+@session_memory_app.command("index")
+def cmd_session_memory_index() -> None:
+    """Regenerate `.memory/MEMORY.md` from every module's notes."""
+    from pf.memory import scan, write_index
+
+    out, changed = write_index(root())
+    n = len(scan(root()))
+    console.print(
+        f"[green]✓[/] {out.relative_to(root())}  [dim]({n} note(s){'' if changed else ' · already current'})[/]"
+    )
+
+
+@session_memory_app.command("check")
+def cmd_session_memory_check() -> None:
+    """Is the committed index current with the notes?
+
+    An index generated before a note was added answers "does anyone know about
+    this" with confident silence — the failure this exists to catch.
+    """
+    from pf.memory import drift
+
+    reason = drift(root())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the memory index matches the notes")
+
+
+@session_memory_app.command("show")
+def cmd_session_memory_show(
+    module: str = typer.Option(
+        "", "--module", "-m", help="root, platform, groups/<g>, groups/<g>/projects/<p>; default: where you are"
+    ),
+    all_modules: bool = typer.Option(False, "--all", help="every module, not just the ones visible from here"),
+    full: bool = typer.Option(False, "--full", help="print bodies, not just the one line"),
+    brief: bool = typer.Option(False, "--brief", help="one line per note, no decoration — for hooks"),
+    toon: bool = typer.Option(False, "--toon", help="TOON rows: notes[N]{module,name,type,status,agent,description}"),
+    limit: int = typer.Option(0, "--limit", help="with --brief: at most this many lines, then a count"),
+) -> None:
+    """The lessons that apply where you are: root, platform, your group, your project."""
+    from pf.memory import module_for, relevant, scan
+
+    r = root()
+    scope = module or module_for(r, Path.cwd())
+    notes = scan(r) if all_modules else relevant(r, scope)
+    notes = [n for n in notes if not n.resolved] if (brief or toon) else notes
+    if toon:
+        # Token-Oriented Object Notation: one header declaring count and fields,
+        # then one comma-separated row per note. A uniform list of like-shaped
+        # records, which is what the SessionStart hook injects — so this is the
+        # form it injects. Descriptions are quoted because they contain commas.
+        shown = notes[:limit] if limit else notes
+        print(f"notes[{len(shown)}]{{module,name,type,status,agent,description}}:")
+        for n in shown:
+            desc = n.description if len(n.description) <= 110 else n.description[:107] + "…"
+            who = n.agent or "-"
+            print(f'  {n.module},{n.name},{n.type},{n.status},{who},"{desc.replace(chr(34), chr(39))}"')
+        if limit and len(notes) > limit:
+            print(f"  # +{len(notes) - limit} more — `pf memory show`")
+        return
+    if brief:
+        shown = notes[:limit] if limit else notes
+        for n in shown:
+            desc = n.description if len(n.description) <= 110 else n.description[:107] + "…"
+            print(f"{n.module}/{n.name}: {desc}")
+        if limit and len(notes) > limit:
+            print(f"… {len(notes) - limit} more — `pf memory show`")
+        return
+    if not notes:
+        console.print(f"[dim]no notes visible from {scope}[/]")
+        return
+    console.print(f"[bold]{len(notes)} note(s) visible from {scope}[/]")
+    for n in notes:
+        tag = " [dim](resolved)[/]" if n.resolved else ""
+        who = f" [dim]by {escape(n.agent)}[/]" if n.agent else ""
+        console.print(f"\n[cyan]{n.module}[/] · [bold]{n.name}[/]{tag}{who}  [dim]{n.path.relative_to(r)}[/]")
+        console.print(f"  {escape(n.description)}")
+        if full:
+            body = n.path.read_text(encoding="utf-8").split("---", 2)[-1].strip()
+            console.print(f"\n{escape(body)}\n")
+
+
+@session_memory_app.command("add")
+def cmd_session_memory_add(
+    module: str = typer.Argument(..., help="root, platform, groups/<g>, or groups/<g>/projects/<p>"),
+    name: str = typer.Argument(..., help="kebab-case slug — becomes the filename"),
+    description: str = typer.Argument(..., help="the one line the index shows"),
+    type_: str = typer.Option("project", "--type", help="project | feedback | reference | user"),
+    body: str = typer.Option("", "--body", help="the why and how-to-apply, inline"),
+    body_file: Path | None = typer.Option(None, "--body-file", help="…or read it from a file ('-' for stdin)"),
+    resolved: bool = typer.Option(False, "--resolved", help="record it as already dealt with"),
+    agent: str = typer.Option(
+        "", "--agent", help="who is writing; default: detected — PF_AGENT, else the tool's own environment mark"
+    ),
+) -> None:
+    """Write one note into the right module and regenerate the index."""
+    import sys
+
+    from pf.memory import add, detect_agent
+
+    text = body
+    if body_file is not None:
+        text = sys.stdin.read() if str(body_file) == "-" else body_file.read_text(encoding="utf-8")
+    try:
+        p = add(
+            root(),
+            module,
+            name,
+            description,
+            body=text,
+            type_=type_,
+            status="resolved" if resolved else "active",
+            agent=agent or detect_agent(),
+        )
+    except (ValueError, KeyError, FileExistsError) as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from None
+    console.print(f"[green]✓[/] {p.relative_to(root())}  [dim](index regenerated)[/]")
+
+
+@session_memory_app.command("init")
+def cmd_session_memory_init() -> None:
+    """Put the convention's README into every module's `.memory/notes/` that lacks one."""
+    from pf.memory import init_readmes
+
+    wrote = init_readmes(root())
+    if not wrote:
+        console.print("[dim]every module already has its README[/]")
+        return
+    for p in wrote:
+        console.print(f"[green]+[/] {p.relative_to(root())}")
+
+
+@session_memory_app.command("log")
+def cmd_session_memory_log(limit: int = typer.Option(20, "--limit")) -> None:
+    """Who added or changed which notes, from git."""
+    from pf.memory import log
+
+    out = log(root(), limit)
+    console.print(out or "[dim]no memory changes in history[/]")
+
+
+# ----------------------------------------------------------- agent context --
+context_app = typer.Typer(
+    help=(
+        "The context every agent reads before its first edit — the entry points "
+        "(CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, "
+        "the test index, the repo map — checked and refreshed as one."
+    )
+)
+app.add_typer(context_app, name="context")
+
+
+@context_app.command("check")
+def cmd_context_check() -> None:
+    """Do the entry points still agree, and does every module have its memory README?
+
+    The generated pieces have their own checks (`pf memory check`, `pf test
+    check`, `pf arch check`); this is the hand-written layer around them — a
+    pointer file that points at nothing is worse than none.
+    """
+    from pf.agentcontext import check
+
+    problems = check(root())
+    for line in problems:
+        console.print(f"[red]✗[/] {escape(line)}")
+    if problems:
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the entry points agree and every module has its memory README")
+
+
+@context_app.command("refresh")
+def cmd_context_refresh(
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="list what would change and exit 1 if anything; write nothing"
+    ),
+) -> None:
+    """Regenerate the memory index, the test index and the repo map in one step."""
+    from pf.agentcontext import refresh
+
+    changed = refresh(root(), dry_run=dry_run)
+    if not changed:
+        console.print("[green]✓[/] agent context already current")
+        return
+    for p in changed:
+        console.print(f"  [yellow]~[/] {p.relative_to(root())}")
+    if dry_run:
+        console.print(f"[red]✗[/] {len(changed)} file(s) stale — run `pf context refresh`")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/] {len(changed)} file(s) regenerated — commit them with the change that made them stale")
 
 
 @tool_app.command("list")

@@ -20,6 +20,7 @@ done
 [ "$root" = "/" ] && exit 0
 
 rel="${PWD#"$root"/}"
+mod="root"
 echo "## Session context"
 echo "- repo: $(basename "$root") · branch: $(git -C "$root" branch --show-current 2>/dev/null || echo '?')"
 
@@ -27,6 +28,7 @@ echo "- repo: $(basename "$root") · branch: $(git -C "$root" branch --show-curr
 if [[ "$rel" == groups/*/projects/* ]]; then
   group="$(echo "$rel" | cut -d/ -f2)"
   project="$(echo "$rel" | cut -d/ -f4)"
+  mod="groups/${group}/projects/${project}"
   echo "- scope: project ${group}/${project} — never read another group or sister"
 
   graph="$root/$rel/kg/graph.duckdb"
@@ -45,6 +47,24 @@ if [[ "$rel" == groups/*/projects/* ]]; then
   fi
 else
   echo "- scope: platform/root — shared infra. Changes here affect every project."
+fi
+# The protocol is per execution scope, not per tool; a Claude session is the
+# Session scope. One line, so the always-on cost is one line.
+echo "- protocol: AGENTS.md — you are its Session scope (§0); leave a note before you finish (§5)"
+
+# Memory: what earlier sessions — Claude's or Copilot's — learned about exactly
+# this scope (root and platform always; the group and project when inside one).
+# One line per note and capped, so the always-on cost is bounded the way the
+# cards are; the bodies are read on demand with `pf memory show`. Silent when
+# there is nothing, so a repo with no notes pays nothing for this block. This
+# is what makes the memory automatic rather than a rule an agent must remember:
+# it is in front of the model on turn one, whichever tool wrote it.
+if [ -f "$root/.memory/MEMORY.md" ]; then
+  mem="$(uv run --quiet --project "$root" pf memory show --toon --limit 8 --module "$mod" 2>/dev/null || true)"
+  if [ -n "$mem" ]; then
+    echo "- memory (\`pf memory show\` for the bodies):"
+    printf '%s\n' "$mem" | sed 's/^/    /'
+  fi
 fi
 
 # Uncommitted work, capped: the point is "there is state here", not a file list.

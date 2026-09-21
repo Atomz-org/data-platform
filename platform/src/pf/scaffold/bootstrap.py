@@ -74,6 +74,23 @@ def _ensure_dirs(root: Path, group: str, project: str) -> StepResult:
     return StepResult("directories", "ok", f"created {len(made)}" if made else "present")
 
 
+def _memory_notes(root: Path, group: str, project: str) -> StepResult:
+    """Make `.memory/notes/` exist in git, not just on disk.
+
+    `_ensure_dirs` above creates the directory, and git does not track an
+    empty directory — so every project scaffolded before the README template
+    existed had memory that no clone could see. The README is the convention's
+    own explanation, written from `pf.memory.README_TEXT` so it cannot say
+    something `pf memory add` does not do.
+    """
+    from pf.memory import init_readmes
+
+    wrote = init_readmes(root, modules=[f"groups/{group}/projects/{project}"])
+    if wrote:
+        return StepResult("memory notes", "created", ".memory/notes/README.md")
+    return StepResult("memory notes", "ok", "present")
+
+
 def _build_graph(root: Path, group: str, project: str) -> StepResult:
     from pf.kg.build import build_graph
 
@@ -988,6 +1005,11 @@ def _dev_serving(root: Path, group: str, project: str) -> StepResult:
 
 STEPS: list[Step] = [
     Step("directories", "every generated artefact has a stable home", _ensure_dirs),
+    Step(
+        "memory notes",
+        "an empty .memory/notes/ is invisible to a clone; the README is what makes the convention exist in git",
+        _memory_notes,
+    ),
     Step(
         "knowledge graph",
         "kg_search, impact and the PreToolUse gate need a graph from day one, not after the first seed",

@@ -1,0 +1,57 @@
+# The environment GitHub Copilot's coding agent gets before it touches this
+# repository. Copilot reads AGENTS.md and .github/copilot-instructions.md for
+# the rules; this is what makes the commands those files name actually run in
+# its sandbox — `pf`, the commit gate, the memory index, the test suite.
+#
+# The job MUST be named `copilot-setup-steps` and the file must sit at exactly
+# this path: that is how GitHub finds it. It also runs on its own changes, so a
+# broken setup is caught here rather than discovered by the agent mid-task.
+#
+# Claude Code needs none of this: its session layer (`.claude/settings.json`,
+# the power-tools plugin) does the same on a developer's machine. This is the
+# same environment, expressed the only way Copilot can consume it.
+name: Copilot setup steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/copilot-setup-steps.yml"]
+  pull_request:
+    paths: [".github/workflows/copilot-setup-steps.yml"]
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pin by pin, never `submodules: recursive` — one unreachable upstream
+      # would otherwise abort the whole checkout. vendor-pins.yml is the daily
+      # check that none is unreachable; this is the graceful path if one is.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+
+      # The commit gate. git does not clone .git/hooks, so without this every
+      # commit the agent makes is unchecked — maxFiles, the denylist, impact.
+      - run: uv run pf install-hook
+
+      # Prove the environment answers the questions AGENTS.md tells the agent
+      # to ask, before the agent asks them.
+      - name: The agent's first commands work
+        run: |
+          uv run pf memory check
+          uv run pf test check
+          uv run pf memory show --all --brief | head -20

@@ -23,6 +23,11 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/platform-tests.yml"
+      # Memory notes live in every module, and `pf memory check` is the only
+      # thing that notices a note landing without its index line. Without
+      # these two, a note added under groups/ would never trigger the check.
+      - ".memory/**"
+      - "**/.memory/**"
 
 # One run per PR. A push that supersedes an in-flight run cancels it rather than
 # racing it, the same rule the generated project workflows use.
@@ -67,6 +72,13 @@ jobs:
       # silence.
       - name: Test index is current
         run: uv run pf test check
+
+      # Fails when a memory note was added, removed or re-described without
+      # `pf memory index`. Same reasoning as the test index: an index that
+      # omits a lesson answers "does anyone know about this" with confident
+      # silence, and that is worse than having no index at all.
+      - name: Memory index is current
+        run: uv run pf memory check
 
       # Fails when the repository's shape changed and `docs/ARCHITECTURE.md`
       # still describes the old one. A stale map is worse than none: it sends a

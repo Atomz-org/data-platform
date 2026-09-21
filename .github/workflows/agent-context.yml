@@ -1,0 +1,152 @@
+# Every pull request: is the context every agent reads still true?
+#
+# Three tools read three entry points — CLAUDE.md, AGENTS.md (+ GEMINI.md,
+# which imports it), .github/copilot-instructions.md — and all of them send the
+# reader to the same generated context: the memory index, the test index, the
+# repo map. `platform-tests.yml` checks the generated pieces, but only on PRs
+# that touch platform paths; a PR that adds a project model and a memory note
+# under groups/ never ran it. This one has no path filter, because the point
+# is *every* PR: whichever tool wrote the change, the next tool must find the
+# context current.
+#
+# Four hard steps, one soft. `pf tokens` is soft (a warning, not a failure)
+# because an over-budget card is a decision for a person — trim the card or
+# raise its budget — and a refresh cannot make it. Flip `continue-on-error`
+# off once that decision is made; `platform.yml` still fails on it for
+# platform changes.
+#
+# `refresh` does what the failure message says, when it can. It commits the
+# regenerated files to a same-repository PR branch — never a fork's, never
+# main — and only with AGENT_CONTEXT_TOKEN, a fine-grained PAT with
+# `contents: write`. GITHUB_TOKEN would push fine, but a push made with it
+# never starts another workflow run, so the fixed commit would sit on the PR
+# with no checks at all, which a required check reads as "waiting" forever.
+# Without the secret the job says so and exits green, and the red `check`
+# above it still tells the author the one command to run.
+name: agent-context
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: agent-context-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pin by pin, not `submodules: recursive`: one unreachable upstream must
+      # not take the whole check with it (see platform-tests.yml).
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+
+      - name: Entry points agree (CLAUDE.md, AGENTS.md, GEMINI.md, Copilot)
+        run: uv run pf context check
+
+      - name: Memory index is current
+        run: uv run pf memory check
+
+      - name: Test index is current
+        run: uv run pf test check
+
+      - name: Architecture map is current
+        run: uv run pf arch check
+
+      - name: Token budgets (advisory until the jaffle-shop card is decided)
+        continue-on-error: true
+        run: |
+          uv run pf tokens || echo "::warning title=Over budget::a CLAUDE.md or a card is over its token budget — \`uv run pf tokens\` names it; trim it or raise the budget in platform/src/pf/kg/card.py"
+
+      # What a refresh would change, in the run summary — so the author sees
+      # the diff without cloning, whether or not the refresh job may push.
+      - name: What is stale
+        if: failure()
+        run: |
+          {
+            echo "## Agent context is stale"
+            echo
+            echo '`uv run pf context refresh` regenerates:'
+            echo
+            echo '```'
+            uv run pf context refresh --dry-run || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  refresh:
+    needs: check
+    if: >-
+      failure() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check for token
+        id: guard
+        env:
+          TOKEN: ${{ secrets.AGENT_CONTEXT_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "AGENT_CONTEXT_TOKEN is not set — not pushing a refresh. Run"
+            echo "  uv run pf context refresh"
+            echo "locally and commit what it regenerates. To let this job do it,"
+            echo "add a fine-grained PAT with contents: write as AGENT_CONTEXT_TOKEN."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.ready == 'true'
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.AGENT_CONTEXT_TOKEN }}
+
+      - name: Vendored upstreams
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || true
+          done
+      - uses: astral-sh/setup-uv@v5
+        if: steps.guard.outputs.ready == 'true'
+      - run: uv sync --frozen
+        if: steps.guard.outputs.ready == 'true'
+
+      # The regenerated files are the commit; nothing else. The same gate a
+      # developer's commit passes applies — `pf install-hook` puts it in place.
+      - name: Refresh and commit
+        if: steps.guard.outputs.ready == 'true'
+        env:
+          PF_AGENT: actions:agent-context
+        run: |
+          uv run pf install-hook
+          uv run pf context refresh
+          if git diff --quiet; then
+            echo "nothing to commit — the check failed on something a refresh cannot fix; read its log"
+            exit 0
+          fi
+          git config user.name "agent-context[bot]"
+          git config user.email "agent-context[bot]@users.noreply.github.com"
+          git add -A -- .memory '*/.memory' platform/tests/README.md docs/ARCHITECTURE.md
+          git commit -m "Refresh agent context" -m "Regenerated by the agent-context workflow: the memory index, the test index and the repo map, so the next agent — whichever tool — reads context that matches this branch."
+          git push
