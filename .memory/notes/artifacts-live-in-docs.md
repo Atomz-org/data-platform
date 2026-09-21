@@ -3,6 +3,7 @@ name: artifacts-live-in-docs
 description: Every artifact published for the data-platform repo must also be saved as a standalone file in its docs/ folder
 type: feedback
 status: active
+agent: claude-code
 ---
 
 When publishing an Artifact about the `Atomz-org/data-platform` repo, always also

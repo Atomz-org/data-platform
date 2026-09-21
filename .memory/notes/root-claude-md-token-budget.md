@@ -3,6 +3,7 @@ name: root-claude-md-token-budget
 description: root CLAUDE.md is hard-capped at 700 tokens (ROUTER_BUDGET, pf/kg/card.py) and CI-enforced by `pf tokens`; it was already at 698/700 before any edit
 type: project
 status: active
+agent: claude-code
 ---
 
 The repo root `CLAUDE.md` is not an ordinary docs file — it is `ROUTER_BUDGET

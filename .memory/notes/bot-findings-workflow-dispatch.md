@@ -3,6 +3,7 @@ name: bot-findings-workflow-dispatch
 description: 'How to backfill review findings into issues with the repo''s bot-findings workflow — dispatch one PR at a time, closed PRs included, epic #312 is full'
 type: project
 status: active
+agent: claude-code
 ---
 
 `.github/workflows/bot-findings.yml` + `.github/scripts/bot_findings.py` turn every CodeRabbit/Gitar (and flagged human) review comment into a `bot-finding` issue, idempotent by a `(path, title)` fingerprint stored as an HTML comment in the issue body; the comment URL is cited in the body, so "is this thread tracked?" = search issue bodies for the thread URL. It never closes issues (adds `fix-landed` instead).

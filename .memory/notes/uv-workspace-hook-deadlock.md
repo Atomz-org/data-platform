@@ -3,6 +3,7 @@ name: uv-workspace-hook-deadlock
 description: Checking out a branch without groups/commodity/projects/commodity-india/pyproject.toml bricks every Bash/Write/Edit call via the uv-run hooks
 type: project
 status: active
+agent: claude-code
 ---
 
 `.claude/settings.json` runs PreToolUse and PostToolUse hooks as `uv run --project "$CLAUDE_PROJECT_DIR" ...` on Edit|Write|MultiEdit|NotebookEdit|Bash. The root pyproject.toml workspace glob is `groups/*/projects/*`. The commodity-india project's pyproject.toml is tracked only on the commodity-stack/* branches; on any other branch its ignored build output (reporting/build) stays on disk, uv refuses to resolve the workspace, every hook errors, and every mutating tool is blocked — including Write, so the session cannot repair itself. Subagents and worktrees hit the same hook (CLAUDE_PROJECT_DIR is pinned to the primary checkout).

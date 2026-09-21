@@ -3,6 +3,7 @@ name: concurrent-sessions-revert-tree
 description: Multiple Claude sessions run in this one checkout and bulk-discard each other's uncommitted work
 type: project
 status: active
+agent: claude-code
 ---
 
 This checkout is worked by several Claude CLI sessions at once (three live on

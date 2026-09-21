@@ -3,6 +3,7 @@ name: open-pr-stacks-2026-09
 description: 'All of #196–#342 in Atomz-org/data-platform are merged (2026-09-20); what land-195.sh learned landing them, and what is still owed'
 type: project
 status: resolved
+agent: claude-code
 ---
 
 State 2026-09-19 (late): #195 and #379 are merged (user ran land-195.sh v1); main = 3c87d31. Open PRs in #196–#342, as the REST `stack` field reports them (`gh api repos/.../pulls/N --jq .stack` → number, position, size, base.ref; stack numbers share the issue sequence, so `gh stack merge <pr>` cannot collide with a stack number):

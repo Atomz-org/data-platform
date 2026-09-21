@@ -3,6 +3,7 @@ name: pr-merge-classifier-limits
 description: What the auto-mode classifier allows and denies when merging PRs in Atomz-org/data-platform — merges into main, retargets, bulk readies, --no-verify commits and platform/ shell edits get denied; pushes to feature branches, authored commits that pass the gate, single readies, PR/issue comments and merges into feature branches pass
 type: reference
 status: active
+agent: claude-code
 ---
 
 The auto-mode classifier is independent of `permissions.allow` in `.claude/settings.json` (a `Bash(gh stack merge:*)` allow rule changes nothing). Observed over three sessions on 2026-09-19:
