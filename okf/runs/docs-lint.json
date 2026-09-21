@@ -1,0 +1,8 @@
+{
+  "bundle": "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/docs",
+  "command": "lint",
+  "errors": 10,
+  "findings": [],
+  "valid": false,
+  "warnings": 0
+}

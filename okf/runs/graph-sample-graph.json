@@ -1,0 +1,473 @@
+{
+  "bundle": "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/graph-sample",
+  "command": "graph",
+  "density_pct": 1.7241379310344827,
+  "edge_count": 57,
+  "edges": [
+    {
+      "from": "tables/jaffle-seeds-raw_accounts_receivable",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_budgets",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_campaign_spend",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_campaigns",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_coupon_redemptions",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_coupons",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_customers",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_delivery_shipments",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_departments",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_email_events",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_employees",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_equipment",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_expense_categories",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_expenses",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_gift_cards",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_ingredient_prices",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_ingredients",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_inventory_counts",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_inventory_movements",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_invoice_line_items",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_invoices",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_items",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_loyalty_members",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_loyalty_tiers",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_loyalty_transactions",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_maintenance_logs",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_menu_categories",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_menu_items",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_nutritional_info",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_orders",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_payment_transactions",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_payroll",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_performance_reviews",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_po_line_items",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_po_receipts",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_positions",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_pricing_history",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_product_reviews",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_products",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_purchase_orders",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_recipe_ingredients",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_recipes",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_referrals",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_refunds",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_seasonal_menus",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_shifts",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_social_media_posts",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_store_hours",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_stores",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_supplier_contracts",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_suppliers",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_tax_rates",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_timecards",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_training_completions",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_training_courses",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_warehouses",
+      "to": "sources/jaffle-seeds"
+    },
+    {
+      "from": "tables/jaffle-seeds-raw_waste_logs",
+      "to": "sources/jaffle-seeds"
+    }
+  ],
+  "isolated": 0,
+  "max_backlinks": 57,
+  "node_count": 58,
+  "nodes": [
+    {
+      "id": "sources/jaffle-seeds",
+      "type": "Source"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_accounts_receivable",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_budgets",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_campaign_spend",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_campaigns",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_coupon_redemptions",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_coupons",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_customers",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_delivery_shipments",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_departments",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_email_events",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_employees",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_equipment",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_expense_categories",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_expenses",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_gift_cards",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_ingredient_prices",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_ingredients",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_inventory_counts",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_inventory_movements",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_invoice_line_items",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_invoices",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_items",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_loyalty_members",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_loyalty_tiers",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_loyalty_transactions",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_maintenance_logs",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_menu_categories",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_menu_items",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_nutritional_info",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_orders",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_payment_transactions",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_payroll",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_performance_reviews",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_po_line_items",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_po_receipts",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_positions",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_pricing_history",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_product_reviews",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_products",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_purchase_orders",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_recipe_ingredients",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_recipes",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_referrals",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_refunds",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_seasonal_menus",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_shifts",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_social_media_posts",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_store_hours",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_stores",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_supplier_contracts",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_suppliers",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_tax_rates",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_timecards",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_training_completions",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_training_courses",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_warehouses",
+      "type": "Table"
+    },
+    {
+      "id": "tables/jaffle-seeds-raw_waste_logs",
+      "type": "Table"
+    }
+  ]
+}

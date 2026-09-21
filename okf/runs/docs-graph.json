@@ -1,0 +1,113 @@
+{
+  "bundle": "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/docs",
+  "command": "graph",
+  "density_pct": 3.75,
+  "edge_count": 9,
+  "edges": [
+    {
+      "from": "reference/ai-governance-architecture",
+      "to": "reference/air"
+    },
+    {
+      "from": "reference/ai-governance-architecture",
+      "to": "reference/governance"
+    },
+    {
+      "from": "reference/ai-governance-architecture",
+      "to": "reference/policy"
+    },
+    {
+      "from": "reference/claude-code",
+      "to": "reference/scaffolding"
+    },
+    {
+      "from": "reference/kg-atlas",
+      "to": "reference/policy"
+    },
+    {
+      "from": "reference/kg-atlas",
+      "to": "reference/semantics"
+    },
+    {
+      "from": "reference/scaffolding",
+      "to": "reference/architecture-maps"
+    },
+    {
+      "from": "reference/semantics",
+      "to": "reference/kg-atlas"
+    },
+    {
+      "from": "reference/semantics",
+      "to": "reference/policy"
+    }
+  ],
+  "isolated": 7,
+  "max_backlinks": 3,
+  "node_count": 16,
+  "nodes": [
+    {
+      "id": "reference/ai-governance-architecture",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/air",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/architecture",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/architecture-maps",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/artifacts",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/claude-code",
+      "type": "Playbook"
+    },
+    {
+      "id": "reference/engineering",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/governance",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/kg-atlas",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/policy",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/project-atlas",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/scaffolding",
+      "type": "Playbook"
+    },
+    {
+      "id": "reference/semantics",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/stack",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/vendor",
+      "type": "Reference"
+    },
+    {
+      "id": "reference/vendor-card",
+      "type": "Reference"
+    }
+  ]
+}

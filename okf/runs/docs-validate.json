@@ -1,0 +1,69 @@
+{
+  "bundle": "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/docs",
+  "command": "validate",
+  "errors": 10,
+  "findings": [
+    {
+      "concept_id": "reference/air",
+      "message": "broken link: [platform/src/pf/air/sources.py] -\u003e ../platform/src/pf/air/sources.py (concept platform/src/pf/air/sources.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/air",
+      "message": "broken link: [`vendor/ai-governance-framework`] -\u003e ../vendor/ai-governance-framework (concept vendor/ai-governance-framework not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/air",
+      "message": "broken link: [`platform/src/pf/ontology/policy.yaml`] -\u003e ../platform/src/pf/ontology/policy.yaml (concept platform/src/pf/ontology/policy.yaml not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/architecture-maps",
+      "message": "broken link: [`platform/src/pf/architecture.py`] -\u003e ../platform/src/pf/architecture.py (concept platform/src/pf/architecture.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/architecture-maps",
+      "message": "broken link: [`platform/src/pf/viz.py`] -\u003e ../platform/src/pf/viz.py (concept platform/src/pf/viz.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/artifacts",
+      "message": "broken link: [`platform/src/pf/artifacts.py`] -\u003e ../platform/src/pf/artifacts.py (concept platform/src/pf/artifacts.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/artifacts",
+      "message": "broken link: [`platform/src/pf/tools/recce.py`] -\u003e ../platform/src/pf/tools/recce.py (concept platform/src/pf/tools/recce.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/kg-atlas",
+      "message": "broken link: [`platform/src/pf/kg/`] -\u003e ../platform/src/pf/kg/ (concept platform/src/pf/kg not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/project-atlas",
+      "message": "broken link: [`platform/src/pf/atlas.py`] -\u003e ../platform/src/pf/atlas.py (concept platform/src/pf/atlas.py not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    },
+    {
+      "concept_id": "reference/scaffolding",
+      "message": "broken link: [`platform/src/pf/scaffold/`] -\u003e ../platform/src/pf/scaffold/ (concept platform/src/pf/scaffold not found)",
+      "rule": "okf/links/broken",
+      "severity": "ERROR"
+    }
+  ],
+  "valid": false,
+  "warnings": 0
+}

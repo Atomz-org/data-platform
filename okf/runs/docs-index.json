@@ -1,0 +1,9 @@
+{
+  "bundle": "okf/bundles/docs",
+  "command": "index",
+  "count": 2,
+  "indexes_written": [
+    "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/docs/index.md",
+    "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/docs/reference/index.md"
+  ]
+}

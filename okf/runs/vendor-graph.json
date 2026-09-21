@@ -1,0 +1,108 @@
+{
+  "bundle": "/Users/sswaminathan/Documents/data_platform/data-platform/okf/bundles/vendor",
+  "command": "graph",
+  "density_pct": 0,
+  "edge_count": 0,
+  "edges": [],
+  "isolated": 24,
+  "max_backlinks": 0,
+  "node_count": 24,
+  "nodes": [
+    {
+      "id": "upstreams/ai-governance-framework",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/asqav-compliance",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/context-ontology-accelerator",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/dagster-skills",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/dbt-agent-skills",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/dlthub-ai-workbench",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/duckdb-quack",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/duckdb-skills",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/evidence-bi",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/floci",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/forge",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/loop-engineering",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/ontology-playground",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/openmetadata",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/openmetadata-standards",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/opentopology",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/pr-agent",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/public-sector-ai-playbook",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/recce",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/recce-claude-plugin",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/recce-pr-update",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/recce-ui",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/shadcn-admin",
+      "type": "Vendor Upstream"
+    },
+    {
+      "id": "upstreams/wrenai",
+      "type": "Vendor Upstream"
+    }
+  ]
+}
