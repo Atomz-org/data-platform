@@ -29,8 +29,8 @@ flowchart LR
     end
     subgraph LD["delivery"]
         direction TB
-        D1["exposures<br/>6"]:::exposure
-        D2["Evidence pages<br/>1"]:::exposure
+        D1["exposures<br/>22"]:::exposure
+        D2["Evidence pages<br/>16"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -109,7 +109,7 @@ flowchart TB
 | dbt targets | ✓ | `transform/profiles.yml` | dev, base and prod; base is what Recce diffs against |
 | staging models | ✓ 58 | `transform/models/staging/finance/stg_accounts_receivable.sql` | one per raw table, generated from the annotations |
 | marts | ✓ 996 | `transform/models/marts/advanced/int_customer_first_purchase_context.sql` | business entities at a declared grain — what metrics are built on |
-| data tests | ✓ 540 | `transform/models/marts/_exposures.yml` | the assumptions the models are allowed to make |
+| data tests | ✓ 540 | `transform/models/_reporting__exposures.yml` | the assumptions the models are allowed to make |
 | project macros | ✓ 21 | `transform/macros/bucket_values.sql` | project-local SQL; dialect macros come from the platform toolkits |
 | snapshots | ✓ 2 | `transform/snapshots/snp_dim_employees.sql` | slowly-changing dimensions captured over time |
 | dbt packages | ✓ | `transform/packages.yml` | the group's shared dbt package, plus any upstream ones |
@@ -130,7 +130,7 @@ flowchart TB
 | MCP servers | — | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten — `pf capability-add` |
 | decision records | ✓ 3 | `decisions/ADR-0002-snowflake-semantics-on-every-adapter.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
-| exposures | ✓ 6 | `transform/models/marts/_exposures.yml` | who reads the output — impact analysis stops at the mart without them |
+| exposures | ✓ 22 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 11 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | ✓ 2 | `jaffle-shop-evidence-layer.html` | standalone HTML about this project, kept beside what it describes |
