@@ -8,7 +8,7 @@ context per session.
 platform/          engines, ontology, knowledge graph, MCP, 14 skill toolkits   ← you never edit
 groups/<g>/        a family of sister companies: ontology instance, shared macros
   projects/<p>/    one legal entity: sources, models, metrics                    ← you only edit here
-vendor/            21 upstreams pinned as submodules, with recorded provenance   ← you never edit
+vendor/            23 upstreams pinned as submodules, with recorded provenance   ← you never edit
 data/_platform.duckdb   tracking DB (agent runs, spend, monitors, impact history)
 ```
 
@@ -45,6 +45,17 @@ uv run pf status                   # every group and project
 | `pf housekeeping [g p] [--apply]` | Maintenance the engines skip: lakehouse compaction and snapshot expiry per project, Dagster history and stale artefacts platform-wide |
 | `pf pr report` | Blast radius, conformance and drift for the current change |
 | `pf ui` / `pf mcp` | Dashboard / MCP server |
+
+## Developing on the platform
+
+`uv run pf install-hook` on a fresh clone — git does not clone `.git/hooks`,
+so the pre-commit gate is otherwise silently absent. What
+[`platform-tests.yml`](.github/workflows/platform-tests.yml) runs on every
+`platform/**` pull request: `ruff check platform/`, `pf test check`,
+`pf arch check`, `pytest platform/tests -q`. Full commands, the generated-file
+table (what regenerates each committed artefact, and what to edit instead),
+the traps in verifying one locally, and the commit gate's `maxFiles` and
+denylists: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## What you write vs never touch
 
@@ -165,12 +176,14 @@ duckdb/duckdb-skills and dagster-io/skills, adapted for dlt Core / dbt Core.
 
 ## Vendored upstreams
 
-Twenty-one upstreams are pinned as branch-tracked submodules under `vendor/`, and every
-borrowing is written down as a **path pair** — one file upstream, one or more of
-ours — in `platform/src/pf/vendor/registry.yaml`. 53 adoptions, 22 explicit
-declines. Full account: [`docs/VENDOR.md`](docs/VENDOR.md); the agent-loadable
-index is [`docs/VENDOR-CARD.md`](docs/VENDOR-CARD.md) (~420 tokens). Both are
-generated from the registry.
+Twenty-three upstreams are pinned as branch-tracked submodules under `vendor/`,
+and every borrowing is written down as a **path pair** — one file upstream, one
+or more of ours — in `platform/src/pf/vendor/registry.yaml`: 24 entries in all
+(one, `floci`, is registered but its submodule was never added — `pf vendor
+verify` reports it `missing`), 88 adoptions, 51 explicit declines. Full
+account: [`docs/VENDOR.md`](docs/VENDOR.md); the agent-loadable index is
+[`docs/VENDOR-CARD.md`](docs/VENDOR-CARD.md) (~924 tokens). Both are generated
+from the registry.
 
 | Command | What it does |
 |---|---|
