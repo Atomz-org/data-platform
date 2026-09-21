@@ -4408,12 +4408,19 @@ code_app = typer.Typer(
 )
 app.add_typer(code_app, name="code")
 
+# Read at import time only so the option help can state them. `pf.codegraph`
+# imports nothing from `pf`, so this cannot cycle.
+from pf.codegraph import IMPACT_DEPTH as _IMPACT_DEPTH  # noqa: E402
+from pf.codegraph import IMPACT_MAX_RESULTS as _IMPACT_MAX_RESULTS  # noqa: E402
 
-def _code_run(subcommand: str, *args: str, json_out: bool = False) -> None:
+
+def _code_run(subcommand: str, *args: str, capture: bool = False) -> str:
     """Shell out to the pinned wheel, scoped to `platform/`.
 
     Not imported: the tool's dependency set is not one this lockfile resolves,
     so it runs through `uvx` exactly as the `graphify` MCP server already does.
+    With `capture`, stdout is returned instead of streamed — which is how the
+    verbose JSON becomes a few lines worth reading.
     """
     import subprocess
 
@@ -4432,10 +4439,13 @@ def _code_run(subcommand: str, *args: str, json_out: bool = False) -> None:
             f"[yellow]no graph yet[/] — building it first is `pf code build` "
             f"[dim]({codegraph.SCOPE}/{codegraph.MARKER_DIR}/ is empty)[/]"
         )
-    proc = subprocess.run(cmd, check=False)
+    proc = subprocess.run(cmd, check=False, capture_output=capture, text=True)
     if proc.returncode != 0:
         console.print(f"[red]✗[/] {' '.join(cmd)}  [dim](exit {proc.returncode})[/]")
+        if capture and proc.stderr:
+            console.print(f"[dim]{escape(proc.stderr[-800:])}[/]")
         raise typer.Exit(proc.returncode)
+    return proc.stdout or "" if capture else ""
 
 
 @code_app.command("build")
@@ -4451,9 +4461,50 @@ def cmd_code_update() -> None:
 
 
 @code_app.command("impact")
-def cmd_code_impact(path: str = typer.Argument(..., help="a file under platform/")) -> None:
-    """Callers, dependents and covering tests of a platform file — its blast radius."""
-    _code_run("impact", path)
+def cmd_code_impact(
+    paths: list[str] = typer.Argument(None, help="files under platform/; default: what changed since HEAD~1"),
+    depth: int = typer.Option(
+        0, "--depth", help=f"hops to follow; default {_IMPACT_DEPTH} (the tool's own 2 returns ~31k tokens)"
+    ),
+    max_results: int = typer.Option(0, "--max-results", help=f"cap on results; default {_IMPACT_MAX_RESULTS}"),
+    as_json: bool = typer.Option(
+        False, "--json", help="the tool's own payload, ~13k tokens — the detail, not the answer"
+    ),
+) -> None:
+    """Which files to read before changing a platform file — the blast radius.
+
+    Prints the list, because that *is* the answer: 53 tokens here against
+    81,831 for reading the six files it names. `--json` is the full payload
+    when the detail is genuinely wanted. With no path the tool works out what
+    changed itself, which is what a pre-push check wants.
+    """
+    import json as _json
+
+    from pf import codegraph
+
+    try:
+        files = codegraph.resolve_scoped(root(), list(paths or []))
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {escape(str(exc))}")
+        raise typer.Exit(1) from None
+    args = [
+        "--depth",
+        str(depth or codegraph.IMPACT_DEPTH),
+        "--max-results",
+        str(max_results or codegraph.IMPACT_MAX_RESULTS),
+        *(["--files", *files] if files else []),
+    ]
+    if as_json:
+        _code_run("impact", *args)
+        return
+    out = _code_run("impact", *args, capture=True)
+    try:
+        payload = _json.loads(out)
+    except ValueError:
+        console.print(out or "[dim]no output[/]")
+        return
+    for line in codegraph.summarise_impact(payload, root()):
+        console.print(escape(line))
 
 
 @code_app.command("search")

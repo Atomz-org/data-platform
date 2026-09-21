@@ -124,6 +124,88 @@ def argv(subcommand: str, *args: str, root: str | Path | None = None) -> list[st
     return ["uvx", f"{PACKAGE}@{PINNED}", subcommand, "--repo", repo, *args]
 
 
+def resolve_scoped(root: str | Path, paths: list[str]) -> list[str]:
+    """Absolute paths for the tool, refusing anything outside `platform/`.
+
+    The graph stores absolute paths, so `--files` is given absolute ones. A
+    path is resolved against the working directory first and against
+    `platform/` second, so both `platform/src/pf/cli.py` from the root and
+    `src/pf/cli.py` from inside it work.
+
+    Refusing the rest is not tidiness. Asking this graph about a sister
+    project's file cannot be answered — it is not in it — and the question
+    itself is the boundary crossing the platform forbids, so it is better
+    named than silently answered with an empty blast radius.
+    """
+    scope = scope_dir(root).resolve()
+    out: list[str] = []
+    for p in paths:
+        # Working directory, then the repository root, then `platform/` — so
+        # `platform/src/pf/cli.py` from the root and `src/pf/cli.py` from
+        # inside it both land on the same file, and neither becomes
+        # `platform/platform/...`.
+        candidates = [Path(p), Path(root) / p, scope / p]
+        q = next((c.resolve() for c in candidates if c.exists()), (scope / p).resolve())
+        if q != scope and not q.is_relative_to(scope):
+            raise ValueError(
+                f"{p} is not under {SCOPE}/ — this graph covers the shared engine only; "
+                f"a project's code is `pf kg` territory, and a sister's is off limits"
+            )
+        out.append(str(q))
+    return out
+
+
+#: Defaults tighter than the tool's own (`--depth 2 --max-results 500`).
+#: Measured on this tree, one impact query on `platform/src/pf/memory.py`:
+#: the tool's defaults return 31,317 tokens of JSON and still report
+#: `truncated`. Depth 1 with 50 results returns 13,090. Neither is a thing to
+#: put in a context window, which is why `summarise_impact` exists.
+IMPACT_DEPTH = 1
+IMPACT_MAX_RESULTS = 50
+
+
+def summarise_impact(payload: dict, root: str | Path) -> list[str]:
+    """The blast radius as the few lines that are worth reading.
+
+    The point of a graph is to say *which files to open*, and that answer is
+    53 tokens. The tool's own JSON for the same question is 13,090, because
+    it carries every node record and source snippet; reading the six files it
+    names is 81,831. So the default output here is the list, and `--json` is
+    the escape hatch when the detail is actually wanted.
+
+    Keys read: `changed_nodes`, `impacted_nodes`, `impacted_files`,
+    `total_impacted`, `truncated`, `edges_omitted`. That is a contract with
+    upstream's CLI, which is why `registry.yaml` couples this file to it as
+    `data` — a rename upstream turns this summary silently wrong.
+    """
+    scope = scope_dir(root).resolve()
+
+    def rel(p: object) -> str:
+        s = p if isinstance(p, str) else (p or {}).get("file_path") or (p or {}).get("path") or ""
+        if not s:
+            return ""
+        q = Path(str(s))
+        return str(q.relative_to(scope)) if q.is_absolute() and q.is_relative_to(scope) else str(q)
+
+    files = [f for f in (rel(x) for x in payload.get("impacted_files") or []) if f]
+    tests = sorted(f for f in files if "/tests/" in f or Path(f).name.startswith("test_"))
+    code = sorted(f for f in files if f not in set(tests))
+    changed = len(payload.get("changed_nodes") or [])
+    impacted = payload.get("total_impacted") or len(payload.get("impacted_nodes") or [])
+
+    out = [f"{changed} changed node(s) · {impacted} impacted · {len(files)} file(s) to read"]
+    for f in code:
+        out.append(f"  {SCOPE}/{f}")
+    for f in tests:
+        out.append(f"  {SCOPE}/{f}  (test)")
+    if not tests and code:
+        out.append("  ⚠ no test covers this — the blast radius is unguarded")
+    if payload.get("truncated"):
+        omitted = payload.get("edges_omitted") or 0
+        out.append(f"  … truncated ({omitted} edge(s) omitted) — widen with --depth/--max-results, or --json")
+    return out
+
+
 def plan(root: str | Path) -> list[str]:
     """What a first run looks like, as copyable lines."""
     return [

@@ -235,6 +235,72 @@ def test_an_unscoped_mcp_server_is_named(tmp_path: Path) -> None:
     assert any("does not parse" in p for p in codegraph.check(root))
 
 
+def test_a_path_outside_the_platform_is_refused_not_answered(tmp_path: Path) -> None:
+    """An empty blast radius for a sister's file would be a wrong answer, not
+    a missing one, so the question is refused instead."""
+    from pf import codegraph
+
+    scope = codegraph.scope_dir(tmp_path)
+    (scope / "src").mkdir(parents=True)
+    (scope / "src" / "engine.py").write_text("x", encoding="utf-8")
+    (tmp_path / "groups" / "g" / "projects" / "p").mkdir(parents=True)
+    sister = tmp_path / "groups" / "g" / "projects" / "p" / "model.py"
+    sister.write_text("x", encoding="utf-8")
+
+    # Both spellings of an in-scope path resolve to the same absolute file.
+    from_root = codegraph.resolve_scoped(tmp_path, ["platform/src/engine.py"])
+    from_inside = codegraph.resolve_scoped(tmp_path, ["src/engine.py"])
+    assert from_root == from_inside == [str((scope / "src" / "engine.py").resolve())]
+
+    for bad in (str(sister), "groups/g/projects/p/model.py", "../elsewhere.py"):
+        try:
+            codegraph.resolve_scoped(tmp_path, [bad])
+        except ValueError as exc:
+            assert "not under platform/" in str(exc)
+        else:
+            raise AssertionError(f"{bad} should be refused")
+
+
+def test_the_blast_radius_is_summarised_to_the_files_to_read() -> None:
+    """The answer is which files to open. The tool's own payload for the same
+    question is ~13k tokens; this is the reason the default is not that."""
+    from pf import codegraph
+
+    scope = codegraph.scope_dir(REPO_ROOT)
+    payload = {
+        "changed_nodes": [1, 2],
+        "total_impacted": 7,
+        "impacted_files": [
+            str(scope / "src" / "pf" / "cli.py"),
+            {"file_path": str(scope / "tests" / "gate" / "test_cli.py")},
+            "src/pf/memory.py",
+        ],
+        "truncated": True,
+        "edges_omitted": 176,
+    }
+    lines = codegraph.summarise_impact(payload, REPO_ROOT)
+    assert lines[0] == "2 changed node(s) · 7 impacted · 3 file(s) to read"
+    assert "  platform/src/pf/cli.py" in lines
+    assert "  platform/src/pf/memory.py" in lines, "a relative path is passed through"
+    assert "  platform/tests/gate/test_cli.py  (test)" in lines, "tests are marked and sorted last"
+    assert any("176 edge(s) omitted" in ln for ln in lines)
+    assert len(" ".join(lines)) // 4 < 60, "the summary is the cheap surface; keep it cheap"
+
+
+def test_an_unguarded_blast_radius_says_so() -> None:
+    """No covering test is the finding, not a silence."""
+    from pf import codegraph
+
+    lines = codegraph.summarise_impact(
+        {"changed_nodes": [1], "total_impacted": 1, "impacted_files": ["src/pf/engine.py"]}, REPO_ROOT
+    )
+    assert any("no test covers this" in ln for ln in lines)
+    covered = codegraph.summarise_impact(
+        {"changed_nodes": [1], "total_impacted": 1, "impacted_files": ["tests/test_x.py"]}, REPO_ROOT
+    )
+    assert not any("no test covers" in ln for ln in covered)
+
+
 def test_built_means_a_database_not_just_the_marker(tmp_path: Path) -> None:
     """A marker with only its README is wiring, not a graph. `init` never overwrites."""
     from pf import codegraph
