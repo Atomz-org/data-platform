@@ -4348,6 +4348,56 @@ def cmd_session_memory_log(limit: int = typer.Option(20, "--limit")) -> None:
     console.print(out or "[dim]no memory changes in history[/]")
 
 
+# ----------------------------------------------------------- agent context --
+context_app = typer.Typer(
+    help=(
+        "The context every agent reads before its first edit — the entry points "
+        "(CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, "
+        "the test index, the repo map — checked and refreshed as one."
+    )
+)
+app.add_typer(context_app, name="context")
+
+
+@context_app.command("check")
+def cmd_context_check() -> None:
+    """Do the entry points still agree, and does every module have its memory README?
+
+    The generated pieces have their own checks (`pf memory check`, `pf test
+    check`, `pf arch check`); this is the hand-written layer around them — a
+    pointer file that points at nothing is worse than none.
+    """
+    from pf.agentcontext import check
+
+    problems = check(root())
+    for line in problems:
+        console.print(f"[red]✗[/] {escape(line)}")
+    if problems:
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the entry points agree and every module has its memory README")
+
+
+@context_app.command("refresh")
+def cmd_context_refresh(
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="list what would change and exit 1 if anything; write nothing"
+    ),
+) -> None:
+    """Regenerate the memory index, the test index and the repo map in one step."""
+    from pf.agentcontext import refresh
+
+    changed = refresh(root(), dry_run=dry_run)
+    if not changed:
+        console.print("[green]✓[/] agent context already current")
+        return
+    for p in changed:
+        console.print(f"  [yellow]~[/] {p.relative_to(root())}")
+    if dry_run:
+        console.print(f"[red]✗[/] {len(changed)} file(s) stale — run `pf context refresh`")
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/] {len(changed)} file(s) regenerated — commit them with the change that made them stale")
+
+
 @tool_app.command("list")
 def cmd_tool_list(
     group: str = typer.Argument("", help="show enablement for a project"), project: str = typer.Argument("")

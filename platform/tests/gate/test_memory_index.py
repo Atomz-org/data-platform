@@ -28,6 +28,7 @@ from pf.memory import (
     render_index,
     scan,
     visible_from,
+    write_index,
 )
 
 
@@ -119,7 +120,7 @@ def _skeleton(tmp_path: Path) -> Path:
 
 def test_add_writes_the_note_and_the_index_together(tmp_path: Path) -> None:
     root = _skeleton(tmp_path)
-    p = add(root, "groups/g/projects/p", "first-lesson", "one line", body="why\n\nhow", type_="project")
+    p = add(root, "groups/g/projects/p", "first-lesson", "one line", body="why\n\nhow", type_="project", agent="t")
     assert p == root / "groups" / "g" / "projects" / "p" / ".memory" / "notes" / "first-lesson.md"
     assert drift(root) == "", "add must leave the index current"
     text = index_path(root).read_text(encoding="utf-8")
@@ -131,18 +132,20 @@ def test_add_writes_the_note_and_the_index_together(tmp_path: Path) -> None:
 def test_add_refuses_what_would_make_the_index_lie(tmp_path: Path) -> None:
     root = _skeleton(tmp_path)
     with pytest.raises(ValueError):
-        add(root, "root", "Not A Slug", "x")
+        add(root, "root", "Not A Slug", "x", agent="t")
     with pytest.raises(ValueError):
-        add(root, "root", "fine", "")
+        add(root, "root", "fine", "", agent="t")
     with pytest.raises(ValueError):
-        add(root, "root", "fine", "x", type_="opinion")
+        add(root, "root", "fine", "x", type_="opinion", agent="t")
     with pytest.raises(ValueError):
         add(root, "root", "fine", "x", agent="not one token")
+    with pytest.raises(ValueError, match="who is writing"):
+        add(root, "root", "fine", "x", agent="")
     with pytest.raises(KeyError):
-        add(root, "groups/nope", "fine", "x")
-    add(root, "root", "fine", "x")
+        add(root, "groups/nope", "fine", "x", agent="t")
+    add(root, "root", "fine", "x", agent="t")
     with pytest.raises(FileExistsError):
-        add(root, "root", "fine", "again")
+        add(root, "root", "fine", "again", agent="t")
 
 
 def test_a_note_copied_from_claudes_store_is_valid_here(tmp_path: Path) -> None:
@@ -196,13 +199,21 @@ def test_who_wrote_a_note_is_on_the_note_and_in_the_index(tmp_path: Path) -> Non
         "| [written-by](../platform/.memory/notes/written-by.md) | one line | actions:copilot-swe-agent[bot] |" in idx
     )
     assert "| [anonymous](notes/anonymous.md) | y | — |" in idx
+    write_index(root)
+    assert "anonymous.md" in drift(root) and "agent" in drift(root), "an unattributed note is drift, not a blank"
 
 
 def test_the_writing_tool_is_detected_from_its_own_environment(monkeypatch: pytest.MonkeyPatch) -> None:
     """`PF_AGENT` wins; else each tool's own mark; else nothing — never a guess."""
+    import sys
+
     for var in ("PF_AGENT", "CLAUDECODE", "GEMINI_CLI", "GITHUB_ACTIONS", "GITHUB_ACTOR"):
         monkeypatch.delenv(var, raising=False)
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
     assert detect_agent() == ""
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    assert detect_agent() == "human", "a keyboard is the one writer with no mark to leave"
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: False)
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     assert detect_agent() == "actions"
     monkeypatch.setenv("GITHUB_ACTOR", "copilot-swe-agent[bot]")

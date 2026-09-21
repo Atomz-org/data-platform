@@ -7,8 +7,9 @@ the memory lives in the repository, as tracked markdown, in the module it is
 about — and every tool is told the same thing by whichever file it reads
 (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`):
 read it before starting, add to it before finishing. Who wrote a note is
-recorded on the note (`agent:`), detected from the environment, so the ledger
-says which tool learned what without anyone trusting a filename.
+recorded on the note (`agent:`) — required, detected from the environment or
+given with `--agent` — so the ledger says which tool learned what without
+anyone trusting a filename.
 
 Layout mirrors the repository's own structure, and so do the reading rules:
 
@@ -55,6 +56,7 @@ from __future__ import annotations
 import os
 import re
 import subprocess
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -200,6 +202,10 @@ def detect_agent() -> str:
     Recorded, not trusted: it is the ledger's *who* column, the same way a git
     author is, and it authorises nothing. A tool this does not know sets
     `PF_AGENT`; nothing here needs to change for a new model to be named.
+
+    A person at a terminal is the one writer with no mark to leave, so an
+    interactive stdin with nothing else set is recorded as `human`. Every
+    agent tool drives its shell through pipes, so none of them can claim it.
     """
     env = os.environ
     explicit = env.get("PF_AGENT", "").strip()
@@ -212,6 +218,11 @@ def detect_agent() -> str:
     if env.get("GITHUB_ACTIONS"):
         actor = env.get("GITHUB_ACTOR", "").strip()
         return f"actions:{actor}" if actor else "actions"
+    try:
+        if sys.stdin.isatty():
+            return "human"
+    except (AttributeError, ValueError):
+        pass
     return ""
 
 
@@ -287,7 +298,12 @@ def add(
     is writing; callers pass `detect_agent()` unless the operator said."""
     if not _SLUG.match(name):
         raise ValueError(f"name must be a kebab-case slug: {name!r}")
-    if agent and not _AGENT.match(agent):
+    if not agent:
+        raise ValueError(
+            "say who is writing: --agent <name>, or export PF_AGENT=<name> once — "
+            "nothing in this environment identifies the tool"
+        )
+    if not _AGENT.match(agent):
         raise ValueError(f"agent must be one token, no spaces or quotes: {agent!r}")
     if type_ not in TYPES:
         raise ValueError(f"type must be one of {TYPES}: {type_!r}")
@@ -300,9 +316,13 @@ def add(
     p = d / f"{name}.md"
     if p.exists():
         raise FileExistsError(f"{p.relative_to(root)} exists — edit it, or pick another name")
-    fm: dict[str, str] = {"name": name, "description": description.strip(), "type": type_, "status": status}
-    if agent:
-        fm["agent"] = agent
+    fm: dict[str, str] = {
+        "name": name,
+        "description": description.strip(),
+        "type": type_,
+        "status": status,
+        "agent": agent,
+    }
     front = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True, width=1000)
     text = f"---\n{front}---\n\n{body.strip()}\n" if body.strip() else f"---\n{front}---\n"
     p.write_text(text, encoding="utf-8")
@@ -447,7 +467,9 @@ def drift(root: Path) -> str:
             return f"{n.path.relative_to(root)}: type {n.type!r} is not one of {TYPES}"
         if n.status not in STATUSES:
             return f"{n.path.relative_to(root)}: status {n.status!r} is not one of {STATUSES}"
-        if n.agent and not _AGENT.match(n.agent):
+        if not n.agent:
+            return f"{n.path.relative_to(root)}: no `agent:` line — who wrote it? add `agent: <name>`"
+        if not _AGENT.match(n.agent):
             return f"{n.path.relative_to(root)}: agent {n.agent!r} must be one token, no spaces or quotes"
     stray = _stray_notes(root)
     if stray:
