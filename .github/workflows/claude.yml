@@ -1,0 +1,90 @@
+# Claude implements what an issue or a comment asks for, when asked by name.
+#
+# `claude-review.yml` is read-only and label-gated; this one writes. Mention
+# `@claude` in an issue, an issue comment or a PR review comment and it runs
+# with the session layer this repository already defines — CLAUDE.md, the
+# memory notes under `.memory/`, the gates — on a branch it pushes. It does
+# NOT open the pull request itself: this organisation does not allow GitHub
+# Actions to create pull requests (the 409 `vendor-sync.yml` documents), so it
+# replies with the compare link and a person opens the PR. That is also the
+# right shape for a change an agent wrote: a human clicks "create".
+#
+# Requires the ANTHROPIC_API_KEY repository secret. Without it the job says so
+# and exits green, so an unconfigured fork does not look broken.
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    if: >-
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for API key
+        id: guard
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "ANTHROPIC_API_KEY is not set — skipping. Add the repository"
+            echo "secret to enable @claude."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.ready == 'true'
+        with:
+          fetch-depth: 0
+
+      - name: Vendored upstreams
+        if: steps.guard.outputs.ready == 'true'
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
+
+      - uses: astral-sh/setup-uv@v5
+        if: steps.guard.outputs.ready == 'true'
+        with:
+          enable-cache: true
+
+      - run: uv sync --frozen
+        if: steps.guard.outputs.ready == 'true'
+
+      # The same commit gate a developer has. Claude's commits here go through
+      # maxFiles, the denylist and impact analysis like anyone else's.
+      - run: uv run pf install-hook
+        if: steps.guard.outputs.ready == 'true'
+
+      - name: Implement
+        if: steps.guard.outputs.ready == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # No `prompt`: tag mode. The request is the comment that mentioned
+          # @claude, and CLAUDE.md, AGENTS.md and `pf memory show` are the
+          # rules — the same ones a local session gets, from the same files.
+          claude_args: "--allowed-tools Read,Grep,Glob,Edit,Write,MultiEdit,Bash(uv run pf:*),Bash(uv run pytest:*),Bash(uv run ruff:*),Bash(uv sync:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git push:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
