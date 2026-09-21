@@ -130,7 +130,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 18 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 7 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |

@@ -125,7 +125,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 10 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/zenith_uk/definitions.py` | assets come from the runtime factory; the project supplies logic |
