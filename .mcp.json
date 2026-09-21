@@ -8,6 +8,15 @@
         "graphify-mcp",
         "${CLAUDE_PROJECT_DIR}/graphify-out/graph.json"
       ]
+    },
+    "code-review-graph": {
+      "command": "uvx",
+      "args": [
+        "code-review-graph@2.3.9",
+        "serve",
+        "--repo",
+        "${CLAUDE_PROJECT_DIR}/platform"
+      ]
     }
   }
 }

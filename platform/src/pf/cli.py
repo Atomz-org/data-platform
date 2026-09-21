@@ -4398,6 +4398,176 @@ def cmd_context_refresh(
     console.print(f"[green]✓[/] {len(changed)} file(s) regenerated — commit them with the change that made them stale")
 
 
+# --------------------------------------------------------------- code graph --
+code_app = typer.Typer(
+    help=(
+        "The code graph: which function calls which, under `platform/` only. "
+        "Models, columns, metrics and lineage are `pf kg` — this is the Python "
+        "structure the data graph has no notion of."
+    )
+)
+app.add_typer(code_app, name="code")
+
+# Read at import time only so the option help can state them. `pf.codegraph`
+# imports nothing from `pf`, so this cannot cycle.
+from pf.codegraph import IMPACT_DEPTH as _IMPACT_DEPTH  # noqa: E402
+from pf.codegraph import IMPACT_MAX_RESULTS as _IMPACT_MAX_RESULTS  # noqa: E402
+
+
+def _code_run(subcommand: str, *args: str, capture: bool = False) -> str:
+    """Shell out to the pinned wheel, scoped to `platform/`.
+
+    Not imported: the tool's dependency set is not one this lockfile resolves,
+    so it runs through `uvx` exactly as the `graphify` MCP server already does.
+    With `capture`, stdout is returned instead of streamed — which is how the
+    verbose JSON becomes a few lines worth reading.
+    """
+    import subprocess
+
+    from pf import codegraph
+
+    if not codegraph.available():
+        console.print(
+            "[red]✗[/] `uvx` is not on PATH, so the code graph cannot run.\n"
+            "  Install uv (https://docs.astral.sh/uv/), or read the structure from "
+            "`docs/ARCHITECTURE.md` instead."
+        )
+        raise typer.Exit(1)
+    cmd = codegraph.argv(subcommand, *args, root=root())
+    if not codegraph.built(root()) and subcommand not in ("build", "status"):
+        console.print(
+            f"[yellow]no graph yet[/] — building it first is `pf code build` "
+            f"[dim]({codegraph.SCOPE}/{codegraph.MARKER_DIR}/ is empty)[/]"
+        )
+    proc = subprocess.run(cmd, check=False, capture_output=capture, text=True)
+    if proc.returncode != 0:
+        console.print(f"[red]✗[/] {' '.join(cmd)}  [dim](exit {proc.returncode})[/]")
+        if capture and proc.stderr:
+            console.print(f"[dim]{escape(proc.stderr[-800:])}[/]")
+        raise typer.Exit(proc.returncode)
+    return proc.stdout or "" if capture else ""
+
+
+@code_app.command("build")
+def cmd_code_build() -> None:
+    """Parse `platform/` into a fresh code graph."""
+    _code_run("build")
+
+
+@code_app.command("update")
+def cmd_code_update() -> None:
+    """Re-parse only what changed since the last build."""
+    _code_run("update")
+
+
+@code_app.command("impact")
+def cmd_code_impact(
+    paths: list[str] = typer.Argument(None, help="files under platform/; default: what changed since HEAD~1"),
+    depth: int = typer.Option(
+        0, "--depth", help=f"hops to follow; default {_IMPACT_DEPTH} (the tool's own 2 returns ~31k tokens)"
+    ),
+    max_results: int = typer.Option(0, "--max-results", help=f"cap on results; default {_IMPACT_MAX_RESULTS}"),
+    as_json: bool = typer.Option(
+        False, "--json", help="the tool's own payload, ~13k tokens — the detail, not the answer"
+    ),
+) -> None:
+    """Which files to read before changing a platform file — the blast radius.
+
+    Prints the list, because that *is* the answer: 53 tokens here against
+    81,831 for reading the six files it names. `--json` is the full payload
+    when the detail is genuinely wanted. With no path the tool works out what
+    changed itself, which is what a pre-push check wants.
+    """
+    import json as _json
+
+    from pf import codegraph
+
+    try:
+        files = codegraph.resolve_scoped(root(), list(paths or []))
+    except ValueError as exc:
+        console.print(f"[red]✗[/] {escape(str(exc))}")
+        raise typer.Exit(1) from None
+    args = [
+        "--depth",
+        str(depth or codegraph.IMPACT_DEPTH),
+        "--max-results",
+        str(max_results or codegraph.IMPACT_MAX_RESULTS),
+        *(["--files", *files] if files else []),
+    ]
+    if as_json:
+        _code_run("impact", *args)
+        return
+    out = _code_run("impact", *args, capture=True)
+    try:
+        payload = _json.loads(out)
+    except ValueError:
+        console.print(out or "[dim]no output[/]")
+        return
+    for line in codegraph.summarise_impact(payload, root()):
+        console.print(escape(line))
+
+
+@code_app.command("search")
+def cmd_code_search(term: str) -> None:
+    """Find a function, class or import without reading files to locate it."""
+    _code_run("search", term)
+
+
+@code_app.command("architecture")
+def cmd_code_architecture() -> None:
+    """The engine's own shape, as the graph sees it."""
+    _code_run("architecture")
+
+
+@code_app.command("status")
+def cmd_code_status() -> None:
+    """Graph statistics: how much of `platform/` is indexed, and how stale."""
+    _code_run("status")
+
+
+@code_app.command("init")
+def cmd_code_init() -> None:
+    """Create the marker that makes `platform/` the graph's root."""
+    from pf import codegraph
+
+    wrote = codegraph.init(root())
+    if not wrote:
+        console.print("[dim]the marker already exists[/]")
+        return
+    for p in wrote:
+        console.print(f"[green]+[/] {p.relative_to(root())}")
+
+
+@code_app.command("plan")
+def cmd_code_plan() -> None:
+    """Print the exact commands a first build runs, without running them."""
+    from pf import codegraph
+
+    for line in codegraph.plan(root()):
+        console.print(f"  {escape(line)}")
+
+
+@code_app.command("check")
+def cmd_code_check() -> None:
+    """Is the code-graph wiring still true?
+
+    The marker, the ignore rules, the gate entry, the MCP server's scope. A
+    missing marker is the one that matters: it does not fail, it silently
+    builds a graph over every sister project.
+    """
+    from pf import codegraph
+
+    problems = codegraph.check(root())
+    for line in problems:
+        console.print(f"[red]✗[/] {escape(line)}")
+    if problems:
+        raise typer.Exit(1)
+    r = root()
+    state = "built" if codegraph.built(r) else "not built yet — `pf code build`"
+    tool = "uvx present" if codegraph.available() else "uvx MISSING"
+    console.print(f"[green]✓[/] code graph scoped to {codegraph.SCOPE}/  [dim]({state} · {tool})[/]")
+
+
 @tool_app.command("list")
 def cmd_tool_list(
     group: str = typer.Argument("", help="show enablement for a project"), project: str = typer.Argument("")

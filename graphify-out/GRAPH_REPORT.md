@@ -1,2640 +1,1567 @@
-# Graph Report - .  (2026-08-20)
+# Graph Report - .  (2026-09-21)
 
 ## Corpus Check
-- 2380 files · ~1,188,797 words
+- 448 files · ~489,699 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 8322 nodes · 11529 edges · 2476 communities (1791 shown, 685 thin omitted)
-- Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1029 edges (avg confidence: 0.8)
-- Token cost: 3,298,457 input · 7,175 output
+- 6629 nodes · 13942 edges · 338 communities (292 shown, 46 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 738 edges (avg confidence: 0.74)
+- Token cost: 572,146 input · 0 output
 
 ## Community Hubs (Navigation)
-- pf CLI
-- OpenMetadata Catalog Sync
-- Platform UI
-- Capability & Tool Registry
-- Recce Tool
-- Vendor Registry
-- Onboarding Tests
-- Regulatory Corpus Downloaders
-- AIR Governance Tests
-- Project Scaffolding
-- Agent LLM Layer
-- CI Workflows & Semantics
-- MCP Server
-- Ontology Policies & OTOP
-- Vendored Compliance Playbooks
-- Evals Framework
-- Knowledge Graph Build
-- AIR CLI & Register
-- Stack Control Plane Tests
+- Platform CLI Commands
+- Evidence BI Projections
+- Routing Capability Checks
+- Trace & Onboarding Tests
+- Platform Web UI
+- AIR Control Assessment
+- Group Lifecycle Registry
+- Artifact Capability Tests
+- Tool Registry & Gate Rules
+- Repo Onboarding Tests
+- Ontology Class Model
+- Architecture Map Tests
+- Housekeeping Retention Plans
+- Scaffold Bootstrap & Tokens
+- Pluggable Tool Layer Tests
+- Recce Tool Integration
+- Impact Analysis Gate
+- AIR Coverage Verdicts
+- Ontology Annotation
+- Capability Registry
+- Stack Render Tests
+- Project Feature Capabilities
+- MCP Server 22
+- SQL Dialect Analysis
+- Workflow Session Linking
+- Test Coverage Map
+- Vendor & Governance Docs
+- Loop State Writing
+- Workflow Adoption & Git Log
+- CLI Command Dispatch
+- Policy Layering Tests
+- Policy Enforcement Projections
+- Claude Settings & Plugins
+- Agent Context Consistency
 - External Repo Onboarding
-- Tool Layer Tests
-- Dagster Runtime
-- config.py
-- test_dialect.py
-- air-register.md
-- sources.py
-- generator.py
-- settings.json
-- warehouse.py
-- store.py
-- owasp-llm.yml
-- test_housekeeping.py
-- wren.md
-- stripe.py
-- bot_findings.py
-- test_provenance.py
-- registry.py
-- ledger.py
-- storage.py
-- gate.py
-- catalogue.py
-- model.py
-- metrics_revenue.yml
-- validate.py
-- model.py
-- test_openmetadata.py
-- case.py
-- impact.py
-- test_ontology_governance.py
-- tools.yaml
-- README.md
-- api.ts
-- dbt_runtime.py
-- dagster_home.py
-- VENDOR.md
-- pr.py
-- elementary.py
-- rag-system_v0-no-risks.png
-- ri-2_information-leaked-to-vector-store.md
-- recce.md
-- snowflake.md
-- runner.py
-- artifacts.py
-- frontdoor.py
-- test_card.py
-- test_ladder.py
-- evidence.py
-- openmetadata.py
-- README.md
-- coverage.py
-- uc-4_anti-financial-crime-investigation.md
-- loops.py
-- audit.py
-- anchor.py
-- wren.py
-- README.md
-- 2026-08-14-jaffle-seeds.yaml
-- sem_order_items.yml
-- snowflake.md
-- spec.py
-- ladder.py
-- snowflake.md
-- _product__models.yml
-- record.py
-- induct.py
-- package.json
-- __sources.yml
-- runner.py
-- catalogue.py
-- ladder.py
-- audit.py
-- scanner.ts
-- __sources.yml
-- verify.py
-- artifacts.py
-- proposal.py
-- grade.py
-- orchestrator.py
-- README.md
-- ladder.py
-- test_pr_mermaid.py
-- data_classification.yml
-- annotations.yaml
-- obs.py
-- survey.py
-- expectations.py
-- tsconfig.json
-- test_toolkits.py
-- CLAUDE-CODE.md
-- dbtproject.py
-- test_tool_elementary.py
-- architecture-review.md
-- uc-2_autonomous-wealth-management.md
-- package.json
-- package.json
-- __sources.yml
-- audit.py
-- TOOLKITS.md
-- agentic-skill-system_v1-with-risks.png
-- atr.html
-- dl_nist-pdfs.py
-- SKILL.md
-- ARTIFACTS.md
-- 2026-08-13-stripe.yaml
-- package.json
-- package.json
-- package.json
-- package.json
-- _product__models.yml
-- CLAUDE.md
-- package.json
-- package.json
-- SKILL.md
-- mdl.py
-- chain.py
-- tsconfig.json
-- mi-18_agent-authority-least-privilege-framework.md
-- annotate_yaml_front_matter.py
-- STACK.md
-- metrics_revenue.yml
-- concepts.yaml
-- security-audit.md
-- uc-3_loan-approval.md
-- dl_owasp.py
-- package.json
-- bias-audit-template.md
-- _hr_ops__models.yml
-- policy.yaml
-- test_toolkit_macros.py
-- SKILL.md
-- package.json
-- package.json
-- __sources.yml
-- _time_series__models.yml
-- test_tool_expectations.py
-- SKILL.md
-- dl_nist-pdfs.py
-- package.json
-- package.json
-- package.json
-- package.json
-- index.md
-- _marketing_deep__models.yml
-- ladder.py
-- context-budget.md
-- format_edit.py
-- SKILL.md
-- README.md
-- dl_nist-pdfs.py
-- package.json
-- coverage.py
-- package.json
-- ship.md
-- canada-regulations.yml
-- dl_nist-pdfs.py
-- drink_orders.md
-- drink_revenue_pct.md
-- _kpis__models.yml
-- __sources.yml
-- pyproject.toml
-- cli.py
-- index.html
-- package.json
-- SKILL.md
-- SKILL.md
-- tech-debt.md
-- dl_nist-pdfs.py
-- SKILL.md
-- package.json
-- CLAUDE.md
-- package.json
-- performance-audit.md
-- stage-layers.md
-- SKILL.md
-- dl_nist-pdfs.py
-- dl_nist-pdfs.py
-- VENDOR-CARD.md
-- snowflake.md
-- package.json
-- package.json
-- package.json
-- package.json
-- package.json
-- package.json
-- ADR-0003-what-the-base-diff-found.md
-- median_revenue.md
-- README.md
-- workspace.py
-- concepts.yaml
-- SKILL.md
-- RULES.md
-- SKILL.md
-- ast-grep.md
-- stage-dialect.md
-- recce.md
-- recce.md
-- README.md
-- recce.md
-- recce.md
-- README.md
-- recce.md
-- README.md
-- recce.md
-- README.md
-- dbt_project.yml
-- _utilities__models.yml
-- recce.md
-- README.md
-- README.md
-- recce.md
-- README.md
-- loop-constraints.md
-- compose.yaml
-- verify_provenance.py
-- README.md
-- blast-radius.md
-- gemini-analyze.md
-- stage-import.md
-- stage-metrics.md
-- stage-ontology.md
-- README.md
-- snowflake.md
-- snowflake.md
-- README.md
-- README.md
-- snowflake.md
-- snowflake.md
-- ADR-0002-snowflake-semantics-on-every-adapter.md
-- snowflake.md
-- _alerts__models.yml
-- _marketing__models.yml
-- packages.yml
-- README.md
-- snowflake.md
-- LOOP.md
-- post_tool_use.py
-- impact-verifier.md
-- stage-review.md
-- package.json
-- package.json
-- openmetadata.md
-- README.md
-- openmetadata.md
-- README.md
-- CLAUDE.md
-- ADR-0001-platform-macros-on-macro-paths.md
-- openmetadata.md
-- README.md
-- CLAUDE.md
-- openmetadata.md
-- README.md
-- openmetadata.md
-- README.md
-- CLAUDE.md
-- openmetadata.md
-- _kpis__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- openmetadata.md
-- openmetadata.md
-- README.md
-- pre_tool_use.py
-- SKILL.md
-- SKILL.md
-- 2025_AIGovernanceFramework_Stacked.png
-- dl_nist-pdfs.py
-- recce.md
-- .mcp.json
-- wren.md
-- index.md
-- CLAUDE.md
-- wren.md
-- index.md
-- CLAUDE.md
-- wren.md
-- CLAUDE.md
-- wren.md
-- README.md
-- wren.md
-- order_cost.md
-- _finance_deep__models.yml
-- _cross_domain__models.yml
-- _cohorts__models.yml
-- _hr_ops__models.yml
-- _hr_ops__models.yml
-- _incremental__models.yml
-- _kpis__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_deep__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _supply_chain__models.yml
-- _marketing__models.yml
-- wren.md
-- CLAUDE.md
-- README.md
-- base.py
-- cli.py
-- test_air.py
-- secrets-auditor.md
-- semantic-conformance.md
-- sql-reviewer.md
-- STATE.md
-- ai_deployment_model.yml
-- lint-check
-- rename-with-titles
-- CODE_OF_CONDUCT.md
-- snowflake.md
-- VENDOR.md
-- VENDOR.md
-- air.yaml
-- github.md
-- tools_card.md
-- github.md
-- github.md
-- tools_card.md
-- github.md
-- github.md
-- github.md
-- _alerts__models.yml
-- _alerts__models.yml
-- _cross_domain__models.yml
-- _data_quality__models.yml
-- _incremental__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _marketing_deep__models.yml
-- _marketing__models.yml
-- _mega_wide__models.yml
-- _ml_features__models.yml
-- _period_comparison__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _rankings__models.yml
-- _supply_chain__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _wide_tables__models.yml
-- _marketing__models.yml
-- air.yaml
-- github.md
-- tools_card.md
-- github.md
-- customers.yml
-- stack-entrypoint.sh
-- notify.sh
-- ROUTING.md
-- 2025_AIGovernanceFramework_Icon.png
-- uc-index.md
-- validate-references.py
-- CLAUDE.md
-- README.md
-- README.md
-- group_card.md
-- annotations.yaml
-- README.md
-- active_customers.md
-- aov.md
-- gross_payment_volume.md
-- payment_count.md
-- revenue.md
-- revenue_mom_growth.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- package-lock.yml
-- tools_card.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- package-lock.yml
-- README.md
-- README.md
-- active_customers.md
-- aov.md
-- gross_payment_volume.md
-- payment_count.md
-- revenue.md
-- revenue_mom_growth.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- README.md
-- README.md
-- group_card.md
-- tools_card.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- tools_card.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- dbt_project.yml
-- README.md
-- README.md
-- group_card.md
-- 2026-08-14-jaffle-seeds.yaml
-- 2026-08-14-jaffle-seeds.yaml
-- README.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- _advanced__models.yml
-- _advanced__models.yml
-- _advanced__models.yml
-- _advanced__models.yml
-- _advanced__models.yml
-- _alerts__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _cohorts__models.yml
-- _cohorts__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _data_quality__models.yml
-- _data_quality__models.yml
-- _data_quality__models.yml
-- _executive__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_deep__models.yml
-- _finance__models.yml
-- _funnels__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_deep__models.yml
-- _marketing__models_r2.yml
-- _mega_wide__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _ml_features__models.yml
-- _narrow__models.yml
-- _period_comparison__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product__models.yml
-- _role_views__models.yml
-- _supply_chain__models_r2.yml
-- _supply_chain__models_r2.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _marketing__models.yml
-- README.md
-- README.md
-- group_card.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- README.md
-- tools_card.md
-- README.md
-- __init__.py
-- __init__.py
-- __init__.py
-- __init__.py
-- package-lock.yml
-- ADR-0002-snowflake-semantics-on-every-adapter.md
-- pre_commit.sh
-- dagster-entrypoint.sh
-- __init__.py
-- __init__.py
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- SKILL.md
-- session_start.sh
-- RULES.md
-- SKILL.md
-- SKILL.md
-- command
-- wren.md
-- README.md
-- air-register.md
-- extension.yaml
-- dbt_project.yml
-- dbt_project.yml
-- tools.yaml
-- .user.yml
-- tools_card.md
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _advanced_sql__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _alerts__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _analytics__models.yml
-- _cohorts__models.yml
-- _cohorts__models.yml
-- _cohorts__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _comparisons__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _cross_domain__models.yml
-- _data_quality__models.yml
-- _data_quality__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _derived__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _distributions__models.yml
-- _executive__models.yml
-- _executive__models.yml
-- _executive__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_advanced__models.yml
-- _finance_deep__models.yml
-- _finance_deep__models.yml
-- _finance_deep__models.yml
-- _finance_deep__models.yml
-- _finance__models_r2.yml
-- _finance__models_r2.yml
-- _finance__models.yml
-- _finance__models.yml
-- _finance__models.yml
-- _finance__models.yml
-- _finance__models_r2.yml
-- _funnels__models.yml
-- _funnels__models.yml
-- _funnels__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _geo__models.yml
-- _groups.yml
-- _groups.yml
-- _groups.yml
-- _groups.yml
-- _groups.yml
-- _groups.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_advanced__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_deep__models.yml
-- _hr_ops__models.yml
-- _hr_ops__models_r2.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _incremental__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _kpis__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_advanced__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing_deep__models.yml
-- _marketing__models_r2.yml
-- _marketing__models_r2.yml
-- metricflow_time_spine.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _metrics__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _narrow__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _period_comparison__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_advanced__models.yml
-- _product_deep__models.yml
-- _product_deep__models.yml
-- _product_deep__models.yml
-- _product_deep__models.yml
-- _product_deep__models.yml
-- _product__models_r2.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _rankings__models.yml
-- _reverse_etl__models.yml
-- _reverse_etl__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _role_views__models.yml
-- _snapshots__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _summaries__models.yml
-- _supply_chain__models_r2.yml
-- _supply_chain__models_r2.yml
-- _supply_chain__models_r2.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_advanced__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _supply_chain_deep__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _trends__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _wide_tables__models.yml
-- _marketing__models.yml
-- _utilities__models.yml
-- recce.yml
-- dbt_project.yml
-- README.md
-- .user.yml
-- tools_card.md
-- instance.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- policy.yaml
-- README.md
-- _utils__models.yml
-- .pre-commit-config.yaml
+- Memory Notes & Index
+- Code Graph CLI
+- Ontology Governance Edits
+- Knowledge Graph Build
+- Eval Proposal Templates
+- Claude Settings Scaffolding
+- Provenance Decision Chain
+- Platform Core — Memory
+- Agent Model Specs
+- Platform Atlas Rendering
+- OpenMetadata Catalog Tool
+- Onboarding — Ladder (1)
+- Tests Capabilities — Test Workflows (1)
+- Platform Core — Trace
+- Platform Core Stack — Storage
+- Loop Engine — Registry
+- Tests Gate — Test Agentic
+- Platform Docs — Architecture Maps (1)
+- Agent Runtime — Loops
+- Platform Core Evals — Contract
+- Platform Core Evals — Template
+- Loop Engine — Config
+- Loop Engine — Levels
+- Ontology — Model
+- Platform Core — Architecture (1)
+- Tests Capabilities — Test Capability Policies
+- Tests Gate — Test Gate Hook (1)
+- AIR Controls — Catalogue (1)
+- AIR Controls — Sources
+- Projections — Mdl
+- Agent Runtime — Ask
+- Platform Core — Artifacts (1)
+- Tests Graph — Test Kg Currency
+- Platform UI Web — Api
+- Tests Onboarding — Test Ladder
+- Runtime Factory — Dbt Runtime
+- Tests Graph — Test Atlas (1)
+- Platform UI Web — Package
+- Platform Core Evals — Runner
+- AIR Controls — Catalogue (2)
+- Loop Engine — Audit
+- Onboarding — Audit
+- Tool Layer — Elementary
+- Tests Graph — Test Mdl
+- Loop.Md
+- AIR Controls — Cli
+- Platform Core — Archmap
+- Provenance Chain — Ledger
+- Runtime Factory — Dagster Runtime
+- Runtime Factory — Warehouse
+- Runtime Factory — Quack (1)
+- Tests Capabilities — Test Warehouse Mcp
+- Ontology — Proposal
+- Loop Engine — Runner
+- Platform Core — Pr
+- Platform Core Stack — Frontdoor
+- Tests Capabilities — Test Dbt Paths
+- Platform Core — Artifacts (2)
+- Onboarding — Ladder (2)
+- Readme.Md
+- Knowledge Graph — Query
+- Tests Graph — Test Card
+- Tests Gate — Test Memory Index
+- Tool Layer — Openmetadata
+- Loop Engine — Memory
+- Tests Gate — Test Diagrams
+- Provenance Chain — Anchor
+- Provenance Chain — Audit
+- Tests Ontology — Test Openmetadata (1)
+- Tool Layer — Wren
+- Claude.Md
+- Ontology — Induct
+- AIR Controls — Verify
+- Platform Core — Architecture (2)
+- Loop Engine — Gate
+- Tool Layer — Evidence
+- Scaffolding — Generator
+- Tests Onboarding — Test Scaffold Plan
+- Memory Notes
+- Loop Engine — Actions
+- Tests Ontology — Test Ontology Governance
+- Tests Capabilities — Test Targets
+- Tests Capabilities — Test Housekeeping
+- Gate.Yaml
+- Onboarding — Orchestrator
+- Tests Capabilities — Test Group Shared Code
+- Agents.Md 121
+- Platform UI Static
+- Platform Docs — Artifacts
+- Platform Core — Cli (1)
+- Platform Core Evals — Grade
+- Tests Gate — Test Pr Mermaid
+- Platform Docs — Commodity End To End
+- Onboarding — Survey
+- Provenance Chain — Record
+- Tool Layer — Expectations
+- Platform UI Web — Tsconfig
+- Tests Capabilities — Test Toolkits
+- Platform Docs — Stack
+- Third Party Notices.Md
+- Platform Docs — Policy (1)
+- .Github Scripts — Bot Findings (1)
+- Onboarding — Funnel
+- Provenance Chain 138
+- Tool Layer — Dbtproject
+- Tests Capabilities — Test Quack
+- Tests Capabilities — Test Tool Elementary
+- Power Tools Commands — Architecture Review
+- Power Tools Commands — Context Budget
+- Onboarding — Ladder (3)
+- .Github Scripts — Bot Findings (2)
+- .Github Scripts — Bot Findings (3)
+- .Github Scripts — Loop Observations
+- Platform Core — Cli (2)
+- Platform Core Scripts — Catalog Sync
+- Tool Layer — Config
+- Tests Gate — Test Observations
+- Toolkits 152
+- Platform Docs — Skill
+- Platform Core Evals — Gate
+- Runtime Factory — Adbc
+- Tests Gate — Test Gate
+- Platform Docs — Kg Atlas (1)
+- CI Workflows — Platform
+- Knowledge Graph — Store
+- Ontology — Concepts (1)
+- Platform Core — Workflows
+- Onboard Project References — Stage Metrics
+- Tests Capabilities — Test Workflows (2)
+- Platform Docs — Engineering
+- Platform Docs — Claude Code
+- .Github Scripts — Bot Findings (4)
+- Platform Core — Cli (3)
+- Ontology — Skill (1)
+- Tests Ontology — Test Otop
+- Power Tools Commands — Security Audit
+- Platform Docs — Ai Governance Architecture (1)
+- CI Workflows — Vendor Pins
+- Tests Capabilities — Test Tool Expectations
+- Entrypoints — Verify Provenance
+- Platform Core — Cli (4)
+- Runtime Factory — Dlt Runtime
+- Tests Ontology — Test Openmetadata (2)
+- Tests Graph — Test Bloom (1)
+- Tests Onboarding — Test Toolkit Macros
+- Skills Design Architecture 180
+- Deploy Terraform — Readme (1)
+- Scaffolding — Plan
+- Runtime Factory — Quack (2)
+- Platform Docs — Ai Governance Architecture (2)
+- Platform Docs — Policy (2)
+- Platform Docs — Scaffolding
+- Skills Create Sql Pipeline
+- Platform Core — Cli (5)
+- Tests — Conftest
+- Power Tools Hooks — Format Edit
+- Onboard Project References — Skill
+- Skills Onboard Project
+- Package.Json
+- Platform Docs — Ai Governance Architecture (3)
+- CI Workflows — Acme Eu
+- Deploy Terraform — Readme (2)
+- Tests Graph — Test Bloom (2)
+- Toolkits 198
+- Tests Capabilities — Test Dlt Runtime
+- Skills Duckdb Docs
+- Power Tools Commands — Ship
+- Skills Upgrade And Migrate
+- Platform Docs — Governance
+- Platform Docs — Architecture
+- CI Workflows — Agent Context
+- Platform Core — Bloom
+- Tests Graph — Test Bloom (3)
+- Platform Core — Capabilities
+- MCP Server 209
+- Ontology — Policy.Capabilities
+- Skills Debug Pipeline 211
+- Projections — Owl
+- Scaffolding — Ci
+- Tool Layer — Recce
+- Toolkits Evidence Bi
+- Power Tools Commands — Tech Debt
+- Onboard Project References — Stage Import
+- Platform Docs — Vendor Card
+- Agents.Md 219
+- Platform Docs — Ai Governance Architecture (4)
+- Platform Docs Bloom — Readme (1)
+- Platform Docs Bloom — Readme (2)
+- Tests Graph — Test Bloom (4)
+- Tests Graph — Test Bloom (5)
+- Skills Add Expectations 225
+- Dlt Ingest Registry
+- Skills Scaffold Project
+- Power Tools Commands — Performance Audit
+- Onboard Project References — Stage Layers
+- Skills Charts And Diagrams
+- .Memory Notes
+- Platform Docs — Architecture Maps (2)
+- .Github Scripts — Bot Findings (5)
+- Platform Core — Viz
+- Platform Core — Artifacts (3)
+- Platform Core — Checks
+- Tests — Readme
+- Skills Port Snowflake Sql
+- Skills Forge Ui
+- Power Tools Commands — Ast Grep
+- Onboard Project References — Stage Dialect
+- Onboard Project References — Stage Ontology
+- Ontology — Skill (2)
+- Platform Docs — Development
+- Platform Docs — Project Atlas
+- Platform Docs — Semantics
+- CI Workflows — Ai Governance
+- Hooks — Session Start
+- AIR Controls — Coverage
+- Platform Core — Architecture (3)
+- Platform Core — Notify
+- Toolkits Dbt Snowflake — Readme (1)
+- Skills Design Architecture 253
+- Toolkits Power Tools — Rules
+- Power Tools Commands — Gemini Analyze
+- Platform Docs — Policy (3)
+- Platform Docs — Vendor
+- Loop Constraints.Md
+- Hooks — Post Tool Use
+- Tests Graph — Test Bloom (6)
+- Skills Annotate Source
+- Power Tools Agents — Impact Verifier
+- Skills Recce Review
+- Platform Core — Cli (6)
+- Platform Docs — Ai-Governance-Architecture
+- Platform Docs — Ai Governance Architecture (5)
+- Platform Docs — Kg Atlas (2)
+- CI Workflows — Bot Findings
+- .Mcp.Json
+- Deploy
+- Hooks — Pre Tool Use
+- Skills Build Assets
+- Skills Add Expectations 273
+- Toolkits Elementary Observe
+- Platform Docs — Policy (4)
+- Toolkits Power Tools — .Mcp
+- Toolkits Dbt Snowflake — Readme (2)
+- Ontology — Concepts (2)
+- Skills Choose A Test
+- Skills Steward Ontology
+- Skills Build Dashboard
+- Power Tools Agents — Secrets Auditor
+- Power Tools Agents — Semantic Conformance
+- Power Tools Agents — Sql Reviewer
+- State.Md
+- Code Of Conduct.Md
+- Entrypoints — Stack Entrypoint
+- Tests Capabilities — Test Tools
+- Power Tools Hooks — Notify
+- Toolkits — Routing
+- Gemini.Md
+- .Github
+- Pyproject.Toml
+- Entrypoints — Dagster Entrypoint
+- Hooks — Pre Commit
+- MCP Server 296
+- MCP Server 297
+- Ontology — Policy (1)
+- Ontology — Policy (2)
+- Ontology — Policy (3)
+- Platform Core Scripts —   Init  
+- Tests Capabilities — Test Workflows (3)
+- Tests Gate — Test Gate Hook (2)
+- Tests Graph — Test Every
+- Tests Graph — Test Atlas (2)
+- Skills Contracts And Access
+- Skills Troubleshoot Runs
+- Skills Fetch Docs
+- Skills Run Commands
+- Skills Answer With Metrics
+- Skills Build Semantic Layer
+- Skills Add Tests
+- Skills Add Unit Test 313
+- Skills Explore Data
+- Skills Create Rest Pipeline
+- Skills Debug Pipeline 316
+- Skills Attach Db
+- Skills Query
+- Power Tools Hooks — Session Start
+- Skills Dignified Python 320
+- Skills Dignified Python 321
+- Loop Budget.Md — Why The
+- Keyerror
+- Report 326
+- Report 327
+- Report 328
+- Ontology — Dev-Serving-Wire-Is-Read-Only
+- Ontology — High-Impact-Actions-Need-A-Human
+- Ontology — Model-Routing-Is-Declared
+- Platform UI Web — Control Plane
+- Skills Add Unit Test — Skill: Add-Unit-Test
 
 ## God Nodes (most connected - your core abstractions)
-1. `root()` - 68 edges
-2. `load_ontology()` - 61 edges
-3. `Ctx` - 44 edges
-4. `CatalogueSource` - 42 edges
-5. `Ontology` - 42 edges
-6. `pdir()` - 39 edges
-7. `Catalogue` - 36 edges
-8. `open_graph()` - 36 edges
-9. `StepResult` - 36 edges
-10. `load()` - 35 edges
+1. `root()` - 117 edges
+2. `load_ontology()` - 74 edges
+3. `pdir()` - 51 edges
+4. `open_graph()` - 49 edges
+5. `Ctx` - 49 edges
+6. `StepResult` - 49 edges
+7. `Node` - 46 edges
+8. `Ontology` - 45 edges
+9. `LoopSpec` - 42 edges
+10. `Capability` - 40 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Capability Path Policy` --references--> `load_policy()`  [EXTRACTED]
-  gate.capabilities.yaml → platform/src/pf/loops/gate.py
-- `Platform CLAUDE.md` --calls--> `pf air gate`  [EXTRACTED]
-  CLAUDE.md → platform/src/pf/air/gate.py
-- `Readiness Scorer Tool` --implements--> `AI Readiness Assessment`  [INFERRED]
-  tools/readiness_scorer.py → 00-foundations/ai-readiness-assessment.md
-- `Claude Review Workflow` --semantically_similar_to--> `Entity Isolation Rule`  [INFERRED] [semantically similar]
-  .github/workflows/claude-review.yml → CONTRIBUTING.md
-- `Acme Group Card` --semantically_similar_to--> `Entity Isolation Rule`  [INFERRED] [semantically similar]
-  groups/acme/kg/group_card.md → CONTRIBUTING.md
+- `Only expected_change Justifies Editing the Test` --semantically_similar_to--> `Binding Loop Constraints`  [INFERRED] [semantically similar]
+  platform/toolkits/dbt-elementary/skills/triage-alerts/SKILL.md → loop-constraints.md
+- `pf.viz palette, esc and lint discipline for diagrams` --semantically_similar_to--> `A guard whose silence is indistinguishable from success is not a guard`  [INFERRED] [semantically similar]
+  platform/toolkits/platform-init/skills/design-architecture/SKILL.md → .github/workflows/vendor-pins.yml
+- `Generated Yet Deliberately Committed` --semantically_similar_to--> `Change the Generator, Not the File`  [INFERRED] [semantically similar]
+  gate.yaml → AGENTS.md
+- `Never Read a Sister Project` --semantically_similar_to--> `Business Logic Does Not Transfer Between Entities`  [INFERRED] [semantically similar]
+  AGENTS.md → CLAUDE.md
+- `pf code impact` --semantically_similar_to--> `Knowledge Graph as Retrieval, Not Grep`  [INFERRED] [semantically similar]
+  platform/.memory/notes/code-graph-scoped-to-platform.md → README.md
 
 ## Import Cycles
 - 4-file cycle: `platform/src/pf/cli.py -> platform/src/pf/loops/registry.py -> platform/src/pf/tools/expectations.py -> platform/src/pf/tools/__init__.py -> platform/src/pf/cli.py`
+- 5-file cycle: `platform/src/pf/cli.py -> platform/src/pf/loops/__init__.py -> platform/src/pf/loops/registry.py -> platform/src/pf/tools/expectations.py -> platform/src/pf/tools/__init__.py -> platform/src/pf/cli.py`
 
 ## Hyperedges (group relationships)
-- **Loop Execution Framework** — loop_md, loop_budget_md, loop_constraints_md, gate_yaml [EXTRACTED 1.00]
-- **Acme Group Hierarchy** — groups_acme_claude, groups_acme_projects_acme_eu_claude, groups_acme_projects_acme_us_claude [EXTRACTED 1.00]
-- **Jaffle Semantic Layer** — jaffle_ontology_instance, jaffle_ontology_extension, jaffle_shop_annotations [EXTRACTED 1.00]
-- **dbt Observability Stack** — transform_dbt_project, transform_profiles, governance_air_register [INFERRED 0.85]
-- **AI Governance Workflow** — foundations_ai_readiness_assessment, use_case_assessment_use_case_decision_framework, governance_ai_risk_register_template, deployment_model_card_template [EXTRACTED 0.90]
-- **Responsible Procurement Framework** — procurement_supplier_due_diligence_checklist, procurement_ai_contract_clause_library, foundations_ai_readiness_assessment [EXTRACTED 0.85]
-- **Generated Per-Project CI Pipelines** — _github_workflows_acme_eu_workflow, _github_workflows_acme_rollup_workflow, _github_workflows_acme_us_workflow, _github_workflows_globex_core_workflow, _github_workflows_globex_eu_workflow, _github_workflows_jaffle_shop_workflow, _github_workflows_zenith_de_workflow, _github_workflows_zenith_uk_workflow [EXTRACTED 1.00]
-- **Entity Isolation Principle** — contributing_entity_isolation, groups_acme_kg_group_card_acme_group, _github_workflows_claude_review_claude_review [INFERRED 0.85]
-- **Vendor Governance Flow** — third_party_notices_third_party_notices, contributing_vendor_read_only, _github_workflows_vendor_sync_vendor_sync, _github_workflows_pr_report_impact_report [INFERRED 0.85]
-- **Payment metrics over fct_payments** — groups_acme_projects_acme_eu_reporting_pages_metrics_gross_payment_volume_page, groups_acme_projects_acme_eu_reporting_pages_metrics_payment_count_page, groups_acme_projects_acme_eu_reporting_pages_metrics_revenue_page, groups_acme_projects_acme_eu_reporting_pages_metrics_aov_page, groups_acme_projects_acme_eu_reporting_pages_metrics_revenue_mom_growth_page [EXTRACTED 1.00]
-- **Artefacts generated from ontology roles — edit the roles, not the files** — groups_acme_projects_acme_eu_docs_recce_recce_config_generation, groups_acme_projects_acme_eu_docs_expectations_generated_floor, groups_acme_projects_acme_eu_docs_wren_mdl_manifest, groups_acme_projects_acme_eu_docs_openmetadata_catalogue_projection, groups_acme_projects_acme_eu_reporting_readme_evidence_reporting [INFERRED 0.85]
-- **Merge-blocking gates** — groups_acme_projects_acme_eu_docs_air_air_gate, groups_acme_projects_acme_eu_docs_github_impact_gate, groups_acme_projects_acme_eu_docs_snowflake_dialect_gate [INFERRED 0.85]
-- **acme-eu MetricFlow semantic layer** — groups_acme_projects_acme_eu_transform_models_semantic_sem_payments_payments, groups_acme_projects_acme_eu_transform_models_semantic_sem_payments_customers, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_revenue, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_gross_payment_volume, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_payment_count, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_aov, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_revenue_mom_growth, groups_acme_projects_acme_eu_transform_models_semantic_metrics_revenue_active_customers, groups_acme_projects_acme_eu_transform_models_semantic_saved_queries_exec_weekly, groups_acme_projects_acme_eu_transform_models_utils__utils__models_metricflow_time_spine [EXTRACTED 1.00]
-- **acme-rollup OpenMetadata publication pipeline** — groups_acme_projects_acme_rollup_catalog_ingestion_database_snowflake_ingestion, groups_acme_projects_acme_rollup_catalog_ingestion_dbt_dbt_ingestion [EXTRACTED 1.00]
-- **Ontology-role-driven artefact generation chain** — groups_acme_projects_acme_rollup_docs_recce_recce_yml_generation, groups_acme_projects_acme_rollup_docs_expectations_generated_floor [INFERRED 0.85]
-- **Elementary observability wiring** — groups_acme_projects_acme_rollup_transform_packages_elementary, groups_acme_projects_acme_rollup_transform_dbt_project_elementary_schema, groups_acme_projects_acme_rollup_transform_profiles_elementary_profile, groups_acme_projects_acme_us_docs_elementary_observability [INFERRED 0.85]
-- **Ontology-role-derived quality checks** — groups_acme_projects_acme_us_contracts_annotations_resource_contract, groups_acme_projects_acme_us_contracts_annotations_pii_roles, groups_acme_projects_acme_rollup_transform_recce_derived_checks [INFERRED 0.85]
-- **AIR control governance loop** — groups_acme_projects_acme_us_air_baseline, groups_acme_projects_acme_us_docs_air_air_gate, groups_acme_projects_acme_us_docs_air_register_generated, groups_acme_projects_acme_rollup_governance_air_register_register [INFERRED 0.85]
-- **acme-us Evidence Dashboard Pages** — groups_acme_projects_acme_us_reporting_pages_index_overview_page, groups_acme_projects_acme_us_reporting_pages_metrics_revenue_revenue, groups_acme_projects_acme_us_reporting_pages_metrics_gross_payment_volume_gross_payment_volume, groups_acme_projects_acme_us_reporting_pages_metrics_payment_count_payment_count, groups_acme_projects_acme_us_reporting_pages_metrics_aov_aov, groups_acme_projects_acme_us_reporting_pages_metrics_revenue_mom_growth_revenue_mom_growth, groups_acme_projects_acme_us_reporting_pages_metrics_active_customers_active_customers [EXTRACTED 1.00]
-- **acme-us Recce Review Flow** — groups_acme_projects_acme_us_docs_recce_review_loop, groups_acme_projects_acme_us_docs_recce_artefact_store, groups_acme_projects_acme_us_docs_recce_recce_review_asset, groups_acme_projects_acme_us_transform_recce_checks, groups_acme_projects_acme_us_transform_profiles_acme_us_profile, groups_acme_projects_acme_us_docs_snowflake_dual_target [EXTRACTED 1.00]
-- **Generated Do-Not-Edit Derived Artefacts** — groups_acme_projects_acme_us_transform_recce_checks, groups_acme_projects_acme_us_governance_air_register_coverage, groups_acme_projects_acme_us_kg_tools_card_evidence_capability, groups_acme_projects_acme_us_docs_wren_mdl_manifest, groups_acme_projects_acme_us_reporting_readme_bi_as_code, groups_acme_projects_acme_us_evals_cases_readme_eval_corpus [INFERRED 0.85]
-- **acme-us MetricFlow semantic layer** — groups_acme_projects_acme_us_transform_models_semantic_sem_payments_payments, groups_acme_projects_acme_us_transform_models_semantic_sem_payments_customers, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_revenue, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_gross_payment_volume, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_payment_count, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_aov, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_revenue_mom_growth, groups_acme_projects_acme_us_transform_models_semantic_metrics_revenue_active_customers, groups_acme_projects_acme_us_transform_models_semantic_saved_queries_exec_weekly, groups_acme_projects_acme_us_transform_models_utils__utils__models_metricflow_time_spine [EXTRACTED 1.00]
-- **Stripe-to-marts lineage (acme-us)** — groups_acme_projects_acme_us_transform_models_staging_stripe__stripe__sources_stripe, groups_acme_projects_acme_us_transform_models_staging_stripe__stripe__models_stg_stripe__charges, groups_acme_projects_acme_us_transform_models_staging_stripe__stripe__models_stg_stripe__customers, groups_acme_projects_acme_us_transform_models_staging_stripe__stripe__models_stg_stripe__subscriptions, groups_acme_projects_acme_us_transform_models_marts__core__models_fct_payments, groups_acme_projects_acme_us_transform_models_marts__core__models_dim_customers, groups_acme_projects_acme_us_transform_models_marts__core__models_fct_revenue [INFERRED 0.85]
-- **AIR control commitment chain (globex)** — groups_globex_air_control_declaration, groups_globex_projects_globex_core_air_control_declaration, groups_globex_projects_globex_core_docs_air_air_gate [EXTRACTED 1.00]
-- **Generated artefacts: edit the declaration, not the projection** — groups_globex_projects_globex_core_governance_air_register_register, groups_globex_projects_globex_core_transform_recce_checks, groups_globex_projects_globex_core_kg_tools_card_capabilities, groups_globex_projects_globex_eu_catalog_ingestion_database_snowflake_ingestion, groups_globex_projects_globex_eu_catalog_ingestion_dbt_dbt_ingestion, groups_globex_projects_globex_core_reporting_evidence_config_theme, groups_globex_projects_globex_core_reporting_pages_index_overview, groups_globex_projects_globex_core_transform_profiles_elementary_profile [INFERRED 0.85]
-- **Credentials as env-var references, never committed** — groups_globex_projects_globex_core_docs_snowflake_env_var_credentials, groups_globex_projects_globex_core_transform_profiles_prod_target, groups_globex_projects_globex_eu_catalog_ingestion_database_snowflake_ingestion, groups_globex_projects_globex_eu_catalog_ingestion_dbt_dbt_ingestion, groups_globex_projects_globex_core_docs_openmetadata_catalogue [INFERRED 0.85]
-- **Single canonical declaration; downstream surfaces are projections** — groups_globex_projects_globex_core_docs_openmetadata_projection_not_sync, groups_globex_projects_globex_core_transform_recce_role_derived_checks, groups_globex_projects_globex_core_reporting_readme_pages_never_restate [INFERRED 0.85]
-- **Generated artefacts — edit the declaration, not the output** — groups_globex_projects_globex_eu_transform_recce_checks, groups_globex_projects_globex_eu_docs_expectations_generated_floor, groups_globex_projects_globex_eu_governance_air_register_ai_risk_register, groups_globex_projects_globex_eu_docs_wren_mdl_manifest, groups_globex_projects_globex_eu_evals_cases_readme_eval_corpus, groups_globex_projects_globex_eu_transform_profiles_elementary_profile, groups_globex_projects_globex_eu_kg_tools_card_capabilities_card [INFERRED 0.85]
-- **Elementary recording rides inside every dbt build** — groups_globex_projects_globex_eu_docs_elementary_elementary_observability, groups_globex_projects_globex_eu_transform_packages_package_declarations, groups_globex_projects_globex_eu_transform_dbt_project_elementary_schema_config, groups_globex_projects_globex_eu_transform_profiles_elementary_profile [EXTRACTED 1.00]
-- **One DuckDB warehouse file: dev builds, base diffs, reporting reads** — groups_globex_projects_globex_eu_transform_profiles_globex_eu_profile, groups_globex_projects_globex_eu_transform_profiles_base_target, groups_globex_projects_globex_eu_reporting_sources_globex_eu_connection_duckdb_connector, groups_globex_projects_globex_eu_docs_snowflake_dual_target_warehouse [INFERRED 0.85]
-- **Classes Reused From the Existing Ontology** — groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_term_reuse, groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_customer, groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_employee, groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_order, groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_product, groups_jaffle_ontology_proposals_2026_08_14_jaffle_seeds_refund [EXTRACTED 1.00]
-- **Ontology-Derived Generated Artefacts (edit the roles, not the files)** — groups_jaffle_projects_jaffle_shop_docs_recce_generated_config, groups_jaffle_projects_jaffle_shop_reporting_readme_evidence_bi [INFERRED 0.85]
-- **Merge-Blocking Gate Family** — groups_jaffle_projects_jaffle_shop_docs_air_air_gate, groups_jaffle_projects_jaffle_shop_docs_github_impact_gate, groups_jaffle_projects_jaffle_shop_claude_declared_joins [INFERRED 0.75]
-- **Governed semantic-layer metric pages** — groups_jaffle_projects_jaffle_shop_reporting_pages_index, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_average_order_value, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_count_lifetime_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_revenue_pct, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_revenue_pct, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_large_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_lifetime_spend_pretax, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_median_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_new_customer_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_cost, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_gross_profit, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_total, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_revenue_growth_mom [EXTRACTED 1.00]
-- **Order-item revenue metrics over ordered_at from order_items** — groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_median_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_revenue, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_revenue_pct, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_revenue_pct, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_gross_profit, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_revenue_growth_mom [EXTRACTED 1.00]
-- **Orders-fact metrics over ordered_at from orders** — groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_food_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_drink_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_large_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_new_customer_orders, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_cost, groups_jaffle_projects_jaffle_shop_reporting_pages_metrics_order_total [EXTRACTED 1.00]
-- **Gift Card Program Analytics Family** — groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_int_gift_card_running_balance_int_gift_card_running_balance, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_int_gift_card_redemption_velocity_int_gift_card_redemption_velocity, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_deep_int_gift_card_lifecycle_int_gift_card_lifecycle, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_advanced_fin_gift_card_breakage_fin_gift_card_breakage, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_advanced_fin_gift_card_revenue_timing_fin_gift_card_revenue_timing, groups_jaffle_projects_jaffle_shop_transform_models_marts_analytics_rpt_gift_card_program_summary_rpt_gift_card_program_summary, groups_jaffle_projects_jaffle_shop_transform_models_marts_distributions_dist_gift_card_balance_dist_gift_card_balance, groups_jaffle_projects_jaffle_shop_transform_models_marts_alerts_alert_gift_card_fraud_flag_alert_gift_card_fraud_flag [INFERRED 0.85]
-- **Cost-per-Order Metric Family** — groups_jaffle_projects_jaffle_shop_transform_models_marts_analytics_rpt_operational_cost_per_order_rpt_operational_cost_per_order, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_int_cost_per_order_by_store_int_cost_per_order_by_store, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_advanced_fin_expense_per_transaction_fin_expense_per_transaction, groups_jaffle_projects_jaffle_shop_transform_models_marts_hr_advanced_hr_employee_cost_per_order_hr_employee_cost_per_order [INFERRED 0.85]
-- **Customer RFM Segmentation Flow** — groups_jaffle_projects_jaffle_shop_transform_models_marts_cross_domain_int_customer_rfm_scores_int_customer_rfm_scores, groups_jaffle_projects_jaffle_shop_transform_models_marts_advanced_sql_adv_customer_health_matrix_adv_customer_health_matrix, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_deep_int_revenue_by_customer_segment_int_revenue_by_customer_segment, groups_jaffle_projects_jaffle_shop_transform_models_marts_finance_deep_int_payment_method_by_segment_int_payment_method_by_segment [INFERRED 0.85]
-- **Incrementally materialized models (tag type:incremental)** — groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_orders, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_order_items, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_invoices, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_payment_transactions, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_loyalty_transactions, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_inventory_movements, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_email_events, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_met_daily_revenue, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_met_daily_orders, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_met_daily_product_sales, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_timecards, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_shifts, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_waste_events, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_coupon_redemptions, groups_jaffle_projects_jaffle_shop_transform_models_marts_incremental_incremental_models_inc_fct_product_reviews [EXTRACTED 1.00]
-- **Role-scoped executive views (CFO/COO/CMO/HR/store manager)** — groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_revenue_summary, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_expense_overview, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_cash_position, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_budget_status, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_ar_summary, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cfo_profitability_matrix, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_ops_dashboard, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_store_performance, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_staffing_overview, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_equipment_status, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_supply_chain_health, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_coo_quality_metrics, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_campaign_dashboard, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_customer_health, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_loyalty_overview, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_channel_performance, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_acquisition_funnel, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_cmo_social_dashboard, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_daily_report, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_staff_schedule, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_inventory_status, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_product_performance, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_customer_insights, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_store_mgr_labor_summary, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_headcount_dashboard, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_turnover_report, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_training_status, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_payroll_summary, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_performance_overview, groups_jaffle_projects_jaffle_shop_transform_models_marts_role_views_role_views_models_view_hr_compliance_dashboard [EXTRACTED 1.00]
-- **Reverse-ETL exports feeding operational systems (CRM, POS, payroll, procurement)** — groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_crm_customer_sync, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_email_segment_high_value, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_email_segment_at_risk, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_email_segment_new, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_loyalty_sync, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_inventory_reorder, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_pos_menu_update, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_pos_pricing_update, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_hr_payroll_export, groups_jaffle_projects_jaffle_shop_transform_models_marts_reverse_etl_reverse_etl_models_rev_etl_supplier_scorecard_export [EXTRACTED 1.00]
-- **MetricFlow semantic layer star schema (jaffle-shop)** — groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_customers_customers, groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_locations_locations, groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_order_items_order_item, groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_orders_orders, groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_products_products, groups_jaffle_projects_jaffle_shop_transform_models_semantic_sem_supplies_supplies [EXTRACTED 1.00]
-- **Daily-to-weekly-to-monthly time-series rollup family** — groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_daily_orders_by_store, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_weekly_orders_by_store, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_monthly_orders_by_store, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_daily_orders_by_product, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_weekly_product_sales, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_monthly_product_sales, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_daily_customer_activity, groups_jaffle_projects_jaffle_shop_transform_models_marts_time_series__time_series__models_int_monthly_active_customers [INFERRED 0.85]
-- **Supply risk assessment and its named factor models** — groups_jaffle_projects_jaffle_shop_transform_models_marts_supply_chain_advanced__supply_chain_advanced__models_sc_supply_risk_assessment, groups_jaffle_projects_jaffle_shop_transform_models_marts_supply_chain_advanced__supply_chain_advanced__models_sc_supplier_diversification, groups_jaffle_projects_jaffle_shop_transform_models_marts_supply_chain_advanced__supply_chain_advanced__models_sc_ingredient_price_volatility, groups_jaffle_projects_jaffle_shop_transform_models_marts_supply_chain_advanced__supply_chain_advanced__models_sc_supplier_lead_time_trend [INFERRED 0.85]
-- **Supply chain procurement flow (order to receipt)** — groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_suppliers, groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_supplier_contracts, groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_purchase_orders, groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_po_line_items, groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_po_receipts, groups_jaffle_projects_jaffle_shop_transform_models_staging_supply_chain__supply_chain__models_stg_delivery_shipments [INFERRED 0.85]
-- **Loyalty program (members, transactions, tiers)** — groups_jaffle_projects_jaffle_shop_transform_models_staging_marketing__marketing__models_stg_loyalty_members, groups_jaffle_projects_jaffle_shop_transform_models_staging_marketing__marketing__models_stg_loyalty_transactions, groups_jaffle_projects_jaffle_shop_transform_models_staging_marketing__marketing__models_stg_loyalty_tiers [INFERRED 0.85]
-- **zenith AIR governance chain (group baseline, project union, runbook)** — groups_zenith_air_zenith_air_baseline, groups_zenith_projects_zenith_de_air_zenith_de_air_baseline, groups_zenith_projects_zenith_de_docs_air_air_controls_doc [EXTRACTED 1.00]
-- **Recce change-review flow (baseline, diff, base target, workspace join)** — groups_zenith_projects_zenith_de_docs_recce_review_loop, groups_zenith_projects_zenith_de_transform_recce_checks, groups_zenith_projects_zenith_de_transform_profiles_targets, groups_zenith_projects_zenith_de_docs_recce_artefact_store, groups_zenith_projects_zenith_de_docs_recce_workspace_review_join [INFERRED 0.85]
-- **Evidence BI-as-code reporting pipeline** — groups_zenith_projects_zenith_de_reporting_readme_evidence_reporting, groups_zenith_projects_zenith_de_reporting_evidence_config_theme, groups_zenith_projects_zenith_de_reporting_pages_index_overview, groups_zenith_projects_zenith_de_reporting_sources_zenith_de_connection_duckdb_connector, groups_zenith_projects_zenith_de_reporting_readme_one_rule [EXTRACTED 1.00]
-- **OpenMetadata catalogue publishing and ingestion** — groups_zenith_projects_zenith_de_docs_openmetadata_catalogue, groups_zenith_projects_zenith_uk_catalog_ingestion_database_snowflake_ingestion, groups_zenith_projects_zenith_uk_catalog_ingestion_dbt_dbt_ingestion [INFERRED 0.85]
-- **Derived artefacts: regenerate, never hand-edit** — groups_zenith_projects_zenith_uk_transform_recce_recce_checks, groups_zenith_projects_zenith_uk_docs_expectations_generated_floor, groups_zenith_projects_zenith_uk_governance_air_register_register, groups_zenith_projects_zenith_uk_reporting_pages_index_overview_page, groups_zenith_projects_zenith_uk_reporting_evidence_config_validated_palette, groups_zenith_projects_zenith_uk_docs_wren_mdl_manifest, groups_zenith_projects_zenith_uk_kg_tools_card_capabilities_card [INFERRED 0.85]
-- **Elementary declaration spans three transform files** — groups_zenith_projects_zenith_uk_docs_elementary_elementary_package, groups_zenith_projects_zenith_uk_transform_packages_elementary, groups_zenith_projects_zenith_uk_transform_dbt_project_zenith_uk_project, groups_zenith_projects_zenith_uk_transform_profiles_elementary_profile [EXTRACTED 1.00]
-- **Change-review flow: baseline, diff, publish, read semantically** — groups_zenith_projects_zenith_uk_transform_profiles_base_target, groups_zenith_projects_zenith_uk_transform_recce_recce_checks, groups_zenith_projects_zenith_uk_docs_recce_workspace_semantic_join, groups_zenith_projects_zenith_uk_docs_wren_mdl_manifest [INFERRED 0.85]
+- **Eleven per-project CI workflows generated from one capability declaration** — github_workflows_acme_eu_workflow, github_workflows_acme_rollup_workflow, github_workflows_acme_us_workflow, github_workflows_commodity_india_workflow, github_workflows_commodity_rollup_workflow, github_workflows_commodity_us_workflow, github_workflows_globex_core_workflow, github_workflows_globex_eu_workflow, github_workflows_jaffle_shop_workflow, github_workflows_zenith_de_workflow, github_workflows_zenith_uk_workflow, github_workflows_platform_tests_generated_per_project_workflows [EXTRACTED 1.00]
+- **Surviving a deleted upstream: fork, pin, check daily, degrade to a warning** — github_workflows_vendor_pins_asqav_compliance_deletion, github_workflows_platform_tests_pin_by_pin_submodule_init, github_workflows_vendor_pins_resolve, github_workflows_vendor_sync_forks, github_workflows_vendor_sync_fork_every_pin, github_workflows_ai_governance_compliance_scan, github_workflows_platform_converged [EXTRACTED 1.00]
+- **Whichever tool wrote the change, the next tool reads current context** — github_workflows_agent_context_check, github_workflows_agent_context_refresh, github_workflows_agent_context_three_tools_one_context, github_workflows_copilot_setup_steps_copilot_setup_steps, github_workflows_claude_implement, github_workflows_platform_tests_suite, platform_toolkits_platform_init_skills_design_architecture_skill_orientation_routing_order [EXTRACTED 1.00]
+- **Agent Governance Policy Set** — platform_src_pf_ontology_policy_agent_authority_is_least_privilege, platform_src_pf_ontology_policy_agent_decisions_are_recorded, platform_src_pf_ontology_policy_evidence_chain_is_tamper_evident, platform_src_pf_ontology_policy_agent_authority_is_revocable, platform_src_pf_ontology_policy_high_impact_actions_need_a_human, platform_src_pf_ontology_policy_control_baseline_is_declared [EXTRACTED 1.00]
+- **Quack Dev-Serving Guardrails** — platform_src_pf_ontology_policy_dev_serving_wire_is_read_only, platform_src_pf_ontology_policy_dev_server_binds_localhost_only, platform_src_pf_ontology_policy_quack_token_never_leaves_the_machine, platform_src_pf_ontology_policy_warehouse_custody_is_recorded [EXTRACTED 1.00]
+- **Entity Isolation Enforced Across Layers** — platform_src_pf_ontology_policy_sister_projects_are_isolated, platform_src_pf_ontology_policy_capabilities_entity_isolation_enforced, platform_toolkits_routing_cross_sister_rollup, github_copilot_instructions_scope_mapping, docs_bloom_readme_qualified_ids, memory_memory_module_scope [INFERRED 0.95]
+- **How a Loop Earns Its Autonomy Level** — loop_autonomy_ladder, loop_registry, loop_ledger, loop_evals_gate, loop_automatic_demotion [EXTRACTED 1.00]
+- **Structural Enforcement of the Impact Gate** — readme_three_gates, gate_safety_policy, gate_impact_required, readme_impact_analysis, loop_failure_mode_skipped_impact_gate, agents_pf_gate [INFERRED 0.85]
+- **The Three Kinds of Shared Agent State** — agents_read_protocol, platform_memory_notes_readme_session_memory, agents_data_graph, agents_code_graph, readme_context_card [EXTRACTED 1.00]
+- **The Six Governance Planes That Compose** — docs_ai_governance_architecture_harness_permissions, docs_ai_governance_architecture_path_gate, docs_ai_governance_architecture_ontology_policy_layer, docs_ai_governance_architecture_provenance_ledger, docs_ai_governance_architecture_air_catalogue, docs_ai_governance_architecture_asqav_scan [EXTRACTED 1.00]
+- **The Tightening-Only Invariant Across Layers** — docs_policy_tightening_only, docs_policy_policyrelaxation, docs_ai_governance_architecture_tightening_sections, docs_engineering_loop_engineering, docs_policy_omitted_severity_inherits [INFERRED 0.85]
+- **Generated Artefacts Kept True by a Check** — docs_development_generated_files_discipline, docs_architecture_maps_architecture_map, platform_tests_readme_suite_index, docs_vendor_card_vendor_index, docs_kg_atlas_kg_check, docs_architecture_merge_gate_path [INFERRED 0.85]
+- **Vendor Governance Flow** — third_party_notices_third_party_notices, contributing_vendor_read_only, _github_workflows_pr_report_impact_report [INFERRED 0.85]
 - **Platform Ontology Core Classes** — platform_src_pf_ontology_concepts_party, platform_src_pf_ontology_concepts_customer, platform_src_pf_ontology_concepts_organization, platform_src_pf_ontology_concepts_employee, platform_src_pf_ontology_concepts_agreement, platform_src_pf_ontology_concepts_subscription, platform_src_pf_ontology_concepts_order, platform_src_pf_ontology_concepts_contract, platform_src_pf_ontology_concepts_event, platform_src_pf_ontology_concepts_payment, platform_src_pf_ontology_concepts_refund, platform_src_pf_ontology_concepts_usage, platform_src_pf_ontology_concepts_interaction, platform_src_pf_ontology_concepts_product, platform_src_pf_ontology_concepts_location, platform_src_pf_ontology_concepts_currency [EXTRACTED 1.00]
-- **Agent Governance Policy Suite (FINOS AIR)** — platform_src_pf_ontology_policy_agent_authority_is_least_privilege, platform_src_pf_ontology_policy_tool_contribution_may_only_tighten, platform_src_pf_ontology_policy_agent_decisions_are_recorded, platform_src_pf_ontology_policy_evidence_chain_is_tamper_evident, platform_src_pf_ontology_policy_sister_projects_are_isolated, platform_src_pf_ontology_policy_agent_authority_is_revocable, platform_src_pf_ontology_policy_high_impact_actions_need_a_human, platform_src_pf_ontology_policy_model_routing_is_declared, platform_src_pf_ontology_policy_upstream_licences_are_reviewed, platform_src_pf_ontology_policy_control_baseline_is_declared [EXTRACTED 1.00]
-- **Single Metric Definition Discipline** — platform_src_pf_ontology_policy_metric_owns_aggregation, platform_toolkits_dbt_semantic_skills_answer_with_metrics_skill_answer_with_metrics, platform_toolkits_dbt_semantic_skills_build_semantic_layer_skill_build_semantic_layer, platform_toolkits_dbt_modeling_skills_using_dbt_skill_using_dbt, platform_toolkits_routing_tool_precedence [INFERRED 0.85]
 - **Ontology roles drive generated monitors** — platform_toolkits_dlt_ingest_skills_annotate_source_skill, platform_toolkits_dlt_quality_skills_setup_data_quality_skill, platform_toolkits_elementary_observe_skills_add_anomaly_tests_skill, platform_toolkits_dlt_ingest_registry_stripe [INFERRED 0.85]
-- **Secrets flow only through secrets_update_fragment** — platform_toolkits_platform_init_rules, platform_toolkits_dlt_ingest_skills_find_source_skill, platform_toolkits_dlt_ingest_skills_create_filesystem_pipeline_skill, platform_toolkits_duckdb_ops_skills_read_file_skill [EXTRACTED 1.00]
+- **Secrets flow only through secrets_update_fragment** — platform_toolkits_platform_init_rules, platform_toolkits_dlt_ingest_skills_find_source_skill, platform_toolkits_duckdb_ops_skills_read_file_skill [EXTRACTED 1.00]
 - **Impact / diff / history composed triage picture** — platform_toolkits_elementary_observe_skills_triage_observability_skill, platform_toolkits_power_tools_rules, platform_toolkits_power_tools_agents_impact_verifier [INFERRED 0.85]
 - **Gated onboarding ladder: six stages in dependency order** — platform_toolkits_project_onboarding_skills_onboard_project_skill_onboard_project, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_import_stage_import, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_ontology_stage_ontology, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_dialect_stage_dialect, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_layers_stage_layers, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_metrics_stage_metrics, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_review_stage_review [EXTRACTED 1.00]
 - **Grain uniqueness verification repeated across every review surface** — platform_toolkits_power_tools_agents_sql_reviewer_grain_check, platform_toolkits_power_tools_agents_sql_reviewer_sql_reviewer, platform_toolkits_power_tools_commands_architecture_review_architecture_review, platform_toolkits_power_tools_commands_performance_audit_performance_audit, platform_toolkits_power_tools_agents_semantic_conformance_semantic_conformance [INFERRED 0.85]
 - **Recce review lifecycle: baseline, diff, ship, PII audit of the committed state** — platform_toolkits_project_onboarding_skills_quality_stack_skill_quality_stack, platform_toolkits_project_onboarding_skills_onboard_project_references_stage_review_recce_diff, platform_toolkits_power_tools_commands_ship_ship, platform_toolkits_power_tools_commands_security_audit_recce_state_pii_check [INFERRED 0.75]
-- **FINOS Project Governance Layer** — vendor_ai_governance_framework_contributing_contribution_guidelines, vendor_ai_governance_framework_governance_governance_policy, vendor_ai_governance_framework_maintainers_maintainers_list, vendor_ai_governance_framework__github_code_of_conduct_code_of_conduct [INFERRED 0.85]
-- **Regulatory Reference Data System** — vendor_ai_governance_framework_docs__data_references_readme_reference_data_schema, vendor_ai_governance_framework_docs__data_references_canada_regulations_canada_regulatory_references, vendor_ai_governance_framework__github_workflows_validate_references_validate_references_workflow [EXTRACTED 1.00]
-- **Use Case Catalogue Flow** — vendor_ai_governance_framework_docs_use_cases_use_case_catalogue_page, vendor_ai_governance_framework_docs_propose_use_case_use_case_proposal_form, vendor_ai_governance_framework_docs__config_site_configuration, vendor_ai_governance_framework_docs__data_data_classification_financial_data_classification [EXTRACTED 1.00]
-- **AIGF Regulatory & Standards Reference Crosswalk** — vendor_ai_governance_framework_docs__data_references_eu_ai_act_eu_ai_act, vendor_ai_governance_framework_docs__data_references_ffiec_itbooklets_ffiec_it_examination_handbook, vendor_ai_governance_framework_docs__data_references_iosco_supervisory_toolkit_iosco_supervisory_toolkit, vendor_ai_governance_framework_docs__data_references_iso_42001_iso_iec_42001, vendor_ai_governance_framework_docs__data_references_nist_ai_600_1_nist_ai_600_1, vendor_ai_governance_framework_docs__data_references_nist_sp_800_53r5_nist_sp_800_53r5, vendor_ai_governance_framework_docs__data_references_owasp_asi_owasp_top_10_for_agentic_applications, vendor_ai_governance_framework_docs__data_references_owasp_llm_owasp_llm_top_10, vendor_ai_governance_framework_docs__data_references_owasp_ml_owasp_ml_security_top_10, vendor_ai_governance_framework_docs__data_references_sr11_7_sr_11_7_model_risk_management, vendor_ai_governance_framework_docs__data_references_uk_regulations_uk_financial_services_ai_regulations, vendor_ai_governance_framework_docs__includes_reference_card_reference_card, vendor_ai_governance_framework_docs__includes_reference_entry_card_reference_entry_card, vendor_ai_governance_framework_docs__layouts_reference_reference_layout, vendor_ai_governance_framework_docs__layouts_risk_risk_layout, vendor_ai_governance_framework_docs__layouts_mitigation_mitigation_layout [EXTRACTED 1.00]
-- **Data & Model Poisoning Risk Family Across OWASP Standards** — vendor_ai_governance_framework_docs__data_references_owasp_asi_asi06_memory_context_poisoning, vendor_ai_governance_framework_docs__data_references_owasp_llm_llm04_data_and_model_poisoning, vendor_ai_governance_framework_docs__data_references_owasp_ml_ml02_data_poisoning_attack, vendor_ai_governance_framework_docs__data_references_owasp_ml_ml10_model_poisoning [INFERRED 0.85]
-- **AI Supply Chain Risk Family Across Standards** — vendor_ai_governance_framework_docs__data_references_owasp_asi_asi04_agentic_supply_chain_vulnerabilities, vendor_ai_governance_framework_docs__data_references_owasp_llm_llm03_supply_chain, vendor_ai_governance_framework_docs__data_references_owasp_ml_ml06_ml_supply_chain_attacks, vendor_ai_governance_framework_docs__data_references_nist_ai_600_1_value_chain_and_component_integration [INFERRED 0.85]
-- **Agentic AI security control family (mi-18..mi-23)** — vendor_ai_governance_framework_docs__mitigations_mi_18_agent_authority_least_privilege_framework_agent_authority_least_privilege_framework, vendor_ai_governance_framework_docs__mitigations_mi_19_tool_chain_validation_and_sanitization_tool_chain_validation_and_sanitization, vendor_ai_governance_framework_docs__mitigations_mi_20_mcp_server_security_governance_mcp_server_security_governance, vendor_ai_governance_framework_docs__mitigations_mi_22_multi_agent_isolation_and_segmentation_multi_agent_isolation_and_segmentation, vendor_ai_governance_framework_docs__mitigations_mi_23_agentic_system_credential_protection_framework_agentic_system_credential_protection_framework [INFERRED 0.85]
-- **Prompt injection defense stack** — vendor_ai_governance_framework_docs__risks_ri_10_prompt_injection_prompt_injection, vendor_ai_governance_framework_docs__mitigations_mi_3_user_app_model_firewalling_filtering_user_app_model_firewalling_filtering, vendor_ai_governance_framework_docs__mitigations_mi_19_tool_chain_validation_and_sanitization_tool_chain_validation_and_sanitization [EXTRACTED 1.00]
-- **AI data protection and confidentiality control family** — vendor_ai_governance_framework_docs__mitigations_mi_2_data_filtering_from_external_knowledge_bases_data_filtering_from_external_knowledge_bases, vendor_ai_governance_framework_docs__mitigations_mi_6_data_quality_classification_sensitivity_data_quality_classification_sensitivity, vendor_ai_governance_framework_docs__mitigations_mi_12_role_based_access_control_for_ai_data_role_based_access_control_for_ai_data, vendor_ai_governance_framework_docs__mitigations_mi_14_encryption_of_ai_data_at_rest_encryption_of_ai_data_at_rest, vendor_ai_governance_framework_docs__mitigations_mi_16_preserving_source_data_access_controls_in_ai_systems_preserving_source_data_access_controls_in_ai_systems [INFERRED 0.85]
-- **Agentic AI Security Risk Family (OWASP ASI-mapped)** — vendor_ai_governance_framework_docs_risks_ri_24_agent_action_authorization_bypass_agent_action_authorization_bypass, vendor_ai_governance_framework_docs_risks_ri_25_tool_chain_manipulation_and_injection_tool_chain_manipulation_and_injection, vendor_ai_governance_framework_docs_risks_ri_26_mcp_server_supply_chain_compromise_mcp_server_supply_chain_compromise, vendor_ai_governance_framework_docs_risks_ri_27_agent_state_persistence_poisoning_agent_state_persistence_poisoning, vendor_ai_governance_framework_docs_risks_ri_28_multi_agent_trust_boundary_violations_multi_agent_trust_boundary_violations, vendor_ai_governance_framework_docs_risks_ri_29_agent_mediated_credential_discovery_and_harvesting_agent_mediated_credential_discovery_and_harvesting [INFERRED 0.85]
-- **Foundation Model Dependency Risks** — vendor_ai_governance_framework_docs_risks_ri_5_foundation_model_versioning_foundation_model_versioning, vendor_ai_governance_framework_docs_risks_ri_6_non_deterministic_behaviour_non_deterministic_behaviour, vendor_ai_governance_framework_docs_risks_ri_7_availability_of_foundational_model_availability_of_foundational_model, vendor_ai_governance_framework_docs_risks_ri_8_tampering_with_the_foundational_model_tampering_with_the_foundational_model [INFERRED 0.85]
-- **Information Leakage and Exfiltration Risks** — vendor_ai_governance_framework_docs_risks_ri_1_information_leaked_to_hosted_model_information_leaked_to_hosted_model, vendor_ai_governance_framework_docs_risks_ri_2_information_leaked_to_vector_store_information_leaked_to_vector_store, vendor_ai_governance_framework_docs_risks_ri_23_intellectual_property_ip_and_copyright_intellectual_property_ip_and_copyright, vendor_ai_governance_framework_docs_risks_ri_29_agent_mediated_credential_discovery_and_harvesting_agent_mediated_credential_discovery_and_harvesting [INFERRED 0.75]
-- **Human-Oversight-Bounded AI Pattern** — vendor_ai_governance_framework_docs__usecases_uc_3_loan_approval_use_case, vendor_ai_governance_framework_docs__usecases_uc_4_anti_financial_crime_investigation_use_case, vendor_ai_governance_framework_docs__usecases_uc_3_loan_approval_deterministic_policy_gates, vendor_ai_governance_framework_docs__usecases_uc_4_anti_financial_crime_investigation_mlro_approval_gate, vendor_asqav_compliance_contributing_governance_scan_categories [INFERRED 0.85]
-- **Reference Data Generation Pipeline** — vendor_ai_governance_framework_scripts_docs_readme_scripts_overview, vendor_ai_governance_framework_scripts_docs_runbook_generation_runbook, vendor_ai_governance_framework_scripts_docs_dl_ffiec_itbooklets_ffiec_booklets_manager, vendor_ai_governance_framework_scripts_requirements_scripts_dependencies, vendor_ai_governance_framework_docs_references_ffiec_itbooklets_reference_page, vendor_ai_governance_framework_docs_references_eu_ai_act_reference_page, vendor_ai_governance_framework_docs_references_iso_42001_reference_page, vendor_ai_governance_framework_docs_references_nist_ai_600_1_reference_page, vendor_ai_governance_framework_docs_references_nist_sp_800_53r5_reference_page, vendor_ai_governance_framework_docs_references_owasp_llm_reference_page, vendor_ai_governance_framework_docs_references_owasp_ml_reference_page [INFERRED 0.85]
-- **Public Sector AI Governance Lifecycle** — vendor_public_sector_ai_playbook_00_foundations_ai_readiness_assessment_ai_readiness_assessment, vendor_public_sector_ai_playbook_01_use_case_assessment_use_case_decision_framework_use_case_decision_framework, vendor_public_sector_ai_playbook_02_procurement_supplier_due_diligence_checklist_supplier_due_diligence_checklist, vendor_public_sector_ai_playbook_02_procurement_ai_contract_clause_library_ai_contract_clause_library, vendor_public_sector_ai_playbook_04_governance_ai_risk_register_template_ai_risk_register, vendor_public_sector_ai_playbook_05_deployment_model_card_template_model_card, vendor_public_sector_ai_playbook_05_deployment_bias_audit_template_bias_audit [EXTRACTED 1.00]
-- **Human Oversight Control Family** — vendor_public_sector_ai_playbook_00_foundations_principles_meaningful_human_oversight, vendor_public_sector_ai_playbook_02_procurement_ai_contract_clause_library_human_override_capability_clause, vendor_public_sector_ai_playbook_04_governance_ai_risk_register_template_risk_004_loss_of_human_oversight, vendor_asqav_compliance_readme_five_governance_checks [INFERRED 0.85]
-- **AI Triage with Human Review Pattern** — vendor_public_sector_ai_playbook_03_sector_playbooks_healthcare_healthcare_ai_playbook_nhs_radiology_triage_pattern, vendor_public_sector_ai_playbook_03_sector_playbooks_local_government_local_government_ai_playbook_planning_triage_pattern, vendor_public_sector_ai_playbook_00_foundations_principles_meaningful_human_oversight [INFERRED 0.85]
-- **Skill & Plugin Supply Chain (No Sandbox, Dual Attack Surface)** — vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_skill_bundled_code, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_skill_loader, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_skill_prompt_content, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_dual_attack_surface [EXTRACTED 1.00]
-- **Agent Runtime Environment (User's Machine, Full Local Privileges)** — vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_user_interface, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_agent_orchestrator, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_permission_approval_layer, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_agent_state_memory [EXTRACTED 1.00]
-- **MCP Server Ecosystem (Local / Remote Services)** — vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_mcp_registry_router, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_local_mcp_servers, vendor_ai_governance_framework_diagrams_agentic_skill_system_v1_with_risks_remote_mcp_servers [EXTRACTED 1.00]
-- **RAG Knowledge Base Preparation Pipeline** — vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_data_processing_environment, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_private_knowledge_data_source, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_data_processor_and_filtering, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_refined_knowledge_data_source, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_vector_data_loader, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_vector_database [EXTRACTED 1.00]
-- **RAG Inference Flow (User Query Path)** — vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_instrumentation_environment, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_user, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_user_query, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_query_processing, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_vector_database, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_embeddings_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_inference_endpoint [EXTRACTED 1.00]
-- **SaaS Inference Environment Boundary** — vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_inference_environment_saas, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_embeddings_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_inference_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_embeddings_model, vendor_ai_governance_framework_diagrams_rag_system_v0_no_risks_llm_model [EXTRACTED 1.00]
-- **RAG Knowledge Base Preparation Pipeline** — vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_private_knowledge_data_source, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_data_processor_and_filtering, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_refined_knowledge_data_source, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_vector_data_loader, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_vector_database [EXTRACTED 1.00]
-- **RAG Inference Request Flow** — vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_query_processing, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_vector_database, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_embeddings_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_inference_endpoint [EXTRACTED 1.00]
-- **SaaS Inference Environment Components** — vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_embeddings_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_inference_endpoint, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_embeddings_model, vendor_ai_governance_framework_diagrams_rag_system_v1_with_risks_llm_model [EXTRACTED 1.00]
 
-## Communities (2476 total, 685 thin omitted)
+## Communities (338 total, 46 thin omitted)
 
-### Community 0 - "pf CLI"
+### Community 0 - "Platform CLI Commands"
 Cohesion: 0.03
-Nodes (173): all_projects(), bootstrap_cmd(), capabilities(), _changed_nodes(), check(), cmd_align_evaluate(), cmd_align_stages(), cmd_align_status() (+165 more)
+Nodes (98): all_projects(), bootstrap_cmd(), _changed_nodes(), check(), cmd_align_funnel(), cmd_arch_build(), cmd_arch_check(), cmd_artifacts_env() (+90 more)
 
-### Community 1 - "OpenMetadata Catalog Sync"
+### Community 1 - "Evidence BI Projections"
 Cohesion: 0.05
-Nodes (83): main(), _project_dir(), _publish_tables(), _publish_vocabulary(), Any, Path, Refresh the projections, then publish to OpenMetadata. `catalogue=False`…, Run one bootstrap step and turn its result into a detail string. (+75 more)
+Nodes (82): agg_sql(), build(), collect_metrics(), _config(), _context_sentence(), _exposures(), _fence_spacing(), _filter_text() (+74 more)
 
-### Community 2 - "Platform UI"
-Cohesion: 0.07
-Nodes (73): get, query(), Read-only query against the tracking DB. Opened read_only so a dashboard…, Stack-table rows contributed by tools, for the UI's layer view., stack_layers(), activity(), agent_runs(), annotations() (+65 more)
+### Community 2 - "Routing Capability Checks"
+Cohesion: 0.04
+Nodes (77): callback, Check every routed step against its model's real capabilities. Called by `pf…, validate_routing(), _bootstrap_commit_gate(), capabilities(), cmd_align_evaluate(), cmd_align_stages(), cmd_artifacts_status() (+69 more)
 
-### Community 3 - "Capability & Tool Registry"
+### Community 3 - "Trace & Onboarding Tests"
 Cohesion: 0.05
-Nodes (60): apply(), Capability, _caveats(), _env_block(), gate_additions(), _merge(), missing_env(), Any (+52 more)
+Nodes (68): pf — the shared platform: ontology, knowledge graph, runtime, MCP, UI., FakeParseClient, FakeToolClient, FakeUsage, Any, fixture, MonkeyPatch, Path (+60 more)
 
-### Community 4 - "Recce Tool"
+### Community 4 - "Platform Web UI"
 Cohesion: 0.07
-Nodes (70): Assign a port to every project that has a dbt project to review. A project with…, services(), baseline_dir(), baseline_pairs(), bootstrap_project(), capture_baseline(), check_results(), config_file() (+62 more)
+Nodes (71): get, post(), POST to an incoming webhook. Returns (ok, detail). Never raises., activity(), agent_runs(), annotations(), api_impact(), api_neighbors() (+63 more)
 
-### Community 5 - "Vendor Registry"
-Cohesion: 0.07
-Nodes (55): _purpose(), Path, Two documents from one registry. `docs/VENDOR.md` is the long form: every…, The long form: every adoption and every decline, with the reasoning., The always-loadable index: what each upstream is for, in one line., The hand-written one-liner, falling back to the first sentence of `why`.…, render_card(), render_doc() (+47 more)
-
-### Community 6 - "Onboarding Tests"
-Cohesion: 0.07
-Nodes (64): _merge_dbt_project(), Fold the source's dbt config into the scaffolded one. Three classes of key, and…, _big_repo(), Path, Tests for onboarding an external repository. The failures worth pinning are the…, `a << b` means b runs first. Reading it as `a then b` produces a graph that…, The core honesty property. Translating a task body would produce code that…, Prefect orders work through ordinary calls, so there is no reliable static edge… (+56 more)
-
-### Community 7 - "Regulatory Corpus Downloaders"
-Cohesion: 0.05
-Nodes (58): BeautifulSoup, build_annexes_section(), build_recitals_section(), build_toc_section(), Chapter, chunked(), create_flattened_yaml_data(), create_markdown_document() (+50 more)
-
-### Community 8 - "AIR Governance Tests"
-Cohesion: 0.07
-Nodes (59): load(), Every available catalogue, merged. Raises `NotVendored` when there are none., assess(), One verdict per control in the catalogue. Re-derived every call.…, gate(), load_config(), The effective declaration for one entity: group baseline + its refinement.…, Problems with a declaration that the catalogue can see. Empty is good. (+51 more)
-
-### Community 9 - "Project Scaffolding"
-Cohesion: 0.07
-Nodes (55): defaults(), Capability names a project gets without asking. Read from the registry rather…, estimate_tokens(), Path, Render context cards — the always-in-context index. These are token-budgeted by…, Rough local estimate. `pf tokens --exact` uses the Anthropic count_tokens API., Raw tables from which no Metric is reachable. This walks the graph rather than…, render_group_card() (+47 more)
-
-### Community 10 - "Agent LLM Layer"
-Cohesion: 0.07
-Nodes (50): The LLM call layer for loops. Three things are centralised here because getting…, Strip the card's generation date. The card legitimately changes when the…, _stable(), cache_ttl(), caches(), estimate_usd(), ModelSpec, Any (+42 more)
-
-### Community 11 - "CI Workflows & Semantics"
-Cohesion: 0.07
-Nodes (52): Per-Project DuckDB Writer Pools, AIR Baseline Merge Gate, Per-Area Change Filter, Blast-Radius Impact Gate, Recce Data Review, acme-eu CI Workflow, acme-rollup CI Workflow, acme-us CI Workflow (+44 more)
-
-### Community 12 - "MCP Server"
+### Community 5 - "AIR Control Assessment"
 Cohesion: 0.06
-Nodes (51): Consolidated MCP server for the active project., active_project(), _clip(), dbt_build(), dbt_list(), dbt_test(), display_schema(), execute_sql_query() (+43 more)
+Nodes (66): load(), Every available catalogue, merged. Raises `NotVendored` when there are none., assess(), One verdict per control in the catalogue. Re-derived every call.…, build_corpus(), _coverage_fixture(), _gate_fixture(), _only_the_fake_catalogue() (+58 more)
 
-### Community 13 - "Ontology Policies & OTOP"
+### Community 6 - "Group Lifecycle Registry"
+Cohesion: 0.06
+Nodes (53): cmd_group_list(), Every group: lifecycle, owner, readiness., budget_for(), can_transition(), Check, DataPolicy, exists(), group_names() (+45 more)
+
+### Community 7 - "Artifact Capability Tests"
+Cohesion: 0.05
+Nodes (58): _clean_env(), _Err, _FakeS3, Exception, fixture, MonkeyPatch, parametrize, Path (+50 more)
+
+### Community 8 - "Tool Registry & Gate Rules"
+Cohesion: 0.06
+Nodes (54): gate_additions(), Union of the gate rules a set of capabilities contributes., Let each tool attach its own subcommands under `pf tool <name>`. Hooks are…, _register_tool_commands(), _apply_capability(), bootstrap_order(), bootstrap_tools(), dagster_contributions() (+46 more)
+
+### Community 9 - "Repo Onboarding Tests"
+Cohesion: 0.07
+Nodes (62): _big_repo(), Path, Onboarding an external repository. The failures worth pinning are the silent…, `a << b` means b runs first. Reading it as `a then b` produces a graph that…, The core honesty property. Translating a task body would produce code that…, Prefect orders work through ordinary calls, so there is no reliable static edge…, A project that is present but unannotated contributes nothing to the graph, the…, Ours is pinned against the dbt version this platform is tested with; taking the… (+54 more)
+
+### Community 10 - "Ontology Class Model"
+Cohesion: 0.06
+Nodes (39): Ontology, Property, A named object property. Directional: domain -> range., Whether a string is a plausible ISO 4217 code. Shape rather than a list.…, Identity property, inherited from the nearest ancestor that has one., Own properties merged over inherited ones., The relation connecting two classes, in either direction., True if a link src -> dst is declared in the topology. (+31 more)
+
+### Community 11 - "Architecture Map Tests"
+Cohesion: 0.05
+Nodes (57): _bare(), _projects(), parametrize, Path, Per-project architecture map. The map makes one promise that is easy to state…, The reason the registry is composed rather than listed. A tool arrives by…, Declaring a Feature is the refinement, not the price of entry. A tool already…, Nine capabilities writing one page each would be nine identical rows. They are… (+49 more)
+
+### Community 12 - "Housekeeping Retention Plans"
+Cohesion: 0.05
+Nodes (52): detect(), ops_retention_days(), plan_for_project(), plan_platform(), Path, The shared halves of housekeeping: what a task is, and which engine owns it.…, Inspect the platform's own accumulation and plan its maintenance. The per-…, Retention for run history and regenerable artefacts. Wider than the lake's… (+44 more)
+
+### Community 13 - "Scaffold Bootstrap & Tokens"
 Cohesion: 0.08
-Nodes (46): Policy, Every policy claiming to discharge an external control (`AIR-DET-21`). Many-to-…, _artifact(), ArtifactRef, _as_ts(), _assertion(), _authored(), build_manifest() (+38 more)
+Nodes (55): estimate_tokens(), Rough local estimate. `pf tokens --exact` uses the Anthropic count_tokens API., stats(), _bootstrap_capabilities(), _bootstrap_tools(), _build_graph(), _build_reporting(), _capability_policies() (+47 more)
 
-### Community 14 - "Vendored Compliance Playbooks"
-Cohesion: 0.08
-Nodes (52): Asqav Dependabot Configuration, Asqav Funding Links, Asqav Compliance CI Pipeline, AI Agent Governance Scanner Action, Asqav SDK, Asqav Compliance Scanner, Compliance Score (0-100), DORA (Digital Operational Resilience Act) (+44 more)
+### Community 14 - "Pluggable Tool Layer Tests"
+Cohesion: 0.06
+Nodes (54): _model(), Path, Pluggable tool layer. The properties worth pinning down are the ones a future…, Overriding one key must not drop the rest, or a port change would silently…, A freshly scaffolded project has no models. Emitting checks against nothing…, The correctness of every value diff rests on this. Copying `target/` aside…, A half-built comparison environment produces diffs against missing tables,…, fct_revenue has no natural key. Requiring one left exactly the aggregate marts… (+46 more)
 
-### Community 15 - "Evals Framework"
-Cohesion: 0.08
-Nodes (48): Binding, load_template(), Any, ValueError, A resolved project fact — one real node, with the fields a template may…, Render one template into a case object, ready to be written as JSON., A template that cannot be loaded, or asks for a binding we cannot resolve., render() (+40 more)
-
-### Community 16 - "Knowledge Graph Build"
+### Community 15 - "Recce Tool Integration"
 Cohesion: 0.09
-Nodes (37): _add_annotations(), _add_dbt(), _add_ontology(), _add_physical_columns(), _add_policy(), _add_semantic(), build_graph(), cid() (+29 more)
+Nodes (55): baseline_dir(), baseline_pairs(), bootstrap_project(), capture_baseline(), config_file(), dagster_assets(), dbt_dir(), dbt_env() (+47 more)
 
-### Community 17 - "AIR CLI & Register"
-Cohesion: 0.08
-Nodes (45): absent_reason(), available(), True when at least one registered catalogue has a corpus on disk., The evidence string every caller uses when nothing is available., _air_catalogue(), _air_coverage(), cmd_air_baseline(), cmd_air_catalogues() (+37 more)
+### Community 16 - "Impact Analysis Gate"
+Cohesion: 0.07
+Nodes (47): _classify(), gate(), GateNotExercised, impact_of(), impact_of_many(), ImpactReport, Exception, Path (+39 more)
 
-### Community 18 - "Stack Control Plane Tests"
+### Community 17 - "AIR Coverage Verdicts"
+Cohesion: 0.07
+Nodes (33): available(), True when at least one registered catalogue has a corpus on disk., Claim, ControlVerdict, Coverage, Coverage — which controls this platform actually discharges, derived on read.…, The whole assessment. `vendored=False` means every verdict is unexercised., Coverage rolled up per external regime. This is the number an assessor asks for… (+25 more)
+
+### Community 18 - "Ontology Annotation"
+Cohesion: 0.07
+Nodes (44): annotate(), Annotation, concept_of(), export_annotations(), from_proposal(), links_of(), load_annotations(), load_unmodelled() (+36 more)
+
+### Community 19 - "Capability Registry"
+Cohesion: 0.06
+Nodes (44): KeyError, _caveats(), _env_block(), Capability registry — how a new feature reaches every project. The platform…, Required credentials first, then the ones with defaults. Split because the…, Everything a production warehouse contributes, built from its declaration. The…, Raised for a capability name that is not registered., UnknownCapability (+36 more)
+
+### Community 20 - "Stack Render Tests"
 Cohesion: 0.06
 Nodes (40): parametrize, Path, The control plane's generated configuration. Everything `pf stack render`…, It has to create it; a search_path naming it would not resolve., Not copied once: the pool limits stay tracked to the file that has them., `^~` is what holds two apps that both own `/api` apart., A prefix would 404 in the SPA; see the module docstring., sub_filter cannot substitute inside a gzipped response. (+32 more)
 
-### Community 19 - "External Repo Onboarding"
+### Community 21 - "Project Feature Capabilities"
+Cohesion: 0.06
+Nodes (36): Capability, One optional feature a project can be scaffolded with., covered(), derive(), Feature, InvalidFeature, lane_for(), ValueError (+28 more)
+
+### Community 22 - "MCP Server 22"
 Cohesion: 0.07
-Nodes (39): What a repository's SQL asks for, against what the target provides., Report, Adopt an existing data repository as a project in this platform. Onboarding…, Pipeline, Emit one Dagster module mirroring the incoming task graphs., One incoming DAG or flow., Tasks whose logic has been carried across. Always zero at generation — the…, render() (+31 more)
+Nodes (45): Consolidated MCP server for the active project., active_project(), ask_metric_question(), _clip(), dbt_build(), dbt_list(), dbt_test(), display_schema() (+37 more)
 
-### Community 20 - "Tool Layer Tests"
-Cohesion: 0.07
-Nodes (44): argv for `recce server`, review mode when a state file exists. Review mode…, server_argv(), _model(), Path, Tests for the pluggable tool layer. The properties worth pinning down are the…, Overriding one key must not drop the rest, or a port change would silently…, A freshly scaffolded project has no models. Emitting checks against nothing…, The correctness of every value diff rests on this. Copying `target/` aside… (+36 more)
-
-### Community 21 - "Dagster Runtime"
-Cohesion: 0.07
-Nodes (37): Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold…, Dagster entry point. The platform factory assembles everything — never scaffold… (+29 more)
-
-### Community 22 - "config.py"
-Cohesion: 0.09
-Nodes (43): _merge_gate_rules(), Append capability-contributed patterns to the generated gate overlay. Written…, Let each tool attach its own subcommands under `pf tool <name>`. Hooks are…, _register_tool_commands(), config_path(), enabled(), enabled_names(), load() (+35 more)
-
-### Community 23 - "test_dialect.py"
+### Community 23 - "SQL Dialect Analysis"
 Cohesion: 0.07
 Nodes (43): analyse(), call_sites(), duckdb_functions(), Counter, Path, Which SQL functions a repository calls, and whether they will survive a move.…, Every macro the dialect toolkits actually define. Read from the toolkit rather…, Every function name DuckDB registers in its catalogue. Queried rather than… (+35 more)
 
-### Community 24 - "air-register.md"
-Cohesion: 0.07
-Nodes (45): AIR-DET-1 AI Data Leakage Prevention and Detection, AIR-DET-21 Agent Decision Audit and Explainability, AIR-PREV-18 Agent Authority Least Privilege Framework, AIR-PREV-22 Multi-Agent Isolation and Segmentation, Agent Threat Rules (ATR), EU AI Act, IOSCO Supervisory Toolkit for AI Use in Capital Markets, ISO/IEC 42001 (+37 more)
+### Community 24 - "Workflow Session Linking"
+Cohesion: 0.10
+Nodes (46): link(), Point a session's run and script directories at the repo, so the harness writes…, age(), linked_run(), Path, Workflow runs written inside the repo. Every failure here is silent or…, What the SessionStart hook depends on: at that moment the folder may not exist,…, A repo kept under ~/.claude would make the link point back into the folder it… (+38 more)
 
-### Community 25 - "sources.py"
-Cohesion: 0.07
-Nodes (35): catalogue_of(), Which registered catalogue an id belongs to, without loading a corpus., AIR — the risk taxonomy and control catalogue, and our coverage of it. The…, all_sources(), available_sources(), CatalogueSource, _coerce(), discover() (+27 more)
+### Community 25 - "Test Coverage Map"
+Cohesion: 0.06
+Nodes (44): Module, _covers(), drift(), index_path(), Path, What the test suite guards, as an index rather than 4,000 lines to read. An…, Files whose subject, name or imported modules mention `term`., Empty when the committed index matches the suite; a reason when it does not.… (+36 more)
 
-### Community 26 - "generator.py"
-Cohesion: 0.07
-Nodes (42): cmd_new_group(), Create a new company group (a family of sister companies)., _default_tools_yaml(), new_group(), new_project(), Any, Path, Scaffold groups and projects. No external template engine — templates are plain… (+34 more)
+### Community 26 - "Vendor & Governance Docs"
+Cohesion: 0.09
+Nodes (45): floci Local Object Store, Known Gap - A Registry Entry With No Submodule, The Fourth Side - A Published Control Catalogue, Adopted (1), Adopted (2), Adopted (3), Adopted (4), Adopted (6) (+37 more)
 
-### Community 27 - "settings.json"
+### Community 27 - "Loop State Writing"
+Cohesion: 0.10
+Nodes (44): Write STATE.md — the durable spine that outlives any conversation. One section…, update_state(), _body(), _loops(), MonkeyPatch, Path, Tests for group loop overrides, the state spine and the loop prefix. The…, L1 means writes nothing. A lowered index-refresher would still rebuild the… (+36 more)
+
+### Community 28 - "Workflow Adoption & Git Log"
+Cohesion: 0.08
+Nodes (42): log(), Who added or changed what, from git — on demand rather than stored, so the…, _adopt(), _adopt_one(), _agents(), _aliased(), discover(), _is_run() (+34 more)
+
+### Community 29 - "CLI Command Dispatch"
+Cohesion: 0.05
+Nodes (43): cmd_evals_gen(), cmd_gen_staging(), cmd_housekeeping(), cmd_impact_gate(), cmd_kg_build(), cmd_kg_check(), cmd_kg_neighbors(), cmd_kg_search() (+35 more)
+
+### Community 30 - "Policy Layering Tests"
+Cohesion: 0.13
+Nodes (43): load_project_ontology(), Group ontology with the project's own policy merged over it. Vocabulary…, _by_id(), _fake_root(), _graph_policies(), _policy_file(), _project(), MonkeyPatch (+35 more)
+
+### Community 31 - "Policy Enforcement Projections"
+Cohesion: 0.10
+Nodes (39): Policy, _anchor(), _artifact(), ArtifactRef, _as_ts(), _assertion(), _authored(), build_manifest() (+31 more)
+
+### Community 32 - "Claude Settings & Plugins"
 Cohesion: 0.05
 Nodes (42): enabledPlugins, platform-init@platform, power-tools@platform, env, PF_NOTIFY, PF_NOTIFY_VOICE, extraKnownMarketplaces, platform (+34 more)
 
-### Community 28 - "warehouse.py"
+### Community 33 - "Agent Context Consistency"
 Cohesion: 0.07
-Nodes (31): Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results., _run_monitors(), main(), Cross-entity roll-up. Attaches every sister warehouse READ_ONLY. This is the…, Load this project end to end: dlt → DuckDB → annotations → dbt → manifests. `pf…, Execute the ontology-derived monitors and record their results., _run_monitors() (+23 more)
+Nodes (42): check(), Path, Every way the entry points can disagree, as one line each with the fix. Empty…, references(), sections(), _code_graph_wiring(), _code_tree(), _conforming() (+34 more)
 
-### Community 29 - "store.py"
+### Community 34 - "External Repo Onboarding"
+Cohesion: 0.08
+Nodes (38): Adopt an existing data repository as a project in this platform. Onboarding…, Pipeline, Emit one Dagster module mirroring the incoming task graphs., One incoming DAG or flow., Tasks whose logic has been carried across. Always zero at generation — the…, render(), Action, _add_checklist() (+30 more)
+
+### Community 35 - "Memory Notes & Index"
+Cohesion: 0.06
+Nodes (41): agent-context Workflow, pf context refresh, Generated Memory Index, Module Scope Of A Lesson, pf memory check, AGENT_CONTEXT_TOKEN Auto-Refresh Push, agent-context.yml PR Check Workflow, pf tokens Advisory Step (+33 more)
+
+### Community 36 - "Code Graph CLI"
+Cohesion: 0.08
+Nodes (41): cmd_code_architecture(), cmd_code_build(), cmd_code_check(), cmd_code_impact(), cmd_code_init(), cmd_code_plan(), cmd_code_search(), cmd_code_status() (+33 more)
+
+### Community 37 - "Ontology Governance Edits"
 Cohesion: 0.10
 Nodes (39): Governance edits: who changed the ontology, what it was, and what it became.…, apply_edit(), current(), EditRejected, history(), _path_for(), Any, Exception (+31 more)
 
-### Community 30 - "owasp-llm.yml"
-Cohesion: 0.06
-Nodes (42): EU AI Act, EU AI Act Art. 12: Record-Keeping, EU AI Act Art. 9: Risk Management System, FFIEC IT Examination Handbook, IOSCO Supervisory Toolkit for AI Use in Capital Markets, IOSCO Table 2: Model Risk Management, IOSCO Table 2: Recordkeeping & Audit Trail, IOSCO Table 3.8: Training and AI Literacy (+34 more)
-
-### Community 31 - "test_housekeeping.py"
-Cohesion: 0.07
-Nodes (33): detect(), ops_retention_days(), plan_for_project(), plan_platform(), Path, The shared halves of housekeeping: what a task is, and which engine owns it.…, Inspect the platform's own accumulation and plan its maintenance. The per-…, Retention for run history and regenerable artefacts. Wider than the lake's… (+25 more)
-
-### Community 32 - "wren.md"
-Cohesion: 0.07
-Nodes (38): Elementary Anomaly Tests, Elementary Observability, Generated Expectations Floor, Recce Artefact Store, Recce Config Generation, Recce Review, MDL Semantic Manifest, Workspace Review Join (+30 more)
-
-### Community 33 - "stripe.py"
-Cohesion: 0.10
-Nodes (34): datetime, charges(), customers(), Any, Random, resource, source, Stripe source for acme-us. Synthetic generator so the project runs offline.… (+26 more)
-
-### Community 34 - "bot_findings.py"
-Cohesion: 0.12
-Nodes (36): api(), category(), close_resolved(), collect(), ensure_board(), file_on_board(), find_issue(), Finding (+28 more)
-
-### Community 35 - "test_provenance.py"
-Cohesion: 0.12
-Nodes (37): verify_chain(), action(), execution(), Stage 03 — written after the action, success or failure alike., Record all three stages around a block of work. The preferred entry point,…, _chain(), _lines(), fixture (+29 more)
-
-### Community 36 - "registry.py"
+### Community 38 - "Knowledge Graph Build"
 Cohesion: 0.11
-Nodes (33): have_credentials(), dashboard_coverage(), expectations_refresher(), freshness_triage(), impact_sentinel(), index_refresher(), metric_gap_harvester(), observability_triage() (+25 more)
+Nodes (40): _add_annotations(), _add_dbt(), _add_decisions(), _add_ontology(), _add_physical_columns(), _add_policy(), _add_semantic(), build_graph() (+32 more)
 
-### Community 37 - "ledger.py"
+### Community 39 - "Eval Proposal Templates"
+Cohesion: 0.10
+Nodes (38): load_template(), _case(), Proposal, Proposals, BaseModel, Path, Eval layer. The properties worth pinning are the ones whose failure would be…, A typo'd matcher silently passing is how a case stops testing anything. (+30 more)
+
+### Community 40 - "Claude Settings Scaffolding"
+Cohesion: 0.07
+Nodes (37): ensure_plugins(), _migrate_marketplaces(), _migrate_plugins(), normalize(), Any, Migrations for a project's `.claude/settings.json`. Claude Code validates…, `enabledPlugins` list -> record. Returns a description, or None., Bare-path marketplace sources -> explicit directory sources. (+29 more)
+
+### Community 41 - "Provenance Decision Chain"
+Cohesion: 0.10
+Nodes (37): decision(), One governance act, always logged — whoever's entry point it came through.…, _chain(), _lines(), fixture, Path, Agent action provenance chain. The chain is evidence, and evidence is only…, The failure case is the one an audit needs most. (+29 more)
+
+### Community 42 - "Platform Core — Memory"
 Cohesion: 0.12
-Nodes (36): cmd_prov_status(), Head, anchor coverage, kill-switch state — the one-screen summary., _actor(), approvals(), approve(), claim_action(), correlation_key(), decision() (+28 more)
+Nodes (35): Agent context — the files every tool reads before its first edit, checked as…, Regenerate every generated piece of context and return what changed. With…, refresh(), add(), drift(), _gloss(), index_path(), init_readmes() (+27 more)
 
-### Community 38 - "storage.py"
+### Community 43 - "Agent Model Specs"
+Cohesion: 0.09
+Nodes (36): cache_ttl(), caches(), estimate_usd(), ModelSpec, Any, KeyError, Model capability registry — what each model actually accepts. Routing a step to…, Render intent into a payload the target model accepts. Everything this drops,… (+28 more)
+
+### Community 44 - "Platform Atlas Rendering"
+Cohesion: 0.10
+Nodes (36): _box(), _census(), _chain(), Config, default_yaml(), esc(), Facts, gather() (+28 more)
+
+### Community 45 - "OpenMetadata Catalog Tool"
+Cohesion: 0.10
+Nodes (38): bootstrap_project(), build_workflows(), catalog_dir(), column_roles(), dagster_assets(), dbt_dir(), edits_path(), ingest() (+30 more)
+
+### Community 46 - "Onboarding — Ladder (1)"
+Cohesion: 0.10
+Nodes (26): check_ontology(), Ctx, eval_dialect(), eval_import(), eval_metrics(), eval_ontology(), eval_review(), _ever_committed() (+18 more)
+
+### Community 47 - "Tests Capabilities — Test Workflows (1)"
+Cohesion: 0.12
+Nodes (38): finalize(), mirror(), Copy what is missing or stale into <root>/logs/workflows/<run-id>/. A run…, Names whose mirror copy is missing or differs from the source by hash. Nothing…, Remove the session copy, and only that. Refused while any agent runs, while the…, Adopt every run that still has a session copy: copy it into the repo and, with…, sync(), SyncResult (+30 more)
+
+### Community 48 - "Platform Core — Trace"
+Cohesion: 0.12
+Nodes (21): BaseException, cmd_logs_tail(), The last n runs, rendered., current(), enabled(), index(), _jsonable(), _now() (+13 more)
+
+### Community 49 - "Platform Core Stack — Storage"
 Cohesion: 0.08
 Nodes (33): cmd_stack_db_init(), cmd_stack_token(), Create Dagster's role and schema in OpenMetadata's database. Run once, as an…, Print the catalogue's ingestion-bot JWT, for `export`. Prints a credential to…, The control plane as one deployable: Postgres, OpenMetadata, Dagster, recce.…, admin_settings(), ensure_schema(), merge_storage() (+25 more)
 
-### Community 39 - "gate.py"
+### Community 50 - "Loop Engine — Registry"
 Cohesion: 0.10
-Nodes (34): _applicable(), check_path(), check_paths(), GateResult, _is_name_heuristic(), load_policy(), _match(), project_for() (+26 more)
+Nodes (32): The waiver covering `name`, or None. Case-sensitive glob, as dbt names are., waived(), expectations_refresher(), _fix_target(), freshness_triage(), impact_sentinel(), index_refresher(), metric_gap_harvester() (+24 more)
 
-### Community 40 - "catalogue.py"
+### Community 51 - "Tests Gate — Test Agentic"
+Cohesion: 0.12
+Nodes (34): _ledger(), MonkeyPatch, Path, Tests for the agentic layer: memory, the earned ladder, the action chain, the…, A new prompt file that is not gated is the failure this pins., A platform-shaped git repo with one project., _repo(), _row() (+26 more)
+
+### Community 52 - "Platform Docs — Architecture Maps (1)"
+Cohesion: 0.08
+Nodes (36): Capability, Per-Project Architecture Map, pf.architecture.FEATURES Registry, Architecture Map Token Budget, Unmapped Entry Detection, viz.lint Diagram Linter, Tool (pf.tools entry point), The Artefact Store (+28 more)
+
+### Community 53 - "Agent Runtime — Loops"
+Cohesion: 0.12
+Nodes (33): AgentConfig, cached_prefix(), call(), Any, Path, T, The LLM call layer for loops. Three things are centralised here because getting…, The stable system prefix. Identical bytes across every run — that is the whole… (+25 more)
+
+### Community 54 - "Platform Core Evals — Contract"
+Cohesion: 0.10
+Nodes (34): Strip the card's generation date. The card legitimately changes when the…, _stable(), _cache_marker_only_where_it_caches(), _cache_ttl_matches_cadence(), _cached_prefix_is_byte_stable(), _card_regeneration_does_not_bust_the_cache(), ContractResult, _effort_intent_is_not_silently_lost() (+26 more)
+
+### Community 55 - "Platform Core Evals — Template"
+Cohesion: 0.11
+Nodes (32): CaseError, Any, ValueError, A case file that cannot be loaded or does not describe a runnable case., Validate a case object, wherever it came from. Split out from `load_case` so a…, validate_case(), generate(), Generated (+24 more)
+
+### Community 56 - "Loop Engine — Config"
+Cohesion: 0.11
+Nodes (32): config_path(), disabled(), load(), LoopConfigError, LoopOverride, overrides(), _parse(), Any (+24 more)
+
+### Community 57 - "Loop Engine — Levels"
+Cohesion: 0.14
+Nodes (29): Autonomy, board(), demote(), effective(), eligibility(), Evidence, _Fleet, _key() (+21 more)
+
+### Community 58 - "Ontology — Model"
+Cohesion: 0.10
+Nodes (32): _ontology(), The platform ontology, with a group's extension merged over it if there is one.…, _copy(), load_group_ontology(), load_ontology(), merge_policies(), OntologyClass, _overlay_policy() (+24 more)
+
+### Community 59 - "Platform Core — Architecture (1)"
+Cohesion: 0.10
+Nodes (32): _capabilities(), Chain, _count(), _diff(), Drift, features(), gather(), _graph_counts() (+24 more)
+
+### Community 60 - "Tests Capabilities — Test Capability Policies"
+Cohesion: 0.09
+Nodes (34): defaults(), policy_additions(), Every policy a set of capabilities declares, first declaration winning.…, Regenerate the capability policy overlay. Returns the path written. Defaults to…, Capability names a project gets without asking. Read from the registry rather…, Resolve names to capabilities, dependencies first, each applied once., resolve(), write_capability_policies() (+26 more)
+
+### Community 61 - "Tests Gate — Test Gate Hook (1)"
+Cohesion: 0.11
+Nodes (31): HookState, cmd_install_hook(), Install the pre-commit gate, so gate.yaml is enforced before a commit lands.…, hook_status(), install_hook(), Is the gate's pre-commit hook actually installed? `foreign` is the case worth…, Install the pre-commit gate. Idempotent; never clobbers a foreign hook. Returns…, Path (+23 more)
+
+### Community 62 - "AIR Controls — Catalogue (1)"
 Cohesion: 0.07
-Nodes (17): Catalogue, Control, Doc, One citation into an external regime. `framework` is the crosswalk file's stem…, True when this citation is an artefact of broken upstream frontmatter. A…, Shared shape of a risk and a control., One thing that can go wrong., One mitigation. `mitigates` holds resolved risk ids, not the corpus's own slugs… (+9 more)
+Nodes (15): Catalogue, Control, Doc, One citation into an external regime. `framework` is the crosswalk file's stem…, True when this citation is an artefact of broken upstream frontmatter. A…, Shared shape of a risk and a control., One thing that can go wrong., One mitigation. `mitigates` holds resolved risk ids, not the corpus's own slugs… (+7 more)
 
-### Community 41 - "model.py"
-Cohesion: 0.08
-Nodes (17): Ontology, A named object property. Directional: domain -> range., Whether a string is a plausible ISO 4217 code. Shape rather than a list.…, Identity property, inherited from the nearest ancestor that has one., Own properties merged over inherited ones., The relation connecting two classes, in either direction., True if a link src -> dst is declared in the topology., Every external control id any policy names, deduplicated and sorted. (+9 more)
-
-### Community 42 - "metrics_revenue.yml"
-Cohesion: 0.08
-Nodes (34): crm_customer_sync (exposure), dim_customers (mart), exec_weekly_dashboard (exposure), fct_payments (mart), fct_revenue (mart), active_customers (metric), aov (Average Order Value metric), gross_payment_volume (metric) (+26 more)
-
-### Community 43 - "validate.py"
-Cohesion: 0.10
-Nodes (30): Annotation, concept_of(), from_proposal(), links_of(), Any, Attach ontology meaning to dlt resources. Annotations are applied as dlt `x-`…, Annotations implied by the **accepted** axioms of an ontology proposal. `pf…, registry() (+22 more)
-
-### Community 44 - "model.py"
-Cohesion: 0.08
-Nodes (30): export_annotations(), Write every registered annotation to YAML for the knowledge graph., load_group_ontology(), load_ontology(), OntologyClass, _parse_properties(), Property, Any (+22 more)
-
-### Community 45 - "test_openmetadata.py"
+### Community 63 - "AIR Controls — Sources"
 Cohesion: 0.09
-Nodes (34): _load(), payload(), Any, fixture, MonkeyPatch, Path, The OpenMetadata projection, checked against the vendored schemas.…, Proves the validator is wired to the real schema. `description` is required on… (+26 more)
+Nodes (25): all_sources(), available_sources(), CatalogueSource, _coerce(), discover(), DiscoveryError, Frontmatter, get() (+17 more)
 
-### Community 46 - "case.py"
+### Community 64 - "Projections — Mdl"
 Cohesion: 0.12
-Nodes (30): CaseError, discover(), load_case(), Any, Path, ValueError, Loading eval cases off disk. The on-disk shape is the one every scaffolded…, Collect cases from the three tiers, outermost first. **platform** —… (+22 more)
+Nodes (33): Node, build_manifest(), _busiest_model(), _column_properties(), _declared_fk_sources(), _dedupe_dims(), _entity_model(), export() (+25 more)
 
-### Community 47 - "impact.py"
+### Community 65 - "Agent Runtime — Ask"
+Cohesion: 0.14
+Nodes (30): Answer, answer_direct(), answer_live(), ask(), _clean(), dimensions_for(), governed_page(), metrics_catalogue() (+22 more)
+
+### Community 66 - "Platform Core — Artifacts (1)"
 Cohesion: 0.12
-Nodes (27): _classify(), gate(), GateNotExercised, impact_of(), impact_of_many(), ImpactReport, Exception, Path (+19 more)
+Nodes (20): ArtifactStoreError, _is_missing(), Exception, RuntimeError, Anything that went wrong talking to the bucket., A prefix that names one tenant, or an error saying why it does not. The only…, One bucket, and the credentials to reach it. Credential-carrying, so the…, Everything about this store that is safe to print. (+12 more)
 
-### Community 48 - "test_ontology_governance.py"
-Cohesion: 0.12
-Nodes (31): load_annotations(), load_unmodelled(), merge_annotations(), Path, Write annotations, never overwriting one that is already there. An existing…, Raw resources deliberately left without a concept, and why. Not every table is…, Read annotations back from YAML (used by the KG builder and the UI)., _cls() (+23 more)
+### Community 67 - "Tests Graph — Test Kg Currency"
+Cohesion: 0.11
+Nodes (30): graph_drift(), GraphDrift, dbt resources the manifest declares that the tracked graph does not hold.…, Is the committed graph current with the dbt project beside it? This is the…, _graph_json(), _manifest(), MonkeyPatch, parametrize (+22 more)
 
-### Community 49 - "tools.yaml"
-Cohesion: 0.08
-Nodes (33): Snowflake metadata ingestion workflow, dbt artefact ingestion workflow, Recce dbt Review (globex-core), No Wren Web UI, Wren Semantic Layer (globex-core), pf impact-gate CI check, OpenMetadata catalogue projection, Recce artefact store publication (+25 more)
-
-### Community 50 - "README.md"
-Cohesion: 0.09
-Nodes (33): pf impact-gate PR Check, OpenMetadata Catalogue Projection, OpenMetadata JWT Credential Discipline, Recce Artefact Store Publication, Recce Baseline-Diff Review Loop, Dialect Portability Gate, DuckDB Dev / Snowflake Prod Dual Target, Snowflake Credentials via Environment (+25 more)
-
-### Community 51 - "api.ts"
+### Community 68 - "Platform UI Web — Api"
 Cohesion: 0.12
 Nodes (23): api, GovEdit, GovSurface, Group, Json, Project, RecceCheck, SemanticDiff (+15 more)
 
-### Community 52 - "dbt_runtime.py"
-Cohesion: 0.12
-Nodes (29): main(), main(), main(), Load this project end to end: seeds → DuckDB → dbt → manifests. `pf seed jaffle…, _run(), dbt(), deps(), ensure_manifest() (+21 more)
-
-### Community 53 - "dagster_home.py"
+### Community 69 - "Tests Onboarding — Test Ladder"
 Cohesion: 0.09
-Nodes (28): One maintenance action, planned before anything runs. `sql` is what `--apply`…, Task, _instance(), plan(), prune_records(), _prune_runs(), datetime, Path (+20 more)
+Nodes (28): eval_layers(), _project(), parametrize, Path, Onboarding ladder. What is worth pinning here is not that the stages run — it…, Staging is 1:1 with a raw table. A join there hides a business decision in a…, A CTE that reads the same upstream twice is not a join. Counting call sites…, Without a block it builds with dbt's defaults instead of the platform's… (+20 more)
 
-### Community 54 - "VENDOR.md"
+### Community 70 - "Runtime Factory — Dbt Runtime"
 Cohesion: 0.12
-Nodes (31): Adopted (1), Adopted (11), Adopted (12), Adopted (2), Adopted (3), Adopted (4), Adopted (6), AWS Context Ontology Accelerator (+23 more)
+Nodes (31): dbt(), declared_packages(), deps(), ensure_manifest(), failed_nodes(), manifest(), mf(), mf_env() (+23 more)
 
-### Community 55 - "pr.py"
+### Community 71 - "Tests Graph — Test Atlas (1)"
+Cohesion: 0.15
+Nodes (30): _project(), Path, Per-project atlas and its dbt hook. Two things here are easy to get wrong in…, `parse`, `deps` and `ls` change nothing an atlas would show. Firing on them…, It runs inside `dbt()`. A broken atlas must not fail a build that worked. Three…, Otherwise a before/after pair is one file that overwrote itself., The wiring, not the atlas: `dbt()` is the one funnel every call uses., Bootstrap runs this on a project with no graph at all. (+22 more)
+
+### Community 72 - "Platform UI Web — Package"
+Cohesion: 0.06
+Nodes (30): @fluentui/react-icons, allowScripts, esbuild@0.25.12, dependencies, @fluentui/react-icons, react, react-dom, wss3-forge (+22 more)
+
+### Community 73 - "Platform Core Evals — Runner"
+Cohesion: 0.11
+Nodes (22): reset_spend(), spend(), Case, discover(), load_case(), Path, Loading eval cases off disk. The on-disk shape is the one every scaffolded…, Collect cases from the three tiers, outermost first. **platform** —… (+14 more)
+
+### Community 74 - "AIR Controls — Catalogue (2)"
+Cohesion: 0.11
+Nodes (29): absent_reason(), catalogue_of(), _commit(), CorpusError, _first_section(), _load_regimes(), load_source(), NotVendored (+21 more)
+
+### Community 75 - "Loop Engine — Audit"
+Cohesion: 0.12
+Nodes (27): audit(), _broken_sources(), Check, _group_plugins_resolve(), _marketplace_resolves(), _mcp_wired(), project_readiness(), ProjectReadiness (+19 more)
+
+### Community 76 - "Onboarding — Audit"
 Cohesion: 0.14
-Nodes (27): nodes_for(), Graph node ids implied by a changed file., _add_conformance(), _add_impact(), build(), changed_files(), _default_base(), _git() (+19 more)
+Nodes (23): audit(), _collision_risks(), _dialect_risks(), _fmt(), _has_rollup_tags(), _layout_risks(), _macro_risks(), _package_risks() (+15 more)
 
-### Community 56 - "elementary.py"
+### Community 77 - "Tool Layer — Elementary"
 Cohesion: 0.14
 Nodes (30): bootstrap_project(), build_models(), dagster_assets(), dbt_dir(), dbt_env(), derive_profile(), ensure_models_config(), ensure_package() (+22 more)
 
-### Community 57 - "rag-system_v0-no-risks.png"
-Cohesion: 0.09
-Nodes (31): RAG Knowledge Base Preparation - Data Processing Environment (Internal OnPrem/Cloud), Data Processor and Filtering [Service], Embeddings Endpoint [API], Embeddings Model [ML Model Store], Inference Endpoint [API], Inference Environment (SaaS), RAG Inference for Users - Instrumentation Environment (Internal OnPrem/Cloud), LLM Model [ML Model Store] (+23 more)
+### Community 78 - "Tests Graph — Test Mdl"
+Cohesion: 0.16
+Nodes (29): commodity(), _conditions(), _dims(), _exposure(), _mart(), _metric(), _project(), fixture (+21 more)
 
-### Community 58 - "ri-2_information-leaked-to-vector-store.md"
-Cohesion: 0.11
-Nodes (31): Indirect Prompt Injection, Prompt Injection (ri-10), Bias and Discrimination, Proxy Discrimination, Lack of Explainability, Anthropomorphism, Model Overreach / Expanded Use, Information Leaked To Hosted Model (+23 more)
-
-### Community 59 - "recce.md"
+### Community 79 - "Loop.Md"
 Cohesion: 0.08
-Nodes (29): Snowflake Metadata Ingestion Config, dbt Metadata Ingestion Config, OpenMetadata Catalogue Projection, acme_eu DuckDB reporting connection, dbt_expectations package dependency, elementary package dependency, acme_eu dbt profile (dev/ci/prod/base targets), base comparison target (+21 more)
+Nodes (28): Anatomy of a run, Demotion Is Automatic, Autonomy Ladder, Daily Token Ceiling, Effort Is a Per-Model Constraint, TTL Comes From Cadence, Circuit Breaker, Max 3 Attempts Per Finding (+20 more)
 
-### Community 60 - "snowflake.md"
-Cohesion: 0.09
-Nodes (29): OpenMetadata Catalogue (globex-core), Baseline-and-Diff Review Loop, DuckDB-first Development, Credentials via Environment Variables, Explicit prod Target Naming, Snowflake Production Warehouse, Capabilities Card (none enabled), Evidence Theme Configuration (+21 more)
-
-### Community 61 - "runner.py"
+### Community 80 - "AIR Controls — Cli"
 Cohesion: 0.12
-Nodes (17): reset_spend(), CircuitBreaker, Ledger, LoopSpec, _now(), Any, Path, Loop runner: durable state, token budget, circuit breaker, ledger. Adapted from… (+9 more)
+Nodes (29): _air_catalogue(), _air_coverage(), cmd_air_baseline(), cmd_air_catalogues(), cmd_air_controls(), cmd_air_coverage(), cmd_air_crosswalk(), cmd_air_gaps() (+21 more)
 
-### Community 62 - "artifacts.py"
-Cohesion: 0.11
-Nodes (18): ArtifactStoreError, _first_env(), _is_missing(), NotConfigured, Exception, RuntimeError, Anything that went wrong talking to the bucket., No credentials in the environment. Raised only where a bucket is required. (+10 more)
+### Community 81 - "Platform Core — Archmap"
+Cohesion: 0.12
+Nodes (28): _classdefs(), _context(), _contributes(), doc_path(), drift(), Facts, gather(), _layout() (+20 more)
 
-### Community 63 - "frontdoor.py"
-Cohesion: 0.11
-Nodes (26): cmd_stack_render(), Generate nginx, supervisor and the Dagster storage block. Everything here is…, bar_css(), bar_js(), code_locations(), CodeLocation, _inject(), landing_html() (+18 more)
-
-### Community 64 - "test_card.py"
-Cohesion: 0.13
-Nodes (28): _bullets(), _capped(), Counter, Join a list, saying how many were left out rather than dropping them. Every…, What the models that did not fit are, rather than only how many. The truncation…, _summarise(), _tag_groups(), _fmt() (+20 more)
-
-### Community 65 - "test_ladder.py"
-Cohesion: 0.11
-Nodes (25): eval_layers(), _project(), parametrize, Path, Tests for the onboarding ladder. What is worth pinning here is not that the…, Staging is 1:1 with a raw table. A join there hides a business decision in a…, A CTE that reads the same upstream twice is not a join. Counting call sites…, Without a block it builds with dbt's defaults instead of the platform's… (+17 more)
-
-### Community 66 - "evidence.py"
-Cohesion: 0.15
-Nodes (27): build(), collect_metrics(), _config(), _context_sentence(), _den_expr(), _fence_spacing(), _filter_text(), _index_page() (+19 more)
-
-### Community 67 - "openmetadata.py"
+### Community 82 - "Provenance Chain — Ledger"
 Cohesion: 0.14
-Nodes (28): build_all(), build_classification(), build_database_entities(), build_glossary(), build_glossary_terms(), build_metrics(), build_policy_terms(), build_tags() (+20 more)
+Nodes (30): action(), _actor(), approve(), decision(), enforcing(), execution(), intent(), is_revoked() (+22 more)
 
-### Community 68 - "README.md"
-Cohesion: 0.08
-Nodes (28): MDL semantic-layer manifest (mdl/mdl.json), pf ui Workspace review-semantics join, Validated chart palette (evidence.config.yaml), globex-eu overview page (generated), Evidence requires Node 20, Ratio metrics re-divide at grain, metricflow_time_spine model, Elementary anomaly tests (deliberately not generated) (+20 more)
-
-### Community 69 - "coverage.py"
-Cohesion: 0.09
-Nodes (11): ControlVerdict, Coverage, The whole assessment. `vendored=False` means every verdict is unexercised., Coverage rolled up per external regime. This is the number an assessor asks for…, A control, its check, and the claims the check was built from., Acceptance, AirConfig, GateResult (+3 more)
-
-### Community 70 - "uc-4_anti-financial-crime-investigation.md"
-Cohesion: 0.16
-Nodes (28): Role-Based Access Control for AI Data (mi-12), Providing Citations and Source Traceability for AI-Generated Information (mi-13), Encryption of AI Data at Rest (mi-14), Preserving Source Data Access Controls in AI Systems (mi-16), Canary Tokens (Honey Tokens), MCP Server Security Governance (mi-20), Agentic System Credential Protection Framework (mi-23), Data Filtering From External Knowledge Bases (mi-2) (+20 more)
-
-### Community 71 - "loops.py"
-Cohesion: 0.15
-Nodes (25): AgentConfig, cached_prefix(), call(), client(), Any, Path, T, The stable system prefix. Identical bytes across every run — that is the whole… (+17 more)
-
-### Community 72 - "audit.py"
-Cohesion: 0.16
-Nodes (22): audit(), _collision_risks(), _dialect_risks(), _fmt(), _has_rollup_tags(), _layout_risks(), _macro_risks(), _package_risks() (+14 more)
-
-### Community 73 - "anchor.py"
-Cohesion: 0.15
-Nodes (26): Anchor, anchors(), build_request(), _der_len(), _int(), Path, Stage 05 — TIMESTAMP. RFC 3161 for minutes, OpenTimestamps for decades. A hash…, PKIStatus from a TimeStampResp. 0 granted, 1 granted-with-mods. Walks only as… (+18 more)
-
-### Community 74 - "wren.py"
-Cohesion: 0.17
-Nodes (26): What a tool adds to a project's Dagster definitions. Plain lists and dicts…, ToolContribution, ask(), bootstrap_project(), connection_path(), dagster_assets(), has_mdl(), mdl_path() (+18 more)
-
-### Community 75 - "README.md"
-Cohesion: 0.09
-Nodes (25): AIR Control Gate, Generated AIR Register, air.yaml Baseline Declaration, Impact Gate CI Check, Empty committed baseline, Accepted-risk entries (reason and owner required), acme-us AIR baseline declaration, pf air gate (merge-blocking control gate) (+17 more)
-
-### Community 76 - "2026-08-14-jaffle-seeds.yaml"
-Cohesion: 0.09
-Nodes (26): Jaffle Group Skills, Jaffle Group Evals, Three-Tier Eval Model, Jaffle Group, Rollup-Only Cross-Entity Access, Customer (ontology class, reused), Department (ontology class), Employee (ontology class, reused) (+18 more)
-
-### Community 77 - "sem_order_items.yml"
-Cohesion: 0.11
-Nodes (26): Average Order Value metric, Count Lifetime Orders metric, customer_order_metrics saved query, customers semantic model, LTV Pre-tax metric, locations semantic model, Cumulative Revenue (All Time) metric, Drink Revenue metric (+18 more)
-
-### Community 78 - "snowflake.md"
-Cohesion: 0.10
-Nodes (25): GitHub integration — zenith-de, pf impact-gate PR check, OpenMetadata catalogue publishing — zenith-de, Catalogue is a projection, not a sync, Recce artefact store publishing, Recce review loop — zenith-de, Workspace join of review and semantic layer, Credentials (+17 more)
-
-### Community 79 - "spec.py"
-Cohesion: 0.09
-Nodes (19): One model, described in the ontology's terms rather than the warehouse's., Columns a value diff may materialise — everything except PII., Every mart, described by ontology role and review intent. Reads the knowledge…, _reviewable_models(), ReviewColumn, ReviewModel, DbtBinding, A web UI the tool serves. `embeddable` is load-bearing. A tool that sends… (+11 more)
-
-### Community 80 - "ladder.py"
-Cohesion: 0.20
-Nodes (22): Check, Check, failed(), passed(), The three-state check — one condition, its verdict, and the evidence for it.…, One gate condition, with the evidence for its verdict. `evidence` is not a…, unexercised(), check_dialect() (+14 more)
-
-### Community 81 - "snowflake.md"
-Cohesion: 0.09
-Nodes (24): Dialect portability gate (pf align validate --stage dialect), Environment-variable credentials, Snowflake production warehouse, sf_* adapter-dispatch macros, AIR-PREV-23 Agentic System Credential Protection Framework, Capabilities card - none enabled, prod target (Snowflake), OpenMetadata Snowflake metadata ingestion (+16 more)
-
-### Community 82 - "_product__models.yml"
+### Community 83 - "Runtime Factory — Dagster Runtime"
 Cohesion: 0.13
-Nodes (25): rev_etl_pos_pricing_update, int_pricing_snapshot_monthly, product source (dlt-ingested raw layer), Raw schema resolved via var, not target.schema, Historical supplier price records per ingredient, Master ingredient list with allergen and perishability flags, Menu category hierarchy, Menu items including combos and seasonal offerings (+17 more)
+Nodes (29): _annotated(), build_definitions(), _discover_source_modules(), _group_name(), _make_dbt_assets(), _make_housekeeping_asset(), _make_ingest_asset(), _make_rollup_asset() (+21 more)
 
-### Community 83 - "record.py"
+### Community 84 - "Runtime Factory — Warehouse"
+Cohesion: 0.09
+Nodes (19): Shared runtime: warehouse, dlt, dbt and Dagster factories., preview(), project_slug(), Path, Warehouse access. One DuckDB file per project — that is what makes sister…, Dagster concurrency pool — scoped per project so sisters never queue behind…, Create `data/` so something else can open the file inside it. DuckDB creates…, Attach sibling project databases READ_ONLY for cross-entity roll-ups. A served… (+11 more)
+
+### Community 85 - "Runtime Factory — Quack (1)"
+Cohesion: 0.16
+Nodes (27): _alive(), _custody(), derived_port(), ensure(), _group_project(), _listening(), main(), Path (+19 more)
+
+### Community 86 - "Tests Capabilities — Test Warehouse Mcp"
+Cohesion: 0.08
+Nodes (29): One dbt output block. The unit `pf align` checks and bootstrap appends., Swap one output block in an existing profiles.yml. Returns (text, changed).…, render_target(), replace_target(), parametrize, Path, The MCP seam warehouses arrive through, DuckLake's included. The properties…, Two definitions of "which lake" is how they end up disagreeing. (+21 more)
+
+### Community 87 - "Ontology — Proposal"
+Cohesion: 0.15
+Nodes (26): cmd_onto_approve(), cmd_onto_review(), cmd_onto_scan(), cmd_prov_approve(), _dlt_schemas(), Scan what a source actually landed and induce an ontology proposal., Schemas that look like dlt datasets, not dbt output., What a proposal would change, and what it unlocks. (+18 more)
+
+### Community 88 - "Loop Engine — Runner"
 Cohesion: 0.12
-Nodes (20): canonical_bytes(), _check(), digest(), NonCanonical, Any, ValueError, The five stages of an agent action, and the bytes they hash to. An action is…, One stage of one action, linked to the stage before it. `action_id` is what… (+12 more)
+Nodes (17): all_entries(), CircuitBreaker, Ledger, _now(), Any, Path, Loop runner: durable state, token budget, circuit breaker, ledger. Adapted from…, Append-only run history, one file per group. The circuit breaker reads it. It… (+9 more)
 
-### Community 84 - "induct.py"
+### Community 89 - "Platform Core — Pr"
+Cohesion: 0.16
+Nodes (25): _add_conformance(), _add_impact(), build(), changed_files(), _default_base(), _git(), load_all(), markdown() (+17 more)
+
+### Community 90 - "Platform Core Stack — Frontdoor"
+Cohesion: 0.10
+Nodes (25): bar_js(), code_locations(), CodeLocation, _inject(), landing_html(), _map_block(), nginx_conf(), Path (+17 more)
+
+### Community 91 - "Tests Capabilities — Test Dbt Paths"
+Cohesion: 0.17
+Nodes (27): NO_DBT, escaping_paths(), (key, path) for every written-to dbt path that resolves outside the project. To…, Install `groups/<group>/shared/transform` as a local dbt package. Only once the…, _wire_group_package(), _dbt(), _outside_target(), MonkeyPatch (+19 more)
+
+### Community 92 - "Platform Core — Artifacts (2)"
+Cohesion: 0.11
+Nodes (26): base_ref(), _git(), head_ref(), project_prefix(), pull_files(), push_files(), Path, Remote artefact store — where build artefacts live instead of in git.… (+18 more)
+
+### Community 93 - "Onboarding — Ladder (2)"
+Cohesion: 0.10
+Nodes (25): cmd_align_ship(), cmd_align_status(), cmd_align_validate(), cmd_align_verify(), _print_verdict(), Which rung of the onboarding ladder this project is on. Every verdict is re-…, Phase three of a stage: the gate, with the evidence for its verdict. A check…, The checker half: judge the change, not the result. `validate` asks whether the… (+17 more)
+
+### Community 94 - "Readme.Md"
+Cohesion: 0.09
+Nodes (27): Per-Model Minimum Cache Prefix, Five of Eight Loops Cost Nothing, pii-audit Loop, Loop System Prefix, pf code impact, Per-Group Rollup, Never a Bigger Number, Test Index Token Budget Exhausted, Control Plane Single-Page UI (+19 more)
+
+### Community 95 - "Knowledge Graph — Query"
+Cohesion: 0.14
+Nodes (23): Counter, Path, Render context cards — the always-in-context index. These are token-budgeted by…, Write only when the content differs, so an unchanged artefact keeps its mtime.…, Raw tables from which no Metric is reachable. This walks the graph rather than…, render_project_card(), _tag_groups(), _uncovered_tables() (+15 more)
+
+### Community 96 - "Tests Graph — Test Card"
+Cohesion: 0.15
+Nodes (26): _bullets(), _capped(), What the models that did not fit are, rather than only how many. The truncation…, Join a list, saying how many were left out rather than dropping them. Every…, _summarise(), _fmt(), _models(), parametrize (+18 more)
+
+### Community 97 - "Tests Gate — Test Memory Index"
+Cohesion: 0.10
+Nodes (26): module_for(), The module a working directory sits in — how `pf memory show` scopes itself the…, What a session in `module` may read: root and platform always, its group if it…, visible_from(), MonkeyPatch, Path, Memory index and the layout that makes a note findable. A lesson written into a…, The two marker directories and one group with one project. (+18 more)
+
+### Community 98 - "Tool Layer — Openmetadata"
+Cohesion: 0.11
+Nodes (27): _api(), _api_write(), build_database_workflow(), build_payload(), fetch_tables(), probe_engine(), publish_payload(), publish_tables() (+19 more)
+
+### Community 99 - "Loop Engine — Memory"
+Cohesion: 0.15
+Nodes (21): Applied, apply(), audit(), _days_ago(), _decide(), Entry, forget(), load() (+13 more)
+
+### Community 100 - "Tests Gate — Test Diagrams"
+Cohesion: 0.10
+Nodes (24): blocks(), lint(), Lint mermaid before a reader finds it broken. A mermaid diagram fails in one…, Every ```mermaid fence in a markdown document., Problems in one diagram. Empty means it parses and says what it looks like., _markdown_with_diagrams(), parametrize, Path (+16 more)
+
+### Community 101 - "Provenance Chain — Anchor"
+Cohesion: 0.18
+Nodes (24): Anchor, anchors(), build_request(), _der_len(), _int(), Path, Stage 05 — TIMESTAMP. RFC 3161 for minutes, OpenTimestamps for decades. A hash…, PKIStatus from a TimeStampResp. 0 granted, 1 granted-with-mods. Walks only as… (+16 more)
+
+### Community 102 - "Provenance Chain — Audit"
+Cohesion: 0.12
+Nodes (21): Finding, format_report(), Path, The audit: does the ledger say what it claims, and does anyone else agree. Four…, Plain text, for CI logs and for anyone without the CLI., Records written since the last successful anchor., Full audit. `check_anchors` shells out to openssl/ots and needs network., Report (+13 more)
+
+### Community 103 - "Tests Ontology — Test Openmetadata (1)"
+Cohesion: 0.12
+Nodes (23): _load(), payload(), Any, fixture, The OpenMetadata projection, checked against the vendored schemas.…, Proves the validator is wired to the real schema. `description` is required on…, `::` separates fields in OpenMetadata's entityLink grammar., Publishing only our vocabulary would hide PII from every built-in policy. (+15 more)
+
+### Community 104 - "Tool Layer — Wren"
+Cohesion: 0.19
+Nodes (24): ask(), bootstrap_project(), connection_path(), dagster_assets(), has_mdl(), mdl_path(), plan(), probe_engine() (+16 more)
+
+### Community 105 - "Claude.Md"
+Cohesion: 0.12
+Nodes (23): Code Graph, Data Graph, Read Protocol, Never Read a Sister Project, The Repository Is the Source of Truth, Named Controls (AIR), Group (Family of Sisters), pf MCP Server (+15 more)
+
+### Community 106 - "Ontology — Induct"
 Cohesion: 0.12
 Nodes (18): Confidence, Axiom, _class_name(), ColumnProfile, _identity_of(), induce(), Any, Path (+10 more)
 
-### Community 85 - "package.json"
-Cohesion: 0.10
-Nodes (24): dependencies, @evidence-dev/evidence, @evidence-dev/mssql, @evidence-dev/mysql, @evidence-dev/snowflake, @evidence-dev/evidence, @evidence-dev/mssql, @evidence-dev/mysql (+16 more)
-
-### Community 86 - "__sources.yml"
+### Community 107 - "AIR Controls — Verify"
 Cohesion: 0.11
-Nodes (24): adv_store_affinity_network, geo_store_cannibalization, order_items, test_supply_costs_sum_correctly, int_store_metrics_weekly, int_ingredient_demand_forecast, int_daily_customer_activity, int_daily_orders_by_product (+16 more)
+Nodes (20): _citations(), _counts(), _cross_references(), Finding, _our_mapping(), Path, A corpus on disk that parsed to nothing is a layout that has moved. Reported…, An unknown type code changes every derived id in that class. Checked against… (+12 more)
 
-### Community 87 - "runner.py"
-Cohesion: 0.14
-Nodes (16): NoCredentials, RuntimeError, Raised when no Anthropic credential is resolvable., spend(), Case, One eval case: an input to an agent and what must be true of the output., CaseResult, Path (+8 more)
-
-### Community 88 - "catalogue.py"
+### Community 108 - "Platform Core — Architecture (2)"
 Cohesion: 0.13
-Nodes (23): _commit(), CorpusError, _first_section(), _load_regimes(), load_source(), NotVendored, Any, Path (+15 more)
+Nodes (22): Arch, as_json(), _control(), _coverage(), _example(), _node(), Machine-readable, for the UI and for `pf pr report`., A feature by key, or an empty stand-in. Never raises. The registry is composed… (+14 more)
 
-### Community 89 - "ladder.py"
+### Community 109 - "Loop Engine — Gate"
+Cohesion: 0.16
+Nodes (22): gate(), Enforce gate.yaml over a set of paths. Used by the pre-commit hook., _applicable(), check_path(), check_paths(), GateResult, _is_name_heuristic(), load_policy() (+14 more)
+
+### Community 110 - "Tool Layer — Evidence"
+Cohesion: 0.13
+Nodes (21): audit(), Finding, Path, Mechanical quality score for the reporting layer. The dashboard loop terminates…, Score 0-100 and the findings behind it., bootstrap_project(), dagster_assets(), has_reporting() (+13 more)
+
+### Community 111 - "Scaffolding — Generator"
+Cohesion: 0.13
+Nodes (22): default_plugins(), _default_tools_yaml(), new_group(), new_project(), Any, Path, Scaffold groups and projects. No external template engine — templates are plain…, Scaffold one project. The `hooks.PreToolUse` block in PROJECT_SETTINGS is load-… (+14 more)
+
+### Community 112 - "Tests Onboarding — Test Scaffold Plan"
+Cohesion: 0.19
+Nodes (23): _caps(), MonkeyPatch, Path, `pf new-project --plan`. The plan exists to be trusted without being tried.…, Its whole reason for existing is that reading is dearer than asking. `pf…, `--without` everything is legal and unusual; silence would read as a bug., Capability order comes from a dict; the plan must not inherit that., The one property that makes a dry run worth having. (+15 more)
+
+### Community 113 - "Memory Notes"
 Cohesion: 0.11
-Nodes (19): changed(), current(), _ever_committed(), ladder(), _owned(), Path, Append this validation to the loop ledger, and report the breaker. The three-…, Validate every stage in order, stopping at the first closed gate. Stops rather… (+11 more)
+Nodes (6): `groups/commodity/` — one family — shared by its sisters, `groups/jaffle/projects/jaffle-shop/` — one entity, Keeping this true, Memory — what agents have learned about this repository, `platform/` — shared engines — true of every project, Repository-wide — repo-wide — git, CI, pull requests, the session layer
 
-### Community 90 - "audit.py"
-Cohesion: 0.15
-Nodes (18): Finding, format_report(), Path, The audit: does the ledger say what it claims, and does anyone else agree. Four…, Plain text, for CI logs and for anyone without the CLI., Records written since the last successful anchor., Full audit. `check_anchors` shells out to openssl/ots and needs network., Report (+10 more)
+### Community 114 - "Loop Engine — Actions"
+Cohesion: 0.18
+Nodes (20): branch_name(), execute(), _gh_available(), _git(), _has_remote(), load_all(), Outcome, Proposal (+12 more)
 
-### Community 91 - "scanner.ts"
-Cohesion: 0.13
-Nodes (20): ASQAV Pre-commit Compliance Scan Hook, asqav-compliance Contributing Guide, run(), AGENT_FRAMEWORK_PATTERNS, AnalysisResult, analyzeFile(), AUDIT_TRAIL_PATTERNS, CategoryDef (+12 more)
+### Community 115 - "Tests Ontology — Test Ontology Governance"
+Cohesion: 0.19
+Nodes (22): apply_to_extension(), Merge accepted axioms into the group extension. Additive by design: an approved…, _cls(), _prop(), _proposal(), Path, Parts of the ontology flow that decide what is allowed to land. Every case here…, A relation still called `refers_to` is a placeholder. Links fill in as they are… (+14 more)
 
-### Community 92 - "__sources.yml"
-Cohesion: 0.13
-Nodes (23): hr_ops source (HR and store operations), raw_departments, raw_employees, raw_equipment, raw_maintenance_logs, raw_payroll, raw_performance_reviews, raw_positions (+15 more)
-
-### Community 93 - "verify.py"
+### Community 116 - "Tests Capabilities — Test Targets"
 Cohesion: 0.12
-Nodes (19): _citations(), _counts(), _cross_references(), Finding, _our_mapping(), Path, A corpus on disk that parsed to nothing is a layout that has moved. Reported…, An unknown type code changes every derived id in that class. Checked against… (+11 more)
+Nodes (22): default_warehouse(), The one a project gets without asking. None if nothing is default., A whole profiles.yml. `DBT_TARGET` selects; nothing else switches warehouse., render_profiles(), test_detect_refuses_engines_that_housekeep_themselves(), parametrize, Path, The warehouse registry keeps its promises. "Adding ClickHouse is one entry and… (+14 more)
 
-### Community 94 - "artifacts.py"
-Cohesion: 0.14
-Nodes (21): base_ref(), _git(), head_ref(), project_prefix(), pull_files(), push_files(), Path, Remote artefact store — where build artefacts live instead of in git.… (+13 more)
+### Community 117 - "Tests Capabilities — Test Housekeeping"
+Cohesion: 0.09
+Nodes (18): Housekeeping stays safe near production. The dangerous parts are all decisions,…, dbt logs and PR reports are rebuilt by their tools, so they may be deleted; a…, `prune_records` pages with a limit; a fake instance proves it drains the query…, A checkout with no Dagster home, no logs and no reports plans nothing automated…, The unit tests pin our decisions; this pins DuckLake's API. If the extension…, Both are `type: duckdb`; the profile's shape is the only signal., Merge writes a new snapshot; expiry unreferences the pre-merge files; cleanup…, A concurrent writer's in-flight files look exactly like orphans; the platform… (+10 more)
 
-### Community 95 - "proposal.py"
-Cohesion: 0.21
-Nodes (20): cmd_onto_review(), What a proposal would change, and what it unlocks., apply_to_extension(), approve(), create(), _default_accept(), diff_against(), listing() (+12 more)
+### Community 118 - "Gate.Yaml"
+Cohesion: 0.13
+Nodes (22): pf gate Path Check, Session State Lives in Git, Where You May Write, Provenance Chain, ACMR Diff Filter Blind Spot, Auto-Merge Allowlist, Generated Capability Gate Policy, Gate Denylist (+14 more)
 
-### Community 96 - "grade.py"
-Cohesion: 0.17
-Nodes (20): _apply(), _attr(), _check(), _count(), _elementwise(), grade(), GradeFailure, _Missing (+12 more)
-
-### Community 97 - "orchestrator.py"
+### Community 119 - "Onboarding — Orchestrator"
 Cohesion: 0.19
 Nodes (21): AST, Call, FunctionDef, _callee(), _chain(), _edges(), _has_decorator(), _identifier() (+13 more)
 
-### Community 98 - "README.md"
-Cohesion: 0.10
-Nodes (18): Session Memory Notes, Decision log, Eval Corpus, Generated Eval Cases, acme-rollup project context, Decision log, Hand-written business-rule eval cases, Eval target agents (test_failure_triage, freshness_triage, metric_gap_proposer) (+10 more)
-
-### Community 99 - "ladder.py"
-Cohesion: 0.13
-Nodes (16): Ctx, eval_dialect(), eval_import(), eval_metrics(), eval_ontology(), _fmt(), CompletedProcess, Counter (+8 more)
-
-### Community 100 - "test_pr_mermaid.py"
-Cohesion: 0.22
-Nodes (20): body(), parametrize, Tests for the PR architecture chart. The chart fails in one direction only, and…, Two boxes sharing an id do not error — mermaid silently merges them into one,…, Two groups must never share a container — that is the one thing the chart is…, The diagram without its fence — what mermaid itself would parse., `"` ends a label, `#` opens an entity, `<` is a tag under htmlLabels. The `<`…, A typo'd id renders as an extra empty box, not an error — so assert it. (+12 more)
-
-### Community 101 - "data_classification.yml"
-Cohesion: 0.11
-Nodes (21): AIR-* Numbering Convention, Document Status Lifecycle (Pre-Draft / Draft / Working-Group-Approved / Approved-Specification), Mitigation Classification (PREV / DET), Risk Classification (RC / OP / SEC), AIGF Jekyll Site Configuration, Financial Services AI Use Case Taxonomy, Cross-Cutting AI Capabilities, BCBS 239 (Risk Data Aggregation Principles) (+13 more)
-
-### Community 102 - "annotations.yaml"
+### Community 120 - "Tests Capabilities — Test Group Shared Code"
 Cohesion: 0.17
-Nodes (20): crm_customer_sync exposure, dim_customers mart, active_customers metric, customers semantic model, stg_stripe__charges staging model, stg_stripe__customers staging model, stg_stripe__subscriptions staging model, stripe.charges raw table (+12 more)
+Nodes (20): conformed_shapes(), Column set of every conformed table, or a `ValueError` naming what differs.…, extend_sys_path(), group_dir(), import_paths(), Path, Where a project's Python is found, and the group code it may share. Project…, `groups/<group>` for a `groups/<group>/projects/<project>` directory. (+12 more)
 
-### Community 103 - "obs.py"
+### Community 121 - "Agents.Md 121"
+Cohesion: 0.12
+Nodes (20): Agent Attribution on Notes, Agent Protocol, Autonomous Scope, Execution Scope, A Hand-off Is Not a Separate Ledger, Inline Scope, Session Scope, Memory Write Protocol (+12 more)
+
+### Community 122 - "Platform UI Static"
+Cohesion: 0.10
+Nodes (21): Tools as Runnable Capabilities, Impact Analysis Before Any Change, dashboard-coverage Loop, Agent Skips the Impact Gate, impact-sentinel Loop, Loop Memory (loop-memory.yaml), loops Capability, api (+13 more)
+
+### Community 123 - "Platform Docs — Artifacts"
+Cohesion: 0.10
+Nodes (20): Azure needs a second SDK, Checking it worked, without printing anything, Creating the token, Fallback variable names, and the one trap, GCS needs an HMAC pair, not a service-account JSON, If a key leaks, In CI, Known gap: baseline staleness (+12 more)
+
+### Community 124 - "Platform Core — Cli (1)"
+Cohesion: 0.12
+Nodes (21): cmd_loop_demote(), cmd_loop_ladder(), cmd_loop_promote(), cmd_loop_reset(), cmd_loop_revert(), cmd_memory_add(), cmd_proposals_accept(), cmd_proposals_reject() (+13 more)
+
+### Community 125 - "Platform Core Evals — Grade"
+Cohesion: 0.20
+Nodes (18): _apply(), _attr(), _check(), _count(), _elementwise(), grade(), GradeFailure, _Missing (+10 more)
+
+### Community 126 - "Tests Gate — Test Pr Mermaid"
 Cohesion: 0.22
-Nodes (19): list_toolkits(), Installed platform toolkits (skills available to this session)., connect(), db_path(), estimate_cost(), _now(), Any, datetime (+11 more)
+Nodes (20): body(), parametrize, PR architecture chart. The chart fails in one direction only, and it fails…, Two boxes sharing an id do not error — mermaid silently merges them into one,…, Two groups must never share a container — that is the one thing the chart is…, The diagram without its fence — what mermaid itself would parse., `"` ends a label, `#` opens an entity, `<` is a tag under htmlLabels. The `<`…, A typo'd id renders as an extra empty box, not an error — so assert it. (+12 more)
 
-### Community 104 - "survey.py"
+### Community 127 - "Platform Docs — Commodity End To End"
+Cohesion: 0.14
+Nodes (20): Shared platform/ Tier vs Per-Entity groups/, One Project, Source to Consumer, Convert in Order, Five Rules That Outrank Any Request, One Price, From the API to the Board, A Price Is Not Additive, The One Sister Allowed to Look Sideways, Three Tiers and One Prohibition (+12 more)
+
+### Community 128 - "Onboarding — Survey"
 Cohesion: 0.16
 Nodes (18): _collect(), _detect_capabilities(), _dirs_for(), is_build_artifact(), _package_namespaces(), Path, Read an existing repository and report what it is made of. Everything here is…, Every SQL file whose dialect has to survive the move. (+10 more)
 
-### Community 105 - "expectations.py"
+### Community 129 - "Provenance Chain — Record"
+Cohesion: 0.16
+Nodes (14): canonical_bytes(), _check(), digest(), NonCanonical, Any, ValueError, The five stages of an agent action, and the bytes they hash to. An action is…, One stage of one action, linked to the stage before it. `action_id` is what… (+6 more)
+
+### Community 130 - "Tool Layer — Expectations"
 Cohesion: 0.19
 Nodes (19): _annotated_marts(), bootstrap_project(), dbt_dir(), ensure_package(), generate_tests(), MartModel, Any, Path (+11 more)
 
-### Community 106 - "tsconfig.json"
+### Community 131 - "Platform UI Web — Tsconfig"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, isolatedModules, jsx, lib, module, moduleResolution, noEmit (+11 more)
 
-### Community 107 - "test_toolkits.py"
+### Community 132 - "Tests Capabilities — Test Toolkits"
 Cohesion: 0.19
 Nodes (19): catalogue(), parametrize, Path, Toolkit registration, checked rather than remembered. A toolkit is three things…, A section that names the toolkit but not its skills routes to nothing., The toolkit this suite shipped with — every hop, so a later refactor that drops…, Without a manifest the directory is not a toolkit, it is a folder., Skills are invoked by name, so the name in the frontmatter has to be the one… (+11 more)
 
-### Community 108 - "CLAUDE-CODE.md"
+### Community 133 - "Platform Docs — Stack"
 Cohesion: 0.11
-Nodes (17): 1. Memory: CLAUDE.md, 2. Context management, 3. Tools: the MCP server, 4. Commands, 5. Subagents, 6. Hooks, 7. Permissions, 8. Enforcement outside the session (+9 more)
+Nodes (18): Per-Project DuckDB Writer Pools, Self-Decrypting Catalogue Credential, Control Plane Stack, Environment, `FERNET_KEY`, One origin, two root-anchored SPAs, Path-Based Origin Merge, `PF_OM_REINDEX` (+10 more)
 
-### Community 109 - "dbtproject.py"
+### Community 134 - "Third Party Notices.Md"
+Cohesion: 0.12
+Nodes (19): Claude Review Workflow, PR Impact Report Workflow, Contributing Guide, Developer Certificate of Origin, Entity Isolation Rule, Append-Only Provenance Rule, Vendor Directory Read-Only Rule, Credentials Live In The Environment (+11 more)
+
+### Community 135 - "Platform Docs — Policy (1)"
+Cohesion: 0.14
+Nodes (19): AIR Control Catalogue Plane, ASQAV Static Scan Plane, F1 - Impact Warning Unreachable for Model SQL, Six Governance Planes, Ontology Policy Layer Plane, Path Gate (gate.yaml), TIGHTENING_SECTIONS Append-Only Merge, The Commit Gate Before Staging (+11 more)
+
+### Community 136 - ".Github Scripts — Bot Findings (1)"
+Cohesion: 0.12
+Nodes (17): _already_filed(), canonical_title(), find_issue(), index(), issue_path(), _key(), locate(), The same finding, stated without a file. A bot reports one defect twice on the… (+9 more)
+
+### Community 137 - "Onboarding — Funnel"
+Cohesion: 0.16
+Nodes (12): Funnel, funnel_all(), _hours(), Any, Path, The onboarding funnel — the ladder as a product, with one number on the front.…, One PR for one stage's working-tree changes, via the proposal chain. The…, ship_stage() (+4 more)
+
+### Community 138 - "Provenance Chain 138"
+Cohesion: 0.18
+Nodes (17): append(), Head, _locked(), Path, Stage 04 — CHAIN. Append-only, tamper-evident, SHA-256 linked. The file is…, Write the sidecar atomically. A torn head file is recoverable (the scan above),…, The current tip, without taking the write lock., Seal `record` onto the chain and return it with `seq`, `prev` and `hash`. The… (+9 more)
+
+### Community 139 - "Tool Layer — Dbtproject"
 Cohesion: 0.18
 Nodes (18): append_profile(), ensure_package(), has_package(), has_profile(), has_project_key(), insert_under_key(), load_yaml(), Any (+10 more)
 
-### Community 110 - "test_tool_elementary.py"
-Cohesion: 0.23
-Nodes (17): _project(), Path, Elementary tool + the shared dbt-file editors it is built on. The properties…, One elementary output per project target, connection identical, schema suffixed…, Swap prod to another warehouse after elementary is set up: the next bootstrap…, test_append_profile_is_idempotent_and_additive(), test_bootstrap_declares_package_config_and_profile(), test_bootstrap_is_idempotent() (+9 more)
+### Community 140 - "Tests Capabilities — Test Quack"
+Cohesion: 0.12
+Nodes (12): _ensure_or_skip(), fixture, The quack dev server: state discipline, the write window, and the wire. The…, Prefix matching is not a classifier — the parser is., Two independent refusals: the client's parser and the engine itself., Serve, borrow and stop each land in the provenance ledger as full actions., A live server, or a skip with the reason. A sandboxed runner refuses the…, A live quack server over a scratch database with one seeded table. (+4 more)
 
-### Community 111 - "architecture-review.md"
+### Community 141 - "Tests Capabilities — Test Tool Elementary"
+Cohesion: 0.23
+Nodes (17): _project(), Path, Elementary, and the dbt-file editors it is built on. The properties worth…, One elementary output per project target, connection identical, schema suffixed…, Swap prod to another warehouse after elementary is set up: the next bootstrap…, test_append_profile_is_idempotent_and_additive(), test_bootstrap_declares_package_config_and_profile(), test_bootstrap_is_idempotent() (+9 more)
+
+### Community 142 - "Power Tools Commands — Architecture Review"
 Cohesion: 0.14
 Nodes (18): Conformed dimensions belong to the group, Semantic chain: ontology to annotation to model to metric to contract, semantic-conformance agent, Grain uniqueness verification, Faults that produce wrong numbers without erroring, sql-reviewer agent, 1. Conformance, mechanically, 2. The four claims worth checking by hand (+10 more)
 
-### Community 112 - "uc-2_autonomous-wealth-management.md"
-Cohesion: 0.18
-Nodes (19): Alignment Drift, Inadequate System Alignment, Data Drift / Concept Drift, Data Quality and Drift, Model Risk Management (SR 11-7 / PRA SS1-23), Retrieval-Augmented Generation (RAG), Hallucination and Inaccurate Outputs, Hallucination is Inevitable: An Innate Limitation of Large Language Models (+11 more)
+### Community 143 - "Power Tools Commands — Context Budget"
+Cohesion: 0.12
+Nodes (17): /ast-grep command, After a change with real reach, Blast radius, Fastest path, Blast radius / impact_analysis, Reading the result, When the answer is empty, 1. The enforced budget (+9 more)
 
-### Community 113 - "package.json"
-Cohesion: 0.11
-Nodes (17): devDependencies, @sveltejs/vite-plugin-svelte, name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3 (+9 more)
+### Community 144 - "Onboarding — Ladder (3)"
+Cohesion: 0.24
+Nodes (13): Check, check_dialect(), check_import(), check_layers(), check_metrics(), check_review(), _comprehension_check(), _parse_check() (+5 more)
 
-### Community 114 - "package.json"
-Cohesion: 0.11
-Nodes (17): devDependencies, @sveltejs/vite-plugin-svelte, name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3 (+9 more)
-
-### Community 115 - "__sources.yml"
-Cohesion: 0.15
-Nodes (18): dq_orphan_orders, raw_customers, finance source (payments and finance), raw_accounts_receivable, raw_gift_cards, raw_invoice_line_items, raw_invoices, raw_payment_transactions (+10 more)
-
-### Community 116 - "audit.py"
+### Community 145 - ".Github Scripts — Bot Findings (2)"
 Cohesion: 0.19
-Nodes (14): audit(), Check, _marketplace_resolves(), _mcp_wired(), project_readiness(), ProjectReadiness, Path, Loop Readiness Score. loop-engineering scores a repo 0–100 on whether it is… (+6 more)
+Nodes (17): adopt(), api(), ensure_epic(), ensure_labels(), _epic_index(), fix_commit(), prs_from_event(), The most recent commit touching `path` after the finding was raised. That is… (+9 more)
 
-### Community 117 - "TOOLKITS.md"
+### Community 146 - ".Github Scripts — Bot Findings (3)"
+Cohesion: 0.14
+Nodes (18): collect(), _deblockquote(), _kind(), parse(), _parse_file_block(), parse_human(), parse_review_body(), Every finding raised on this PR, by anyone. Inline comments carry the id of the… (+10 more)
+
+### Community 147 - ".Github Scripts — Loop Observations"
+Cohesion: 0.20
+Nodes (17): add_to_board(), close_clean(), content_hash(), _dry_gh(), ensure_board(), ensure_labels(), fingerprint(), latest_observations() (+9 more)
+
+### Community 148 - "Platform Core — Cli (2)"
+Cohesion: 0.14
+Nodes (18): cmd_capability_add(), cmd_kg_card(), cmd_new_group(), cmd_new_project(), cmd_onboard(), cmd_tool_enable(), _merge_gate_rules(), _print_bootstrap() (+10 more)
+
+### Community 149 - "Platform Core Scripts — Catalog Sync"
+Cohesion: 0.22
+Nodes (14): main(), _project_dir(), _publish_tables(), _publish_vocabulary(), Any, Path, Refresh the projections, then publish to OpenMetadata. `catalogue=False`…, Run one bootstrap step and turn its result into a detail string. (+6 more)
+
+### Community 150 - "Tool Layer — Config"
+Cohesion: 0.22
+Nodes (17): config_path(), enabled(), enabled_names(), load(), _merge(), Any, Path, Which tools a project actually runs — declared at the group, refined per… (+9 more)
+
+### Community 151 - "Tests Gate — Test Observations"
+Cohesion: 0.18
+Nodes (13): FakeGH, lo(), fixture, MonkeyPatch, The observations-to-issues sync, driven end to end with a fake gh. The script…, Records every gh call; answers `issue list` from a canned index., _row(), test_changed_observation_edits_in_place_with_a_comment() (+5 more)
+
+### Community 152 - "Toolkits 152"
 Cohesion: 0.11
 Nodes (17): dagster-orchestrate — Adding or changing Dagster assets, schedules, sensors or partitions., dbt-govern — A dbt run or test failed, or a model needs a contract, access modifier or version., dbt-migrate — Upgrading dbt Core, migrating to Fusion, or retargeting the warehouse. One-time operations., dbt-modeling — Building, modifying or debugging a dbt model. The default analytics-engineering toolkit., dbt-semantic — Any question about a business quantity — revenue, churn, retention, counts., dbt-testing — Adding data tests or unit tests to a model., dlt-explore — Profiling loaded data or building a notebook — not for answering governed metric questions., dlt-ingest — The data needed does not exist in the warehouse yet. (+9 more)
 
-### Community 118 - "agentic-skill-system_v1-with-risks.png"
-Cohesion: 0.15
-Nodes (18): Agent Orchestrator (Agentic Loop + Skill Context), Agent State & Memory (AGENTS.md / Session History), Agentic Skill-Based System Architecture (Coding Agent with Skills, No Skill Sandboxing), Dual Attack Surface (RI-30), Foundation Model (Large Language Model), Local MCP Servers (File System / DB / Git), MCP Registry & Router (Connector Hub), Permission & Approval Layer (User Consent Gate) (+10 more)
-
-### Community 119 - "atr.html"
-Cohesion: 0.16
-Nodes (18): ATR Reference Page, EU AI Act Reference Page, FFIEC IT Booklets Reference Page, Regulatory References Catalogue, IOSCO Supervisory Toolkit Reference Page, ISO 42001 Reference Page, NIST AI 600-1 Reference Page, NIST SP 800-53r5 Reference Page (+10 more)
-
-### Community 120 - "dl_nist-pdfs.py"
-Cohesion: 0.18
-Nodes (11): PdfReader, BookmarkExtractor, BookmarkInfo, Extracts and processes PDF bookmarks with coordinates., Extract all bookmarks from PDF with full navigation hierarchy., V2-style recursive extraction that handles pypdf children properly., Extract detailed information from a single bookmark., Extract coordinate information from outline item. (+3 more)
-
-### Community 121 - "SKILL.md"
-Cohesion: 0.18
-Nodes (17): project-onboarding rules, Ambiguous cross-dialect functions, Portable sf_* dispatch macros, Stage 3: dialect — one SQL, two targets, Stage 1: import, Config re-keying after directory moves, Four-layer contract (staging / marts / semantic / utils), Stage 4: layers — staging, marts, semantic (+9 more)
-
-### Community 122 - "ARTIFACTS.md"
-Cohesion: 0.12
-Nodes (15): Checking it worked, without printing anything, Creating the token, Fallback variable names, and the one trap, If a key leaks, In CI, Known gap: baseline staleness, Layout, Migration (+7 more)
-
-### Community 123 - "2026-08-13-stripe.yaml"
-Cohesion: 0.22
-Nodes (16): Charge, Customer, PII Email Role Proposal, Stripe Ontology Proposal (2026-08-13), Subscription, Evidence Capability Card, Evidence Theme Config, acme-eu Overview Page (+8 more)
-
-### Community 124 - "package.json"
-Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
-
-### Community 125 - "package.json"
-Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
-
-### Community 126 - "package.json"
-Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
-
-### Community 127 - "package.json"
-Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
-
-### Community 128 - "_product__models.yml"
-Cohesion: 0.12
-Nodes (16): inc_met_daily_product_sales, kpi_gross_margin_by_product, met_daily_product_sales, prod_menu_item_contribution, prod_portion_cost_analysis, prod_recipe_cost_simulation, int_menu_item_enriched, int_menu_item_margin (+8 more)
-
-### Community 129 - "CLAUDE.md"
+### Community 153 - "Platform Docs — Skill"
 Cohesion: 0.14
-Nodes (13): Business rules the graph cannot encode, Cross-entity work, zenith — group context, zenith group evals, Rollup-only cross-entity access, zenith — group index (group card), zenith ontology instance (fintech: Customer, Organization, Contract, Payment, Refund, Currency), zenith-de session memory notes (+5 more)
+Nodes (16): Harness Permissions Plane, Merge Gate Path, The Formatter Never Removes Code, Corrections to the Power-User Guide, Read-Only Verification Subagents, power-tools Session Layer, pf workflow link, impact_analysis (+8 more)
 
-### Community 130 - "package.json"
+### Community 154 - "Platform Core Evals — Gate"
+Cohesion: 0.21
+Nodes (13): GateReport, _hits(), latest_path(), needs_live(), _norm(), Any, Path, Evals as a gate — on every change that alters what the agent is. `pf check`… (+5 more)
+
+### Community 155 - "Runtime Factory — Adbc"
+Cohesion: 0.17
+Nodes (10): connect(), Connection, driver_path(), Any, Path, ADBC is how the platform talks to DuckDB: Arrow across every boundary. Every…, An ADBC connection to a DuckDB database (or ``:memory:``). ``read_only`` maps…, The shared library exposing ``duckdb_adbc_init``. DuckDB's Python wheel ships… (+2 more)
+
+### Community 156 - "Tests Gate — Test Gate"
+Cohesion: 0.14
+Nodes (16): parametrize, Path, Path gate. The gate is the one rule that is enforced rather than remembered, so…, `.env.*` has to catch `.env.local`; it also caught the committed template that…, `**/*_key*` is a guess from a filename. It denied `surrogate_key_hash.sql` — an…, A pattern whose basename is wrapped in `*` matches a substring of a name, which…, Changing a model is allowed; doing it without reporting the blast radius is…, Pinning the precedence, because it is what makes the contradiction above… (+8 more)
+
+### Community 157 - "Platform Docs — Kg Atlas (1)"
 Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
+Nodes (16): A new group or project gets one on creation, CI fails a pull request that leaves it stale, Colour is fixed, not themed, Every edge runs upstream → downstream, Keeping it current, The commands take any scope, The knowledge graph, as a map, The ontology is resolved at *project* scope (+8 more)
 
-### Community 131 - "package.json"
-Cohesion: 0.12
-Nodes (15): name, overrides, axios, jsonwebtoken, sqlite3, trim@<0.0.3, private, scripts (+7 more)
-
-### Community 132 - "SKILL.md"
-Cohesion: 0.22
-Nodes (16): Policy: change-declares-blast-radius, Policy: change-verified-against-baseline, Policy: metric-owns-aggregation, Policy: sister-projects-are-isolated, Skill: build-assets (Dagster), Skill: contracts-and-access (dbt governance), Skill: troubleshoot-runs, Skill: upgrade-and-migrate (+8 more)
-
-### Community 133 - "mdl.py"
-Cohesion: 0.20
-Nodes (15): build_manifest(), _busiest_model(), _column_properties(), export(), _identity_column(), _mdl_type(), _model_for_concept(), _projected_fk() (+7 more)
-
-### Community 134 - "chain.py"
-Cohesion: 0.23
-Nodes (14): append(), Head, _locked(), Path, Stage 04 — CHAIN. Append-only, tamper-evident, SHA-256 linked. The file is…, Write the sidecar atomically. A torn head file is recoverable (the scan above),…, The current tip, without taking the write lock., Seal `record` onto the chain and return it with `seq`, `prev` and `hash`. The… (+6 more)
-
-### Community 135 - "tsconfig.json"
-Cohesion: 0.12
-Nodes (15): dist, node_modules, src/**/*.ts, compilerOptions, declaration, esModuleInterop, forceConsistentCasingInFileNames, module (+7 more)
-
-### Community 136 - "mi-18_agent-authority-least-privilege-framework.md"
-Cohesion: 0.26
-Nodes (16): Agent Authority Least Privilege Framework (mi-18), Tool Manager, Tool Chain Validation and Sanitization (mi-19), Multi-Agent Isolation and Segmentation (mi-22), User/App/Model Firewalling/Filtering (mi-3), Quality of Service (QoS) and DDoS Prevention for AI Systems (mi-8), AI System Alerting and Denial of Wallet (DoW) / Spend Monitoring (mi-9), Denial of Wallet (DoW) Attack (+8 more)
-
-### Community 137 - "annotate_yaml_front_matter.py"
-Cohesion: 0.18
-Nodes (15): format_regular_section(), get_reference_titles(), get_titles_from_directory(), main(), process_annotated_section(), process_files_in_directory(), Create a mapping of IDs to their titles from markdown files in a directory., Process a YAML section by adding title comments to items. (+7 more)
-
-### Community 138 - "STACK.md"
+### Community 158 - "CI Workflows — Platform"
 Cohesion: 0.13
-Nodes (14): Environment, `FERNET_KEY`, One database, two schemas, One origin, two root-anchored SPAs, `PF_OM_REINDEX`, Processes, Run it, Startup order (+6 more)
+Nodes (16): acme-rollup project CI workflow, acme-us project CI workflow, commodity-india project CI workflow, commodity-rollup project CI workflow, commodity-us project CI workflow, globex-core project CI workflow, globex-eu project CI workflow, jaffle-shop project CI workflow (+8 more)
 
-### Community 139 - "metrics_revenue.yml"
+### Community 159 - "Knowledge Graph — Store"
+Cohesion: 0.13
+Nodes (5): Graph, DuckDBPyConnection, Insert edges, de-duplicated on (src, dst, kind). kg_edges has no primary key,…, Thin wrapper over a DuckDB connection holding kg_nodes / kg_edges., _row_to_node()
+
+### Community 160 - "Ontology — Concepts (1)"
+Cohesion: 0.20
+Nodes (16): Agreement (ontology class), Contract (ontology class), Currency (ontology class), Customer (ontology class), Employee (ontology class), Event (ontology class), Interaction (ontology class), Location (ontology class) (+8 more)
+
+### Community 161 - "Platform Core — Workflows"
+Cohesion: 0.12
+Nodes (9): Agent, The repo holds this run and nothing outside it does. False while a session copy…, Still running, or changed too recently to be sure it is not., phase -> (started, finished), in the order the phases began., One line for a watcher: the phase the run is in with that phase's counts, the…, _readme(), Run, test_meta_overrides_journal_label_and_a_torn_journal_line_is_skipped() (+1 more)
+
+### Community 162 - "Onboard Project References — Stage Metrics"
+Cohesion: 0.12
+Nodes (12): Evaluate, Implement, Stage 5 — MetricFlow, Then, Validate, Where the definitions come from, Evaluate, Implement (+4 more)
+
+### Community 163 - "Tests Capabilities — Test Workflows (2)"
+Cohesion: 0.15
+Nodes (15): CaptureFixture, Claude Code's folder name for a repo: the absolute path with every character…, slug(), home(), hook_module(), fixture, A repo root repo_root() would accept, with an underscore in the path so the…, A fake ~/.claude holding this repo's slug (with its `memory` dir and a stray… (+7 more)
+
+### Community 164 - "Platform Docs — Engineering"
 Cohesion: 0.18
-Nodes (15): exec_weekly_dashboard exposure, fct_payments mart, fct_revenue mart, aov (Average Order Value) ratio metric, gross_payment_volume metric, payment_count metric, revenue metric, revenue_mom_growth derived metric (+7 more)
+Nodes (14): Three Context Cost Tiers, The pf MCP Server, Memory Layering (always-on, on-demand, queried, remembered), The Graph Is Asked, Not Read, Byte-Stable Cached Prefix for Loop Agents, Context engineering, Context, loop and graph engineering, Graph engineering (+6 more)
 
-### Community 140 - "concepts.yaml"
-Cohesion: 0.22
-Nodes (15): Agreement (ontology class), Contract (ontology class), Customer (ontology class), Employee (ontology class), Event (ontology class), Interaction (ontology class), Location (ontology class), Order (ontology class) (+7 more)
+### Community 165 - "Platform Docs — Claude Code"
+Cohesion: 0.13
+Nodes (15): 10. Workflow runs, 1. Memory: CLAUDE.md, 2. Context management, 3. Tools: the MCP server, 4. Commands, 5. Subagents, 6. Hooks, 7. Permissions (+7 more)
 
-### Community 141 - "security-audit.md"
+### Community 166 - ".Github Scripts — Bot Findings (4)"
+Cohesion: 0.24
+Nodes (14): backfill_board(), category(), ensure_board(), file_on_board(), Finding, gql_options(), labels_for(), main() (+6 more)
+
+### Community 167 - "Platform Core — Cli (3)"
+Cohesion: 0.20
+Nodes (15): human(), cmd_artifacts_ls(), cmd_artifacts_migrate(), cmd_artifacts_pull(), cmd_artifacts_push(), _git_tracked(), One project, one group, or every project when nothing is given. The widening…, A configured store, or a one-line exit. Unconfigured is the *expected* first… (+7 more)
+
+### Community 168 - "Ontology — Skill (1)"
+Cohesion: 0.19
+Nodes (14): Column Semantic Roles, mart-declares-grain, metric-owns-aggregation, pii-not-in-consumption, review-artifacts-exclude-pii, Skill: fetch-docs, dbt Layer Boundaries, Staging: cleaning happens here, and only here (+6 more)
+
+### Community 169 - "Tests Ontology — Test Otop"
+Cohesion: 0.18
+Nodes (14): fixture, MonkeyPatch, parametrize, Path, The otop manifest's timestamps. `created_at` and `implemented_at` come from git…, A one-commit repository, committed at a known non-UTC offset., The property the manifest depends on, and the one that was broken., A `Z` on a local reading is wrong even when nothing else disagrees. (+6 more)
+
+### Community 170 - "Power Tools Commands — Security Audit"
 Cohesion: 0.15
 Nodes (14): Exposed / Exposable / Placeholder triage, secrets-auditor agent, 1. Secrets at rest, 2. Gate coverage — the holes, not the rules, 3. PII in committed review artefacts, 4. Query surface, 5. Report, Gate coverage as holes, not rules (+6 more)
 
-### Community 142 - "uc-3_loan-approval.md"
-Cohesion: 0.37
-Nodes (15): AI Model Version Pinning (mi-10), Reinforcement Learning from Human Feedback (RLHF), Using Large Language Models for Automated Evaluation (LLM-as-a-Judge) (mi-15), Bias and Discrimination (ri-16), Foundation Model Versioning (ri-5), Deterministic Policy Gates, Human Feedback Loop for AI Systems (mi-11), AI System Observability (mi-4) (+7 more)
-
-### Community 143 - "dl_owasp.py"
-Cohesion: 0.20
-Nodes (14): download_project_files(), extract_file_metadata(), extract_file_metadata_frontmatter(), extract_file_metadata_heading(), generate_data_file(), get_paths(), main(), Download OWASP project markdown files and generate data file. (+6 more)
-
-### Community 144 - "package.json"
-Cohesion: 0.13
-Nodes (14): author, description, license, main, name, overrides, undici, repository (+6 more)
-
-### Community 145 - "bias-audit-template.md"
-Cohesion: 0.27
-Nodes (13): Bias Audit Template, Model Card Template, AI Readiness Assessment, Responsible AI Principles, Validation Workflow, AI Risk Register Template, AI Contract Clause Library, Supplier Due Diligence Checklist (+5 more)
-
-### Community 146 - "_hr_ops__models.yml"
+### Community 171 - "Platform Docs — Ai Governance Architecture (1)"
 Cohesion: 0.14
-Nodes (14): int_employee_tenure, int_overtime_hours, int_training_progress, int_payroll_cost_trend, kpi_employee_turnover_rate, kpi_training_completion_rate, ml_feature_employee_attrition, poc_payroll_mom (+6 more)
+Nodes (14): 10. Where a human is required, 12. Threat model, 13. Known gaps the platform already declares, 14. Extending it, 1. The governing idea, 2. Plane 1 — the harness: what an agent may attempt, 4. Plane 3 — the ontology policy layer, 6. Plane 5 — the control catalogue (+6 more)
 
-### Community 147 - "policy.yaml"
+### Community 172 - "CI Workflows — Vendor Pins"
+Cohesion: 0.22
+Nodes (14): air-baseline job (per-project AI control gate), AI control baseline job (repo-wide pf air gate sweep), Pin-by-pin submodule init, never submodules: recursive, The asqav-compliance deletion (18 September 2026), A guard whose silence is indistinguishable from success is not a guard, Pins are checked for resolvability, never against the upstream tip, Pins resolve job (remote exists, pinned sha fetchable), Vendor pins workflow (+6 more)
+
+### Community 173 - "Tests Capabilities — Test Tool Expectations"
+Cohesion: 0.31
+Nodes (12): MartModel, _marts(), _project(), Path, dbt-expectations: declaration, generation, managed directory. The generation…, Aggregate marts have no surrogate key; PII keys are excluded upstream. Either…, test_a_mart_without_a_safe_key_gets_only_the_row_count_floor(), test_bootstrap_skips_a_project_with_no_dbt() (+4 more)
+
+### Community 174 - "Entrypoints — Verify Provenance"
+Cohesion: 0.20
+Nodes (13): canonical_bytes(), check_completeness(), digest(), main(), Path, An EXECUTION with no DECISION is work that never passed the gate., verify_chain(), Two dicts with the same content must hash identically. (+5 more)
+
+### Community 175 - "Platform Core — Cli (4)"
+Cohesion: 0.15
+Nodes (14): ask(), cmd_loop_list(), cmd_loop_run(), cmd_loop_run_all(), _loop_config_or_exit(), _print_run(), Run one `pf.loops.config` reader, or exit 1 with the yaml's mistake. A…, Every loop, with its born and (if a project is given) earned autonomy. With a… (+6 more)
+
+### Community 176 - "Runtime Factory — Dlt Runtime"
+Cohesion: 0.16
+Nodes (13): build_pipeline(), collect_sources(), export_project_annotations(), monitors_for(), Any, Path, dlt pipeline factory. Projects declare annotated sources; the platform owns…, Create a dlt pipeline targeting the project's DuckDB file. (+5 more)
+
+### Community 177 - "Tests Ontology — Test Openmetadata (2)"
+Cohesion: 0.16
+Nodes (14): build_workflow(), The dbt ingestion workflow, as OpenMetadata's own schema expects it.…, MonkeyPatch, Path, A committed file with an absolute home directory works on one machine., The workflow is generated into a committed directory., The ontology is why a column is called personal data, not dbt's docs., `offline_bootstrap`: scaffolding must not depend on who ran it. (+6 more)
+
+### Community 178 - "Tests Graph — Test Bloom (1)"
 Cohesion: 0.18
-Nodes (13): Currency (ontology class), Column Semantic Roles, Policy: mart-declares-grain, Policy: money-requires-currency, Policy: pii-not-in-consumption, Policy: quality-floor-derived-from-ontology, Policy: review-artifacts-exclude-pii, drawGraph (+5 more)
+Nodes (12): estate(), _project(), fixture, The Bloom export. The invariants worth pinning are the ones whose failure is…, Neo4j rejects a dangling relationship and names one row. Name them all., A kind added to the graph but not here renders grey and uncategorised., Two kinds sharing a colour is indistinguishable from a rendering bug., Two sisters that deliberately share ids, plus one project that doesn't. (+4 more)
 
-### Community 148 - "test_toolkit_macros.py"
+### Community 179 - "Tests Onboarding — Test Toolkit Macros"
 Cohesion: 0.14
 Nodes (12): built(), fixture, parametrize, The dbt-snowflake toolkit, compiled through dbt against a real adapter.…, Run the probe model through dbt once, and return its row., Non-deterministic, so only their existence is worth asserting., The pair that justifies the toolkit: same inputs, two defensible answers, and…, A macro nobody probes is a macro nobody has run. (+4 more)
 
-### Community 149 - "SKILL.md"
-Cohesion: 0.18
-Nodes (13): Metric-First Reporting Principle, Ratio Re-Division Rule, Reporting rules, Toolchain, build-dashboard Skill, Building a dashboard, Non-negotiables, Procedure — in order (+5 more)
+### Community 180 - "Skills Design Architecture 180"
+Cohesion: 0.21
+Nodes (13): architecture job (map is current), converged job (pf bootstrap --all as a drift gate), Warehouse projections excluded from the convergence diff, Absent features are listed, not omitted, kg/architecture.md generated project map, design-architecture skill, Orientation routing order: card, map, graph tools, then files, pf.architecture.FEATURES registry (+5 more)
 
-### Community 150 - "package.json"
-Cohesion: 0.15
-Nodes (13): @evidence-dev/sqlite, @evidence-dev/sqlite, @evidence-dev/sqlite, @evidence-dev/sqlite, @evidence-dev/sqlite, dependencies, @evidence-dev/mssql, @evidence-dev/mysql (+5 more)
-
-### Community 151 - "package.json"
-Cohesion: 0.15
-Nodes (13): devDependencies, @sveltejs/vite-plugin-svelte, @sveltejs/vite-plugin-svelte, devDependencies, @sveltejs/vite-plugin-svelte, devDependencies, @sveltejs/vite-plugin-svelte, devDependencies (+5 more)
-
-### Community 152 - "__sources.yml"
-Cohesion: 0.18
-Nodes (13): adv_gap_analysis, adv_missing_data_detector, raw_stores, raw_budgets, raw_expense_categories, raw_expenses, stg_budgets, stg_expense_categories (+5 more)
-
-### Community 153 - "_time_series__models.yml"
-Cohesion: 0.15
-Nodes (13): int_labor_cost_daily, int_labor_hours_actual, int_employee_productivity, int_store_labor_demand, kpi_employee_productivity, kpi_labor_cost_ratio, met_daily_labor_metrics, rank_employees_by_productivity (+5 more)
-
-### Community 154 - "test_tool_expectations.py"
-Cohesion: 0.35
-Nodes (11): _marts(), _project(), Path, dbt-expectations tool: declaration, generation, and the managed directory. The…, Aggregate marts have no surrogate key; PII keys are excluded upstream. Either…, test_a_mart_without_a_safe_key_gets_only_the_row_count_floor(), test_bootstrap_skips_a_project_with_no_dbt(), test_bootstrap_without_a_graph_still_declares_the_package() (+3 more)
-
-### Community 155 - "SKILL.md"
+### Community 181 - "Deploy Terraform — Readme (1)"
 Cohesion: 0.19
-Nodes (13): annotate-source Skill, Annotate a source, create-filesystem-pipeline Skill, Filesystem pipeline, find-source Skill, After the first load: propose the ontology, Find and scaffold a source, install-duckdb Skill (+5 more)
+Nodes (13): floci S3 Emulator Service, Loopback-Only Port Binding, Opt-In Per Shell, Not Per Stack, Explicit Region Pinning, PF_ARTIFACTS_REGION SigV4 Signing, Three Cloud Root Modules, Exposure Is Opt-In, GCS HMAC Key Pair (+5 more)
 
-### Community 156 - "dl_nist-pdfs.py"
-Cohesion: 0.15
-Nodes (7): Config, Generate PDF filename from prefix., Generate YAML filename from document type., Apply title case formatting to bookmark titles if enabled., Configuration for the PDF processor., Derive document type from filename prefix., Construct PDF URL from filename prefix.
+### Community 182 - "Scaffolding — Plan"
+Cohesion: 0.21
+Nodes (10): missing_env(), Credentials each capability declares that are not set. For `pf doctor`., build(), Plan, Path, What `pf new-project` would do, before it does it. Scaffolding is cheap to run…, The plan, compact enough that reading it is cheaper than exploring., A scaffold, resolved but not performed. (+2 more)
 
-### Community 157 - "package.json"
+### Community 183 - "Runtime Factory — Quack (2)"
+Cohesion: 0.18
+Nodes (7): assert_read_only(), Refuse anything that is not a read, using the real parser. A string prefix is…, Quacks like the slice of `DuckDBPyConnection` the read paths use, executing…, One server-side statement, straight to an Arrow table., A connection whose statements run inside the server owning the file. The local…, read_connection(), ReadConnection
+
+### Community 184 - "Platform Docs — Ai Governance Architecture (2)"
+Cohesion: 0.21
+Nodes (12): Canonical Record Form and the Float Ban, Loop Circuit Breaker, decision.not_enforced Finding, Earned Autonomy Ladder (L1/L2/L3), F3 - The Two Verifiers Disagree by Construction, F7 - One Agent Path Writes No Provenance, Provenance Ledger Plane, Six Deliberately Separate Stores (+4 more)
+
+### Community 185 - "Platform Docs — Policy (2)"
 Cohesion: 0.17
-Nodes (12): @evidence-dev/databricks, @evidence-dev/databricks, @evidence-dev/databricks, @evidence-dev/databricks, @evidence-dev/databricks, @evidence-dev/databricks, dependencies, @evidence-dev/csv (+4 more)
+Nodes (12): Add a policy of your own, Add enforcement without claiming the policy, An omitted `severity:` means *inherit*, API, `applies_to` and `params` are not overridable, Reading the resolved result, The one rule: overlays may only tighten, The policy layer (+4 more)
 
-### Community 158 - "package.json"
+### Community 186 - "Platform Docs — Scaffolding"
 Cohesion: 0.17
-Nodes (12): @evidence-dev/duckdb, @evidence-dev/duckdb, @evidence-dev/duckdb, @evidence-dev/duckdb, @evidence-dev/duckdb, @evidence-dev/duckdb, @evidence-dev/duckdb, dependencies (+4 more)
+Nodes (12): Adding to the scaffold, Blockers, and why these two, Choosing capabilities, Failure modes, Group or project?, Scaffolding a project, The sqlglot warning, The token argument (+4 more)
 
-### Community 159 - "package.json"
-Cohesion: 0.17
-Nodes (12): @evidence-dev/motherduck, @evidence-dev/motherduck, dependencies, @evidence-dev/evidence, @evidence-dev/motherduck, @evidence-dev/mssql, @evidence-dev/motherduck, @evidence-dev/motherduck (+4 more)
+### Community 187 - "Skills Create Sql Pipeline"
+Cohesion: 0.24
+Nodes (12): Staging Is 1:1 With a Raw Table, Arrow Loads Need add_dlt_load_id and add_dlt_id, gen-staging and Arrow Gotchas, Unannotated Columns Are Silently Dropped From Staging, Annotate Every Resource Before Finishing, Monotonic Incremental Cursor, Reflection Level, SQL Database Pipeline (+4 more)
 
-### Community 160 - "package.json"
-Cohesion: 0.17
-Nodes (12): @evidence-dev/snowflake, @evidence-dev/snowflake, dependencies, @evidence-dev/core-components, @evidence-dev/mssql, @evidence-dev/mysql, @evidence-dev/snowflake, @evidence-dev/snowflake (+4 more)
-
-### Community 161 - "index.md"
+### Community 188 - "Platform Core — Cli (5)"
 Cohesion: 0.20
-Nodes (12): jaffle-shop — Overview, DateRange two-row bounds workaround, Detail, Governed metric projection, Revenue by is food item, Revenue over time, Average Order Value, By customer name (+4 more)
+Nodes (12): cmd_workflow_list(), cmd_workflow_show(), cmd_workflow_sync(), cmd_workflow_watch(), Every run of this repo: written here, still in a session folder, or both., Copy runs a session wrote while it was not linked into logs/workflows/. The…, Live progress of every run. Ctrl-C to stop. A linked run is read where the…, Phases and every agent of one run, with its state. (+4 more)
 
-### Community 162 - "_marketing_deep__models.yml"
+### Community 189 - "Tests — Conftest"
 Cohesion: 0.18
-Nodes (12): kpi_customer_churn_rate, mkt_customer_lifecycle_stage, mkt_customer_win_back, int_loyalty_churn_risk, mega_wide_customer_master, met_monthly_customer_metrics, ml_feature_customer_churn, rank_customers_by_ltv (+4 more)
+Nodes (9): _find_repo_root(), fixture, Path, Shared test setup — and the single definition of where the repository is. Six…, The checkout root, for tests that would rather take it than import it., repo_root(), The vendor registry parses and names files that exist.…, An `ours:` path that does not exist is a provenance record for nothing, and `pf… (+1 more)
 
-### Community 163 - "ladder.py"
-Cohesion: 0.17
-Nodes (7): Whether the next stage may be entered., Whether every condition was actually exercised and passed., Verdict, A missing MetricFlow CLI must not wall a project off from the ladder., test_one_failure_closes_the_gate(), test_unexercised_does_not_close_the_gate(), test_unexercised_is_never_reported_as_a_pass()
-
-### Community 164 - "context-budget.md"
-Cohesion: 0.18
-Nodes (11): /ast-grep command, 1. The enforced budget, 2. What the session loads beyond the cards, 3. Spend it on the graph, not on files, 4. When a session is already too full, 5. Report, Context budget, Enforced context budget (pf tokens) (+3 more)
-
-### Community 165 - "format_edit.py"
+### Community 190 - "Power Tools Hooks — Format Edit"
 Cohesion: 0.36
 Nodes (11): format_python(), format_sql(), gate_blocks(), main(), CompletedProcess, Path, Prefer the workspace venv over PATH. `uv run <tool>` would also work but re-…, Ask the same policy the PreToolUse gate asks. A denied path reaching this hook… (+3 more)
 
-### Community 166 - "SKILL.md"
+### Community 191 - "Onboard Project References — Skill"
+Cohesion: 0.29
+Nodes (11): project-onboarding rules, Ambiguous cross-dialect functions, Portable sf_* dispatch macros, Stage 3: dialect — one SQL, two targets, Stage 5: MetricFlow metrics, Stage 6: Recce review, Three-failure circuit breaker, Gated onboarding ladder (+3 more)
+
+### Community 192 - "Skills Onboard Project"
 Cohesion: 0.17
 Nodes (12): Adding a stage, Budget, Maker and checker are different questions, and never the same agent, Onboarding a project, Rules that outrank anything a stage says, The child loop, The parent loop, The stages (+4 more)
 
-### Community 167 - "README.md"
-Cohesion: 0.17
-Nodes (12): Adding a capability, Agentic Data Platform, Daily commands, Loop engineering, Pull requests, Quick start, Sister companies run genuinely in parallel, Skill toolkits (+4 more)
-
-### Community 168 - "dl_nist-pdfs.py"
-Cohesion: 0.18
-Nodes (7): PDFProcessor, Path, Get YAML output directory (docs/_data)., Handles PDF downloading and parsing operations., Download PDF if not cached locally., Load PDF and return reader object., Derive output directory from document type.
-
-### Community 169 - "package.json"
+### Community 193 - "Package.Json"
 Cohesion: 0.18
 Nodes (10): blume, commet, graphify, allowScripts, esbuild@0.27.7, @scarf/scarf@1.4.0, dependencies, blume (+2 more)
 
-### Community 170 - "coverage.py"
-Cohesion: 0.22
-Nodes (10): _evidence_seen(), _ontology(), Path, Coverage — which controls this platform actually discharges, derived on read.…, Does the thing `enforced_by` names actually exist? Three forms appear in…, Has anything this policy declares as evidence actually been produced? Only…, The platform ontology, with a group's extension merged over it if there is one.…, _resolve_artefact() (+2 more)
-
-### Community 171 - "package.json"
+### Community 194 - "Platform Docs — Ai Governance Architecture (3)"
 Cohesion: 0.18
-Nodes (10): allowScripts, esbuild@0.25.12, name, private, scripts, build, dev, preview (+2 more)
+Nodes (11): 11. Findings, F10 — Smaller things, F1 — The impact-analysis warning cannot fire for dbt model SQL, F2 — The blocking provenance check does not run in CI, F3 — The two verifiers disagree by construction, F4 — `--anchors` failures never fail the audit, F5 — `vendor/**` is gate-protected only for project sessions, F6 — The human-approval path has no production caller (+3 more)
 
-### Community 172 - "ship.md"
+### Community 195 - "CI Workflows — Acme Eu"
+Cohesion: 0.29
+Nodes (11): Recce baseline pulled from the artefact store, changes job (one path-area diff per PR), Gate against the base, not the branch, impact-gate job (blast radius in CI), kg-current job (committed graph is current), recce job (dbt data diff against base), acme-eu project CI workflow, Without a warehouse or a model key, loops report nothing rather than something invented (+3 more)
+
+### Community 196 - "Deploy Terraform — Readme (2)"
+Cohesion: 0.18
+Nodes (10): After apply, Exposure is opt-in, in all three, Migrations, Out of scope, on purpose, Running the control plane on a cloud, The one deviation from `compose.yaml`, Two things that will bite, Using it (+2 more)
+
+### Community 197 - "Tests Graph — Test Bloom (2)"
+Cohesion: 0.18
+Nodes (11): collect(), Union every project graph under `root`, qualifying ids by project. An edge…, Neo4j cannot nest, but stringifying loses less than discarding., The whole reason ids are qualified. `model:orders` in acme-us and acme-eu are…, A Bloom result has to be traceable back to the project graph., test_collects_every_project(), test_edges_are_qualified_too(), test_empty_estate_is_not_an_error() (+3 more)
+
+### Community 198 - "Toolkits 198"
+Cohesion: 0.22
+Nodes (11): builds-record-observability, anomaly-tests-do-not-gate-merge, source-declares-freshness, Test vs Contract, Classify Before Fixing A Load, Tool Precedence Order, Data-Returning Tool Truncation Policy, dbt-elementary Toolkit (+3 more)
+
+### Community 199 - "Tests Capabilities — Test Dlt Runtime"
+Cohesion: 0.22
+Nodes (10): dlt_home(), fixture, MonkeyPatch, Path, dlt Core lands the raw stage; the platform owns the pipeline around it., Pipeline state under the test, not under ~/.dlt., The summary counts rows in the dataset, so a seed can refuse to build marts…, A rest_api resource has no function to decorate. `annotate(...)(resource)` must… (+2 more)
+
+### Community 200 - "Skills Duckdb Docs"
+Cohesion: 0.18
+Nodes (10): optimize-performance Skill, Pipeline performance, duckdb-docs Skill, DuckDB docs, DuckDB Single-Writer Constraint, read-memories Skill, Reading memories, Entity Isolation Principle (+2 more)
+
+### Community 201 - "Power Tools Commands — Ship"
 Cohesion: 0.18
 Nodes (10): 1. See what is actually changing, 2. Gate, 3. Conformance and reach, 4. Build and test what you touched, 5. Data diff, when models changed, 6. Commit, 7. Stop, Ordered ship sequence (+2 more)
 
-### Community 173 - "canada-regulations.yml"
+### Community 202 - "Skills Upgrade And Migrate"
 Cohesion: 0.20
-Nodes (11): Validate Reference YAML Files Workflow, Canada AI & Financial-Sector Regulatory References, CSA Staff Notice 11-348: AI Systems in Capital Markets, NI 31-103: Registration Requirements and Ongoing Registrant Obligations, OSFI Guideline B-10: Third-Party Risk Management, OSFI Guideline B-13: Technology and Cyber Risk Management, OSFI Guideline E-23: Model Risk Management (2027), PIPEDA (Canadian Federal Privacy Law) (+3 more)
+Nodes (9): platform/ Shared Module, Platform Denylist, Never Full-Refresh or Backfill From a Loop, Core to Fusion, Migrations, Plan-Then-Apply, Never From a Chat Turn, Retarget the Warehouse, Upgrade dbt Core (+1 more)
 
-### Community 174 - "dl_nist-pdfs.py"
-Cohesion: 0.22
-Nodes (6): Generates YAML output for Jekyll integration., Generate YAML document with flattened keys., Create dictionary of bookmarks with normalized keys., Normalize bookmark title to create YAML key., Write YAML content to file in docs/_data directory., YamlGenerator
+### Community 203 - "Platform Docs — Governance"
+Cohesion: 0.33
+Nodes (10): F2 - The Blocking Provenance Check Does Not Run in CI, Two-Anchor Timestamping (RFC 3161 + OpenTimestamps), ASQAV as a Second Opinion, provenance/chain.jsonl, pf provenance verify (the audit), A Fast Queue Cancels Its Own Audit Trail, M1 - The Post-Merge Governance Check Has Never Passed, M3 - The Ledger Audit Runs Where the Evidence Isn't (+2 more)
 
-### Community 175 - "drink_orders.md"
-Cohesion: 0.22
-Nodes (10): Drink Orders, By order total dim, Food Orders, By order total dim, Large Orders, By order total dim, New Customers, By order total dim (+2 more)
-
-### Community 176 - "drink_revenue_pct.md"
-Cohesion: 0.22
-Nodes (10): Drink Revenue, By is food item, Drink Revenue %, By is food item, Ratio metric aggregation (drink revenue %), Food Revenue, By is food item, Food Revenue % (+2 more)
-
-### Community 177 - "_kpis__models.yml"
+### Community 204 - "Platform Docs — Architecture"
 Cohesion: 0.20
-Nodes (10): kpi_inventory_days_on_hand, kpi_procurement_cycle_time, kpi_stockout_rate, kpi_supplier_on_time_delivery, rank_suppliers_by_lead_time, rev_etl_inventory_reorder, view_store_mgr_inventory_status, int_lead_time_by_supplier (+2 more)
+Nodes (9): How one edit reaches every project, Keeping this true, One project, source to consumer, Straight to the file, The platform, drawn from the platform, What context costs, What each project actually holds, What has to pass before a merge (+1 more)
 
-### Community 178 - "__sources.yml"
-Cohesion: 0.20
-Nodes (10): marketing source (marketing and loyalty), raw_campaigns, raw_coupon_redemptions, raw_coupons, raw_email_events, raw_loyalty_members, raw_loyalty_tiers, raw_loyalty_transactions (+2 more)
-
-### Community 179 - "pyproject.toml"
-Cohesion: 0.20
-Nodes (10): acme_eu, acme_rollup, acme_us, data-platform, globex_core, globex_eu, jaffle_shop, pf (+2 more)
-
-### Community 180 - "cli.py"
+### Community 205 - "CI Workflows — Agent Context"
 Cohesion: 0.27
-Nodes (10): human(), cmd_artifacts_ls(), cmd_artifacts_pull(), cmd_artifacts_push(), A configured store, or a one-line exit. Unconfigured is the *expected* first…, Upload a project's recce artefacts. No arguments → every project., Download a project's recce artefacts. No arguments → every project. Overwrites…, What is in the bucket. (+2 more)
+Nodes (10): agent-context check job (entry points, memory, test, arch, tokens), agent-context refresh job (self-healing commit), Three agent tools, three entry points, one generated context, agent-context workflow, Autonomous scope of AGENTS.md appended to the system prompt, implement job (claude-code-action in tag mode), Claude workflow (@claude implements), copilot-setup-steps job (Copilot's sandbox environment) (+2 more)
 
-### Community 181 - "index.html"
+### Community 206 - "Platform Core — Bloom"
+Cohesion: 0.22
+Nodes (7): Corpus, The whole repository, as one graph you can walk in Neo4j Bloom. Every project…, Every project's graph, unioned and qualified., The half of the export a person reads before touching Neo4j., readme(), test_corpus_counts_are_sorted_descending(), test_readme_reports_the_real_numbers()
+
+### Community 207 - "Tests Graph — Test Bloom (3)"
+Cohesion: 0.20
+Nodes (10): _flat(), Any, `props` as something Neo4j will accept, losing nothing. A Neo4j property is a…, Saved search phrases — the questions this repository is actually asked. Each…, templates(), A `$param` with no declaration is a search phrase that cannot run., A phrase naming a label or type the graph never emits finds nothing., test_template_ids_are_unique() (+2 more)
+
+### Community 208 - "Platform Core — Capabilities"
+Cohesion: 0.22
+Nodes (10): apply(), _merge(), Any, Path, Write one capability's files and merge its settings. Returns what changed.…, Deep-merge, appending lists rather than replacing them. Replacing would let a…, An unmigratable conflict must say which setting, not AttributeError., The existing contract: capabilities add permissions, never replace them. (+2 more)
+
+### Community 209 - "MCP Server 209"
+Cohesion: 0.20
+Nodes (10): _graph_path(), impact_analysis(), kg_neighbors_tool(), kg_path_tool(), kg_search_tool(), Path, Find nodes by name, label or business term. The vague-question entry point., Explore the graph around a node. Call this BEFORE reading any file. (+2 more)
+
+### Community 210 - "Ontology — Policy.Capabilities"
+Cohesion: 0.20
+Nodes (10): agent-settings-schema-valid, entity-isolation-enforced, Generated Capability Policy Overlay, vendor-is-read-only, sister-projects-are-isolated, tool-contribution-may-only-tighten, upstream-licences-are-reviewed, Skill: build-assets (Dagster) (+2 more)
+
+### Community 211 - "Skills Debug Pipeline 211"
+Cohesion: 0.22
+Nodes (10): money-amount-bounded, money-requires-currency, quality-floor-derived-from-ontology, Generate The Expectation From The Role, Skill: add-tests, debug-pipeline Skill, drop Resource Rebackfill, Pipeline Naming Convention (+2 more)
+
+### Community 212 - "Projections — Owl"
+Cohesion: 0.31
+Nodes (8): Projections of the knowledge graph into external semantic formats. The graph is…, export(), _inverse_id(), Path, Project the ontology into OWL / RDF-XML. Microsoft's Ontology-Playground…, stats(), to_rdf_xml(), _uri()
+
+### Community 213 - "Scaffolding — Ci"
 Cohesion: 0.24
-Nodes (10): Evidence Kinds Registry, OpenTopology (otop), Intent → Constraint → Artifact → Evidence Chain, api (fetch helper), loadAll, loadReview, loadTopology, loadWorkspace (+2 more)
+Nodes (9): legacy_paths(), One CI workflow per project, composed from what its capabilities declare. Why a…, The whole workflow file for one project. `jobs` maps a job id to its YAML…, Repo-relative path of a project's master workflow., Per-capability workflow files this master supersedes. Named explicitly rather…, _render_outputs(), render_project_workflow(), _render_steps() (+1 more)
 
-### Community 182 - "package.json"
-Cohesion: 0.20
-Nodes (10): typescript, typescript, tsx, @types/node, devDependencies, tsx, @types/node, typescript (+2 more)
+### Community 214 - "Tool Layer — Recce"
+Cohesion: 0.27
+Nodes (10): check_results(), model_diffs(), Any, Attach `pf tool recce ...`. Imported lazily by the CLI, never at startup., What the recorded review measured, per dbt model. `read_state` counts checks;…, Every recorded check with its verdict — the validation itself, not a count.…, Turn one recorded result into (verdict, human detail)., register_commands() (+2 more)
 
-### Community 183 - "SKILL.md"
-Cohesion: 0.20
-Nodes (9): Local connector registry, Stripe Connector Registry Entry, steward-ontology Skill, Stewarding an induced ontology, The four judgements induction cannot make, Things that should make you reject, Where approved terms go, setup-data-quality Skill (+1 more)
+### Community 215 - "Toolkits Evidence Bi"
+Cohesion: 0.27
+Nodes (9): Metric-First Reporting Principle, Ratio Re-Division Rule, Reporting rules, Toolchain, build-dashboard Skill, dashboard-loop Skill, Exit conditions — stop when all hold, The dashboard loop (+1 more)
 
-### Community 184 - "SKILL.md"
-Cohesion: 0.20
-Nodes (9): create-sql-pipeline Skill, SQL database pipeline, optimize-performance Skill, Pipeline performance, duckdb-docs Skill, DuckDB docs, DuckDB Single-Writer Constraint, Entity Isolation Principle (+1 more)
-
-### Community 185 - "tech-debt.md"
+### Community 216 - "Power Tools Commands — Tech Debt"
 Cohesion: 0.20
 Nodes (9): Empty blast radius trichotomy, 1. Inert governance — check first, it is the costliest kind, 2. Model debt, 3. Source debt, 4. Documentation and decisions, 5. Rank and report, Generic checklist (retained from the source guide), Inert governance as the costliest debt (+1 more)
 
-### Community 186 - "dl_nist-pdfs.py"
-Cohesion: 0.24
-Nodes (7): main(), parse_arguments(), Create configuration for NIST SP 800-53r5 document., Create configuration for NIST AI 600-1 document., Configure logging with appropriate level and format., Parse command line arguments and return configuration., setup_logging()
+### Community 217 - "Onboard Project References — Stage Import"
+Cohesion: 0.20
+Nodes (9): Evaluate, Implement, Stage 1: import, Then, Validate, What the import deliberately does not carry, Config re-keying after directory moves, Four-layer contract (staging / marts / semantic / utils) (+1 more)
 
-### Community 187 - "SKILL.md"
+### Community 219 - "Agents.Md 219"
 Cohesion: 0.22
-Nodes (7): Querying, Recce Review Skill, Procedure, Reading the UI, Reviewing a dbt change with Recce, Rules, Where this sits
+Nodes (9): 0. Which scope you are in, 1. Before you start — the read protocol, 2. Where you may write, 3. Generated files: change the generator, not the file, 4. Before you push, 5. Before you finish — the write protocol, 6. Source of truth, dependencies, and session state, 7. Never (+1 more)
 
-### Community 188 - "package.json"
+### Community 220 - "Platform Docs — Ai Governance Architecture (4)"
 Cohesion: 0.22
-Nodes (9): @fluentui/react-icons, dependencies, @fluentui/react-icons, react, react-dom, wss3-forge, react, react-dom (+1 more)
+Nodes (9): 5. Plane 4 — the ledger: what actually happened, Anchoring: two clocks, because they fail differently, Fail-open by default, fail-closed where it counts, Five stages, three of them records, The ledger is not in git, The record, and why the canonical form is pinned, Verifiable by anyone, What the audit checks (+1 more)
 
-### Community 189 - "CLAUDE.md"
+### Community 221 - "Platform Docs Bloom — Readme (1)"
 Cohesion: 0.22
-Nodes (7): acme — group context, Business rules the graph cannot encode, Cross-entity work, Acme Ontology Instance, acme-eu — project context, Business rules the graph cannot encode, Conventions
+Nodes (8): Ids are qualified, on purpose, Load it, Modelled on, Node kinds, Per project, Relationship kinds, The platform graph, in Neo4j Bloom, What you get
 
-### Community 190 - "package.json"
+### Community 222 - "Platform Docs Bloom — Readme (2)"
 Cohesion: 0.22
-Nodes (9): devDependencies, @types/react, @types/react-dom, vite, @vitejs/plugin-react, @types/react, @types/react-dom, vite (+1 more)
+Nodes (9): Unioned Bloom Graph Export, Colour Is The Plane, Column Hidden By Default, neo4j-graph-examples/bloom, Qualified Node Ids, control-baseline-is-declared, Evidence Kinds Registry, Intent -> Constraint -> Artifact -> Evidence Chain (+1 more)
 
-### Community 191 - "performance-audit.md"
+### Community 223 - "Tests Graph — Test Bloom (4)"
+Cohesion: 0.22
+Nodes (9): perspective(), The `.bloom-perspective.json` that makes the export legible., A qualified id is a join key. Captioning on it shows noise., 78% of the real graph is Column; any view holding it is unreadable., test_column_is_hidden_by_default(), test_id_is_excluded_from_display(), test_perspective_captions_on_name(), test_perspective_covers_what_the_corpus_holds() (+1 more)
+
+### Community 224 - "Tests Graph — Test Bloom (5)"
+Cohesion: 0.22
+Nodes (9): Path, Write the whole export. Returns the corpus and what was written., write(), The check Neo4j would otherwise make for us, hours later., Two runs over an unchanged graph must produce identical bytes., test_csv_round_trips(), test_every_written_edge_endpoint_resolves(), test_write_is_repeatable() (+1 more)
+
+### Community 225 - "Skills Add Expectations 225"
+Cohesion: 0.36
+Nodes (9): add-expectations Skill, Do Not Restate A Built-In Test, One Assumption Per Test, Error For Metric-Corrupting, Warn For Drift, Cheapest Test That Expresses The Assumption, choose-a-test Skill, Data vs Logic Test, Static vs Historical Assertion (+1 more)
+
+### Community 226 - "Dlt Ingest Registry"
+Cohesion: 0.25
+Nodes (8): Local connector registry, Stripe Connector Registry Entry, find-source Skill, After the first load: propose the ontology, Find and scaffold a source, steward-ontology Skill, setup-data-quality Skill, Data quality
+
+### Community 227 - "Skills Scaffold Project"
+Cohesion: 0.25
+Nodes (8): Never read another group or another sister project, after scaffolding, choosing capabilities, do not read these, group or project?, Scaffold a project, verify, then stop, when it fails
+
+### Community 228 - "Power Tools Commands — Performance Audit"
 Cohesion: 0.22
 Nodes (8): 1. Where the time actually goes, 2. Why the slow ones are slow, 3. Ingestion, 4. Reporting layer, 5. Report, Generic checklist (retained from the source guide), Measure before recommending, Performance audit
 
-### Community 192 - "stage-layers.md"
+### Community 229 - "Onboard Project References — Stage Layers"
 Cohesion: 0.22
 Nodes (8): Evaluate, Implement, `intermediate/` → `marts/`, Layers that are neither, Stage 4 — staging, marts, semantic, Staging that joins, Then, Validate
 
-### Community 193 - "SKILL.md"
+### Community 230 - "Skills Charts And Diagrams"
 Cohesion: 0.22
 Nodes (8): Charts and diagrams, Colour, by the job it does, Evidence pages, Form, Form first, colour last, Mermaid that GitHub renders, Theme-invariant mermaid styling, Validate, do not eyeball
 
-### Community 194 - "dl_nist-pdfs.py"
-Cohesion: 0.28
-Nodes (5): BookmarkFilter, Filters bookmarks by section and other criteria., Filter bookmarks by section name., Filter bookmarks to only include leaf nodes (nodes with no children)., Check if a section title is anonymous (just numbers/punctuation).
+### Community 231 - ".Memory Notes"
+Cohesion: 0.36
+Nodes (8): Change the Generator, Not the File, Regeneration Is Safe Only With Full Inputs, Generated Yet Deliberately Committed, Arch Gate Verification Trap, Two CI Pipelines Render architecture.md Differently, Reproducing CI Locally, git clone --shared Carries No Submodules, A Stale dbt Manifest Degrades Confidently
 
-### Community 195 - "dl_nist-pdfs.py"
-Cohesion: 0.28
-Nodes (5): DeepLinkGenerator, Generates enhanced deep links with object references and coordinates., Create the most precise deep link possible for a bookmark., Create object-based deep link with coordinates., Create page+coordinate deep link.
+### Community 232 - "Platform Docs — Architecture Maps (2)"
+Cohesion: 0.25
+Nodes (8): Adding a feature, Budget, Failure modes, Scope: one project, never a sister, The diagrams, The per-project architecture map, Why it is a registry, not a template, Why it is committed, and why it has no date
 
-### Community 196 - "VENDOR-CARD.md"
+### Community 233 - ".Github Scripts — Bot Findings (5)"
+Cohesion: 0.32
+Nodes (8): board_item(), field_value(), gql(), Note which commit a resolved thread points at. **Never closes the issue.** An…, This issue's item on the board, adding it if it is not there yet.…, The current value of one single-select field on a board item., record_resolution(), set_fields()
+
+### Community 234 - "Platform Core — Viz"
 Cohesion: 0.29
-Nodes (8): AIR Reference, Governance Reference, Vendor Card, Vendored upstreams — index, AI Governance Workflow, pf air gate, Platform CLAUDE.md, Vendor Registry
+Nodes (7): lint_doc(), Every mermaid block in a rendered map, checked. Empty means clean., blocks(), lint(), The diagram design system — one palette, one escape, one linter. Three places…, Every ```mermaid fence in a document, without its fence lines., Problems in one mermaid block, as human sentences. Empty means clean. Catches…
 
-### Community 197 - "snowflake.md"
+### Community 235 - "Platform Core — Artifacts (3)"
 Cohesion: 0.25
-Nodes (7): Credentials, Dialect Portability Gate, DuckDB-Dev / Snowflake-Prod Strategy, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
+Nodes (6): _first_env(), infer_backend(), NotConfigured, No credentials in the environment. Raised only where a bucket is required., Which protocol this endpoint speaks, from its host alone. Only Azure is…, A configured store, or None. Never raises — the caller decides. Returning None…
 
-### Community 198 - "package.json"
+### Community 236 - "Platform Core — Checks"
+Cohesion: 0.36
+Nodes (6): Check, failed(), passed(), The three-state check — one condition, its verdict, and the evidence for it.…, One gate condition, with the evidence for its verdict. `evidence` is not a…, unexercised()
+
+### Community 237 - "Tests — Readme"
 Cohesion: 0.25
-Nodes (8): @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery, @evidence-dev/bigquery
+Nodes (7): `capabilities/` — the seams a feature arrives through, Finding the right file without opening any, `gate/` — what blocks a merge, `graph/` — the knowledge graph and the always-on context tier, `onboarding/` — bringing an external project in, `ontology/` — what things mean, and what must hold of them, What the suite guards
 
-### Community 199 - "package.json"
-Cohesion: 0.25
-Nodes (8): @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components, @evidence-dev/core-components
-
-### Community 200 - "package.json"
-Cohesion: 0.25
-Nodes (8): @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv, @evidence-dev/csv
-
-### Community 201 - "package.json"
-Cohesion: 0.25
-Nodes (8): @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres, @evidence-dev/postgres
-
-### Community 202 - "package.json"
-Cohesion: 0.25
-Nodes (8): @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript, @evidence-dev/source-javascript
-
-### Community 203 - "package.json"
-Cohesion: 0.25
-Nodes (8): @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino, @evidence-dev/trino
-
-### Community 204 - "ADR-0003-what-the-base-diff-found.md"
-Cohesion: 0.25
-Nodes (7): ADR-0003 — What the base/current diff found, Decision, `mega_wide_daily_flash` — 2 rows, last decimal digit, Result, `scr_customer_churn_propensity` — 308 rows, and **not our doing**, What was compared, Why this is worth writing down
-
-### Community 205 - "median_revenue.md"
-Cohesion: 0.25
-Nodes (8): Median Revenue, By is food item, Order Total, By order total dim, Revenue, By is food item, Revenue Growth % M/M, By is food item
-
-### Community 206 - "README.md"
-Cohesion: 0.32
-Nodes (8): Evidence capability card — zenith-de, Evidence config and validated palette, zenith-de overview page, Evidence BI reporting — zenith-de, Pages never restate business logic, Ratio metrics re-divide at grain, Evidence DuckDB connector — zenith_de, metricflow_time_spine
-
-### Community 207 - "workspace.py"
-Cohesion: 0.43
-Nodes (7): _delete(), _log_cap_mb(), plan(), Path, Task, Workspace housekeeping — regenerable artefacts that only ever grow. Everything…, _truncate()
-
-### Community 208 - "concepts.yaml"
-Cohesion: 0.32
-Nodes (8): Platform Ontology v2, Microsoft Ontology-Playground, Policy: entity-requires-identity, Policy: link-must-be-in-topology, MDL (WrenAI Modeling Definition Language), Topology v2 (Named Relations), Control Plane UI (single-file), Control Plane Web Entry (Vite/React)
-
-### Community 209 - "SKILL.md"
+### Community 238 - "Skills Port Snowflake Sql"
 Cohesion: 0.25
 Nodes (7): Adding a macro, Another source dialect, Porting SQL from another warehouse, Start with the report, not the SQL, The rule that matters, What is already portable, Wrapping a call site
 
-### Community 210 - "RULES.md"
-Cohesion: 0.25
-Nodes (7): read-memories Skill, Reading memories, Graph-Before-Files Principle, power-tools, Read-Only Verifier Principle, Rules, What it ships
-
-### Community 211 - "SKILL.md"
+### Community 239 - "Skills Forge Ui"
 Cohesion: 0.25
 Nodes (8): forge-ui Skill, Build, Control-plane UI, Read the vendored skill first, not the component list, Status Never Colour Alone, What this platform adds on top, Which tile, Wide content
 
-### Community 212 - "ast-grep.md"
+### Community 240 - "Power Tools Commands — Ast Grep"
 Cohesion: 0.25
 Nodes (7): Advanced, Availability — check before promising results, Patterns that pay off in this repo, Structural search with ast-grep, Syntax, Tool choice, When it is the right tool
 
-### Community 213 - "stage-dialect.md"
+### Community 241 - "Onboard Project References — Stage Dialect"
 Cohesion: 0.25
 Nodes (7): Evaluate, Implement, Stage 3 — one SQL, two targets, The targets, The two failure classes are not equally dangerous, Then, Validate
 
-### Community 214 - "recce.md"
-Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for acme/acme-eu, The loop, What is generated, Where the artefacts live
+### Community 242 - "Onboard Project References — Stage Ontology"
+Cohesion: 0.25
+Nodes (8): Evaluate, Implement, Ontology proposal flow (scan / review / approve), Stage 2: ontology, topology, annotations, The three artefacts, Then, Validate, When the ontology has no word for it
 
-### Community 215 - "recce.md"
+### Community 243 - "Ontology — Skill (2)"
 Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for acme/acme-rollup, The loop, What is generated, Where the artefacts live
+Nodes (7): Upstream To Downstream Edge Direction, change-declares-blast-radius, change-verified-against-baseline, Run impact_analysis Before Adding A Test, Skill: troubleshoot-runs, Skill: run-commands, Structure And Lineage Questions First
 
-### Community 216 - "README.md"
+### Community 244 - "Platform Docs — Development"
 Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
+Nodes (6): Commands, Developing on this platform, Generated files: change the generator, not the file, Known gap: a vendor pin the registry describes but never adds, The commit gate, Verifying a regenerated artefact
 
-### Community 217 - "recce.md"
+### Community 245 - "Platform Docs — Project Atlas"
 Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for acme/acme-us, The loop, What is generated, Where the artefacts live
+Nodes (7): Configuring it, Failure modes, The per-project atlas, What is on the page, When it refreshes, and why that is a per-project decision, Where the hook attaches, Why it is not committed
 
-### Community 218 - "recce.md"
+### Community 246 - "Platform Docs — Semantics"
 Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for globex/globex-core, The loop, What is generated, Where the artefacts live
+Nodes (7): How a join condition is derived, Deriving a Join Condition, Why Relations Are Nodes, Not Edges, Room left for WrenAI, The semantic stack, Undocumented Columns, Why relations are nodes, not edges
 
-### Community 219 - "README.md"
-Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 220 - "recce.md"
-Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for globex/globex-eu, The loop, What is generated, Where the artefacts live
-
-### Community 221 - "README.md"
-Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 222 - "recce.md"
-Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for jaffle/jaffle-shop, The loop, What is generated, Where the artefacts live
-
-### Community 223 - "README.md"
-Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 224 - "dbt_project.yml"
-Cohesion: 0.29
-Nodes (7): jaffle_shop DuckDB connection, Per-project warehouse isolation, dbt anonymous user id, jaffle_shop dbt project config, Elementary schema isolation, Seed loading gated by load_source_data var, Domain/layer/criticality tag taxonomy
-
-### Community 225 - "_utilities__models.yml"
-Cohesion: 0.29
-Nodes (7): met_monthly_revenue_by_store, ml_feature_store_sales, poc_revenue_mom, view_cfo_revenue_summary, Date spine ~2017-2027 with calendar attributes, Fiscal calendar mapping (Feb 1 fiscal year start), One row per store per day from opening date, for gap-filling
-
-### Community 226 - "recce.md"
-Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for zenith/zenith-de, The loop, What is generated, Where the artefacts live
-
-### Community 227 - "README.md"
-Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 228 - "README.md"
-Cohesion: 0.29
-Nodes (6): Decision log, zenith-uk eval corpus, Generated eval cases from toolkit templates, Prompt stability via --samples, Weak prose matchers principle, Mandatory why field on eval cases
-
-### Community 229 - "recce.md"
-Cohesion: 0.29
-Nodes (6): In Dagster, Read it against the semantic layer, Recce — dbt review for zenith/zenith-uk, The loop, What is generated, Where the artefacts live
-
-### Community 230 - "README.md"
-Cohesion: 0.29
-Nodes (6): Commands, Node version, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 231 - "loop-constraints.md"
-Cohesion: 0.29
-Nodes (6): Communication, Data changes, Loop behaviour, Loop Constraints — data platform, Scope, Secrets
-
-### Community 232 - "compose.yaml"
+### Community 247 - "CI Workflows — Ai Governance"
 Cohesion: 0.38
-Nodes (7): Control Plane Compose Stack, pf_elasticsearch Service, External Volumes Fail Loudly, pf_postgresql Service, pf_stack Service (OpenMetadata + Dagster + recce + nginx), Per-Project Code Location Isolation, Dagster Workspace (generated)
+Nodes (7): Compliance action pinned as a submodule, never run by tag, Timestamp anchor coverage job (stage 05), ASQAV compliance scan job, Independent stdlib verifier shipped to auditors, Provenance chain job, Runtime evidence, static scan and catalogue are not each other's evidence, AI governance workflow
 
-### Community 233 - "verify_provenance.py"
-Cohesion: 0.38
-Nodes (6): canonical_bytes(), check_completeness(), digest(), main(), Path, An EXECUTION with no DECISION is work that never passed the gate.
+### Community 248 - "Hooks — Session Start"
+Cohesion: 0.48
+Nodes (6): main(), Path, The checkout the session is in, which in a git worktree is that worktree: its…, The folder for this session. `transcript_path` is…, repo_root(), session_dir()
 
-### Community 234 - "README.md"
+### Community 249 - "AIR Controls — Coverage"
+Cohesion: 0.29
+Nodes (7): _evidence_seen(), Path, Does the thing `enforced_by` names actually exist? Three forms appear in…, Has anything this policy declares as evidence actually been produced? Only…, _resolve_artefact(), parametrize, test_artefact_resolution()
+
+### Community 250 - "Platform Core — Architecture (3)"
+Cohesion: 0.29
+Nodes (3): Presence, One feature, as found in one project., Is `count` a quantity, or just how many of a fixed file set exist? `mdl/` holds…
+
+### Community 251 - "Platform Core — Notify"
+Cohesion: 0.43
+Nodes (6): _expand(), notify(), Path, Delivery: where an answer, a finding or a proposal goes when a person is not…, `${VAR}` -> the environment, else empty. A literal URL is passed through, but…, webhook_for()
+
+### Community 252 - "Toolkits Dbt Snowflake — Readme (1)"
 Cohesion: 0.29
 Nodes (6): Adding another source dialect, dbt-snowflake — Snowflake's function surface, portably, Layout, The contract, What is deliberately absent, What this is for
 
-### Community 235 - "blast-radius.md"
+### Community 253 - "Skills Design Architecture 253"
 Cohesion: 0.29
-Nodes (6): After a change with real reach, Blast radius, Fastest path, Blast radius / impact_analysis, Reading the result, When the answer is empty
+Nodes (6): adding a feature to the map, Design a project's architecture, reading it, not the tree, what it tells you, that a file walk does not, when it fails, when you are drawing, not reading
 
-### Community 236 - "gemini-analyze.md"
+### Community 254 - "Toolkits Power Tools — Rules"
+Cohesion: 0.29
+Nodes (6): quick-start Skill, Quick start, power-tools, Read-Only Verifier Principle, Rules, What it ships
+
+### Community 255 - "Power Tools Commands — Gemini Analyze"
 Cohesion: 0.29
 Nodes (6): After, Large-context analysis with the Gemini CLI, Scope rule for this repo — read first, Syntax, When not to, When to reach for it
 
-### Community 237 - "stage-import.md"
-Cohesion: 0.29
-Nodes (6): Evaluate, Implement, Stage 1 — import, Then, Validate, What the import deliberately does not carry
-
-### Community 238 - "stage-metrics.md"
-Cohesion: 0.29
-Nodes (6): Evaluate, Implement, Stage 5 — MetricFlow, Then, Validate, Where the definitions come from
-
-### Community 239 - "stage-ontology.md"
-Cohesion: 0.29
-Nodes (7): Evaluate, Implement, Stage 2 — ontology, topology, annotations, The three artefacts, Then, Validate, When the ontology has no word for it
-
-### Community 240 - "README.md"
+### Community 256 - "Platform Docs — Policy (3)"
 Cohesion: 0.33
-Nodes (5): Commands, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
+Nodes (6): Existing project, How it reaches a project, New project, `preserve` — seeded, not generated, The overlay is impact-required, not denied, The seeded file is inert
 
-### Community 241 - "snowflake.md"
+### Community 257 - "Platform Docs — Vendor"
 Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
+Nodes (6): `ai-governance-framework` — CC BY 4.0, `asqav-compliance` — Elastic-2.0, `dlthub-ai-workbench` — dltHub License (proprietary), `evidence-bi` — not stated upstream, Licence review outstanding, `public-sector-ai-playbook` — CC BY 4.0
 
-### Community 242 - "snowflake.md"
+### Community 258 - "Loop Constraints.Md"
 Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
+Nodes (5): Communication, Data changes, Loop behaviour, Loop Constraints — data platform, Scope
 
-### Community 243 - "README.md"
-Cohesion: 0.33
-Nodes (5): Commands, Ratio metrics, Reporting — Evidence BI, The one rule, What is generated vs yours
-
-### Community 244 - "README.md"
-Cohesion: 0.47
-Nodes (6): Generated expectations floor (acme-us), OpenMetadata Snowflake ingestion (globex-core), OpenMetadata dbt ingestion (globex-core), Elementary observability (globex-core), dbt-expectations generated floor (globex-core), globex tools declaration
-
-### Community 245 - "snowflake.md"
-Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
-
-### Community 246 - "snowflake.md"
-Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
-
-### Community 247 - "ADR-0002-snowflake-semantics-on-every-adapter.md"
-Cohesion: 0.33
-Nodes (5): ADR-0002 — Snowflake's semantics are the ones we pin, on every adapter, Alternatives rejected, Consequences, Context, Decision
-
-### Community 248 - "snowflake.md"
-Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
-
-### Community 249 - "_alerts__models.yml"
-Cohesion: 0.33
-Nodes (6): int_product_sales_velocity, adv_dynamic_pricing_recommendation, alert_margin_erosion, alert_price_below_cost, int_gross_margin_by_product, int_total_cost_of_goods
-
-### Community 250 - "_marketing__models.yml"
-Cohesion: 0.33
-Nodes (6): kpi_campaign_roi_avg, int_marketing_roi_by_quarter, int_campaign_orders, int_campaign_roi, rank_campaigns_by_roi, view_cmo_campaign_dashboard
-
-### Community 251 - "packages.yml"
-Cohesion: 0.33
-Nodes (6): dbt package lockfile, dbt package requirements, dbt_date package (godatadriven, pinned 0.17.2), dbt_expectations package (metaplane, pinned 0.10.10), dbt_utils package (dbt-labs, pinned 1.4.1), elementary package (elementary-data, pinned 0.25.1)
-
-### Community 252 - "README.md"
-Cohesion: 0.47
-Nodes (6): Generated expectations (ontology-derived dbt tests), OpenMetadata Snowflake ingestion workflow (zenith_zenith_de), OpenMetadata dbt artefact ingestion workflow (zenith_zenith_de), Elementary data observability — zenith-de, dbt-expectations generated floor — zenith-de, zenith group tools declaration (recce, wren, openmetadata, expectations, elementary)
-
-### Community 253 - "snowflake.md"
-Cohesion: 0.33
-Nodes (5): Credentials, Production warehouse — Snowflake, Running against it, Switching, Why development stays on DuckDB
-
-### Community 254 - "LOOP.md"
-Cohesion: 0.33
-Nodes (5): Anatomy of a run, Autonomy ladder, Failure modes catalogued, LOOP.md — loop definitions, Loops
-
-### Community 255 - "post_tool_use.py"
+### Community 259 - "Hooks — Post Tool Use"
 Cohesion: 0.53
 Nodes (5): main(), _outcome(), Path, Read success or failure out of the tool response. The shape of `tool_response`…, repo_root()
 
-### Community 256 - "impact-verifier.md"
+### Community 260 - "Tests Graph — Test Bloom (6)"
+Cohesion: 0.33
+Nodes (6): load_cypher(), The loader. `neo4j-admin import` is faster; this works on a live database.…, Re-running must update, not double the graph., test_loader_is_idempotent_by_construction(), test_loader_names_the_csvs_it_is_given(), test_loader_sets_a_label_for_every_kind()
+
+### Community 261 - "Skills Annotate Source"
+Cohesion: 0.33
+Nodes (6): annotate-source Skill, Annotate a source, install-duckdb Skill, Extensions, read-file Skill, Reading files
+
+### Community 262 - "Power Tools Agents — Impact Verifier"
 Cohesion: 0.33
 Nodes (5): A Zero Is Not a Result, Found-None vs No-Impact Distinction, Method, Output, When the graph is empty or stale
 
-### Community 257 - "stage-review.md"
+### Community 263 - "Skills Recce Review"
 Cohesion: 0.33
-Nodes (6): Evaluate, Implement, Stage 6 — Recce, The two states, Then, Validate
+Nodes (5): Procedure, Reading the UI, Reviewing a dbt change with Recce, Rules, Where this sits
 
-### Community 258 - "package.json"
-Cohesion: 0.33
-Nodes (6): agent, ai-governance, audit, compliance, github-action, keywords
-
-### Community 259 - "package.json"
+### Community 264 - "Platform Core — Cli (6)"
 Cohesion: 0.40
-Nodes (5): @actions/core, @actions/github, dependencies, @actions/core, @actions/github
+Nodes (4): Context, _ArchGroup, `pf arch build|check` is the repository's map; any other `pf arch` is a…, TyperGroup
 
-### Community 260 - "openmetadata.md"
+### Community 266 - "Platform Docs — Ai Governance Architecture (5)"
 Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for acme/acme-eu, What publishes what
+Nodes (5): 3. Plane 2 — the path gate: which paths may be touched, An exception says "git may carry this", never "edit this", Evaluation order — first hit wins, Two sections, one merge rule, What is denied, and why it is two different things
 
-### Community 261 - "README.md"
+### Community 267 - "Platform Docs — Kg Atlas (2)"
 Cohesion: 0.40
-Nodes (4): Commands, Evals for acme-eu, Format, Two kinds of case live here
+Nodes (5): 1. How does a raw column reach a business metric?, 2. Why is this column a join key, and to what?, 3. Is this rule enforced, and what proves it?, 4. Is it safe to change this?, Four questions, as edge chains
 
-### Community 262 - "openmetadata.md"
+### Community 268 - "CI Workflows — Bot Findings"
 Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for acme/acme-rollup, What publishes what
+Nodes (5): A resolved thread is not evidence the code changed, pull_request_target so one fix reaches every open PR, The review body half carries the findings with no thread behind them, track job (file every review finding as an issue), bot findings workflow
 
-### Community 263 - "README.md"
-Cohesion: 0.40
-Nodes (4): Commands, Evals for acme-rollup, Format, Two kinds of case live here
+### Community 269 - ".Mcp.Json"
+Cohesion: 0.50
+Nodes (4): uvx, code-review-graph, graphify, graphify-mcp
 
-### Community 264 - "CLAUDE.md"
-Cohesion: 0.40
-Nodes (4): acme-us — project context, Business rules the graph cannot encode, Conventions, Acme-US ADR-0001
+### Community 270 - "Deploy"
+Cohesion: 0.60
+Nodes (5): Control Plane Compose Stack, pf_elasticsearch Service, External Volumes Fail Loudly, pf_postgresql Service, pf_stack Service (OpenMetadata + Dagster + recce + nginx)
 
-### Community 265 - "ADR-0001-platform-macros-on-macro-paths.md"
-Cohesion: 0.40
-Nodes (4): ADR-0001 — Platform cleaning macros load via `macro-paths`, not as a dbt package, Consequences, Context, Decision
-
-### Community 266 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for acme/acme-us, What publishes what
-
-### Community 267 - "README.md"
-Cohesion: 0.40
-Nodes (4): Commands, Evals for acme-us, Format, Two kinds of case live here
-
-### Community 268 - "CLAUDE.md"
-Cohesion: 0.40
-Nodes (4): Business rules the graph cannot encode, Cross-entity work, globex — group context, Globex Ontology Instance
-
-### Community 269 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for globex/globex-core, What publishes what
-
-### Community 270 - "README.md"
-Cohesion: 0.40
-Nodes (4): Commands, Evals for globex-core, Format, Two kinds of case live here
-
-### Community 271 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for globex/globex-eu, What publishes what
-
-### Community 272 - "README.md"
-Cohesion: 0.40
-Nodes (4): Commands, Evals for globex-eu, Format, Two kinds of case live here
-
-### Community 273 - "CLAUDE.md"
-Cohesion: 0.40
-Nodes (4): Business rules the graph cannot encode, Conventions, jaffle-shop — project context, The semantic stack
-
-### Community 274 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for jaffle/jaffle-shop, What publishes what
-
-### Community 275 - "_kpis__models.yml"
-Cohesion: 0.40
-Nodes (5): int_equipment_downtime, int_equipment_lifecycle, kpi_equipment_uptime, kpi_maintenance_cost_ratio, view_coo_equipment_status
-
-### Community 276 - "_marketing_deep__models.yml"
-Cohesion: 0.40
-Nodes (5): int_social_post_timing, mkt_brand_awareness_proxy, mkt_social_content_performance, int_social_engagement_summary, view_cmo_social_dashboard
-
-### Community 277 - "_marketing_deep__models.yml"
-Cohesion: 0.40
-Nodes (5): mkt_loyalty_point_liability, int_loyalty_points_balance, view_cmo_loyalty_overview, int_loyalty_balance_monthly, sum_monthly_loyalty_totals
-
-### Community 278 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for zenith/zenith-de, What publishes what
-
-### Community 279 - "openmetadata.md"
-Cohesion: 0.40
-Nodes (4): Configuration, It is a projection, not a sync, OpenMetadata — the catalogue for zenith/zenith-uk, What publishes what
-
-### Community 280 - "README.md"
-Cohesion: 0.40
-Nodes (4): Commands, Evals for zenith-uk, Format, Two kinds of case live here
-
-### Community 281 - "pre_tool_use.py"
+### Community 271 - "Hooks — Pre Tool Use"
 Cohesion: 0.70
 Nodes (4): main(), Path, repo_root(), _target()
 
-### Community 282 - "SKILL.md"
+### Community 272 - "Skills Build Assets"
 Cohesion: 0.40
 Nodes (4): Dagster in this platform, Lineage, The pipeline builds itself, Three traps in this factory
 
-### Community 283 - "SKILL.md"
+### Community 273 - "Skills Add Expectations 273"
+Cohesion: 0.40
+Nodes (4): Expectations, Generate from the role, not from imagination, Rules, Where this stops
+
+### Community 274 - "Toolkits Elementary Observe"
 Cohesion: 0.60
 Nodes (5): elementary-observe Toolkit Context, Test vs Monitor Distinction, add-anomaly-tests Skill, triage-observability Skill, Immutable Record Principle
 
-### Community 284 - "2025_AIGovernanceFramework_Stacked.png"
-Cohesion: 0.60
-Nodes (5): Graph-Motif AI Monogram, AI Governance Framework Horizontal Logo (2025), AI Governance Framework, AI Graph-Network Monogram Icon, AI Governance Framework Stacked Logo (2025)
-
-### Community 285 - "dl_nist-pdfs.py"
-Cohesion: 0.40
-Nodes (3): NISTProcessor, Main orchestrator for NIST document processing workflow., Execute the complete processing workflow.
-
-### Community 286 - "recce.md"
+### Community 275 - "Platform Docs — Policy (4)"
 Cohesion: 0.50
-Nodes (4): Recce Documentation, Jaffle Ontology Extension, Jaffle Shop Annotations, Recce Configuration
+Nodes (4): Implementation notes, `load_ontology` is cached — overlays must never write through it, `PolicyRelaxation` subclasses `ValueError`, Severity is ranked, not compared
 
-### Community 287 - ".mcp.json"
+### Community 276 - "Toolkits Power Tools — .Mcp"
 Cohesion: 0.50
 Nodes (3): PF_PROJECT_DIR, uv, pf
 
-### Community 288 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for acme/acme-eu
-
-### Community 289 - "index.md"
-Cohesion: 0.50
-Nodes (3): Detail, Revenue by payment status, Revenue over time
-
-### Community 290 - "CLAUDE.md"
-Cohesion: 0.50
-Nodes (3): acme-rollup — project context, Business rules the graph cannot encode, Conventions
-
-### Community 291 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for acme/acme-us
-
-### Community 292 - "index.md"
-Cohesion: 0.50
-Nodes (3): Detail, Revenue by payment status, Revenue over time
-
-### Community 293 - "CLAUDE.md"
-Cohesion: 0.50
-Nodes (3): Business rules the graph cannot encode, Conventions, globex-core — project context
-
-### Community 294 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for globex/globex-core
-
-### Community 295 - "CLAUDE.md"
-Cohesion: 0.50
-Nodes (3): Business rules the graph cannot encode, Conventions, globex-eu — project context
-
-### Community 296 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for globex/globex-eu
-
-### Community 297 - "README.md"
-Cohesion: 0.50
-Nodes (4): globex-eu eval corpus, freshness_triage agent, metric_gap_proposer agent, test_failure_triage agent
-
-### Community 298 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for jaffle/jaffle-shop
-
-### Community 299 - "order_cost.md"
-Cohesion: 0.50
-Nodes (4): Order Cost, By order total dim, Order Gross Profit, By is food item
-
-### Community 300 - "_finance_deep__models.yml"
-Cohesion: 0.50
-Nodes (4): adv_customer_health_matrix, int_customer_rfm_scores, int_payment_method_by_segment, int_revenue_by_customer_segment
-
-### Community 301 - "_cross_domain__models.yml"
-Cohesion: 0.50
-Nodes (4): alert_stockout_risk, int_demand_forecast_weekly, int_supply_capacity, fin_revenue_forecast_simple
-
-### Community 302 - "_cohorts__models.yml"
-Cohesion: 0.50
-Nodes (4): coh_customer_monthly_cohort, coh_customer_retention_curve, coh_customer_revenue_by_cohort, fnl_new_customer_onboarding
-
-### Community 303 - "_hr_ops__models.yml"
-Cohesion: 0.50
-Nodes (4): int_performance_trend, rank_employees_by_performance, view_hr_performance_overview, scr_employee_performance
-
-### Community 304 - "_hr_ops__models.yml"
-Cohesion: 0.50
-Nodes (4): int_shift_coverage, int_store_staffing_ratio, int_absenteeism_rate, view_coo_staffing_overview
-
-### Community 305 - "_incremental__models.yml"
-Cohesion: 0.50
-Nodes (4): inc_fct_product_reviews, int_product_review_trend, int_product_review_summary, rank_products_by_review_score
-
-### Community 306 - "_kpis__models.yml"
-Cohesion: 0.50
-Nodes (4): kpi_waste_to_revenue_ratio, met_monthly_waste_metrics, poc_waste_mom, sum_monthly_waste_totals
-
-### Community 307 - "_marketing_advanced__models.yml"
-Cohesion: 0.50
-Nodes (4): int_email_unsubscribe_analysis, mkt_email_deliverability, int_email_engagement_funnel, int_email_send_time_analysis
-
-### Community 308 - "_marketing_advanced__models.yml"
-Cohesion: 0.50
-Nodes (4): int_referral_revenue_attribution, mkt_referral_network_analysis, int_referral_chain, int_referral_conversion_rate
-
-### Community 309 - "_marketing_deep__models.yml"
-Cohesion: 0.50
-Nodes (4): mkt_attribution_multi_touch, mkt_customer_journey_touchpoints, int_customer_acquisition_source, view_cmo_acquisition_funnel
-
-### Community 310 - "_product_advanced__models.yml"
-Cohesion: 0.50
-Nodes (4): prod_bundle_recommendation, prod_cross_sell_opportunity, int_combo_meal_analysis, int_product_affinity
-
-### Community 311 - "_product_advanced__models.yml"
-Cohesion: 0.50
-Nodes (4): prod_waste_by_product_analysis, int_product_return_rate, int_ingredient_waste_cost, int_waste_rate_by_product
-
-### Community 312 - "_supply_chain__models.yml"
-Cohesion: 0.50
-Nodes (4): view_coo_supply_chain_health, int_delivery_tracking, int_po_fulfillment_status, int_purchase_orders_enriched
-
-### Community 313 - "_marketing__models.yml"
-Cohesion: 0.50
-Nodes (4): Daily campaign spend records by channel, Cleaned marketing campaigns, one row per campaign, Email interaction events (sent, opened, clicked, unsubscribed, bounced), Social media posts and engagement metrics
-
-### Community 314 - "wren.md"
-Cohesion: 0.50
-Nodes (3): Against the review, There is no Wren web UI, Wren — semantic layer for zenith/zenith-de
-
-### Community 315 - "CLAUDE.md"
-Cohesion: 0.50
-Nodes (3): Business rules the graph cannot encode, Conventions, zenith-uk — project context
-
-### Community 316 - "README.md"
+### Community 277 - "Toolkits Dbt Snowflake — Readme (2)"
 Cohesion: 0.67
 Nodes (4): pf Platform dbt Project, Ambiguous Dialect Functions, dbt-snowflake Toolkit (portable sf_* macros), Skill: port-snowflake-sql
 
-### Community 317 - "base.py"
-Cohesion: 0.50
-Nodes (4): Check every routed step against its model's real capabilities. Called by `pf…, validate_routing(), models(), Model routing per step, with what each model actually accepts.
+### Community 278 - "Ontology — Concepts (2)"
+Cohesion: 0.67
+Nodes (4): Platform Ontology v2, Microsoft Ontology-Playground, MDL (WrenAI Modeling Definition Language), Topology v2 (Named Relations)
 
-### Community 318 - "cli.py"
+### Community 279 - "Skills Choose A Test"
 Cohesion: 0.50
-Nodes (4): mcp(), Run the MCP server over stdio., main(), Run as a stdio MCP server (requires the `mcp` extra).
+Nodes (3): Before adding any of them, The distinction people get wrong, Which test
 
-### Community 319 - "test_air.py"
+### Community 280 - "Skills Steward Ontology"
 Cohesion: 0.50
-Nodes (4): _only_the_fake_catalogue(), fixture, Register the synthetic catalogue and nothing else, for every test here.…, real_catalogues()
+Nodes (4): Stewarding an induced ontology, The four judgements induction cannot make, Things that should make you reject, Where approved terms go
 
-### Community 320 - "secrets-auditor.md"
+### Community 281 - "Skills Build Dashboard"
+Cohesion: 0.50
+Nodes (4): Building a dashboard, Non-negotiables, Procedure — in order, References
+
+### Community 282 - "Power Tools Agents — Secrets Auditor"
 Cohesion: 0.50
 Nodes (3): Judgement, Output, Where to look, in order of likelihood
 
-### Community 321 - "semantic-conformance.md"
+### Community 283 - "Power Tools Agents — Semantic Conformance"
 Cohesion: 0.50
 Nodes (3): Group boundaries, Output, The chain, checked link by link
 
-### Community 322 - "sql-reviewer.md"
+### Community 284 - "Power Tools Agents — Sql Reviewer"
 Cohesion: 0.50
 Nodes (3): Output, Reading the model, What to check, in order of how often it is actually wrong
 
-### Community 323 - "STATE.md"
+### Community 285 - "State.Md"
 Cohesion: 0.50
 Nodes (3): High priority (a loop is acting, or waiting on a human), Loop State — data platform, Watch list
 
-### Community 324 - "ai_deployment_model.yml"
-Cohesion: 0.67
-Nodes (4): Agent Patterns (Autonomous Agent, Multi-Agent), AI Deployment Model Taxonomy, Anthropic: Building Effective Agents, LLM Workflow Patterns (Prompt Chaining, Routing, Parallelization, Orchestrator-Workers, Evaluator-Optimizer)
-
-### Community 325 - "lint-check"
-Cohesion: 0.83
-Nodes (3): lint-check script, check_filename_regex(), process_files()
-
-### Community 326 - "rename-with-titles"
-Cohesion: 0.83
-Nodes (3): rename-with-titles script, process_files(), usage()
-
-### Community 327 - "CODE_OF_CONDUCT.md"
+### Community 286 - "Code Of Conduct.Md"
 Cohesion: 0.67
 Nodes (3): Code of Conduct, Contributor Covenant v2.1, Mozilla Code-of-Conduct Enforcement Ladder
 
-### Community 328 - "snowflake.md"
+### Community 288 - "Tests Capabilities — Test Tools"
 Cohesion: 0.67
-Nodes (3): Snowflake Documentation, dbt Project Configuration, dbt Profiles
-
-### Community 329 - "VENDOR.md"
-Cohesion: 0.67
-Nodes (3): Adopted (9), dbt Agent Skills, Deliberately not taken (5)
-
-### Community 330 - "VENDOR.md"
-Cohesion: 0.67
-Nodes (3): `dlthub-ai-workbench` — dltHub License (proprietary), `evidence-bi` — not stated upstream, Licence review outstanding
-
-### Community 331 - "air.yaml"
-Cohesion: 0.67
-Nodes (3): Acme AIR Configuration, Acme-EU AIR Configuration, Acme-EU AIR Register
-
-### Community 340 - "_alerts__models.yml"
-Cohesion: 0.67
-Nodes (3): alert_budget_overrun, int_budget_utilization_rate, int_budget_vs_actual
-
-### Community 341 - "_alerts__models.yml"
-Cohesion: 0.67
-Nodes (3): alert_revenue_drop_daily, int_daily_revenue, int_revenue_by_store_daily
-
-### Community 342 - "_cross_domain__models.yml"
-Cohesion: 0.67
-Nodes (3): int_order_throughput_by_hour, int_peak_hour_analysis, geo_foot_traffic_proxy
-
-### Community 343 - "_data_quality__models.yml"
-Cohesion: 0.67
-Nodes (3): dq_missing_invoices, fin_payment_reconciliation, int_invoice_payment_matching
-
-### Community 344 - "_incremental__models.yml"
-Cohesion: 0.67
-Nodes (3): inc_met_daily_revenue, met_daily_revenue_by_store, sum_daily_store_totals
-
-### Community 345 - "_kpis__models.yml"
-Cohesion: 0.67
-Nodes (3): kpi_avg_basket_size, ml_feature_basket_size, int_avg_basket_composition
-
-### Community 346 - "_kpis__models.yml"
-Cohesion: 0.67
-Nodes (3): kpi_coupon_redemption_rate, int_coupon_performance, rank_coupons_by_redemption_rate
-
-### Community 347 - "_marketing_deep__models.yml"
-Cohesion: 0.67
-Nodes (3): int_campaign_customer_overlap, mkt_campaign_overlap_impact, mkt_promo_calendar_view
-
-### Community 348 - "_marketing__models.yml"
-Cohesion: 0.67
-Nodes (3): int_loyalty_tier_progression, narrow_loyalty_tier_counts, rev_etl_loyalty_sync
-
-### Community 349 - "_mega_wide__models.yml"
-Cohesion: 0.67
-Nodes (3): mega_wide_daily_flash, view_store_mgr_daily_report, sum_daily_company_totals
-
-### Community 350 - "_ml_features__models.yml"
-Cohesion: 0.67
-Nodes (3): ml_feature_pricing_optimization, prod_price_point_analysis, int_price_elasticity_estimate
-
-### Community 351 - "_period_comparison__models.yml"
-Cohesion: 0.67
-Nodes (3): poc_supplier_spend_mom, rank_suppliers_by_cost, int_supplier_spend_monthly
-
-### Community 352 - "_product_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): prod_ingredient_cost_hedge, int_ingredient_cost_trend, rank_ingredients_by_cost
-
-### Community 353 - "_product_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): prod_menu_complexity_score, prod_recipe_simplification, int_recipe_complexity_score
-
-### Community 354 - "_product_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): prod_menu_optimization_matrix, int_menu_item_popularity_rank, scr_menu_item_ranking
-
-### Community 355 - "_product_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): prod_product_velocity_segments, int_menu_item_velocity_by_store, rank_products_by_velocity
-
-### Community 356 - "_rankings__models.yml"
-Cohesion: 0.67
-Nodes (3): rank_suppliers_by_reliability, rev_etl_supplier_scorecard_export, scr_supplier_reliability
-
-### Community 357 - "_supply_chain__models.yml"
-Cohesion: 0.67
-Nodes (3): int_inventory_level_weekly_snapshot, int_inventory_current_level, int_inventory_snapshot_daily
-
-### Community 358 - "_supply_chain_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): sc_ingredient_price_volatility, sc_supplier_diversification, sc_supply_risk_assessment
-
-### Community 359 - "_supply_chain_advanced__models.yml"
-Cohesion: 0.67
-Nodes (3): sc_inventory_days_on_hand, sc_stockout_frequency, int_inventory_weeks_of_supply
-
-### Community 360 - "_wide_tables__models.yml"
-Cohesion: 0.67
-Nodes (3): wide_daily_business_summary, wide_monthly_business_summary, wide_weekly_business_summary
-
-### Community 361 - "_marketing__models.yml"
-Cohesion: 0.67
-Nodes (3): Loyalty program membership records, Loyalty tier definitions (Bronze through Platinum), Points earned and redeemed by loyalty members
-
-### Community 362 - "air.yaml"
-Cohesion: 0.67
-Nodes (3): zenith group AIR control declaration, zenith-de AIR control declaration, AI risk controls runbook — zenith-de
-
-### Community 366 - "customers.yml"
-Cohesion: 0.67
-Nodes (3): Customers Mart, Jaffle Shop Exposures, Orders Mart
-
-### Community 371 - "2025_AIGovernanceFramework_Icon.png"
-Cohesion: 1.00
-Nodes (3): AI Lettermark, Node-and-Edge Graph Motif, FINOS AI Governance Framework Icon (2025)
-
-### Community 372 - "uc-index.md"
-Cohesion: 0.67
-Nodes (3): AI in Finance Use Case Taxonomy, Credit Risk and Scoring, Regulatory Compliance (RegTech)
+Nodes (3): parametrize, The whole reason capabilities were kept declarative. A tool that could add to…, test_tool_cannot_loosen_the_gate()
 
 ## Ambiguous Edges - Review These
-- `Snowflake Production Warehouse` → `Capabilities Card (none enabled)`  [AMBIGUOUS]
-  groups/globex/projects/globex-core/kg/tools_card.md · relation: conceptually_related_to
-- `dbt_utils 1.4.1 Lock Pin` → `dbt_expectations Dependency`  [AMBIGUOUS]
-  groups/globex/projects/globex-core/transform/package-lock.yml · relation: references
-- `dbt_utils 1.4.1 Lock Pin` → `Elementary Dependency`  [AMBIGUOUS]
-  groups/globex/projects/globex-core/transform/package-lock.yml · relation: references
-- `AI Use Cases Catalogue Page` → `Financial Data Classification Scheme`  [AMBIGUOUS]
-  vendor/ai-governance-framework/docs/use-cases.md · relation: references
+- `Warehouse projections excluded from the convergence diff` → `kg/architecture.md generated project map`  [AMBIGUOUS]
+  platform/toolkits/platform-init/skills/design-architecture/SKILL.md · relation: references
 
 ## Knowledge Gaps
-- **1781 isolated node(s):** `Platform monorepo — router`, `Autonomy ladder`, `Loops`, `Anatomy of a run`, `Failure modes catalogued` (+1776 more)
+- **587 isolated node(s):** `$schema`, `source`, `path`, `platform-init@platform`, `power-tools@platform` (+582 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **685 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **46 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **What is the exact relationship between `Snowflake Production Warehouse` and `Capabilities Card (none enabled)`?**
-  _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **What is the exact relationship between `dbt_utils 1.4.1 Lock Pin` and `dbt_expectations Dependency`?**
+- **What is the exact relationship between `Warehouse projections excluded from the convergence diff` and `kg/architecture.md generated project map`?**
   _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **What is the exact relationship between `dbt_utils 1.4.1 Lock Pin` and `Elementary Dependency`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **What is the exact relationship between `AI Use Cases Catalogue Page` and `Financial Data Classification Scheme`?**
-  _Edge tagged AMBIGUOUS (relation: references) - confidence is low._
-- **Why does `load_policy()` connect `gate.py` to `ladder.py`, `ladder.py`, `CI Workflows & Semantics`?**
-  _High betweenness centrality (0.054) - this node is a cross-community bridge._
-- **Why does `Capability Path Policy` connect `CI Workflows & Semantics` to `gate.py`?**
-  _High betweenness centrality (0.054) - this node is a cross-community bridge._
-- **Are the 2 inferred relationships involving `load_ontology()` (e.g. with `test_every_mapped_control_exists_in_the_pinned_catalogue()` and `test_shipped_ontology_declares_intents_for_its_roles()`) actually correct?**
+- **Why does `build_definitions()` connect `Runtime Factory — Dagster Runtime` to `Tests Capabilities — Test Group Shared Code`, `Ontology — Policy.Capabilities`, `CLI Command Dispatch`, `Skills Duckdb Docs`?**
+  _High betweenness centrality (0.124) - this node is a cross-community bridge._
+- **Why does `sister-projects-are-isolated` connect `Ontology — Policy.Capabilities` to `Agents.Md 121`, `Platform Docs Bloom — Readme (2)`?**
+  _High betweenness centrality (0.118) - this node is a cross-community bridge._
+- **Why does `Skill: build-assets (Dagster)` connect `Ontology — Policy.Capabilities` to `Runtime Factory — Dagster Runtime`?**
+  _High betweenness centrality (0.117) - this node is a cross-community bridge._
+- **Are the 2 inferred relationships involving `load_ontology()` (e.g. with `test_shipped_ontology_declares_intents_for_its_roles()` and `test_every_mapped_control_exists_in_the_pinned_catalogue()`) actually correct?**
   _`load_ontology()` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `$schema`, `source`, `path` to the rest of the system?**
+  _587 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Platform CLI Commands` be split into smaller, more focused modules?**
+  _Cohesion score 0.034504523458868085 - nodes in this community are weakly interconnected._
