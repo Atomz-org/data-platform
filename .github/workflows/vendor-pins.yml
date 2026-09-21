@@ -31,10 +31,15 @@ on:
   pull_request:
     paths:
       - ".gitmodules"
+      # Its own file, so that changing the guard exercises the guard. Without
+      # this a pull request editing this workflow could not run it, and the
+      # only way to find out whether it still worked was to merge it.
+      - ".github/workflows/vendor-pins.yml"
   push:
     branches: [main]
     paths:
       - ".gitmodules"
+      - ".github/workflows/vendor-pins.yml"
   # Daily, not weekly. The cost of asking is one shallow fetch per pin; the cost
   # of not asking was three days of a governance check silently not running.
   schedule:
