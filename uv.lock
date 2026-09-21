@@ -16,6 +16,8 @@ members = [
     "acme-rollup",
     "acme-us",
     "commodity-india",
+    "commodity-rollup",
+    "commodity-us",
     "data-platform",
     "globex-core",
     "globex-eu",
@@ -533,6 +535,28 @@ wheels = [
 name = "commodity-india"
 version = "0.1.0"
 source = { editable = "groups/commodity/projects/commodity-india" }
+dependencies = [
+    { name = "pf" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pf", editable = "platform" }]
+
+[[package]]
+name = "commodity-rollup"
+version = "0.1.0"
+source = { editable = "groups/commodity/projects/commodity-rollup" }
+dependencies = [
+    { name = "pf" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pf", editable = "platform" }]
+
+[[package]]
+name = "commodity-us"
+version = "0.1.0"
+source = { editable = "groups/commodity/projects/commodity-us" }
 dependencies = [
     { name = "pf" },
 ]

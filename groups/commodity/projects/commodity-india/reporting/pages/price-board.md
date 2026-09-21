@@ -79,7 +79,7 @@ limit 12
 
 ## The board
 
-`landed_price_inr` is the benchmark converted at the day's USD/INR and grossed up by the
+`landed_price_local` is the benchmark converted at the day's USD/INR and grossed up by the
 effective customs duty. It is blank where import is prohibited, and it inherits the
 staleness of the benchmark behind it.
 
@@ -92,9 +92,9 @@ select
     benchmark_price_usd,
     quote_unit,
     price_change_pct,
-    usd_inr_rate,
+    usd_fx_rate,
     effective_duty_rate,
-    landed_price_inr,
+    landed_price_local,
     market_unit,
     price_age_days,
     is_stale,
@@ -112,9 +112,9 @@ order by is_stale desc, category, commodity_name
     <Column id=benchmark_price_usd title='Benchmark (USD)' fmt=num2/>
     <Column id=quote_unit title='Per'/>
     <Column id=price_change_pct title='Day' fmt=pct1 contentType=delta/>
-    <Column id=usd_inr_rate title='USD/INR' fmt=num2/>
+    <Column id=usd_fx_rate title='USD/INR' fmt=num2/>
     <Column id=effective_duty_rate title='Duty' fmt=pct1/>
-    <Column id=landed_price_inr title='Landed (INR)' fmt=num2/>
+    <Column id=landed_price_local title='Landed (INR)' fmt=num2/>
     <Column id=market_unit title='Per'/>
     <Column id=is_import_prohibited title='Import banned'/>
     <Column id=is_duty_rate_confirmed title='Duty confirmed'/>

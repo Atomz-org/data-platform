@@ -1,0 +1,24 @@
+{
+  "name": "futures_weekend_gap_is_market_closure",
+  "agent": "freshness_triage",
+  "why": "The platform's freshness monitor allows 26 hours, and futures_prices is keyed on the trading day, not the load time. Every Monday morning the newest trade_date is Friday's, some 60 hours old, while the pipeline loaded on schedule. Escalating that trains the team to ignore the one monitor that catches a dead Yahoo feed.",
+  "tags": ["anomaly", "noise", "market-calendar"],
+  "input": {
+    "monitor_rows": [
+      {
+        "resource": "futures_prices",
+        "column_name": "trade_date",
+        "monitor": "freshness",
+        "status": "warn",
+        "observed": 60.0,
+        "expected": 26.0,
+        "deviation_pct": 130.8,
+        "message": "Hours since max(trade_date) is 60.0 at Monday 12:00 UTC; max(trade_date) is Friday. The pipeline's last load finished Monday 06:05 UTC with status ok and merged 240 rows. CME, CBOT, NYMEX, COMEX and ICE US do not settle on Saturday or Sunday."
+      }
+    ]
+  },
+  "expect": {
+    "ignorable": true,
+    "severity": "info"
+  }
+}

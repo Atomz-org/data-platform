@@ -1,0 +1,144 @@
+version: 2
+# This market's facts. `market_units` and `import_duties` carry the names the
+# conformed models expect in every sister; their content is the United States'.
+
+seeds:
+  - name: import_duties
+    description: >
+      United States import duty per commodity over validity intervals, as a
+      fraction of the benchmark value. Section 232 metals and lumber are dated
+      from their proclamations; MFN ad valorem rates are taken as printed;
+      specific (cents-per-kg) duties are converted at a stated benchmark price
+      when above about 1% and treated as nil below it; IEEPA reciprocal
+      tariffs, tariff-rate quota over-quota rates and antidumping duties depend
+      on origin and are not modelled. Every such choice is written in
+      `duty_basis` and decided in ADR-0001. A row with no `confirmed_from` is a
+      rate applied to all history without a date it is known to hold from.
+    meta:
+      concept: ImportTariff
+      grain: one commodity per validity interval
+    config:
+      column_types:
+        tariff_id: varchar
+        commodity_id: varchar
+        market_country: varchar
+        valid_from: date
+        valid_to: date
+        confirmed_from: date
+        is_import_prohibited: boolean
+        statutory_basis: varchar
+        effective_duty_rate: decimal(9,6)
+        duty_basis: varchar
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "valid_to is null or valid_to >= valid_from"
+    columns:
+      - name: tariff_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('commodities')
+                field: commodity_id
+      - name: market_country
+        meta: {role: geo_country}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [US]
+      - name: valid_from
+        meta: {role: valid_from}
+        data_tests: [not_null]
+      - name: valid_to
+        meta: {role: valid_to}
+      - name: is_import_prohibited
+        data_tests: [not_null]
+      - name: statutory_basis
+        description: The instrument the rate comes from — an HTSUS heading, a Section 232 proclamation, a tariff-rate quota.
+        meta: {role: status_enum}
+      - name: effective_duty_rate
+        meta: {role: rate_fraction}
+        data_tests:
+          - not_null:
+              config:
+                where: "not is_import_prohibited"
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "between 0 and 1"
+
+  - name: market_units
+    description: The unit US markets quote each commodity in (bullion per troy ounce, base metals per pound, livestock per hundredweight).
+    meta:
+      grain: one commodity
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('commodities')
+                field: commodity_id
+      - name: market_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+
+  - name: us_contract_lots
+    description: >
+      The CME Group (COMEX, NYMEX, CBOT, CME) and ICE US contracts behind the
+      benchmarks: quote basis and lot size, keyed on the exchange symbol. Used to
+      express a landed price the way the contract trades. Specifications as of
+      September 2026 — check the exchange's contract specs before relying on a
+      lot size.
+    meta:
+      grain: one contract
+    config:
+      column_types:
+        contract_code: varchar
+        exchange: varchar
+        lot_size: double
+        quote_size: double
+    columns:
+      - name: contract_code
+        description: Exchange product code (GC, HG, CL, ZW, ...).
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: exchange
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [COMEX, NYMEX, CBOT, CME, ICE]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('commodities')
+                field: commodity_id
+      - name: lot_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code

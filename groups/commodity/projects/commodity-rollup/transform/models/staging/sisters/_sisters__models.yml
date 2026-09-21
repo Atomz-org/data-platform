@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: stg_sisters__landed_prices
+    description: >
+      Every sister's conformed daily landed price, in her own currency per her market unit, with the benchmark, FX rate and duty it was built from. Cleaned 1:1 from `sisters.landed_prices`; grain: one commodity per market per price date.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per market per price date
+      layer: staging
+    columns:
+      - name: landed_price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: price_basis
+        meta: {role: status_enum}
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+      - name: market_unit
+        meta: {role: unit_of_measure}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: benchmark_price_usd
+        meta: {role: unit_price}
+      - name: benchmark_usd_per_market_unit
+        meta: {role: unit_price}
+      - name: usd_fx_rate
+        meta: {role: exchange_rate}
+      - name: fx_fixed_on
+        meta: {role: reference_date}
+      - name: effective_duty_rate
+        meta: {role: rate_fraction}
+      - name: is_import_prohibited
+        meta: {role: flag}
+      - name: is_duty_rate_confirmed
+        meta: {role: flag}
+      - name: assessable_value_local
+        meta: {role: unit_price}
+      - name: duty_local
+        meta: {role: unit_price}
+      - name: landed_price_local
+        meta: {role: unit_price}
+      - name: landed_price_change_local
+        meta: {role: unit_price}
+      - name: landed_price_change_pct
+        meta: {role: rate_fraction}
+      - name: commodity_id
+        description: Foreign key to Commodity.
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: market_code
+        description: Foreign key to Market.
+        meta: {role: foreign_key, links_to: Market}

@@ -1218,11 +1218,18 @@ def impact(
 
 
 @app.command("impact-gate")
-def cmd_impact_gate(group: str, project: str, nodes: str) -> None:
+def cmd_impact_gate(
+    group: str, project: str, nodes: str,
+    decisions: str = typer.Option(
+        "", "--decisions",
+        help="comma-separated decision records (decisions/*.md) this change adds or edits; "
+             "a breaking radius is reported, not blocked, when there is one"),
+) -> None:
     """CI gate over a comma-separated set of changed nodes."""
     gp = pdir(group, project) / "kg" / "graph.duckdb"
     try:
-        code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()])
+        code, rendered = impact_gate(gp, [n.strip() for n in nodes.split(",") if n.strip()],
+                                     decisions=[d.strip() for d in decisions.split(",") if d.strip()])
     except GateNotExercised as exc:
         console.print(f"[red]✗[/] gate not exercised — {exc}")
         raise typer.Exit(1) from exc

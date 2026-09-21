@@ -15,6 +15,7 @@ ontology, not a graph. Cross-entity blast radius has to be assessed in the
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -204,7 +205,8 @@ class GateNotExercised(Exception):
     """The graph cannot answer the question the gate was asked."""
 
 
-def gate(graph_path: str | Path, node_ids: list[str], fail_on: str = "breaking") -> tuple[int, str]:
+def gate(graph_path: str | Path, node_ids: list[str], fail_on: str = "breaking",
+         decisions: Sequence[str] = ()) -> tuple[int, str]:
     """CI entry point. Returns (exit_code, rendered_report).
 
     Raises `GateNotExercised` when the graph holds no models at all. That graph
@@ -213,6 +215,15 @@ def gate(graph_path: str | Path, node_ids: list[str], fail_on: str = "breaking")
     reports "safe to change" for a change it could not see, and passes. A gate
     that cannot answer has to say so; a green tick that means "found nothing"
     is worse than no gate, because it is trusted.
+
+    `decisions` are the decision records (`decisions/*.md`) the same change adds
+    or edits. A radius at or above `fail_on` blocks *unless* the change carries
+    one: a mart that feeds a metric is "breaking" to touch by definition, so a
+    gate with no way through stops every intentional change to a mart with
+    consumers — a rename, a conformed column set — and gets switched off.
+    The way through is the platform's own: write down why. The report is
+    still printed in full and the owners are still named; what changes is that
+    the reviewer has a decision to read instead of a red job to override.
     """
     with open_graph(graph_path, read_only=True) as g:
         if not g.counts().get("Model"):
@@ -224,4 +235,12 @@ def gate(graph_path: str | Path, node_ids: list[str], fail_on: str = "breaking")
     report = impact_of_many(graph_path, node_ids)
     threshold = SEVERITY_ORDER[fail_on]
     code = 1 if SEVERITY_ORDER[report.severity] <= threshold and report.total else 0
-    return code, report.render()
+    rendered = report.render()
+    decided = [Path(d).name for d in decisions if d and Path(d).name.lower() != "readme.md"]
+    if code and decided:
+        rendered += ("\n\nDecided in this change: " + ", ".join(sorted(decided))
+                     + "\nThe blast radius above is acknowledged by a decision record, "
+                     "so the gate reports rather than blocks. Read the decision; "
+                     "notify the owners.")
+        code = 0
+    return code, rendered

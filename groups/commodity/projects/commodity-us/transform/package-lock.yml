@@ -1,0 +1,7 @@
+packages:
+  - name: dbt_utils
+    package: dbt-labs/dbt_utils
+    version: 1.4.1
+  - local: ../../../shared/transform
+    name: commodity_shared
+sha1_hash: d28733bfd9930101fb477b16ff1c35da8903ef2b

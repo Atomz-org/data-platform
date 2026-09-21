@@ -1,0 +1,1136 @@
+{
+  "catalog": "commodity",
+  "schema": "commodity_rollup",
+  "dataSource": "DUCKDB",
+  "layoutVersion": 1,
+  "models": [
+    {
+      "name": "dim_commodities",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_commodities"
+      },
+      "columns": [
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_of_measure"
+          }
+        },
+        {
+          "name": "markets_pricing",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "commodity_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "unit_dimension",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "commodity_id",
+      "properties": {
+        "description": "The group catalog as every market sees it, with how many markets currently price each commodity.",
+        "grain": "one commodity",
+        "layer": "marts",
+        "pf.project": "commodity-rollup",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "dim_markets",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_markets"
+      },
+      "columns": [
+        {
+          "name": "market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "is_reporting",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The sister has landed at least one price; false is a registered market nobody has seeded."
+          }
+        },
+        {
+          "name": "latest_price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "market_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "home_exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "timezone",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "project",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "first_price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "commodities_priced",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_rows",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "market_code",
+      "properties": {
+        "description": "Every market registered in the group's `markets` seed, with whether its sister is reporting and what the roll-up has received from it.",
+        "grain": "one market",
+        "layer": "marts",
+        "pf.project": "commodity-rollup",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_landed_prices_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_landed_prices_daily"
+      },
+      "columns": [
+        {
+          "name": "landed_price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "benchmark_price_usd",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "usd_fx_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "exchange_rate"
+          }
+        },
+        {
+          "name": "landed_price_local",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "landed_price_usd_per_quote_unit",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "import_parity_premium_pct",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction",
+            "description": "landed USD per quote unit over the benchmark, minus one. Duty, plus FX timing where a fix was carried forward."
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fx_fixed_on",
+          "type": "DATE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "effective_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "landed_price_id",
+      "properties": {
+        "description": "Every market's daily landed price side by side: as the market reports it (its currency per its unit) and in USD per the benchmark's quote unit, with the import-parity premium each market adds over the benchmark. Prices are non-additive: aggregate within one commodity and one market.",
+        "grain": "one commodity per market per price date",
+        "layer": "marts",
+        "pf.project": "commodity-rollup",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_market_spreads_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_market_spreads_daily"
+      },
+      "columns": [
+        {
+          "name": "landed_price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "cheapest_market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "spread_to_cheapest_usd",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "spread_to_cheapest_pct",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "is_cheapest_market",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "markets_compared",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_usd_per_quote_unit",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cheapest_landed_usd",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "landed_price_id",
+      "properties": {
+        "description": "On days at least two markets priced a commodity: each market's landed price in USD per quote unit against the cheapest market's, as a spread and a percentage. Pure market effects \u2014 duty regimes and FX timing \u2014 because both sides stand on the same benchmark.",
+        "grain": "one commodity per market per price date",
+        "layer": "marts",
+        "pf.project": "commodity-rollup",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "rpt_market_comparison_board",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_market_comparison_board"
+      },
+      "columns": [
+        {
+          "name": "board_row_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "landed_price_usd_per_quote_unit",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "spread_to_cheapest_pct",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "is_stale",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "That market's latest benchmark is more than four days old."
+          }
+        },
+        {
+          "name": "market_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "commodity_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "benchmark_price_usd",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_local",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "usd_fx_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "effective_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "import_parity_premium_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cheapest_market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cheapest_landed_usd",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "markets_compared",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_cheapest_market",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_age_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "board_row_id",
+      "properties": {
+        "description": "One row per commodity per market: the latest landed price on the benchmark's footing, the cheapest market to land it in, each market's spread to it, and how old each market's number is. The table behind the market comparison board.",
+        "grain": "one commodity per market",
+        "layer": "marts",
+        "pf.project": "commodity-rollup",
+        "pf.group": "commodity"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "name": "fct_landed_prices_daily_dim_commodities",
+      "models": [
+        "fct_landed_prices_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_landed_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_market_spreads_daily_dim_commodities",
+      "models": [
+        "fct_market_spreads_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_market_spreads_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "rpt_market_comparison_board_dim_commodities",
+      "models": [
+        "rpt_market_comparison_board",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "rpt_market_comparison_board.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_landed_prices_daily_dim_markets",
+      "models": [
+        "fct_landed_prices_daily",
+        "dim_markets"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_landed_prices_daily.market_code = dim_markets.market_code",
+      "properties": {
+        "pf.relation": "price_observation_in_market",
+        "pf.label": "is landed in",
+        "pf.inverse": "lands",
+        "pf.description": "A landed price is one market's price; the benchmark it derives from belongs to none."
+      }
+    },
+    {
+      "name": "fct_market_spreads_daily_dim_markets",
+      "models": [
+        "fct_market_spreads_daily",
+        "dim_markets"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_market_spreads_daily.market_code = dim_markets.market_code",
+      "properties": {
+        "pf.relation": "price_observation_in_market",
+        "pf.label": "is landed in",
+        "pf.inverse": "lands",
+        "pf.description": "A landed price is one market's price; the benchmark it derives from belongs to none."
+      }
+    },
+    {
+      "name": "fct_market_spreads_daily_dim_markets__cheapest_market_code",
+      "models": [
+        "fct_market_spreads_daily",
+        "dim_markets"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_market_spreads_daily.cheapest_market_code = dim_markets.market_code",
+      "properties": {
+        "pf.relation": "price_observation_in_market",
+        "pf.label": "is landed in",
+        "pf.inverse": "lands",
+        "pf.description": "A landed price is one market's price; the benchmark it derives from belongs to none."
+      }
+    },
+    {
+      "name": "rpt_market_comparison_board_dim_markets",
+      "models": [
+        "rpt_market_comparison_board",
+        "dim_markets"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "rpt_market_comparison_board.market_code = dim_markets.market_code",
+      "properties": {
+        "pf.relation": "price_observation_in_market",
+        "pf.label": "is landed in",
+        "pf.inverse": "lands",
+        "pf.description": "A landed price is one market's price; the benchmark it derives from belongs to none."
+      }
+    }
+  ],
+  "views": [
+    {
+      "name": "dim_markets_view",
+      "statement": "select\n  dim_markets.market_code,\n  dim_markets.country_code,\n  dim_markets.currency_code,\n  dim_markets.is_reporting,\n  dim_markets.latest_price_date,\n  dim_markets.market_name,\n  dim_markets.home_exchange,\n  dim_markets.timezone,\n  dim_markets.project,\n  dim_markets.first_price_date,\n  dim_markets.commodities_priced,\n  dim_markets.landed_price_rows\nfrom dim_markets",
+      "properties": {
+        "pf.exposures": "report_market_comparison",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Every market registered in the group's `markets` seed, with whether its sister is reporting and what the roll-up has received from it.",
+        "pf.grain": "one market"
+      }
+    },
+    {
+      "name": "fct_landed_prices_daily_view",
+      "statement": "select\n  fct_landed_prices_daily.landed_price_id,\n  fct_landed_prices_daily.market_code,\n  fct_landed_prices_daily.commodity_id,\n  fct_landed_prices_daily.price_date,\n  fct_landed_prices_daily.currency_code,\n  fct_landed_prices_daily.benchmark_price_usd,\n  fct_landed_prices_daily.usd_fx_rate,\n  fct_landed_prices_daily.landed_price_local,\n  fct_landed_prices_daily.landed_price_usd_per_quote_unit,\n  fct_landed_prices_daily.import_parity_premium_pct,\n  fct_landed_prices_daily.price_basis,\n  fct_landed_prices_daily.quote_unit,\n  fct_landed_prices_daily.market_unit,\n  fct_landed_prices_daily.fx_fixed_on,\n  fct_landed_prices_daily.effective_duty_rate,\n  fct_landed_prices_daily.is_import_prohibited,\n  fct_landed_prices_daily.is_duty_rate_confirmed,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.markets_pricing,\n  dim_commodities.commodity_name,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.unit_dimension,\n  dim_markets.market_code as markets_market_code,\n  dim_markets.country_code,\n  dim_markets.currency_code as markets_currency_code,\n  dim_markets.is_reporting,\n  dim_markets.latest_price_date,\n  dim_markets.market_name,\n  dim_markets.home_exchange,\n  dim_markets.timezone,\n  dim_markets.project,\n  dim_markets.first_price_date,\n  dim_markets.commodities_priced,\n  dim_markets.landed_price_rows\nfrom fct_landed_prices_daily\n  left join dim_commodities on fct_landed_prices_daily.commodity_id = dim_commodities.commodity_id\n  left join dim_markets on fct_landed_prices_daily.market_code = dim_markets.market_code",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_avg_import_parity_ratio, report_metrics_avg_landed_price_usd, report_metrics_benchmark_usd_total_where_landed, report_metrics_landed_usd_days, report_metrics_landed_usd_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Every market's daily landed price side by side: as the market reports it (its currency per its unit) and in USD per the benchmark's quote unit, with the import-parity premium each market adds over the benchmark. Prices are non-additive: aggregate within one commodity and one market.",
+        "pf.grain": "one commodity per market per price date"
+      }
+    },
+    {
+      "name": "fct_market_spreads_daily_view",
+      "statement": "select\n  fct_market_spreads_daily.landed_price_id,\n  fct_market_spreads_daily.market_code,\n  fct_market_spreads_daily.commodity_id,\n  fct_market_spreads_daily.price_date,\n  fct_market_spreads_daily.cheapest_market_code,\n  fct_market_spreads_daily.spread_to_cheapest_usd,\n  fct_market_spreads_daily.spread_to_cheapest_pct,\n  fct_market_spreads_daily.is_cheapest_market,\n  fct_market_spreads_daily.quote_unit,\n  fct_market_spreads_daily.markets_compared,\n  fct_market_spreads_daily.landed_price_usd_per_quote_unit,\n  fct_market_spreads_daily.cheapest_landed_usd,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.markets_pricing,\n  dim_commodities.commodity_name,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.unit_dimension,\n  dim_markets.market_code as markets_market_code,\n  dim_markets.country_code,\n  dim_markets.currency_code,\n  dim_markets.is_reporting,\n  dim_markets.latest_price_date,\n  dim_markets.market_name,\n  dim_markets.home_exchange,\n  dim_markets.timezone,\n  dim_markets.project,\n  dim_markets.first_price_date,\n  dim_markets.commodities_priced,\n  dim_markets.landed_price_rows,\n  dim_markets.country_code as markets_country_code,\n  dim_markets.currency_code as markets_currency_code,\n  dim_markets.is_reporting as markets_is_reporting,\n  dim_markets.latest_price_date as markets_latest_price_date,\n  dim_markets.market_name as markets_market_name,\n  dim_markets.home_exchange as markets_home_exchange,\n  dim_markets.timezone as markets_timezone,\n  dim_markets.project as markets_project,\n  dim_markets.first_price_date as markets_first_price_date,\n  dim_markets.commodities_priced as markets_commodities_priced,\n  dim_markets.landed_price_rows as markets_landed_price_rows\nfrom fct_market_spreads_daily\n  left join dim_commodities on fct_market_spreads_daily.commodity_id = dim_commodities.commodity_id\n  left join dim_markets on fct_market_spreads_daily.market_code = dim_markets.market_code\n  left join dim_markets on fct_market_spreads_daily.cheapest_market_code = dim_markets.market_code",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_avg_spread_to_cheapest_ratio, report_metrics_avg_spread_to_cheapest_usd, report_metrics_cheapest_usd_total, report_metrics_days_as_cheapest_market, report_metrics_spread_days, report_metrics_spread_usd_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "On days at least two markets priced a commodity: each market's landed price in USD per quote unit against the cheapest market's, as a spread and a percentage. Pure market effects \u2014 duty regimes and FX timing \u2014 because both sides stand on the same benchmark.",
+        "pf.grain": "one commodity per market per price date"
+      }
+    },
+    {
+      "name": "rpt_market_comparison_board_view",
+      "statement": "select\n  rpt_market_comparison_board.board_row_id,\n  rpt_market_comparison_board.market_code,\n  rpt_market_comparison_board.commodity_id,\n  rpt_market_comparison_board.category,\n  rpt_market_comparison_board.landed_price_usd_per_quote_unit,\n  rpt_market_comparison_board.spread_to_cheapest_pct,\n  rpt_market_comparison_board.is_stale,\n  rpt_market_comparison_board.market_name,\n  rpt_market_comparison_board.currency_code,\n  rpt_market_comparison_board.commodity_name,\n  rpt_market_comparison_board.segment,\n  rpt_market_comparison_board.price_date,\n  rpt_market_comparison_board.price_basis,\n  rpt_market_comparison_board.benchmark_price_usd,\n  rpt_market_comparison_board.quote_unit,\n  rpt_market_comparison_board.landed_price_local,\n  rpt_market_comparison_board.market_unit,\n  rpt_market_comparison_board.usd_fx_rate,\n  rpt_market_comparison_board.effective_duty_rate,\n  rpt_market_comparison_board.is_import_prohibited,\n  rpt_market_comparison_board.is_duty_rate_confirmed,\n  rpt_market_comparison_board.import_parity_premium_pct,\n  rpt_market_comparison_board.cheapest_market_code,\n  rpt_market_comparison_board.cheapest_landed_usd,\n  rpt_market_comparison_board.markets_compared,\n  rpt_market_comparison_board.is_cheapest_market,\n  rpt_market_comparison_board.price_age_days,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category as commodities_category,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.markets_pricing,\n  dim_commodities.commodity_name as commodities_commodity_name,\n  dim_commodities.segment as commodities_segment,\n  dim_commodities.exchange,\n  dim_commodities.unit_dimension,\n  dim_markets.market_code as markets_market_code,\n  dim_markets.country_code,\n  dim_markets.currency_code as markets_currency_code,\n  dim_markets.is_reporting,\n  dim_markets.latest_price_date,\n  dim_markets.market_name as markets_market_name,\n  dim_markets.home_exchange,\n  dim_markets.timezone,\n  dim_markets.project,\n  dim_markets.first_price_date,\n  dim_markets.commodities_priced,\n  dim_markets.landed_price_rows\nfrom rpt_market_comparison_board\n  left join dim_commodities on rpt_market_comparison_board.commodity_id = dim_commodities.commodity_id\n  left join dim_markets on rpt_market_comparison_board.market_code = dim_markets.market_code",
+      "properties": {
+        "pf.exposures": "report_market_comparison",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "One row per commodity per market: the latest landed price on the benchmark's footing, the cheapest market to land it in, each market's spread to it, and how old each market's number is. The table behind the market comparison board.",
+        "pf.grain": "one commodity per market"
+      }
+    }
+  ],
+  "cubes": [
+    {
+      "name": "commodity_rollup_core",
+      "baseObject": "fct_market_spreads_daily",
+      "measures": [
+        {
+          "name": "avg_import_parity_ratio",
+          "expression": "sum(landed_price_usd_per_quote_unit) / nullif(sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Import Parity Ratio",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_landed_price_usd",
+          "expression": "sum(landed_price_usd_per_quote_unit) / nullif(count(landed_price_usd_per_quote_unit), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Landed Price (USD per quote unit)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_spread_to_cheapest_ratio",
+          "expression": "sum(spread_to_cheapest_usd) / nullif(sum(cheapest_landed_usd), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Spread to Cheapest Market (ratio)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_spread_to_cheapest_usd",
+          "expression": "sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Spread to Cheapest Market (USD)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "benchmark_usd_total_where_landed",
+          "expression": "sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end)",
+          "type": "DOUBLE",
+          "description": "Benchmark USD Total, landed days (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "cheapest_usd_total",
+          "expression": "sum(cheapest_landed_usd)",
+          "type": "DOUBLE",
+          "description": "Cheapest Landed Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "days_as_cheapest_market",
+          "expression": "sum(case when is_cheapest_market then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "Days as Cheapest Market",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_usd_days",
+          "expression": "count(landed_price_usd_per_quote_unit)",
+          "type": "DOUBLE",
+          "description": "Days With a Comparable Landed Price",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_usd_total",
+          "expression": "sum(landed_price_usd_per_quote_unit)",
+          "type": "DOUBLE",
+          "description": "Landed USD Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "spread_days",
+          "expression": "count(spread_to_cheapest_usd)",
+          "type": "DOUBLE",
+          "description": "Days Compared",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "spread_usd_total",
+          "expression": "sum(spread_to_cheapest_usd)",
+          "type": "DOUBLE",
+          "description": "Spread Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "category",
+          "expression": "category",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "cheapest_market_code",
+          "expression": "cheapest_market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "commodity_name",
+          "expression": "commodity_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "country_code",
+          "expression": "country_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "currency_code",
+          "expression": "currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_cheapest_market",
+          "expression": "is_cheapest_market",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_reporting",
+          "expression": "is_reporting",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_name",
+          "expression": "market_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "quote_unit",
+          "expression": "quote_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "segment",
+          "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
+}

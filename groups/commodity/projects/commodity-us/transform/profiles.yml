@@ -1,0 +1,22 @@
+commodity_us:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      threads: 4
+    ci:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      threads: 8
+    prod:
+      type: duckdb
+      path: "ducklake:{{ env_var('DUCKLAKE_METADATA') }}"
+      schema: "{{ env_var('DUCKLAKE_SCHEMA', 'analytics_commodity_us') }}"
+      extensions: [ducklake, httpfs]
+      threads: "{{ env_var('DUCKLAKE_THREADS', '1') | int }}"
+    base:
+      type: duckdb
+      path: "{{ env_var('PF_DUCKDB_PATH') }}"
+      schema: base
+      threads: 4

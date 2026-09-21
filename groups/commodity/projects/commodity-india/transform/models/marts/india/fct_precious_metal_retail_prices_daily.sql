@@ -2,9 +2,9 @@
 -- Indian retail quote conventions on top of the landed per-gram price:
 -- per gram, per 10 grams, per kilogram, by purity (24K/22K/18K, 999/925/900).
 with landed as (
-    select * from {{ ref('fct_india_landed_prices_daily') }}
+    select * from {{ ref('fct_landed_prices_daily') }}
     where market_unit = 'g'
-        and landed_price_inr is not null
+        and landed_price_local is not null
 ),
 
 purities as (
@@ -28,7 +28,7 @@ graded as (
         l.price_date,
         l.price_basis,
         l.is_duty_rate_confirmed,
-        l.landed_price_inr * p.fineness                                     as inr_per_gram
+        l.landed_price_local * p.fineness                                     as inr_per_gram
     from landed as l
     inner join purities as p on p.commodity_id = l.commodity_id
 )

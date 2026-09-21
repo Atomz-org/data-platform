@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 from pf.kg.build import build_graph
 from pf.kg.card import render_project_card
-from pf.kg.impact import impact_of, impact_of_many
+from pf.kg.impact import gate, impact_of, impact_of_many
 from pf.kg.query import kg_search
 from pf.kg.store import open_graph
 
@@ -247,6 +247,46 @@ def test_a_change_set_merges_decisions_once(graph: Path) -> None:
     report = impact_of_many(graph, ["model:fct_orders", "model:int_orders__clean"])
     assert [n.id for n in report.decisions] == ["decision:ADR-0001"]
     assert len(report.to_dict()["decisions"]) == 1
+
+
+# ------------------------------------------------------------------ gate ----
+def test_a_breaking_radius_blocks_the_gate(graph: Path) -> None:
+    """fct_orders feeds the revenue metric, so touching it is breaking."""
+    code, rendered = gate(graph, ["model:fct_orders"])
+    assert code == 1
+    assert "BREAKING" in rendered
+    assert "Decided in this change" not in rendered
+
+
+def test_a_breaking_radius_passes_when_the_change_carries_a_decision(project: Path) -> None:
+    """A mart that feeds a metric is breaking to touch by definition, so a gate
+    with no way through blocks every intentional change to it. The way through
+    is a decision record in the same change: the radius is still printed and
+    the owners still named, but the reviewer reads the decision rather than
+    overriding a red job."""
+    adr = project / "decisions" / "ADR-0001-orders-are-gross.md"
+    code, rendered = gate(project / "kg" / "graph.duckdb", ["model:fct_orders"],
+                          decisions=[str(adr)])
+    assert code == 0
+    assert "BREAKING" in rendered                       # the severity is unchanged
+    assert "Decided in this change: ADR-0001-orders-are-gross.md" in rendered
+    assert "notify the owners" in rendered
+
+
+def test_the_scaffolded_decision_log_readme_is_not_a_decision(project: Path) -> None:
+    code, _ = gate(project / "kg" / "graph.duckdb", ["model:fct_orders"],
+                   decisions=[str(project / "decisions" / "README.md"), ""])
+    assert code == 1
+
+
+def test_a_decision_does_not_pass_a_gate_that_could_not_be_exercised(tmp_path: Path) -> None:
+    from pf.kg.impact import GateNotExercised
+
+    root = _project(tmp_path, with_decision=False)
+    (root / "transform" / "target" / "manifest.json").write_text(json.dumps({"nodes": {}, "parent_map": {}}))
+    build_graph(root, group="", project="p")
+    with pytest.raises(GateNotExercised):
+        gate(root / "kg" / "graph.duckdb", ["model:fct_orders"], decisions=["ADR-0009-x.md"])
 
 
 # ------------------------------------------------------------------ card ----

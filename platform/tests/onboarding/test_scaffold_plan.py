@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 from pf.capabilities import CAPABILITIES
 from pf.scaffold import plan as planner
+from pf.scaffold.generator import _sister_alias, new_group, new_project
 
 
 def _root(tmp_path: Path, group: str = "acme") -> Path:
@@ -165,3 +166,29 @@ def test_building_a_plan_writes_nothing(tmp_path: Path) -> None:
     planner.render(planner.build(root, "acme", "acme-us", list(CAPABILITIES.values())))
 
     assert set(root.rglob("*")) == before
+
+
+# ------------------------------------------------------- the roll-up scaffold --
+
+def test_a_sister_alias_is_her_name_without_the_group_prefix() -> None:
+    assert _sister_alias("acme", "acme-us") == "us"
+    assert _sister_alias("commodity", "commodity-india") == "india"
+    # A sister named outside the convention keeps her whole name rather than
+    # losing it to a prefix she does not carry.
+    assert _sister_alias("acme", "globex-eu") == "globex-eu"
+    assert _sister_alias("acme", "acme-") == "acme-"
+
+
+def test_a_rollup_names_its_sisters_by_alias(tmp_path: Path) -> None:
+    new_group(tmp_path, "acme", "b2b_saas")
+    new_project(tmp_path, "acme", "acme-us")
+    new_project(tmp_path, "acme", "acme-eu")
+    new_project(tmp_path, "acme", "acme-rollup", is_rollup=True, sisters=["acme-us", "acme-eu"])
+    defs = (tmp_path / "groups/acme/projects/acme-rollup/src/acme_rollup/definitions.py").read_text()
+    # `<group>-<alias>` must be the sister's project, or the roll-up's Dagster
+    # dependencies point at code locations that do not exist.
+    assert '"us": "../acme-us/data/acme_us.duckdb"' in defs
+    assert '"eu": "../acme-eu/data/acme_eu.duckdb"' in defs
+    assert "acme_us\":" not in defs
+    settings = (tmp_path / "groups/acme/projects/acme-rollup/.claude/settings.json").read_text()
+    assert '"Read(../acme-us/**)"' in settings and '"Read(../acme-eu/**)"' in settings

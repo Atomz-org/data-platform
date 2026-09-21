@@ -1,0 +1,27 @@
+contract_code,exchange,commodity_id,contract_name,lot_size,lot_unit,quote_size,quote_unit
+GC,COMEX,gold,Gold,100,troy_oz,1,troy_oz
+MGC,COMEX,gold,Micro Gold,10,troy_oz,1,troy_oz
+SI,COMEX,silver,Silver,5000,troy_oz,1,troy_oz
+SIL,COMEX,silver,Micro Silver,1000,troy_oz,1,troy_oz
+PL,NYMEX,platinum,Platinum,50,troy_oz,1,troy_oz
+PA,NYMEX,palladium,Palladium,100,troy_oz,1,troy_oz
+HG,COMEX,copper,Copper,25000,lb,1,lb
+ALI,COMEX,aluminium,Aluminum,25,metric_ton,1,metric_ton
+HRC,COMEX,steel_hrc,US Midwest Domestic Hot-Rolled Coil Steel,20,short_ton,1,short_ton
+CL,NYMEX,crude_oil_wti,WTI Crude Oil,1000,barrel,1,barrel
+BZ,ICE,crude_oil_brent,Brent Crude,1000,barrel,1,barrel
+NG,NYMEX,natural_gas,Henry Hub Natural Gas,10000,mmbtu,1,mmbtu
+ZW,CBOT,wheat,Chicago SRW Wheat,5000,bushel_60lb,1,bushel_60lb
+ZC,CBOT,corn,Corn,5000,bushel_56lb,1,bushel_56lb
+ZS,CBOT,soybean,Soybeans,5000,bushel_60lb,1,bushel_60lb
+ZM,CBOT,soybean_meal,Soybean Meal,100,short_ton,1,short_ton
+ZL,CBOT,soybean_oil,Soybean Oil,60000,lb,1,lb
+ZR,CBOT,rice,Rough Rice,2000,cwt,1,cwt
+SB,ICE,sugar,Sugar No. 11,112000,lb,1,lb
+CT,ICE,cotton,Cotton No. 2,50000,lb,1,lb
+KC,ICE,coffee,Coffee C,37500,lb,1,lb
+CC,ICE,cocoa,Cocoa,10,metric_ton,1,metric_ton
+OJ,ICE,orange_juice,FCOJ-A,15000,lb,1,lb
+LBR,CME,lumber,Lumber,27.5,mbf,1,mbf
+HE,CME,lean_hogs,Lean Hogs,40000,lb,1,lb
+LE,CME,live_cattle,Live Cattle,40000,lb,1,lb

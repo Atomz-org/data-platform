@@ -28,6 +28,12 @@ seed-paths: ["seeds"]
 test-paths: ["tests"]
 target-path: "target"
 
+# The one place this project says which market it is. Every model that needs the
+# currency or the country joins the group's `markets` seed on this code; a
+# literal `INR` in a model is a bug.
+vars:
+  market_code: IN
+
 models:
   commodity_india:
     staging:

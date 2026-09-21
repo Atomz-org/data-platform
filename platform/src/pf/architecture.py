@@ -62,6 +62,17 @@ its CI workflow and its Dagster code location — and, for a roll-up, the sister
 transfer between entities, and neither does an architecture read from the wrong
 one.
 
+## Why only tracked files count
+
+`pf arch --check` compares the committed map with a fresh render, on a runner
+that has only what git gave it. A render that counts whatever is on the disk
+disagrees with that runner the moment a machine holds an ungitted regenerate
+(`kg/context_card.md`, `platform/workspace.yaml`), a stray untracked note, or a
+built warehouse. So every count reads the git index — tracked or staged files,
+nothing else — and artefacts that are regenerated per machine are rows of their
+own kind (`⟳`), never present-here-absent-there. Outside a repository the
+filesystem is read as before, which is what the tests do.
+
 ## Why there is no date in the output
 
 The context card carries a generation date and is rewritten every day because of
@@ -76,6 +87,7 @@ from __future__ import annotations
 import difflib
 import fnmatch
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -168,9 +180,11 @@ CORE: tuple[Feature, ...] = (
     Feature("graph", "knowledge graph", "semantics",
             "kg_search, kg_neighbors and impact analysis read this, not the files",
             ("kg/graph.duckdb", "kg/graph.json"), made_by="pf kg build"),
+    # Gitignored and rewritten by every `pf kg card`: present on whoever's
+    # machine last ran it, absent on a runner. A regenerate, not a gap.
     Feature("card", "context card", "semantics",
             "the always-on index; ~400 tokens, budgeted by `pf tokens`",
-            ("kg/context_card.md",), made_by="pf kg card"),
+            ("kg/context_card.md",), made_by="pf kg card", build_output=True),
     Feature("architecture", "architecture map", "semantics",
             "this document — the on-demand map, regenerated never hand-edited",
             ("kg/architecture.md",), made_by="pf arch", self_reporting=True),
@@ -199,6 +213,11 @@ CORE: tuple[Feature, ...] = (
     Feature("settings", "agent permissions", "governance",
             "the deny list and the PreToolUse hook — sisters unreadable by policy",
             (".claude/settings.json",), made_by="pf new-project"),
+    # Optional because it exists only once a capability needs it: a warehouse
+    # capability merges its MCP server in, and a project may add its own.
+    Feature("mcp_servers", "MCP servers", "governance",
+            "the servers a capability wires into the agent's session; merged, never overwritten",
+            (".mcp.json",), optional=True, made_by="pf capability-add"),
     Feature("decisions", "decision records", "governance",
             "why this project is shaped the way it is, where code cannot say so",
             ("decisions/*.md",), optional=True, made_by="written by hand"),
@@ -224,9 +243,15 @@ CORE: tuple[Feature, ...] = (
     Feature("dagster", "Dagster definitions", "operate",
             "assets come from the runtime factory; the project supplies logic",
             ("src/*/definitions.py",), made_by="pf new-project"),
+    # `platform/workspace.yaml` is generated per machine and gitignored (it
+    # holds absolute paths), so it can never be read as evidence of anything
+    # by a runner. Registration is what `pf bootstrap` derives from
+    # `definitions.py`, which the `dagster` row already shows.
     Feature("code_location", "Dagster registration", "operate",
-            "an unregistered project silently never runs",
-            repo_paths=("platform/workspace.yaml",), made_by="pf bootstrap"),
+            "the code location `pf bootstrap` writes into platform/workspace.yaml, "
+            "machine-local and ungitted",
+            repo_paths=("platform/workspace.yaml",), made_by="pf bootstrap",
+            build_output=True),
     Feature("ci", "CI workflow", "operate",
             "one workflow per project, composed from its capabilities' jobs",
             repo_paths=(".github/workflows/{project}.yml",), made_by="pf bootstrap"),
@@ -350,6 +375,10 @@ class Presence:
     def state(self) -> str:
         if self.present:
             return "ok"
+        if self.feature.build_output and not self.feature.count_kind:
+            # Never read from disk and with no graph count to stand in: a row
+            # that is regenerated wherever the project runs, not a hole in it.
+            return "generated"
         return "optional" if self.feature.optional else "gap"
 
 
@@ -406,18 +435,50 @@ class Arch:
 
 
 # ----------------------------------------------------------------- gather ----
+def _tracked(base: Path) -> set[Path] | None:
+    """Files git tracks or has staged under `base`, or None outside a repository.
+
+    The map describes the repository. A file that exists only on this machine —
+    an ungitted regenerate, a note nobody added — makes the local render
+    disagree with the runner's, and `pf arch --check` fails on whoever raised
+    the PR rather than on anything they changed. Staged files count, so the
+    render after `git add` is the render CI will see.
+    """
+    if not base.is_dir():
+        return None
+    try:
+        r = subprocess.run(["git", "ls-files", "-z", "--cached", "--", "."],
+                           cwd=base, capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return {(base / p.decode()).resolve() for p in r.stdout.split(b"\0") if p}
+
+
+def _tracked_glob(base: Path, pattern: str) -> list[Path]:
+    """`base.glob(pattern)`, kept to what git knows about — see `_tracked`."""
+    tracked = _tracked(base)
+    hits = base.glob(pattern) if base.is_dir() else iter(())
+    if tracked is None:
+        return sorted(hits, key=str)
+    return sorted((h for h in hits
+                   if h.resolve() in tracked
+                   or (h.is_dir() and any(t.is_relative_to(h.resolve()) for t in tracked))),
+                  key=str)
+
+
 def _count(base: Path, globs: tuple[str, ...]) -> tuple[int, str]:
     """How many paths match, and the one to print.
 
     Glob order is honoured for the printed path and ignored for the count: the
     first glob is the feature's most descriptive location (`mdl/mdl.json`, not
     the `mdl/connection.json` that sorts before it), while the count has to be
-    de-duplicated across globs that overlap.
+    de-duplicated across globs that overlap. Only tracked paths count — see
+    `_tracked`; a directory counts when it holds a tracked file.
     """
     seen: set[Path] = set()
     where = ""
     for g in globs:
-        hits = sorted(base.glob(g), key=str)
+        hits = _tracked_glob(base, g)
         if hits and not where:
             where = str(hits[0].relative_to(base))
         seen.update(hits)
@@ -545,7 +606,7 @@ def _capabilities(root: Path, pdir: Path, group: str, project: str) -> list[str]
         for name, cap in sorted(CAPABILITIES.items()):
             targets = [(root if rel.startswith(".github/") else pdir) / rel
                        for rel in (render(r, ctx) for r in cap.files)]
-            if targets and all(t.exists() for t in targets):
+            if targets and all(_tracked_glob(t.parent, t.name) for t in targets):
                 out.append(name)
         return out
     except Exception:  # noqa: BLE001
@@ -650,9 +711,11 @@ def _node(nid: str, label: str, cls: str, count: int | None = None,
 
 def _spine(a: Arch) -> list[str]:
     """Ingest to delivery, with this project's real counts on every stage."""
-    src_dir = a.pdir / "src" / a.module / "sources"
-    src_names = ", ".join(sorted(p.stem for p in src_dir.glob("[!_]*.py"))[:3])
-    pages = len(list((a.pdir / "reporting" / "pages").rglob("*.md")))
+    # Tracked files only, like every other count here: a page or a source that
+    # exists on one machine and not in the repository is not the project's.
+    src_names = ", ".join(sorted(
+        p.stem for p in _tracked_glob(a.pdir, f"src/{a.module}/sources/[!_]*.py"))[:3])
+    pages = len(_tracked_glob(a.pdir, "reporting/pages/**/*.md"))
     inner = "        "
 
     out = [
@@ -778,7 +841,7 @@ def _control(a: Arch) -> list[str]:
     return out
 
 
-_STATE = {"ok": "✓", "gap": "**gap**", "optional": "—"}
+_STATE = {"ok": "✓", "gap": "**gap**", "optional": "—", "generated": "⟳"}
 
 
 def _coverage(a: Arch) -> list[str]:
@@ -799,7 +862,12 @@ def _coverage(a: Arch) -> list[str]:
             mark = _STATE[p.state]
             n = f" {p.count}" if p.present and p.countable and p.count > 1 else ""
             where = f"`{p.where}`" if p.where else ""
-            why = p.feature.why if p.present else f"{p.feature.why} — `{p.feature.made_by}`"
+            if p.present:
+                why = p.feature.why
+            elif p.state == "generated":
+                why = f"{p.feature.why} — regenerated by `{p.feature.made_by}`, not tracked"
+            else:
+                why = f"{p.feature.why} — `{p.feature.made_by}`"
             out.append(f"| {p.feature.title} | {mark}{n} | {where} | {why} |")
     return out
 

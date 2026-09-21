@@ -1,0 +1,58 @@
+version: 2
+
+seeds:
+  - name: commodities
+    description: >
+      The conformed commodity catalog: every benchmark any sister prices, with
+      the exchange it trades on and the unit it is quoted per. Built in each
+      sister from this group package and read by each sister's Python sources,
+      so what is fetched and what is modelled are the same list. A sister
+      narrows it to what it tracks; it never adds to it locally.
+    meta:
+      concept: Commodity
+      grain: one commodity
+    config:
+      column_types:
+        commodity_id: varchar
+        commodity_name: varchar
+        category: varchar
+        segment: varchar
+        quote_unit: varchar
+        exchange: varchar
+        yahoo_symbol: varchar
+        spot_symbol: varchar
+    columns:
+      - name: commodity_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_name
+        meta: {role: free_text}
+        data_tests: [not_null]
+      - name: category
+        description: precious | industrial | energy | agri — the tracker's tabs.
+        meta: {role: status_enum}
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [precious, industrial, energy, agri]
+      - name: segment
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: quote_unit
+        description: Unit the international benchmark is quoted per; a `units_of_measure` code.
+        meta: {role: unit_of_measure}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code
+      - name: exchange
+        meta: {role: status_enum}
+      - name: yahoo_symbol
+        description: Yahoo Finance front-month contract; empty means no free live feed.
+        meta: {role: free_text}
+      - name: spot_symbol
+        description: gold-api.com spot symbol, precious metals only.
+        meta: {role: free_text}

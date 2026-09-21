@@ -1,0 +1,13 @@
+[runtime]
+log_level = "WARNING"
+
+[normalize.data_writer]
+disable_compression = false
+
+# The sisters source yields Arrow batches, and dlt leaves an Arrow table's
+# columns as they arrive — including leaving out the `_dlt_load_id` and
+# `_dlt_id` it adds to every row-by-row load. The generated staging reads
+# `_dlt_load_id` like any other raw table's, so ask for both.
+[normalize.parquet_normalizer]
+add_dlt_load_id = true
+add_dlt_id = true

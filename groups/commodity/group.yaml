@@ -31,5 +31,9 @@ resources:
   artifact_prefix: groups/commodity
   catalog_services:
     - commodity_commodity-india
+    - commodity_commodity-us
+    - commodity_commodity-rollup
   warehouses:
     - commodity-india: groups/commodity/projects/commodity-india/data/commodity_india.duckdb
+    - commodity-us: groups/commodity/projects/commodity-us/data/commodity_us.duckdb
+    - commodity-rollup: groups/commodity/projects/commodity-rollup/data/commodity_rollup.duckdb

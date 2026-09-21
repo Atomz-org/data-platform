@@ -1,0 +1,116 @@
+"""Load the roll-up end to end: sisters → dlt → DuckDB → annotations → dbt → manifests.
+
+`pf seed commodity commodity-rollup` runs this, and `pf run-all commodity` runs
+it after every sister has seeded. It needs no network: its only source is the
+sisters' warehouses, read READ_ONLY.
+"""
+
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_DIR / "src"))
+
+from pf.runtime.paths import extend_sys_path  # noqa: E402
+
+extend_sys_path(PROJECT_DIR)  # the group's shared connectors, beside this project's own code
+
+from pf import obs  # noqa: E402
+from pf.ontology.annotate import load_annotations  # noqa: E402
+from pf.runtime.dbt_runtime import dbt, deps, parse  # noqa: E402
+from pf.runtime.dlt_runtime import export_project_annotations, monitors_for, run_source  # noqa: E402
+from pf.runtime.warehouse import Warehouse  # noqa: E402
+
+GROUP = "commodity"
+PROJECT = "commodity-rollup"
+
+
+def main() -> int:
+    wh = Warehouse.for_project(PROJECT_DIR, GROUP, PROJECT)
+    from commodity_rollup.sources import sisters
+
+    # The raw stage: the sisters' conformed marts, read READ_ONLY and landed as
+    # one dataset. Required — a roll-up over sisters that have not built is not a
+    # roll-up — and refused before a row is read when their shapes disagree.
+    for name, source, required in (("sisters", sisters.sisters_source(), True),):
+        t0 = time.time()
+        try:
+            info = run_source(wh, source, source_name=name, dataset=name)
+        except Exception as exc:  # noqa: BLE001 — recorded, then re-raised
+            obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt", name=name,
+                                    status="error", duration_ms=int((time.time() - t0) * 1000),
+                                    message=str(exc)[:500])
+            raise
+        counts = ", ".join(f"{t}={n}" for t, n in sorted(info["rows"].items()))
+        empty = sorted(t for t, n in info["rows"].items() if n == 0)
+        obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt", name=name,
+                                status="error" if empty else "ok",
+                                duration_ms=int((time.time() - t0) * 1000),
+                                message=f"loads={len(info['load_ids'])} rows: {counts}")
+        print(f"  dlt → {wh.path.name} dataset={name} ({counts})")
+        if required and empty:
+            print(f"  {name}: nothing landed in {', '.join(empty)} — not building marts over it")
+            return 1
+
+    ann_path = export_project_annotations(PROJECT_DIR)
+    anns = load_annotations(ann_path)
+    print(f"  annotations → {ann_path.name} ({len(anns)} resources)")
+
+    _run_monitors(wh, anns)
+
+    deps(PROJECT_DIR, duckdb_path=wh.path)
+
+    t0 = time.time()
+    proc = dbt(PROJECT_DIR, "build", duckdb_path=wh.path)
+    status = "ok" if proc.returncode == 0 else "error"
+    obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dbt", name="build",
+                            status=status, duration_ms=int((time.time() - t0) * 1000),
+                            message=proc.stdout[-500:])
+    print(f"  dbt build → {status}")
+    if proc.returncode != 0:
+        print(proc.stdout[-3000:])
+        return proc.returncode
+
+    parse(PROJECT_DIR, duckdb_path=wh.path)
+    print("  dbt parse → manifest.json + semantic_manifest.json")
+    return 0
+
+
+def _run_monitors(wh: Warehouse, anns) -> None:
+    """Execute the ontology-derived monitors and record their results."""
+    monitors = monitors_for(anns)
+    schema_of = {a.resource: a.source for a in anns}
+    with wh.connect(read_only=True) as con:
+        for m in monitors:
+            table = f'{schema_of[m["resource"]]}.{m["resource"]}'
+            try:
+                if m["kind"] == "row_count_band":
+                    n = con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
+                    obs.record_monitor(group=GROUP, project=PROJECT, resource=m["resource"],
+                                       column_name=m["column"], monitor=m["kind"],
+                                       status="ok" if n > 0 else "critical",
+                                       observed=n, expected=n, message=f"{n} rows")
+                elif m["kind"] == "freshness":
+                    row = con.execute(f'SELECT max({m["column"]}) FROM {table}').fetchone()[0]
+                    obs.record_monitor(group=GROUP, project=PROJECT, resource=m["resource"],
+                                       column_name=m["column"], monitor=m["kind"],
+                                       status="ok", message=f"max={row}")
+                elif m["kind"] == "category_drift":
+                    cats = con.execute(
+                        f'SELECT count(DISTINCT {m["column"]}) FROM {table}').fetchone()[0]
+                    obs.record_monitor(group=GROUP, project=PROJECT, resource=m["resource"],
+                                       column_name=m["column"], monitor=m["kind"],
+                                       status="ok", observed=cats, expected=cats,
+                                       message=f"{cats} distinct values")
+            except Exception as exc:  # a monitor must never fail the load
+                obs.record_monitor(group=GROUP, project=PROJECT, resource=m["resource"],
+                                   column_name=m["column"], monitor=m["kind"],
+                                   status="warn", message=str(exc)[:200])
+    print(f"  monitors → {len(monitors)} generated from ontology roles")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
