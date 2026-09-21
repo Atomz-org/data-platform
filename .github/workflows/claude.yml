@@ -38,6 +38,11 @@ jobs:
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-latest
+    env:
+      # Recorded on every memory note this run writes (`pf memory add` reads
+      # it): the ledger's *who* column, so a note from here is not mistaken
+      # for one a person's session left.
+      PF_AGENT: claude-actions
     steps:
       - name: Check for API key
         id: guard
@@ -87,4 +92,8 @@ jobs:
           # No `prompt`: tag mode. The request is the comment that mentioned
           # @claude, and CLAUDE.md, AGENTS.md and `pf memory show` are the
           # rules — the same ones a local session gets, from the same files.
-          claude_args: "--allowed-tools Read,Grep,Glob,Edit,Write,MultiEdit,Bash(uv run pf:*),Bash(uv run pytest:*),Bash(uv run ruff:*),Bash(uv sync:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git push:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
+          # The appended line is the one thing a local session knows that this
+          # run does not: which execution scope of AGENTS.md it is in.
+          claude_args: >-
+            --append-system-prompt 'You are in the Autonomous scope of AGENTS.md: no one answers questions here. Read AGENTS.md; run every check in its section 4 yourself; leave a memory note (section 5) before you finish; and when a map contradicts the request, stop and say so in a comment instead of guessing.'
+            --allowed-tools Read,Grep,Glob,Edit,Write,MultiEdit,Bash(uv run pf:*),Bash(uv run pytest:*),Bash(uv run ruff:*),Bash(uv sync:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git push:*),Bash(gh pr view:*),Bash(gh pr diff:*)

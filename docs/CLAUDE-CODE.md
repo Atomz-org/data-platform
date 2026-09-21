@@ -18,7 +18,7 @@ matches the product. The last section says exactly which parts.
 |---|---|---|
 | Router memory | `CLAUDE.md` | repo-wide, always loaded |
 | Project memory | `groups/<g>/projects/<p>/CLAUDE.md` + `kg/context_card.md` | one entity, always loaded, **budgeted** |
-| Session memory | `.memory/notes/` at root, `platform/`, each group and project · `.memory/MEMORY.md` | per module, on demand, **indexed**, shared with Copilot via `AGENTS.md` |
+| Session memory | `.memory/notes/` at root, `platform/`, each group and project · `.memory/MEMORY.md` | per module, on demand, **indexed**, shared with every other agent via `AGENTS.md` |
 | Marketplace | `platform/.claude-plugin/marketplace.json` | lists all 19 plugins |
 | Toolkits | `platform/toolkits/<name>/` | one craft each, enabled per project |
 | Session layer | `platform/toolkits/power-tools/` | commands, agents, hooks, MCP |
@@ -109,8 +109,10 @@ The structure instead:
   inside one — never a sister), one line each and capped; `pf memory show`
   reads the bodies. `pf memory add <module> <name> "<line>"` writes one and
   regenerates the index `.memory/MEMORY.md`, which `pf memory check` gates in
-  CI. It lives in the repo rather than in `~/.claude` so that Copilot, which
-  reads `AGENTS.md`, sees exactly the same notes.
+  CI. It lives in the repo rather than in `~/.claude` so that every other
+  agent — whatever reads `AGENTS.md`, `GEMINI.md` or the Copilot
+  instructions — sees exactly the same notes, and each note records which
+  tool wrote it.
 
 So a new fact goes in the layer that matches how often it is needed. Business
 rules the graph cannot encode go in the project `CLAUDE.md` under that heading.

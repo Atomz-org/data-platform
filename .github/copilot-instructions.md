@@ -1,36 +1,33 @@
 # Copilot instructions
 
-This repository is worked by more than one agent. The rules are written once
-and shared; this file only says where they are and what Copilot has to do by
-hand that Claude Code's hooks do for it.
+The rules are written once, for every agent, in `AGENTS.md`. This file only
+says where they are and which scope you are in. Read, in order:
 
-1. **Read `CLAUDE.md` first.** It is the router for every agent — what the
-   directories are, what is shared, what is read-only, what is recorded.
-2. **Then `AGENTS.md`.** The protocol: where you may write, which files are
-   generated, what to run before pushing, how to leave a note.
-3. **Then `uv run pf memory show`** from wherever you are working. It prints
-   the lessons earlier sessions — Claude's or yours — left about exactly that
-   scope. The index is `.memory/MEMORY.md`; the notes are `.memory/notes/` at
-   the root, under `platform/`, and under each group and project.
+1. `CLAUDE.md` — the router: the directories, what is shared, what is
+   read-only, what is recorded.
+2. `AGENTS.md` — the protocol. §0 tells you your scope; the rest is per scope.
+3. `.memory/MEMORY.md` — what earlier agents, of any tool, learned. With a
+   shell, `uv run pf memory show` from where you are working prints exactly
+   the notes that apply there.
 
-What Copilot must do that the Claude Code session layer does automatically:
+Your scope, in Copilot's terms:
 
-- **Run the gate before committing.** There is no PreToolUse hook here.
-  `uv run pf gate --paths "<comma-separated staged paths>"` is what the
-  pre-commit hook runs; `uv run pf install-hook` installs it after `uv sync`.
-- **Stay inside one project.** Never read or edit a sister project's files —
-  the Claude settings deny it at the tool level; here it is your discipline.
-- **Regenerate, never hand-edit.** `kg/architecture.md`, `kg/graph.json`,
-  `.github/workflows/<project>.yml`, `platform/tests/README.md`,
-  `.memory/MEMORY.md` are all generated. `AGENTS.md` §3 names the command.
-- **Leave a note.** Before finishing, `uv run pf memory add <module> <name>
-  "<one line>"` for anything non-obvious you learned — a new dependency, a
-  constraint you established, a generator that surprised you. Dense and
-  keyword-rich, not prose. Commit it with the regenerated index.
-- **The maps win.** If what you are asked for contradicts `kg/architecture.md`
-  or `docs/ARCHITECTURE.md`, say so; change the code and regenerate the map,
-  never the map to match the request. Session state is the branch and the PR,
-  not a file — do not create a shared task ledger.
+- **Completions and inline chat → Inline.** One file, no shell. Follow the
+  file's own patterns and what `kg/architecture.md` and the notes say. Never
+  add a dependency, a model, a column or a generated file from a completion.
+  A lesson you cannot write goes in a one-line `NOTE(memory):` comment for
+  the person to turn into a note.
+- **Chat in agent mode → Session.** You have a shell and a person. There is
+  no PreToolUse hook here, so run the gate yourself before committing:
+  `uv run pf gate --paths "$(git diff --cached --name-only | tr '\n' ',')"`.
+- **The coding agent on an issue → Autonomous.** No one answers. Run every
+  check in `AGENTS.md` §4, push the branch and describe it, leave a note
+  (§5). Your environment is `.github/workflows/copilot-setup-steps.yml`.
 
-Environment for the coding agent is `.github/workflows/copilot-setup-steps.yml`:
-submodules pin by pin, `uv sync --frozen`, the commit gate installed.
+The same in all three: stay inside one project — never read a sister; Claude's
+settings deny it at the tool level, here it is yours to keep. Regenerate
+generated files instead of editing them (`AGENTS.md` §3). When a request
+contradicts a map, say so, then change the code and regenerate — never the
+map. Session state is the branch and the PR, not a file.
+
+VS Code reads `AGENTS.md` directly when `chat.useAgentsMdFile` is on.
