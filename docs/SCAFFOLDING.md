@@ -97,6 +97,22 @@ cannot reach its warehouse. Blocking there would block the normal case.
 A roll-up over a group with no sisters warns too: it will union nothing until
 one exists, which is fine when the roll-up is created first on purpose.
 
+A roll-up's `definitions.py` names its sisters by alias — the project name
+without the group prefix (`acme-us` → `us`), which is how the platform finds
+each sister's code location again — and, with `rollup_tables=(...)`, the
+conformed marts it depends on. The roll-up asset attaches every sister
+READ_ONLY and checks those marts exist with one column set before anything
+reads them; a sister whose columns differ is refused by name. What the roll-up
+then does with its sisters is its own sources and models: `groups/commodity`
+lands them through a dlt source over `commodity_shared.sisters`, so the union
+gets a staging model, an annotation and lineage like any other raw table.
+
+A group may ship Python every sister needs and none owns — connectors, a
+conformed catalog loader — at `groups/<group>/shared/python/src`. It is found
+by path, like a project's own `src` (`pf.runtime.paths`), never as a workspace
+member: a `groups/*/shared/python` glob bricks every `uv run` hook on any
+branch where the directory lingers without its `pyproject.toml`.
+
 ---
 
 ## Group or project?

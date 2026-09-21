@@ -1,0 +1,31 @@
+version: 2
+resources:
+- resource: landed_prices
+  concept: PriceObservation
+  source: sisters
+  roles:
+    landed_price_id: natural_key
+    price_date: event_time
+    price_basis: status_enum
+    quote_unit: unit_of_measure
+    market_unit: unit_of_measure
+    currency_code: currency_code
+    benchmark_price_usd: unit_price
+    benchmark_usd_per_market_unit: unit_price
+    usd_fx_rate: exchange_rate
+    fx_fixed_on: reference_date
+    effective_duty_rate: rate_fraction
+    is_import_prohibited: flag
+    is_duty_rate_confirmed: flag
+    assessable_value_local: unit_price
+    duty_local: unit_price
+    landed_price_local: unit_price
+    landed_price_change_local: unit_price
+    landed_price_change_pct: rate_fraction
+  rename: {}
+  links:
+    commodity_id: Commodity
+    market_code: Market
+  description: Every sister's conformed daily landed price, in her own currency per
+    her market unit, with the benchmark, FX rate and duty it was built from
+  grain: one commodity per market per price date

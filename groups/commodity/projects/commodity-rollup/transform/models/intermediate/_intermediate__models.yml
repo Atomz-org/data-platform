@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: int_landed_prices__usd_per_quote_unit
+    description: >
+      Each market's landed price restated in USD per the benchmark's quote unit,
+      undoing the sister's FX at the rate she applied and repricing her market
+      unit with the group's unit factors. The one place markets are made
+      comparable.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per market per price date
+      layer: intermediate
+    columns:
+      - name: landed_price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: market_code
+        meta: {role: foreign_key, links_to: Market}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests: [not_null]
+      - name: landed_price_usd_per_quote_unit
+        meta: {role: unit_price}
+        data_tests:
+          - not_null:
+              config:
+                where: "not is_import_prohibited"

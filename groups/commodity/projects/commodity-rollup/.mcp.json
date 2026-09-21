@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ducklake": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-motherduck",
+        "--db-path",
+        "ducklake:${DUCKLAKE_METADATA}"
+      ]
+    }
+  }
+}

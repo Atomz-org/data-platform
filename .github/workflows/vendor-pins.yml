@@ -1,0 +1,171 @@
+# Every vendored pin must still resolve. Two questions, asked of each of the
+# twenty-three submodules in `.gitmodules`:
+#
+#   Does the remote still exist?  `git ls-remote` against the url we record.
+#   Is the commit we pinned still fetchable from it?  `git fetch --depth 1 <sha>`.
+#
+# Neither is answered anywhere else. `pf vendor drift` is local only and never
+# fetches — it compares the checkout against the reviewed lock, which tells you
+# nothing about whether the upstream is still there. `vendor-sync.yml` does
+# fetch, but weekly, and it fetches tracking *branches*: an upstream can be
+# deleted, renamed, or made private and nothing says so until the next Monday.
+#
+# That is not hypothetical. `jagmarques/asqav-compliance` was deleted on 18
+# September 2026 along with its owner's account. Every `submodules: true`
+# checkout in this repository began failing at step one, the ASQAV governance
+# scan stopped running, and the report it posts simply stopped appearing on pull
+# requests. Nobody was told. It surfaced three days later because a human
+# noticed a comment was missing from a PR and traced it by hand. A dead pin is
+# a supply-chain event, and the gap between it happening and anyone knowing was
+# the whole problem.
+#
+# This job is deliberately *not* a check that a pin matches its upstream's
+# branch tip. `vendor/` is read-only and pinned on purpose, and bumping a pin is
+# a human decision — `docs/VENDOR-CARD.md` and the `vendor/sync` PR are how that
+# decision gets proposed and reviewed. A gate that demanded the tip would go red
+# whenever any of twenty-three third-party repositories pushed a commit, which
+# is a red build nobody here can fix by changing their own code.
+name: Vendor pins
+
+on:
+  pull_request:
+    paths:
+      - ".gitmodules"
+      # Its own file, so that changing the guard exercises the guard. Without
+      # this a pull request editing this workflow could not run it, and the
+      # only way to find out whether it still worked was to merge it.
+      - ".github/workflows/vendor-pins.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".gitmodules"
+      - ".github/workflows/vendor-pins.yml"
+  # Daily, not weekly. The cost of asking is one shallow fetch per pin; the cost
+  # of not asking was three days of a governance check silently not running.
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Keyed by ref on a pull request so a new push supersedes the run it replaced,
+  # and by commit elsewhere so each scheduled run and each merge keeps its own
+  # record rather than cancelling the one before it.
+  group: vendor-pins-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  resolve:
+    name: Pins resolve
+    runs-on: ubuntu-latest
+    steps:
+      # No submodules: initialising them is the thing that fails when a pin is
+      # dead, and it fails all-or-nothing. This job has to survive one bad pin
+      # in order to report which one it is.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Every pin resolves
+        run: |
+          # Written to the summary as it goes, so a failure is readable without
+          # opening the log.
+          {
+            echo "### Vendored pins"
+            echo ""
+            echo "| upstream | remote | pinned commit | fetchable |"
+            echo "|---|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Enumerated into a file first, and counted, for two reasons.
+          #
+          # A `while read` fed by process substitution that produces nothing
+          # loops zero times and leaves `$fail` empty, so the job exits 0. This
+          # check would then pass by not running — the exact failure it exists
+          # to catch, and the first version of this workflow had it: the log of
+          # its own first green run contains not one pin name, because every
+          # line went to the step summary and nothing asserted the count.
+          #
+          # So the expected number is established up front and compared at the
+          # end. A guard whose silence is indistinguishable from success is not
+          # a guard.
+          git config -f .gitmodules --get-regexp '^submodule\..*\.path$' > /tmp/pins.txt || true
+          expected=$(wc -l < /tmp/pins.txt | tr -d ' ')
+          echo "Found $expected submodule(s) in .gitmodules"
+          if [ "$expected" -lt 1 ]; then
+            echo "::error title=No pins found::.gitmodules produced no submodule paths. This check cannot pass by finding nothing to do."
+            echo "**Failed:** no submodules found in \`.gitmodules\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          fail=""
+          checked=0
+          while read -r key path; do
+            checked=$((checked + 1))
+            name="${key#submodule.}"; name="${name%.path}"
+            url="$(git config -f .gitmodules --get "submodule.${name}.url")"
+            sha="$(git ls-tree HEAD -- "$path" | awk '{print $3}')"
+            id="$(basename "$path")"
+            # A declared submodule with no gitlink is an inconsistency in its
+            # own right, not something to skip past quietly.
+            if [ -z "$sha" ]; then
+              echo "$id: NO GITLINK"
+              echo "| \`$id\` | — | declared in .gitmodules, absent from the tree | — |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=Submodule declared but not committed::$id is in .gitmodules but has no gitlink at $path."
+              fail="$fail $id"
+              continue
+            fi
+
+            # One retry. A network blip on a third-party host is not a
+            # supply-chain event, and a gate that cries wolf gets ignored —
+            # which is the failure mode this whole workflow exists to correct.
+            if git ls-remote --heads "$url" >/dev/null 2>&1 \
+               || { sleep 5; git ls-remote --heads "$url" >/dev/null 2>&1; }; then
+              remote="ok"
+            else
+              remote="**gone**"
+              fail="$fail $id"
+              echo "$id: REMOTE GONE ($url)"
+              echo "| \`$id\` | $remote | \`${sha:0:8}\` | — |" >> "$GITHUB_STEP_SUMMARY"
+              echo "::error title=Vendored upstream unreachable::$id — $url no longer resolves. The pin cannot be fetched, so anything reading $path is silently not running."
+              continue
+            fi
+
+            # `--depth 1 <sha>` asks the server for that exact object. GitHub
+            # serves a commit reachable from a ref, so this failing means the
+            # pin is not on any branch upstream any more: a force-push or a
+            # rewritten history, which changes the code under a reviewed pin.
+            if git fetch --depth 1 --no-tags "$url" "$sha" >/dev/null 2>&1 \
+               || { sleep 5; git fetch --depth 1 --no-tags "$url" "$sha" >/dev/null 2>&1; }; then
+              fetchable="ok"
+            else
+              fetchable="**missing**"
+              fail="$fail $id"
+              echo "::error title=Pinned commit missing upstream::$id — ${sha:0:8} is no longer fetchable from $url. The pin was reviewed against code that is no longer there."
+            fi
+            echo "$id: remote=$remote pin=${sha:0:8} fetchable=$fetchable"
+            echo "| \`$id\` | $remote | \`${sha:0:8}\` | $fetchable |" >> "$GITHUB_STEP_SUMMARY"
+          done < /tmp/pins.txt
+
+          echo "Checked $checked of $expected pin(s)"
+          if [ "$checked" -ne "$expected" ]; then
+            echo "::error title=Not every pin was checked::$checked of $expected — this check did not do what it reports."
+            echo "**Failed:** only $checked of $expected pins were checked." >> "$GITHUB_STEP_SUMMARY"
+            fail="$fail incomplete-run"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$fail" ]; then
+            {
+              echo "**Unresolvable:**$fail"
+              echo ""
+              echo "A pin that cannot be fetched means every job reading it is skipping"
+              echo "rather than passing. Restore the upstream, or repoint the pin at a"
+              echo "copy that can produce the same sha — \`docs/VENDOR.md\` records how"
+              echo "\`asqav-compliance\` was recovered from a mirror at its original sha."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "All pins resolve." >> "$GITHUB_STEP_SUMMARY"

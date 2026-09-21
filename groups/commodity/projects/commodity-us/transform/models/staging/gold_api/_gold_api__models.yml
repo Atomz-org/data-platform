@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_gold_api__spot_prices
+    description: >
+      Latest precious-metal spot quotes from gold-api.com, USD per troy ounce. Cleaned 1:1 from `gold_api.spot_prices`; grain: one precious metal per gold-api update.
+    meta:
+      concept: PriceObservation
+      grain: one precious metal per gold-api update
+      layer: staging
+    columns:
+      - name: spot_quote_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: spot_price
+        meta: {role: unit_price}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+      - name: quoted_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: commodity_id
+        description: Foreign key to Commodity.
+        meta: {role: foreign_key, links_to: Commodity}

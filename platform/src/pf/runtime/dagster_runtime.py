@@ -28,6 +28,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from pf.runtime.paths import extend_sys_path
 from pf.runtime.warehouse import Warehouse
 
 
@@ -39,6 +40,7 @@ def build_definitions(
     source_modules: Sequence[str] = (),
     dbt_project_dir: str = "transform",
     sisters: dict[str, str] | None = None,
+    rollup_tables: Sequence[str] = ("fct_revenue",),
 ) -> Any:
     """Assemble a Dagster `Definitions` for one project.
 
@@ -56,11 +58,21 @@ def build_definitions(
             Dagster runs a code location with cwd set to its
             `working_directory` (`<project>/src`), so "../acme-us/..." in a
             project's definitions.py would otherwise resolve one level too deep.
+        rollup_tables: the conformed marts a roll-up reads from every sister,
+            for a roll-up project only. They name the sisters' assets the
+            roll-up depends on, and the roll-up asset checks each one is
+            present and identically shaped in every sister before anything
+            reads it. The default is the revenue mart the reference roll-up
+            reads; a group whose sisters conform on something else says so.
     """
     from dagster import Definitions, define_asset_job, multiprocess_executor
 
     root = Path(project_dir) if project_dir else Path.cwd()
     wh = Warehouse.for_project(root, group, project)
+    # The project's own `src` is the code location's working directory already;
+    # the group's shared Python is not, and a source module importing it would
+    # otherwise fail only under Dagster.
+    extend_sys_path(root)
 
     # dbt's profiles.yml reads this; set it before any manifest is loaded.
     os.environ.setdefault("PF_DUCKDB_PATH", str(wh.path))
@@ -82,7 +94,7 @@ def build_definitions(
             resources["dbt"] = dbt_resource
 
     if sisters:
-        assets.append(_make_rollup_asset(wh, _resolve_sisters(root, sisters)))
+        assets.append(_make_rollup_asset(wh, _resolve_sisters(root, sisters), tuple(rollup_tables)))
 
     hk = _make_housekeeping_asset(root, group, project, wh)
     if hk is not None:
@@ -395,19 +407,29 @@ def _resolve_sisters(root: Path, sisters: dict[str, str]) -> dict[str, Path]:
     }
 
 
-def _make_rollup_asset(wh: Warehouse, sisters: dict[str, Path]):
-    """Cross-entity roll-up.
+def _make_rollup_asset(wh: Warehouse, sisters: dict[str, Path],
+                       tables: Sequence[str] = ("fct_revenue",)):
+    """Cross-entity roll-up: the gate every sister's conformed marts pass through.
 
     `deps` are plain AssetKeys pointing into the sisters' code locations —
     Dagster resolves cross-location dependencies by key, so the roll-up shows
     upstream lineage without importing a sister's code.
+
+    The asset attaches every sister READ_ONLY and checks that each conformed
+    table exists in all of them with one column set. It writes nothing: what a
+    roll-up does with its sisters' marts is that project's own sources and
+    models, and this asset is what stops them running over a sister that has
+    not built, or that means something different by a shared column name. Two
+    sisters that disagree on a column are refused here, by name, rather than
+    summed into a number that merely looks right.
     """
     from dagster import AssetKey, MetadataValue, asset
 
     # The sister's project slug is <group>-<alias>. This was hardcoded to
     # "acme-", so any other group's roll-up drew dependencies on asset keys that
     # do not exist — silently, since cross-location deps resolve by key.
-    upstream = [AssetKey([_prefix(f"{wh.group}-{alias}"), "fct_revenue"]) for alias in sisters]
+    upstream = [AssetKey([_prefix(f"{wh.group}-{alias}"), table])
+                for alias in sisters for table in tables]
 
     @asset(
         name="group_rollup",
@@ -415,18 +437,47 @@ def _make_rollup_asset(wh: Warehouse, sisters: dict[str, Path]):
         group_name="rollup",
         pool=wh.writer_pool,
         deps=upstream,
-        description="Cross-entity roll-up. Attaches sister databases READ_ONLY.",
+        description="Cross-entity roll-up. Attaches sister databases READ_ONLY and "
+                    "checks the conformed marts agree before anything reads them.",
         compute_kind="duckdb",
     )
     def _rollup(context) -> None:  # noqa: ANN001
         paths = {alias: Path(p) for alias, p in sisters.items()}
         with wh.attach_sisters(paths) as con:
-            unions = " UNION ALL ".join(
-                f"SELECT '{alias.upper()}' AS entity, * FROM {alias}.main_marts.fct_revenue"
-                for alias in paths
-            )
-            con.execute(f"CREATE OR REPLACE TABLE group_revenue AS {unions}")
-            rows = con.execute("SELECT count(*) FROM group_revenue").fetchone()[0]
-        context.add_output_metadata({"entities": MetadataValue.json(list(paths)), "rows": rows})
+            shapes = conformed_shapes(con, paths, tables)
+        context.add_output_metadata({
+            "entities": MetadataValue.json(list(paths)),
+            "tables": MetadataValue.json({t: sorted(cols) for t, cols in shapes.items()}),
+        })
 
     return _rollup
+
+
+def conformed_shapes(con: Any, sisters: dict[str, Path], tables: Sequence[str],
+                     schema: str = "main_marts") -> dict[str, frozenset[str]]:
+    """Column set of every conformed table, or a `ValueError` naming what differs.
+
+    `con` has each sister attached under its alias. A table missing in one
+    sister is reported the same way as one whose columns differ: either way the
+    roll-up cannot union it.
+    """
+    shapes: dict[str, frozenset[str]] = {}
+    for table in tables:
+        per_sister: dict[str, frozenset[str]] = {}
+        for alias in sisters:
+            rows = con.execute(
+                "SELECT column_name FROM information_schema.columns "
+                f"WHERE table_catalog = '{alias}' AND table_schema = '{schema}' "
+                f"AND table_name = '{table}'").fetchall()
+            per_sister[alias] = frozenset(r[0] for r in rows)
+        absent = sorted(a for a, cols in per_sister.items() if not cols)
+        if absent:
+            raise ValueError(f"{table} is missing in sister(s): {', '.join(absent)}")
+        if len(set(per_sister.values())) > 1:
+            common = frozenset.intersection(*per_sister.values())
+            diff = {a: sorted(c - common) for a, c in per_sister.items() if c - common}
+            raise ValueError(
+                f"{table} is not conformed across sisters — columns only some have: "
+                + "; ".join(f"{a}: {', '.join(c)}" for a, c in sorted(diff.items())))
+        shapes[table] = next(iter(per_sister.values()))
+    return shapes

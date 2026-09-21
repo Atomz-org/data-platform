@@ -1,0 +1,51 @@
+version: 2
+
+seeds:
+  - name: indicative_prices
+    description: >
+      Manually maintained benchmark levels for commodities with no free live feed
+      (LME base metals, battery metals, iron ore, vegetable oils). A benchmark
+      level is the same in every market, so it is conformed here rather than
+      kept per sister. Refresh by appending a row with a new `as_of_date`; never
+      overwrite a past level.
+    meta:
+      concept: PriceObservation
+      grain: one commodity per as-of date
+    config:
+      column_types:
+        commodity_id: varchar
+        as_of_date: date
+        price: double
+        currency_code: varchar
+        quote_unit: varchar
+        benchmark: varchar
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [commodity_id, as_of_date]
+    columns:
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('commodities')
+                field: commodity_id
+      - name: price
+        meta: {role: unit_price}
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: "> 0"
+      - name: currency_code
+        meta: {role: currency_code}
+        data_tests: [not_null]
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('units_of_measure')
+                field: unit_code

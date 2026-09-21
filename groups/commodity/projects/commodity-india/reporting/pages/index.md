@@ -3,18 +3,17 @@ title: commodity-india — Overview
 queries:
   - metrics/benchmark_price_usd_total.sql
   - metrics/benchmark_price_days.sql
-  - metrics/landed_price_inr_total.sql
+  - metrics/landed_price_local_total.sql
   - metrics/landed_price_days.sql
-  - metrics/duty_inr_total.sql
-  - metrics/usd_inr_rate_total.sql
-  - metrics/usd_inr_rate_days.sql
+  - metrics/duty_local_total.sql
+  - metrics/usd_fx_rate_total.sql
   - metrics/avg_benchmark_price_usd.sql
   - metrics/period_high_price_usd.sql
   - metrics/period_low_price_usd.sql
   - metrics/contracts_traded.sql
-  - metrics/avg_landed_price_inr.sql
-  - metrics/avg_duty_inr.sql
-  - metrics/avg_usd_inr_rate.sql
+  - metrics/avg_landed_price_local.sql
+  - metrics/avg_duty_local.sql
+  - metrics/avg_usd_fx_rate.sql
 ---
 
 Every number on this page is a governed metric compiled from the dbt
@@ -42,9 +41,9 @@ select sum(benchmark_price_days) as benchmark_price_days
 from ${metrics_benchmark_price_days}
 ```
 
-```sql kpi_landed_price_inr_total
-select sum(landed_price_inr_total) as landed_price_inr_total
-from ${metrics_landed_price_inr_total}
+```sql kpi_landed_price_local_total
+select sum(landed_price_local_total) as landed_price_local_total
+from ${metrics_landed_price_local_total}
 ```
 
 ```sql kpi_landed_price_days
@@ -56,7 +55,7 @@ from ${metrics_landed_price_days}
 
 <BigValue data={kpi_benchmark_price_usd_total} value=benchmark_price_usd_total title='Benchmark Price Total (component)' fmt=num0/>
 <BigValue data={kpi_benchmark_price_days} value=benchmark_price_days title='Priced Days' fmt=num0/>
-<BigValue data={kpi_landed_price_inr_total} value=landed_price_inr_total title='Landed Price Total (component)' fmt=num0/>
+<BigValue data={kpi_landed_price_local_total} value=landed_price_local_total title='Landed Price Total (component)' fmt=num0/>
 <BigValue data={kpi_landed_price_days} value=landed_price_days title='Days With a Landed Price' fmt=num0/>
 
 </Grid>

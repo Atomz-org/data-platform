@@ -1,0 +1,3 @@
+market_code,market_name,country_code,currency_code,home_exchange,timezone,project
+IN,India,IN,INR,MCX,Asia/Kolkata,commodity-india
+US,United States,US,USD,COMEX,America/New_York,commodity-us

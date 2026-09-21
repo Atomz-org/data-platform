@@ -139,6 +139,19 @@ IMPACT_JOB = """\
           [ -z "$CHANGED" ] && echo "no model changes"
           echo "models=$CHANGED" >> "$GITHUB_OUTPUT"
 
+      # A breaking radius — a mart that feeds a metric or an exposure — needs a
+      # decision record in the same change to pass. The gate still prints the
+      # whole radius and names the owners; the decision is what the reviewer
+      # reads instead of overriding a red job. `decisions/README.md` is the
+      # scaffold's, not a decision.
+      - name: Decisions this PR adds or changes
+        id: decided
+        run: |
+          DECIDED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \\
+            -- 'groups/{{group}}/projects/{{project}}/decisions/*.md' \\
+            | grep -v '/README\\.md$' | paste -sd, -)
+          echo "decisions=$DECIDED" >> "$GITHUB_OUTPUT"
+
       # Gate against the *base*, not the branch. The question a merge gate
       # answers is "what does this break in {{group}}/{{project}} as it stands",
       # and only the base graph can answer it:
@@ -154,16 +167,24 @@ IMPACT_JOB = """\
       # `pf kg build` parses the dbt project first. Without a manifest the graph
       # holds no models, every blast-radius query comes back empty, and the gate
       # passes because it found nothing rather than because there is nothing.
+      #
+      # Only the *group* is taken from the base — its projects and its shared
+      # package — while `platform/` stays at this PR's version. Checking the
+      # whole base out ran the base's `pf` against the PR's arguments, so a gate
+      # option added in the same PR was unknown to the job that needed it, and
+      # the platform change that fixed a gate could never pass that gate.
       - name: Blast radius against the base
         if: steps.changed.outputs.models != \'\'
         run: |
-          git checkout --detach origin/${{ github.base_ref }}
+          git rm -rq --cached groups/{{group}} && rm -rf groups/{{group}}
+          git checkout origin/${{ github.base_ref }} -- groups/{{group}} 2>/dev/null || true
           if [ ! -f "groups/{{group}}/projects/{{project}}/transform/dbt_project.yml" ]; then
             echo "{{group}}/{{project}} does not exist on ${{ github.base_ref }} yet — nothing there to break"
             exit 0
           fi
           uv run pf kg build {{group}} {{project}}
-          uv run pf impact-gate {{group}} {{project}} "${{ steps.changed.outputs.models }}"
+          uv run pf impact-gate {{group}} {{project}} "${{ steps.changed.outputs.models }}" \\
+            --decisions "${{ steps.decided.outputs.decisions }}"
 """
 
 LOOPS_README = """\
@@ -218,6 +239,9 @@ GITHUB_README = """\
 # GitHub integration — {{group}}/{{project}}
 
 `pf impact-gate` runs on every PR that touches this project's models or sources.
+A radius that reaches a metric or an exposure blocks unless the same PR adds or
+edits a decision record under `decisions/` — the report is still printed and
+the owners still named; the decision is what a reviewer reads.
 A change with a breaking blast radius fails the check and names the exposure
 owners who need to know.
 
