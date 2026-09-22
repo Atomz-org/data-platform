@@ -5,6 +5,7 @@ description: Customers with at least one active subscription.
 okf_x_kind: simple
 okf_x_model: dim_customers
 okf_x_time_column: created_at
+okf_x_kg_node: metric:active_customers
 ---
 
 # Definition
