@@ -3,14 +3,16 @@ import {
   AppSidebar, Box, Button, HStack, Select, Spinner, Text, VStack,
 } from "wss3-forge";
 import {
-  Board20Regular, DataTrending20Regular, Molecule20Regular,
-  ShieldCheckmark20Regular, WeatherMoon20Regular, WeatherSunny20Regular,
+  Board20Regular, BuildingMultiple20Regular, DataTrending20Regular,
+  Molecule20Regular, ShieldCheckmark20Regular, WeatherMoon20Regular,
+  WeatherSunny20Regular,
 } from "@fluentui/react-icons";
 import { api, type Tree } from "./api";
 import Workspace from "./screens/Workspace";
 import Review from "./screens/Review";
 import Semantics from "./screens/Semantics";
 import Governance from "./screens/Governance";
+import Fleet from "./screens/Fleet";
 
 /**
  * Shell shape is taken from the shadcn admin template (see the vendor registry):
@@ -22,6 +24,16 @@ import Governance from "./screens/Governance";
  * screen is how two of them end up disagreeing about which project is active.
  */
 const SECTIONS = [
+  {
+    // First, and above "Change", because it is the only section that works
+    // before a project exists. A console whose every screen is scoped to a
+    // project has nothing to show the operator who is here to create the first
+    // one, and lands them on an empty picker instead.
+    title: "Platform",
+    items: [
+      { id: "fleet", icon: <BuildingMultiple20Regular />, label: "Fleet" },
+    ],
+  },
   {
     title: "Change",
     items: [
@@ -60,6 +72,11 @@ export default function App({ mode, onToggleTheme }: {
         const match = all.find(a => `${a.group}/${a.project}` === saved);
         const first = match ?? all[0];
         if (first) setActive(first);
+        // An empty platform has nothing for a project-scoped screen to show.
+        // Landing on Workspace's "select a project" with no project to select
+        // is a dead end on the one visit where the operator is here to create
+        // the first one.
+        else setTab("fleet");
       })
       .catch(e => setError(e.message));
   }, []);
@@ -67,6 +84,12 @@ export default function App({ mode, onToggleTheme }: {
   React.useEffect(() => {
     if (active) localStorage.setItem("pf-project", `${active.group}/${active.project}`);
   }, [active]);
+
+  // Re-read after a group or project is created, so the topbar picker offers
+  // the new project without a page reload.
+  const refresh = React.useCallback(() => {
+    api.get<Tree>("/api/tree").then(setTree).catch(e => setError(e.message));
+  }, []);
 
   const options = (tree?.groups ?? []).flatMap(g =>
     g.projects.map(p => ({ value: `${g.name}/${p.name}`, label: `${g.name}/${p.name}` })));
@@ -116,6 +139,7 @@ export default function App({ mode, onToggleTheme }: {
         <Box style={{ flex: 1, minHeight: 0, overflowY: "auto" }} p="lg">
           {error && <Text color="error">{error}</Text>}
           {!tree && !error && <Spinner />}
+          {tab === "fleet" && <Fleet onChanged={refresh} />}
           {active && tab === "workspace" && <Workspace {...active} />}
           {active && tab === "review" && <Review {...active} />}
           {active && tab === "semantics" && <Semantics {...active} />}

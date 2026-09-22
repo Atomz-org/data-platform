@@ -47,6 +47,27 @@ Two rules that are ours, not Forge's:
   checked it". A green nought over an unmeasured project is a clean bill of
   health nobody issued.
 
+## The one screen that writes
+
+`src/screens/Fleet.tsx` lists every group and project and is where new ones are
+created (`NewGroupDialog`, `NewProjectDialog`). Three rules apply to it that do
+not apply to the read-only screens:
+
+- **The server owns every rule.** Name shape, collisions, capability resolution
+  and blockers all come from `/api/provision/*/plan`, re-resolved as the form
+  changes. The submit button is never enabled by a check the front end made up,
+  because a form that disagrees with the scaffolder is worse than no preview.
+- **`actor` is required.** Same rule as the Governance screen. It persists in
+  `localStorage` under `pf-actor`, which is the shared key — do not invent a
+  second one.
+- **Report the ladder, not a tick.** A created project returns one row per
+  bootstrap step. A project whose ladder half-ran exists on disk and is not
+  finished, and a green tick over a failed graph build is the report that costs
+  someone an afternoon.
+
+It is also the only screen that works before a project exists, which is why it
+sits above "Change" in the sidebar and is what an empty platform lands on.
+
 ## Wide content
 
 Tables scroll inside their own card (`.pf-scroll-x`), never the page. A
