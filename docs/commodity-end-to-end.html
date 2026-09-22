@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commodity Desks, End to End</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #f3f6f7;
+    --surface: #ffffff;
+    --surface-2: #e8edef;
+    --ink: #15202a;
+    --ink-2: #46565f;
+    --ink-3: #7b8a93;
+    --line: #d2d9dd;
+    --line-strong: #b3bfc5;
+    --owned: #0f6a6a;
+    --shared: #414c8c;
+    --bound: #8a5800;
+    --ok: #2d6b4d;
+    --display: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0e1418;
+      --surface: #151e24;
+      --surface-2: #1c272e;
+      --ink: #e5ecf0;
+      --ink-2: #a1b1ba;
+      --ink-3: #6d7e87;
+      --line: #293640;
+      --line-strong: #3b4c57;
+      --owned: #5ec5bd;
+      --shared: #9ba7e9;
+      --bound: #d9a642;
+      --ok: #6dbf90;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1418;
+    --surface: #151e24;
+    --surface-2: #1c272e;
+    --ink: #e5ecf0;
+    --ink-2: #a1b1ba;
+    --ink-3: #6d7e87;
+    --line: #293640;
+    --line-strong: #3b4c57;
+    --owned: #5ec5bd;
+    --shared: #9ba7e9;
+    --bound: #d9a642;
+    --ok: #6dbf90;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; }
+  .prose { max-width: 66ch; }
+
+  h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1.04; margin: 0 0 12px; }
+  h2 { font-size: clamp(1.6rem, 3.6vw, 2.1rem); line-height: 1.12; margin: 0 0 4px; }
+  h3 { font-size: 1.16rem; line-height: 1.3; margin: 0 0 6px; font-family: var(--body); font-weight: 600; letter-spacing: 0; }
+  p { margin: 0 0 14px; }
+  a { color: var(--owned); text-underline-offset: 2px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.14em; color: var(--ink-3); margin: 0 0 10px;
+  }
+  header.top { border-bottom: 1px solid var(--line); padding-block: 56px 28px; margin-bottom: 40px; }
+  .standfirst { font-size: 1.12rem; color: var(--ink-2); max-width: 60ch; margin: 0; }
+
+  section { padding-block: 34px 0; }
+  section + section { border-top: 1px solid var(--line); margin-top: 34px; }
+  .sect-head { margin-bottom: 20px; }
+
+  code, .mono { font-family: var(--mono); font-size: 0.855em; font-variant-ligatures: none; }
+  p code, li code, td code { background: var(--surface-2); padding: 0.08em 0.34em; border-radius: 3px; }
+
+  /* ---- diagram primitives ---------------------------------------------- */
+  .scroll { overflow-x: auto; padding-bottom: 4px; }
+  .figure { margin: 0 0 8px; }
+  figcaption { font-size: 0.83rem; color: var(--ink-3); margin-top: 10px; font-family: var(--mono); }
+
+  .tier {
+    border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface);
+    padding: 14px 16px; position: relative;
+  }
+  .tier + .tier { margin-top: 12px; }
+  .tier .tier { background: var(--surface-2); }
+  .tier-label {
+    font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--ink-2); display: flex; flex-wrap: wrap;
+    gap: 8px; align-items: baseline; margin-bottom: 8px;
+  }
+  .tier-note { font-family: var(--body); font-size: 0.86rem; letter-spacing: 0; text-transform: none; color: var(--ink-3); }
+
+  .badge {
+    font-family: var(--mono); font-size: 0.66rem; text-transform: uppercase;
+    letter-spacing: 0.08em; padding: 2px 7px; border-radius: 2px; white-space: nowrap;
+    border: 1px solid currentColor;
+  }
+  .b-shared { color: var(--shared); }
+  .b-owned { color: var(--owned); }
+  .b-bound { color: var(--bound); }
+  .b-gen { color: var(--ink-3); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--mono); font-size: 0.78rem; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 2px; padding: 3px 8px; white-space: nowrap;
+  }
+  .tier .tier .chip { background: var(--paper); }
+
+  /* pipeline */
+  .flow { display: grid; gap: 0; min-width: 460px; }
+  .stage {
+    display: grid; grid-template-columns: 150px 1fr; gap: 16px;
+    border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
+    background: var(--surface); padding: 12px 14px; border-radius: 2px;
+  }
+  .stage.own { border-left-color: var(--owned); }
+  .stage.shr { border-left-color: var(--shared); }
+  .stage.ext { border-left-color: var(--ink-3); border-style: dashed; }
+  .stage-name { font-weight: 600; font-size: 0.95rem; }
+  .stage-name span { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 400; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 2px; }
+  .hop {
+    display: grid; grid-template-columns: 150px 1fr; gap: 16px;
+    padding: 7px 14px; font-size: 0.86rem; color: var(--ink-2);
+  }
+  .hop .arrow { font-family: var(--mono); color: var(--ink-3); text-align: center; }
+  .hop em { font-style: normal; color: var(--bound); }
+
+  /* rollup */
+  .rollup { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; min-width: 460px; }
+  .wh {
+    border: 1px solid var(--line); border-radius: 2px; background: var(--surface);
+    padding: 12px; text-align: center;
+  }
+  .wh .nm { font-family: var(--mono); font-size: 0.82rem; font-weight: 500; }
+  .wh .db { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-3); margin-top: 4px; word-break: break-all; }
+  .attach { text-align: center; color: var(--ink-3); font-family: var(--mono); font-size: 0.78rem; padding: 12px 0 8px; }
+
+  /* facts */
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 2px; }
+  .fact { background: var(--surface); padding: 12px 14px; }
+  .fact dt { font-family: var(--mono); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--ink-3); }
+  .fact dd { margin: 4px 0 0; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+  .fact dd .sm { font-size: 0.84rem; color: var(--ink-2); }
+
+  /* rules */
+  .rules { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .rules li {
+    border-left: 3px solid var(--bound); background: var(--surface);
+    border-top: 1px solid var(--line); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 11px 14px; border-radius: 2px;
+  }
+  .rules strong { font-weight: 600; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; min-width: 480px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 400; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 12px; }
+  .steps li::before {
+    content: counter(s); font-family: var(--mono); font-size: 0.8rem; color: var(--ink-3);
+    border: 1px solid var(--line-strong); border-radius: 50%; width: 26px; height: 26px;
+    display: grid; place-items: center; margin-top: 2px;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 18px; font-size: 0.85rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+
+  @media (max-width: 620px) {
+    .stage, .hop { grid-template-columns: 1fr; gap: 8px; }
+    .hop .arrow { text-align: left; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+  <style>
+    html { color-scheme: light dark; }
+    img { max-width: 100%; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <p class="eyebrow">data-platform · a walkthrough</p>
+    <h1>Commodity Desks, End to End</h1>
+    <p class="standfirst">
+      One monorepo runs many companies at once. The infrastructure is shared, the
+      business logic never is. This follows a single price from a public API to a
+      dashboard, through the Commodity Desks family, and names the rule that
+      applies at every hop.
+    </p>
+  </header>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">The idea in one minute</p>
+      <h2>Three tiers, and one prohibition</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Everything in the repository sits in one of three tiers. The platform is
+        the machinery, written once. A group is a family of companies that share a
+        vocabulary. A project is one company, with its own warehouse and its own
+        numbers.
+      </p>
+      <p>
+        The prohibition is what makes it safe: a project may never read another
+        project. Business logic does not transfer between companies, so an
+        assumption carried across is a bug, not a shortcut. Everything else in the
+        design exists to make that rule survive contact with real work.
+      </p>
+    </div>
+
+    <div class="legend" style="margin-top:22px">
+      <span><i class="swatch" style="background:var(--shared)"></i> shared, written once</span>
+      <span><i class="swatch" style="background:var(--owned)"></i> owned by one company</span>
+      <span><i class="swatch" style="background:var(--bound)"></i> a boundary rule</span>
+      <span><i class="swatch" style="background:var(--ink-3)"></i> generated, not hand-written</span>
+    </div>
+
+    <figure class="figure">
+      <div class="scroll">
+        <div style="min-width:460px">
+          <div class="tier">
+            <div class="tier-label"><span class="badge b-shared">platform/</span> the machinery
+              <span class="tier-note">engines, runtime factories, ontology, the knowledge graph, the agent tooling. Shared by every company.</span>
+            </div>
+            <div class="chips">
+              <span class="chip">pf CLI</span><span class="chip">dlt runtime</span><span class="chip">dbt runtime</span>
+              <span class="chip">warehouse factory</span><span class="chip">ontology</span><span class="chip">knowledge graph</span>
+              <span class="chip">MCP server</span><span class="chip">toolkits</span><span class="chip">provenance</span>
+            </div>
+
+            <div class="tier" style="margin-top:14px">
+              <div class="tier-label"><span class="badge b-shared">groups/commodity/</span> the family
+                <span class="tier-note">one vocabulary, conformed dimensions, group metrics, one token budget.</span>
+              </div>
+              <div class="chips">
+                <span class="chip">ontology/instance.yaml</span><span class="chip">shared/transform/macros</span>
+                <span class="chip">shared/transform/seeds</span><span class="chip">tools.yaml</span>
+                <span class="chip">loops.yaml</span><span class="chip">air.yaml</span><span class="chip">group.yaml</span>
+              </div>
+
+              <div class="tier" style="margin-top:14px">
+                <div class="tier-label"><span class="badge b-owned">projects/commodity-us/</span> one market
+                  <span class="tier-note">its own warehouse, its own sources, its own duty regime. Runs in parallel with its sisters.</span>
+                </div>
+                <div class="chips">
+                  <span class="chip">src/·/sources/</span><span class="chip">transform/models/</span>
+                  <span class="chip">data/commodity_us.duckdb</span><span class="chip">reporting/</span>
+                  <span class="chip">contracts/annotations.yaml</span><span class="chip">governance/policy.yaml</span>
+                  <span class="chip">decisions/</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>Containment is the permission model. Inner tiers read outward, never sideways.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">The worked example</p>
+      <h2>Who the Commodity Desks are</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Three sister projects, one per market. Each is a market in the strict sense
+        the family uses: one currency, one customs regime, one warehouse. The third
+        sister is not a market at all but the only place cross-market questions may
+        be answered.
+      </p>
+    </div>
+    <dl class="facts">
+      <div class="fact"><dt>Sisters</dt><dd>3 <span class="sm">india · us · rollup</span></dd></div>
+      <div class="fact"><dt>Lifecycle</dt><dd>active <span class="sm">gates run at full severity</span></dd></div>
+      <div class="fact"><dt>Data residency</dt><dd>local <span class="sm">DuckDB files, in the repo</span></dd></div>
+      <div class="fact"><dt>Retention</dt><dd>3,650 days</dd></div>
+      <div class="fact"><dt>Erasure SLA</dt><dd>30 days</dd></div>
+      <div class="fact"><dt>Agent token ceiling</dt><dd>40,000 <span class="sm">per day, whole family</span></dd></div>
+      <div class="fact"><dt>Ontology classes</dt><dd class="sm">Product · Currency · Location</dd></div>
+      <div class="fact"><dt>Own terms</dt><dd class="sm">Commodity · PriceObservation · FxRate · ImportTariff</dd></div>
+    </dl>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">End to end</p>
+      <h2>One price, from the API to the board</h2>
+    </div>
+    <div class="prose">
+      <p>
+        This is the real chain in <code>commodity-us</code>, with the real model
+        names. Read the left column as the layer and the right as what actually
+        lives there. Between every pair of stages is the rule that governs the
+        hop, and those rules are where the family's knowledge is kept.
+      </p>
+    </div>
+
+    <figure class="figure">
+      <div class="scroll">
+        <div class="flow">
+          <div class="stage ext">
+            <div class="stage-name">Outside world<span>third-party</span></div>
+            <div class="chips"><span class="chip">Gold API</span><span class="chip">Yahoo Finance</span></div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div><em>dlt lands raw only.</em> Never transform in a source; never join here.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Extract<span>src/·/sources</span></div>
+            <div class="chips"><span class="chip">gold_api.py</span><span class="chip">yahoo_finance.py</span></div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div>Every resource declares its concept, column roles and links in <code>contracts/annotations.yaml</code>. Those annotations drive everything downstream.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Raw<span>warehouse schema</span></div>
+            <div class="chips"><span class="chip">commodity_us.duckdb · raw</span></div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div><em>One row in, one row out.</em> Staging is generated from the annotations by <code>pf gen-staging</code>, and cleans only.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Staging<span>models/staging</span></div>
+            <div class="chips">
+              <span class="chip">stg_gold_api__spot_prices</span>
+              <span class="chip">stg_yahoo_finance__futures_prices</span>
+              <span class="chip">stg_yahoo_finance__fx_rates</span>
+            </div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div><em>Minor units first, then units, then FX.</em> A quote in USX or GBX goes through <code>to_major_currency</code> before anything else touches it.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Intermediate<span>models/intermediate</span></div>
+            <div class="chips">
+              <span class="chip">int_commodity_prices__usd</span>
+              <span class="chip">int_fx_rates__daily</span>
+            </div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div><em>Identical SQL in every sister.</em> The conformed core is the family's, not the market's. Change it everywhere or nowhere.</div></div>
+
+          <div class="stage shr">
+            <div class="stage-name">Conformed marts<span>models/marts/core</span></div>
+            <div class="chips">
+              <span class="chip">dim_commodities</span>
+              <span class="chip">fct_commodity_prices_daily</span>
+              <span class="chip">fct_fx_rates_daily</span>
+              <span class="chip">fct_landed_prices_daily</span>
+              <span class="chip">rpt_commodity_price_board</span>
+            </div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div>Only here does the market's own law appear: its duty schedule, its contract sizes, its seeds under conformed names.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Market marts<span>models/marts/us</span></div>
+            <div class="chips">
+              <span class="chip">fct_us_contract_values_daily</span>
+              <span class="chip">rpt_us_contract_board</span>
+            </div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div><em>A price is a unit price, never an amount.</em> It is not additive, so the metric layer defines a mean as a ratio within one commodity.</div></div>
+
+          <div class="stage shr">
+            <div class="stage-name">Semantic layer<span>models/semantic</span></div>
+            <div class="chips">
+              <span class="chip">sem_commodity_prices.yml</span>
+              <span class="chip">metrics_commodity_prices.yml</span>
+              <span class="chip">metricflow_time_spine</span>
+            </div>
+          </div>
+          <div class="hop"><div class="arrow">↓</div><div>Dashboards are a projection of the metrics, not a second place they are defined. Each page becomes an exposure, so impact analysis reaches it.</div></div>
+
+          <div class="stage own">
+            <div class="stage-name">Reporting<span>reporting/pages</span></div>
+            <div class="chips">
+              <span class="chip">US Import Parity</span>
+              <span class="chip">·· one exposure per page</span>
+              <span class="badge b-gen">generated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>13 SQL models and 2 semantic files in commodity-us. Staging, exposures and the price board are generated, not typed.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">Crossing the boundary</p>
+      <h2>The one sister allowed to look sideways</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Sooner or later someone asks which market is cheapest. That question cannot
+        be answered inside a market, and the answer is not to relax the rule. It is
+        a fourth kind of thing: a roll-up project whose only job is comparison, and
+        which reaches its sisters through a read-only attachment to their warehouse
+        files rather than by reading their code.
+      </p>
+    </div>
+
+    <figure class="figure">
+      <div class="scroll">
+        <div style="min-width:460px">
+          <div class="rollup">
+            <div class="wh"><div class="nm">commodity-india</div><div class="db">commodity_india.duckdb</div></div>
+            <div class="wh"><div class="nm">commodity-us</div><div class="db">commodity_us.duckdb</div></div>
+            <div class="wh" style="border-style:dashed"><div class="nm">·· a new market</div><div class="db">one row in markets</div></div>
+          </div>
+          <div class="attach">↓ &nbsp; ATTACH '…duckdb' AS sister (READ_ONLY) &nbsp; ↓</div>
+          <div class="tier">
+            <div class="tier-label"><span class="badge b-owned">commodity-rollup</span> comparison only
+              <span class="tier-note">reads the conformed landed price from every sister and nothing else.</span>
+            </div>
+            <div class="chips">
+              <span class="chip">stg_sisters__landed_prices</span>
+              <span class="chip">int_landed_prices__usd_per_quote_unit</span>
+              <span class="chip">dim_markets</span>
+              <span class="chip">fct_market_spreads_daily</span>
+              <span class="chip">rpt_market_comparison_board</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>The roll-up refuses a sister whose conformed models differ, which is what keeps "identical SQL everywhere" honest.</figcaption>
+    </figure>
+
+    <div class="prose" style="margin-top:6px">
+      <p>
+        That refusal is the load-bearing part. A comparison across markets is only
+        meaningful if every market computed its landed price the same way, so the
+        roll-up is also the test. Adding a market is therefore a small act: one row
+        in the markets seed, its own duty and unit seeds under conformed names, and
+        a warehouse. The catalogue, the units and the connectors already belong to
+        the family.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">Knowledge the code cannot hold</p>
+      <h2>Five rules that outrank any request</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Every family keeps a short list of things that are true about its business
+        and invisible in its schema. These are the Commodity Desks' own, and they
+        are written where an agent or a new engineer reads them before starting.
+      </p>
+    </div>
+    <ul class="rules">
+      <li><strong>A price is not additive.</strong> It is a unit price, never a money amount. A mean is a sum divided by a count, within one commodity, and never across commodities or markets.</li>
+      <li><strong>Convert in order.</strong> Minor-unit quotes first, then units of measure, then foreign exchange. Any other order is quietly wrong.</li>
+      <li><strong>A sister is a market.</strong> One currency, one customs regime, one warehouse. If something needs two, it needs two sisters.</li>
+      <li><strong>The conformed core is identical everywhere.</strong> Change it in every sister or in none, and let the roll-up prove it.</li>
+      <li><strong>Extraction never transforms.</strong> Landing raw and shaping data are different jobs owned by different tools.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">Around the pipeline</p>
+      <h2>What the platform adds that a dbt project does not have</h2>
+    </div>
+    <div class="prose">
+      <p>
+        The data flow above would work in any warehouse. What makes this a platform
+        is the layer around it: a vocabulary the models are checked against, a graph
+        that answers questions instead of being read, gates that block a merge, and
+        a record of what every agent did.
+      </p>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Layer</th><th>What it is</th><th>What it prevents</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Ontology</strong><br><code class="mono">ontology/instance.yaml</code></td>
+            <td>The classes this family models, validated against the platform's own vocabulary. Terms the platform lacks live in the family's extension.</td>
+            <td>Two sisters inventing two names for one thing.</td>
+          </tr>
+          <tr>
+            <td><strong>Knowledge graph</strong><br><code class="mono">kg/graph.json</code></td>
+            <td>Models, columns, metrics, sources and dashboards as nodes and edges. Queried through the platform's own tools, never loaded into a prompt.</td>
+            <td>Changing a column and discovering the blast radius in production.</td>
+          </tr>
+          <tr>
+            <td><strong>Context cards</strong><br><code class="mono">kg/context_card.md</code></td>
+            <td>A generated, token-budgeted summary of the project, so a session starts informed rather than reading the tree.</td>
+            <td>An agent spending its context window rediscovering the obvious.</td>
+          </tr>
+          <tr>
+            <td><strong>The commit gate</strong><br><code class="mono">gate.yaml</code></td>
+            <td>Which paths a session may write, at most twelve files per commit, and blast radius required before a model changes.</td>
+            <td>A change made for one company silently altering every other.</td>
+          </tr>
+          <tr>
+            <td><strong>Provenance</strong><br><code class="mono">provenance/</code></td>
+            <td>Intent, decision and execution for every agent action, hash-chained and timestamped. No agent may write here.</td>
+            <td>A record of what happened that the actor could edit.</td>
+          </tr>
+          <tr>
+            <td><strong>Named controls</strong><br><code class="mono">air.yaml</code></td>
+            <td>Governance controls with real identifiers, cross-walked to the regulations, where a control whose enforcement resolves to nothing reports as failing.</td>
+            <td>Compliance asserted in prose and true nowhere.</td>
+          </tr>
+          <tr>
+            <td><strong>Loops</strong><br><code class="mono">loops.yaml</code></td>
+            <td>Scheduled agent runs with a token budget and a cadence, here tied to the US futures close.</td>
+            <td>Autonomous work with no ceiling and no schedule.</td>
+          </tr>
+          <tr>
+            <td><strong>Tools</strong><br><code class="mono">tools.yaml</code></td>
+            <td>A capability that also runs: one declaration brings scaffolded files, gate rules, pipeline assets and a UI. Enabled for the family, overridable per market.</td>
+            <td>Deciding the same thing three times, once per sister.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose" style="margin-top:14px">
+      Two of these are worth dwelling on. The graph is <em>asked</em>, not read, which
+      is why a session can reason about a warehouse it has never opened. And the
+      generated artefacts are committed on purpose, so that a pull request shows the
+      change and its consequences side by side. The rule that follows from that is
+      short: change the generator, never the generated file.
+    </p>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">A change, end to end</p>
+      <h2>What happens when you touch the landed price</h2>
+    </div>
+    <div class="prose">
+      <p>
+        Suppose the duty calculation in <code>fct_landed_prices_daily</code> is wrong.
+        That model is conformed, so it exists identically in every sister and feeds
+        the roll-up. Here is the whole path from edit to dashboard.
+      </p>
+    </div>
+    <ol class="steps">
+      <li><strong>Before the edit, ask the graph.</strong> The blast radius names the downstream models, metrics and dashboard pages, so the size of the change is known before it is made rather than after.</li>
+      <li><strong>The gate checks the path.</strong> A session working in one market may not write to the platform, to another market, or to the provenance record. A model change also requires its impact to be reported first.</li>
+      <li><strong>The edit lands in every sister.</strong> Conformed means identical. Changing one is the failure the roll-up is built to catch.</li>
+      <li><strong>The commit is small.</strong> At most twelve files, a subject line saying what changed and a body saying why. Larger work becomes a sequence.</li>
+      <li><strong>Continuous integration rebuilds the derived truth.</strong> The knowledge graph, the architecture map and the semantic manifest are regenerated and compared against what was committed.</li>
+      <li><strong>The review shows data, not just code.</strong> The diff between the old and new numbers is computed and posted, because the meaningful question is what the values did, not what the SQL says.</li>
+      <li><strong>The dashboards are reached through exposures.</strong> Each page is a node in the graph, so the pull request can name who to tell.</li>
+      <li><strong>The action is recorded.</strong> Whoever did it, agent or person, and in which order, hash-chained into a ledger nobody in the loop may rewrite.</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">Who else works here</p>
+      <h2>The repository as something agents can be trusted in</h2>
+    </div>
+    <div class="prose">
+      <p>
+        The unusual part of this codebase is that it is written to be operated by
+        more than one kind of worker. People, a chat session with a shell, an
+        autonomous job answering an issue, and an editor completing a line are all
+        held to the same rules, and the rules go by what the worker can do rather
+        than by which vendor built it.
+      </p>
+      <p>
+        Three files carry that. A short router names the tiers and the prohibitions,
+        and is capped so small that every session can afford to load it. A protocol
+        spells out the scopes, where each may write, which files are generated and
+        what to run before pushing. And a per-module memory keeps the traps that
+        already cost someone a day, in the directory they are true of, indexed and
+        checked so a lesson cannot land without being findable.
+      </p>
+      <p>
+        The graphs serve the same purpose from the other side. One answers questions
+        about the data. A second, scoped deliberately to the platform directory
+        alone, answers which function calls which. Neither is ever read in full, and
+        asking the wrong one returns a confident answer to a different question.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sect-head prose">
+      <p class="eyebrow">Orientation</p>
+      <h2>Where to look first</h2>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>If you want</th><th>Open</th></tr></thead>
+        <tbody>
+          <tr><td>The tiers and the prohibitions</td><td><code class="mono">CLAUDE.md</code> at the root</td></tr>
+          <tr><td>The family's business rules</td><td><code class="mono">groups/commodity/CLAUDE.md</code></td></tr>
+          <tr><td>What the repository actually contains</td><td><code class="mono">docs/ARCHITECTURE.md</code>, generated</td></tr>
+          <tr><td>One market's shape</td><td><code class="mono">groups/commodity/projects/commodity-us/kg/architecture.md</code></td></tr>
+          <tr><td>The rules every agent follows</td><td><code class="mono">AGENTS.md</code></td></tr>
+          <tr><td>Lessons already paid for</td><td><code class="mono">.memory/MEMORY.md</code></td></tr>
+          <tr><td>What the tests guard</td><td><code class="mono">platform/tests/README.md</code>, generated</td></tr>
+          <tr><td>What was borrowed, and from where</td><td><code class="mono">docs/VENDOR-CARD.md</code>, generated</td></tr>
+          <tr><td>To start work on a market</td><td><code class="mono">uv run pf work commodity commodity-us</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose" style="margin-top:18px; color:var(--ink-2); font-size:0.92rem">
+      Five families, eleven markets, twenty-three pinned upstreams, and a platform
+      suite of fifty-four test files. The shape above is the same in all of them;
+      only the business rules change.
+    </p>
+  </section>
+
+</div>
+</body>
+</html>
