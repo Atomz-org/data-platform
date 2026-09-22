@@ -115,12 +115,13 @@ Hand-editing one is silently discarded by the next regeneration.
 | `**/kg/architecture.md` | `pf kg build <g> <p>` then `pf arch <g> <p>` | the project |
 | `**/kg/graph.json` | `pf kg build <g> <p>` | the project |
 | `docs/ARCHITECTURE.md` | `pf arch build` | the repository |
+| `docs/ONBOARDING.md`, `docs/onboarding.html` | `pf guide build` | the repository, or `pf/guide.py` |
 | `platform/tests/README.md` | `pf test index` | the test docstrings |
 | `.memory/MEMORY.md` | `pf memory index` (or `pf memory add`) | the notes |
 | `docs/VENDOR*.md` | `pf vendor docs` | `platform/src/pf/vendor/registry.yaml` |
 
-`pf context refresh` regenerates the memory index, the test index and the
-repo map in one step — the fix the `agent-context` workflow names when a pull
+`pf context refresh` regenerates the memory index, the test index, the
+repo map and the onboarding guide in one step — the fix the `agent-context` workflow names when a pull
 request leaves any of them stale.
 
 A regenerated artefact is safe to commit only when the generator could see
@@ -140,6 +141,7 @@ uv run ruff check platform/                       # any platform/** change
 uv run pf test check                              # added or moved a test file → pf test index
 uv run pf memory check                            # added or edited a note   → pf memory index
 uv run pf arch check                              # repo map current
+uv run pf guide check                             # onboarding guide current
 uv run pf context check                           # entry points still agree; every module has its README
 uv run pytest platform/tests -q                   # the platform suite
 uv run pf kg build <g> <p> && uv run pf arch <g> <p> --check   # any project change
@@ -216,8 +218,8 @@ the first commit after it is written.
 
 **Every pull request is checked for all of this.** The `agent-context`
 workflow runs on every PR, with no path filter: the entry points must agree
-(`pf context check`), and the memory index, the test index and the repo map
-must be current. When they are not, the run summary shows what
+(`pf context check`), and the memory index, the test index, the repo map and
+the onboarding guide must be current. When they are not, the run summary shows what
 `pf context refresh` would change; with an `AGENT_CONTEXT_TOKEN` secret the
 workflow commits that refresh to the branch itself.
 

@@ -7,11 +7,12 @@ Three tools, three entry points, one protocol:
     GEMINI.md                          Gemini's entry point — imports the two above
     .github/copilot-instructions.md    Copilot's entry point — points at the two above
 
-and three pieces of generated context they all send the reader to:
+and four pieces of generated context they all send the reader to:
 
     .memory/MEMORY.md                  `pf memory index`
     platform/tests/README.md           `pf test index`
     docs/ARCHITECTURE.md               `pf arch build`
+    docs/ONBOARDING.md                 `pf guide build` (with its HTML twin)
 
 Each generated piece already has its own drift check. What nothing checked was
 the hand-written layer *around* them: that `GEMINI.md` still imports the
@@ -55,10 +56,11 @@ SUPPORTING: tuple[str, ...] = (
 )
 
 #: Generated context the entry points send a reader to. Each has its own
-#: drift check; `refresh` regenerates all three.
+#: drift check; `refresh` regenerates all four.
 GENERATED: tuple[str, ...] = (
     ".memory/MEMORY.md",
     "docs/ARCHITECTURE.md",
+    "docs/ONBOARDING.md",
     "platform/tests/README.md",
 )
 
@@ -187,8 +189,13 @@ def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
         write(testmap.index_path(tests), testmap.render_index(testmap.scan(tests)))
 
     if (root / "docs").is_dir() and (root / "platform" / "src" / "pf").is_dir():
-        from pf import archmap
+        from pf import archmap, guide
 
         write(archmap.doc_path(root), archmap.render(archmap.gather(root)))
+        # The guide's HTML twin is regenerated with it: one page, two renderings,
+        # and a check that fails on either.
+        g = guide.gather(root)
+        write(guide.md_path(root), guide.render_markdown(g))
+        write(guide.html_path(root), guide.render_html(g))
 
     return changed

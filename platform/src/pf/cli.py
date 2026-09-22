@@ -4138,6 +4138,42 @@ def cmd_arch_check() -> None:
     console.print("[green]✓[/] the architecture map matches the repository")
 
 
+# ------------------------------------------------------------ onboarding --
+guide_app = typer.Typer(help="The onboarding guide: `build`/`check`, generated from the repository.")
+app.add_typer(guide_app, name="guide")
+
+
+@guide_app.command("build")
+def cmd_guide_build() -> None:
+    """Regenerate `docs/ONBOARDING.md` and `docs/onboarding.html` from the repository itself."""
+    from pf.guide import build, html_path, md_path
+
+    guide, changed = build(root())
+    for out in (md_path(root()), html_path(root())):
+        note = "" if out in changed else " · already current"
+        console.print(
+            f"[green]✓[/] {out.relative_to(root())}  "
+            f"[dim]({len(guide.groups)} group(s), {guide.facts.projects} project(s), "
+            f"{len(guide.commands)} command(s), ~{len(out.read_text()) // 4} tokens{note})[/]"
+        )
+
+
+@guide_app.command("check")
+def cmd_guide_check() -> None:
+    """Are the committed guide pages current with the repository?
+
+    A stale guide is worse than none: it sends a newcomer confidently to a
+    command that was renamed, which is exactly the cost the page exists to remove.
+    """
+    from pf.guide import drift
+
+    reason = drift(root())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the onboarding guide matches the repository")
+
+
 # ------------------------------------------------------------- test index --
 test_app = typer.Typer(help="What the test suite guards, without reading it.")
 app.add_typer(test_app, name="test")
@@ -4383,7 +4419,7 @@ def cmd_context_refresh(
         False, "--dry-run", help="list what would change and exit 1 if anything; write nothing"
     ),
 ) -> None:
-    """Regenerate the memory index, the test index and the repo map in one step."""
+    """Regenerate the memory index, the test index, the repo map and the onboarding guide in one step."""
     from pf.agentcontext import refresh
 
     changed = refresh(root(), dry_run=dry_run)

@@ -7,15 +7,33 @@ hand-written layer around the generated context, that `pf context refresh` is
 the one-step fix for the generated layer, and that the code graph stops at
 `platform/` — the one drift here that fails by *succeeding*, since without its
 marker directory the graph spans every sister project instead of erroring.
+
+The onboarding guide is one of the generated pieces, and it is also published
+away from the repository, where a stylesheet from the wrong host or a script
+of any kind renders as a blank page with no error. Its publish contract is
+therefore the last section here, a test rather than a note.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from conftest import REPO_ROOT
 from pf.agentcontext import ENTRY_POINTS, GENERATED, check, references, refresh, sections
+from pf.archmap import Facts
+from pf.guide import (
+    EXTERNAL_HOSTS,
+    TITLE,
+    GroupRow,
+    Guide,
+    ProjectRow,
+    drift,
+    gather,
+    render_html,
+    render_markdown,
+)
 from pf.memory import add
 
 
@@ -68,7 +86,7 @@ def _conforming(tmp_path: Path) -> Path:
     (root / "CLAUDE.md").write_text("router", encoding="utf-8")
     (root / "AGENTS.md").write_text(
         "# p\n\nCLAUDE.md GEMINI.md .github/copilot-instructions.md\n"
-        ".memory/MEMORY.md docs/ARCHITECTURE.md platform/tests/README.md\n"
+        ".memory/MEMORY.md docs/ARCHITECTURE.md docs/ONBOARDING.md platform/tests/README.md\n"
         "**Session** **Autonomous** **Inline** pf memory add pf context check pf code\n"
         + "".join(f"## {n}. s\n" for n in range(8)),
         encoding="utf-8",
@@ -326,3 +344,86 @@ def test_refresh_writes_the_missing_pieces_and_then_nothing(tmp_path: Path) -> N
     did = {p.relative_to(root).as_posix() for p in refresh(root)}
     assert did == would
     assert refresh(root, dry_run=True) == []
+
+
+# --------------------------------------------------------- the guide -------
+_EXTERNAL = re.compile(r'(?:src|href)="https?://([^/"]+)')
+
+
+def test_the_committed_guide_matches_the_repository() -> None:
+    """Run `uv run pf guide build` if this fails — the repository is the source."""
+    assert drift(REPO_ROOT) == ""
+
+
+def test_the_guide_is_rendered_deterministically() -> None:
+    """Compared byte for byte, so two gathers must render the same page.
+
+    Set iteration order is the usual way this breaks, and it breaks
+    intermittently — the worst failure mode for something that gates a build.
+    """
+    a, b = gather(REPO_ROOT), gather(REPO_ROOT)
+    assert render_markdown(a) == render_markdown(b)
+    assert render_html(a) == render_html(b)
+
+
+def test_both_renderings_name_every_group_project_step_and_command() -> None:
+    """The facts a newcomer acts on must be in both pages, not just the one that was checked."""
+    g = gather(REPO_ROOT)
+    md, page = render_markdown(g), render_html(g)
+    assert g.groups and g.steps and g.commands and g.command_groups, "gather found nothing to say"
+    for gr in g.groups:
+        for text in (md, page):
+            assert f"`{gr.name}`" in text or f"<code>{gr.name}</code>" in text
+            for p in gr.projects:
+                assert f"{gr.name}/{p.name}" in text
+    for name, _why in g.steps:
+        assert name in md and name in page
+    for name, _help in g.commands:
+        assert f"pf {name}" in md and f"pf {name}" in page
+    for name, _help in g.command_groups:
+        assert f"pf {name}" in md and f"pf {name}" in page
+
+
+def test_the_html_page_keeps_to_the_publish_contract() -> None:
+    """What the page needs to render where it is published, with no error shown when it does not."""
+    page = render_html(gather(REPO_ROOT))
+    assert f"<title>{TITLE}</title>" in page[:8000], "the title must sit in the first 8KB"
+    assert "<script" not in page, "the page needs no script, and a blocked one renders blank"
+    hosts = set(_EXTERNAL.findall(page))
+    assert hosts <= EXTERNAL_HOSTS, f"off-allowlist host(s): {sorted(hosts - EXTERNAL_HOSTS)}"
+    # Theme tokens: the full light palette on bare :root, redefined for the
+    # un-stamped dark state and again for the explicit toggle.
+    assert re.search(r":root\s*\{[^}]*--paper:", page)
+    assert ':root:not([data-theme="light"])' in page
+    assert ':root[data-theme="dark"]' in page
+    assert re.search(r"body\s*\{[^}]*background: var\(--paper\)", page)
+    assert "<!-- snapshot -->" in page, "the publish step stamps the commit here"
+
+
+def test_the_markdown_has_no_date_or_commit() -> None:
+    """A timestamp would make every commit a stale one."""
+    md = render_markdown(gather(REPO_ROOT))
+    assert not re.search(r"\b20\d\d-\d\d-\d\d\b", md)
+    assert not re.search(r"\b[0-9a-f]{40}\b", md)
+
+
+def test_what_the_repository_says_is_escaped_in_the_html() -> None:
+    """A group's display name is data; the page must never execute it."""
+    g = Guide(
+        facts=Facts(groups={"g": ["p"]}),
+        groups=[GroupRow("g", "<img src=x onerror=alert(1)>", "d", "active", (ProjectRow("p", 1, 2, 3, 4),))],
+        commands=[("x", "does <b>things</b>")],
+    )
+    page = render_html(g)
+    assert "<img src=x" not in page
+    assert "&lt;img src=x onerror=alert(1)&gt;" in page
+    assert "does &lt;b&gt;things&lt;/b&gt;" in page
+
+
+def test_the_checker_can_fail(tmp_path: Path) -> None:
+    """A checker that cannot fail is a checker nobody should trust."""
+    assert "pf guide build" in drift(tmp_path)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "ONBOARDING.md").write_text("stale\n", encoding="utf-8")
+    (tmp_path / "docs" / "onboarding.html").write_text("stale\n", encoding="utf-8")
+    assert "is stale" in drift(tmp_path)
