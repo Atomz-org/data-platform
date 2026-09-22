@@ -14,5 +14,5 @@ okf_x_kg_node: metric:landed_price_days
 * **Kind:** `simple`
 * **Expression:** `count(landed_price_local)`
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `currency_code`, `market_unit`, `is_duty_rate_confirmed`, `price_basis`
+* **Dimensions:** `commodity_id`, `currency_code`, `is_duty_rate_confirmed`, `market_code`, `market_unit`, `price_basis`
 * **Derived from it:** [avg_duty_local](/metrics/avg_duty_local.md), [avg_landed_price_local](/metrics/avg_landed_price_local.md), [avg_usd_fx_rate](/metrics/avg_usd_fx_rate.md)

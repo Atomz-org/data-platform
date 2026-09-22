@@ -55,6 +55,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 * [duty_local_total](/metrics/duty_local_total.md)
 * [landed_price_days](/metrics/landed_price_days.md)
 * [landed_price_local_total](/metrics/landed_price_local_total.md)
+* [landed_price_mom_change](/metrics/landed_price_mom_change.md)
 * [usd_fx_rate_total](/metrics/usd_fx_rate_total.md)
 
 # Lineage

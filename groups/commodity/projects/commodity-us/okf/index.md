@@ -8,7 +8,7 @@ okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 13
 okf_x_tables: 7
 okf_x_concepts: 2
-okf_x_metrics: 13
+okf_x_metrics: 15
 ---
 
 # commodity/commodity-us
@@ -45,11 +45,13 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 * [avg_landed_price_local](/metrics/avg_landed_price_local.md) - Mean import landed price in this market's currency per its market unit (benchmark × USD/local × (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.
 * [avg_usd_fx_rate](/metrics/avg_usd_fx_rate.md) - Mean units of this market's currency per US dollar, as applied to landed prices; 1 for a USD market.
 * [benchmark_price_days](/metrics/benchmark_price_days.md) - Days with a benchmark price. Group by commodity to spot feed gaps.
+* [benchmark_price_mom_change](/metrics/benchmark_price_mom_change.md) - Month-over-month change in the mean benchmark price. Group by commodity.
 * [benchmark_price_usd_total](/metrics/benchmark_price_usd_total.md) - Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.
 * [contracts_traded](/metrics/contracts_traded.md) - Front-month futures volume from live feeds. Group by commodity.
 * [duty_local_total](/metrics/duty_local_total.md) - Building block for avg_duty_local. A sum of per-unit duties means nothing on its own.
 * [landed_price_days](/metrics/landed_price_days.md) - Days a landed price exists — never for commodities this market prohibits importing.
 * [landed_price_local_total](/metrics/landed_price_local_total.md) - Building block for avg_landed_price_local. A sum of prices means nothing on its own.
+* [landed_price_mom_change](/metrics/landed_price_mom_change.md) - Month-over-month change in the mean landed price; moves with both the benchmark and the currency.
 * [period_high_price_usd](/metrics/period_high_price_usd.md) - Highest traded price in the period, USD per quote unit. Group by commodity.
 * [period_low_price_usd](/metrics/period_low_price_usd.md) - Lowest traded price in the period, USD per quote unit. Group by commodity.
 * [usd_fx_rate_total](/metrics/usd_fx_rate_total.md) - Building block for avg_usd_fx_rate — the rate each landed price actually used.

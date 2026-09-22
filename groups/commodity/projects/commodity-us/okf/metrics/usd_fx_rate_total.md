@@ -14,5 +14,5 @@ okf_x_kg_node: metric:usd_fx_rate_total
 * **Kind:** `simple`
 * **Expression:** `sum(usd_fx_rate)`
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `currency_code`, `market_unit`, `is_duty_rate_confirmed`, `price_basis`
+* **Dimensions:** `commodity_id`, `currency_code`, `is_duty_rate_confirmed`, `market_code`, `market_unit`, `price_basis`
 * **Derived from it:** [avg_usd_fx_rate](/metrics/avg_usd_fx_rate.md)
