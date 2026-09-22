@@ -5,6 +5,7 @@ description: Count of lifetime orders
 okf_x_kind: simple
 okf_x_model: customers
 okf_x_time_column: first_ordered_at
+okf_x_kg_node: metric:count_lifetime_orders
 ---
 
 # Definition

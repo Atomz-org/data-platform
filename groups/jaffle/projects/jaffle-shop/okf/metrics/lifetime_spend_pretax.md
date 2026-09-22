@@ -5,6 +5,7 @@ description: Customer's lifetime spend before tax
 okf_x_kind: simple
 okf_x_model: customers
 okf_x_time_column: first_ordered_at
+okf_x_kg_node: metric:lifetime_spend_pretax
 ---
 
 # Definition

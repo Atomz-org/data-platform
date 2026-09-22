@@ -5,6 +5,7 @@ description: Count of orders that contain food order items
 okf_x_kind: simple
 okf_x_model: orders
 okf_x_time_column: ordered_at
+okf_x_kg_node: metric:food_orders
 ---
 
 # Definition

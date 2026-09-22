@@ -5,6 +5,7 @@ description: The % of order revenue from food.
 okf_x_kind: ratio
 okf_x_model: order_items
 okf_x_time_column: ordered_at
+okf_x_kg_node: metric:food_revenue_pct
 ---
 
 # Definition
