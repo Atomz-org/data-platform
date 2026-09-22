@@ -15,3 +15,4 @@ okf_x_kg_node: metric:landed_price_local_total
 * **Expression:** `sum(landed_price_local)`
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
 * **Dimensions:** `commodity_id`, `market_code`, `currency_code`, `market_unit`, `is_duty_rate_confirmed`, `price_basis`
+* **Derived from it:** [avg_landed_price_local](/metrics/avg_landed_price_local.md)
