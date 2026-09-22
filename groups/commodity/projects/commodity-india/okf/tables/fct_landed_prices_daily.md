@@ -13,6 +13,7 @@ okf_x_concept: PriceObservation
 okf_x_layer: marts
 okf_x_grain: one commodity per price date
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_landed_prices_daily
 ---
 
 # Schema
@@ -55,3 +56,14 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 * [landed_price_days](/metrics/landed_price_days.md)
 * [landed_price_local_total](/metrics/landed_price_local_total.md)
 * [usd_fx_rate_total](/metrics/usd_fx_rate_total.md)
+
+# Lineage
+
+* **Upstream:** `int_commodity_prices__usd`, `int_fx_rates__daily`
+* **Downstream:** [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md), [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md), [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md)
+* **Read by:** `report_index` (data-platform), `report_landed_cost` (data-platform), `report_metrics_avg_duty_local` (data-platform), `report_metrics_avg_landed_price_local` (data-platform), `report_metrics_avg_usd_fx_rate` (data-platform), `report_metrics_duty_local_total` (data-platform), and 3 more
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.
+* **Decision** ADR-0005 — commodity-india is one market of many (accepted)

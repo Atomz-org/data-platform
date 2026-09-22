@@ -10,6 +10,7 @@ okf_x_concept: Commodity
 okf_x_layer: marts
 okf_x_grain: one commodity
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:rpt_commodity_price_board
 ---
 
 # Schema
@@ -49,3 +50,12 @@ okf_x_columns_withheld: 0
 # Concept
 
 Instantiates [Commodity](/concepts/Commodity.md).
+
+# Lineage
+
+* **Upstream:** [dim_commodities](/tables/dim_commodities.md), [fct_commodity_prices_daily](/tables/fct_commodity_prices_daily.md), [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md), `stg_gold_api__spot_prices`
+* **Read by:** `commodity_price_board` (Commodity Research), `report_landed_cost` (data-platform), `report_price_board` (data-platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

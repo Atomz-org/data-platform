@@ -9,6 +9,7 @@ okf_x_concept: PriceObservation
 okf_x_layer: marts
 okf_x_grain: one precious metal per purity grade per price date
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_precious_metal_retail_prices_daily
 ---
 
 # Schema
@@ -30,3 +31,12 @@ okf_x_columns_withheld: 0
 # Concept
 
 Instantiates [PriceObservation](/concepts/PriceObservation.md).
+
+# Lineage
+
+* **Upstream:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
+* **Read by:** `commodity_price_board` (Commodity Research)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

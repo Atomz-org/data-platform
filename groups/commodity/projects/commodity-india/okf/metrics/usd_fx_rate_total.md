@@ -6,6 +6,7 @@ description: Building block for avg_usd_fx_rate — the rate each landed price a
 okf_x_kind: simple
 okf_x_model: fct_landed_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:usd_fx_rate_total
 ---
 
 # Definition
