@@ -127,6 +127,7 @@ flowchart TB
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
+| harness map | ✓ | `HARNESS.md` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
 | MCP servers | ✓ | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten |
 | decision records | ✓ 2 | `decisions/ADR-0001-the-sisters-are-the-raw-stage.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
