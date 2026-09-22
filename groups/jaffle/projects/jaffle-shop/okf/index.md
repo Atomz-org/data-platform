@@ -6,10 +6,9 @@ okf_x_project: jaffle-shop
 okf_x_platform_bundle: ../../../../../platform/okf/index.md
 okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 1088
-okf_x_tables: 0
-okf_x_concepts: 7
+okf_x_tables: 25
+okf_x_concepts: 4
 okf_x_metrics: 15
-okf_x_tables_over_cap: 996
 ---
 
 # jaffle/jaffle-shop
@@ -22,21 +21,42 @@ confidence `0.00` is one the platform does not hold yet; declare it in
 
 The concepts below are the platform's, shared by every sister: [Platform ontology](../../../../../platform/okf/index.md).
 
-Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 1088 model(s); 996 reach the BI layer, more than a bundle may hold — see below.
+Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 1088 model(s); the 25 below are the ones the semantic layer projects to BI.
 
 # Tables
 
-_996 models are exposed by this project's semantic layer — more than the 100 an OKF v0.1 bundle may hold, so no table is documented here. They are in `mdl/mdl.json`, and every one of them is in the knowledge graph. Narrow what the marts layer exposes to get table pages back._
+* [customers](/tables/customers.md) — `Customer` - Customer overview data mart, offering key details for each unique customer. One row per customer.
+* [dim_customer_360](/tables/dim_customer_360.md) — `Customer` - marts at grain: undeclared
+* [exec_company_kpis_monthly](/tables/exec_company_kpis_monthly.md) - Monthly company KPIs with MoM and YoY growth rates.
+* [locations](/tables/locations.md) — `Location` - Every store, one row per location, straight from the source.
+* [met_weekly_revenue_by_store](/tables/met_weekly_revenue_by_store.md) — `Location` - Weekly revenue aggregation per store with week-over-week growth.
+* [ml_feature_customer_churn](/tables/ml_feature_customer_churn.md) — `Customer` - Customer-level feature table for churn prediction models. Includes recency, frequency, monetary, loyalty, engagement, and trend features plus a proxy churn label (no order in 90+ days). Grain: one row per customer.
+* [order_items](/tables/order_items.md) - marts at grain: undeclared
+* [orders](/tables/orders.md) — `Order` - Order overview data mart, offering key details for each order inlcluding if it's a customer's first order and a food vs. drink item breakdown. One row per order.
+* [products](/tables/products.md) — `Product` - Every product the shop sells, one row per product, straight from the source.
+* [rev_etl_crm_customer_sync](/tables/rev_etl_crm_customer_sync.md) — `Customer` - Customer data formatted for CRM sync including name, segment, LTV, and churn risk with source system metadata.
+* [rev_etl_email_segment_at_risk](/tables/rev_etl_email_segment_at_risk.md) — `Customer` - At-risk customers for win-back email campaigns filtered by churn propensity score above 70.
+* [rev_etl_email_segment_high_value](/tables/rev_etl_email_segment_high_value.md) — `Customer` - High-value customer list for email marketing targeting based on customer segment classification.
+* [rev_etl_inventory_reorder](/tables/rev_etl_inventory_reorder.md) — `Location` - Items needing reorder for procurement system integration based on stock alerts for stockout and low stock conditions.
+* [rpt_campaign_effectiveness](/tables/rpt_campaign_effectiveness.md) - marts at grain: undeclared
+* [rpt_customer_acquisition_funnel](/tables/rpt_customer_acquisition_funnel.md) - marts at grain: undeclared
+* [rpt_customer_segments](/tables/rpt_customer_segments.md) - marts at grain: undeclared
+* [rpt_loyalty_program_health](/tables/rpt_loyalty_program_health.md) - marts at grain: undeclared
+* [rpt_stock_alerts](/tables/rpt_stock_alerts.md) — `Product` - marts at grain: undeclared
+* [rpt_store_pnl](/tables/rpt_store_pnl.md) — `Location` - marts at grain: undeclared
+* [scr_customer_churn_propensity](/tables/scr_customer_churn_propensity.md) — `Customer` - 0-100 churn risk score per customer based on recency, frequency, loyalty activity, and spend trend from dim_customer_360.
+* [supplies](/tables/supplies.md) - Every supply a product consumes, one row per product-supply pair.
+* [view_store_mgr_daily_report](/tables/view_store_mgr_daily_report.md) — `Location` - Daily store report with revenue, orders, labor cost, waste, and day assessment for store managers.
+* [view_store_mgr_inventory_status](/tables/view_store_mgr_inventory_status.md) — `Location` - Current inventory levels with reorder alerts and urgency classification for store managers.
+* [view_store_mgr_product_performance](/tables/view_store_mgr_product_performance.md) - Product sales at store level with monthly aggregation and in-store product ranking.
+* [view_store_mgr_staff_schedule](/tables/view_store_mgr_staff_schedule.md) - Staff shift schedule with employee details, hours, and shift status for store manager review.
 
 # Concepts
 
-* [Contract](/concepts/Contract.md)
 * [Customer](/concepts/Customer.md)
-* [Employee](/concepts/Employee.md)
 * [Location](/concepts/Location.md)
 * [Order](/concepts/Order.md)
 * [Product](/concepts/Product.md)
-* [Refund](/concepts/Refund.md)
 
 # Metrics
 
