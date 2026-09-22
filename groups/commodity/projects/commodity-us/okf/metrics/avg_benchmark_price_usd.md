@@ -5,6 +5,7 @@ description: Mean daily settlement price, USD per quote unit. Group by commodity
 okf_x_kind: ratio
 okf_x_model: fct_commodity_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:avg_benchmark_price_usd
 ---
 
 # Definition

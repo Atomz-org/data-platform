@@ -5,6 +5,7 @@ description: Days with a benchmark price. Group by commodity to spot feed gaps.
 okf_x_kind: simple
 okf_x_model: fct_commodity_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:benchmark_price_days
 ---
 
 # Definition

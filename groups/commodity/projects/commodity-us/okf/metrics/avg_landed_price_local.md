@@ -7,6 +7,7 @@ description: Mean import landed price in this market's currency per its market u
 okf_x_kind: ratio
 okf_x_model: fct_landed_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:avg_landed_price_local
 ---
 
 # Definition
