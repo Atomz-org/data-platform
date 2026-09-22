@@ -14,6 +14,13 @@ and four pieces of generated context they all send the reader to:
     docs/ARCHITECTURE.md               `pf arch build`
     docs/ONBOARDING.md                 `pf guide build` (with its HTML twin)
 
+and the per-harness config layer — Codex, Cursor, Gemini, VS Code, OpenCode —
+rendered from `.mcp.json` by `pf.harness`, so a tool that is not Claude Code
+still reaches the graph and knows exactly which gate applies to it
+(`docs/HARNESSES.md`). Those are generated too, and checked here for the same
+reason: a stale `.codex/config.toml` is a Codex session with no graph and no
+error.
+
 Each generated piece already has its own drift check. What nothing checked was
 the hand-written layer *around* them: that `GEMINI.md` still imports the
 protocol, that the Copilot file still names the memory index, that a pointer
@@ -69,6 +76,7 @@ GENERATED: tuple[str, ...] = (
 _MENTIONS: tuple[tuple[str, tuple[str, ...], str], ...] = (
     ("AGENTS.md", ("CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"), "every entry point"),
     ("AGENTS.md", GENERATED, "every generated context artefact"),
+    ("AGENTS.md", ("docs/HARNESSES.md",), "the harness scorecard — where enforcement is a hook and where it is a rule"),
     ("AGENTS.md", ("**Session**", "**Autonomous**", "**Inline**"), "the three execution scopes"),
     ("AGENTS.md", ("pf memory add", "pf context check"), "the write protocol and this check"),
     ("GEMINI.md", ("@./CLAUDE.md", "@./AGENTS.md"), "the imports of the router and the protocol"),
@@ -152,6 +160,13 @@ def check(root: str | Path) -> list[str]:
     from pf import codegraph
 
     problems.extend(codegraph.check(root))
+
+    # The per-harness configs, for the same reason: `pf context check` is the
+    # one command, and a Codex config that no longer lists the `pf` server is
+    # a drift that fails by *succeeding* — the session starts, with no graph.
+    from pf import harness
+
+    problems.extend(harness.check(root))
     return problems
 
 
@@ -197,5 +212,14 @@ def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
         g = guide.gather(root)
         write(guide.md_path(root), guide.render_markdown(g))
         write(guide.html_path(root), guide.render_html(g))
+
+    # The harness configs need only `.mcp.json`, so they are refreshed in any
+    # tree that has one — including a bare test skeleton, which is how the
+    # conforming-tree tests get theirs.
+    if (root / ".mcp.json").is_file():
+        from pf import harness
+
+        for rel, content in harness.targets(root).items():
+            write(root / rel, content)
 
     return changed

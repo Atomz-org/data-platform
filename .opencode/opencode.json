@@ -1,0 +1,43 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "mcp": {
+    "code-review-graph": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "code-review-graph@2.3.9",
+        "serve",
+        "--repo",
+        "platform"
+      ],
+      "enabled": true
+    },
+    "graphify": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "graphifyy",
+        "graphify-mcp",
+        "graphify-out/graph.json"
+      ],
+      "enabled": true
+    },
+    "pf": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "pf",
+        "mcp"
+      ],
+      "enabled": true,
+      "environment": {
+        "PF_PROJECT_DIR": "."
+      }
+    }
+  }
+}

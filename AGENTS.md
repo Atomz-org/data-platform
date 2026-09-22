@@ -19,6 +19,7 @@ server has to do by hand.
 | Copilot in VS Code — chat, inline | `.github/copilot-instructions.md` | it points here; `chat.useAgentsMdFile: true` reads it directly |
 | Gemini CLI, Gemini Code Assist | `GEMINI.md` | imports this file |
 | Continue.dev, Ollama, mlx, anything that only takes a system prompt | the operator's prompt | paste this file, or one rule: *follow `AGENTS.md`* |
+| Any of the above, for the graph and the gate | `docs/HARNESSES.md` — the generated per-harness configs (`.codex/`, `.cursor/`, `.gemini/`, `.vscode/mcp.json`, `.opencode/`), and what each one actually enforces | it points here |
 
 ## 0. Which scope you are in
 
@@ -119,9 +120,10 @@ Hand-editing one is silently discarded by the next regeneration.
 | `platform/tests/README.md` | `pf test index` | the test docstrings |
 | `.memory/MEMORY.md` | `pf memory index` (or `pf memory add`) | the notes |
 | `docs/VENDOR*.md` | `pf vendor docs` | `platform/src/pf/vendor/registry.yaml` |
+| `.codex/`, `.cursor/`, `.gemini/`, `.vscode/mcp.json`, `.opencode/`, `docs/HARNESSES.md` | `pf context refresh` | `.mcp.json` for the servers; `platform/src/pf/harness.py` for the rest |
 
 `pf context refresh` regenerates the memory index, the test index, the
-repo map and the onboarding guide in one step — the fix the `agent-context` workflow names when a pull
+repo map, the onboarding guide and the harness configs in one step — the fix the `agent-context` workflow names when a pull
 request leaves any of them stale.
 
 A regenerated artefact is safe to commit only when the generator could see

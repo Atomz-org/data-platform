@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "uv run python platform/hooks/cursor_hook.py shell",
+        "description": "gate.yaml cannot be bypassed: block --no-verify"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "uv run python platform/hooks/cursor_hook.py edit",
+        "description": "gate.yaml verdict for the edited file (advisory \u2014 Cursor has no pre-edit hook)"
+      }
+    ]
+  }
+}

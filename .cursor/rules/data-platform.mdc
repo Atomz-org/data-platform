@@ -1,0 +1,19 @@
+---
+description: "Data platform protocol: where the rules are and which scope you are in"
+alwaysApply: true
+---
+# Data platform — read these, in order
+
+1. `CLAUDE.md` — the router: the directories, what is shared, what is read-only.
+2. `AGENTS.md` — the protocol. §0 names your scope; the rest is per scope.
+3. `.memory/MEMORY.md` — what earlier agents learned. `uv run pf memory show` from
+   where you are working prints the notes that apply there.
+
+You are the **Session** scope: a person is in the loop and you have a shell.
+Ask the graph before reading files — `kg_search`, `kg_neighbors`, `impact_analysis`
+are MCP tools from `.cursor/mcp.json`. Stay inside one project; never read a sister.
+
+Enforcement here is narrower than in Claude Code, and `docs/HARNESSES.md` says how:
+the shell hook blocks `--no-verify`; edits are judged after the fact and again at
+commit by `gate.yaml`. Run `uv run pf gate --paths <files>` before you commit.
+Leave a note before you finish (`AGENTS.md` §5).
