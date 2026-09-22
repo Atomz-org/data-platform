@@ -24,7 +24,7 @@ okf_x_kg_node: model:fct_payments
 | `payment_id` | VARCHAR | natural_key | Business key from the source system. (primary key) | 1.00 |
 | `payment_status` | VARCHAR |  | — | 0.00 |
 | `plan_tier` | VARCHAR |  | — | 0.00 |
-| `subscription_id` | VARCHAR | foreign_key | Reference to another concept instance. FK to [dim_customers](/tables/dim_customers.md) | 1.00 |
+| `subscription_id` | VARCHAR | foreign_key | Reference to another concept instance. | 1.00 |
 
 # Concept
 
