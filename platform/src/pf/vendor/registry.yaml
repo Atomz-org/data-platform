@@ -1442,3 +1442,123 @@ upstreams:
           describes *their* consensus, and letting it decide whether our build
           passes would hand a FINOS working group a vote on our merge gate. It is
           parsed, reported by `pf air show`, and enforces nothing.
+
+  # --------------------------------------------------------------- harness --
+  - id: ecc
+    summary: "per-harness adapters: one gate reached from Codex, Cursor, Gemini, Copilot, OpenCode"
+    name: ECC (Everything Claude Code)
+    url: https://github.com/dockerai09-ai/ECC
+    path: vendor/ecc
+    branch: main
+    licence: MIT
+    role: shape
+    why: >
+      An agent-harness layer for a dozen tools — Claude Code, Codex, Cursor,
+      Gemini, OpenCode, Kiro — from one source. Pinned at the organisation's
+      fork of affaan-m/ECC, identical to upstream at the time of pinning, for
+      the same reason the ASQAV scanner is: a pin that can vanish is not a pin.
+      What is taken is the *shape* of cross-harness support — a compliance
+      record per harness, an adapter that maps a foreign hook payload onto one
+      shared code path, a Codex config whose instruction line survives updates.
+      What is not taken is any hook body, any skill, or the installer: the
+      gate here is `gate.yaml` behind `pre_tool_use.py`, and the point of an
+      adapter is that there is exactly one gate.
+    adopted:
+      - upstream: .cursor/hooks.json
+        kind: shape
+        ours:
+          - .cursor/hooks.json
+          - platform/src/pf/harness.py
+        note: >
+          The event names Cursor exposes, and which of them can block. Ours is
+          rendered by `pf context refresh` and lists two events, both pointing
+          at our adapter; theirs lists fifteen pointing at theirs.
+      - upstream: .cursor/hooks/before-shell-execution-block-no-verify.js
+        kind: port
+        ours:
+          - platform/hooks/cursor_hook.py
+        note: >
+          The adapter pattern: read Cursor's stdin, reshape it, delegate to the
+          same code path Claude Code uses, forward the exit code. Ported so the
+          two surfaces share one matcher rather than drift on two.
+      - upstream: scripts/hooks/block-no-verify.js
+        kind: port
+        ours:
+          - platform/hooks/cursor_hook.py
+        note: >
+          A flag-position-aware `--no-verify` matcher. Upstream's first version
+          refused any commit whose *message* mentioned the flag; the rewrite
+          skips the values of `-m`, `-F` and friends. That false positive is the
+          thing worth not repeating, and the test table pins it.
+      - upstream: .codex/config.toml
+        kind: shape
+        ours:
+          - .codex/config.toml
+        note: >
+          `persistent_instructions` (additive to AGENTS.md, survives a Codex
+          update) and `sandbox_mode = "workspace-write"`. Their six third-party
+          MCP servers are not taken; ours lists the graph and `pf`, rendered
+          from `.mcp.json`.
+      - upstream: scripts/codex/install-global-git-hooks.sh
+        kind: shape
+        ours:
+          - platform/hooks/pre_commit.sh
+        note: >
+          The stance, not the script: a harness with no tool hooks is gated at
+          commit, and the commit hook is the backstop every tool shares. Ours
+          already existed (`pf install-hook`); what this settles is that it is
+          the answer for Codex, Gemini, Copilot and OpenCode rather than a gap.
+      - upstream: .cursor/rules/common-security.md
+        kind: shape
+        ours:
+          - .cursor/rules/data-platform.mdc
+        note: >
+          The `alwaysApply` frontmatter. Ours is a pointer at CLAUDE.md, AGENTS.md
+          and the memory index — the rules are written once — not a second copy.
+      - upstream: .opencode/opencode.json
+        kind: shape
+        ours:
+          - .opencode/opencode.json
+        note: >
+          The `instructions:` list. Ours names AGENTS.md and nothing else.
+      - upstream: scripts/lib/harness-adapter-compliance.js
+        kind: shape
+        ours:
+          - platform/src/pf/harness.py
+          - docs/HARNESSES.md
+        note: >
+          A compliance record per harness, rendered as a table and checked in
+          CI. Theirs grades install state; ours grades *enforcement* — hook,
+          partial, or rule — because a tool that reads "gated" and is not has
+          been lied to by the file meant to prevent that.
+    declined:
+      - what: skills/, agents/, commands/ (386 skills, 68 agents, 94 command shims)
+        why: >
+          The toolkits are the one skill system here, enabled per group and
+          project and declared into the gate. Two skill systems is worse than
+          one, and the full set costs ~29k tokens on every session against a
+          router budgeted at 700.
+      - what: scripts/hooks/gateguard-fact-force.js
+        why: >
+          Denies the first Bash command of every session until the agent
+          "presents facts". Provenance already records INTENT before every
+          action, which is what the ritual approximates; the denial is
+          friction without a record.
+      - what: the ecc-universal installer and Claude plugin install
+        why: >
+          An installer that writes hooks and MCP configs into harness
+          directories is a plugin system inside the gate boundary — see
+          `pf.capabilities` on why capabilities are declarative.
+      - what: .codex/config.toml MCP servers (github, context7, exa, memory, playwright, sequential-thinking)
+        why: >
+          Six third-party `npx` servers. A data platform's MCP surface is its
+          graph and its warehouse tools; every extra server is context every
+          session pays for.
+      - what: the .ecc/memory vault
+        why: "`.memory/notes/` and `pf memory` are the one memory, shared by every tool."
+      - what: scripts/hooks/cost-tracker.js, scripts/hooks/insaits-security-monitor.py
+        why: "`pf.obs` tracks spend; the provenance chain records actions. Both already exist."
+      - what: .kiro/, .pi/, .zed, .openclaw, .codebuddy, .hermes, .kimi, .adal adapters
+        why: >
+          Nobody here runs them. A generated config for a tool nobody opens is
+          drift waiting for a reader who trusts it.

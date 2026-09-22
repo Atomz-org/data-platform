@@ -8,7 +8,7 @@ context per session.
 platform/          engines, ontology, knowledge graph, MCP, 14 skill toolkits   ← you never edit
 groups/<g>/        a family of sister companies: ontology instance, shared macros
   projects/<p>/    one legal entity: sources, models, metrics                    ← you only edit here
-vendor/            23 upstreams pinned as submodules, with recorded provenance   ← you never edit
+vendor/            25 upstreams pinned as submodules, with recorded provenance   ← you never edit
 data/_platform.duckdb   tracking DB (agent runs, spend, monitors, impact history)
 ```
 
