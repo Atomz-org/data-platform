@@ -26,13 +26,19 @@ Three things are taken from the weaver, and the vendor registry says so:
     platform has *no* declaration for — as proposals in `okf/weave.md` for a
     person to promote into an annotation, never written into the bundle.
 
-Two bundles, connected. `platform/okf/` is the platform ontology itself as
-OKF — one concept file per class, one per role — and every project's
-`okf/index.md` names it as `okf_x_platform_bundle`; a project concept file
-links to the platform's when the class is the platform's, and says
-`okf_x_defined_in: group` when the group's extension declared it. An agent
-reading a project bundle can follow the concept up to the definition every
-sister shares, which is the whole point of the three-tier ontology.
+Three bundles, connected, because the ontology has three tiers. `platform/okf/`
+is the platform ontology as OKF — a page per class, per role and per relation.
+`groups/<group>/okf/` is what that family added on top: the classes, roles and
+relations its `extension.yaml` declares, and nothing it merely inherited, which
+is one link away. A project's `okf/` is the physical layer — its tables, the
+concepts they instantiate, its metrics.
+
+Each tier names the one above it, so a reader who starts at a table can follow
+the concept to the family that declared it and up to the vocabulary every sister
+shares. A term a steward approved into a group extension used to have no OKF
+page at all until some project's mart happened to instantiate it: approved,
+propagated to the graph and the MDL, and invisible in the format the platform
+publishes its knowledge in.
 
 Joined to the knowledge graph, not exported beside it. Every page names the
 node it documents (`okf_x_kg_node`), and states what only the graph holds: the
@@ -297,9 +303,44 @@ def _cell(text: str) -> str:
     return _one_line(text).replace("|", "\\|")
 
 
-def _platform_link(pdir: Path, root: Path, rel: str) -> str:
+def _link(from_bundle: Path, to_bundle: Path, rel: str) -> str:
     """A bundle-to-bundle link, relative, so it survives a clone anywhere."""
-    return os.path.relpath(root / PLATFORM_REL / rel, pdir / OKF_REL / Path(rel).parent).replace("\\", "/")
+    return os.path.relpath(to_bundle / rel, from_bundle / Path(rel).parent).replace("\\", "/")
+
+
+def _platform_link(pdir: Path, root: Path, rel: str) -> str:
+    return _link(pdir / OKF_REL, root / PLATFORM_REL, rel)
+
+
+def group_bundle(root: str | Path, group: str) -> Path:
+    return Path(root) / "groups" / group / OKF_REL
+
+
+def group_terms(root: str | Path, group: str) -> dict[str, set[str]]:
+    """What this family *declared*, as opposed to what it inherited.
+
+    Read from `extension.yaml` rather than diffed against the platform ontology,
+    because a group may extend a platform class — adding properties to `Customer`
+    without inventing a word — and that extension is the group's even though the
+    class is not.
+    """
+    path = Path(root) / "groups" / group / "ontology" / "extension.yaml"
+    empty = {"classes": set(), "roles": set(), "relations": set()}
+    if not path.is_file():
+        return empty
+    try:
+        ext = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError:
+        return empty  # a malformed extension is `pf check`'s to report
+    return {
+        "classes": {str(k) for k in (ext.get("classes") or {})},
+        "roles": {str(k) for k in (ext.get("roles") or {})},
+        "relations": {
+            str(r.get("name"))
+            for r in (ext.get("relations") or [])
+            if isinstance(r, dict) and r.get("name")
+        },
+    }
 
 
 def _ref(name: str, have: set[str], folder: str) -> str:
@@ -650,11 +691,24 @@ def _concept_file(f: Facts, cls: Any, platform_defined: bool, tables: list[str])
     }
     if platform_defined:
         front["okf_x_platform_concept"] = _platform_link(f.pdir, f.root, f"concepts/{cls.name}.md")
+    else:
+        # The tier that declared it. Before the group bundle existed this page
+        # named the YAML file and stopped there, which is a path, not a link:
+        # the definition every sister shares was the one thing a reader of a
+        # project bundle could not follow.
+        front["okf_x_group_concept"] = _link(
+            f.pdir / OKF_REL, group_bundle(f.root, f.group), f"concepts/{cls.name}.md"
+        )
     lines = []
     if platform_defined:
         lines += [f"Defined by the platform ontology: [{cls.name}]({front['okf_x_platform_concept']})."]
     else:
-        lines += [f"Declared in `groups/{f.group}/ontology/extension.yaml`, shared by every sister of `{f.group}`."]
+        lines += [
+            (
+                f"Declared by this family: [{cls.name}]({front['okf_x_group_concept']}) in "
+                f"`groups/{f.group}/ontology/extension.yaml`, shared by every sister of `{f.group}`."
+            )
+        ]
     lines += ["", "# Instantiated by", ""] + [f"* [{t}](/tables/{t}.md)" for t in tables]
     props = getattr(cls, "properties", {}) or {}
     if props:
@@ -725,6 +779,176 @@ def _metric_file(ms: Any, gf: GraphFacts | None = None, have_metric: set[str] | 
     return _front(front) + "\n" + "\n".join(lines) + "\n"
 
 
+def _concept_page(onto: Any, cls: Any, *, tier: str, up: str = "", roles_dir: str = "/roles") -> str:
+    """One ontology class, in whichever tier declares it.
+
+    The platform's and a group's concept pages are the same page — a class, its
+    properties, the relations it takes part in, the policies that govern it —
+    and were two renderers until the group tier existed. One renderer is also
+    what keeps the two tiers readable as one vocabulary.
+    """
+    front: dict[str, Any] = {
+        "type": "Concept",
+        "title": cls.name,
+        "description": _one_line(getattr(cls, "description", "")),
+        "okf_x_tier": tier,
+        "okf_x_parent": getattr(cls, "parent", None) or None,
+        "okf_x_abstract": bool(getattr(cls, "abstract", False)),
+        "okf_x_identity": getattr(cls, "identity", None) or None,
+    }
+    if up:
+        front["okf_x_platform_concept"] = up
+    body: list[str] = []
+    if up:
+        body += [f"Extends the platform's [{cls.name}]({up}); this page is what this family added.", ""]
+    props = getattr(cls, "properties", {}) or {}
+    if props:
+        body += ["# Properties", "", "| Property | Datatype | Role |", "|---|---|---|"]
+        body += [
+            f"| `{n}` | {getattr(p, 'datatype', '')} | "
+            + (f"[{p.role}]({roles_dir}/{p.role}.md)" if getattr(p, "role", "") else "")
+            + " |"
+            for n, p in sorted(props.items())
+        ]
+    rels = sorted(onto.relations_for(cls.name), key=lambda r: r.name) if hasattr(onto, "relations_for") else []
+    if rels:
+        body += ["", "# Relations", ""]
+        body += [f"* [{r.name}](/relations/{r.name}.md) — {r.describe()}" for r in rels]
+    governed = sorted(
+        (p for p in getattr(onto, "policies", []) if (p.applies_to or {}).get("class") == cls.name),
+        key=lambda p: p.id,
+    )
+    if governed:
+        body += ["", "# Governance", ""]
+        body += [
+            f"* `{p.id}` ({p.severity}) — {_one_line(p.intent).split('. ')[0]}." for p in governed
+        ]
+    return _front(front) + "\n" + "\n".join(body or ["_no properties declared_"]) + "\n"
+
+
+def _role_page(onto: Any, role: Any, *, tier: str, up: str = "") -> str:
+    front: dict[str, Any] = {
+        "type": "Role",
+        "title": role.name,
+        "description": _one_line(getattr(role, "description", "")),
+        "okf_x_tier": tier,
+        "okf_x_datatype": getattr(role, "datatype", None) or None,
+        "okf_x_pii": bool(getattr(role, "pii", False)),
+        "okf_x_review": getattr(role, "review", None) or None,
+    }
+    if up:
+        front["okf_x_platform_role"] = up
+    policies = onto.policies_for_role(role.name) if hasattr(onto, "policies_for_role") else []
+    body = ([f"Overrides the platform's [{role.name}]({up}) for this family.", ""] if up else []) + [
+        "# Policies",
+        "",
+    ]
+    body += [
+        f"* `{p.id}` — {_one_line(getattr(p, 'description', '') or getattr(p, 'intent', ''))}"
+        for p in sorted(policies, key=lambda p: p.id)
+    ] or ["_none bound to this role_"]
+    return _front(front) + "\n" + "\n".join(body) + "\n"
+
+
+def _relation_page(rel: Any, *, tier: str, concept_link: Any) -> str:
+    """A named relation, addressable.
+
+    Relations were described inside the concept pages of both ends and had no
+    page of their own, so the one object the topology exists to name — the verb
+    between two classes — was the one an agent could not link to.
+    """
+    front = {
+        "type": "Relation",
+        "title": rel.name,
+        "description": _one_line(getattr(rel, "description", "")) or rel.describe(),
+        "okf_x_tier": tier,
+        "okf_x_domain": rel.domain,
+        "okf_x_range": rel.range,
+        "okf_x_cardinality": rel.cardinality,
+        "okf_x_inverse": getattr(rel, "inverse", None) or None,
+    }
+    body = [
+        "# Reading it",
+        "",
+        f"* {rel.describe()}",
+        f"* Reverse: {rel.describe(reverse=True)}",
+        "",
+        "# Between",
+        "",
+        f"* Domain: {concept_link(rel.domain)}",
+        f"* Range: {concept_link(rel.range)}",
+    ]
+    return _front(front) + "\n" + "\n".join(body) + "\n"
+
+
+def build_group(root: str | Path, group: str) -> dict[str, str]:
+    """A family's own vocabulary as OKF: what its extension declares, and nothing
+    it merely inherited — that is one link up, in the platform bundle."""
+    root = Path(root)
+    from pf.ontology.model import load_group_ontology, load_ontology
+
+    onto = load_group_ontology(root, group)
+    platform = load_ontology()
+    declared = group_terms(root, group)
+    bundle = group_bundle(root, group)
+    up = root / PLATFORM_REL
+
+    classes = [onto.classes[n] for n in sorted(declared["classes"]) if n in onto.classes]
+    roles = [onto.roles[n] for n in sorted(declared["roles"]) if n in onto.roles]
+    relations = sorted((r for r in onto.relations if r.name in declared["relations"]), key=lambda r: r.name)
+
+    def concept_link(name: str) -> str:
+        if name in declared["classes"]:
+            return f"[{name}](/concepts/{name}.md)"
+        return f"[{name}]({_link(bundle, up, f'concepts/{name}.md')})"
+
+    front = {
+        "okf_version": "0.1",
+        "name": f"{group} ontology",
+        "okf_x_scope": "group",
+        "okf_x_group": group,
+        "okf_x_platform_bundle": _link(bundle, up, "index.md"),
+        "okf_x_concepts": len(classes),
+        "okf_x_roles": len(roles),
+        "okf_x_relations": len(relations),
+    }
+    lines = [
+        f"# {group} ontology",
+        "",
+        f"Generated by `pf tool okf build --group {group}` from `groups/{group}/ontology/`. What",
+        "this family declared on top of the platform vocabulary — the terms a steward approved,",
+        "or that were written by hand when no platform class described the business. Every",
+        f"sister in `{group}` shares exactly this; another family never inherits a word of it.",
+        "",
+        f"Everything else this family uses is the platform's: [{PLATFORM_NAME}]({front['okf_x_platform_bundle']}).",
+        "",
+        "# Concepts",
+        "",
+    ]
+    lines += [
+        f"* [{c.name}](/concepts/{c.name}.md) - {_one_line(getattr(c, 'description', ''))}" for c in classes
+    ] or ["_this family declares no class of its own_"]
+    lines += ["", "# Roles", ""]
+    lines += [
+        f"* [{r.name}](/roles/{r.name}.md) - {_one_line(getattr(r, 'description', ''))}" for r in roles
+    ] or ["_no role of its own; the platform's roles carry every column here_"]
+    lines += ["", "# Relations", ""]
+    lines += [f"* [{r.name}](/relations/{r.name}.md) - {r.describe()}" for r in relations] or [
+        "_no relation of its own_"
+    ]
+
+    files: dict[str, str] = {"log.md": LOG, "index.md": _front(front) + "\n" + "\n".join(lines) + "\n"}
+    for c in classes:
+        link = _link(bundle, up, f"concepts/{c.name}.md") if c.name in platform.classes else ""
+        files[f"concepts/{c.name}.md"] = _concept_page(onto, c, tier="group", up=link)
+    for r in roles:
+        link = _link(bundle, up, f"roles/{r.name}.md") if r.name in platform.roles else ""
+        files[f"roles/{r.name}.md"] = _role_page(onto, r, tier="group", up=link)
+    for rel in relations:
+        files[f"relations/{rel.name}.md"] = _relation_page(rel, tier="group", concept_link=concept_link)
+    return files
+
+
 def build_platform(root: str | Path) -> dict[str, str]:
     """The platform ontology itself as an OKF bundle: one concept per class, one per role."""
     root = Path(root)
@@ -734,12 +958,14 @@ def build_platform(root: str | Path) -> dict[str, str]:
     files: dict[str, str] = {"log.md": LOG}
     classes = sorted(onto.classes.values(), key=lambda c: c.name)
     roles = sorted(onto.roles.values(), key=lambda r: r.name)
+    relations = sorted(onto.relations, key=lambda r: r.name)
     front = {
         "okf_version": "0.1",
         "name": PLATFORM_NAME,
         "okf_x_scope": "platform",
         "okf_x_concepts": len(classes),
         "okf_x_roles": len(roles),
+        "okf_x_relations": len(relations),
     }
     lines = [
         f"# {PLATFORM_NAME}",
@@ -754,45 +980,17 @@ def build_platform(root: str | Path) -> dict[str, str]:
     lines += [f"* [{c.name}](/concepts/{c.name}.md) - {_one_line(getattr(c, 'description', ''))}" for c in classes]
     lines += ["", "# Roles", ""]
     lines += [f"* [{r.name}](/roles/{r.name}.md) - {_one_line(getattr(r, 'description', ''))}" for r in roles]
+    lines += ["", "# Relations", ""]
+    lines += [f"* [{r.name}](/relations/{r.name}.md) - {r.describe()}" for r in relations]
     files["index.md"] = _front(front) + "\n" + "\n".join(lines) + "\n"
     for c in classes:
-        f_ = {
-            "type": "Concept",
-            "title": c.name,
-            "description": _one_line(getattr(c, "description", "")),
-            "okf_x_parent": getattr(c, "parent", None) or None,
-            "okf_x_abstract": bool(getattr(c, "abstract", False)),
-            "okf_x_identity": getattr(c, "identity", None) or None,
-        }
-        body = []
-        props = getattr(c, "properties", {}) or {}
-        if props:
-            body += ["# Properties", "", "| Property | Datatype | Role |", "|---|---|---|"]
-            body += [
-                f"| `{n}` | {getattr(p, 'datatype', '')} | "
-                + (f"[{p.role}](/roles/{p.role}.md)" if getattr(p, "role", "") else "")
-                + " |"
-                for n, p in sorted(props.items())
-            ]
-        rels = sorted(onto.relations_for(c.name), key=lambda r: r.name)
-        if rels:
-            body += ["", "# Relations", ""] + [f"* {r.describe()} — {_one_line(r.description)}" for r in rels]
-        files[f"concepts/{c.name}.md"] = _front(f_) + "\n" + "\n".join(body or ["_no properties declared_"]) + "\n"
+        files[f"concepts/{c.name}.md"] = _concept_page(onto, c, tier="platform")
     for r in roles:
-        f_ = {
-            "type": "Role",
-            "title": r.name,
-            "description": _one_line(getattr(r, "description", "")),
-            "okf_x_datatype": getattr(r, "datatype", None) or None,
-            "okf_x_pii": bool(getattr(r, "pii", False)),
-            "okf_x_review": getattr(r, "review", None) or None,
-        }
-        policies = onto.policies_for_role(r.name) if hasattr(onto, "policies_for_role") else []
-        body = ["# Policies", ""] + (
-            [f"* `{p.id}` — {_one_line(getattr(p, 'description', ''))}" for p in sorted(policies, key=lambda p: p.id)]
-            or ["_none bound to this role_"]
+        files[f"roles/{r.name}.md"] = _role_page(onto, r, tier="platform")
+    for rel in relations:
+        files[f"relations/{rel.name}.md"] = _relation_page(
+            rel, tier="platform", concept_link=lambda n: f"[{n}](/concepts/{n}.md)"
         )
-        files[f"roles/{r.name}.md"] = _front(f_) + "\n" + "\n".join(body) + "\n"
     return files
 
 
@@ -806,7 +1004,7 @@ def _sync(out: Path, files: dict[str, str]) -> tuple[list[Path], list[Path]]:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text, encoding="utf-8")
             written.append(p)
-    for sub in ("tables", "concepts", "metrics", "roles"):
+    for sub in ("tables", "concepts", "metrics", "roles", "relations"):
         d = out / sub
         if not d.is_dir():
             continue
@@ -832,6 +1030,21 @@ def write_project(root: str | Path, group: str, project: str) -> dict[str, Any]:
     }
 
 
+def write_group(root: str | Path, group: str) -> dict[str, Any]:
+    root = Path(root)
+    out = group_bundle(root, group)
+    files = build_group(root, group)
+    written, removed = _sync(out, files)
+    return {
+        "path": out,
+        "concepts": sum(1 for k in files if k.startswith("concepts/")),
+        "roles": sum(1 for k in files if k.startswith("roles/")),
+        "relations": sum(1 for k in files if k.startswith("relations/")),
+        "written": len(written),
+        "removed": len(removed),
+    }
+
+
 def write_platform(root: str | Path) -> dict[str, Any]:
     root = Path(root)
     out = root / PLATFORM_REL
@@ -841,6 +1054,7 @@ def write_platform(root: str | Path) -> dict[str, Any]:
         "path": out,
         "concepts": sum(1 for k in files if k.startswith("concepts/")),
         "roles": sum(1 for k in files if k.startswith("roles/")),
+        "relations": sum(1 for k in files if k.startswith("relations/")),
         "written": len(written),
         "removed": len(removed),
     }
@@ -882,7 +1096,7 @@ def _drift(out: Path, files: dict[str, str]) -> list[str]:
             problems.append(f"{rel}: missing")
         elif p.read_text(encoding="utf-8") != text:
             problems.append(f"{rel}: stale")
-    for sub in ("tables", "concepts", "metrics", "roles"):
+    for sub in ("tables", "concepts", "metrics", "roles", "relations"):
         d = out / sub
         for p in sorted(d.glob("*.md")) if d.is_dir() else []:
             if f"{sub}/{p.name}" not in files:
@@ -1024,3 +1238,19 @@ def check_platform(root: str | Path) -> list[str]:
     if not out.is_dir():
         return ["platform: no platform/okf/ — run `pf tool okf build --platform`"]
     return [f"platform: {x}" for x in _drift(out, build_platform(root))] + [f"platform: {x}" for x in conformance(out)]
+
+
+def check_group(root: str | Path, group: str) -> list[str]:
+    """Is the family's bundle what its extension declares?
+
+    The gate that makes approval mean something: `pf semantic approve` merges a
+    term into `extension.yaml` and rebuilds everything downstream, and this is
+    what notices when one of those rebuilds did not happen.
+    """
+    root = Path(root)
+    out = group_bundle(root, group)
+    if not out.is_dir():
+        return [f"{group}: no groups/{group}/okf/ — run `pf tool okf build --group {group}`"]
+    return [f"{group}: {x}" for x in _drift(out, build_group(root, group))] + [
+        f"{group}: {x}" for x in conformance(out)
+    ]

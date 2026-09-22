@@ -567,6 +567,103 @@ def test_a_project_concept_links_up_to_the_platform_bundle() -> None:
         ).resolve()
 
 
+# ------------------------------------------------ the three ontology tiers ---
+#
+# The ontology has three layers and the bundles had two. A term a steward
+# approved into a family's extension reached the graph, the MDL and every
+# sister's warehouse, and had no page in the format the platform publishes its
+# knowledge in until some project's mart happened to instantiate it.
+def _groups() -> list[str]:
+    return sorted(g.name for g in (_REPO / "groups").iterdir() if (g / "ontology").is_dir())
+
+
+@pytest.mark.parametrize("group", _groups())
+def test_a_family_bundle_holds_what_its_extension_declares(group: str) -> None:
+    import yaml as _yaml
+
+    okf = _okf()
+    ext = _REPO / "groups" / group / "ontology" / "extension.yaml"
+    declared = _yaml.safe_load(ext.read_text(encoding="utf-8")) or {} if ext.is_file() else {}
+    files = okf.build_group(_REPO, group)
+
+    for name in (declared.get("classes") or {}):
+        assert f"concepts/{name}.md" in files, f"{group} declares {name} and its bundle has no page"
+    for name in (declared.get("roles") or {}):
+        assert f"roles/{name}.md" in files
+    for rel in declared.get("relations") or []:
+        assert f"relations/{rel['name']}.md" in files
+    assert files["index.md"].count("okf_x_scope: group") == 1
+
+
+@pytest.mark.parametrize("group", _groups())
+def test_a_family_bundle_never_restates_the_platform_vocabulary(group: str) -> None:
+    """What the family inherited is one link up, not copied down: a vocabulary
+    duplicated per family is a vocabulary that drifts per family."""
+    from pf.ontology.model import load_ontology
+
+    okf = _okf()
+    files = okf.build_group(_REPO, group)
+    declared = okf.group_terms(_REPO, group)
+
+    pages = {k.removeprefix("concepts/").removesuffix(".md") for k in files if k.startswith("concepts/")}
+    assert pages == declared["classes"]
+    inherited = set(load_ontology().classes) - declared["classes"]
+    assert not (pages & inherited)
+
+
+def test_a_class_a_family_extends_links_up_to_the_platforms(tmp_path: Path) -> None:
+    from pf.ontology.model import load_ontology
+
+    okf = _okf()
+    group = next((g for g in _groups() if set(okf.group_terms(_REPO, g)["classes"]) & set(load_ontology().classes)), "")
+    if not group:
+        pytest.skip("no family extends a platform class")
+    shared = sorted(set(okf.group_terms(_REPO, group)["classes"]) & set(load_ontology().classes))[0]
+
+    page = okf.build_group(_REPO, group)[f"concepts/{shared}.md"]
+    assert "okf_x_platform_concept:" in page
+    link = next(x for x in page.splitlines() if x.startswith("okf_x_platform_concept:")).split(":", 1)[1].strip()
+    assert (okf.group_bundle(_REPO, group) / "concepts" / link).resolve() == (
+        _REPO / "platform" / "okf" / "concepts" / f"{shared}.md"
+    ).resolve()
+
+
+def test_a_relation_has_a_page_of_its_own() -> None:
+    """The one object the topology exists to name — the verb between two classes
+    — was described inside both ends and addressable from neither."""
+    from pf.ontology.model import load_ontology
+
+    okf = _okf()
+    files = okf.build_platform(_REPO)
+    for rel in load_ontology().relations:
+        page = files[f"relations/{rel.name}.md"]
+        assert "type: Relation" in page
+        assert f"okf_x_domain: {rel.domain}" in page and f"okf_x_range: {rel.range}" in page
+        assert f"(/concepts/{rel.domain}.md)" in page and f"(/concepts/{rel.range}.md)" in page
+
+
+@pytest.mark.parametrize("group", _groups())
+def test_a_project_concept_the_family_declared_links_to_the_family_bundle(group: str) -> None:
+    okf = _okf()
+    for pdir in sorted((_REPO / "groups" / group / "projects").glob("*")):
+        bundle = pdir / "okf" / "concepts"
+        for page in sorted(bundle.glob("*.md")) if bundle.is_dir() else []:
+            meta = okf.frontmatter(page)
+            if meta.get("okf_x_defined_in") != "group":
+                continue
+            link = meta.get("okf_x_group_concept")
+            assert link, f"{page}: declared by the family and links nowhere"
+            assert (page.parent / link).resolve() == (
+                okf.group_bundle(_REPO, group) / "concepts" / page.name
+            ).resolve()
+
+
+@pytest.mark.parametrize("group", _groups())
+def test_the_family_bundle_is_checked_like_every_other(group: str) -> None:
+    okf = _okf()
+    assert okf.check_group(_REPO, group) == []
+
+
 def test_the_checker_fails_on_drift_and_on_a_file_without_a_type(tmp_path: Path) -> None:
     okf = _okf()
     root = _demo(tmp_path)

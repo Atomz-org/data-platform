@@ -24,6 +24,7 @@ denylist:
 - '**/okf/concepts/**'
 - '**/okf/metrics/**'
 - '**/okf/roles/**'
+- '**/okf/relations/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'

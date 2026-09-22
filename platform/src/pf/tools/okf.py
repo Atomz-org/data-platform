@@ -138,6 +138,7 @@ CAPABILITY = Capability(
             "**/okf/concepts/**",
             "**/okf/metrics/**",
             "**/okf/roles/**",
+            "**/okf/relations/**",
         ],
     },
     default_enabled=True,
@@ -179,16 +180,23 @@ def health() -> dict[str, Any]:
 
 # -------------------------------------------------------------- bootstrap --
 def bootstrap_project(root: Path, group: str, project: str, project_dir: Path, config: dict[str, Any]) -> Any:
-    """The project's bundle, and the platform's beside it. Skipped where there is no MDL yet."""
+    """The project's bundle, and the two ontology tiers above it."""
+    from pf.projections.okf import NotVendored, write_group, write_platform, write_project
     from pf.scaffold.bootstrap import StepResult
 
+    # The two ontology tiers are written whether or not this project has a
+    # semantic layer yet: a term a steward approved into the family's extension
+    # is published the moment it is approved, not when some sister happens to
+    # build its first mart.
+    try:
+        write_group(root, group)
+        write_platform(root)
+    except NotVendored as exc:
+        return StepResult("okf", "skipped", str(exc))
     if not has_mdl(project_dir):
-        return StepResult("okf", "skipped", "no mdl/mdl.json yet (`pf semantic mdl`)")
-    from pf.projections.okf import NotVendored, write_platform, write_project
-
+        return StepResult("okf", "ok", "ontology tiers only — no mdl/mdl.json yet (`pf semantic mdl`)")
     try:
         r = write_project(root, group, project)
-        write_platform(root)
     except NotVendored as exc:
         return StepResult("okf", "skipped", str(exc))
     return StepResult("okf", "ok", f"{r['tables']} table(s), {r['concepts']} concept(s), {r['metrics']} metric(s)")
@@ -410,19 +418,32 @@ def register_commands(app: Any) -> None:
         project: str = typer.Argument(""),
         all_: bool = typer.Option(False, "--all", help="every project"),
         platform: bool = typer.Option(False, "--platform", help="the platform ontology's own bundle"),
+        group_only: bool = typer.Option(False, "--group", help="the family's own ontology bundle"),
     ) -> None:
-        """Regenerate a project's `okf/` from its semantic layer; `--platform` for `platform/okf/`."""
-        from pf.cli import root
-        from pf.projections.okf import write_platform, write_project
+        """Regenerate a project's `okf/` from its semantic layer; `--platform` and `--group` for the ontology tiers."""
+        from pf.cli import all_projects, root
+        from pf.projections.okf import write_group, write_platform, write_project
 
         if platform:
             r = write_platform(root())
             console.print(
                 f"[green]✓[/] platform/okf  [dim]{r['concepts']} concept(s), {r['roles']} role(s), "
-                f"{r['written']} written, {r['removed']} removed[/]"
+                f"{r['relations']} relation(s), {r['written']} written, {r['removed']} removed[/]"
             )
-            if not (all_ or (group and project)):
-                return
+        if group_only:
+            groups = sorted({g for g, _, _ in all_projects()}) if all_ else ([group] if group else [])
+            if not groups:
+                console.print("[red]give a group, or --all[/]")
+                raise typer.Exit(1)
+            for g in groups:
+                r = write_group(root(), g)
+                console.print(
+                    f"[green]✓[/] groups/{g}/okf  [dim]{r['concepts']} concept(s), {r['roles']} role(s), "
+                    f"{r['relations']} relation(s), {r['written']} written, {r['removed']} removed[/]"
+                )
+        # A tier-only build asks for no project and must not demand one.
+        if (platform or group_only) and not (all_ or (group and project)):
+            return
         for g, p in _targets(group, project, all_):
             r = write_project(root(), g, p)
             console.print(
@@ -438,10 +459,13 @@ def register_commands(app: Any) -> None:
     ) -> None:
         """Is every committed bundle what the semantic layer projects, and conformant? Exits 1 otherwise."""
         from pf.cli import root
-        from pf.projections.okf import check_platform, check_project
+        from pf.projections.okf import check_group, check_platform, check_project
 
         problems = check_platform(root()) if all_ else []
-        for g, p in _targets(group, project, all_):
+        targets = _targets(group, project, all_)
+        for g in sorted({g for g, _ in targets}):
+            problems += check_group(root(), g)
+        for g, p in targets:
             problems += check_project(root(), g, p)
         for x in problems:
             console.print(f"[red]✗[/] {x}")

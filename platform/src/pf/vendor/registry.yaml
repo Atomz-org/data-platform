@@ -74,6 +74,20 @@ upstreams:
           Upstream's ontology is per-pipeline. Ours is three-layered
           (platform / group / project) so sister companies share a vocabulary
           without inheriting each other's invented terms.
+      - upstream: workbench/transformations/skills/create-ontology/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/ontology-design/skills/design-ontology/SKILL.md
+        note: >
+          The six steps kept — entities, identity, attributes, relations, gaps,
+          publish — and every one re-aimed. Upstream writes ISON for a CDM
+          generator; ours writes the tier's YAML and publishes through approval,
+          the graph, the MDL and the three OKF bundles. Identity is a decision
+          rather than a discovered natural key, attributes carry roles that
+          drive masking and staging, relations take a business verb instead of
+          an UPPER_SNAKE edge label, and the scope constraint is kept verbatim
+          in spirit: a property with no column is a gap to record, not a field
+          to model.
       - upstream: workbench/transformations/skills/generate-cdm/SKILL.md
         kind: shape
         ours: [platform/src/pf/runtime/staging.py]
