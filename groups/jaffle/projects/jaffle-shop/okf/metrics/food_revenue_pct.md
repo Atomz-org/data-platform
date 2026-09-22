@@ -15,3 +15,4 @@ okf_x_kg_node: metric:food_revenue_pct
 * **Ratio:** `food_revenue` / `revenue` — re-divide at the reading grain, never average the ratio
 * **Built on:** [order_items](/tables/order_items.md)
 * **Dimensions:** `is_food_item`, `is_drink_item`
+* **Built from:** [food_revenue](/metrics/food_revenue.md), [revenue](/metrics/revenue.md)

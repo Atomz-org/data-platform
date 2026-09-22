@@ -14,3 +14,4 @@ okf_x_kg_node: metric:lifetime_spend_pretax
 * **Expression:** `sum(lifetime_spend_pretax)`
 * **Built on:** [customers](/tables/customers.md)
 * **Dimensions:** `customer_name`, `customer_type`
+* **Derived from it:** `average_order_value`

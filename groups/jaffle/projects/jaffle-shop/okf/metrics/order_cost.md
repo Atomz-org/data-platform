@@ -14,3 +14,4 @@ okf_x_kg_node: metric:order_cost
 * **Expression:** `sum(order_cost)`
 * **Built on:** [orders](/tables/orders.md)
 * **Dimensions:** `order_total_dim`, `is_food_order`, `is_drink_order`, `customer_order_number`
+* **Derived from it:** `order_gross_profit`

@@ -14,3 +14,4 @@ okf_x_kg_node: metric:revenue
 * **Expression:** `sum(product_price)`
 * **Built on:** [order_items](/tables/order_items.md)
 * **Dimensions:** `is_food_item`, `is_drink_item`
+* **Derived from it:** [drink_revenue_pct](/metrics/drink_revenue_pct.md), [food_revenue_pct](/metrics/food_revenue_pct.md), `order_gross_profit`, `revenue_growth_mom`
