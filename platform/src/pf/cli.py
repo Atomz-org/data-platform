@@ -3129,20 +3129,57 @@ def cmd_policy(
 
 @sem_app.command("mdl")
 def cmd_mdl(
-    group: str, project: str, out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)")
+    group: str = typer.Argument("", help="omit with --all"),
+    project: str = typer.Argument("", help="omit with --all"),
+    out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)"),
+    check: bool = typer.Option(False, "--check", help="is the committed manifest what the committed graph projects?"),
+    all_: bool = typer.Option(False, "--all", help="every project"),
+    strict: bool = typer.Option(False, "--strict", help="with --check, a project that cannot be judged fails too"),
 ) -> None:
-    """Export a WrenAI MDL manifest from the graph."""
+    """Export a WrenAI MDL manifest from the graph, or check the committed one.
+
+    `--check` compares `mdl/mdl.json` against a projection of the *committed*
+    `kg/graph.json`, rebuilding neither and reading no warehouse. Without it the
+    manifest was the one artefact in the chain nothing compared: it is excluded
+    from the converged gate, because a bare runner regenerates it from a graph
+    it cannot build — so two of them aged past the whole reporting layer before
+    an end-to-end run noticed.
+    """
+    if not (all_ or (group and project)):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+    targets = _targets(group, project) if all_ else [(group, project, pdir(group, project))]
+
+    if check:
+        from pf.projections.mdl import check_manifest
+
+        drifted = unexercised = 0
+        for g, p, d in targets:
+            report = check_manifest(d, g, p)
+            console.print(report.render())
+            if not report.exercised:
+                unexercised += 1
+            elif report.total:
+                drifted += 1
+        if drifted:
+            console.print(f"[red]{drifted} stale manifest(s)[/] — run `pf semantic mdl` and commit mdl/mdl.json")
+        if unexercised and strict:
+            console.print(f"[red]{unexercised} manifest(s) could not be checked[/]")
+        raise typer.Exit(1 if drifted or (unexercised and strict) else 0)
+
     from pf.projections.mdl import export as export_mdl
 
-    d = pdir(group, project)
-    path = export_mdl(d, group, project, out or None)
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    console.print(f"[green]✓[/] {path}")
-    console.print(
-        f"  models={len(payload['models'])} relationships={len(payload['relationships'])} cubes={len(payload['cubes'])}"
-    )
-    for r in payload["relationships"]:
-        console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
+    for g, p, d in targets:
+        path = export_mdl(d, g, p, out or None)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        console.print(f"[green]✓[/] {path}")
+        console.print(
+            f"  models={len(payload['models'])} relationships={len(payload['relationships'])} "
+            f"cubes={len(payload['cubes'])}"
+        )
+        if len(targets) == 1:
+            for r in payload["relationships"]:
+                console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
 
 
 @sem_app.command("owl")

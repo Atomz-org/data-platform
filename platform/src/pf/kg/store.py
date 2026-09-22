@@ -174,6 +174,83 @@ class Graph:
         self.con.close()
 
 
+class Export:
+    """The tracked `kg/graph.json` presented with the same reads as `Graph`.
+
+    `graph.duckdb` is gitignored, so every projection that reads it can be
+    *built* and never *checked*: a clone with no warehouse — every CI runner —
+    has nothing to compare a committed manifest against, and the manifest ages
+    silently while each rebuild looks fine. The export is the same graph,
+    written by `build_graph` on the way out and committed beside it, so a
+    projection read from here is reproducible on any checkout.
+
+    Read-only by construction: there is no `add_nodes` and no `reset`, because
+    the export is written by the builder and by nothing else.
+
+    The orderings match the SQL they stand in for — `nodes(kind)` by name,
+    `nodes()` by kind then name, edges in insertion order — so a projection
+    reads the same sequence from either source. That is the whole contract:
+    a manifest built here and one built from the database must not differ.
+    """
+
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self._nodes = {
+            str(n["id"]): Node(
+                id=str(n["id"]), kind=str(n.get("kind") or ""), name=str(n.get("name") or ""),
+                layer=str(n.get("layer") or ""), label=str(n.get("label") or ""),
+                props=dict(n.get("props") or {}),
+            )
+            for n in payload.get("nodes") or []
+            if isinstance(n, dict) and n.get("id")
+        }
+        self._edges = [
+            Edge(src=str(e["src"]), dst=str(e["dst"]), kind=str(e.get("kind") or ""),
+                 props=dict(e.get("props") or {}))
+            for e in payload.get("edges") or []
+            if isinstance(e, dict) and e.get("src") and e.get("dst")
+        ]
+        self._out: dict[str, list[Edge]] = {}
+        self._in: dict[str, list[Edge]] = {}
+        for e in self._edges:
+            self._out.setdefault(e.src, []).append(e)
+            self._in.setdefault(e.dst, []).append(e)
+
+    def node(self, node_id: str) -> Node | None:
+        return self._nodes.get(node_id)
+
+    def nodes(self, kind: str | None = None) -> list[Node]:
+        if kind:
+            return sorted((n for n in self._nodes.values() if n.kind == kind), key=lambda n: n.name)
+        return sorted(self._nodes.values(), key=lambda n: (n.kind, n.name))
+
+    def edges(self) -> list[Edge]:
+        return list(self._edges)
+
+    def out_edges(self, node_id: str) -> list[Edge]:
+        return list(self._out.get(node_id, ()))
+
+    def in_edges(self, node_id: str) -> list[Edge]:
+        return list(self._in.get(node_id, ()))
+
+    def counts(self) -> dict[str, int]:
+        out: dict[str, int] = {}
+        for n in self._nodes.values():
+            out[n.kind] = out.get(n.kind, 0) + 1
+        return dict(sorted(out.items()))
+
+    def close(self) -> None:
+        """Nothing to close. Here so a caller can treat both sources alike."""
+
+
+@contextmanager
+def open_export(path: str | Path) -> Iterator[Export]:
+    """The committed export, for reading. Raises if the project has none."""
+    p = Path(path)
+    if not p.is_file():
+        raise FileNotFoundError(f"{p} does not exist — run `pf kg build` and commit it")
+    yield Export(json.loads(p.read_text(encoding="utf-8")))
+
+
 def _row_to_node(row: tuple) -> Node:
     return Node(
         id=row[0], kind=row[1], name=row[2], layer=row[3] or "",

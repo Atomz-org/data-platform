@@ -83,6 +83,15 @@ jobs:
       - name: Harness maps are current
         run: uv run pf harness check
 
+      # The BI semantic layer, against the graph it is projected from. It was
+      # the one artefact in the chain nothing compared — excluded from the
+      # converged gate because a bare runner rebuilds it from a warehouse it
+      # cannot build — and two manifests aged past the whole reporting layer
+      # before an end-to-end run noticed. This compares the committed manifest
+      # with a projection of the committed `kg/graph.json`, rebuilding neither.
+      - name: MDL manifests are current with their graphs
+        run: uv run pf semantic mdl --check --all
+
       # What a table and a column *mean*, as every agent and catalogue reads
       # it — and the graph it is joined to. Built from tracked inputs only
       # (`mdl/mdl.json`, `kg/graph.json`), so this compares the same way on a

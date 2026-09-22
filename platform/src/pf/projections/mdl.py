@@ -16,6 +16,14 @@ key to a named topology relation, and the identity property on the target class
 supplies the other side. Ontology gives meaning, topology gives direction,
 annotations give the physical column — the condition falls out.
 
+Read from the graph the project committed, not from the one on this machine.
+`kg/graph.duckdb` is gitignored; `kg/graph.json` is the same graph, written by
+`pf kg build` on the way out and committed beside the manifest. Building from
+the database when it is there and from the export when it is not makes the
+manifest reproducible in a bare clone — and makes `check_manifest` possible at
+all: the committed manifest is compared against a projection of the committed
+graph, rebuilding neither.
+
 Which *mart* plays each side is read from what the project declared — a model's
 `meta.concept` and a column's `meta.links_to` — before any naming heuristic.
 The heuristic alone matched `commodity` against `fct_commodity_prices_daily`
@@ -26,15 +34,36 @@ relationship without a word.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from pf.kg.store import Node, open_graph
+from pf.kg.store import Node, open_export, open_graph
 from pf.ontology.model import load_group_ontology, load_ontology
 
 # MDL schema types this as an integer, not a semver string.
 LAYOUT_VERSION = 1
 JOIN_TYPES = {"ONE_TO_ONE", "ONE_TO_MANY", "MANY_TO_ONE", "MANY_TO_MANY"}
+
+
+def _source(root: Path, tracked: bool = False):
+    """The graph to read: the database, or the export committed beside it.
+
+    `tracked` forces the export, which is what a check needs — comparing a
+    committed manifest against a projection of whatever the local warehouse
+    happens to hold would pass or fail on a fact about this machine.
+
+    Without it the database wins when it exists (it is what the last build
+    wrote) and the export stands in when it does not, so `pf semantic mdl` works
+    in a clone that has never built anything. When neither exists the database
+    is opened anyway and DuckDB creates it empty — the long-standing behaviour,
+    and the projection of an empty graph is an empty manifest.
+    """
+    export = root / "kg" / "graph.json"
+    db = root / "kg" / "graph.duckdb"
+    if tracked or (not db.is_file() and export.is_file()):
+        return open_export(export)
+    return open_graph(db, read_only=True)
 
 
 def _identity_column(model: Node, columns: list[Node]) -> str | None:
@@ -49,7 +78,7 @@ def _identity_column(model: Node, columns: list[Node]) -> str | None:
 
 
 def build_manifest(project_dir: str | Path, group: str, project: str,
-                   layer: str = "marts") -> dict[str, Any]:
+                   layer: str = "marts", tracked: bool = False) -> dict[str, Any]:
     """Build an MDL manifest from one project's graph.
 
     Only `marts` are exposed by default. Staging is an implementation detail; a
@@ -58,14 +87,13 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
     """
     root = Path(project_dir)
     onto = _ontology(root, group)
-    gp = root / "kg" / "graph.duckdb"
 
     models: list[dict[str, Any]] = []
     relationships: list[dict[str, Any]] = []
     cubes: list[dict[str, Any]] = []
     enum_definitions: list[dict[str, Any]] = []
 
-    with open_graph(gp, read_only=True) as g:
+    with _source(root, tracked) as g:
         wanted = [m for m in g.nodes("Model") if m.layer == layer]
         by_name = {m.name: m for m in wanted}
         cols_of: dict[str, list[Node]] = {}
@@ -249,7 +277,7 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
         "layoutVersion": LAYOUT_VERSION,
         "models": models,
         "relationships": relationships,
-        "views": _views(gp, models, relationships),
+        "views": _views(root, models, relationships, tracked),
         "cubes": cubes,
     }
     if enum_definitions:
@@ -301,8 +329,8 @@ def _dedupe_dims(dims: list[Node], sql_type: str) -> list[dict[str, Any]]:
     return list(folded.values())
 
 
-def _views(graph_path: Path, models: list[dict[str, Any]],
-           relationships: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _views(root: Path, models: list[dict[str, Any]],
+           relationships: list[dict[str, Any]], tracked: bool = False) -> list[dict[str, Any]]:
     """One view per mart a dbt exposure names.
 
     An exposure is the only place in the stack where someone states *this is a
@@ -319,7 +347,7 @@ def _views(graph_path: Path, models: list[dict[str, Any]],
     by_name = {m["name"]: m for m in models}
     views: list[dict[str, Any]] = []
 
-    with open_graph(graph_path, read_only=True) as g:
+    with _source(root, tracked) as g:
         exposures = g.nodes("Exposure")
         if not exposures:
             return []
@@ -559,6 +587,118 @@ def _busiest_model(g, metrics: list[Node], by_name: dict[str, Node]) -> str | No
     if counts:
         return max(counts, key=counts.get)
     return next(iter(by_name), None)
+
+
+# ------------------------------------------------------------------ check ---
+#: The manifest's list sections, each keyed by `name`.
+SECTIONS = ("models", "relationships", "views", "cubes", "enumDefinitions")
+#: The scalars at the top, which no list diff would mention.
+HEADER = ("catalog", "schema", "dataSource", "layoutVersion")
+
+
+@dataclass
+class MdlDrift:
+    """Is the committed manifest what the committed graph projects?
+
+    The question `pf kg check` asks of the graph, asked one layer up. It was
+    unanswerable while the projection could only read `kg/graph.duckdb`, which
+    no clone has: the MDL was the only artefact in the chain that nothing
+    compared, and both the India and US manifests had aged past the whole
+    Evidence reporting layer before anyone noticed.
+
+    `exercised` is the honest third answer, as everywhere else here: a project
+    whose graph was never built cannot be judged, and calling that "current"
+    would be the green tick for "found nothing".
+    """
+
+    project: str
+    exercised: bool
+    reason: str = ""
+    missing: bool = False
+    added: dict[str, list[str]] = field(default_factory=dict)
+    removed: dict[str, list[str]] = field(default_factory=dict)
+    changed: dict[str, list[str]] = field(default_factory=dict)
+    header: list[str] = field(default_factory=list)
+    unnamed: bool = False
+
+    @property
+    def total(self) -> int:
+        counted = sum(len(v) for d in (self.added, self.removed, self.changed) for v in d.values())
+        return counted + len(self.header) + int(self.unnamed) + int(self.missing)
+
+    def render(self) -> str:
+        if not self.exercised:
+            return f"?  {self.project} — not exercised: {self.reason}"
+        if self.missing:
+            return f"⛔ {self.project} — no mdl/mdl.json; run `pf semantic mdl {self.project.replace('/', ' ')}`"
+        if not self.total:
+            return f"✓  {self.project} — manifest matches the graph"
+
+        lines = [f"⛔ {self.project} — manifest is {self.total} change(s) behind the graph"]
+        for label, entries, mark in (("missing", self.added, "+"), ("dropped", self.removed, "-"),
+                                     ("stale", self.changed, "~")):
+            for section, names in sorted(entries.items()):
+                head = ", ".join(f"{mark}{n}" for n in sorted(names)[:6])
+                rest = f", +{len(names) - 6} more" if len(names) > 6 else ""
+                lines.append(f"     {section} {label}: {head}{rest}")
+        if self.header:
+            lines.append(f"     header: {', '.join(sorted(self.header))}")
+        if self.unnamed:
+            lines.append("     and a difference no section names — compare the file")
+        lines.append(f"     run `pf semantic mdl {self.project.replace('/', ' ')}` and commit mdl/mdl.json")
+        return "\n".join(lines)
+
+    @property
+    def problems(self) -> list[str]:
+        return [self.render()] if self.exercised and self.total else []
+
+
+def _by_name(manifest: dict[str, Any], section: str) -> dict[str, Any]:
+    return {
+        str(entry.get("name")): entry
+        for entry in manifest.get(section) or []
+        if isinstance(entry, dict) and entry.get("name")
+    }
+
+
+def check_manifest(project_dir: str | Path, group: str, project: str) -> MdlDrift:
+    """Compare the committed manifest against a projection of the committed graph.
+
+    Neither is rebuilt, and nothing here reads the warehouse or the graph
+    database: this has to answer the same way on a laptop that has built
+    everything and on a runner that has built nothing, or it is not a gate.
+    """
+    root = Path(project_dir)
+    name = f"{group}/{project}"
+    if not (root / "kg" / "graph.json").is_file():
+        return MdlDrift(name, exercised=False,
+                        reason="no kg/graph.json; the graph has never been built")
+    path = root / "mdl" / "mdl.json"
+    if not path.is_file():
+        return MdlDrift(name, exercised=True, missing=True)
+    try:
+        committed_text = path.read_text(encoding="utf-8")
+        committed = json.loads(committed_text)
+    except ValueError as exc:
+        return MdlDrift(name, exercised=True, reason=str(exc), unnamed=True)
+
+    built = build_manifest(root, group, project, tracked=True)
+    drift = MdlDrift(name, exercised=True)
+    for section in SECTIONS:
+        want, have = _by_name(built, section), _by_name(committed, section)
+        if added := sorted(set(want) - set(have)):
+            drift.added[section] = added
+        if removed := sorted(set(have) - set(want)):
+            drift.removed[section] = removed
+        if changed := sorted(n for n in set(want) & set(have) if want[n] != have[n]):
+            drift.changed[section] = changed
+    drift.header = [k for k in HEADER if built.get(k) != committed.get(k)]
+    # The sections above are what a person can act on; this is the backstop for
+    # anything else — a key order, a section the manifest gained upstream —
+    # so "current" always means byte-identical to what a rebuild would write.
+    if not drift.total and committed_text != json.dumps(built, indent=2) + "\n":
+        drift.unnamed = True
+    return drift
 
 
 def export(project_dir: str | Path, group: str, project: str,

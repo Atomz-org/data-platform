@@ -409,6 +409,7 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
     tables = []
     role_of: dict[str, dict[str, str]] = {}
     withheld: dict[str, int] = {}
+    unnamed: dict[str, int] = {}
     for m in f.models:
         name = str(m["name"])
         props = m.get("properties") or {}
@@ -419,11 +420,10 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
                 withheld[name] = withheld.get(name, 0) + 1
                 continue
             role = str((c.get("properties") or {}).get("pf.role") or "")
-            role_of[name][str(c["name"])] = role
             r = roles.get(role)
             definition = _one_line(getattr(r, "description", "")) if r is not None else ""
-            cols.append(
-                models.OKFColumn(
+            try:
+                column = models.OKFColumn(
                     name=str(c["name"]),
                     definition=definition,
                     confidence=1.0 if definition else 0.0,
@@ -432,7 +432,18 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
                     nullable=not bool(c.get("notNull")),
                     references=fks.get((name, str(c["name"]))),
                 )
-            )
+            except ValueError:
+                # A column the spec will not name. Warehouses name an unaliased
+                # expression after the expression itself — `CASE WHEN (...) END`,
+                # newlines and all — and a bundle is Markdown headings and file
+                # references, so the weaver's models reject it. Counted and left
+                # out rather than crashing the build of every other project:
+                # the defect is an unaliased select in the source model, and the
+                # count on the page is what says so.
+                unnamed[name] = unnamed.get(name, 0) + 1
+                continue
+            role_of[name][str(c["name"])] = role
+            cols.append(column)
         desc = _one_line(props.get("description") or "")
         fallback = f"{props.get('layer') or 'model'} at grain: {props.get('grain') or 'undeclared'}"
         tables.append(
@@ -446,14 +457,23 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
         )
 
     files: dict[str, str] = {"log.md": LOG}
+    # OKF v0.1 holds at most `MAX_TABLES` tables, and the vendored models enforce
+    # it. A project whose semantic layer exposes more than that — an adopted
+    # repository with a thousand marts — has a bundle that cannot exist, and
+    # building one raised a pydantic error out of `pf tool okf build --all`.
+    # Refusing the table pages and saying why is the honest projection: the
+    # concepts and the metrics still travel, and `mdl/mdl.json` and the graph
+    # still hold every table. The cap is read from the vendored spec rather than
+    # repeated here, so a bump of the pin moves it.
+    over_cap = len(tables) if len(tables) > models.MAX_TABLES else 0
     # The gate: a bundle the weaver would reject cannot be written.
-    bundle = models.OKFBundle(name=f"{group}/{project}", tables=tables) if tables else None
+    bundle = models.OKFBundle(name=f"{group}/{project}", tables=tables) if tables and not over_cap else None
     concepts_used = sorted({c for c in concept_of.values() if c in classes})
     # What this bundle will document, so a lineage line links a page it holds and
     # names plainly what it does not.
     have_table = {t.name for t in bundle.tables} if bundle is not None else set()
     have_metric = {str(ms.name) for ms in f.metrics}
-    files["index.md"] = _index(f, bundle, concept_of, concepts_used)
+    files["index.md"] = _index(f, bundle, concept_of, concepts_used, over_cap, models.MAX_TABLES)
     if bundle is not None:
         metrics_on = {}
         for ms in f.metrics:
@@ -466,6 +486,7 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
                 concept_of.get(t.name, ""),
                 role_of[t.name],
                 withheld.get(t.name, 0),
+                unnamed.get(t.name, 0),
                 metrics_on.get(t.name, []),
                 f.graph,
                 have_table,
@@ -480,7 +501,8 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
     return files
 
 
-def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str]) -> str:
+def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str],
+           over_cap: int = 0, cap: int = 0) -> str:
     front = {
         "okf_version": bundle.okf_version if bundle is not None else "0.1",
         "name": f"{f.group}/{f.project}",
@@ -493,6 +515,8 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
         "okf_x_concepts": len(concepts),
         "okf_x_metrics": len(f.metrics),
     }
+    if over_cap:
+        front["okf_x_tables_over_cap"] = over_cap
     lines = [
         f"# {f.group}/{f.project}",
         "",
@@ -509,17 +533,27 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
         "",
     ]
     if f.graph is not None:
+        documented = (
+            f"{over_cap} reach the BI layer, more than a bundle may hold — see below"
+            if over_cap
+            else f"the {front['okf_x_tables']} below are the ones the semantic layer projects to BI"
+        )
         lines += [
             (
                 f"Joined to this project's knowledge graph ([kg/graph.json]({KG_LINK})): every page names the node "
                 f"it documents, and states the lineage, policies and decisions the graph holds for it. The graph "
-                f"reaches {front['okf_x_kg_models']} model(s); the {front['okf_x_tables']} below are the ones the "
-                f"semantic layer projects to BI."
+                f"reaches {front['okf_x_kg_models']} model(s); {documented}."
             ),
             "",
         ]
     lines += ["# Tables", ""]
-    if bundle is None:
+    if over_cap:
+        lines.append(
+            f"_{over_cap} models are exposed by this project's semantic layer — more than the {cap} an OKF v0.1 "
+            f"bundle may hold, so no table is documented here. They are in `mdl/mdl.json`, and every one of them "
+            f"is in the knowledge graph. Narrow what the marts layer exposes to get table pages back._"
+        )
+    elif bundle is None:
         lines.append("_No models in the semantic layer yet — `pf seed`, then `pf semantic mdl`._")
     else:
         for t in bundle.tables:
@@ -541,6 +575,7 @@ def _table_file(
     concept: str,
     role_of: dict[str, str],
     withheld: int,
+    unnamed: int,
     metrics: list[str],
     gf: GraphFacts | None = None,
     have_table: set[str] | None = None,
@@ -559,6 +594,8 @@ def _table_file(
         "okf_x_columns_withheld": withheld,
         "okf_x_kg_node": _kg_node(gf, f"model:{t.name}"),
     }
+    if unnamed:
+        front["okf_x_columns_unnamed"] = unnamed
     rows = [
         "# Schema",
         "",
@@ -584,6 +621,14 @@ def _table_file(
         body += [
             "",
             f"_{withheld} column(s) withheld: masked by policy in the MDL, and not named in a portable file._",
+        ]
+    if unnamed:
+        body += [
+            "",
+            (
+                f"_{unnamed} column(s) left out: the warehouse named them after the expression that produced "
+                f"them, which OKF cannot use as a name. Alias them in the model._"
+            ),
         ]
     node_id = f"model:{t.name}"
     if gf is not None and gf.has(node_id):
