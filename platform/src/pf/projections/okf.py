@@ -476,7 +476,7 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
             f, classes[cls], cls in f.platform_classes, [t for t, c in sorted(concept_of.items()) if c == cls]
         )
     for ms in f.metrics:
-        files[f"metrics/{ms.name}.md"] = _metric_file(ms, f.graph)
+        files[f"metrics/{ms.name}.md"] = _metric_file(ms, f.graph, have_metric)
     return files
 
 
@@ -631,7 +631,7 @@ def _concept_file(f: Facts, cls: Any, platform_defined: bool, tables: list[str])
     return _front(front) + "\n" + "\n".join(lines) + "\n"
 
 
-def _metric_file(ms: Any, gf: GraphFacts | None = None) -> str:
+def _metric_file(ms: Any, gf: GraphFacts | None = None, have_metric: set[str] | None = None) -> str:
     front: dict[str, Any] = {
         "type": "Metric",
         "title": ms.label or ms.name,
@@ -660,6 +660,21 @@ def _metric_file(ms: Any, gf: GraphFacts | None = None) -> str:
         lines.append(f"* **Filter:** `{ms.filter_sql}`")
     node_id = f"metric:{ms.name}"
     if gf is not None and gf.has(node_id):
+        # A derived metric hangs off the metric it is built from, not off a
+        # model, so no table page can name it. Said here or nowhere: changing
+        # this definition changes every metric below it.
+        built_from = gf.upstream(node_id, "Metric")
+        if built_from:
+            lines.append(
+                "* **Built from:** "
+                + ", ".join(_ref(str(n.get("name") or ""), have_metric or set(), "metrics") for n in built_from)
+            )
+        derived = gf.downstream(node_id, "Metric")
+        if derived:
+            lines.append(
+                "* **Derived from it:** "
+                + ", ".join(_ref(str(n.get("name") or ""), have_metric or set(), "metrics") for n in derived)
+            )
         lines += _governance(gf, [node_id], "")
     return _front(front) + "\n" + "\n".join(lines) + "\n"
 

@@ -123,6 +123,7 @@ def _demo(tmp_path: Path, with_graph: bool = True) -> Path:
             _edge("model:fct_orders", "exposure:order_board", "feeds"),
             _edge("model:fct_orders", "metric:order_count", "measures"),
             _edge("model:fct_orders", "metric:orders_mom_change", "measures"),
+            _edge("metric:order_count", "metric:orders_mom_change", "feeds"),
             _edge("model:fct_orders", "col:model:fct_orders.order_id", "has_column"),
             _edge("policy:entity-requires-identity", "concept:Order", "governs"),
             _edge("decision:ADR-0007", "model:fct_orders", "decides"),
@@ -196,6 +197,25 @@ def test_a_metric_with_no_page_is_still_named(tmp_path: Path) -> None:
 
     assert "**Also measured by:**" in page
     assert "`orders_mom_change`" in page
+
+
+def test_a_metric_page_carries_the_metric_graph_around_it(tmp_path: Path) -> None:
+    """A derived metric hangs off the metric it is built from, never off a model,
+    so no table page can reach it. Said on the metric page or nowhere — and
+    changing a definition changes every metric below it."""
+    from types import SimpleNamespace
+
+    gf = okf.load_graph(_demo(tmp_path) / "groups" / "demo" / "projects" / "demo-us")
+    assert gf is not None
+    metric = SimpleNamespace(
+        name="order_count", label="Orders", description="How many orders.", kind="simple",
+        model="fct_orders", time_column="ordered_at", expression="count(*)", numerator="",
+        denominator="", dimensions=[], filter_sql="",
+    )
+
+    page = okf._metric_file(metric, gf, {"order_count"})
+    assert "okf_x_kg_node: metric:order_count" in page
+    assert "**Derived from it:** `orders_mom_change`" in page  # in the graph, no page here
 
 
 def test_a_reader_is_named_without_its_owners_address(tmp_path: Path) -> None:
