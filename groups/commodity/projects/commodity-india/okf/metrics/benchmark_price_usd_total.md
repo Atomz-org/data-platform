@@ -15,3 +15,4 @@ okf_x_kg_node: metric:benchmark_price_usd_total
 * **Expression:** `sum(close_price)`
 * **Built on:** [fct_commodity_prices_daily](/tables/fct_commodity_prices_daily.md)
 * **Dimensions:** `commodity_id`, `price_basis`
+* **Derived from it:** [avg_benchmark_price_usd](/metrics/avg_benchmark_price_usd.md)
