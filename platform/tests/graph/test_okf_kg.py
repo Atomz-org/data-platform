@@ -423,6 +423,33 @@ def test_every_page_of_every_bundle_carries_a_resolvable_node(group: str, projec
 
 
 @pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
+def test_the_reporting_layer_reaches_the_bundle_of_the_project_it_reads(group: str, project: str) -> None:
+    """The Evidence pages under `reporting/` are dbt exposures on the marts they
+    query, so the graph holds them — and a table page that does not name its
+    readers sends someone renaming a column to read the dbt project to find out
+    who breaks."""
+    pdir = ROOT / "groups" / group / "projects" / project
+    gf = okf.load_graph(pdir)
+    tables = pdir / okf.OKF_REL / "tables"
+    if gf is None or not tables.is_dir():
+        pytest.skip("no graph or no documented table")
+
+    documented = {p.stem for p in tables.glob("*.md")}
+    expected = {
+        model: [str(e.get("name")) for e in gf.downstream(f"model:{model}", "Exposure")]
+        for model in sorted(documented)
+    }
+    with_readers = {m: names for m, names in expected.items() if names}
+    if not with_readers:
+        pytest.skip("no exposure reads a documented table")
+
+    for model, names in with_readers.items():
+        page = (tables / f"{model}.md").read_text(encoding="utf-8")
+        assert "**Read by:**" in page, f"{group}/{project}: {model} is read by {names} and says so nowhere"
+        assert names[0] in page  # sorted, so the first is always named — the rest may be summarised
+
+
+@pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
 def test_no_bundle_carries_an_address(group: str, project: str) -> None:
     bundle = ROOT / "groups" / group / "projects" / project / okf.OKF_REL
     if not bundle.is_dir():
