@@ -477,10 +477,8 @@ def _probes(p: Project, tracked: set[str] | None) -> list[str]:
         _first(b, "transform/models/**/*.yml", tracked, "transform/models/marts/_marts__models.yml"),
         "transform/macros/example.sql",
         "transform/tests/expectations/example.yml",
-        "transform/target/manifest.json",
         "transform/recce.yml",
         "transform/recce_state.json",
-        "kg/graph.json",
         "kg/graph.duckdb",
         "kg/context_card.md",
         "kg/architecture.md",
@@ -492,14 +490,12 @@ def _probes(p: Project, tracked: set[str] | None) -> list[str]:
         "air.yaml",
         "reporting/pages/index.md",
         "reporting/queries/metrics/example.sql",
-        "reporting/evidence.config.yaml",
         "evals/cases/example.json",
         "evals/cases/generated/example.json",
         "CLAUDE.md",
         f"data/{m}.duckdb",
         f"data/{m}.quack.json",
         ".dlt/secrets.toml",
-        ".env.local",
         "logs/trace/example.jsonl",
     ]
 
@@ -1338,8 +1334,8 @@ def render_project(p: Project) -> str:
         lines += [f"- `{w.name}` ({w.when}): " + ", ".join(f"`{j}`" for j in w.jobs) for w in p.repo_workflows]
         lines += [
             (
-                "- `agent-context` (every pull request): the entry points agree, and the memory index, the "
-                "test index, the repo map, the onboarding guide and these harness maps are current"
+                "- `agent-context` (every pull request): entry points, memory and test indexes, repo map, "
+                "guide and these maps are current"
             )
         ]
     if p.filtered_workflows:
@@ -1382,7 +1378,7 @@ def render_project(p: Project) -> str:
         "",
         (
             "- **Provenance.** The hooks write INTENT, DECISION and EXECUTION into `provenance/` — gitignored, "
-            "denied to every agent, hash-chained and time-anchored. `pf provenance verify` audits it."
+            "denied, hash-chained, time-anchored; `pf provenance verify` audits it."
         ),
         (
             f"- **AI controls.** `air.yaml` commits to {_n(p.air_baseline, 'control')} and accepts "
@@ -1394,9 +1390,8 @@ def render_project(p: Project) -> str:
         + ("; the capabilities present add " + ", ".join(f"`{x}`" for x in p.policies) if p.policies else "")
         + ".",
         (
-            f"- **Evals.** {_n(p.evals, 'hand-written case')} in `evals/cases/`; generated ones are "
-            f"gitignored (`pf evals-gen`). `pf evals {p.group} {p.project}` runs them; `pf evals-gate` "
-            "runs on a change to an agent surface."
+            f"- **Evals.** {_n(p.evals, 'hand-written case')} in `evals/cases/`, generated ones gitignored; "
+            f"`pf evals {p.group} {p.project}` runs them, `pf evals-gate` on an agent-surface change."
         ),
         f"- **The onboarding ladder.** `pf align {p.group} {p.project}`: "
         + " → ".join(f"`{n}`" for n, _t, _o in p.stages)

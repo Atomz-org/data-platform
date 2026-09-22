@@ -18,6 +18,12 @@ denylist:
 - '**/governance/air-register.md'
 - '**/transform/edr_target/**'
 - '**/catalog/ingestion/**'
+- '**/okf/index.md'
+- '**/okf/log.md'
+- '**/okf/tables/**'
+- '**/okf/concepts/**'
+- '**/okf/metrics/**'
+- '**/okf/roles/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'
