@@ -27,16 +27,17 @@ okf_x_kg_node: model:order_items
 
 # Metrics
 
+* [cumulative_revenue](/metrics/cumulative_revenue.md)
 * [drink_revenue](/metrics/drink_revenue.md)
 * [drink_revenue_pct](/metrics/drink_revenue_pct.md)
 * [food_revenue](/metrics/food_revenue.md)
 * [food_revenue_pct](/metrics/food_revenue_pct.md)
 * [median_revenue](/metrics/median_revenue.md)
 * [revenue](/metrics/revenue.md)
+* [revenue_growth_mom](/metrics/revenue_growth_mom.md)
 
 # Lineage
 
 * **Upstream:** `stg_order_items`, `stg_orders`, `stg_products`, `stg_supplies`
 * **Downstream:** `adv_customer_order_pairs`, `int_customer_ltv`, `int_customer_rfm_scores`, [orders](/tables/orders.md), `wide_order_detail`, `wide_order_with_products`, `wide_product_summary`, `wide_store_monthly`
-* **Also measured by:** `cumulative_revenue`
 * **Read by:** `report_index` (Data Platform), `report_metrics_drink_revenue` (Data Platform), `report_metrics_drink_revenue_pct` (Data Platform), `report_metrics_food_revenue` (Data Platform), `report_metrics_food_revenue_pct` (Data Platform), `report_metrics_median_revenue` (Data Platform), and 1 more

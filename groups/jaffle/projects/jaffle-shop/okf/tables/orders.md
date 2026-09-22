@@ -47,6 +47,7 @@ Instantiates [Order](/concepts/Order.md).
 * [large_orders](/metrics/large_orders.md)
 * [new_customer_orders](/metrics/new_customer_orders.md)
 * [order_cost](/metrics/order_cost.md)
+* [order_gross_profit](/metrics/order_gross_profit.md)
 * [order_total](/metrics/order_total.md)
 * [orders](/metrics/orders.md)
 

@@ -32,6 +32,7 @@ Instantiates [Customer](/concepts/Customer.md).
 
 # Metrics
 
+* [average_order_value](/metrics/average_order_value.md)
 * [count_lifetime_orders](/metrics/count_lifetime_orders.md)
 * [lifetime_spend_pretax](/metrics/lifetime_spend_pretax.md)
 
