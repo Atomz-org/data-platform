@@ -6,8 +6,8 @@ okf_x_project: acme-us
 okf_x_platform_bundle: ../../../../../platform/okf/index.md
 okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 37
-okf_x_tables: 0
-okf_x_concepts: 0
+okf_x_tables: 3
+okf_x_concepts: 2
 okf_x_metrics: 5
 ---
 
@@ -21,15 +21,18 @@ confidence `0.00` is one the platform does not hold yet; declare it in
 
 The concepts below are the platform's, shared by every sister: [Platform ontology](../../../../../platform/okf/index.md).
 
-Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 37 model(s); the 0 below are the ones the semantic layer projects to BI.
+Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 37 model(s); the 3 below are the ones the semantic layer projects to BI.
 
 # Tables
 
-_No models in the semantic layer yet — `pf seed`, then `pf semantic mdl`._
+* [dim_customers](/tables/dim_customers.md) — `Payment` - Customer dimension with subscription rollups.
+* [fct_payments](/tables/fct_payments.md) — `Customer` - Payment fact at attempt grain, enriched with customer and plan.
+* [fct_revenue](/tables/fct_revenue.md) - Daily revenue by segment and plan. Union-compatible across sisters.
 
 # Concepts
 
-_none reached by a table_
+* [Customer](/concepts/Customer.md)
+* [Payment](/concepts/Payment.md)
 
 # Metrics
 

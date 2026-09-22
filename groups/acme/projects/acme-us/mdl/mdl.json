@@ -3,8 +3,462 @@
   "schema": "acme_us",
   "dataSource": "DUCKDB",
   "layoutVersion": 1,
-  "models": [],
-  "relationships": [],
-  "views": [],
-  "cubes": []
+  "models": [
+    {
+      "name": "dim_customers",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_customers"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Sales segment. Drives most reporting cuts."
+          }
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "created_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "subscription_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "active_subscriptions",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "organization_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "first_subscribed_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "is_active",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "Customer dimension with subscription rollups.",
+        "grain": "one customer",
+        "layer": "marts",
+        "pf.project": "acme-us",
+        "pf.group": "acme"
+      }
+    },
+    {
+      "name": "fct_payments",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_payments"
+      },
+      "columns": [
+        {
+          "name": "payment_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "paid_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "payment_status",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum",
+            "description": "Which statuses count as revenue is a semantic-layer policy."
+          }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "country_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "subscription_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        }
+      ],
+      "primaryKey": "payment_id",
+      "properties": {
+        "description": "Payment fact at attempt grain, enriched with customer and plan.",
+        "grain": "one payment attempt",
+        "layer": "marts",
+        "pf.project": "acme-us",
+        "pf.group": "acme"
+      }
+    },
+    {
+      "name": "fct_revenue",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_revenue"
+      },
+      "columns": [
+        {
+          "name": "revenue_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "net_amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "gross_amount",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "plan_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "payment_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        }
+      ],
+      "properties": {
+        "description": "Daily revenue by segment and plan. Union-compatible across sisters.",
+        "grain": "one day x segment x plan",
+        "layer": "marts",
+        "pf.project": "acme-us",
+        "pf.group": "acme"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "name": "fct_payments_dim_customers",
+      "models": [
+        "fct_payments",
+        "dim_customers"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_payments.customer_id = dim_customers.customer_id",
+      "properties": {
+        "pf.relation": "customer_pays_payment",
+        "pf.label": "pays",
+        "pf.inverse": "paid by",
+        "pf.description": "",
+        "pf.also_realises": "customer_holds_subscription"
+      }
+    }
+  ],
+  "views": [
+    {
+      "name": "dim_customers_view",
+      "statement": "select\n  dim_customers.customer_id,\n  dim_customers.customer_segment,\n  dim_customers.country_code,\n  dim_customers.created_at,\n  dim_customers.subscription_count,\n  dim_customers.active_subscriptions,\n  dim_customers.organization_id,\n  dim_customers.first_subscribed_at,\n  dim_customers.is_active\nfrom dim_customers",
+      "properties": {
+        "pf.exposures": "crm_customer_sync, exec_weekly_dashboard, report_metrics_active_customers",
+        "pf.exposure_types": "application, dashboard",
+        "pf.owners": "Data Platform, Finance, RevOps",
+        "pf.description": "Customer dimension with subscription rollups.",
+        "pf.grain": "one customer"
+      }
+    },
+    {
+      "name": "fct_payments_view",
+      "statement": "select\n  fct_payments.payment_id,\n  fct_payments.amount,\n  fct_payments.paid_at,\n  fct_payments.currency_code,\n  fct_payments.payment_status,\n  fct_payments.customer_segment,\n  fct_payments.country_code,\n  fct_payments.plan_tier,\n  fct_payments.customer_id,\n  fct_payments.subscription_id,\n  dim_customers.customer_id as customers_customer_id,\n  dim_customers.customer_segment as customers_customer_segment,\n  dim_customers.country_code as customers_country_code,\n  dim_customers.created_at,\n  dim_customers.subscription_count,\n  dim_customers.active_subscriptions,\n  dim_customers.organization_id,\n  dim_customers.first_subscribed_at,\n  dim_customers.is_active\nfrom fct_payments\n  left join dim_customers on fct_payments.customer_id = dim_customers.customer_id",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_aov, report_metrics_gross_payment_volume, report_metrics_payment_count, report_metrics_revenue",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Data Platform",
+        "pf.description": "Payment fact at attempt grain, enriched with customer and plan.",
+        "pf.grain": "one payment attempt"
+      }
+    },
+    {
+      "name": "fct_revenue_view",
+      "statement": "select\n  fct_revenue.revenue_date,\n  fct_revenue.net_amount,\n  fct_revenue.gross_amount,\n  fct_revenue.currency_code,\n  fct_revenue.customer_segment,\n  fct_revenue.plan_tier,\n  fct_revenue.payment_count\nfrom fct_revenue",
+      "properties": {
+        "pf.exposures": "exec_weekly_dashboard",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance",
+        "pf.description": "Daily revenue by segment and plan. Union-compatible across sisters.",
+        "pf.grain": "one day x segment x plan"
+      }
+    }
+  ],
+  "cubes": [
+    {
+      "name": "acme_us_core",
+      "baseObject": "fct_payments",
+      "measures": [
+        {
+          "name": "active_customers",
+          "expression": "sum(case when is_active then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "Active Customers",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "aov",
+          "expression": "sum(amount) / nullif(count(payment_id), 0)",
+          "type": "DOUBLE",
+          "description": "Average Order Value",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "gross_payment_volume",
+          "expression": "sum(amount)",
+          "type": "DOUBLE",
+          "description": "Gross Payment Volume",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "payment_count",
+          "expression": "count(payment_id)",
+          "type": "DOUBLE",
+          "description": "Payments",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "revenue",
+          "expression": "sum(amount)",
+          "type": "DOUBLE",
+          "description": "Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "country_code",
+          "expression": "country_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_segment",
+          "expression": "customer_segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "payment_status",
+          "expression": "payment_status",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "plan_tier",
+          "expression": "plan_tier",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "created_at",
+          "expression": "created_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "paid_at",
+          "expression": "paid_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
 }
