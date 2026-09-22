@@ -76,7 +76,8 @@
       "Bash(pf air:*)",
       "Bash(pf tool elementary:*)",
       "Bash(edr report:*)",
-      "Bash(edr monitor:*)"
+      "Bash(edr monitor:*)",
+      "Bash(pf tool okf:*)"
     ],
     "ask": [
       "Bash(git push:*)",
