@@ -446,6 +446,26 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
 
 
 # ---------------------------------------------------------------- semantic --
+def _filter_text(f: Any) -> str:
+    """A MetricFlow filter as the semantic layer wrote it.
+
+    dbt has spelled this three ways across versions — a bare string, `{"where_filters": [...]}`,
+    and a list of those — so read all three rather than the one this repo's dbt
+    happens to emit today.
+    """
+    if not f:
+        return ""
+    if isinstance(f, str):
+        return f.strip()
+    if isinstance(f, dict):
+        parts = [str(w.get("where_sql_template") or "").strip()
+                 for w in (f.get("where_filters") or []) if isinstance(w, dict)]
+        return " AND ".join(p for p in parts if p)
+    if isinstance(f, list):
+        return " AND ".join(x for x in (_filter_text(i) for i in f) if x)
+    return ""
+
+
 def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     sm_path = root / "transform" / "target" / "semantic_manifest.json"
     if not sm_path.exists():
@@ -453,12 +473,19 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     sm = json.loads(sm_path.read_text(encoding="utf-8"))
 
     measure_owner: dict[str, str] = {}
+    #: The agg time dimension each semantic model defaults to, by model. A
+    #: metric's time column is a fact about the semantic layer and lived only in
+    #: `target/semantic_manifest.json`, which is gitignored — so a projection
+    #: that wanted it had to read an untracked file, and the OKF bundle built
+    #: from one could not be checked in a clone. Carried here, it is tracked.
+    model_time: dict[str, str] = {}
     #: What the semantic layer says a measure *is* — its aggregation and the
     #: expression it aggregates. Stored as facts, not as SQL: the graph does not
     #: know which dialect will read it, and every projection composes its own.
     measure_facts: dict[str, dict[str, Any]] = {}
     for model in sm.get("semantic_models") or []:
         model_ref = (model.get("node_relation") or {}).get("alias") or model.get("name")
+        model_time[model_ref] = (model.get("defaults") or {}).get("agg_time_dimension") or ""
         for measure in model.get("measures") or []:
             measure_owner[measure["name"]] = model_ref
             measure_facts[measure["name"]] = {
@@ -492,7 +519,13 @@ def _add_semantic(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
         props: dict[str, Any] = {"type": metric.get("type"),
                                  "description": metric.get("description") or "",
                                  "numerator": _ref(tp.get("numerator")),
-                                 "denominator": _ref(tp.get("denominator"))}
+                                 "denominator": _ref(tp.get("denominator")),
+                                 # As written in the semantic layer, not as SQL:
+                                 # the graph does not know which dialect will
+                                 # read it, and every projection translates.
+                                 "filter": _filter_text(metric.get("filter")),
+                                 "time_column": model_time.get(
+                                     measure_owner.get(measures[0], ""), "") if measures else ""}
         facts = measure_facts.get(measures[0]) if measures else None
         if facts:
             props.update(facts)

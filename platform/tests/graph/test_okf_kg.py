@@ -189,14 +189,15 @@ def test_a_model_below_the_documented_layer_is_named_but_not_linked(tmp_path: Pa
     assert "(/tables/stg_orders.md)" not in page
 
 
-def test_a_metric_with_no_page_is_still_named(tmp_path: Path) -> None:
-    """A derived metric is in the graph and not in the metric collector's list.
-    Leaving it out would let a table measured by it say it is measured by
-    nothing."""
+def test_every_metric_on_a_table_is_linked_from_its_page(tmp_path: Path) -> None:
+    """There was a second row here — "also measured by" — for metrics the graph
+    held and the metric collector dropped. The bundle takes its metrics from the
+    graph now, so the two lists cannot disagree and the row cannot fire."""
     page = okf.build_project(_demo(tmp_path), "demo", "demo-us")["tables/fct_orders.md"]
 
-    assert "**Also measured by:**" in page
-    assert "`orders_mom_change`" in page
+    assert "**Also measured by:**" not in page
+    for metric in ("order_count", "orders_mom_change"):
+        assert f"[{metric}](/metrics/{metric}.md)" in page
 
 
 def test_a_metric_page_carries_the_metric_graph_around_it(tmp_path: Path) -> None:
@@ -265,12 +266,13 @@ def test_reconcile_is_clean_when_both_were_built_together(tmp_path: Path) -> Non
 
     join = okf.reconcile(root, "demo", "demo-us")
     assert join.exercised and join.problems == []
-    # Four pages: two tables and the two concepts their keys identify. Three
-    # resolve; `concept:Customer` is not in this graph, so its page names no
-    # node — reported as exactly that rather than counted as either outcome.
-    assert (join.pages, join.resolved) == (4, 3)
+    # Six pages: two tables, the two concepts their keys identify, and the two
+    # metrics the graph holds. Five resolve; `concept:Customer` is not in this
+    # graph, so its page names no node — reported as exactly that rather than
+    # counted as either outcome.
+    assert (join.pages, join.resolved) == (6, 5)
     assert join.undocumented == ["stg_orders"]
-    assert "3/3 page(s) resolve in the graph · 1 name no node" in join.render()
+    assert "5/5 page(s) resolve in the graph · 1 name no node" in join.render()
     assert "1 graph model(s) below the documented layer" in join.render()
     assert join.render().startswith("✓")
 
@@ -386,6 +388,85 @@ def test_the_graph_says_where_a_node_is_documented(tmp_path: Path) -> None:
 
     okf.write_project(root, "demo", "demo-us")
     assert "documented in okf/tables/fct_orders.md" in kg_neighbors(graph_path, "model:fct_orders")
+
+
+# ------------------------------------------- nothing but tracked artefacts ---
+def test_a_bundle_builds_the_same_in_a_checkout_that_has_never_run_dbt(tmp_path: Path) -> None:
+    """The failure this guards: the metric pages came from
+    `transform/target/semantic_manifest.json`, which is gitignored. The bundle
+    was green on a machine that had built the project and told every CI runner
+    that fifteen committed metric pages were "no longer in the semantic layer".
+
+    So the test is not "metrics come from the graph" — it is that the projection
+    reads nothing git does not carry. Build it from a tree holding the tracked
+    inputs alone and the bytes have to match.
+    """
+    import shutil
+
+    root = _demo(tmp_path)
+    pdir = root / "groups" / "demo" / "projects" / "demo-us"
+    # what a build leaves behind, and a clone never has
+    (pdir / "transform" / "target").mkdir(parents=True)
+    (pdir / "transform" / "target" / "semantic_manifest.json").write_text(
+        json.dumps({"metrics": [{"name": "ghost", "type": "simple"}], "semantic_models": []}), encoding="utf-8"
+    )
+    with_target = okf.build_project(root, "demo", "demo-us")
+
+    bare = tmp_path / "bare"
+    for rel in ("mdl/mdl.json", "kg/graph.json"):
+        dst = bare / "groups" / "demo" / "projects" / "demo-us" / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(pdir / rel, dst)
+    without_target = okf.build_project(bare, "demo", "demo-us")
+
+    assert with_target == without_target
+    assert not any("ghost" in k for k in with_target), "a gitignored file reached the bundle"
+
+
+def test_every_metric_the_graph_holds_is_documented(tmp_path: Path) -> None:
+    """The collector drops a metric whose measure it cannot turn into SQL, which
+    is right for a dashboard that has to run the query and wrong for a bundle
+    that has to describe it."""
+    specs = okf.metric_specs(okf.load_graph(_demo(tmp_path) / "groups" / "demo" / "projects" / "demo-us"))
+
+    assert sorted(s.name for s in specs) == ["order_count", "orders_mom_change"]
+    assert [s.model for s in specs if s.name == "order_count"] == ["fct_orders"]
+
+
+def test_a_metric_built_on_another_metric_inherits_its_model(tmp_path: Path) -> None:
+    """A ratio hangs off other metrics and has no `measures` edge of its own;
+    asking the graph directly says "no model" about a metric plainly built on
+    one, and the page then documents a measure with nothing under it."""
+    specs = {s.name: s for s in okf.metric_specs(okf.load_graph(
+        _demo(tmp_path) / "groups" / "demo" / "projects" / "demo-us"))}
+
+    assert specs["orders_mom_change"].model == "fct_orders"
+
+
+@pytest.mark.parametrize(("group", "project"), _projects(), ids=lambda x: x if isinstance(x, str) else "")
+def test_no_committed_bundle_depends_on_an_untracked_file(group: str, project: str) -> None:
+    """The same guarantee, against the real bundles: rebuild each one from the
+    tracked inputs alone and compare with what is committed."""
+    import shutil
+    import tempfile
+
+    pdir = ROOT / "groups" / group / "projects" / project
+    if not (pdir / okf.OKF_REL / "index.md").is_file():
+        pytest.skip("no bundle")
+    bare = Path(tempfile.mkdtemp()) / "bare"
+    for rel in ("mdl/mdl.json", okf.KG_REL.as_posix()):
+        src = pdir / rel
+        if src.is_file():
+            dst = bare / "groups" / group / "projects" / project / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src, dst)
+    if (ROOT / "groups" / group / "ontology").is_dir():
+        shutil.copytree(ROOT / "groups" / group / "ontology", bare / "groups" / group / "ontology")
+
+    for rel, text in okf.build_project(bare, group, project).items():
+        committed = pdir / okf.OKF_REL / rel
+        assert committed.is_file(), f"{group}/{project}: {rel} is projected and not committed"
+        assert committed.read_text(encoding="utf-8") == text, f"{group}/{project}: {rel} differs in a bare checkout"
 
 
 # ----------------------------------------------- every project, as committed --

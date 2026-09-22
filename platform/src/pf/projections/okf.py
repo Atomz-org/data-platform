@@ -235,12 +235,6 @@ def gather(root: str | Path, group: str, project: str) -> Facts:
         )
         f.relationships = [r for r in mdl.get("relationships") or [] if isinstance(r, dict)]
     try:
-        from pf.projections.evidence import collect_metrics
-
-        f.metrics = sorted(collect_metrics(pdir), key=lambda m: m.name)
-    except Exception:  # noqa: BLE001 — a project with no semantic layer has no metrics
-        f.metrics = []
-    try:
         from pf.ontology.model import load_ontology, load_project_ontology
 
         f.onto = load_project_ontology(root, group, project)
@@ -248,7 +242,100 @@ def gather(root: str | Path, group: str, project: str) -> Facts:
     except Exception:  # noqa: BLE001 — a malformed ontology is `pf check`'s to report
         f.onto = None
     f.graph = load_graph(pdir)
+    f.metrics = metric_specs(f.graph)
     return f
+
+
+def _inherited_time(gf: GraphFacts, name: str, seen: set[str] | None = None) -> str:
+    """A ratio's time column is its components' — it aggregates over the same time."""
+    seen = seen or set()
+    if name in seen:
+        return ""
+    seen.add(name)
+    for component in gf.upstream(f"metric:{name}", "Metric"):
+        cname = str(component.get("name") or "")
+        declared = str((component.get("props") or {}).get("time_column") or "")
+        if declared:
+            return declared
+        found = _inherited_time(gf, cname, seen)
+        if found:
+            return found
+    return ""
+
+
+def metric_specs(gf: GraphFacts | None) -> list[Any]:
+    """Every metric the graph holds, as specs a page can be rendered from.
+
+    From the graph rather than from `pf.projections.evidence.collect_metrics`,
+    whose only input is `transform/target/semantic_manifest.json`. That file is
+    gitignored, so a bundle built through the collector documented whatever the
+    last `dbt parse` on that machine happened to leave behind: green on a laptop
+    that has built everything, and on a runner that has built nothing it read as
+    "these fifteen metric pages are no longer in the semantic layer". The graph
+    carries the same facts and git carries the graph.
+
+    Every Metric node gets a spec. The collector drops a metric whose measure it
+    cannot turn into SQL, which is the right rule for a dashboard that has to
+    run the query and the wrong one for a bundle that has to describe it — a
+    metric the platform defines and cannot render is exactly the one worth
+    documenting.
+    """
+    if gf is None:
+        return []
+    from pf.projections.evidence import MetricSpec, agg_sql, translate_filter
+
+    def owner(name: str, seen: set[str] | None = None) -> str:
+        """The model a metric measures, directly or through its components.
+
+        A ratio or a derived metric hangs off other metrics and has no `measures`
+        edge of its own, so asking the graph directly says "no model" about a
+        metric that is plainly built on one. Walk up until a component names it.
+        """
+        seen = seen or set()
+        if name in seen:
+            return ""
+        seen.add(name)
+        direct = gf.upstream(f"metric:{name}", "Model", edge="measures")
+        if direct:
+            return str(direct[0].get("name") or "")
+        for component in gf.upstream(f"metric:{name}", "Metric"):
+            found = owner(str(component.get("name") or ""), seen)
+            if found:
+                return found
+        return ""
+
+    out = []
+    for node in sorted(gf.nodes.values(), key=lambda n: str(n.get("name") or "")):
+        if node.get("kind") != "Metric":
+            continue
+        props = node.get("props") or {}
+        name = str(node.get("name") or "")
+        model = owner(name)
+        dims = [
+            str(d.get("name") or "")
+            for d in gf.downstream(f"model:{model}", "Dimension", edge="grouped_by")
+            if (d.get("props") or {}).get("type") != "time"
+        ] if model else []
+        expression = ""
+        if props.get("agg"):
+            expression = agg_sql(str(props["agg"]), str(props.get("expr") or name),
+                                 props.get("agg_params") or {}) or ""
+        out.append(
+            MetricSpec(
+                name=name,
+                label=str(node.get("label") or name),
+                kind=str(props.get("type") or "simple"),
+                model=model,
+                expression=expression,
+                filter_sql=translate_filter(str(props.get("filter") or "")),
+                time_column=str(props.get("time_column") or _inherited_time(gf, name)),
+                dimensions=sorted(dict.fromkeys(dims)),
+                numerator=str(props.get("numerator") or ""),
+                denominator=str(props.get("denominator") or ""),
+                description=str(props.get("description") or ""),
+            )
+        )
+    return out
 
 
 _JOIN = re.compile(r"^\s*(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)\s*$")
@@ -360,8 +447,7 @@ def _ref(name: str, have: set[str], folder: str) -> str:
 MAX_READERS = 6
 
 
-def _lineage(gf: GraphFacts, node_id: str, have_table: set[str], have_metric: set[str],
-             listed: set[str]) -> list[str]:
+def _lineage(gf: GraphFacts, node_id: str, have_table: set[str]) -> list[str]:
     rows = []
     up = gf.upstream(node_id, "Model") + gf.upstream(node_id, "Table")
     if up:
@@ -378,15 +464,6 @@ def _lineage(gf: GraphFacts, node_id: str, have_table: set[str], have_metric: se
     if down:
         rows.append(
             "* **Downstream:** " + ", ".join(_ref(str(n.get("name") or ""), have_table, "tables") for n in down)
-        )
-    # Only the metrics the page has not already listed: the graph holds derived
-    # metrics (a month-on-month change) that the metric collector does not, and
-    # a table that measures one should say so rather than leave it invisible.
-    mets = [n for n in gf.downstream(node_id, "Metric", edge="measures") if str(n.get("name") or "") not in listed]
-    if mets:
-        rows.append(
-            "* **Also measured by:** "
-            + ", ".join(_ref(str(n.get("name") or ""), have_metric, "metrics") for n in mets)
         )
     exps = gf.downstream(node_id, "Exposure")
     if exps:
@@ -516,9 +593,10 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
     have_metric = {str(ms.name) for ms in f.metrics}
     files["index.md"] = _index(f, bundle, concept_of, concepts_used, over_cap, models.MAX_TABLES)
     if bundle is not None:
-        metrics_on = {}
+        metrics_on: dict[str, list[str]] = {}
         for ms in f.metrics:
-            metrics_on.setdefault(ms.model, []).append(ms.name)
+            if ms.model:  # a derived metric sits on another metric, not on a model
+                metrics_on.setdefault(ms.model, []).append(ms.name)
         by_name = {str(m["name"]): m for m in f.models}
         for t in bundle.tables:
             files[f"tables/{t.name}.md"] = _table_file(
@@ -531,7 +609,6 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
                 metrics_on.get(t.name, []),
                 f.graph,
                 have_table,
-                have_metric,
             )
     for cls in concepts_used:
         files[f"concepts/{cls}.md"] = _concept_file(
@@ -621,7 +698,6 @@ def _table_file(
     metrics: list[str],
     gf: GraphFacts | None = None,
     have_table: set[str] | None = None,
-    have_metric: set[str] | None = None,
 ) -> str:
     props = m.get("properties") or {}
     front: dict[str, Any] = {
@@ -674,7 +750,7 @@ def _table_file(
         ]
     node_id = f"model:{t.name}"
     if gf is not None and gf.has(node_id):
-        body += _lineage(gf, node_id, have_table or set(), have_metric or set(), set(metrics))
+        body += _lineage(gf, node_id, have_table or set())
         body += _governance(gf, [node_id, *gf.columns_of(node_id)], concept)
     return _front(front) + "\n" + "\n".join(body) + "\n"
 
