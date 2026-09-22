@@ -88,6 +88,14 @@ pf tool okf serve                          # the weaver's own API, locally
 Confidence is a fact, not a guess: `1.00` where the platform holds a
 declaration, `0.00` where it holds none. A `0.00` is a column to annotate.
 
+## Which tables are in it
+
+The ones the semantic layer exposes: the marts layer, minus what the project
+marks `meta: {semantic: false}` in dbt, plus what it marks `true` and any mart
+an exposure names. A bundle holds at most 100 tables — a repository whose
+`marts/` is a corpus rather than a surface declares which models are the
+surface, and `pf semantic mdl --check` keeps the manifest honest about it.
+
 ## Joined to the knowledge graph
 
 Each page carries `okf_x_kg_node` — the node in `kg/graph.json` it documents —

@@ -551,7 +551,8 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
         lines.append(
             f"_{over_cap} models are exposed by this project's semantic layer — more than the {cap} an OKF v0.1 "
             f"bundle may hold, so no table is documented here. They are in `mdl/mdl.json`, and every one of them "
-            f"is in the knowledge graph. Narrow what the marts layer exposes to get table pages back._"
+            f"is in the knowledge graph. Mark what belongs in the semantic layer with `meta: {{semantic: true}}` "
+            f"in dbt, and the rest `false`, to get table pages back._"
         )
     elif bundle is None:
         lines.append("_No models in the semantic layer yet — `pf seed`, then `pf semantic mdl`._")

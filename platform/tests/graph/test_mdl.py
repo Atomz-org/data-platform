@@ -588,6 +588,75 @@ def test_the_tool_claims_its_directory_and_is_registered() -> None:
     assert "tool_okf" in keys, "okf/ would be an unmapped directory in every project"
 
 
+# ------------------------------------------- what the layer exposes ----------
+#
+# The layer alone cannot tell a BI surface from a corpus: an adopted repository
+# with 996 models under `marts/` projected all 996 — a manifest no one can read
+# and a bundle the OKF spec refuses to hold. The project declares instead, in
+# dbt `meta` where the model is, and an exposure counts as a declaration.
+def _exposed(pdir: Path) -> list[str]:
+    from pf.kg.store import open_graph
+    from pf.projections.mdl import exposed_models
+
+    with open_graph(pdir / "kg" / "graph.duckdb", read_only=True) as g:
+        return sorted(m.name for m in exposed_models(g))
+
+
+def test_a_project_that_declares_nothing_exposes_the_marts_layer(tmp_path: Path) -> None:
+    """Nothing shrinks by default: every project that never heard of this flag
+    keeps the layer it always got."""
+    pdir = _commodity_project(tmp_path)
+    assert _exposed(pdir) == ["dim_commodities", "fct_commodity_prices_daily"]
+
+
+def test_a_mart_marked_out_leaves_the_semantic_layer(tmp_path: Path) -> None:
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    corpus, _ = _mart("adv_exercise_42", {"id": KEY})
+    corpus[0].props["semantic"] = False
+    _write(pdir, [_mart("dim_commodities", {"commodity_id": KEY}), (corpus, [])])
+
+    assert _exposed(pdir) == ["dim_commodities"]
+
+
+def test_an_exposure_is_a_declaration_that_the_mart_is_consumed(tmp_path: Path) -> None:
+    """Naming a model in an exposure is the project stating that people read it,
+    which is the same statement the flag makes — so it counts as one, and a
+    directory-wide `semantic: false` does not hide a mart someone consumes."""
+    from pf.kg.store import Edge, Node
+
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    read, _ = _mart("rpt_board", {"id": KEY})
+    read[0].props["semantic"] = False
+    unread, _ = _mart("adv_exercise_42", {"id": KEY})
+    unread[0].props["semantic"] = False
+    exposure = Node(id="exposure:board", kind="Exposure", name="board", layer="consumption")
+    _write(pdir, [(read, []), (unread, []),
+                  ([exposure], [Edge(src="model:rpt_board", dst="exposure:board", kind="feeds")])])
+
+    assert _exposed(pdir) == ["rpt_board"]
+
+
+def test_a_model_marked_in_joins_the_layer_from_wherever_it_sits(tmp_path: Path) -> None:
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    staged, _ = _mart("stg_orders", {"id": KEY})
+    staged[0].layer = "staging"
+    staged[0].props["semantic"] = True
+    _write(pdir, [(staged, []), _mart("dim_commodities", {"commodity_id": KEY})])
+
+    assert _exposed(pdir) == ["dim_commodities", "stg_orders"]
+
+
+def test_the_declaration_travels_from_dbt_into_the_graph(tmp_path: Path) -> None:
+    """Including `false`, which the name-declaring helper drops as falsy — and
+    dropping it is how a corpus stays in the semantic layer."""
+    from pf.kg.build import _declared_flag
+
+    assert _declared_flag({"semantic": False}, "semantic") == {"semantic": False}
+    assert _declared_flag({"semantic": True}, "semantic") == {"semantic": True}
+    assert _declared_flag({}, "semantic") == {}  # absent stays absent: the graph does not churn
+    assert _declared_flag({"semantic": "yes"}, "semantic") == {}  # a flag is a boolean or it is nothing
+
+
 # ------------------------------------------------ the manifest, as a gate ----
 #
 # The MDL was the one projection in the chain nothing compared. `kg/graph.json`

@@ -337,6 +337,17 @@ def _declared(meta: dict[str, Any] | None, key: str) -> dict[str, str]:
     return {key: str(value)} if value else {}
 
 
+def _declared_flag(meta: dict[str, Any] | None, key: str) -> dict[str, bool]:
+    """A declared boolean, including a declared `false`.
+
+    `_declared` drops anything falsy, which is right for a name and wrong for a
+    flag: `semantic: false` is the whole point of writing it down. Absent stays
+    absent, so a project that declares nothing keeps a byte-identical graph.
+    """
+    value = (meta or {}).get(key)
+    return {key: bool(value)} if isinstance(value, bool) else {}
+
+
 def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
     manifest_path = root / "transform" / "target" / "manifest.json"
     if not manifest_path.exists():
@@ -371,6 +382,11 @@ def _add_dbt(root: Path, nodes: list[Node], edges: list[Edge]) -> None:
                     # `dim_commodities`. Written only when declared, so projects
                     # that declare nothing keep a byte-identical graph.
                     **_declared(node.get("meta"), "concept"),
+                    # Whether this model belongs in the semantic layer, when the
+                    # project says so. An adopted repository can hold a thousand
+                    # models under `marts/` that are exercises rather than a BI
+                    # surface, and the layer alone cannot tell them apart.
+                    **_declared_flag(node.get("meta"), "semantic"),
                 },
             ))
             for col_name, col in (node.get("columns") or {}).items():

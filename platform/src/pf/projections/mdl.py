@@ -66,6 +66,33 @@ def _source(root: Path, tracked: bool = False):
     return open_graph(db, read_only=True)
 
 
+def exposed_models(g, layer: str = "marts") -> list[Node]:
+    """Which models the semantic layer exposes.
+
+    The marts layer, minus what the project marked `semantic: false`, plus what
+    it marked `semantic: true` and any mart an exposure names.
+
+    The layer alone was the whole rule, and it cannot tell a BI surface from a
+    corpus: an adopted repository with 996 models under `marts/` projected all
+    996, which is a manifest no one can read and a knowledge bundle the OKF spec
+    refuses to hold. So the project declares, in dbt `meta` where the model is —
+    and an exposure counts as a declaration, because naming a model in one is
+    the project stating that people consume it.
+
+    Nothing shrinks by default: a project that declares no `semantic` key gets
+    the layer it always got.
+    """
+    named = {e.src for e in g.edges() if e.kind == "feeds" and e.dst.startswith("exposure:")}
+    out = []
+    for m in g.nodes("Model"):
+        declared = m.props.get("semantic")
+        if declared is True:
+            out.append(m)  # declared in, whatever layer it sits in
+        elif m.layer == layer and (declared is None or m.id in named):
+            out.append(m)
+    return out
+
+
 def _identity_column(model: Node, columns: list[Node]) -> str | None:
     """The column a join targets: an explicit key role, else a *_id convention."""
     for c in columns:
@@ -81,9 +108,10 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
                    layer: str = "marts", tracked: bool = False) -> dict[str, Any]:
     """Build an MDL manifest from one project's graph.
 
-    Only `marts` are exposed by default. Staging is an implementation detail; a
-    semantic layer that exposes it invites the exact ad-hoc SQL the metrics layer
-    exists to prevent.
+    Only `marts` are exposed by default — staging is an implementation detail,
+    and a semantic layer that exposes it invites the exact ad-hoc SQL the metrics
+    layer exists to prevent — and a project narrows or widens that with the
+    `semantic` flag in dbt `meta`. See `exposed_models`.
     """
     root = Path(project_dir)
     onto = _ontology(root, group)
@@ -94,7 +122,7 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
     enum_definitions: list[dict[str, Any]] = []
 
     with _source(root, tracked) as g:
-        wanted = [m for m in g.nodes("Model") if m.layer == layer]
+        wanted = exposed_models(g, layer)
         by_name = {m.name: m for m in wanted}
         cols_of: dict[str, list[Node]] = {}
 
