@@ -1,6 +1,6 @@
 ---
 name: evidence-travels-with-features
-description: Every new feature lands with the test or eval that proves it, in the same commit; gate.yaml tests_required enforces it (new source without evidence is refused, modified is warned); never make the suite green by deleting or loosening a check
+description: Feature and its test/eval land in one commit (gate.yaml tests_required)
 type: feedback
 status: active
 agent: claude-code
