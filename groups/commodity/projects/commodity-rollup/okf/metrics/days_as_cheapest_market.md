@@ -6,6 +6,7 @@ description: Days a market was the cheapest place to land a commodity. Group by 
 okf_x_kind: simple
 okf_x_model: fct_market_spreads_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:days_as_cheapest_market
 ---
 
 # Definition

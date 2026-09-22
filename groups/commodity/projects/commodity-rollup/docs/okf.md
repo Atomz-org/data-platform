@@ -11,6 +11,7 @@ is written, and never hand-edited.
 ```bash
 pf tool okf build commodity commodity-rollup     # regenerate from the semantic layer
 pf tool okf check commodity commodity-rollup     # stale or non-conformant? exits 1
+pf tool okf graph commodity commodity-rollup     # does every page resolve in kg/graph.json?
 pf tool okf weave commodity commodity-rollup     # ask the weaver for what the platform lacks
 pf tool okf serve                          # the weaver's own API, locally
 ```
@@ -23,9 +24,20 @@ pf tool okf serve                          # the weaver's own API, locally
 | a column's definition | the ontology role on it (`contracts/annotations.yaml`) |
 | the concept a table instantiates | the relation the MDL join names, else the class whose identity is the key |
 | a metric | `transform/models/semantic/` |
+| lineage, policies, decisions on a page | this project's `kg/graph.json` |
 
 Confidence is a fact, not a guess: `1.00` where the platform holds a
 declaration, `0.00` where it holds none. A `0.00` is a column to annotate.
+
+## Joined to the knowledge graph
+
+Each page carries `okf_x_kg_node` — the node in `kg/graph.json` it documents —
+and states what only the graph holds: what feeds the table, what reads it
+(including the Evidence dashboards), the policies that govern its concept and
+the decisions recorded about it. The graph answers back: `kg_neighbors` names
+the page that documents a node, and `pf impact` lists the pages a change
+stales. Rebuild both together — `pf kg build` then `pf tool okf build` — or
+`pf tool okf check` fails on a page whose node the graph no longer holds.
 
 ## Connected to the platform
 

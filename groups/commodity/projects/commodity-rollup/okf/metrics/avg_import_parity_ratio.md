@@ -6,6 +6,7 @@ description: Landed over benchmark, both in USD per quote unit — 1.15 means la
 okf_x_kind: ratio
 okf_x_model: fct_landed_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:avg_import_parity_ratio
 ---
 
 # Definition

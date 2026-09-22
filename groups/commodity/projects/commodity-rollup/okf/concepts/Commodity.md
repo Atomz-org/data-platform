@@ -6,6 +6,7 @@ description: A traded raw material with an international benchmark, quoted per a
 okf_x_defined_in: group
 okf_x_parent: Product
 okf_x_identity: commodity_id
+okf_x_kg_node: concept:Commodity
 ---
 
 Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
@@ -30,3 +31,7 @@ Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister o
 * Order contains Product — Needs a line-item bridge in any physical model.
 * PriceObservation prices Commodity — Every benchmark price belongs to exactly one commodity.
 * Subscription for product Product — 
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

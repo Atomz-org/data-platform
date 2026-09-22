@@ -5,6 +5,7 @@ description: One benchmark price for one commodity at one point in time. Never s
 okf_x_defined_in: group
 okf_x_parent: Event
 okf_x_identity: quote_id
+okf_x_kg_node: concept:PriceObservation
 ---
 
 Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
@@ -30,3 +31,11 @@ Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister o
 
 * PriceObservation is landed in Market — A landed price is one market's price; the benchmark it derives from belongs to none.
 * PriceObservation prices Commodity — Every benchmark price belongs to exactly one commodity.
+
+# Raw tables that instantiate it
+
+* `sisters.landed_prices`
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

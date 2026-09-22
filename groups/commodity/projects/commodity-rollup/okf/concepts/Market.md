@@ -6,6 +6,7 @@ description: A jurisdiction commodities are landed in — one sister project, on
 okf_x_defined_in: group
 okf_x_parent: Location
 okf_x_identity: market_code
+okf_x_kg_node: concept:Market
 ---
 
 Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
@@ -26,3 +27,7 @@ Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister o
 
 * Customer located in Location — 
 * PriceObservation is landed in Market — A landed price is one market's price; the benchmark it derives from belongs to none.
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.
