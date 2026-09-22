@@ -6,6 +6,7 @@ description: Days a landed price exists — never for commodities this market pr
 okf_x_kind: simple
 okf_x_model: fct_landed_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:landed_price_days
 ---
 
 # Definition

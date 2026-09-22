@@ -9,6 +9,7 @@ okf_x_concept: null
 okf_x_layer: marts
 okf_x_grain: one currency per calendar day
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_fx_rates_daily
 ---
 
 # Schema
@@ -24,3 +25,7 @@ okf_x_columns_withheld: 0
 | `rate_date` | TIMESTAMP | event_time | When the event occurred. Candidate agg time dimension. | 1.00 |
 | `usd_rate` | DECIMAL | exchange_rate | Units of quote currency per one unit of base currency. | 1.00 |
 | `usd_rate_change_pct` | DOUBLE |  | — | 0.00 |
+
+# Lineage
+
+* **Upstream:** `int_fx_rates__daily`

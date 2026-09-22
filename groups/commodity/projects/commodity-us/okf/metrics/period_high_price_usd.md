@@ -5,6 +5,7 @@ description: Highest traded price in the period, USD per quote unit. Group by co
 okf_x_kind: simple
 okf_x_model: fct_commodity_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:period_high_price_usd
 ---
 
 # Definition
