@@ -6,6 +6,7 @@ description: Building block for avg_landed_price_usd. A sum of prices means noth
 okf_x_kind: simple
 okf_x_model: fct_landed_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:landed_usd_total
 ---
 
 # Definition

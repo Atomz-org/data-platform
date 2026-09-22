@@ -5,6 +5,7 @@ description: Building block for avg_spread_to_cheapest_usd.
 okf_x_kind: simple
 okf_x_model: fct_market_spreads_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:spread_usd_total
 ---
 
 # Definition

@@ -11,6 +11,7 @@ okf_x_concept: PriceObservation
 okf_x_layer: marts
 okf_x_grain: one commodity per market per price date
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_landed_prices_daily
 ---
 
 # Schema
@@ -46,3 +47,13 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 * [benchmark_usd_total_where_landed](/metrics/benchmark_usd_total_where_landed.md)
 * [landed_usd_days](/metrics/landed_usd_days.md)
 * [landed_usd_total](/metrics/landed_usd_total.md)
+
+# Lineage
+
+* **Upstream:** `int_landed_prices__usd_per_quote_unit`
+* **Downstream:** [fct_market_spreads_daily](/tables/fct_market_spreads_daily.md), [rpt_market_comparison_board](/tables/rpt_market_comparison_board.md)
+* **Read by:** `report_index` (data-platform), `report_metrics_avg_import_parity_ratio` (data-platform), `report_metrics_avg_landed_price_usd` (data-platform), `report_metrics_benchmark_usd_total_where_landed` (data-platform), `report_metrics_landed_usd_days` (data-platform), `report_metrics_landed_usd_total` (data-platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

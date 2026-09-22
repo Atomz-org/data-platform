@@ -9,6 +9,7 @@ okf_x_concept: Market
 okf_x_layer: marts
 okf_x_grain: one market
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:dim_markets
 ---
 
 # Schema
@@ -31,3 +32,13 @@ okf_x_columns_withheld: 0
 # Concept
 
 Instantiates [Market](/concepts/Market.md).
+
+# Lineage
+
+* **Upstream:** `stg_sisters__landed_prices`
+* **Downstream:** [rpt_market_comparison_board](/tables/rpt_market_comparison_board.md)
+* **Read by:** `report_market_comparison` (data-platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

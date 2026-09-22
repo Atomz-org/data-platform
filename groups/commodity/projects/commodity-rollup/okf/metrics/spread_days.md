@@ -5,6 +5,7 @@ description: Days at least two markets priced the commodity.
 okf_x_kind: simple
 okf_x_model: fct_market_spreads_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:spread_days
 ---
 
 # Definition

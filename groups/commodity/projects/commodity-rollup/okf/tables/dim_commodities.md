@@ -9,6 +9,7 @@ okf_x_concept: Commodity
 okf_x_layer: marts
 okf_x_grain: one commodity
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:dim_commodities
 ---
 
 # Schema
@@ -28,3 +29,12 @@ okf_x_columns_withheld: 0
 # Concept
 
 Instantiates [Commodity](/concepts/Commodity.md).
+
+# Lineage
+
+* **Upstream:** `stg_sisters__landed_prices`
+* **Downstream:** [rpt_market_comparison_board](/tables/rpt_market_comparison_board.md)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.
