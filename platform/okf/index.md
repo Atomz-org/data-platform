@@ -4,6 +4,7 @@ name: Platform ontology
 okf_x_scope: platform
 okf_x_concepts: 16
 okf_x_roles: 16
+okf_x_relations: 14
 ---
 
 # Platform ontology
@@ -49,3 +50,20 @@ declared once, for every sister.
 * [surrogate_key](/roles/surrogate_key.md) - Generated key
 * [valid_from](/roles/valid_from.md) - SCD2 interval start.
 * [valid_to](/roles/valid_to.md) - SCD2 interval end.
+
+# Relations
+
+* [contract_signed_by_organization](/relations/contract_signed_by_organization.md) - Contract signed by Organization
+* [customer_belongs_to_organization](/relations/customer_belongs_to_organization.md) - Customer belongs to Organization
+* [customer_holds_subscription](/relations/customer_holds_subscription.md) - Customer holds Subscription
+* [customer_located_in_location](/relations/customer_located_in_location.md) - Customer located in Location
+* [customer_participates_in_interaction](/relations/customer_participates_in_interaction.md) - Customer participates in Interaction
+* [customer_pays_payment](/relations/customer_pays_payment.md) - Customer pays Payment
+* [customer_places_order](/relations/customer_places_order.md) - Customer places Order
+* [order_contains_product](/relations/order_contains_product.md) - Order contains Product
+* [order_settled_by_payment](/relations/order_settled_by_payment.md) - Order settled by Payment
+* [payment_denominated_in_currency](/relations/payment_denominated_in_currency.md) - Payment denominated in Currency
+* [payment_reversed_by_refund](/relations/payment_reversed_by_refund.md) - Payment reversed by Refund
+* [subscription_for_product](/relations/subscription_for_product.md) - Subscription for product Product
+* [subscription_metered_by_usage](/relations/subscription_metered_by_usage.md) - Subscription metered by Usage
+* [subscription_settled_by_payment](/relations/subscription_settled_by_payment.md) - Subscription settled by Payment

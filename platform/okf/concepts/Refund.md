@@ -2,6 +2,7 @@
 type: Concept
 title: Refund
 description: Negative movement of money against a prior payment.
+okf_x_tier: platform
 okf_x_parent: Event
 okf_x_abstract: false
 okf_x_identity: refund_id
@@ -18,4 +19,4 @@ okf_x_identity: refund_id
 
 # Relations
 
-* Payment reversed by Refund — 
+* [payment_reversed_by_refund](/relations/payment_reversed_by_refund.md) — Payment reversed by Refund

@@ -2,6 +2,7 @@
 type: Concept
 title: Subscription
 description: A recurring agreement with a plan, term and status.
+okf_x_tier: platform
 okf_x_parent: Agreement
 okf_x_abstract: false
 okf_x_identity: subscription_id
@@ -21,7 +22,7 @@ okf_x_identity: subscription_id
 
 # Relations
 
-* Customer holds Subscription — The spine of any recurring-revenue model.
-* Subscription for product Product — 
-* Subscription metered by Usage — 
-* Subscription settled by Payment — 
+* [customer_holds_subscription](/relations/customer_holds_subscription.md) — Customer holds Subscription
+* [subscription_for_product](/relations/subscription_for_product.md) — Subscription for product Product
+* [subscription_metered_by_usage](/relations/subscription_metered_by_usage.md) — Subscription metered by Usage
+* [subscription_settled_by_payment](/relations/subscription_settled_by_payment.md) — Subscription settled by Payment

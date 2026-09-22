@@ -2,6 +2,7 @@
 type: Role
 title: free_text
 description: Unstructured text. Never a dimension.
+okf_x_tier: platform
 okf_x_datatype: string
 okf_x_pii: false
 okf_x_review: null
