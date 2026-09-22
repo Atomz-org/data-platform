@@ -7,8 +7,9 @@ okf_x_platform_bundle: ../../../../../platform/okf/index.md
 okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 1088
 okf_x_tables: 0
-okf_x_concepts: 0
+okf_x_concepts: 7
 okf_x_metrics: 15
+okf_x_tables_over_cap: 996
 ---
 
 # jaffle/jaffle-shop
@@ -21,15 +22,21 @@ confidence `0.00` is one the platform does not hold yet; declare it in
 
 The concepts below are the platform's, shared by every sister: [Platform ontology](../../../../../platform/okf/index.md).
 
-Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 1088 model(s); the 0 below are the ones the semantic layer projects to BI.
+Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 1088 model(s); 996 reach the BI layer, more than a bundle may hold — see below.
 
 # Tables
 
-_No models in the semantic layer yet — `pf seed`, then `pf semantic mdl`._
+_996 models are exposed by this project's semantic layer — more than the 100 an OKF v0.1 bundle may hold, so no table is documented here. They are in `mdl/mdl.json`, and every one of them is in the knowledge graph. Narrow what the marts layer exposes to get table pages back._
 
 # Concepts
 
-_none reached by a table_
+* [Contract](/concepts/Contract.md)
+* [Customer](/concepts/Customer.md)
+* [Employee](/concepts/Employee.md)
+* [Location](/concepts/Location.md)
+* [Order](/concepts/Order.md)
+* [Product](/concepts/Product.md)
+* [Refund](/concepts/Refund.md)
 
 # Metrics
 
