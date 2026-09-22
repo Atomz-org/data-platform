@@ -167,7 +167,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 
 **Tools enabled**, and what each wires in:
 
-- `okf` — Open Knowledge Format: the semantic layer as portable, validated context for agents. (from the group; denies 6; a Dagster asset; a dev server on port 8010/docs)
+- `okf` — Open Knowledge Format: the semantic layer as portable, validated context for agents. (from the group; denies 7; a Dagster asset; a dev server on port 8010/docs)
 - `openmetadata` — Catalogue: publish the ontology, dbt lineage and review findings. (from the group; denies 3; a Dagster asset; a dev server on port 8585/)
 - `recce` — dbt PR review — diff a change against a captured baseline. (from the group; denies 3; impact-gates 1; CI `recce`; a Dagster asset; a dev server on port 8000/)
 - `wren` — MDL semantic layer — project it, inspect it, query through it. (from the group; denies 2; a Dagster asset)

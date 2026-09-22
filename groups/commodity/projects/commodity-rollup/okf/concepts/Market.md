@@ -7,9 +7,10 @@ okf_x_defined_in: group
 okf_x_parent: Location
 okf_x_identity: market_code
 okf_x_kg_node: concept:Market
+okf_x_group_concept: ../../../../okf/concepts/Market.md
 ---
 
-Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
+Declared by this family: [Market](../../../../okf/concepts/Market.md) in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
 
 # Instantiated by
 

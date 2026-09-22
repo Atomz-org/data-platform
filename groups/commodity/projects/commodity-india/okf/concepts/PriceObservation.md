@@ -6,9 +6,10 @@ okf_x_defined_in: group
 okf_x_parent: Event
 okf_x_identity: quote_id
 okf_x_kg_node: concept:PriceObservation
+okf_x_group_concept: ../../../../okf/concepts/PriceObservation.md
 ---
 
-Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
+Declared by this family: [PriceObservation](../../../../okf/concepts/PriceObservation.md) in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
 
 # Instantiated by
 

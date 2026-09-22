@@ -7,9 +7,10 @@ okf_x_defined_in: group
 okf_x_parent: Product
 okf_x_identity: commodity_id
 okf_x_kg_node: concept:Commodity
+okf_x_group_concept: ../../../../okf/concepts/Commodity.md
 ---
 
-Declared in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
+Declared by this family: [Commodity](../../../../okf/concepts/Commodity.md) in `groups/commodity/ontology/extension.yaml`, shared by every sister of `commodity`.
 
 # Instantiated by
 
