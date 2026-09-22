@@ -201,13 +201,23 @@ def test_the_pre_commit_gate_sees_renames() -> None:
     keys on.
     """
     hook = REPO_ROOT / "platform" / "hooks" / "pre_commit.sh"
-    filters = [
-        line for line in hook.read_text().splitlines() if "--diff-filter=" in line
-    ]
+    lines = hook.read_text().splitlines()
+    filters = [line for line in lines if "--diff-filter=" in line]
     assert filters, "the pre-commit hook no longer filters staged paths"
     for line in filters:
-        letters = line.split("--diff-filter=")[1].split()[0].strip('"\'')
+        letters = line.split("--diff-filter=")[1].split()[0].strip('"\')')
+        if line.lstrip().startswith("ADDED="):
+            # A different question. The added subset feeds `tests_required`,
+            # which refuses a *new* source file without evidence and only warns
+            # on a changed one. A rename is a changed path, not a new one — so
+            # this filter must be `A` and nothing else, or `git mv` on a module
+            # would be refused for lacking a test it already has.
+            assert letters == "A", f"the added subset must be --diff-filter=A, not {letters}"
+            continue
         assert "R" in letters, (
             f"--diff-filter={letters} excludes renames; `git mv` would bypass "
             f"every gate rule"
         )
+    assert any(line.lstrip().startswith("ADDED=") for line in lines), (
+        "the hook must pass the added subset (--added), or every source edit is judged as new"
+    )
