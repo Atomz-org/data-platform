@@ -8,6 +8,7 @@ okf_x_concept: null
 okf_x_layer: marts
 okf_x_grain: one day x segment x plan
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_revenue
 ---
 
 # Schema
@@ -21,3 +22,8 @@ okf_x_columns_withheld: 0
 | `payment_count` | BIGINT |  | — | 0.00 |
 | `plan_tier` | VARCHAR |  | — | 0.00 |
 | `revenue_date` | TIMESTAMP | event_time | When the event occurred. Candidate agg time dimension. | 1.00 |
+
+# Lineage
+
+* **Upstream:** [fct_payments](/tables/fct_payments.md)
+* **Read by:** `exec_weekly_dashboard` (Finance)

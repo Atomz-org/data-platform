@@ -8,6 +8,7 @@ okf_x_concept: Customer
 okf_x_layer: marts
 okf_x_grain: one payment attempt
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:fct_payments
 ---
 
 # Schema
@@ -35,3 +36,13 @@ Instantiates [Customer](/concepts/Customer.md).
 * [gross_payment_volume](/metrics/gross_payment_volume.md)
 * [payment_count](/metrics/payment_count.md)
 * [revenue](/metrics/revenue.md)
+
+# Lineage
+
+* **Upstream:** `stg_stripe__charges`, `stg_stripe__customers`, `stg_stripe__subscriptions`
+* **Downstream:** [fct_revenue](/tables/fct_revenue.md)
+* **Read by:** `report_index` (Data Platform), `report_metrics_aov` (Data Platform), `report_metrics_gross_payment_volume` (Data Platform), `report_metrics_payment_count` (Data Platform), `report_metrics_revenue` (Data Platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

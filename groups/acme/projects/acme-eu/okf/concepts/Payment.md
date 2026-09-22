@@ -5,6 +5,7 @@ description: Movement of money settling an agreement.
 okf_x_defined_in: platform
 okf_x_parent: Event
 okf_x_identity: payment_id
+okf_x_kg_node: concept:Payment
 okf_x_platform_concept: ../../../../../../platform/okf/concepts/Payment.md
 ---
 
@@ -38,3 +39,11 @@ Defined by the platform ontology: [Payment](../../../../../../platform/okf/conce
 * Payment reversed by Refund — 
 * Subscription settled by Payment — 
 * Payment settles Subscription — Foreign key resolves to a scanned entity. Rename the relation to the business verb — `places`, `settles`, `holds` — before approving; `refers_to` is a placeholder, not a meaning.
+
+# Raw tables that instantiate it
+
+* `stripe.charges`
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

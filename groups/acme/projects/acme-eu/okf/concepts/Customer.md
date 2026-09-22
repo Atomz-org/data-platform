@@ -5,6 +5,7 @@ description: A party that buys. May be a person or an organization.
 okf_x_defined_in: platform
 okf_x_parent: Party
 okf_x_identity: id
+okf_x_kg_node: concept:Customer
 okf_x_platform_concept: ../../../../../../platform/okf/concepts/Customer.md
 ---
 
@@ -38,3 +39,11 @@ Defined by the platform ontology: [Customer](../../../../../../platform/okf/conc
 * Payment pays Customer — Foreign key resolves to a scanned entity. Rename the relation to the business verb — `places`, `settles`, `holds` — before approving; `refers_to` is a placeholder, not a meaning.
 * Customer pays Payment — 
 * Customer places Order — 
+
+# Raw tables that instantiate it
+
+* `stripe.customers`
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

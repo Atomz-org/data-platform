@@ -8,6 +8,7 @@ okf_x_concept: Payment
 okf_x_layer: marts
 okf_x_grain: one customer
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:dim_customers
 ---
 
 # Schema
@@ -31,3 +32,12 @@ Instantiates [Payment](/concepts/Payment.md).
 # Metrics
 
 * [active_customers](/metrics/active_customers.md)
+
+# Lineage
+
+* **Upstream:** `stg_stripe__customers`, `stg_stripe__subscriptions`
+* **Read by:** `crm_customer_sync` (RevOps), `exec_weekly_dashboard` (Finance), `report_metrics_active_customers` (Data Platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.

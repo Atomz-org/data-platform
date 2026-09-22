@@ -5,6 +5,7 @@ description: Revenue divided by succeeded payment count.
 okf_x_kind: ratio
 okf_x_model: fct_payments
 okf_x_time_column: paid_at
+okf_x_kg_node: metric:aov
 ---
 
 # Definition
