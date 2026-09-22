@@ -11,7 +11,6 @@ from pathlib import Path
 
 import click
 import typer
-import yaml
 from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
@@ -24,13 +23,9 @@ from pf.capabilities import (
     CAPABILITIES,
     UnknownCapability,
     gate_additions,
-    missing_env,
 )
 from pf.capabilities import (
     apply as apply_capability,
-)
-from pf.capabilities import (
-    defaults as capability_defaults,
 )
 from pf.capabilities import (
     resolve as resolve_capabilities,
@@ -67,8 +62,8 @@ from pf.loops.runner import Ledger, run_loop, update_state
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import validate_instance, validate_project, validate_topology
 from pf.runtime.staging import generate as generate_staging
+from pf.scaffold import provision
 from pf.scaffold.bootstrap import STEPS, bootstrap
-from pf.scaffold.generator import new_group, new_project
 from pf.stack import frontdoor, storage, token
 
 app = typer.Typer(add_completion=False, help="Agentic data platform control CLI.")
@@ -157,11 +152,40 @@ def all_projects() -> list[tuple[str, str, Path]]:
 def cmd_new_group(
     group: str,
     domain: str = typer.Option("b2b_saas", help="b2b_saas | ecommerce | marketplace | fintech"),
+    display_name: str = typer.Option("", "--display-name", help="the family's name as a human writes it"),
+    owner_team: str = typer.Option("", "--owner-team", help="team accountable for this family"),
+    owner_contact: str = typer.Option("", "--owner-contact", help="how to reach that team"),
+    tier: str = typer.Option("standard", help="standard | critical"),
 ) -> None:
-    """Create a new company group (a family of sister companies)."""
-    files = new_group(root(), group, domain)
-    render_group_card(root() / "groups" / group, group)
-    console.print(f"[green]✓[/] group [bold]{group}[/] created with {len(files)} files")
+    """Create a new company group (a family of sister companies).
+
+    The owner options are not decoration. `new_group` templates `group.yaml` with
+    an empty owner because a template cannot know one, and every group in this
+    repository still has it empty — which is how `pf offboard` came to have
+    nobody to notify. The cheapest moment to record it is while the person who
+    knows is the one typing.
+    """
+    try:
+        result = provision.create_group(
+            root(),
+            group,
+            domain,
+            display_name=display_name,
+            owner_team=owner_team,
+            owner_contact=owner_contact,
+            tier=tier,
+        )
+    except provision.ProvisionError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1)
+
+    console.print(f"[green]✓[/] group [bold]{group}[/] created with {len(result.files)} files")
+    console.print(f"  [dim]{domain}: {', '.join(result.classes)}[/]")
+    if not (owner_team or owner_contact):
+        console.print(
+            f"  [yellow]![/] no owner recorded — set [cyan]owner:[/] in "
+            f"[cyan]groups/{group}/group.yaml[/] before this family goes live"
+        )
     console.print(f"  next: [cyan]pf new-project {group} {group}-us[/]")
 
 
@@ -189,12 +213,16 @@ def cmd_new_project(
     # be asked for its capabilities gets the ones whoever typed the command
     # remembered — which is how seven projects ended up with no CI merge gate
     # while the eighth had one. Opting out stays possible and stays explicit.
-    skip = {c.strip() for c in without.split(",") if c.strip()}
-    names = [n for n in capability_defaults() if n not in skip]
-    names += [c.strip() for c in with_.split(",") if c.strip() and c.strip() not in names]
+    #
+    # Resolved by `pf.scaffold.provision`, which is also what the control plane's
+    # create form calls. Two implementations of this rule is how a project made
+    # in a browser and one made in a shell come to differ.
     try:
-        caps = resolve_capabilities(names)
-    except (UnknownCapability, ValueError) as exc:
+        caps = provision.resolve_capability_set(
+            [c.strip() for c in with_.split(",") if c.strip()],
+            [c.strip() for c in without.split(",") if c.strip()],
+        )
+    except provision.ProvisionError as exc:
         console.print(f"[red]{exc}[/]")
         raise typer.Exit(1)
 
@@ -203,7 +231,7 @@ def cmd_new_project(
     # have been added, so the capability set is decided here or corrected by hand.
     from pf.scaffold import plan as planner
 
-    resolved = planner.build(root(), group, project, caps, is_rollup=rollup)
+    resolved = provision.plan_project(root(), group, project, caps, is_rollup=rollup)
     if plan:
         console.print(planner.render(resolved))
         raise typer.Exit(0 if resolved.ok else 1)
@@ -212,25 +240,20 @@ def cmd_new_project(
         console.print("\n[red]refusing to scaffold[/] — resolve the blocker(s) above")
         raise typer.Exit(1)
 
-    files = new_project(root(), group, project, is_rollup=rollup, sisters=sister_list)
-    render_group_card(root() / "groups" / group, group)
-    d = root() / "groups" / group / "projects" / project
-
-    ctx = {"group": group, "project": project, "module": project.replace("-", "_")}
-    for cap in caps:
-        written = apply_capability(cap, root(), d, ctx)
-        console.print(f"  [green]+[/] capability [bold]{cap.name}[/] ({len(written)} file(s))")
-    if caps:
-        _merge_gate_rules(gate_additions(caps))
-
-    # Everything past the file writes lives in `pf.scaffold.bootstrap`, shared
-    # with `pf bootstrap`. Inlining it here is what previously left projects
-    # created before a capability landed permanently missing it.
-    console.print(f"[green]✓[/] project [bold]{group}/{project}[/] created with {len(files)} files")
-    _print_bootstrap(bootstrap(root(), group, project))
+    # Everything from here lives in `pf.scaffold.provision`, which ends by running
+    # the `pf.scaffold.bootstrap` ladder shared with `pf bootstrap`. Inlining it
+    # here is what previously left projects created before a capability landed
+    # permanently missing it.
+    result = provision.create_project(root(), group, project, caps=caps, is_rollup=rollup, sisters=sister_list)
+    for name, written in result.capability_files.items():
+        console.print(f"  [green]+[/] capability [bold]{name}[/] ({written} file(s))")
+    if result.gate_rules_added:
+        console.print(f"  [dim]gate overlay += {result.gate_rules_added} rule(s) → gate.capabilities.yaml[/]")
+    console.print(f"[green]✓[/] project [bold]{group}/{project}[/] created with {len(result.files)} files")
+    _print_bootstrap(result.steps)
     if caps:
         console.print(f"  [dim]capabilities: {', '.join(c.name for c in caps)}[/]")
-    for cap, missing in missing_env(caps).items():
+    for cap, missing in result.missing_env.items():
         console.print(f"  [yellow]![/] {cap} needs unset env: {', '.join(missing)}")
 
     # What to do next, named as commands rather than described. An agent that
@@ -253,42 +276,29 @@ def cmd_new_project(
     )
 
 
-def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
-    """Append capability-contributed patterns to the generated gate overlay.
+def _print_gate_rules(changed: list[str]) -> None:
+    """Report an overlay merge as a count per section.
 
-    Written to `gate.capabilities.yaml`, never to `gate.yaml`: round-tripping the
-    hand-written policy through the YAML dumper strips every comment in it, and
-    those comments are where each rule's reason lives. `load_policy` unions the
-    two. Appends only — a capability may tighten the gate, never loosen it.
+    A count, not the patterns. The six full globs this used to print are already
+    in `--plan`, are in `gate.capabilities.yaml`, and are the same every time —
+    three copies of a fixed list in output someone is reading for what changed.
     """
-    if not additions:
+    if not changed:
         return
-    path = root() / "gate.capabilities.yaml"
-    existing = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
-    existing = existing or {}
-    changed = []
-    for section, patterns in additions.items():
-        bucket = existing.setdefault(section, [])
-        for p in patterns:
-            if p not in bucket:
-                bucket.append(p)
-                changed.append(f"{section}:{p}")
-    if changed:
-        path.write_text(
-            "# GENERATED by `pf new-project --with`. Merged over gate.yaml at load\n"
-            "# time by pf.loops.gate.load_policy. Edit the capability, not this file.\n"
-            + yaml.safe_dump(existing, sort_keys=False),
-            encoding="utf-8",
-        )
-        # A count, not the patterns. The six full globs this used to print are
-        # already in `--plan`, are in `gate.capabilities.yaml`, and are the same
-        # every time — three copies of a fixed list in output someone is reading
-        # for what changed.
-        by_section: dict[str, int] = {}
-        for entry in changed:
-            by_section[entry.split(":", 1)[0]] = by_section.get(entry.split(":", 1)[0], 0) + 1
-        summary = ", ".join(f"{k} ×{v}" for k, v in sorted(by_section.items()))
-        console.print(f"  [dim]gate overlay += {len(changed)} rule(s) ({summary}) → gate.capabilities.yaml[/]")
+    by_section: dict[str, int] = {}
+    for entry in changed:
+        by_section[entry.split(":", 1)[0]] = by_section.get(entry.split(":", 1)[0], 0) + 1
+    summary = ", ".join(f"{k} ×{v}" for k, v in sorted(by_section.items()))
+    console.print(f"  [dim]gate overlay += {len(changed)} rule(s) ({summary}) → gate.capabilities.yaml[/]")
+
+
+def _merge_gate_rules(additions: dict[str, list[str]]) -> None:
+    """Merge capability-contributed gate patterns, then report what moved.
+
+    The merge itself is `pf.scaffold.provision.merge_gate_rules`, shared with the
+    control plane. Only the printing is the CLI's.
+    """
+    _print_gate_rules(provision.merge_gate_rules(root(), additions))
 
 
 @app.command()
