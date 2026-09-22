@@ -5,6 +5,7 @@ description: Sum of cost for each order item.
 okf_x_kind: simple
 okf_x_model: orders
 okf_x_time_column: ordered_at
+okf_x_kg_node: metric:order_cost
 ---
 
 # Definition

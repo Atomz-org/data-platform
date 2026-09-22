@@ -5,6 +5,7 @@ description: Sum of total order amonunt. Includes tax + revenue.
 okf_x_kind: simple
 okf_x_model: orders
 okf_x_time_column: ordered_at
+okf_x_kg_node: metric:order_total
 ---
 
 # Definition
