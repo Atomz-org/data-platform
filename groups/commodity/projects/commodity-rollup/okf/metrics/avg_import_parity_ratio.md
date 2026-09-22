@@ -12,8 +12,8 @@ okf_x_kg_node: metric:avg_import_parity_ratio
 # Definition
 
 * **Kind:** `ratio`
-* **Expression:** `sum(landed_price_usd_per_quote_unit) / nullif(sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end), 0)`
+* **Expression:** derived
 * **Ratio:** `landed_usd_total` / `benchmark_usd_total_where_landed` — re-divide at the reading grain, never average the ratio
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `price_basis`, `is_duty_rate_confirmed`
+* **Dimensions:** `commodity_id`, `is_duty_rate_confirmed`, `market_code`, `price_basis`
 * **Built from:** [benchmark_usd_total_where_landed](/metrics/benchmark_usd_total_where_landed.md), [landed_usd_total](/metrics/landed_usd_total.md)

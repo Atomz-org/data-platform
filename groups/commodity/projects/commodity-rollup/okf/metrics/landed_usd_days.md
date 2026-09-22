@@ -13,5 +13,5 @@ okf_x_kg_node: metric:landed_usd_days
 * **Kind:** `simple`
 * **Expression:** `count(landed_price_usd_per_quote_unit)`
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `price_basis`, `is_duty_rate_confirmed`
+* **Dimensions:** `commodity_id`, `is_duty_rate_confirmed`, `market_code`, `price_basis`
 * **Derived from it:** [avg_landed_price_usd](/metrics/avg_landed_price_usd.md)

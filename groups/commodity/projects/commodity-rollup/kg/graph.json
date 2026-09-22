@@ -2601,7 +2601,9 @@
         "type": "ratio",
         "description": "Landed over benchmark, both in USD per quote unit \u2014 1.15 means landing adds 15%. Group by commodity and market.",
         "numerator": "landed_usd_total",
-        "denominator": "benchmark_usd_total_where_landed"
+        "denominator": "benchmark_usd_total_where_landed",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -2614,7 +2616,9 @@
         "type": "ratio",
         "description": "Mean landed price on the benchmark's footing. Group by commodity and market; this is the number that compares.",
         "numerator": "landed_usd_total",
-        "denominator": "landed_usd_days"
+        "denominator": "landed_usd_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -2627,7 +2631,9 @@
         "type": "ratio",
         "description": "Mean spread as a share of the cheapest landed price, re-divided at query grain. Group by commodity and market.",
         "numerator": "spread_usd_total",
-        "denominator": "cheapest_usd_total"
+        "denominator": "cheapest_usd_total",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -2640,7 +2646,9 @@
         "type": "ratio",
         "description": "Mean USD per quote unit a market pays over the cheapest market that day. Group by commodity and market.",
         "numerator": "spread_usd_total",
-        "denominator": "spread_days"
+        "denominator": "spread_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -2654,6 +2662,8 @@
         "description": "Building block for avg_import_parity_ratio \u2014 the benchmark on exactly the days a landed price exists.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end",
         "agg_params": {}
@@ -2670,6 +2680,8 @@
         "description": "Building block for avg_spread_to_cheapest_ratio.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "cheapest_landed_usd",
         "agg_params": {}
@@ -2686,6 +2698,8 @@
         "description": "Days a market was the cheapest place to land a commodity. Group by commodity and market.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "case when is_cheapest_market then 1 else 0 end",
         "agg_params": {}
@@ -2702,6 +2716,8 @@
         "description": "Days a market landed a commodity, restated in USD per quote unit.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "count",
         "expr": "landed_price_usd_per_quote_unit",
         "agg_params": {}
@@ -2718,6 +2734,8 @@
         "description": "Building block for avg_landed_price_usd. A sum of prices means nothing on its own.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "landed_price_usd_per_quote_unit",
         "agg_params": {}
@@ -2734,6 +2752,8 @@
         "description": "Days at least two markets priced the commodity.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "count",
         "expr": "spread_to_cheapest_usd",
         "agg_params": {}
@@ -2750,6 +2770,8 @@
         "description": "Building block for avg_spread_to_cheapest_usd.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "spread_to_cheapest_usd",
         "agg_params": {}

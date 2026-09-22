@@ -14,4 +14,4 @@ okf_x_kg_node: metric:days_as_cheapest_market
 * **Kind:** `simple`
 * **Expression:** `sum(case when is_cheapest_market then 1 else 0 end)`
 * **Built on:** [fct_market_spreads_daily](/tables/fct_market_spreads_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `cheapest_market_code`, `is_cheapest_market`
+* **Dimensions:** `cheapest_market_code`, `commodity_id`, `is_cheapest_market`, `market_code`

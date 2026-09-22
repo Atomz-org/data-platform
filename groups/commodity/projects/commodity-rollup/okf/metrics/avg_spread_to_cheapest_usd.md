@@ -12,8 +12,8 @@ okf_x_kg_node: metric:avg_spread_to_cheapest_usd
 # Definition
 
 * **Kind:** `ratio`
-* **Expression:** `sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)`
+* **Expression:** derived
 * **Ratio:** `spread_usd_total` / `spread_days` — re-divide at the reading grain, never average the ratio
 * **Built on:** [fct_market_spreads_daily](/tables/fct_market_spreads_daily.md)
-* **Dimensions:** `commodity_id`, `market_code`, `cheapest_market_code`, `is_cheapest_market`
+* **Dimensions:** `cheapest_market_code`, `commodity_id`, `is_cheapest_market`, `market_code`
 * **Built from:** [spread_days](/metrics/spread_days.md), [spread_usd_total](/metrics/spread_usd_total.md)
