@@ -8924,6 +8924,8 @@
         "description": "Customers with at least one active subscription.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "created_at",
         "agg": "sum",
         "expr": "case when is_active then 1 else 0 end",
         "agg_params": {}
@@ -8939,7 +8941,9 @@
         "type": "ratio",
         "description": "Revenue divided by succeeded payment count.",
         "numerator": "revenue",
-        "denominator": "payment_count"
+        "denominator": "payment_count",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -8953,6 +8957,8 @@
         "description": "All payment attempts regardless of outcome.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "paid_at",
         "agg": "sum",
         "expr": "amount",
         "agg_params": {}
@@ -8969,6 +8975,8 @@
         "description": "Count of succeeded payments.",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('payment__payment_status') }} = 'succeeded'",
+        "time_column": "paid_at",
         "agg": "count",
         "expr": "payment_id",
         "agg_params": {}
@@ -8985,6 +8993,8 @@
         "description": "Net revenue \u2014 succeeded payments only. The single definition.",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('payment__payment_status') }} = 'succeeded'",
+        "time_column": "paid_at",
         "agg": "sum",
         "expr": "amount",
         "agg_params": {}
@@ -9000,7 +9010,9 @@
         "type": "derived",
         "description": "Month-over-month change in net revenue.",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {

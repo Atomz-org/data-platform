@@ -11,9 +11,8 @@ okf_x_kg_node: metric:aov
 # Definition
 
 * **Kind:** `ratio`
-* **Expression:** `sum(amount) / nullif(count(payment_id), 0)`
+* **Expression:** derived
 * **Ratio:** `revenue` / `payment_count` — re-divide at the reading grain, never average the ratio
 * **Built on:** [fct_payments](/tables/fct_payments.md)
-* **Dimensions:** `payment_status`, `customer_segment`, `plan_tier`, `country_code`
-* **Filter:** `payment_status = 'succeeded'`
+* **Dimensions:** `country_code`, `customer_segment`, `payment_status`, `plan_tier`
 * **Built from:** [payment_count](/metrics/payment_count.md), [revenue](/metrics/revenue.md)
