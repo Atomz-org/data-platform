@@ -63,6 +63,7 @@ Hand-editing one of these is silently discarded by the next regeneration:
 | `**/kg/architecture.md` | `pf arch <g> <p>` / `--all` | the project, or the feature registry |
 | `**/kg/graph.json` | `pf kg build <g> <p>` | the project |
 | `docs/ARCHITECTURE.md` | `pf arch build` | the repository, or `pf/archmap.py` |
+| `docs/ONBOARDING.md`, `docs/onboarding.html` | `pf guide build` | the repository, or `pf/guide.py` |
 | `platform/tests/README.md` | `pf test index` | the test docstrings |
 | `docs/VENDOR-CARD.md`, `docs/VENDOR.md` | `pf vendor docs` | `pf/vendor/registry.yaml` |
 | `gate.capabilities.yaml` | `pf bootstrap` | the capability |
