@@ -1,10 +1,19 @@
 """Control-plane API + dashboard. `pf ui` serves this.
 
-Read-only except for two deliberate exceptions: /api/impact computes, and
-/api/governance/* writes — an ontology a data owner cannot correct is one that
-drifts from the business until nobody trusts it. Every governance write leaves
-an audit row before it touches a file, and the file stays the canonical artefact
-that git and `pf check` still judge. See `pf.governance.store`.
+Read-only except where it is deliberately not:
+
+- **/api/impact** computes rather than reads.
+- **/api/governance/*** writes — an ontology a data owner cannot correct is one
+  that drifts from the business until nobody trusts it. Every governance write
+  leaves an audit row before it touches a file, and the file stays the canonical
+  artefact that git and `pf check` still judge. See `pf.governance.store`.
+- **/api/provision/*** creates groups and projects, in `pf.ui.provision`. It is
+  the one surface that brings a tenant into existence, it goes through the same
+  `pf.scaffold.provision` the CLI calls, and every write is wrapped in
+  `pf.provenance.action()` — a click has no PreToolUse hook over it, so the
+  stages a shell command records for free are written there or not at all.
+
+Both writing surfaces require an `actor` and neither defaults one.
 
 ## Two front ends, on purpose, for now
 
@@ -32,6 +41,7 @@ from pf.kg.store import open_graph
 from pf.ontology.annotate import load_annotations
 from pf.ontology.model import load_ontology
 from pf.ontology.validate import pii_columns, validate_sources
+from pf.ui.provision import router as provision_router
 
 UI_DIR = Path(__file__).parent
 app = FastAPI(title="Data Platform Control Plane", version="0.1.0")
@@ -83,6 +93,14 @@ def spa(path: str = "") -> str:
         raise HTTPException(
             503, "UI not built — run `npm --prefix platform/src/pf/ui/web run build`")
     return entry.read_text(encoding="utf-8")
+
+
+# The fleet and provisioning routes live in their own module and are mounted
+# here. They are the only routes that *create* something, and separating the
+# surface that makes tenants from the surface that reports on them keeps the
+# provenance wrapper and the `actor` requirement in one place, where they can be
+# seen to apply to every write rather than to whichever handler remembered.
+app.include_router(provision_router)
 
 
 # ---------------------------------------------------------------- topology --
