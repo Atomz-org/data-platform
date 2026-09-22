@@ -24,3 +24,17 @@ dirty tree, build the commit with plumbing (`read-tree` into a temp
 it never touches the working tree, but it skips the `.git/hooks/pre-commit`
 gate, so run `uv run pf gate --paths "a,b,c"` by hand. See
 [[uv-workspace-hook-deadlock]].
+
+**A new module path can already be taken.** On 2026-09-22 a session created
+`platform/src/pf/harness.py` from an `ls` taken minutes earlier; a sibling
+session had committed a different `pf.harness` in between, and the Write
+replaced it without a word. `git status` shows the damage as a plain ` M`.
+Before creating a file, run `git log -1 -- <path>` and `git status --short
+<path>`; if either answers, pick another name (`pf.harnessmap` beside
+`pf.harness`) and restore theirs with `git checkout HEAD -- <path>`. Message
+the sibling (`ListAgents`, then `SendMessage`) and agree on anchored edits —
+never whole-file writes — for any file both hold dirty. Do not `git add` new
+files while the sibling is busy: a plain `git commit` on their side sweeps the
+whole index. Generated per-scope files (`HARNESS.md`, `kg/architecture.md`)
+count only once tracked, so stage them before `pf arch --all` or the maps
+render the row as a gap.

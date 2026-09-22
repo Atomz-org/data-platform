@@ -40,6 +40,7 @@ uv run pf status                   # every group and project
 | `pf atlas <g> <p>` | Publish a project's own atlas beside its graph ([docs](docs/PROJECT-ATLAS.md)) |
 | `pf arch <g> <p>` | Per-project architecture map — every feature, present or not ([docs](docs/ARCHITECTURE-MAPS.md)) |
 | `pf guide build` / `check` | The onboarding guide, generated from the repository ([docs](docs/ONBOARDING.md)) |
+| `pf harness <g> [<p>]` / `build` / `check` | The harness map of a group, a project and its report: what wraps an agent there, computed from the files that enforce it |
 | `pf check` | Ontology conformance across every project |
 | `pf group list/show/verify` | Tenant families: lifecycle, owner, readiness |
 | `pf group set-state <g> <state>` | Move a family through its lifecycle |

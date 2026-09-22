@@ -123,7 +123,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <div class="fact"><dt>Toolkits</dt><dd>23</dd></div>
 <div class="fact"><dt>Pinned upstreams</dt><dd>25</dd></div>
 <div class="fact"><dt>pf commands</dt><dd>31</dd></div>
-<div class="fact"><dt>Tests</dt><dd>900</dd></div>
+<div class="fact"><dt>Tests</dt><dd>916</dd></div>
 </dl>
 <section id="model">
 <div class="sect-head">
@@ -337,6 +337,7 @@ uv run pf pr report</code></pre>
 <tr><td><code>dev serving</code></td><td>the served dev database and its guardrails, documented in the project rather than assumed</td></tr>
 <tr><td><code>project atlas</code></td><td>each project publishes a picture of its own graph, refreshed around its own dbt runs</td></tr>
 <tr><td><code>architecture map</code></td><td>every feature of this project, present or absent, so an agent routes instead of reading the tree</td></tr>
+<tr><td><code>harness map</code></td><td>what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it</td></tr>
 <tr><td><code>conformance</code></td><td>fail here rather than in BI</td></tr>
 </tbody></table></div>
 <h3>Capabilities a project can be scaffolded with</h3>
@@ -400,7 +401,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <p class="eyebrow">The tool</p>
 <h2>Every pf command</h2>
 </div>
-<p class="prose">31 commands and 22 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
+<p class="prose">31 commands and 23 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
 <div class="scroll"><table>
 <thead><tr>
 <th>Command</th>
@@ -453,6 +454,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <tr><td><code>pf context</code></td><td>The context every agent reads before its first edit — the entry points (CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, the test index, the repo map — checked and refreshed as one.</td></tr>
 <tr><td><code>pf group</code></td><td>Tenant groups: their manifest, lifecycle and readiness.</td></tr>
 <tr><td><code>pf guide</code></td><td>The onboarding guide: <code>build</code>/<code>check</code>, generated from the repository.</td></tr>
+<tr><td><code>pf harness</code></td><td>Harness maps: <code>build</code>/<code>check</code> for every scope; <code>pf harness &lt;group&gt; [&lt;project&gt;]</code> for one.</td></tr>
 <tr><td><code>pf kg</code></td><td>Knowledge graph operations.</td></tr>
 <tr><td><code>pf logs</code></td><td>Trace logs: what every agent understood, asked, called and got.</td></tr>
 <tr><td><code>pf loop</code></td><td>Loop engineering: scheduled, gated, budgeted agent work.</td></tr>

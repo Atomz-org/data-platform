@@ -222,6 +222,7 @@ Everything after the files lives in one ordered, idempotent list, shared by `pf 
 | `dev serving` | the served dev database and its guardrails, documented in the project rather than assumed |
 | `project atlas` | each project publishes a picture of its own graph, refreshed around its own dbt runs |
 | `architecture map` | every feature of this project, present or absent, so an agent routes instead of reading the tree |
+| `harness map` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
 | `conformance` | fail here rather than in BI |
 
 ### Capabilities a project can be scaffolded with
@@ -283,7 +284,7 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 
 *The tool*
 
-31 commands and 22 command groups, read from the CLI itself. `uv run pf <command> --help` is always current.
+31 commands and 23 command groups, read from the CLI itself. `uv run pf <command> --help` is always current.
 
 | Command | What it does |
 |---|---|
@@ -329,6 +330,7 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 | `pf context` | The context every agent reads before its first edit — the entry points (CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, the test index, the repo map — checked and refreshed as one. |
 | `pf group` | Tenant groups: their manifest, lifecycle and readiness. |
 | `pf guide` | The onboarding guide: `build`/`check`, generated from the repository. |
+| `pf harness` | Harness maps: `build`/`check` for every scope; `pf harness <group> [<project>]` for one. |
 | `pf kg` | Knowledge graph operations. |
 | `pf logs` | Trace logs: what every agent understood, asked, called and got. |
 | `pf loop` | Loop engineering: scheduled, gated, budgeted agent work. |
