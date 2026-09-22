@@ -13,5 +13,5 @@ okf_x_kg_node: metric:food_revenue
 * **Kind:** `simple`
 * **Expression:** `sum(case when is_food_item then product_price else 0 end)`
 * **Built on:** [order_items](/tables/order_items.md)
-* **Dimensions:** `is_food_item`, `is_drink_item`
+* **Dimensions:** `is_drink_item`, `is_food_item`
 * **Derived from it:** [food_revenue_pct](/metrics/food_revenue_pct.md)

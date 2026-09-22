@@ -150664,7 +150664,9 @@
         "type": "derived",
         "description": "LTV pre-tax / number of orders",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -150678,6 +150680,8 @@
         "description": "Count of lifetime orders",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "first_ordered_at",
         "agg": "sum",
         "expr": "count_lifetime_orders",
         "agg_params": {}
@@ -150694,6 +150698,8 @@
         "description": "The cumulative revenue for all orders.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "product_price",
         "agg_params": {}
@@ -150710,6 +150716,8 @@
         "description": "Count of orders that contain drink order items",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('order_id__is_drink_order') }} = true",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "1",
         "agg_params": {}
@@ -150726,6 +150734,8 @@
         "description": "The revenue from drinks in each order",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "case when is_drink_item then product_price else 0 end",
         "agg_params": {}
@@ -150741,7 +150751,9 @@
         "type": "ratio",
         "description": "The % of order revenue from drinks.",
         "numerator": "drink_revenue",
-        "denominator": "revenue"
+        "denominator": "revenue",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -150755,6 +150767,8 @@
         "description": "Count of orders that contain food order items",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('order_id__is_food_order') }} = true",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "1",
         "agg_params": {}
@@ -150771,6 +150785,8 @@
         "description": "The revenue from food in each order",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "case when is_food_item then product_price else 0 end",
         "agg_params": {}
@@ -150786,7 +150802,9 @@
         "type": "ratio",
         "description": "The % of order revenue from food.",
         "numerator": "food_revenue",
-        "denominator": "revenue"
+        "denominator": "revenue",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -150800,6 +150818,8 @@
         "description": "Count of orders with order total over 20.",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('order_id__order_total_dim') }} >= 20",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "1",
         "agg_params": {}
@@ -150816,6 +150836,8 @@
         "description": "Customer's lifetime spend before tax",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "first_ordered_at",
         "agg": "sum",
         "expr": "lifetime_spend_pretax",
         "agg_params": {}
@@ -150832,6 +150854,8 @@
         "description": "The median revenue for each order item. Excludes tax.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "median",
         "expr": "product_price",
         "agg_params": {}
@@ -150848,6 +150872,8 @@
         "description": "New customer's first order count",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('order_id__customer_order_number') }} = 1",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "1",
         "agg_params": {}
@@ -150864,6 +150890,8 @@
         "description": "Sum of cost for each order item.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "order_cost",
         "agg_params": {}
@@ -150879,7 +150907,9 @@
         "type": "derived",
         "description": "Gross profit from each order.",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -150893,6 +150923,8 @@
         "description": "Sum of total order amonunt. Includes tax + revenue.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "order_total",
         "agg_params": {}
@@ -150909,6 +150941,8 @@
         "description": "Count of orders.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "1",
         "agg_params": {}
@@ -150925,6 +150959,8 @@
         "description": "Sum of the product revenue for each order item. Excludes tax.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "ordered_at",
         "agg": "sum",
         "expr": "product_price",
         "agg_params": {}
@@ -150940,7 +150976,9 @@
         "type": "derived",
         "description": "Percentage growth of revenue compared to 1 month ago. Excluded tax",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {

@@ -8,7 +8,7 @@ okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 1088
 okf_x_tables: 25
 okf_x_concepts: 4
-okf_x_metrics: 15
+okf_x_metrics: 19
 ---
 
 # jaffle/jaffle-shop
@@ -60,7 +60,9 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 
 # Metrics
 
+* [average_order_value](/metrics/average_order_value.md) - LTV pre-tax / number of orders
 * [count_lifetime_orders](/metrics/count_lifetime_orders.md) - Count of lifetime orders
+* [cumulative_revenue](/metrics/cumulative_revenue.md) - The cumulative revenue for all orders.
 * [drink_orders](/metrics/drink_orders.md) - Count of orders that contain drink order items
 * [drink_revenue](/metrics/drink_revenue.md) - The revenue from drinks in each order
 * [drink_revenue_pct](/metrics/drink_revenue_pct.md) - The % of order revenue from drinks.
@@ -72,6 +74,8 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 * [median_revenue](/metrics/median_revenue.md) - The median revenue for each order item. Excludes tax.
 * [new_customer_orders](/metrics/new_customer_orders.md) - New customer's first order count
 * [order_cost](/metrics/order_cost.md) - Sum of cost for each order item.
+* [order_gross_profit](/metrics/order_gross_profit.md) - Gross profit from each order.
 * [order_total](/metrics/order_total.md) - Sum of total order amonunt. Includes tax + revenue.
 * [orders](/metrics/orders.md) - Count of orders.
 * [revenue](/metrics/revenue.md) - Sum of the product revenue for each order item. Excludes tax.
+* [revenue_growth_mom](/metrics/revenue_growth_mom.md) - Percentage growth of revenue compared to 1 month ago. Excluded tax
