@@ -5,6 +5,7 @@ description: Front-month futures volume from live feeds. Group by commodity.
 okf_x_kind: simple
 okf_x_model: fct_commodity_prices_daily
 okf_x_time_column: price_date
+okf_x_kg_node: metric:contracts_traded
 ---
 
 # Definition
