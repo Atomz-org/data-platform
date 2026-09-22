@@ -86,12 +86,17 @@ def _conforming(tmp_path: Path) -> Path:
     (root / "CLAUDE.md").write_text("router", encoding="utf-8")
     (root / "AGENTS.md").write_text(
         "# p\n\nCLAUDE.md GEMINI.md .github/copilot-instructions.md\n"
-        ".memory/MEMORY.md docs/ARCHITECTURE.md docs/ONBOARDING.md platform/tests/README.md\n"
+        ".memory/MEMORY.md docs/ARCHITECTURE.md docs/ONBOARDING.md platform/tests/README.md docs/HARNESSES.md\n"
         "**Session** **Autonomous** **Inline** pf memory add pf context check pf code\n"
         + "".join(f"## {n}. s\n" for n in range(8)),
         encoding="utf-8",
     )
     _code_graph_wiring(root)
+    # The harness configs are generated from the `.mcp.json` the wiring just
+    # wrote; a conforming tree has them current, the way it has its indexes.
+    from pf import harness
+
+    harness.write_all(root)
     (root / "GEMINI.md").write_text("see §0\n\n@./CLAUDE.md\n\n@./AGENTS.md\n", encoding="utf-8")
     (root / ".github" / "copilot-instructions.md").write_text(
         "CLAUDE.md AGENTS.md .memory/MEMORY.md §3 §4 §5", encoding="utf-8"
