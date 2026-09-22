@@ -2,6 +2,7 @@
 type: Concept
 title: Location
 description: A geography. Country, region, or address.
+okf_x_tier: platform
 okf_x_parent: null
 okf_x_abstract: false
 okf_x_identity: location_id
@@ -16,4 +17,4 @@ okf_x_identity: location_id
 
 # Relations
 
-* Customer located in Location — 
+* [customer_located_in_location](/relations/customer_located_in_location.md) — Customer located in Location

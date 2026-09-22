@@ -2,6 +2,7 @@
 type: Concept
 title: Organization
 description: A legal entity. Customers may belong to one.
+okf_x_tier: platform
 okf_x_parent: Party
 okf_x_abstract: false
 okf_x_identity: organization_id
@@ -17,5 +18,5 @@ okf_x_identity: organization_id
 
 # Relations
 
-* Contract signed by Organization — 
-* Customer belongs to Organization — A customer may sit under a parent organization.
+* [contract_signed_by_organization](/relations/contract_signed_by_organization.md) — Contract signed by Organization
+* [customer_belongs_to_organization](/relations/customer_belongs_to_organization.md) — Customer belongs to Organization

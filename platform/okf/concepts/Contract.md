@@ -2,6 +2,7 @@
 type: Concept
 title: Contract
 description: A negotiated agreement, usually with custom terms.
+okf_x_tier: platform
 okf_x_parent: Agreement
 okf_x_abstract: false
 okf_x_identity: contract_id
@@ -16,4 +17,4 @@ okf_x_identity: contract_id
 
 # Relations
 
-* Contract signed by Organization — 
+* [contract_signed_by_organization](/relations/contract_signed_by_organization.md) — Contract signed by Organization

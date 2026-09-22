@@ -2,6 +2,7 @@
 type: Concept
 title: Payment
 description: Movement of money settling an agreement.
+okf_x_tier: platform
 okf_x_parent: Event
 okf_x_abstract: false
 okf_x_identity: payment_id
@@ -19,8 +20,8 @@ okf_x_identity: payment_id
 
 # Relations
 
-* Customer pays Payment — 
-* Order settled by Payment — 
-* Payment denominated in Currency — Makes the money/currency pairing explicit rather than a convention.
-* Payment reversed by Refund — 
-* Subscription settled by Payment — 
+* [customer_pays_payment](/relations/customer_pays_payment.md) — Customer pays Payment
+* [order_settled_by_payment](/relations/order_settled_by_payment.md) — Order settled by Payment
+* [payment_denominated_in_currency](/relations/payment_denominated_in_currency.md) — Payment denominated in Currency
+* [payment_reversed_by_refund](/relations/payment_reversed_by_refund.md) — Payment reversed by Refund
+* [subscription_settled_by_payment](/relations/subscription_settled_by_payment.md) — Subscription settled by Payment

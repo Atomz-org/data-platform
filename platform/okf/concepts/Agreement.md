@@ -2,6 +2,7 @@
 type: Concept
 title: Agreement
 description: A commitment between parties, with a lifecycle.
+okf_x_tier: platform
 okf_x_parent: null
 okf_x_abstract: true
 okf_x_identity: null

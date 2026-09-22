@@ -2,6 +2,7 @@
 type: Concept
 title: Interaction
 description: A touchpoint (email, call, session) with a party.
+okf_x_tier: platform
 okf_x_parent: Event
 okf_x_abstract: false
 okf_x_identity: interaction_id
@@ -17,4 +18,4 @@ okf_x_identity: interaction_id
 
 # Relations
 
-* Customer participates in Interaction — 
+* [customer_participates_in_interaction](/relations/customer_participates_in_interaction.md) — Customer participates in Interaction

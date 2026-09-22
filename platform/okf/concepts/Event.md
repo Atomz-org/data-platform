@@ -2,6 +2,7 @@
 type: Concept
 title: Event
 description: Something that happened at a point in time. Immutable.
+okf_x_tier: platform
 okf_x_parent: null
 okf_x_abstract: true
 okf_x_identity: null

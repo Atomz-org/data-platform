@@ -2,6 +2,7 @@
 type: Concept
 title: Order
 description: A one-off purchase commitment.
+okf_x_tier: platform
 okf_x_parent: Agreement
 okf_x_abstract: false
 okf_x_identity: order_id
@@ -19,6 +20,6 @@ okf_x_identity: order_id
 
 # Relations
 
-* Customer places Order — 
-* Order contains Product — Needs a line-item bridge in any physical model.
-* Order settled by Payment — 
+* [customer_places_order](/relations/customer_places_order.md) — Customer places Order
+* [order_contains_product](/relations/order_contains_product.md) — Order contains Product
+* [order_settled_by_payment](/relations/order_settled_by_payment.md) — Order settled by Payment
