@@ -1470,9 +1470,9 @@
       "name": "fct_commodity_prices_daily_view",
       "statement": "select\n  fct_commodity_prices_daily.price_id,\n  fct_commodity_prices_daily.commodity_id,\n  fct_commodity_prices_daily.price_date,\n  fct_commodity_prices_daily.close_price,\n  fct_commodity_prices_daily.high_price,\n  fct_commodity_prices_daily.low_price,\n  fct_commodity_prices_daily.currency_code,\n  fct_commodity_prices_daily.volume,\n  fct_commodity_prices_daily.price_change_pct,\n  fct_commodity_prices_daily.is_latest,\n  fct_commodity_prices_daily.price_basis,\n  fct_commodity_prices_daily.quote_unit,\n  fct_commodity_prices_daily.open_price,\n  fct_commodity_prices_daily.prev_close_price,\n  fct_commodity_prices_daily.price_change,\n  fct_commodity_prices_daily.moving_avg_20d,\n  fct_commodity_prices_daily.moving_avg_50d,\n  fct_commodity_prices_daily.high_252d,\n  fct_commodity_prices_daily.low_252d,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_commodity_prices_daily\n  left join dim_commodities on fct_commodity_prices_daily.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "commodity_price_board",
+        "pf.exposures": "commodity_price_board, report_index, report_landed_cost, report_metrics_avg_benchmark_price_usd, report_metrics_benchmark_price_days, report_metrics_benchmark_price_usd_total, report_metrics_contracts_traded, report_metrics_period_high_price_usd, report_metrics_period_low_price_usd",
         "pf.exposure_types": "dashboard",
-        "pf.owners": "Commodity Research",
+        "pf.owners": "Commodity Research, data-platform",
         "pf.description": "Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.",
         "pf.grain": "one commodity per price date"
       }
@@ -1486,6 +1486,17 @@
         "pf.owners": "Commodity Research",
         "pf.description": "Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.",
         "pf.grain": "one currency per calendar day"
+      }
+    },
+    {
+      "name": "fct_landed_prices_daily_view",
+      "statement": "select\n  fct_landed_prices_daily.price_id,\n  fct_landed_prices_daily.market_code,\n  fct_landed_prices_daily.commodity_id,\n  fct_landed_prices_daily.price_date,\n  fct_landed_prices_daily.market_unit,\n  fct_landed_prices_daily.currency_code,\n  fct_landed_prices_daily.benchmark_price_usd,\n  fct_landed_prices_daily.usd_fx_rate,\n  fct_landed_prices_daily.tariff_id,\n  fct_landed_prices_daily.effective_duty_rate,\n  fct_landed_prices_daily.is_duty_rate_confirmed,\n  fct_landed_prices_daily.landed_price_local,\n  fct_landed_prices_daily.duty_local,\n  fct_landed_prices_daily.price_basis,\n  fct_landed_prices_daily.quote_unit,\n  fct_landed_prices_daily.benchmark_usd_per_market_unit,\n  fct_landed_prices_daily.fx_fixed_on,\n  fct_landed_prices_daily.duty_basis,\n  fct_landed_prices_daily.is_import_prohibited,\n  fct_landed_prices_daily.assessable_value_local,\n  fct_landed_prices_daily.landed_price_change_local,\n  fct_landed_prices_daily.landed_price_change_pct,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code as commodities_market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited as commodities_is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_landed_prices_daily\n  left join dim_commodities on fct_landed_prices_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_index, report_landed_cost, report_metrics_avg_duty_local, report_metrics_avg_landed_price_local, report_metrics_avg_usd_fx_rate, report_metrics_duty_local_total, report_metrics_landed_price_days, report_metrics_landed_price_local_total, report_metrics_usd_fx_rate_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Import landed price per commodity per day in this market's currency per its market unit: benchmark \u00d7 USD/local \u00d7 (1 + customs duty). The benchmark stands in for CIF value \u2014 freight, insurance, landing charges and local taxes are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters. The same shape in every sister; `market_code` and `currency_code` say whose it is.",
+        "pf.grain": "one commodity per price date"
       }
     },
     {
@@ -1514,9 +1525,9 @@
       "name": "rpt_commodity_price_board_view",
       "statement": "select\n  rpt_commodity_price_board.commodity_id,\n  rpt_commodity_price_board.category,\n  rpt_commodity_price_board.market_code,\n  rpt_commodity_price_board.currency_code,\n  rpt_commodity_price_board.benchmark_price_usd,\n  rpt_commodity_price_board.usd_fx_rate,\n  rpt_commodity_price_board.landed_price_local,\n  rpt_commodity_price_board.is_stale,\n  rpt_commodity_price_board.commodity_name,\n  rpt_commodity_price_board.segment,\n  rpt_commodity_price_board.exchange,\n  rpt_commodity_price_board.price_basis,\n  rpt_commodity_price_board.quote_unit,\n  rpt_commodity_price_board.price_date,\n  rpt_commodity_price_board.price_change_pct,\n  rpt_commodity_price_board.high_252d,\n  rpt_commodity_price_board.low_252d,\n  rpt_commodity_price_board.market_unit,\n  rpt_commodity_price_board.usd_inr_rate,\n  rpt_commodity_price_board.effective_duty_rate,\n  rpt_commodity_price_board.duty_basis,\n  rpt_commodity_price_board.is_import_prohibited,\n  rpt_commodity_price_board.is_duty_rate_confirmed,\n  rpt_commodity_price_board.landed_price_inr,\n  rpt_commodity_price_board.landed_price_change_pct,\n  rpt_commodity_price_board.spot_price_usd,\n  rpt_commodity_price_board.spot_quoted_at,\n  rpt_commodity_price_board.futures_spot_basis_pct,\n  rpt_commodity_price_board.price_age_days\nfrom rpt_commodity_price_board",
       "properties": {
-        "pf.exposures": "commodity_price_board",
+        "pf.exposures": "commodity_price_board, report_landed_cost, report_price_board",
         "pf.exposure_types": "dashboard",
-        "pf.owners": "Commodity Research",
+        "pf.owners": "Commodity Research, data-platform",
         "pf.description": "One row per tracked commodity: latest benchmark and move, 252-day range, landed price in this market's currency, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.",
         "pf.grain": "one commodity"
       }
@@ -1525,9 +1536,9 @@
       "name": "rpt_mcx_contract_board_view",
       "statement": "select\n  rpt_mcx_contract_board.contract_code,\n  rpt_mcx_contract_board.commodity_id,\n  rpt_mcx_contract_board.quote_equivalent_inr,\n  rpt_mcx_contract_board.lot_value_inr,\n  rpt_mcx_contract_board.is_stale,\n  rpt_mcx_contract_board.exchange,\n  rpt_mcx_contract_board.contract_name,\n  rpt_mcx_contract_board.price_date,\n  rpt_mcx_contract_board.price_basis,\n  rpt_mcx_contract_board.is_duty_rate_confirmed,\n  rpt_mcx_contract_board.quote_size,\n  rpt_mcx_contract_board.quote_unit,\n  rpt_mcx_contract_board.lot_size,\n  rpt_mcx_contract_board.lot_unit,\n  rpt_mcx_contract_board.price_age_days,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange as commodities_exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom rpt_mcx_contract_board\n  left join dim_commodities on rpt_mcx_contract_board.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "commodity_price_board",
+        "pf.exposures": "commodity_price_board, report_mcx_contracts",
         "pf.exposure_types": "dashboard",
-        "pf.owners": "Commodity Research",
+        "pf.owners": "Commodity Research, data-platform",
         "pf.description": "One row per tracked MCX contract: the latest landed equivalent per quote basis and per lot, and how old its benchmark is. ZINC and ZINCMINI carry the last indicative LME level and read stale until it is refreshed.",
         "pf.grain": "one MCX contract"
       }
