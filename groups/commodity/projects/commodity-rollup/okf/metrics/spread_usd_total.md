@@ -14,3 +14,4 @@ okf_x_kg_node: metric:spread_usd_total
 * **Expression:** `sum(spread_to_cheapest_usd)`
 * **Built on:** [fct_market_spreads_daily](/tables/fct_market_spreads_daily.md)
 * **Dimensions:** `commodity_id`, `market_code`, `cheapest_market_code`, `is_cheapest_market`
+* **Derived from it:** [avg_spread_to_cheapest_ratio](/metrics/avg_spread_to_cheapest_ratio.md), [avg_spread_to_cheapest_usd](/metrics/avg_spread_to_cheapest_usd.md)

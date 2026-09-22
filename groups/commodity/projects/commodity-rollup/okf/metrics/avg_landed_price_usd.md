@@ -16,3 +16,4 @@ okf_x_kg_node: metric:avg_landed_price_usd
 * **Ratio:** `landed_usd_total` / `landed_usd_days` — re-divide at the reading grain, never average the ratio
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
 * **Dimensions:** `commodity_id`, `market_code`, `price_basis`, `is_duty_rate_confirmed`
+* **Built from:** [landed_usd_days](/metrics/landed_usd_days.md), [landed_usd_total](/metrics/landed_usd_total.md)

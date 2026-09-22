@@ -15,3 +15,4 @@ okf_x_kg_node: metric:benchmark_usd_total_where_landed
 * **Expression:** `sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end)`
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
 * **Dimensions:** `commodity_id`, `market_code`, `price_basis`, `is_duty_rate_confirmed`
+* **Derived from it:** [avg_import_parity_ratio](/metrics/avg_import_parity_ratio.md)

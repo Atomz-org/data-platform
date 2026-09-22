@@ -16,3 +16,4 @@ okf_x_kg_node: metric:avg_import_parity_ratio
 * **Ratio:** `landed_usd_total` / `benchmark_usd_total_where_landed` — re-divide at the reading grain, never average the ratio
 * **Built on:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
 * **Dimensions:** `commodity_id`, `market_code`, `price_basis`, `is_duty_rate_confirmed`
+* **Built from:** [benchmark_usd_total_where_landed](/metrics/benchmark_usd_total_where_landed.md), [landed_usd_total](/metrics/landed_usd_total.md)
