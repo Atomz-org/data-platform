@@ -27,6 +27,7 @@ being fixed.
 from __future__ import annotations
 
 import fnmatch
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -101,8 +102,7 @@ def install_hook(root: Path, *, force: bool = False) -> tuple[bool, str]:
 
     target = Path(root) / HOOK_TARGET
     if state == "foreign" and not force:
-        return False, (f"refused: {detail}. Move or chain it, then re-run — "
-                       f"or pass force to replace it.")
+        return False, (f"refused: {detail}. Move or chain it, then re-run — or pass force to replace it.")
 
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() or target.is_symlink():
@@ -197,8 +197,11 @@ def _match(path: str, patterns: list[str]) -> str | None:
     for pat in patterns or []:
         # fnmatch does not treat ** specially; compare against both the full path
         # and the bare filename so "**/x" and "x" both behave as expected.
-        if fnmatch.fnmatch(p, pat) or fnmatch.fnmatch(p, pat.replace("**/", "")) \
-           or fnmatch.fnmatch(Path(p).name, pat.replace("**/", "")):
+        if (
+            fnmatch.fnmatch(p, pat)
+            or fnmatch.fnmatch(p, pat.replace("**/", ""))
+            or fnmatch.fnmatch(Path(p).name, pat.replace("**/", ""))
+        ):
             return pat
     return None
 
@@ -216,15 +219,17 @@ def check_path(path: str, root: Path, in_project: bool = False) -> GateResult:
 
     hit = _match(path, _applicable(path, policy.get("denylist", [])))
     if hit:
-        return GateResult("deny", f"denylist:{hit}", path,
-                          "generated artefact or secret — never edited by hand")
+        return GateResult("deny", f"denylist:{hit}", path, "generated artefact or secret — never edited by hand")
 
     if in_project:
         hit = _match(path, policy.get("platform_denylist", []))
         if hit:
-            return GateResult("deny", f"platform_denylist:{hit}", path,
-                              "shared platform infra; changing it from a project "
-                              "session affects every other company")
+            return GateResult(
+                "deny",
+                f"platform_denylist:{hit}",
+                path,
+                "shared platform infra; changing it from a project session affects every other company",
+            )
 
     hit = _match(path, policy.get("autoMergeAllowlist", []))
     if hit:
@@ -232,14 +237,14 @@ def check_path(path: str, root: Path, in_project: bool = False) -> GateResult:
 
     hit = _match(path, policy.get("impact_required", []))
     if hit:
-        return GateResult("warn", f"impact_required:{hit}", path,
-                          "run impact analysis before changing this")
+        return GateResult("warn", f"impact_required:{hit}", path, "run impact analysis before changing this")
 
     return GateResult("allow", "default", path, "")
 
 
-def check_paths(paths: list[str], root: Path, in_project: bool = False,
-                added: list[str] | None = None) -> list[GateResult]:
+def check_paths(
+    paths: list[str], root: Path, in_project: bool = False, added: list[str] | None = None
+) -> list[GateResult]:
     """Every per-path verdict, then the rules that judge the run as a whole.
 
     `added` is the subset of `paths` that are new files, when the caller knows
@@ -251,10 +256,16 @@ def check_paths(paths: list[str], root: Path, in_project: bool = False,
     policy = load_policy(root)
     limit = int(policy.get("maxFiles", 0) or 0)
     if limit and len(paths) > limit:
-        results.append(GateResult("deny", f"maxFiles:{limit}", f"{len(paths)} files",
-                                  f"a single run may touch at most {limit} files; "
-                                  f"split the change"))
+        results.append(
+            GateResult(
+                "deny",
+                f"maxFiles:{limit}",
+                f"{len(paths)} files",
+                f"a single run may touch at most {limit} files; split the change",
+            )
+        )
     results.extend(check_evidence(paths, root, added))
+    results.extend(check_harness(paths, root))
     return results
 
 
@@ -308,13 +319,116 @@ def check_evidence(paths: list[str], root: Path, added: list[str] | None = None)
                 continue
             is_new = new is None or h in new
             where = ev if scope <= 0 else f"{ev} under {'/'.join(h.split('/')[:scope])}"
-            out.append(GateResult(
-                "deny" if is_new else "warn",
-                f"tests_required:{src}",
-                h,
-                f"{'added' if is_new else 'changed'} with nothing under {where} — "
-                f"a feature lands with the test or eval that proves it",
-            ))
+            out.append(
+                GateResult(
+                    "deny" if is_new else "warn",
+                    f"tests_required:{src}",
+                    h,
+                    f"{'added' if is_new else 'changed'} with nothing under {where} — "
+                    f"a feature lands with the test or eval that proves it",
+                )
+            )
+    return out
+
+
+_SCOPE = re.compile(r"^groups/([^/]+)(?:/projects/([^/]+))?(?:/|$)")
+
+
+def _map_state(root: Path, rel: str) -> str:
+    """How git holds a map: `staged` (the index has what the tree has), `unstaged`
+    (the tree moved past the index), `untracked`, or `unknown` outside a repo.
+
+    The index, not HEAD, because the index is what the commit will carry: a map
+    added for the first time is `staged` the moment it is, and a map that was
+    regenerated after `git add` is `unstaged` even though HEAD never had it.
+    """
+    listed = subprocess.run(
+        ["git", "ls-files", "--cached", "--", rel], cwd=str(root), capture_output=True, text=True, check=False
+    )
+    if listed.returncode != 0:
+        return "unknown"
+    if not listed.stdout.strip():
+        return "untracked"
+    diff = subprocess.run(
+        ["git", "diff", "--quiet", "--", rel], cwd=str(root), capture_output=True, text=True, check=False
+    )
+    return {0: "staged", 1: "unstaged"}.get(diff.returncode, "unknown")
+
+
+def check_harness(paths: list[str], root: Path) -> list[GateResult]:
+    """A change to a scope lands with its harness map current — `gate.yaml`'s `harness_required`.
+
+    For each changed path, the first entry whose `scope` matches names the maps
+    the change can alter. Each such map is rendered from the tree as it stands
+    and compared with the file: a missing or differing map is denied, and the
+    message names the verb that regenerates it. A map that is current but
+    differs from HEAD and is not in this run is denied too — it was regenerated
+    and not staged, and the commit would lack it. Outside a repository the
+    second half is unknown and is not judged.
+
+    Currency, never presence: a change that leaves a map identical needs
+    nothing in the run, which is what keeps this from being one more file to
+    remember. What it cannot see is unstaged work beside the staged change —
+    the tree is rendered as it is — and `pf harness check` in CI is the final
+    word on the commit as committed.
+    """
+    policy = load_policy(root)
+    rules = [x for x in (policy.get("harness_required") or []) if isinstance(x, dict)]
+    if not rules:
+        return []
+    try:
+        from pf import harnessmap
+    except Exception:  # noqa: BLE001 — a gate must not fail closed on an import
+        return []
+    norm = [_norm(p) for p in paths]
+    reached: dict[str, str] = {}
+    for p in norm:
+        rule = next((r for r in rules if _glob(p, str(r.get("scope") or ""))), None)
+        if rule is None:
+            continue
+        m = _SCOPE.match(p)
+        group, project = (m.group(1), m.group(2) or "") if m else ("", "")
+        for template in rule.get("maps") or []:
+            rel = str(template)
+            if "{project}" in rel and not project:
+                continue
+            rel = rel.replace("{group}", group).replace("{project}", project)
+            if "**" in rel:
+                base = root / rel.split("**", 1)[0].rstrip("/")
+                found = (
+                    sorted(x.relative_to(root).as_posix() for x in base.rglob(harnessmap.FILE)) if base.is_dir() else []
+                )
+                for f in found:
+                    reached.setdefault(f, p)
+            else:
+                reached.setdefault(rel, p)
+    out: list[GateResult] = []
+    for rel in sorted(reached):
+        scope = harnessmap.scope_for(root, rel)
+        if scope is None:
+            continue  # a report map for a project that has no reporting/, say
+        verb = f"pf harness {scope.group} {scope.project}".rstrip()
+        path = root / rel
+        if not path.is_file() or path.read_text(encoding="utf-8") != scope.render(root):
+            out.append(
+                GateResult(
+                    "deny",
+                    f"harness_required:{scope.label}",
+                    rel,
+                    f"stale against {reached[rel]} — a change to a scope lands with its harness map; "
+                    f"run `{verb}` and stage this file",
+                )
+            )
+            continue
+        if rel not in norm and _map_state(root, rel) in ("unstaged", "untracked"):
+            out.append(
+                GateResult(
+                    "deny",
+                    f"harness_required:{scope.label}",
+                    rel,
+                    f"regenerated for {reached[rel]} but not in this run — `git add {rel}`",
+                )
+            )
     return out
 
 
@@ -334,8 +448,7 @@ def tracked_denied(root: Path) -> list[GateResult]:
     deny = policy.get("denylist", []) or []
     if not deny:
         return []
-    proc = subprocess.run(["git", "ls-files"], cwd=str(root),
-                          capture_output=True, text=True, check=False)
+    proc = subprocess.run(["git", "ls-files"], cwd=str(root), capture_output=True, text=True, check=False)
     if proc.returncode != 0:
         return []
     allowed = policy.get("denylist_except", []) or []
@@ -345,10 +458,15 @@ def tracked_denied(root: Path) -> list[GateResult]:
             continue
         hit = _match(path, _applicable(path, deny))
         if hit:
-            out.append(GateResult(
-                "deny", f"tracked:{hit}", path,
-                "git is tracking a file the gate calls generated — "
-                "`git rm --cached` it and add the pattern to .gitignore"))
+            out.append(
+                GateResult(
+                    "deny",
+                    f"tracked:{hit}",
+                    path,
+                    "git is tracking a file the gate calls generated — "
+                    "`git rm --cached` it and add the pattern to .gitignore",
+                )
+            )
     return out
 
 

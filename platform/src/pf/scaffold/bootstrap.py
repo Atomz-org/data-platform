@@ -1003,6 +1003,32 @@ def _dev_serving(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dev serving", "ok", "docs/quack.md written")
 
 
+def _render_harness(root: Path, group: str, project: str) -> list[StepResult]:
+    """The harness maps this project answers to: the group's, its own and its report's.
+
+    Runs after the architecture map for the same reason that runs late: it
+    reads the CI workflow, the settings, the tools and the reporting layer that
+    earlier steps write. Every gate verdict in it is computed by the function
+    the PreToolUse hook calls, so a rule that never fires — an allowlist that
+    shadows an impact rule — is reported here as a gap rather than repeated as
+    a promise.
+
+    The group's map is rewritten too: a sister that just gained a report or a
+    tool override changes the family's table, and the group has no bootstrap
+    of its own.
+    """
+    from pf.harnessmap import HARNESS_BUDGET, Scope, scopes, write_scope
+    from pf.kg.card import estimate_tokens
+
+    out: list[StepResult] = []
+    for scope in (Scope("group", group), *scopes(root, group, project)):
+        path, _changed = write_scope(root, scope)
+        n = estimate_tokens(path.read_text(encoding="utf-8"))
+        status: Status = "ok" if n <= HARNESS_BUDGET else "failed"
+        out.append(StepResult("harness map", status, f"{scope.label}: ~{n} tokens / {HARNESS_BUDGET}"))
+    return out
+
+
 STEPS: list[Step] = [
     Step("directories", "every generated artefact has a stable home", _ensure_dirs),
     Step(
@@ -1108,6 +1134,11 @@ STEPS: list[Step] = [
         "architecture map",
         "every feature of this project, present or absent, so an agent routes instead of reading the tree",
         _render_architecture,
+    ),
+    Step(
+        "harness map",
+        "what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it",
+        _render_harness,
     ),
     Step("conformance", "fail here rather than in BI", _validate),
 ]

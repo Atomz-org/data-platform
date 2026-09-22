@@ -11,7 +11,15 @@ marker directory the graph spans every sister project instead of erroring.
 The onboarding guide is one of the generated pieces, and it is also published
 away from the repository, where a stylesheet from the wrong host or a script
 of any kind renders as a blank page with no error. Its publish contract is
-therefore the last section here, a test rather than a note.
+a section here, a test rather than a note.
+
+The per-scope harness maps are the last section. They are generated from the
+files that enforce what they say — a project's settings, the gate, the hooks,
+its workflow, its loops — and every gate verdict in them is computed by the
+function the PreToolUse hook calls. The tests hold them to that: the map must
+say what those files say, must report the gate as it fires rather than as it
+is written, must be byte-stable between a laptop and a runner, and must not
+grow past the budget that keeps reading it cheaper than reading the tree.
 """
 
 from __future__ import annotations
@@ -21,6 +29,7 @@ import re
 from pathlib import Path
 
 from conftest import REPO_ROOT
+from pf import harnessmap
 from pf.agentcontext import ENTRY_POINTS, GENERATED, check, references, refresh, sections
 from pf.archmap import Facts
 from pf.guide import (
@@ -87,6 +96,7 @@ def _conforming(tmp_path: Path) -> Path:
     (root / "AGENTS.md").write_text(
         "# p\n\nCLAUDE.md GEMINI.md .github/copilot-instructions.md\n"
         ".memory/MEMORY.md docs/ARCHITECTURE.md docs/ONBOARDING.md platform/tests/README.md docs/HARNESSES.md\n"
+        "HARNESS.md pf harness\n"
         "**Session** **Autonomous** **Inline** pf memory add pf context check pf code\n"
         + "".join(f"## {n}. s\n" for n in range(8)),
         encoding="utf-8",
@@ -97,6 +107,9 @@ def _conforming(tmp_path: Path) -> Path:
     from pf import harness
 
     harness.write_all(root)
+    # The per-scope harness maps likewise: the tree has a group and a project,
+    # so a conforming one has their maps, current.
+    harnessmap.write(root)
     (root / "GEMINI.md").write_text("see §0\n\n@./CLAUDE.md\n\n@./AGENTS.md\n", encoding="utf-8")
     (root / ".github" / "copilot-instructions.md").write_text(
         "CLAUDE.md AGENTS.md .memory/MEMORY.md §3 §4 §5", encoding="utf-8"
@@ -432,3 +445,116 @@ def test_the_checker_can_fail(tmp_path: Path) -> None:
     (tmp_path / "docs" / "ONBOARDING.md").write_text("stale\n", encoding="utf-8")
     (tmp_path / "docs" / "onboarding.html").write_text("stale\n", encoding="utf-8")
     assert "is stale" in drift(tmp_path)
+
+
+# ---------------------------------------------------- the harness maps -------
+def _first_scope(kind: str) -> harnessmap.Scope | None:
+    return next((s for s in harnessmap.scopes(REPO_ROOT) if s.kind == kind), None)
+
+
+def test_every_committed_harness_map_matches_its_scope() -> None:
+    """Run `uv run pf harness build` if this fails — the settings, the gate and the workflows are the source."""
+    assert [str(d) for d in harnessmap.drift(REPO_ROOT) if not d.ok] == []
+
+
+def test_the_harness_maps_are_byte_stable_and_carry_no_machine_fact() -> None:
+    """Compared byte for byte between a laptop and a runner, so nothing local may leak in.
+
+    No date, no commit, no absolute path: each would make every commit a stale
+    one, or make the check pass here and fail on the runner.
+    """
+    for s in harnessmap.scopes(REPO_ROOT):
+        page = s.render(REPO_ROOT)
+        assert page == s.render(REPO_ROOT), s.label
+        assert not re.search(r"\b20\d\d-\d\d-\d\d\b", page), s.label
+        assert not re.search(r"\b[0-9a-f]{40}\b", page), s.label
+        assert str(REPO_ROOT) not in page and "/Users/" not in page and "/home/" not in page, s.label
+
+
+def test_a_project_map_says_what_its_settings_gate_workflow_and_loops_say() -> None:
+    """Every fact an agent acts on is in the map: each deny rule, the hook, each tool, job and loop."""
+    scope = _first_scope("project")
+    if scope is None:
+        return
+    p = harnessmap.gather_project(REPO_ROOT, scope.group, scope.project)
+    page = harnessmap.render_project(p)
+    settings = json.loads((p.pdir / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    for rule in settings["permissions"]["deny"]:
+        assert f"`{rule}`" in page, rule
+    for h in p.hooks:
+        assert f"`{h.script}`" in page, h.script
+    for t in p.tools:
+        assert f"`{t.name}`" in page, t.name
+    for j in p.jobs:
+        assert f"`{j.name}`" in page, j.name
+    for lp in p.loops:
+        assert f"`{lp.name}`" in page, lp.name
+    assert "| `HARNESS.md` |" in page, "the map judges its own path"
+
+
+def test_the_map_reports_the_gate_as_it_fires_not_as_it_is_written() -> None:
+    """A verdict is `check_path`'s, so an allowlist that shadows an impact rule is a named gap, not a promise."""
+    from pf.loops.gate import check_path
+
+    scope = _first_scope("project")
+    if scope is None:
+        return
+    p = harnessmap.gather_project(REPO_ROOT, scope.group, scope.project)
+    for v in p.verdicts:
+        live = check_path(v.path, REPO_ROOT, in_project=True)
+        assert (v.verdict, v.rule) == (live.verdict, live.rule), v.path
+    shadowed = [v for v in p.verdicts if v.rule.startswith("allowlist:") and harnessmap._impact_on_paper(v.path, p)]
+    if shadowed:
+        assert any("Impact-gated on paper" in g for g in p.gaps)
+
+
+def test_the_harness_maps_stay_inside_their_budget() -> None:
+    """On-demand tier: cheaper to read than the tree it describes, or it stops being read."""
+    from pf.kg.card import estimate_tokens
+
+    for s in harnessmap.scopes(REPO_ROOT):
+        n = estimate_tokens(s.render(REPO_ROOT))
+        assert n <= harnessmap.HARNESS_BUDGET, f"{s.label}: ~{n} tokens — cap a section rather than the budget"
+
+
+def test_a_bare_project_renders_and_names_what_it_lacks(tmp_path: Path) -> None:
+    """The state at scaffold time — no settings, no graph, no workflow — is a list of named gaps, not a crash."""
+    (tmp_path / "groups" / "demo" / "projects" / "demo-us").mkdir(parents=True)
+    p = harnessmap.gather_project(tmp_path, "demo", "demo-us")
+    page = harnessmap.render_project(p)
+    assert "# demo-us — harness" in page
+    joined = " ".join(p.gaps)
+    for needle in (
+        "No edit gate",
+        "No `power-tools` plugin",
+        "Sisters are readable",
+        "No knowledge graph",
+        "No CI workflow",
+    ):
+        assert needle in joined, needle
+    assert "# demo — harness" in harnessmap.render_group(harnessmap.gather_group(tmp_path, "demo"))
+
+
+def test_the_report_map_splits_generated_from_owned() -> None:
+    """What `pf report build` rewrites is never listed as yours, and the index and metric pages are its."""
+    scope = _first_scope("report")
+    if scope is None:
+        return
+    r = harnessmap.gather_report(REPO_ROOT, scope.group, scope.project)
+    page = harnessmap.render_report(r)
+    assert "`queries/metrics/*.sql`" in page and "`pages/index.md`, `pages/metrics/*.md`" in page
+    assert "pages/index.md" not in r.owned
+    assert not any(o.startswith("pages/metrics/") for o in r.owned)
+    for o in r.owned:
+        assert f"`{o}`" in page, o
+
+
+def test_the_harness_checker_can_fail(tmp_path: Path) -> None:
+    """A checker that cannot fail is a checker nobody should trust."""
+    (tmp_path / "groups" / "demo" / "projects" / "demo-us").mkdir(parents=True)
+    assert all(d.missing for d in harnessmap.drift(tmp_path)) and len(harnessmap.drift(tmp_path)) == 2
+    harnessmap.write(tmp_path)
+    assert all(d.ok for d in harnessmap.drift(tmp_path))
+    (tmp_path / "groups" / "demo" / "HARNESS.md").write_text("stale\n", encoding="utf-8")
+    [stale] = [d for d in harnessmap.drift(tmp_path) if not d.ok]
+    assert stale.scope.kind == "group" and "stale" in str(stale) and "would render" in str(stale)

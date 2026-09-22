@@ -77,6 +77,7 @@ _MENTIONS: tuple[tuple[str, tuple[str, ...], str], ...] = (
     ("AGENTS.md", ("CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"), "every entry point"),
     ("AGENTS.md", GENERATED, "every generated context artefact"),
     ("AGENTS.md", ("docs/HARNESSES.md",), "the harness scorecard — where enforcement is a hook and where it is a rule"),
+    ("AGENTS.md", ("HARNESS.md", "pf harness"), "the per-scope harness maps and the verb that regenerates them"),
     ("AGENTS.md", ("**Session**", "**Autonomous**", "**Inline**"), "the three execution scopes"),
     ("AGENTS.md", ("pf memory add", "pf context check"), "the write protocol and this check"),
     ("GEMINI.md", ("@./CLAUDE.md", "@./AGENTS.md"), "the imports of the router and the protocol"),
@@ -221,5 +222,14 @@ def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
 
         for rel, content in harness.targets(root).items():
             write(root / rel, content)
+
+    # The per-scope harness maps — one per group, per project and per report.
+    # Read from each scope's settings, the gate, the hooks, its workflow and
+    # its loops, which is why a refresh is the fix when any of those move.
+    if (root / "groups").is_dir():
+        from pf import harnessmap
+
+        for scope in harnessmap.scopes(root):
+            write(scope.path(root), scope.render(root))
 
     return changed

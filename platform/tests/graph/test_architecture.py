@@ -110,6 +110,7 @@ def test_every_bootstrap_artefact_is_a_feature() -> None:
         "dbt wiring": "profiles",
         "claude settings": "settings",
         "project atlas": "atlas",
+        "harness map": "harness",
         "dev serving": "docs",
         # Writes `.memory/notes/README.md` — the convention's own explanation,
         # so the directory exists in git. The notes an agent writes there are
