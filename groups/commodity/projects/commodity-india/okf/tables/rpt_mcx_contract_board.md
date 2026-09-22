@@ -10,6 +10,7 @@ okf_x_concept: PriceObservation
 okf_x_layer: marts
 okf_x_grain: one MCX contract
 okf_x_columns_withheld: 0
+okf_x_kg_node: model:rpt_mcx_contract_board
 ---
 
 # Schema
@@ -35,3 +36,12 @@ okf_x_columns_withheld: 0
 # Concept
 
 Instantiates [PriceObservation](/concepts/PriceObservation.md).
+
+# Lineage
+
+* **Upstream:** [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md)
+* **Read by:** `commodity_price_board` (Commodity Research), `report_mcx_contracts` (data-platform)
+
+# Governance
+
+* **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.
