@@ -683,6 +683,15 @@ jobs:
         # graph --all` in `agent-context.yml`, which build from the *committed*
         # MDL and graph on every pull request and regenerate neither.
         #
+        # `HARNESS.md` joins `kg/architecture.md`, for the same reason and measured
+        # the same way: a project map's Evidence-report row counts the exposures
+        # in `_reporting__exposures.yml`, which `pf bootstrap --all` regenerates
+        # here from a reporting layer a bare runner cannot build — 17 became 3
+        # for commodity-us, 16 became 0 for jaffle-shop — and that file is already
+        # excluded above. A map that reads an excluded file inherits the
+        # exclusion. It is checked where the comparison is honest: `pf harness
+        # check` in `agent-context.yml`, which regenerates nothing.
+        #
         # `package-lock.yml` is excluded for the opposite reason to all of them:
         # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
@@ -701,6 +710,7 @@ jobs:
               ':(exclude)**/transform/models/_reporting__exposures.yml' \
               ':(exclude)**/transform/package-lock.yml' \
               ':(exclude)**/kg/architecture.md' \
+              ':(exclude)**/HARNESS.md' \
               ':(exclude)**/transform/tests/expectations/*.sql'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"

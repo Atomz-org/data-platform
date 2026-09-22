@@ -28,6 +28,8 @@ import json
 import re
 from pathlib import Path
 
+import yaml
+
 from conftest import REPO_ROOT
 from pf import harnessmap
 from pf.agentcontext import ENTRY_POINTS, GENERATED, check, references, refresh, sections
@@ -558,3 +560,33 @@ def test_the_harness_checker_can_fail(tmp_path: Path) -> None:
     (tmp_path / "groups" / "demo" / "HARNESS.md").write_text("stale\n", encoding="utf-8")
     [stale] = [d for d in harnessmap.drift(tmp_path) if not d.ok]
     assert stale.scope.kind == "group" and "stale" in str(stale) and "would render" in str(stale)
+
+
+# ------------------------------------------------- the converged gate ------
+def test_harness_maps_are_excluded_from_the_converged_diff() -> None:
+    """A map that reads an excluded file inherits the exclusion.
+
+    A project map's Evidence-report row counts the exposures in
+    `_reporting__exposures.yml`, which `pf bootstrap --all` rewrites on the
+    bare converged runner from a reporting layer it cannot build — 17 became 3
+    for commodity-us, 16 became 0 for jaffle-shop — and that file is already
+    excluded from the diff. Without the map excluded too, the job failed on a
+    difference it had manufactured itself. The honest check is `pf harness
+    check` in agent-context.yml, which regenerates nothing; the same call was
+    already made for `okf/**`, `mdl.json` and `kg/architecture.md`.
+    """
+    from pf.scaffold.bootstrap import PLATFORM_WORKFLOW
+
+    committed = (REPO_ROOT / ".github" / "workflows" / "platform.yml").read_text(encoding="utf-8")
+    assert committed == PLATFORM_WORKFLOW, "platform.yml is rendered from the template — run pf bootstrap"
+
+    steps = yaml.safe_load(PLATFORM_WORKFLOW)["jobs"]["converged"]["steps"]
+    run = next(s["run"] for s in steps if "git diff --exit-code" in str(s.get("run", "")))
+    diff_line = next(line for line in run.splitlines() if "git diff --exit-code" in line)
+    for excluded in (
+        "**/HARNESS.md",
+        "**/transform/models/_reporting__exposures.yml",
+        "**/reporting/**",
+        "**/kg/architecture.md",
+    ):
+        assert f"':(exclude){excluded}'" in diff_line, f"{excluded} must stay excluded from the converged diff"
