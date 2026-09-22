@@ -36,6 +36,7 @@ Instantiates [Customer](/concepts/Customer.md).
 * [gross_payment_volume](/metrics/gross_payment_volume.md)
 * [payment_count](/metrics/payment_count.md)
 * [revenue](/metrics/revenue.md)
+* [revenue_mom_growth](/metrics/revenue_mom_growth.md)
 
 # Lineage
 

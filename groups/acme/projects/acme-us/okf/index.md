@@ -8,7 +8,7 @@ okf_x_kg_graph: ../kg/graph.json
 okf_x_kg_models: 37
 okf_x_tables: 3
 okf_x_concepts: 2
-okf_x_metrics: 5
+okf_x_metrics: 6
 ---
 
 # acme/acme-us
@@ -41,3 +41,4 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 * [gross_payment_volume](/metrics/gross_payment_volume.md) - All payment attempts regardless of outcome.
 * [payment_count](/metrics/payment_count.md) - Count of succeeded payments.
 * [revenue](/metrics/revenue.md) - Net revenue — succeeded payments only. The single definition.
+* [revenue_mom_growth](/metrics/revenue_mom_growth.md) - Month-over-month change in net revenue.

@@ -13,4 +13,4 @@ okf_x_kg_node: metric:active_customers
 * **Kind:** `simple`
 * **Expression:** `sum(case when is_active then 1 else 0 end)`
 * **Built on:** [dim_customers](/tables/dim_customers.md)
-* **Dimensions:** `customer_segment`, `country_code`
+* **Dimensions:** `country_code`, `customer_segment`

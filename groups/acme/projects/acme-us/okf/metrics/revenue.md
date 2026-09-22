@@ -13,6 +13,6 @@ okf_x_kg_node: metric:revenue
 * **Kind:** `simple`
 * **Expression:** `sum(amount)`
 * **Built on:** [fct_payments](/tables/fct_payments.md)
-* **Dimensions:** `payment_status`, `customer_segment`, `plan_tier`, `country_code`
+* **Dimensions:** `country_code`, `customer_segment`, `payment_status`, `plan_tier`
 * **Filter:** `payment_status = 'succeeded'`
-* **Derived from it:** [aov](/metrics/aov.md), `revenue_mom_growth`
+* **Derived from it:** [aov](/metrics/aov.md), [revenue_mom_growth](/metrics/revenue_mom_growth.md)
