@@ -9,6 +9,14 @@ layout and, on request, its generator. This module is the wiring: one
 declaration that gives every project an `okf/` bundle, a gate rule over it, a
 Dagster asset downstream of the models it describes, a doctor, and the verbs.
 
+Joined to the knowledge graph. A page names the node it documents and states
+what the graph holds about it — lineage, the dashboards downstream, the
+policies on its concept, the decisions recorded about it — and the graph
+answers the other direction: `kg_neighbors` says where a node is documented,
+and a blast radius names the bundle pages the change stales. `pf tool okf
+graph` is that join as a report, and `check` fails on a page whose node the
+graph no longer holds.
+
 Two bundles, connected. `platform/okf/` is the platform ontology as OKF, and
 every project's `okf/index.md` links to it; the project's concept files link
 to the platform's concept files. `pf tool okf build --platform` writes the
@@ -62,6 +70,7 @@ is written, and never hand-edited.
 ```bash
 pf tool okf build {{group}} {{project}}     # regenerate from the semantic layer
 pf tool okf check {{group}} {{project}}     # stale or non-conformant? exits 1
+pf tool okf graph {{group}} {{project}}     # does every page resolve in kg/graph.json?
 pf tool okf weave {{group}} {{project}}     # ask the weaver for what the platform lacks
 pf tool okf serve                          # the weaver's own API, locally
 ```
@@ -74,9 +83,20 @@ pf tool okf serve                          # the weaver's own API, locally
 | a column's definition | the ontology role on it (`contracts/annotations.yaml`) |
 | the concept a table instantiates | the relation the MDL join names, else the class whose identity is the key |
 | a metric | `transform/models/semantic/` |
+| lineage, policies, decisions on a page | this project's `kg/graph.json` |
 
 Confidence is a fact, not a guess: `1.00` where the platform holds a
 declaration, `0.00` where it holds none. A `0.00` is a column to annotate.
+
+## Joined to the knowledge graph
+
+Each page carries `okf_x_kg_node` — the node in `kg/graph.json` it documents —
+and states what only the graph holds: what feeds the table, what reads it
+(including the Evidence dashboards), the policies that govern its concept and
+the decisions recorded about it. The graph answers back: `kg_neighbors` names
+the page that documents a node, and `pf impact` lists the pages a change
+stales. Rebuild both together — `pf kg build` then `pf tool okf build` — or
+`pf tool okf check` fails on a page whose node the graph no longer holds.
 
 ## Connected to the platform
 
@@ -359,7 +379,7 @@ def serve_argv(root: Path, port: int) -> list[str]:
 
 # -------------------------------------------------------------------- cli --
 def register_commands(app: Any) -> None:
-    """`pf tool okf build|check|weave|serve|doctor`."""
+    """`pf tool okf build|check|graph|weave|serve|doctor`."""
     import typer
     from rich.console import Console
 
@@ -421,6 +441,31 @@ def register_commands(app: Any) -> None:
             console.print("[dim]run `pf tool okf build --all --platform` to regenerate[/]")
             raise typer.Exit(1)
         console.print("[green]✓[/] every OKF bundle matches its semantic layer")
+
+    @okf_app.command("graph")
+    def cmd_graph(
+        group: str = typer.Argument(""),
+        project: str = typer.Argument(""),
+        all_: bool = typer.Option(False, "--all", help="every project"),
+        strict: bool = typer.Option(False, "--strict", help="a project that cannot be judged fails too"),
+    ) -> None:
+        """Does every bundle page resolve to a node in the project's committed graph?"""
+        from pf.cli import root
+        from pf.projections.okf import reconcile
+
+        broken = unexercised = 0
+        for g, p in _targets(group, project, all_):
+            join = reconcile(root(), g, p)
+            console.print(join.render())
+            if not join.exercised:
+                unexercised += 1
+            elif join.dangling:
+                broken += 1
+        if broken:
+            console.print(f"[red]{broken} bundle(s) out of step with their graph[/]")
+        if unexercised and strict:
+            console.print(f"[red]{unexercised} bundle(s) could not be checked[/]")
+        raise typer.Exit(1 if broken or (unexercised and strict) else 0)
 
     @okf_app.command("weave")
     def cmd_weave(

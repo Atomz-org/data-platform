@@ -675,6 +675,14 @@ jobs:
         # `architecture` job runs `pf kg build` and `pf arch --check` in the one
         # environment that is the same every time, a runner with no warehouse.
         #
+        # `okf/**` is excluded because it is a projection of `mdl/mdl.json`,
+        # which is excluded: a bare runner regenerates the MDL empty, so this
+        # job would rebuild every bundle from nothing and then fail on the
+        # difference it had just manufactured. It is checked where the
+        # comparison is honest — `pf tool okf check --all` and `pf tool okf
+        # graph --all` in `agent-context.yml`, which build from the *committed*
+        # MDL and graph on every pull request and regenerate neither.
+        #
         # `package-lock.yml` is excluded for the opposite reason to all of them:
         # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
@@ -685,6 +693,7 @@ jobs:
           if ! git diff --exit-code --ignore-submodules=dirty -- . \
               ':(exclude)**/kg/graph.json' \
               ':(exclude)**/mdl/mdl.json' \
+              ':(exclude)**/okf/**' \
               ':(exclude)**/catalog/*.json' \
               ':(exclude)**/governance/otop.json' \
               ':(exclude)**/transform/recce.yml' \

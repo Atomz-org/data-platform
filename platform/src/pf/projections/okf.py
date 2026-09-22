@@ -34,6 +34,16 @@ links to the platform's when the class is the platform's, and says
 reading a project bundle can follow the concept up to the definition every
 sister shares, which is the whole point of the three-tier ontology.
 
+Joined to the knowledge graph, not exported beside it. Every page names the
+node it documents (`okf_x_kg_node`), and states what only the graph holds: the
+lineage that reaches the table, the metrics and dashboards downstream of it,
+the policies that govern its concept, and the decisions recorded about it. The
+graph is read from the tracked `kg/graph.json`, never from `kg/graph.duckdb` —
+the database is gitignored, so a bundle projected from it could not be checked
+in a clone that never built a warehouse, which is every CI runner. `reconcile`
+is that join as a gate: a page naming a node the graph does not hold means one
+of the two was rebuilt without the other.
+
 Confidence here is not a model's self-report. It is `1.0` where the platform
 holds a declaration (a description on the model, a role on the column) and
 `0.0` where it holds none — an honest "undocumented", surfaced for review in
@@ -62,6 +72,9 @@ VENDOR_SRC = Path("vendor") / "okf-weaver" / "backend" / "src"
 OKF_REL = "okf"
 PLATFORM_REL = Path("platform") / OKF_REL
 PLATFORM_NAME = "Platform ontology"
+#: The tracked graph export, beside the bundle in the same project.
+KG_REL = Path("kg") / "graph.json"
+KG_LINK = "../kg/graph.json"
 
 #: The spec's reserved files. Everything else under `okf/` carries a `type`.
 RESERVED = ("index.md", "log.md")
@@ -102,6 +115,88 @@ def vendored(root: str | Path) -> Any:
     return models
 
 
+# ------------------------------------------------------------- the graph ---
+@dataclass
+class GraphFacts:
+    """The project's committed knowledge graph, indexed for the four questions a
+    bundle page asks of it: what feeds this, what depends on it, what governs
+    its concept, and what was decided about it.
+
+    Indexed rather than queried through `pf.kg.store` because the source here is
+    the JSON export, not the DuckDB file: the export is the tracked artefact, so
+    a bundle built from it is reproducible in a bare clone, and reading it costs
+    no database attachment while a sister holds the write lock.
+    """
+
+    nodes: dict[str, dict[str, Any]] = field(default_factory=dict)
+    out: dict[str, list[tuple[str, str]]] = field(default_factory=dict)
+    into: dict[str, list[tuple[str, str]]] = field(default_factory=dict)
+
+    def has(self, node_id: str) -> bool:
+        return node_id in self.nodes
+
+    def count(self, kind: str) -> int:
+        return sum(1 for n in self.nodes.values() if n.get("kind") == kind)
+
+    def named(self, kind: str) -> list[str]:
+        return sorted(str(n.get("name") or "") for n in self.nodes.values() if n.get("kind") == kind)
+
+    def _walk(self, index: dict[str, list[tuple[str, str]]], node_id: str,
+              edge: str, kind: str) -> list[dict[str, Any]]:
+        found = [self.nodes[other] for k, other in index.get(node_id, ()) if k == edge and other in self.nodes]
+        return sorted((n for n in found if n.get("kind") == kind), key=lambda n: str(n.get("name") or ""))
+
+    def upstream(self, node_id: str, kind: str, edge: str = "feeds") -> list[dict[str, Any]]:
+        return self._walk(self.into, node_id, edge, kind)
+
+    def downstream(self, node_id: str, kind: str, edge: str = "feeds") -> list[dict[str, Any]]:
+        return self._walk(self.out, node_id, edge, kind)
+
+    def columns_of(self, node_id: str) -> list[str]:
+        return [dst for kind, dst in self.out.get(node_id, ()) if kind == "has_column"]
+
+    def governing(self, concept: str) -> list[dict[str, Any]]:
+        """The policies that constrain a concept — a table's obligations, stated
+        where the table is documented rather than three files away."""
+        return self._walk(self.into, f"concept:{concept}", "governs", "Policy") if concept else []
+
+    def decided(self, node_ids: list[str]) -> list[dict[str, Any]]:
+        """The ADRs that decided about any of these nodes. A decision is upstream
+        of what it governs, so it is only ever reached by asking backwards."""
+        found: dict[str, dict[str, Any]] = {}
+        for nid in node_ids:
+            for kind, src in self.into.get(nid, ()):
+                if kind == "decides" and src in self.nodes:
+                    found[src] = self.nodes[src]
+        return sorted(found.values(), key=lambda n: str(n.get("name") or ""))
+
+
+def load_graph(pdir: str | Path) -> GraphFacts | None:
+    """The project's tracked graph, or None where one was never built.
+
+    None rather than an empty graph: a project with no graph and a project whose
+    graph holds nothing about a table are different facts, and only the second
+    one means the bundle should stay silent about lineage.
+    """
+    path = Path(pdir) / KG_REL
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None  # a corrupt export is `pf kg build`'s to report, not a bundle's
+    gf = GraphFacts(nodes={str(n["id"]): n for n in payload.get("nodes") or [] if isinstance(n, dict) and n.get("id")})
+    for e in payload.get("edges") or []:
+        if not isinstance(e, dict):
+            continue
+        src, dst, kind = str(e.get("src") or ""), str(e.get("dst") or ""), str(e.get("kind") or "")
+        if not (src and dst and kind):
+            continue
+        gf.out.setdefault(src, []).append((kind, dst))
+        gf.into.setdefault(dst, []).append((kind, src))
+    return gf
+
+
 # ----------------------------------------------------------------- gather ---
 @dataclass
 class Facts:
@@ -114,6 +209,7 @@ class Facts:
     metrics: list[Any] = field(default_factory=list)
     onto: Any = None
     platform_classes: set[str] = field(default_factory=set)
+    graph: GraphFacts | None = None
 
 
 def gather(root: str | Path, group: str, project: str) -> Facts:
@@ -145,6 +241,7 @@ def gather(root: str | Path, group: str, project: str) -> Facts:
         f.platform_classes = set(load_ontology().classes)
     except Exception:  # noqa: BLE001 — a malformed ontology is `pf check`'s to report
         f.onto = None
+    f.graph = load_graph(pdir)
     return f
 
 
@@ -205,6 +302,100 @@ def _platform_link(pdir: Path, root: Path, rel: str) -> str:
     return os.path.relpath(root / PLATFORM_REL / rel, pdir / OKF_REL / Path(rel).parent).replace("\\", "/")
 
 
+def _ref(name: str, have: set[str], folder: str) -> str:
+    """A link when the bundle documents it, the bare name when it does not.
+
+    The graph reaches every staging and intermediate model; the bundle documents
+    the layer the semantic layer projects to BI. A link to a page that was never
+    written is worse than no link — it reads as a missing file rather than as a
+    model that is deliberately below the documented layer.
+    """
+    return f"[{name}](/{folder}/{name}.md)" if name in have else f"`{name}`"
+
+
+#: How many downstream readers a page names before it summarises the rest. A
+#: project with one Evidence page per metric has dozens, and a context file that
+#: lists them all buys nothing a count does not.
+MAX_READERS = 6
+
+
+def _lineage(gf: GraphFacts, node_id: str, have_table: set[str], have_metric: set[str],
+             listed: set[str]) -> list[str]:
+    rows = []
+    up = gf.upstream(node_id, "Model") + gf.upstream(node_id, "Table")
+    if up:
+        rows.append(
+            "* **Upstream:** "
+            + ", ".join(
+                _ref(str(n.get("name") or ""), have_table, "tables")
+                if n.get("kind") == "Model"
+                else f"`{str(n.get('id') or '').split(':', 1)[-1]}`"
+                for n in up
+            )
+        )
+    down = gf.downstream(node_id, "Model")
+    if down:
+        rows.append(
+            "* **Downstream:** " + ", ".join(_ref(str(n.get("name") or ""), have_table, "tables") for n in down)
+        )
+    # Only the metrics the page has not already listed: the graph holds derived
+    # metrics (a month-on-month change) that the metric collector does not, and
+    # a table that measures one should say so rather than leave it invisible.
+    mets = [n for n in gf.downstream(node_id, "Metric", edge="measures") if str(n.get("name") or "") not in listed]
+    if mets:
+        rows.append(
+            "* **Also measured by:** "
+            + ", ".join(_ref(str(n.get("name") or ""), have_metric, "metrics") for n in mets)
+        )
+    exps = gf.downstream(node_id, "Exposure")
+    if exps:
+        # The owning team, never the owner's address: this file is meant to
+        # travel, and an email in a portable context file is the same mistake
+        # as a masked column's name in one.
+        def read_by(n: dict[str, Any]) -> str:
+            owner = (n.get("props") or {}).get("owner") or ""
+            return f"`{n.get('name')}`" + (f" ({owner})" if owner else "")
+
+        shown = ", ".join(read_by(n) for n in exps[:MAX_READERS])
+        rest = f", and {len(exps) - MAX_READERS} more" if len(exps) > MAX_READERS else ""
+        rows.append(f"* **Read by:** {shown}{rest}")
+    return ["", "# Lineage", "", *rows] if rows else []
+
+
+def _governance(gf: GraphFacts, node_ids: list[str], concept: str) -> list[str]:
+    """What constrains this, and what was decided about it. Both are in the graph
+    and in neither the MDL nor the ontology alone — the policy chain is resolved
+    per project, and an ADR is a file the graph binds to the nodes it names."""
+    rows = []
+    for pol in gf.governing(concept):
+        severity = str((pol.get("props") or {}).get("severity") or "")
+        label = _one_line(pol.get("label") or "")
+        rows.append(
+            f"* **Policy** `{pol.get('name')}`"
+            + (f" ({severity})" if severity else "")
+            + (f" — {label}" if label else "")
+        )
+    for dec in gf.decided(node_ids):
+        status = str((dec.get("props") or {}).get("status") or "")
+        label = _one_line(dec.get("label") or "")
+        rows.append(
+            f"* **Decision** {dec.get('name')}"
+            + (f" — {label}" if label else "")
+            + (f" ({status})" if status else "")
+        )
+    return ["", "# Governance", "", *rows] if rows else []
+
+
+def _kg_node(gf: GraphFacts | None, node_id: str) -> str | None:
+    """The graph node this page documents, stated only when it resolves.
+
+    A key that is written whether or not the node exists is a pointer nobody can
+    trust; written only when it resolves, `reconcile` can treat a dangling one as
+    what it is — a bundle and a graph rebuilt independently of each other.
+    """
+    return node_id if gf is not None and gf.has(node_id) else None
+
+
 def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
     """The project bundle as {path: text}, validated through the weaver's models."""
     root = Path(root)
@@ -258,6 +449,10 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
     # The gate: a bundle the weaver would reject cannot be written.
     bundle = models.OKFBundle(name=f"{group}/{project}", tables=tables) if tables else None
     concepts_used = sorted({c for c in concept_of.values() if c in classes})
+    # What this bundle will document, so a lineage line links a page it holds and
+    # names plainly what it does not.
+    have_table = {t.name for t in bundle.tables} if bundle is not None else set()
+    have_metric = {str(ms.name) for ms in f.metrics}
     files["index.md"] = _index(f, bundle, concept_of, concepts_used)
     if bundle is not None:
         metrics_on = {}
@@ -272,13 +467,16 @@ def build_project(root: str | Path, group: str, project: str) -> dict[str, str]:
                 role_of[t.name],
                 withheld.get(t.name, 0),
                 metrics_on.get(t.name, []),
+                f.graph,
+                have_table,
+                have_metric,
             )
     for cls in concepts_used:
         files[f"concepts/{cls}.md"] = _concept_file(
             f, classes[cls], cls in f.platform_classes, [t for t, c in sorted(concept_of.items()) if c == cls]
         )
     for ms in f.metrics:
-        files[f"metrics/{ms.name}.md"] = _metric_file(ms)
+        files[f"metrics/{ms.name}.md"] = _metric_file(ms, f.graph)
     return files
 
 
@@ -289,6 +487,8 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
         "okf_x_group": f.group,
         "okf_x_project": f.project,
         "okf_x_platform_bundle": _platform_link(f.pdir, f.root, "index.md"),
+        "okf_x_kg_graph": KG_LINK if f.graph is not None else None,
+        "okf_x_kg_models": f.graph.count("Model") if f.graph is not None else None,
         "okf_x_tables": len(bundle.tables) if bundle is not None else 0,
         "okf_x_concepts": len(concepts),
         "okf_x_metrics": len(f.metrics),
@@ -307,9 +507,18 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
             f"({front['okf_x_platform_bundle']})."
         ),
         "",
-        "# Tables",
-        "",
     ]
+    if f.graph is not None:
+        lines += [
+            (
+                f"Joined to this project's knowledge graph ([kg/graph.json]({KG_LINK})): every page names the node "
+                f"it documents, and states the lineage, policies and decisions the graph holds for it. The graph "
+                f"reaches {front['okf_x_kg_models']} model(s); the {front['okf_x_tables']} below are the ones the "
+                f"semantic layer projects to BI."
+            ),
+            "",
+        ]
+    lines += ["# Tables", ""]
     if bundle is None:
         lines.append("_No models in the semantic layer yet — `pf seed`, then `pf semantic mdl`._")
     else:
@@ -327,7 +536,15 @@ def _index(f: Facts, bundle: Any, concept_of: dict[str, str], concepts: list[str
 
 
 def _table_file(
-    t: Any, m: dict[str, Any], concept: str, role_of: dict[str, str], withheld: int, metrics: list[str]
+    t: Any,
+    m: dict[str, Any],
+    concept: str,
+    role_of: dict[str, str],
+    withheld: int,
+    metrics: list[str],
+    gf: GraphFacts | None = None,
+    have_table: set[str] | None = None,
+    have_metric: set[str] | None = None,
 ) -> str:
     props = m.get("properties") or {}
     front: dict[str, Any] = {
@@ -340,6 +557,7 @@ def _table_file(
         "okf_x_layer": props.get("layer") or None,
         "okf_x_grain": _one_line(props.get("grain") or "") or None,
         "okf_x_columns_withheld": withheld,
+        "okf_x_kg_node": _kg_node(gf, f"model:{t.name}"),
     }
     rows = [
         "# Schema",
@@ -367,6 +585,10 @@ def _table_file(
             "",
             f"_{withheld} column(s) withheld: masked by policy in the MDL, and not named in a portable file._",
         ]
+    node_id = f"model:{t.name}"
+    if gf is not None and gf.has(node_id):
+        body += _lineage(gf, node_id, have_table or set(), have_metric or set(), set(metrics))
+        body += _governance(gf, [node_id, *gf.columns_of(node_id)], concept)
     return _front(front) + "\n" + "\n".join(body) + "\n"
 
 
@@ -378,6 +600,7 @@ def _concept_file(f: Facts, cls: Any, platform_defined: bool, tables: list[str])
         "okf_x_defined_in": "platform" if platform_defined else "group",
         "okf_x_parent": getattr(cls, "parent", None) or None,
         "okf_x_identity": getattr(cls, "identity", None) or None,
+        "okf_x_kg_node": _kg_node(f.graph, f"concept:{cls.name}"),
     }
     if platform_defined:
         front["okf_x_platform_concept"] = _platform_link(f.pdir, f.root, f"concepts/{cls.name}.md")
@@ -398,10 +621,17 @@ def _concept_file(f: Facts, cls: Any, platform_defined: bool, tables: list[str])
         rels = sorted(f.onto.relations_for(cls.name), key=lambda r: r.name) if hasattr(f.onto, "relations_for") else []
         if rels:
             lines += ["", "# Relations", ""] + [f"* {r.describe()} — {_one_line(r.description)}" for r in rels]
+    if f.graph is not None and f.graph.has(f"concept:{cls.name}"):
+        sources = f.graph.upstream(f"concept:{cls.name}", "Table", edge="instantiates")
+        if sources:
+            lines += ["", "# Raw tables that instantiate it", ""] + [
+                f"* `{str(n.get('id') or '').split(':', 1)[-1]}`" for n in sources
+            ]
+        lines += _governance(f.graph, [f"concept:{cls.name}"], cls.name)
     return _front(front) + "\n" + "\n".join(lines) + "\n"
 
 
-def _metric_file(ms: Any) -> str:
+def _metric_file(ms: Any, gf: GraphFacts | None = None) -> str:
     front: dict[str, Any] = {
         "type": "Metric",
         "title": ms.label or ms.name,
@@ -409,6 +639,7 @@ def _metric_file(ms: Any) -> str:
         "okf_x_kind": ms.kind,
         "okf_x_model": ms.model or None,
         "okf_x_time_column": ms.time_column or None,
+        "okf_x_kg_node": _kg_node(gf, f"metric:{ms.name}"),
     }
     lines = [
         "# Definition",
@@ -427,6 +658,9 @@ def _metric_file(ms: Any) -> str:
         lines.append("* **Dimensions:** " + ", ".join(f"`{d}`" for d in ms.dimensions))
     if ms.filter_sql:
         lines.append(f"* **Filter:** `{ms.filter_sql}`")
+    node_id = f"metric:{ms.name}"
+    if gf is not None and gf.has(node_id):
+        lines += _governance(gf, [node_id], "")
     return _front(front) + "\n" + "\n".join(lines) + "\n"
 
 
@@ -603,7 +837,124 @@ def check_project(root: str | Path, group: str, project: str) -> list[str]:
         return [f"{group}/{project}: no okf/ — run `pf tool okf build {group} {project}`"]
     problems = [f"{group}/{project}: {x}" for x in _drift(out, build_project(root, group, project))]
     problems += [f"{group}/{project}: {x}" for x in conformance(out)]
+    problems += [f"{group}/{project}: {x}" for x in reconcile(root, group, project).problems]
     return problems
+
+
+# ------------------------------------------------------------------- join ---
+#: The frontmatter key every page uses to name its graph node.
+KG_NODE_KEY = "okf_x_kg_node"
+
+
+def page_rel(kind: str, name: str) -> str:
+    """Where a graph node of this kind is documented, by convention.
+
+    One definition of the convention, so the graph side can answer "where is
+    this written down" without importing the projection or storing a path on a
+    node — a path stored in the graph is one build behind the day a project
+    gains its first model, and wrong forever if the bundle is rebuilt without it.
+    """
+    folder = {"Model": "tables", "Concept": "concepts", "Metric": "metrics"}.get(kind, "")
+    return f"{OKF_REL}/{folder}/{name}.md" if folder and name else ""
+
+
+def frontmatter(path: str | Path) -> dict[str, Any]:
+    """A page's YAML frontmatter, or {} for anything unparseable."""
+    m = _FRONT.match(Path(path).read_text(encoding="utf-8"))
+    if not m:
+        return {}
+    try:
+        return yaml.safe_load(m.group(1)) or {}
+    except yaml.YAMLError:
+        return {}
+
+
+@dataclass
+class Join:
+    """How the committed bundle and the committed graph line up.
+
+    `exercised` is the honest third answer, for the same reason `GraphDrift` has
+    one: a project with no graph or no bundle cannot be judged, and reporting
+    that as "joined" would be the green tick for "found nothing" that every gate
+    here refuses to give.
+    """
+
+    group: str
+    project: str
+    exercised: bool
+    reason: str = ""
+    pages: int = 0
+    resolved: int = 0
+    dangling: list[str] = field(default_factory=list)
+    undocumented: list[str] = field(default_factory=list)
+
+    @property
+    def problems(self) -> list[str]:
+        """Only a dangling node is a problem. A graph model with no page is the
+        design — the bundle documents what the semantic layer projects to BI,
+        and the graph reaches every staging model behind it."""
+        return [
+            f"{rel}: names `{node}`, which kg/graph.json does not hold — "
+            f"the bundle and the graph were rebuilt independently"
+            for rel, node in (d.split(" -> ", 1) for d in self.dangling)
+        ]
+
+    def render(self) -> str:
+        who = f"{self.group}/{self.project}"
+        if not self.exercised:
+            return f"?  {who} — not exercised: {self.reason}"
+        if self.dangling:
+            lines = [f"⛔ {who} — {len(self.dangling)} page(s) name a node the graph does not hold"]
+            lines += [f"     {d}" for d in sorted(self.dangling)[:8]]
+            lines.append("     run `pf kg build` then `pf tool okf build`, and commit both")
+            return "\n".join(lines)
+        named = self.resolved + len(self.dangling)
+        bits = [f"{self.resolved}/{named} page(s) resolve in the graph"]
+        # A page with no node id at all is not a failure and not a success: the
+        # graph did not hold its subject when the bundle was built. Saying so is
+        # the difference between "joined" and "nothing to join".
+        if self.pages > named:
+            bits.append(f"{self.pages - named} name no node")
+        if self.undocumented:
+            bits.append(f"{len(self.undocumented)} graph model(s) below the documented layer")
+        return f"✓  {who} — " + " · ".join(bits)
+
+
+def reconcile(root: str | Path, group: str, project: str) -> Join:
+    """Read the committed bundle against the committed graph. Neither is rebuilt.
+
+    `check_project` rebuilds the bundle and compares, which catches a stale
+    bundle by definition. This asks the other question: do the two artefacts
+    agree *as committed*? A graph rebuilt after a model was renamed, committed
+    without its bundle, leaves pages pointing at nodes that no longer exist —
+    and every agent that follows one reads a file about a model the warehouse
+    does not have.
+    """
+    root = Path(root)
+    pdir = root / "groups" / group / "projects" / project
+    out = pdir / OKF_REL
+    if not out.is_dir():
+        return Join(group, project, False, f"no okf/ — run `pf tool okf build {group} {project}`")
+    gf = load_graph(pdir)
+    if gf is None:
+        return Join(group, project, False, "no kg/graph.json; the graph has never been built")
+
+    join = Join(group, project, True)
+    for page in sorted(out.rglob("*.md")):
+        rel = page.relative_to(out).as_posix()
+        if rel in RESERVED:
+            continue
+        join.pages += 1
+        node = str(frontmatter(page).get(KG_NODE_KEY) or "")
+        if not node:
+            continue  # a page the graph did not reach when the bundle was built
+        if gf.has(node):
+            join.resolved += 1
+        else:
+            join.dangling.append(f"{rel} -> {node}")
+    documented = {p.stem for p in (out / "tables").glob("*.md")} if (out / "tables").is_dir() else set()
+    join.undocumented = [n for n in gf.named("Model") if n not in documented]
+    return join
 
 
 def check_platform(root: str | Path) -> list[str]:

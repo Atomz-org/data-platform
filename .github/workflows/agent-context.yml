@@ -83,6 +83,17 @@ jobs:
       - name: Harness maps are current
         run: uv run pf harness check
 
+      # What a table and a column *mean*, as every agent and catalogue reads
+      # it — and the graph it is joined to. Built from tracked inputs only
+      # (`mdl/mdl.json`, `kg/graph.json`), so this compares the same way on a
+      # runner with no warehouse as on a laptop with one. The PR that renames a
+      # model or changes a role is the PR that makes a page lie, and `graph`
+      # catches the other half: a bundle and a graph rebuilt without each other.
+      - name: OKF bundles are current and joined to the graph
+        run: |
+          uv run pf tool okf check --all
+          uv run pf tool okf graph --all
+
       - name: Token budgets (advisory until the jaffle-shop card is decided)
         continue-on-error: true
         run: |

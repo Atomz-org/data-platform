@@ -31,6 +31,15 @@ def _fmt(n: Node) -> str:
     return " ".join(bits)
 
 
+def _documented_at(graph_path: str | Path, node: Node) -> str:
+    """The OKF page for this node, or "" — derived from the bundle on disk, never
+    from a path stored in the graph, which the next bundle build would outdate."""
+    from pf.projections.okf import page_rel
+
+    rel = page_rel(node.kind, node.name)
+    return rel if rel and (Path(graph_path).parent.parent / rel).is_file() else ""
+
+
 def kg_search(graph_path: str | Path, term: str, kinds: list[str] | None = None,
               limit: int = MAX_ROWS) -> str:
     """Find nodes by name, label or business term. The vague-question entry point."""
@@ -83,8 +92,14 @@ def kg_neighbors(graph_path: str | Path, node_id: str, depth: int = 1,
 
     if kinds:
         rows = [r for r in rows if r[3].kind in kinds]
-    header = f"{start.kind} {_fmt(start)}\n{len(rows)} neighbour(s) within depth {depth}:"
-    lines = [header]
+    lines = [f"{start.kind} {_fmt(start)}"]
+    # Where this node is written down for a reader, when the project's OKF
+    # bundle documents it. The whole point of the graph is to be asked before a
+    # file is opened; this is the one file worth opening afterwards.
+    page = _documented_at(graph_path, start)
+    if page:
+        lines.append(f"documented in {page}")
+    lines.append(f"{len(rows)} neighbour(s) within depth {depth}:")
     for d, arrow, kind, n in sorted(rows, key=lambda r: (r[0], r[3].kind))[:limit]:
         lines.append(f"  d{d} {arrow} {kind:12} {n.kind:9} {_fmt(n)}")
     if len(rows) > limit:
