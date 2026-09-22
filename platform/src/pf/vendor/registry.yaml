@@ -1459,7 +1459,7 @@ upstreams:
 
   # --------------------------------------------------------------- harness --
   - id: ecc
-    summary: "per-harness adapters: one gate reached from Codex, Cursor, Gemini, Copilot, OpenCode"
+    summary: "per-harness adapters: one gate, reached from every agent tool"
     name: ECC (Everything Claude Code)
     url: https://github.com/dockerai09-ai/ECC
     path: vendor/ecc
