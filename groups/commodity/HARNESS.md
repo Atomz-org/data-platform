@@ -9,7 +9,7 @@ What every sister project inherits, decided once for the family. A sister may op
 
 | decision | file | effect |
 |---|---|---|
-| tools | `tools.yaml` | `openmetadata`, `recce`, `wren` — each sister may set `enabled: false` |
+| tools | `tools.yaml` | `okf`, `openmetadata`, `recce`, `wren` — each sister may set `enabled: false` |
 | loops | `loops.yaml` | `freshness-triage` (cadence), `metric-gap-harvester` (4 waivers); off: `vendor-drift` |
 | AI controls | `air.yaml` | baseline 0, accepted 0; a sister's baseline is a union with this one |
 | delivery | `notify.yaml` | `ask` → `${PF_NOTIFY_WEBHOOK_COMMODITY_ASK}`, `default` → `${PF_NOTIFY_WEBHOOK_COMMODITY}`, `loops` → `${PF_NOTIFY_WEBHOOK_COMMODITY_LOOPS}` |

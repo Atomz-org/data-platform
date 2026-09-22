@@ -131,7 +131,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | ✓ 18 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 8 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/commodity_india/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -143,10 +143,11 @@ flowchart TB
 | tool overrides | ✓ | `tools.yaml` | opt out of a group tool or retune one; merged over the group's |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
+| okf | ✓ | `okf/index.md` | Open Knowledge Format: the semantic layer as portable, validated context for agents. |
 
-**Capabilities:** `air`, `evidence`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `air`, `evidence`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
 
-**Tools enabled:** `openmetadata`, `recce`, `wren`
+**Tools enabled:** `okf`, `openmetadata`, `recce`, `wren`
 
 ## Gaps
 
