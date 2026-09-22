@@ -45,6 +45,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 
 * [avg_benchmark_price_usd](/metrics/avg_benchmark_price_usd.md)
 * [benchmark_price_days](/metrics/benchmark_price_days.md)
+* [benchmark_price_mom_change](/metrics/benchmark_price_mom_change.md)
 * [benchmark_price_usd_total](/metrics/benchmark_price_usd_total.md)
 * [contracts_traded](/metrics/contracts_traded.md)
 * [period_high_price_usd](/metrics/period_high_price_usd.md)
