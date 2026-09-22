@@ -43,7 +43,7 @@ The `pf` server exposes 26 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 
 **Asks first:** `gh pr create`, `git push`.
 
-**Allowed without asking** (32): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `edr monitor`, `edr report`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, `npm run dev`, `npm run sources`, `pf air`, `pf align`, `pf artifacts`, `pf ask`, `pf evals-gate`, `pf logs`, `pf loop`, `pf report`, `pf tool elementary`, `pf tool expectations`, `pf tool openmetadata`, `pf tool recce`, `pf tool wren`, `recce debug`, `recce run`, `recce server`, `uv run pf`, `wren`.
+**Allowed without asking** (33): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `edr monitor`, `edr report`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, `npm run dev`, `npm run sources`, `pf air`, `pf align`, `pf artifacts`, `pf ask`, `pf evals-gate`, `pf logs`, `pf loop`, `pf report`, `pf tool elementary`, `pf tool expectations`, `pf tool okf`, `pf tool openmetadata`, `pf tool recce`, `pf tool wren`, `recce debug`, `recce run`, `recce server`, `uv run pf`, `wren`.
 
 **The gate**, as it judges this project: `gate.yaml` plus `gate.capabilities.yaml`, applied to representative paths (real where the project has them) as a `pf work` session is judged. *Denied*: the hook exits 2 and the commit gate refuses. *Impact first*: the hook prints the blast radius and the commit gate runs impact analysis.
 
@@ -55,10 +55,8 @@ The `pf` server exposes 26 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | `transform/models/utils/_utils__models.yml` | impact first | impact_required `**/transform/models/**/*.yml` |
 | `transform/macros/example.sql` | allowed | allowlist `**/*.sql` |
 | `transform/tests/expectations/example.yml` | impact first | impact_required `**/transform/tests/expectations/**` |
-| `transform/target/manifest.json` | **denied** | denylist `**/target/**` |
 | `transform/recce.yml` | impact first | impact_required `**/transform/recce.yml` |
 | `transform/recce_state.json` | **denied** | denylist `**/transform/recce_state.json` |
-| `kg/graph.json` | allowed | default |
 | `kg/graph.duckdb` | **denied** | denylist `**/kg/graph.duckdb` |
 | `kg/context_card.md` | **denied** | denylist `**/kg/context_card.md` |
 | `kg/architecture.md` | allowed | denylist_except |
@@ -70,14 +68,12 @@ The `pf` server exposes 26 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | `air.yaml` | impact first | impact_required `**/air.yaml` |
 | `reporting/pages/index.md` | allowed | allowlist `**/*.md` |
 | `reporting/queries/metrics/example.sql` | **denied** | denylist `**/reporting/queries/metrics/**` |
-| `reporting/evidence.config.yaml` | allowed | default |
 | `evals/cases/example.json` | allowed | allowlist `**/evals/cases/**` |
 | `evals/cases/generated/example.json` | **denied** | denylist `**/evals/cases/generated/**` |
 | `CLAUDE.md` | allowed | allowlist `**/*.md` |
 | `data/zenith_de.duckdb` | **denied** | denylist `**/data/*.duckdb` |
 | `data/zenith_de.quack.json` | **denied** | denylist `**/data/*.quack.json` |
 | `.dlt/secrets.toml` | **denied** | denylist `**/secrets.toml` |
-| `.env.local` | **denied** | denylist `.env.*` |
 | `logs/trace/example.jsonl` | **denied** | denylist `**/logs/trace/**` |
 | `platform/src/pf/cli.py` | **denied** | platform_denylist `platform/**` |
 | `vendor/example/README.md` | **denied** | platform_denylist `vendor/**` |
@@ -118,7 +114,7 @@ Repository-wide, whatever the change touches:
 - `ai-governance` (every pull request · daily): `provenance`, `anchor`, `compliance-scan`, `air-baseline`
 - `claude-review` (every pull request): `review`
 - `pr-report` (every pull request): `report`
-- `agent-context` (every pull request): the entry points agree, and the memory index, the test index, the repo map, the onboarding guide and these harness maps are current
+- `agent-context` (every pull request): entry points, memory and test indexes, repo map, guide and these maps are current
 
 Only when platform paths change: `copilot-setup-steps`, `platform-tests`, `platform`, `vendor-pins`.
 
@@ -143,19 +139,19 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/zenith/n
 
 ## 6. Recorded and judged
 
-- **Provenance.** The hooks write INTENT, DECISION and EXECUTION into `provenance/` — gitignored, denied to every agent, hash-chained and time-anchored. `pf provenance verify` audits it.
+- **Provenance.** The hooks write INTENT, DECISION and EXECUTION into `provenance/` — gitignored, denied, hash-chained, time-anchored; `pf provenance verify` audits it.
 - **AI controls.** `air.yaml` commits to 0 controls and accepts 0, merged over the group's; `pf air gate zenith zenith-de` blocks on a failing baseline control. The register is generated to `governance/air-register.md`.
 - **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
-- **Evals.** 0 hand-written cases in `evals/cases/`; generated ones are gitignored (`pf evals-gen`). `pf evals zenith zenith-de` runs them; `pf evals-gate` runs on a change to an agent surface.
+- **Evals.** 0 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals zenith zenith-de` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align zenith zenith-de`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 0 ADRs in `decisions/`; 10 capability pages in `docs/`.
+- **Decisions.** 0 ADRs in `decisions/`; 11 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 
 | subproject | where | what wraps it |
 |---|---|---|
 | dlt pipeline | `src/zenith_de/` | 0 sources, each `@annotate`d against `contracts/annotations.yaml`; `sources/*.py` impact-gated; `.dlt/secrets.toml` unreadable and unwritable; `definitions.py` is the Dagster code location |
-| dbt project | `transform/` | targets dev `duckdb`, ci `duckdb`, prod `snowflake`, base `duckdb`; `target/` and `dbt_packages/` denied; bound to its manifest: `elementary`, `openmetadata`, `recce`, `wren` |
+| dbt project | `transform/` | targets dev `duckdb`, ci `duckdb`, prod `snowflake`, base `duckdb`; `target/` and `dbt_packages/` denied; bound to its manifest: `elementary`, `okf`, `openmetadata`, `recce`, `wren` |
 | semantic layer | `transform/models/semantic/` | MetricFlow metrics, projected to `mdl/mdl.json` (denied, carried) by `pf semantic mdl`; queried by `mf`, `pf ask` and the `query_metrics` MCP tool |
 | knowledge graph | `kg/` | `graph.json` tracked and `graph.duckdb` denied (`pf kg build`); `context_card.md` denied (`pf kg card`); `architecture.md` carried (`pf arch`); CI `kg-current` and `architecture` |
 | Evidence report | `reporting/` | its own [`HARNESS.md`](reporting/HARNESS.md); 0 exposures reach its pages |
@@ -167,11 +163,12 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/zenith/n
 
 - `elementary` — Data observability — every dbt build records run and test history into the warehouse; `edr` renders the report. (from the group; denies 1; a Dagster asset; a dev server on port 8020/elementary_report.html; plugin `elementary-observe@platform`)
 - `expectations` — Great Expectations-style dbt tests, project-wide, with an ontology-derived generated floor. (from the group; impact-gates 1)
+- `okf` — Open Knowledge Format: the semantic layer as portable, validated context for agents. (from the group; denies 6; a Dagster asset; a dev server on port 8010/docs)
 - `openmetadata` — Catalogue: publish the ontology, dbt lineage and review findings. (from the group; denies 3; a Dagster asset; a dev server on port 8585/)
 - `recce` — dbt PR review — diff a change against a captured baseline. (from the group; denies 3; impact-gates 1; CI `recce`; a Dagster asset; a dev server on port 8000/)
 - `wren` — MDL semantic layer — project it, inspect it, query through it. (from the group; denies 2; a Dagster asset)
 
-**Capabilities present:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`.
+**Capabilities present:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`.
 
 ## Gaps
 

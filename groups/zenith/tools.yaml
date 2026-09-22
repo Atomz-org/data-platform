@@ -17,3 +17,5 @@ tools:
     enabled: true
   elementary:
     enabled: true
+  okf:
+    enabled: true
