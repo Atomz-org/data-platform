@@ -155,6 +155,17 @@ Commits: **at most 12 files each** (`gate.yaml` `maxFiles`), a subject line
 that says what changed and a body that says why, never `--no-verify`. Split
 larger work into a sequence — the history is full of `(1 of 2)`.
 
+**A feature lands with its evidence.** `gate.yaml`'s `tests_required` refuses
+a run that adds a file under `platform/src/pf/` or `platform/hooks/` with
+nothing under `platform/tests/`, or a skill under a toolkit with nothing under
+that toolkit's `evals/`; a run that only modifies one is warned. So the test
+travels in the same commit as the code, not the next one — split by feature,
+not by kind. Deleted tests are never shown to the gate, so removing one is
+not evidence. What the gate cannot judge is yours to: the evidence must fail
+before the change and pass after it, and the rest of this section must still
+be green — new behaviour never buys itself room by weakening an existing
+check.
+
 ## 5. Before you finish — the write protocol
 
 If you learned something the next agent would otherwise pay for again — a
@@ -238,3 +249,6 @@ workflow commits that refresh to the branch itself.
   execution against warehouses, not a report.
 - Expand `CLAUDE.md`. It is budgeted and CI-enforced; new material goes in
   `docs/` or in a memory note.
+- Land a feature without the test or eval that proves it, or make the
+  suite green by deleting or loosening an existing check. The gate refuses
+  the first (§4, `tests_required`); review is the guard for the second.

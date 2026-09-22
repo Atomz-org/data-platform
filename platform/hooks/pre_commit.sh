@@ -15,5 +15,10 @@ set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 STAGED="$(git diff --cached --name-only --diff-filter=ACMR)"
 [ -z "$STAGED" ] && exit 0
+# The added subset, separately: `tests_required` refuses a *new* source file
+# with no evidence and only warns on a modified one, and the gate cannot tell
+# the two apart from a path list. Passed even when empty — an absent flag
+# means "unknown", which the gate judges as new.
+ADDED="$(git diff --cached --name-only --diff-filter=A)"
 cd "$ROOT"
-exec uv run pf gate --paths "$(echo "$STAGED" | tr '\n' ',')"
+exec uv run pf gate --paths "$(echo "$STAGED" | tr '\n' ',')" --added "$(echo "$ADDED" | tr '\n' ',')"

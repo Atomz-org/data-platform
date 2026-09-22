@@ -223,6 +223,30 @@ autoMergeAllowlist:
   - "**/evals/cases/**"
   - '**/transform/macros/**'
 
+# A feature and its evidence land together.
+#
+# pytest and the contract evals already say whether the suite is green. What
+# nothing said was whether a change *has* a suite: a new module under
+# platform/src/pf with no test, or a new skill with no eval case, passed every
+# check there was by having nothing to fail — the same hole `pf group verify`
+# closed for groups. Each pair names a source root and the root where its
+# evidence lives. A run that ADDS a source path and touches nothing under the
+# paired evidence root is refused; a run that only modifies one is warned.
+# `scope` is how many leading path segments a source hit and an evidence hit
+# must share, so a skill in one toolkit is not covered by an eval in another.
+# Deleted paths are never shown to the gate (see the note at the top), so a
+# deleted test cannot count as evidence. The rule that a test must fail before
+# the change and pass after it is review's to keep; a gate cannot tell a real
+# test from a tautology.
+tests_required:
+  - source: "platform/src/pf/**/*.py"
+    evidence: "platform/tests/**/*.py"
+  - source: "platform/hooks/**"
+    evidence: "platform/tests/**/*.py"
+  - source: "platform/toolkits/*/skills/**"
+    evidence: "platform/toolkits/*/evals/**"
+    scope: 3
+
 # A single loop run may not touch more than this many files.
 maxFiles: 12
 

@@ -2630,18 +2630,31 @@ def cmd_install_hook(
 
 
 @app.command()
-def gate(paths: str = typer.Option(..., help="comma-separated paths")) -> None:
+def gate(
+    paths: str = typer.Option(..., help="comma-separated paths"),
+    added: str | None = typer.Option(
+        None, "--added",
+        help="comma-separated subset of --paths that are new files; the rest count as modified. "
+             "Omitted means unknown, and unknown is judged as new.",
+    ),
+) -> None:
     """Enforce gate.yaml over a set of paths. Used by the pre-commit hook."""
     from pf.kg.impact import impact_of_many
 
     r = root()
     plist = [p.strip() for p in paths.split(",") if p.strip()]
-    results = check_paths(plist, r, in_project=False)
+    alist = None if added is None else [p.strip() for p in added.split(",") if p.strip()]
+    results = check_paths(plist, r, in_project=False, added=alist)
     blocked = [x for x in results if x.blocked]
     warned = [x for x in results if x.verdict == "warn"]
 
     for x in blocked:
         console.print(f"[red]DENY[/] {x.path}  [{x.rule}]  {x.message}")
+    # Evidence warnings are for platform paths, which have no project and so no
+    # blast radius to fold them into below; print them, or a warning is silent.
+    for x in warned:
+        if x.rule.startswith("tests_required"):
+            console.print(f"[yellow]WARN[/] {x.path}  [{x.rule}]  {x.message}")
 
     by_project: dict[tuple[str, str, Path], list[str]] = {}
     for x in warned:

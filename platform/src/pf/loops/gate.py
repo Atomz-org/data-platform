@@ -238,7 +238,15 @@ def check_path(path: str, root: Path, in_project: bool = False) -> GateResult:
     return GateResult("allow", "default", path, "")
 
 
-def check_paths(paths: list[str], root: Path, in_project: bool = False) -> list[GateResult]:
+def check_paths(paths: list[str], root: Path, in_project: bool = False,
+                added: list[str] | None = None) -> list[GateResult]:
+    """Every per-path verdict, then the rules that judge the run as a whole.
+
+    `added` is the subset of `paths` that are new files, when the caller knows
+    it (the pre-commit hook and the PR workflow do). `None` means unknown, and
+    unknown is treated as new: a caller that cannot say whether a source file
+    is new gets the strict reading, not the lenient one.
+    """
     results = [check_path(p, root, in_project) for p in paths]
     policy = load_policy(root)
     limit = int(policy.get("maxFiles", 0) or 0)
@@ -246,7 +254,68 @@ def check_paths(paths: list[str], root: Path, in_project: bool = False) -> list[
         results.append(GateResult("deny", f"maxFiles:{limit}", f"{len(paths)} files",
                                   f"a single run may touch at most {limit} files; "
                                   f"split the change"))
+    results.extend(check_evidence(paths, root, added))
     return results
+
+
+def _norm(p: str) -> str:
+    return p.replace("\\", "/").removeprefix("./")
+
+
+def _glob(path: str, pattern: str) -> bool:
+    # `**/` is not fnmatch's; `*` already crosses `/`. Same reading as
+    # `pf.evals.gate`, so a path the evals gate calls a skill this one does too.
+    return fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(path, pattern.replace("**/", ""))
+
+
+def _same_scope(a: str, b: str, n: int) -> bool:
+    return n <= 0 or a.split("/")[:n] == b.split("/")[:n]
+
+
+def check_evidence(paths: list[str], root: Path, added: list[str] | None = None) -> list[GateResult]:
+    """A feature and its evidence land together — `gate.yaml`'s `tests_required`.
+
+    For each pair, every path matching `source` must be accompanied, in the
+    same run, by a path matching `evidence` within the same `scope`. A new
+    source path with none is denied; a modified one is warned. One result per
+    uncovered source path, so the message names the file and not the rule.
+
+    The gate sees added, modified and renamed paths and never deleted ones, so
+    a removed test is not evidence — which is the one way a rule like this is
+    usually gamed. What it cannot judge is whether the evidence is real; a test
+    that passes on the old code satisfies the pair and proves nothing. That is
+    review's to keep, and `AGENTS.md` §4 says so.
+    """
+    policy = load_policy(root)
+    pairs = [x for x in (policy.get("tests_required") or []) if isinstance(x, dict)]
+    if not pairs:
+        return []
+    norm = [_norm(p) for p in paths]
+    new = None if added is None else {_norm(p) for p in added}
+    out: list[GateResult] = []
+    for pair in pairs:
+        src = str(pair.get("source") or "")
+        ev = str(pair.get("evidence") or "")
+        scope = int(pair.get("scope") or 0)
+        if not src or not ev:
+            continue
+        hits = [p for p in norm if _glob(p, src)]
+        if not hits:
+            continue
+        evidence = [p for p in norm if _glob(p, ev)]
+        for h in hits:
+            if any(_same_scope(h, e, scope) for e in evidence):
+                continue
+            is_new = new is None or h in new
+            where = ev if scope <= 0 else f"{ev} under {'/'.join(h.split('/')[:scope])}"
+            out.append(GateResult(
+                "deny" if is_new else "warn",
+                f"tests_required:{src}",
+                h,
+                f"{'added' if is_new else 'changed'} with nothing under {where} — "
+                f"a feature lands with the test or eval that proves it",
+            ))
+    return out
 
 
 def tracked_denied(root: Path) -> list[GateResult]:
