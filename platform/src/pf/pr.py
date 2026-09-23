@@ -166,6 +166,11 @@ def build(root: str | Path, number: int = 0, base: str = "", title: str = "") ->
     # per-run `maxFiles` cap, which exists to keep one *agent run* small. A pull
     # request legitimately touches more files than an agent should in one go, and
     # conflating the two makes every real PR report BLOCK for the wrong reason.
+    #
+    # That is a statement about the *union*, and it is not a hole: the cap is
+    # re-applied to this branch commit by commit — by the pre-push hook, and by
+    # `agent-context.yml` on every pull request — which is the shape the rule
+    # actually has. See `pf.loops.gate.check_commits`.
     denied = [f"{g.path}: {g.message}"
               for g in (check_path(f, root)
                         for f in changed_files(root, base, exclude_deleted=True))

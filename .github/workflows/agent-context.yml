@@ -43,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The commit cap below measures each commit this PR adds, so it needs
+          # the base branch and the commits themselves, not a shallow tip.
+          fetch-depth: 0
 
       # Pin by pin, not `submodules: recursive`: one unreachable upstream must
       # not take the whole check with it (see platform-tests.yml).
@@ -57,6 +61,30 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen
+
+      # The cap that had no second look. `maxFiles` is a *per-run* rule applied
+      # to whatever set one call hands the gate, and until this step the only
+      # caller was the local pre-commit hook over one staged set — so
+      # `git commit --no-verify`, or a clone where nobody had ever run `pf`,
+      # produced commits the gate never saw and nothing afterwards re-measured.
+      # The hook is not committable; git does not clone `.git/hooks`. A control
+      # that only runs where someone remembered to install it is the control
+      # this repo already learned not to trust.
+      #
+      # So the same rule, from the same gate.yaml, is re-applied here to each
+      # commit the pull request adds. Per commit, never over the union: a pull
+      # request legitimately touches more files than one run should, which is
+      # why `pf pr report` skips the cap entirely (see pf/pr.py). Merges are
+      # excluded — a merge's diff is the whole branch it absorbs, and the
+      # commits inside it are each judged on their own.
+      #
+      # An over-cap commit that cannot be split says so in its own message, in
+      # a `Gate-Exempt: <reason>` trailer, and passes as a warning. The rule was
+      # never that a change may not exceed twelve files; it is that exceeding it
+      # may not be silent.
+      - name: Every commit is within the file cap
+        if: github.event_name == 'pull_request'
+        run: uv run pf gate --commits "origin/${{ github.event.pull_request.base.ref }}..HEAD"
 
       - name: Entry points agree (CLAUDE.md, AGENTS.md, GEMINI.md, Copilot) and harness configs are current
         run: uv run pf context check

@@ -306,6 +306,25 @@ harness_required:
       - "groups/{group}/**/HARNESS.md"
 
 # A single loop run may not touch more than this many files.
+#
+# Enforced three times, over this one number. `.git/hooks/pre-commit` counts a
+# staged set; `.git/hooks/pre-push` re-counts every commit leaving the machine;
+# `agent-context.yml` re-counts every commit a pull request adds. The second and
+# third exist because the first is skippable and silent about it — `git commit
+# --no-verify` walks past it, and a fresh clone has no hooks at all, since git
+# does not clone `.git/hooks`. For the life of this repo that was the whole
+# story: a 21-file commit landed unchecked and nothing anywhere said so.
+#
+# Always per commit, never over a pull request's union. A pull request
+# legitimately carries more files than one run should, and `pf pr report`
+# deliberately skips the cap for that reason; judging the union would make every
+# honest pull request fail, and the lesson people would take is that the cap is
+# noise.
+#
+# A commit that genuinely cannot be split carries a `Gate-Exempt: <reason>`
+# trailer and passes as a warning that quotes the reason into the log and the
+# review. The rule is not that a change may never exceed this number. It is that
+# exceeding it is never silent.
 maxFiles: 12
 
 # Severity at which a change is blocked rather than warned.

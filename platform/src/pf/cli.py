@@ -103,11 +103,11 @@ def _bootstrap_commit_gate() -> None:
     if os.environ.get("PF_NO_HOOK_INSTALL"):
         return
     try:
-        from pf.loops.gate import install_hook
+        from pf.loops.gate import install_hooks
 
-        changed, detail = install_hook(root())
-        if changed:
-            print(f"· commit gate installed — {detail}", file=sys.stderr)
+        for hook, changed, detail in install_hooks(root()):
+            if changed:
+                print(f"· {hook} gate installed — {detail}", file=sys.stderr)
     except Exception:  # noqa: BLE001 — never block the real command
         pass
 
@@ -900,12 +900,14 @@ def bootstrap_cmd(
         raise typer.Exit(1)
 
     # Repo-level, so it runs once rather than per project. Bootstrap is "re-run
-    # every post-scaffold step", and installing the commit gate is exactly that:
-    # a step every checkout needs and nobody remembers.
-    from pf.loops.gate import install_hook
+    # every post-scaffold step", and installing the gate's hooks is exactly
+    # that: a step every checkout needs and nobody remembers. Both of them —
+    # `pre-commit` judges what is staged, `pre-push` re-measures what was
+    # committed without it.
+    from pf.loops.gate import install_hooks
 
-    changed, detail = install_hook(root())
-    console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} {'commit gate':24} [dim]{detail}[/]")
+    for hook, changed, detail in install_hooks(root()):
+        console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} {hook + ' gate':24} [dim]{detail}[/]")
 
     failed = False
     for g, p, _ in targets:
@@ -1300,21 +1302,28 @@ def check(
     else:
         console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
 
-    # The gate is enforced at commit time, locally — so an uninstalled hook is
-    # not a missing convenience, it is the gate not running at all. This check
-    # exists because that was true for the whole life of the repo and nothing
-    # said so: `maxFiles` and the staged-set denylist were unenforced while
-    # reading as configured.
-    from pf.loops.gate import hook_status
+    # The gate is enforced locally first — so an uninstalled hook is not a
+    # missing convenience, it is the gate not running at all. This check exists
+    # because that was true for the whole life of the repo and nothing said so:
+    # `maxFiles` and the staged-set denylist were unenforced while reading as
+    # configured.
+    #
+    # Both hooks, because they fail differently. Without `pre-commit` nothing
+    # judges a commit before it is made; without `pre-push` nothing re-measures
+    # one that was made with `--no-verify`, or before the hooks were installed
+    # at all — and the whole point of that second look is that the first one
+    # leaves no trace when it is skipped.
+    from pf.loops.gate import hooks_status
 
-    hstate, hdetail = hook_status(root())
-    if hstate == "ok":
-        console.print(f"[green]✓[/] commit gate       {hdetail}")
-    elif hstate == "no-git":
-        console.print(f"[dim]·[/] commit gate       {hdetail}")
-    else:
-        console.print(f"[red]✗[/] commit gate       {hdetail}")
-        console.print("    [dim]nothing enforces gate.yaml on commit — run `pf install-hook`[/]")
+    for hook, hstate, hdetail in hooks_status(root()):
+        label = f"{hook} gate".ljust(17)
+        if hstate == "ok":
+            console.print(f"[green]✓[/] {label} {hdetail}")
+        elif hstate == "no-git":
+            console.print(f"[dim]·[/] {label} {hdetail}")
+        else:
+            console.print(f"[red]✗[/] {label} {hdetail}")
+            console.print("    [dim]run `pf install-hook`[/]")
 
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
@@ -2621,38 +2630,93 @@ def cmd_memory_audit(group: str, project: str) -> None:
 
 @app.command("install-hook")
 def cmd_install_hook(
-    force: bool = typer.Option(False, "--force", help="replace a pre-commit hook that is not ours"),
+    force: bool = typer.Option(False, "--force", help="replace a hook that is not ours"),
 ) -> None:
-    """Install the pre-commit gate, so gate.yaml is enforced before a commit lands.
+    """Install the gate's hooks, so gate.yaml is enforced before a commit lands.
 
-    This is the only place `maxFiles` and the staged-set denylist are enforced —
-    CI does not re-apply them — so a checkout without this hook has no gate.
+    Two of them. `pre-commit` judges the staged set — the denylist, the evidence
+    and harness pairs, `maxFiles`, impact analysis. `pre-push` re-measures every
+    commit on its way out, which is the only local answer to `git commit
+    --no-verify` and to a clone that was never gated at all.
+
+    Neither is the last word: `agent-context.yml` re-applies the same file cap
+    to a pull request's commits, because `git push --no-verify` skips this half
+    as easily as `--no-verify` skips the other.
     """
-    from pf.loops.gate import hook_status, install_hook
+    from pf.loops.gate import hook_status, install_hooks
 
-    _, detail = install_hook(root(), force=force)
-    state, _ = hook_status(root())
-    if state == "ok":
-        console.print(f"[green]✓[/] {detail}")
-        return
-    console.print(f"[red]✗[/] {detail}")
-    raise typer.Exit(1)
+    failed = False
+    for hook, _, detail in install_hooks(root(), force=force):
+        state, _ = hook_status(root(), hook)
+        if state == "ok":
+            console.print(f"[green]✓[/] {hook}  {detail}")
+            continue
+        console.print(f"[red]✗[/] {hook}  {detail}")
+        failed = True
+    if failed:
+        raise typer.Exit(1)
+
+
+def _report_commit_cap(r: Path, shown: str, spec: list[str]) -> None:
+    """Print the per-commit verdicts for a range, and exit 1 if any denies.
+
+    Exits rather than returning a flag: a range that cannot be resolved must
+    fail loudly. An unfetched base or a shallow clone selects no commits, which
+    is indistinguishable from a branch where every commit is within the cap —
+    the one answer this check must never give by accident.
+    """
+    from pf.loops.gate import GitError, check_commits
+
+    try:
+        results = check_commits(r, spec)
+    except GitError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    for x in results:
+        tag = "[red]DENY[/]" if x.blocked else "[yellow]WARN[/]"
+        console.print(f"{tag} {x.path}  [{x.rule}]  {x.message}")
+    if any(x.blocked for x in results):
+        raise typer.Exit(1)
+    console.print(f"[green]✓[/] every commit in {shown} is within the file cap")
 
 
 @app.command()
 def gate(
-    paths: str = typer.Option(..., help="comma-separated paths"),
+    paths: str | None = typer.Option(None, help="comma-separated paths"),
     added: str | None = typer.Option(
         None,
         "--added",
         help="comma-separated subset of --paths that are new files; the rest count as modified. "
         "Omitted means unknown, and unknown is judged as new.",
     ),
+    commits: str | None = typer.Option(
+        None,
+        "--commits",
+        help="a git rev-list range, e.g. 'origin/main..HEAD'. Re-applies maxFiles to each commit "
+        "it selects, merges excluded. Used by the pre-push hook and by CI.",
+    ),
 ) -> None:
-    """Enforce gate.yaml over a set of paths. Used by the pre-commit hook."""
+    """Enforce gate.yaml over a set of paths, or over a range of commits.
+
+    `--paths` is one run's staged set, which is what the pre-commit hook asks
+    about. `--commits` is the same `maxFiles` cap re-applied to each commit a
+    rev-list range selects, which is what the pre-push hook and CI ask about —
+    the cap has always been per-run, and until both of those existed, skipping
+    the hook skipped the cap with no record that it had been skipped.
+    """
+    import shlex
+
     from pf.kg.impact import impact_of_many
 
     r = root()
+    if commits:
+        _report_commit_cap(r, commits, shlex.split(commits))
+        if paths is None:
+            return
+    if paths is None:
+        console.print("[red]✗[/] pass --paths, --commits, or both")
+        raise typer.Exit(2)
     plist = [p.strip() for p in paths.split(",") if p.strip()]
     alist = None if added is None else [p.strip() for p in added.split(",") if p.strip()]
     results = check_paths(plist, r, in_project=False, added=alist)
