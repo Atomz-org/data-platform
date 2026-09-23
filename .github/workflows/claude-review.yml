@@ -70,7 +70,14 @@ jobs:
             echo "## Changed paths"
             git diff --name-only "origin/${{ github.event.pull_request.base.ref }}...HEAD"
             echo
-            echo "## pf gate"
+            echo "## pf gate — per commit, which is the verdict"
+            uv run pf gate --commits "origin/${{ github.event.pull_request.base.ref }}..HEAD" 2>&1 | tail -20 || true
+            echo
+            echo "## pf gate — every changed path, for the denylist verdicts"
+            echo "NOTE: run over the whole diff, so the maxFiles line below judges"
+            echo "the union of this pull request and is NOT a verdict. The cap is a"
+            echo "per-RUN rule; the block above applies it per commit, which is the"
+            echo "shape it actually has. Read the path verdicts here, not the count."
             uv run pf gate --paths "$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}...HEAD" | tr '\n' ',')" --added "$(git diff --name-only --diff-filter=A "origin/${{ github.event.pull_request.base.ref }}...HEAD" | tr '\n' ',')" 2>&1 | tail -40 || true
             echo
             echo "## pf check"
