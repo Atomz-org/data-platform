@@ -158,6 +158,15 @@ Commits: **at most 12 files each** (`gate.yaml` `maxFiles`), a subject line
 that says what changed and a body that says why, never `--no-verify`. Split
 larger work into a sequence — the history is full of `(1 of 2)`.
 
+That cap is no longer yours to remember. It is re-applied to each commit by the
+`pre-push` hook and again by `agent-context.yml` on every pull request, so a
+commit made with `--no-verify`, or in a checkout with no hooks, is measured
+afterwards and the pull request goes red. If a commit truly cannot be split —
+one regeneration that writes 141 files, where half of it is a broken artefact —
+say so in the commit itself with a `Gate-Exempt: <reason>` trailer, which turns
+the refusal into a warning that quotes your reason into the review. Exceeding
+the cap is allowed. Exceeding it silently is not.
+
 **A feature lands with its evidence.** `gate.yaml`'s `tests_required` refuses
 a run that adds a file under `platform/src/pf/` or `platform/hooks/` with
 nothing under `platform/tests/`, or a skill under a toolkit with nothing under

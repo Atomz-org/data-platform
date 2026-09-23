@@ -123,7 +123,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <div class="fact"><dt>Toolkits</dt><dd>24</dd></div>
 <div class="fact"><dt>Pinned upstreams</dt><dd>26</dd></div>
 <div class="fact"><dt>pf commands</dt><dd>31</dd></div>
-<div class="fact"><dt>Tests</dt><dd>1003</dd></div>
+<div class="fact"><dt>Tests</dt><dd>1023</dd></div>
 </dl>
 <section id="model">
 <div class="sect-head">
@@ -421,12 +421,12 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <tr><td><code>pf evals</code></td><td>Test the parts of this platform that are prompts.</td></tr>
 <tr><td><code>pf evals-gate</code></td><td>Evals as a merge gate: required when the diff changes the agent.</td></tr>
 <tr><td><code>pf evals-gen</code></td><td>Ground every toolkit&#x27;s eval templates in this project&#x27;s own models.</td></tr>
-<tr><td><code>pf gate</code></td><td>Enforce gate.yaml over a set of paths. Used by the pre-commit hook.</td></tr>
+<tr><td><code>pf gate</code></td><td>Enforce gate.yaml over a set of paths, or over a range of commits.</td></tr>
 <tr><td><code>pf gen-staging</code></td><td>Generate 1:1 staging models with role-driven cleaning from annotations.</td></tr>
 <tr><td><code>pf housekeeping</code></td><td>Plan (and with --apply run) maintenance the engines do not do alone.</td></tr>
 <tr><td><code>pf impact</code></td><td>Blast radius of changing a node. The merge gate.</td></tr>
 <tr><td><code>pf impact-gate</code></td><td>CI gate over a comma-separated set of changed nodes.</td></tr>
-<tr><td><code>pf install-hook</code></td><td>Install the pre-commit gate, so gate.yaml is enforced before a commit lands.</td></tr>
+<tr><td><code>pf install-hook</code></td><td>Install the gate&#x27;s hooks, so gate.yaml is enforced before a commit lands.</td></tr>
 <tr><td><code>pf mcp</code></td><td>Run the MCP server over stdio.</td></tr>
 <tr><td><code>pf models</code></td><td>Model routing per step, with what each model actually accepts.</td></tr>
 <tr><td><code>pf new-group</code></td><td>Create a new company group (a family of sister companies).</td></tr>

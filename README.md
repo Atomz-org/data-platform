@@ -56,7 +56,8 @@ uv run pf status                   # every group and project
 ## Developing on the platform
 
 `uv run pf install-hook` on a fresh clone — git does not clone `.git/hooks`,
-so the pre-commit gate is otherwise silently absent. What
+so both gates, `pre-commit` over what you staged and `pre-push` over what you
+committed, are otherwise silently absent. What
 [`platform-tests.yml`](.github/workflows/platform-tests.yml) runs on every
 `platform/**` pull request: `ruff check platform/`, `pf test check`,
 `pf arch check`, `pytest platform/tests -q`. Full commands, the generated-file

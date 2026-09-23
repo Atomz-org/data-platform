@@ -301,12 +301,12 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 | `pf evals` | Test the parts of this platform that are prompts. |
 | `pf evals-gate` | Evals as a merge gate: required when the diff changes the agent. |
 | `pf evals-gen` | Ground every toolkit's eval templates in this project's own models. |
-| `pf gate` | Enforce gate.yaml over a set of paths. Used by the pre-commit hook. |
+| `pf gate` | Enforce gate.yaml over a set of paths, or over a range of commits. |
 | `pf gen-staging` | Generate 1:1 staging models with role-driven cleaning from annotations. |
 | `pf housekeeping` | Plan (and with --apply run) maintenance the engines do not do alone. |
 | `pf impact` | Blast radius of changing a node. The merge gate. |
 | `pf impact-gate` | CI gate over a comma-separated set of changed nodes. |
-| `pf install-hook` | Install the pre-commit gate, so gate.yaml is enforced before a commit lands. |
+| `pf install-hook` | Install the gate's hooks, so gate.yaml is enforced before a commit lands. |
 | `pf mcp` | Run the MCP server over stdio. |
 | `pf models` | Model routing per step, with what each model actually accepts. |
 | `pf new-group` | Create a new company group (a family of sister companies). |
