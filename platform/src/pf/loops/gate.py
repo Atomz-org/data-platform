@@ -168,6 +168,12 @@ def hook_status(root: Path, hook: str = "pre-commit") -> tuple[HookState, str]:
     # it, rather than foreign — which would refuse, permanently, over a script
     # that is not there.
     if target.is_symlink() and not target.exists():
+        if str(target.readlink()) == _hook_link(hooks, source):
+            # Name the checkout that owns the hooks directory, which in a
+            # worktree is not the one asking.
+            owner = hooks.parent.parent
+            where = "this checkout" if owner == Path(root).resolve() else str(owner)
+            return "missing", f"{hook} is linked, but {source} is not in {where} yet"
         return "missing", f"{hook} points at a file that is gone — {_HOOK_WHY[hook]}"
 
     # A symlink pointing at our script, however it was spelled (relative from
@@ -212,13 +218,21 @@ def install_hook(root: Path, *, force: bool = False, hook: str = "pre-commit") -
         return False, "git will not say where it looks for hooks — nothing to install into"
 
     target = hooks / hook
+    link = _hook_link(hooks, source_rel)
+    # Already pointing where it should, at a script this checkout does not carry
+    # yet. Rewriting an identical link changes nothing and reports `changed`,
+    # which made every `pf` command print "pre-push gate installed" on stderr
+    # for as long as the state lasted.
+    if target.is_symlink() and str(target.readlink()) == link:
+        return False, f"already linked → {source_rel}, which this checkout does not carry yet"
+
     if state == "foreign" and not force:
         return False, (f"refused: {detail}. Move or chain it, then re-run — or pass force to replace it.")
 
     target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() or target.is_symlink():
         target.unlink()
-    target.symlink_to(_hook_link(hooks, source_rel))
+    target.symlink_to(link)
     # The hook is exec'd by git, so the *script* must be executable. The symlink
     # itself carries no mode of its own.
     source.chmod(source.stat().st_mode | 0o111)

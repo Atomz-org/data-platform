@@ -405,3 +405,35 @@ def test_the_pre_push_hook_blocks_a_denial_and_stands_aside_for_an_older_pf(
     assert proc.returncode == hook_exit, proc.stderr
     if says:
         assert says in proc.stderr
+
+
+def test_a_dormant_link_is_left_alone_rather_than_rewritten(tmp_path):
+    """Rewriting an identical link changes nothing and reports that it did.
+
+    Which meant every `pf` command run from the worktree printed "pre-push gate
+    installed" on stderr for as long as the owning checkout lacked the script —
+    a notice that is meant to appear once, on the run that actually installs.
+    """
+    (tmp_path / "main").mkdir()
+    main = _repo(tmp_path / "main")
+    (main / HOOKS["pre-push"]).unlink()          # the owner's branch predates it
+    subprocess.run(["git", "add", "-A"], cwd=main, check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=g@x", "-c", "user.name=g", "commit", "-qm", "hooks"],
+                   cwd=main, check=True, capture_output=True)
+    linked = tmp_path / "linked"
+    subprocess.run(["git", "worktree", "add", "-q", str(linked), "-b", "side"],
+                   cwd=main, check=True, capture_output=True)
+    src = linked / HOOKS["pre-push"]
+    src.parent.mkdir(parents=True, exist_ok=True)
+    src.write_text("#!/usr/bin/env bash\nexec uv run pf gate --commits \"$@\"\n")
+
+    assert install_hook(linked, hook="pre-push")[0] is True
+
+    changed, detail = install_hook(linked, hook="pre-push")
+    assert changed is False
+    assert "already linked" in detail
+    # And the status names the checkout that owns the hooks directory, not the
+    # one that asked — they are different here, which is the whole difficulty.
+    state, why = hook_status(linked, "pre-push")
+    assert state == "missing"
+    assert str(main.resolve()) in why
