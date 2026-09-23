@@ -63,7 +63,9 @@ committed, are otherwise silently absent. What
 `pf arch check`, `pytest platform/tests -q`. Full commands, the generated-file
 table (what regenerates each committed artefact, and what to edit instead),
 the traps in verifying one locally, and the commit gate's `maxFiles` and
-denylists: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+denylists: [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md). What each of the
+twenty-three workflows asks, which ones your change wakes, and the local command
+behind every check: [`docs/CI.md`](docs/CI.md).
 
 ## What you write vs never touch
 

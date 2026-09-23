@@ -135,6 +135,13 @@ likely to be working in with no gate at all. It asks git where hooks live
 instead (`git rev-parse --git-path hooks`), which is the main checkout's
 directory, shared by every worktree, exactly as git reads it.
 
+## CI
+
+Twenty-three workflows, each asking one question, and most asleep for any given
+change. [`CI.md`](CI.md) is the map: what wakes on what, the shape every project
+workflow shares, which files are generated, and the `pf` command behind each
+check so a red one can be reproduced here rather than re-run until it passes.
+
 ## The commit gate
 
 `gate.yaml` is the machine-readable policy, read by `pf gate`, the two git

@@ -360,6 +360,7 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 | [ARCHITECTURE-MAPS.md](ARCHITECTURE-MAPS.md) | The per-project architecture map |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | The platform, drawn from the platform |
 | [ARTIFACTS.md](ARTIFACTS.md) | The artefact store |
+| [CI.md](CI.md) | CI — what runs when you open a pull request |
 | [CLAUDE-CODE.md](CLAUDE-CODE.md) | Claude Code, as configured here |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Developing on this platform |
 | [ENGINEERING.md](ENGINEERING.md) | Context, loop and graph engineering |
