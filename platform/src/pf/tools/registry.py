@@ -47,6 +47,7 @@ ENTRY_POINT_GROUP = "pf.tools"
 #: dotted strings, so nothing heavy is needed to describe it.
 BUILTIN_MODULES: tuple[str, ...] = (
     "pf.tools.evidence",
+    "pf.tools.okf",
     "pf.tools.elementary",
     "pf.tools.expectations",
     "pf.tools.openmetadata",

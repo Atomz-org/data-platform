@@ -39,6 +39,11 @@ class ImpactReport:
     tests: list[Node] = field(default_factory=list)
     dimensions: list[Node] = field(default_factory=list)
     decisions: list[Node] = field(default_factory=list)
+    #: OKF bundle pages that document something in this radius, so the change
+    #: that lands here is the change that must rebuild them. Like decisions,
+    #: never part of the severity: a stale context file is a chore, not a risk
+    #: to the warehouse, and `pf tool okf check` is what blocks on it.
+    documents: list[str] = field(default_factory=list)
     owners: list[str] = field(default_factory=list)
     severity: str = "safe"
 
@@ -52,7 +57,7 @@ class ImpactReport:
                      "props": n.props} for n in ns]
         return {
             "root": self.root, "root_kind": self.root_kind, "severity": self.severity,
-            "total": self.total, "owners": self.owners,
+            "total": self.total, "owners": self.owners, "documents": self.documents,
             "models": pack(self.models), "metrics": pack(self.metrics),
             "exposures": pack(self.exposures), "tests": pack(self.tests),
             "dimensions": pack(self.dimensions), "decisions": pack(self.decisions),
@@ -66,14 +71,24 @@ class ImpactReport:
             lines.append(f"  • {n.name}" + (f" — {n.label}" if n.label else ""))
         return lines
 
+    def _document_lines(self) -> list[str]:
+        if not self.documents:
+            return []
+        lines = [f"Knowledge bundle pages this stales ({len(self.documents)}):"]
+        lines += [f"  • {rel}" for rel in self.documents[:8]]
+        if len(self.documents) > 8:
+            lines.append(f"  • … and {len(self.documents) - 8} more")
+        lines.append("  run `pf tool okf build <group> <project>` and commit the bundle")
+        return lines
+
     def render(self) -> str:
         if self.total == 0:
             safe = f"✅ No downstream dependencies on {self.root}. Safe to change."
             # Safe to change is not the same as consistent with what was decided:
             # a model nothing depends on can still be the one an ADR fixed.
-            if not self.decisions:
+            if not (self.decisions or self.documents):
                 return safe
-            return "\n".join([safe, "", *self._decision_lines()])
+            return "\n".join([safe, "", *self._decision_lines(), *self._document_lines()])
 
         icon = {"breaking": "⛔", "review": "⚠️ ", "safe": "✅"}[self.severity]
         lines = [
@@ -101,6 +116,8 @@ class ImpactReport:
         section("Exposures", self.exposures)
         if self.decisions:
             lines += [*self._decision_lines(), ""]
+        if self.documents:
+            lines += [*self._document_lines(), ""]
         if self.tests:
             lines.append(f"Tests that will re-run: {len(self.tests)}")
             lines.append("")
@@ -169,12 +186,27 @@ def impact_of(graph_path: str | Path, node_id: str, max_depth: int = 12) -> Impa
                         decided[e.src] = n
         report.decisions = sorted(decided.values(), key=lambda n: n.name)
 
+        report.documents = _documents(graph_path, [root, *collected])
         report.owners = sorted({
             f"{n.props.get('owner')} <{n.props.get('email')}>"
             for n in report.exposures if n.props.get("owner")
         })
         report.severity = _classify(report)
         return report
+
+
+def _documents(graph_path: str | Path, nodes: list[Node]) -> list[str]:
+    """The bundle pages that document these nodes, by asking the filesystem.
+
+    Derived rather than stored on the node: the graph is built before the bundle
+    is projected from it, so a path written into a node would be one build
+    behind on the day a project gains its first model. A stat cannot be stale.
+    """
+    from pf.projections.okf import page_rel
+
+    pdir = Path(graph_path).parent.parent
+    out = {rel for n in nodes if (rel := page_rel(n.kind, n.name)) and (pdir / rel).is_file()}
+    return sorted(out)
 
 
 def impact_of_many(graph_path: str | Path, node_ids: list[str]) -> ImpactReport:
@@ -192,6 +224,7 @@ def impact_of_many(graph_path: str | Path, node_ids: list[str]) -> ImpactReport:
                     continue
                 seen.add(n.id)
                 getattr(merged, attr).append(n)
+        merged.documents = sorted(set(merged.documents) | set(r.documents))
     merged.decisions.sort(key=lambda n: n.name)
     merged.owners = sorted({
         f"{n.props.get('owner')} <{n.props.get('email')}>"

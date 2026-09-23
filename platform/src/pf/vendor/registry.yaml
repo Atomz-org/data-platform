@@ -74,6 +74,20 @@ upstreams:
           Upstream's ontology is per-pipeline. Ours is three-layered
           (platform / group / project) so sister companies share a vocabulary
           without inheriting each other's invented terms.
+      - upstream: workbench/transformations/skills/create-ontology/SKILL.md
+        kind: port
+        ours:
+          - platform/toolkits/ontology-design/skills/design-ontology/SKILL.md
+        note: >
+          The six steps kept — entities, identity, attributes, relations, gaps,
+          publish — and every one re-aimed. Upstream writes ISON for a CDM
+          generator; ours writes the tier's YAML and publishes through approval,
+          the graph, the MDL and the three OKF bundles. Identity is a decision
+          rather than a discovered natural key, attributes carry roles that
+          drive masking and staging, relations take a business verb instead of
+          an UPPER_SNAKE edge label, and the scope constraint is kept verbatim
+          in spirit: a property with no column is a gap to record, not a field
+          to model.
       - upstream: workbench/transformations/skills/generate-cdm/SKILL.md
         kind: shape
         ours: [platform/src/pf/runtime/staging.py]
@@ -1025,6 +1039,111 @@ upstreams:
           will need later. `PF_ARTIFACTS_ENDPOINT` pointing at 4566 outside
           development is a misconfiguration, not a deployment.
 
+  # ------------------------------------------------------------- knowledge --
+  - id: okf-weaver
+    summary: "OKF v0.1 bundle shape and validation gate"
+    name: OKF Weaver
+    url: https://github.com/PackMaaan/okf-weaver
+    path: vendor/okf-weaver
+    branch: main
+    licence: none declared
+    licence_review: >
+      The repository carries no LICENSE file, so by default all rights are
+      reserved by its author. It is authored and owned by this platform's own
+      maintainer (the same GitHub account that owns this repository), which is
+      why it is pinned at all; confirm the terms before this platform, or a
+      bundle produced through it, is shipped to anyone else.
+    role: projection
+    why: >
+      Open Knowledge Format is the shape an AI agent, an analyst or a catalogue
+      reads to learn what a table and a column *mean*: a directory of Markdown
+      files with YAML frontmatter, one concept per file, `okf_version` on the
+      index. The weaver produces one from a bare dbt manifest by asking Claude
+      per table and marking every answer with a confidence for a person to
+      review. This platform holds the answers already — the ontology role on
+      every column, the concept a table instantiates, the grain and description
+      on the model, the metric built on it — so `pf.projections.okf` renders
+      the bundle from those declarations and never asks. What is taken from
+      the weaver is the *contract*: its Pydantic models are the gate every
+      bundle passes before a file is written, its layout is what a consumer
+      expects, and its generator is what `pf tool okf weave` runs for the
+      columns the platform has no declaration for, as proposals for a person.
+      `platform/okf/` is the platform ontology itself in the same format, and
+      every project's bundle links its concepts to it.
+    adopted:
+      - upstream: backend/src/okf_weaver/models.py
+        kind: schema
+        ours:
+          - platform/src/pf/projections/okf.py
+          - platform/tests/graph/test_mdl.py
+        note: >
+          `OKFBundle`, `OKFTable` and `OKFColumn`, imported from the submodule
+          by path (never a workspace dependency: the backend drags FastAPI,
+          uvicorn and a rate limiter with it). A bundle is constructed as an
+          `OKFBundle` before it is serialized, so structural conformance is by
+          construction and a change to the upstream models fails our tests.
+      - upstream: backend/src/okf_weaver/okf/serialize.py
+        kind: port
+        ours: [platform/src/pf/projections/okf.py]
+        note: >
+          The directory layout and the frontmatter keys — `type`, `title`,
+          `description`, `okf_x_source_of_truth`, `okf_x_table_confidence` —
+          and the `# Schema` table with FK cross-links. Ours drops the
+          timestamp, because a generated file that stamps its build time is
+          stale on every commit and `pf tool okf check` compares bytes, and
+          adds `okf_x_concept`, `okf_x_layer`, `okf_x_grain`, a `Role` column
+          and the link to the platform bundle. Concept, Role and Metric files
+          are ours; the spec permits any `type`.
+      - upstream: backend/src/okf_weaver/ingest/dbt_manifest.py
+        kind: data
+        ours: [platform/src/pf/tools/okf.py]
+        note: >
+          Read at runtime by `pf tool okf weave` to turn the project's
+          `transform/target/manifest.json` into the weaver's `SchemaIR`,
+          restricted to the models the MDL projects so a run is bounded.
+      - upstream: backend/src/okf_weaver/ai/generate.py
+        kind: data
+        ours: [platform/src/pf/tools/okf.py]
+        note: >
+          The per-table, tool-constrained generation with its one repair pass,
+          run from `weave` only, only for the columns and tables the platform
+          holds no declaration for, and recorded in the provenance ledger as an
+          agent action. Its output is `okf/weave.md` — proposals with the
+          weaver's confidence, for a person to promote into an annotation or a
+          model description — never a line in the bundle itself.
+      - upstream: docs/spec.md
+        kind: shape
+        ours: [platform/src/pf/projections/okf.py]
+        note: >
+          §3.4 (conformance: parseable frontmatter with a non-empty `type` on
+          every non-reserved file) is what `conformance()` checks, and the
+          confidence-as-review-signal stance is what our `0.0`/`1.0` honours.
+    declined:
+      - what: frontend/ — the Next.js upload, review and download UI
+        why: >
+          Review here is a pull request over `okf/`, and the proposals from
+          `weave` are a Markdown file in that same diff. A second review
+          surface with its own approve button would be a second place a
+          definition becomes true.
+      - what: backend/src/okf_weaver/main.py as a deployed service (Render), and slowapi
+        why: >
+          Stateless, account-less and rate-limited by client IP is the right
+          shape for a public web app and the wrong one for a platform that
+          already scopes every action to a project and records it. The API is
+          started locally by `pf tool okf serve` for someone who wants the
+          weaver's own interface over a manifest, and nowhere else.
+      - what: generation as the default path
+        why: >
+          The weaver's model self-reports confidence; ours is a fact — `1.0`
+          where a declaration exists, `0.0` where none does. Letting Claude
+          fill a column definition the platform could have declared would make
+          the bundle disagree with the annotations it is supposed to project.
+      - what: examples/*.sql and the SQL DDL ingester
+        why: >
+          Every table this platform documents came through dlt and dbt and has
+          a manifest; a DDL dump is a schema nobody annotated, which is the
+          situation the ontology layer exists to prevent.
+
   # ------------------------------------------------------------ governance --
   - id: asqav-compliance
     summary: "the five governance controls a CI scan checks agent code for"
@@ -1337,3 +1456,123 @@ upstreams:
           describes *their* consensus, and letting it decide whether our build
           passes would hand a FINOS working group a vote on our merge gate. It is
           parsed, reported by `pf air show`, and enforces nothing.
+
+  # --------------------------------------------------------------- harness --
+  - id: ecc
+    summary: "per-harness adapters: one gate, reached from every agent tool"
+    name: ECC (Everything Claude Code)
+    url: https://github.com/dockerai09-ai/ECC
+    path: vendor/ecc
+    branch: main
+    licence: MIT
+    role: shape
+    why: >
+      An agent-harness layer for a dozen tools — Claude Code, Codex, Cursor,
+      Gemini, OpenCode, Kiro — from one source. Pinned at the organisation's
+      fork of affaan-m/ECC, identical to upstream at the time of pinning, for
+      the same reason the ASQAV scanner is: a pin that can vanish is not a pin.
+      What is taken is the *shape* of cross-harness support — a compliance
+      record per harness, an adapter that maps a foreign hook payload onto one
+      shared code path, a Codex config whose instruction line survives updates.
+      What is not taken is any hook body, any skill, or the installer: the
+      gate here is `gate.yaml` behind `pre_tool_use.py`, and the point of an
+      adapter is that there is exactly one gate.
+    adopted:
+      - upstream: .cursor/hooks.json
+        kind: shape
+        ours:
+          - .cursor/hooks.json
+          - platform/src/pf/harness.py
+        note: >
+          The event names Cursor exposes, and which of them can block. Ours is
+          rendered by `pf context refresh` and lists two events, both pointing
+          at our adapter; theirs lists fifteen pointing at theirs.
+      - upstream: .cursor/hooks/before-shell-execution-block-no-verify.js
+        kind: port
+        ours:
+          - platform/hooks/cursor_hook.py
+        note: >
+          The adapter pattern: read Cursor's stdin, reshape it, delegate to the
+          same code path Claude Code uses, forward the exit code. Ported so the
+          two surfaces share one matcher rather than drift on two.
+      - upstream: scripts/hooks/block-no-verify.js
+        kind: port
+        ours:
+          - platform/hooks/cursor_hook.py
+        note: >
+          A flag-position-aware `--no-verify` matcher. Upstream's first version
+          refused any commit whose *message* mentioned the flag; the rewrite
+          skips the values of `-m`, `-F` and friends. That false positive is the
+          thing worth not repeating, and the test table pins it.
+      - upstream: .codex/config.toml
+        kind: shape
+        ours:
+          - .codex/config.toml
+        note: >
+          `persistent_instructions` (additive to AGENTS.md, survives a Codex
+          update) and `sandbox_mode = "workspace-write"`. Their six third-party
+          MCP servers are not taken; ours lists the graph and `pf`, rendered
+          from `.mcp.json`.
+      - upstream: scripts/codex/install-global-git-hooks.sh
+        kind: shape
+        ours:
+          - platform/hooks/pre_commit.sh
+        note: >
+          The stance, not the script: a harness with no tool hooks is gated at
+          commit, and the commit hook is the backstop every tool shares. Ours
+          already existed (`pf install-hook`); what this settles is that it is
+          the answer for Codex, Gemini, Copilot and OpenCode rather than a gap.
+      - upstream: .cursor/rules/common-security.md
+        kind: shape
+        ours:
+          - .cursor/rules/data-platform.mdc
+        note: >
+          The `alwaysApply` frontmatter. Ours is a pointer at CLAUDE.md, AGENTS.md
+          and the memory index — the rules are written once — not a second copy.
+      - upstream: .opencode/opencode.json
+        kind: shape
+        ours:
+          - .opencode/opencode.json
+        note: >
+          The `instructions:` list. Ours names AGENTS.md and nothing else.
+      - upstream: scripts/lib/harness-adapter-compliance.js
+        kind: shape
+        ours:
+          - platform/src/pf/harness.py
+          - docs/HARNESSES.md
+        note: >
+          A compliance record per harness, rendered as a table and checked in
+          CI. Theirs grades install state; ours grades *enforcement* — hook,
+          partial, or rule — because a tool that reads "gated" and is not has
+          been lied to by the file meant to prevent that.
+    declined:
+      - what: skills/, agents/, commands/ (386 skills, 68 agents, 94 command shims)
+        why: >
+          The toolkits are the one skill system here, enabled per group and
+          project and declared into the gate. Two skill systems is worse than
+          one, and the full set costs ~29k tokens on every session against a
+          router budgeted at 700.
+      - what: scripts/hooks/gateguard-fact-force.js
+        why: >
+          Denies the first Bash command of every session until the agent
+          "presents facts". Provenance already records INTENT before every
+          action, which is what the ritual approximates; the denial is
+          friction without a record.
+      - what: the ecc-universal installer and Claude plugin install
+        why: >
+          An installer that writes hooks and MCP configs into harness
+          directories is a plugin system inside the gate boundary — see
+          `pf.capabilities` on why capabilities are declarative.
+      - what: .codex/config.toml MCP servers (github, context7, exa, memory, playwright, sequential-thinking)
+        why: >
+          Six third-party `npx` servers. A data platform's MCP surface is its
+          graph and its warehouse tools; every extra server is context every
+          session pays for.
+      - what: the .ecc/memory vault
+        why: "`.memory/notes/` and `pf memory` are the one memory, shared by every tool."
+      - what: scripts/hooks/cost-tracker.js, scripts/hooks/insaits-security-monitor.py
+        why: "`pf.obs` tracks spend; the provenance chain records actions. Both already exist."
+      - what: .kiro/, .pi/, .zed, .openclaw, .codebuddy, .hermes, .kimi, .adal adapters
+        why: >
+          Nobody here runs them. A generated config for a tool nobody opens is
+          drift waiting for a reader who trusts it.

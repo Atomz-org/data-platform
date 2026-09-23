@@ -5,6 +5,10 @@ models:
   # Elementary monitors (jaffle-shop-goes-online pattern): the new/returning
   # mix drifting is a question no fixed rule can ask.
   config:
+    # In the semantic layer, against the `semantic: false` the
+    # marts tree sets for the exercise corpus around it.
+    meta:
+      semantic: true
     elementary:
       timestamp_column: first_ordered_at
   data_tests:

@@ -7,15 +7,43 @@ hand-written layer around the generated context, that `pf context refresh` is
 the one-step fix for the generated layer, and that the code graph stops at
 `platform/` — the one drift here that fails by *succeeding*, since without its
 marker directory the graph spans every sister project instead of erroring.
+
+The onboarding guide is one of the generated pieces, and it is also published
+away from the repository, where a stylesheet from the wrong host or a script
+of any kind renders as a blank page with no error. Its publish contract is
+a section here, a test rather than a note.
+
+The per-scope harness maps are the last section. They are generated from the
+files that enforce what they say — a project's settings, the gate, the hooks,
+its workflow, its loops — and every gate verdict in them is computed by the
+function the PreToolUse hook calls. The tests hold them to that: the map must
+say what those files say, must report the gate as it fires rather than as it
+is written, must be byte-stable between a laptop and a runner, and must not
+grow past the budget that keeps reading it cheaper than reading the tree.
 """
 
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
+import yaml
 from conftest import REPO_ROOT
+from pf import harnessmap
 from pf.agentcontext import ENTRY_POINTS, GENERATED, check, references, refresh, sections
+from pf.archmap import Facts
+from pf.guide import (
+    EXTERNAL_HOSTS,
+    TITLE,
+    GroupRow,
+    Guide,
+    ProjectRow,
+    drift,
+    gather,
+    render_html,
+    render_markdown,
+)
 from pf.memory import add
 
 
@@ -68,12 +96,21 @@ def _conforming(tmp_path: Path) -> Path:
     (root / "CLAUDE.md").write_text("router", encoding="utf-8")
     (root / "AGENTS.md").write_text(
         "# p\n\nCLAUDE.md GEMINI.md .github/copilot-instructions.md\n"
-        ".memory/MEMORY.md docs/ARCHITECTURE.md platform/tests/README.md\n"
+        ".memory/MEMORY.md docs/ARCHITECTURE.md docs/ONBOARDING.md platform/tests/README.md docs/HARNESSES.md\n"
+        "HARNESS.md pf harness\n"
         "**Session** **Autonomous** **Inline** pf memory add pf context check pf code\n"
         + "".join(f"## {n}. s\n" for n in range(8)),
         encoding="utf-8",
     )
     _code_graph_wiring(root)
+    # The harness configs are generated from the `.mcp.json` the wiring just
+    # wrote; a conforming tree has them current, the way it has its indexes.
+    from pf import harness
+
+    harness.write_all(root)
+    # The per-scope harness maps likewise: the tree has a group and a project,
+    # so a conforming one has their maps, current.
+    harnessmap.write(root)
     (root / "GEMINI.md").write_text("see §0\n\n@./CLAUDE.md\n\n@./AGENTS.md\n", encoding="utf-8")
     (root / ".github" / "copilot-instructions.md").write_text(
         "CLAUDE.md AGENTS.md .memory/MEMORY.md §3 §4 §5", encoding="utf-8"
@@ -326,3 +363,229 @@ def test_refresh_writes_the_missing_pieces_and_then_nothing(tmp_path: Path) -> N
     did = {p.relative_to(root).as_posix() for p in refresh(root)}
     assert did == would
     assert refresh(root, dry_run=True) == []
+
+
+# --------------------------------------------------------- the guide -------
+_EXTERNAL = re.compile(r'(?:src|href)="https?://([^/"]+)')
+
+
+def test_the_committed_guide_matches_the_repository() -> None:
+    """Run `uv run pf guide build` if this fails — the repository is the source."""
+    assert drift(REPO_ROOT) == ""
+
+
+def test_the_guide_is_rendered_deterministically() -> None:
+    """Compared byte for byte, so two gathers must render the same page.
+
+    Set iteration order is the usual way this breaks, and it breaks
+    intermittently — the worst failure mode for something that gates a build.
+    """
+    a, b = gather(REPO_ROOT), gather(REPO_ROOT)
+    assert render_markdown(a) == render_markdown(b)
+    assert render_html(a) == render_html(b)
+
+
+def test_both_renderings_name_every_group_project_step_and_command() -> None:
+    """The facts a newcomer acts on must be in both pages, not just the one that was checked."""
+    g = gather(REPO_ROOT)
+    md, page = render_markdown(g), render_html(g)
+    assert g.groups and g.steps and g.commands and g.command_groups, "gather found nothing to say"
+    for gr in g.groups:
+        for text in (md, page):
+            assert f"`{gr.name}`" in text or f"<code>{gr.name}</code>" in text
+            for p in gr.projects:
+                assert f"{gr.name}/{p.name}" in text
+    for name, _why in g.steps:
+        assert name in md and name in page
+    for name, _help in g.commands:
+        assert f"pf {name}" in md and f"pf {name}" in page
+    for name, _help in g.command_groups:
+        assert f"pf {name}" in md and f"pf {name}" in page
+
+
+def test_the_html_page_keeps_to_the_publish_contract() -> None:
+    """What the page needs to render where it is published, with no error shown when it does not."""
+    page = render_html(gather(REPO_ROOT))
+    assert f"<title>{TITLE}</title>" in page[:8000], "the title must sit in the first 8KB"
+    assert "<script" not in page, "the page needs no script, and a blocked one renders blank"
+    hosts = set(_EXTERNAL.findall(page))
+    assert hosts <= EXTERNAL_HOSTS, f"off-allowlist host(s): {sorted(hosts - EXTERNAL_HOSTS)}"
+    # Theme tokens: the full light palette on bare :root, redefined for the
+    # un-stamped dark state and again for the explicit toggle.
+    assert re.search(r":root\s*\{[^}]*--paper:", page)
+    assert ':root:not([data-theme="light"])' in page
+    assert ':root[data-theme="dark"]' in page
+    assert re.search(r"body\s*\{[^}]*background: var\(--paper\)", page)
+    assert "<!-- snapshot -->" in page, "the publish step stamps the commit here"
+
+
+def test_the_markdown_has_no_date_or_commit() -> None:
+    """A timestamp would make every commit a stale one."""
+    md = render_markdown(gather(REPO_ROOT))
+    assert not re.search(r"\b20\d\d-\d\d-\d\d\b", md)
+    assert not re.search(r"\b[0-9a-f]{40}\b", md)
+
+
+def test_what_the_repository_says_is_escaped_in_the_html() -> None:
+    """A group's display name is data; the page must never execute it."""
+    g = Guide(
+        facts=Facts(groups={"g": ["p"]}),
+        groups=[GroupRow("g", "<img src=x onerror=alert(1)>", "d", "active", (ProjectRow("p", 1, 2, 3, 4),))],
+        commands=[("x", "does <b>things</b>")],
+    )
+    page = render_html(g)
+    assert "<img src=x" not in page
+    assert "&lt;img src=x onerror=alert(1)&gt;" in page
+    assert "does &lt;b&gt;things&lt;/b&gt;" in page
+
+
+def test_the_checker_can_fail(tmp_path: Path) -> None:
+    """A checker that cannot fail is a checker nobody should trust."""
+    assert "pf guide build" in drift(tmp_path)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "ONBOARDING.md").write_text("stale\n", encoding="utf-8")
+    (tmp_path / "docs" / "onboarding.html").write_text("stale\n", encoding="utf-8")
+    assert "is stale" in drift(tmp_path)
+
+
+# ---------------------------------------------------- the harness maps -------
+def _first_scope(kind: str) -> harnessmap.Scope | None:
+    return next((s for s in harnessmap.scopes(REPO_ROOT) if s.kind == kind), None)
+
+
+def test_every_committed_harness_map_matches_its_scope() -> None:
+    """Run `uv run pf harness build` if this fails — the settings, the gate and the workflows are the source."""
+    assert [str(d) for d in harnessmap.drift(REPO_ROOT) if not d.ok] == []
+
+
+def test_the_harness_maps_are_byte_stable_and_carry_no_machine_fact() -> None:
+    """Compared byte for byte between a laptop and a runner, so nothing local may leak in.
+
+    No date, no commit, no absolute path: each would make every commit a stale
+    one, or make the check pass here and fail on the runner.
+    """
+    for s in harnessmap.scopes(REPO_ROOT):
+        page = s.render(REPO_ROOT)
+        assert page == s.render(REPO_ROOT), s.label
+        assert not re.search(r"\b20\d\d-\d\d-\d\d\b", page), s.label
+        assert not re.search(r"\b[0-9a-f]{40}\b", page), s.label
+        assert str(REPO_ROOT) not in page and "/Users/" not in page and "/home/" not in page, s.label
+
+
+def test_a_project_map_says_what_its_settings_gate_workflow_and_loops_say() -> None:
+    """Every fact an agent acts on is in the map: each deny rule, the hook, each tool, job and loop."""
+    scope = _first_scope("project")
+    if scope is None:
+        return
+    p = harnessmap.gather_project(REPO_ROOT, scope.group, scope.project)
+    page = harnessmap.render_project(p)
+    settings = json.loads((p.pdir / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    for rule in settings["permissions"]["deny"]:
+        assert f"`{rule}`" in page, rule
+    for h in p.hooks:
+        assert f"`{h.script}`" in page, h.script
+    for t in p.tools:
+        assert f"`{t.name}`" in page, t.name
+    for j in p.jobs:
+        assert f"`{j.name}`" in page, j.name
+    for lp in p.loops:
+        assert f"`{lp.name}`" in page, lp.name
+    assert "| `HARNESS.md` |" in page, "the map judges its own path"
+
+
+def test_the_map_reports_the_gate_as_it_fires_not_as_it_is_written() -> None:
+    """A verdict is `check_path`'s, so an allowlist that shadows an impact rule is a named gap, not a promise."""
+    from pf.loops.gate import check_path
+
+    scope = _first_scope("project")
+    if scope is None:
+        return
+    p = harnessmap.gather_project(REPO_ROOT, scope.group, scope.project)
+    for v in p.verdicts:
+        live = check_path(v.path, REPO_ROOT, in_project=True)
+        assert (v.verdict, v.rule) == (live.verdict, live.rule), v.path
+    shadowed = [v for v in p.verdicts if v.rule.startswith("allowlist:") and harnessmap._impact_on_paper(v.path, p)]
+    if shadowed:
+        assert any("Impact-gated on paper" in g for g in p.gaps)
+
+
+def test_the_harness_maps_stay_inside_their_budget() -> None:
+    """On-demand tier: cheaper to read than the tree it describes, or it stops being read."""
+    from pf.kg.card import estimate_tokens
+
+    for s in harnessmap.scopes(REPO_ROOT):
+        n = estimate_tokens(s.render(REPO_ROOT))
+        assert n <= harnessmap.HARNESS_BUDGET, f"{s.label}: ~{n} tokens — cap a section rather than the budget"
+
+
+def test_a_bare_project_renders_and_names_what_it_lacks(tmp_path: Path) -> None:
+    """The state at scaffold time — no settings, no graph, no workflow — is a list of named gaps, not a crash."""
+    (tmp_path / "groups" / "demo" / "projects" / "demo-us").mkdir(parents=True)
+    p = harnessmap.gather_project(tmp_path, "demo", "demo-us")
+    page = harnessmap.render_project(p)
+    assert "# demo-us — harness" in page
+    joined = " ".join(p.gaps)
+    for needle in (
+        "No edit gate",
+        "No `power-tools` plugin",
+        "Sisters are readable",
+        "No knowledge graph",
+        "No CI workflow",
+    ):
+        assert needle in joined, needle
+    assert "# demo — harness" in harnessmap.render_group(harnessmap.gather_group(tmp_path, "demo"))
+
+
+def test_the_report_map_splits_generated_from_owned() -> None:
+    """What `pf report build` rewrites is never listed as yours, and the index and metric pages are its."""
+    scope = _first_scope("report")
+    if scope is None:
+        return
+    r = harnessmap.gather_report(REPO_ROOT, scope.group, scope.project)
+    page = harnessmap.render_report(r)
+    assert "`queries/metrics/*.sql`" in page and "`pages/index.md`, `pages/metrics/*.md`" in page
+    assert "pages/index.md" not in r.owned
+    assert not any(o.startswith("pages/metrics/") for o in r.owned)
+    for o in r.owned:
+        assert f"`{o}`" in page, o
+
+
+def test_the_harness_checker_can_fail(tmp_path: Path) -> None:
+    """A checker that cannot fail is a checker nobody should trust."""
+    (tmp_path / "groups" / "demo" / "projects" / "demo-us").mkdir(parents=True)
+    assert all(d.missing for d in harnessmap.drift(tmp_path)) and len(harnessmap.drift(tmp_path)) == 2
+    harnessmap.write(tmp_path)
+    assert all(d.ok for d in harnessmap.drift(tmp_path))
+    (tmp_path / "groups" / "demo" / "HARNESS.md").write_text("stale\n", encoding="utf-8")
+    [stale] = [d for d in harnessmap.drift(tmp_path) if not d.ok]
+    assert stale.scope.kind == "group" and "stale" in str(stale) and "would render" in str(stale)
+
+
+# ------------------------------------------------- the converged gate ------
+def test_harness_maps_are_excluded_from_the_converged_diff() -> None:
+    """A map that reads an excluded file inherits the exclusion.
+
+    A project map's Evidence-report row counts the exposures in
+    `_reporting__exposures.yml`, which `pf bootstrap --all` rewrites on the
+    bare converged runner from a reporting layer it cannot build — 17 became 3
+    for commodity-us, 16 became 0 for jaffle-shop — and that file is already
+    excluded from the diff. Without the map excluded too, the job failed on a
+    difference it had manufactured itself. The honest check is `pf harness
+    check` in agent-context.yml, which regenerates nothing; the same call was
+    already made for `okf/**`, `mdl.json` and `kg/architecture.md`.
+    """
+    from pf.scaffold.bootstrap import PLATFORM_WORKFLOW
+
+    committed = (REPO_ROOT / ".github" / "workflows" / "platform.yml").read_text(encoding="utf-8")
+    assert committed == PLATFORM_WORKFLOW, "platform.yml is rendered from the template — run pf bootstrap"
+
+    steps = yaml.safe_load(PLATFORM_WORKFLOW)["jobs"]["converged"]["steps"]
+    run = next(s["run"] for s in steps if "git diff --exit-code" in str(s.get("run", "")))
+    diff_line = next(line for line in run.splitlines() if "git diff --exit-code" in line)
+    for excluded in (
+        "**/HARNESS.md",
+        "**/transform/models/_reporting__exposures.yml",
+        "**/reporting/**",
+        "**/kg/architecture.md",
+    ):
+        assert f"':(exclude){excluded}'" in diff_line, f"{excluded} must stay excluded from the converged diff"

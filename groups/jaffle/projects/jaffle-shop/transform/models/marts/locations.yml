@@ -1,0 +1,10 @@
+version: 2
+
+models:
+- name: locations
+  description: Every store, one row per location, straight from the source.
+  config:
+    meta:
+      # An entity the exposed facts join to: in the semantic layer even
+      # though no exposure names it directly.
+      semantic: true

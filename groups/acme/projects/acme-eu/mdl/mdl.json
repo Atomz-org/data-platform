@@ -300,26 +300,46 @@
         "pf.relation": "customer_pays_payment",
         "pf.label": "pays",
         "pf.inverse": "paid by",
-        "pf.description": ""
-      }
-    },
-    {
-      "name": "fct_payments_dim_customers",
-      "models": [
-        "fct_payments",
-        "dim_customers"
-      ],
-      "joinType": "MANY_TO_ONE",
-      "condition": "fct_payments.subscription_id = dim_customers.customer_id",
-      "properties": {
-        "pf.relation": "subscription_settled_by_payment",
-        "pf.label": "settled by",
-        "pf.inverse": "settles",
-        "pf.description": ""
+        "pf.description": "",
+        "pf.also_realises": "customer_holds_subscription"
       }
     }
   ],
-  "views": [],
+  "views": [
+    {
+      "name": "dim_customers_view",
+      "statement": "select\n  dim_customers.customer_id,\n  dim_customers.customer_segment,\n  dim_customers.organization_id,\n  dim_customers.country_code,\n  dim_customers.created_at,\n  dim_customers.subscription_count,\n  dim_customers.active_subscriptions,\n  dim_customers.first_subscribed_at,\n  dim_customers.is_active\nfrom dim_customers",
+      "properties": {
+        "pf.exposures": "crm_customer_sync, exec_weekly_dashboard, report_metrics_active_customers",
+        "pf.exposure_types": "application, dashboard",
+        "pf.owners": "Data Platform, Finance, RevOps",
+        "pf.description": "Customer dimension with subscription rollups.",
+        "pf.grain": "one customer"
+      }
+    },
+    {
+      "name": "fct_payments_view",
+      "statement": "select\n  fct_payments.payment_id,\n  fct_payments.amount,\n  fct_payments.paid_at,\n  fct_payments.customer_id,\n  fct_payments.subscription_id,\n  fct_payments.currency_code,\n  fct_payments.payment_status,\n  fct_payments.customer_segment,\n  fct_payments.country_code,\n  fct_payments.plan_tier,\n  dim_customers.customer_id as customers_customer_id,\n  dim_customers.customer_segment as customers_customer_segment,\n  dim_customers.organization_id,\n  dim_customers.country_code as customers_country_code,\n  dim_customers.created_at,\n  dim_customers.subscription_count,\n  dim_customers.active_subscriptions,\n  dim_customers.first_subscribed_at,\n  dim_customers.is_active\nfrom fct_payments\n  left join dim_customers on fct_payments.customer_id = dim_customers.customer_id",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_aov, report_metrics_gross_payment_volume, report_metrics_payment_count, report_metrics_revenue",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Data Platform",
+        "pf.description": "Payment fact at attempt grain, enriched with customer and plan.",
+        "pf.grain": "one payment attempt"
+      }
+    },
+    {
+      "name": "fct_revenue_view",
+      "statement": "select\n  fct_revenue.revenue_date,\n  fct_revenue.net_amount,\n  fct_revenue.customer_segment,\n  fct_revenue.plan_tier,\n  fct_revenue.currency_code,\n  fct_revenue.gross_amount,\n  fct_revenue.payment_count\nfrom fct_revenue",
+      "properties": {
+        "pf.exposures": "exec_weekly_dashboard",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance",
+        "pf.description": "Daily revenue by segment and plan. Union-compatible across sisters.",
+        "pf.grain": "one day x segment x plan"
+      }
+    }
+  ],
   "cubes": [
     {
       "name": "acme_eu_core",
@@ -327,7 +347,7 @@
       "measures": [
         {
           "name": "active_customers",
-          "expression": "-- active_customers",
+          "expression": "sum(case when is_active then 1 else 0 end)",
           "type": "DOUBLE",
           "description": "Active Customers",
           "properties": {
@@ -336,7 +356,7 @@
         },
         {
           "name": "aov",
-          "expression": "-- aov",
+          "expression": "sum(amount) / nullif(count(payment_id), 0)",
           "type": "DOUBLE",
           "description": "Average Order Value",
           "properties": {
@@ -345,7 +365,7 @@
         },
         {
           "name": "gross_payment_volume",
-          "expression": "-- gross_payment_volume",
+          "expression": "sum(amount)",
           "type": "DOUBLE",
           "description": "Gross Payment Volume",
           "properties": {
@@ -354,7 +374,7 @@
         },
         {
           "name": "payment_count",
-          "expression": "-- payment_count",
+          "expression": "count(payment_id)",
           "type": "DOUBLE",
           "description": "Payments",
           "properties": {
@@ -363,20 +383,11 @@
         },
         {
           "name": "revenue",
-          "expression": "-- revenue",
+          "expression": "sum(amount)",
           "type": "DOUBLE",
           "description": "Revenue",
           "properties": {
             "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "revenue_mom_growth",
-          "expression": "-- revenue_mom_growth",
-          "type": "DOUBLE",
-          "description": "Revenue MoM Growth",
-          "properties": {
-            "pf.metric_type": "derived"
           }
         }
       ],
@@ -384,18 +395,6 @@
         {
           "name": "country_code",
           "expression": "country_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "country_code",
-          "expression": "country_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "customer_segment",
-          "expression": "customer_segment",
           "type": "VARCHAR",
           "description": ""
         },

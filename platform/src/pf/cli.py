@@ -103,11 +103,11 @@ def _bootstrap_commit_gate() -> None:
     if os.environ.get("PF_NO_HOOK_INSTALL"):
         return
     try:
-        from pf.loops.gate import install_hook
+        from pf.loops.gate import install_hooks
 
-        changed, detail = install_hook(root())
-        if changed:
-            print(f"· commit gate installed — {detail}", file=sys.stderr)
+        for hook, changed, detail in install_hooks(root()):
+            if changed:
+                print(f"· {hook} gate installed — {detail}", file=sys.stderr)
     except Exception:  # noqa: BLE001 — never block the real command
         pass
 
@@ -900,12 +900,14 @@ def bootstrap_cmd(
         raise typer.Exit(1)
 
     # Repo-level, so it runs once rather than per project. Bootstrap is "re-run
-    # every post-scaffold step", and installing the commit gate is exactly that:
-    # a step every checkout needs and nobody remembers.
-    from pf.loops.gate import install_hook
+    # every post-scaffold step", and installing the gate's hooks is exactly
+    # that: a step every checkout needs and nobody remembers. Both of them —
+    # `pre-commit` judges what is staged, `pre-push` re-measures what was
+    # committed without it.
+    from pf.loops.gate import install_hooks
 
-    changed, detail = install_hook(root())
-    console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} {'commit gate':24} [dim]{detail}[/]")
+    for hook, changed, detail in install_hooks(root()):
+        console.print(f"  {'[green]✓[/]' if changed else '[dim]·[/]'} {hook + ' gate':24} [dim]{detail}[/]")
 
     failed = False
     for g, p, _ in targets:
@@ -1300,21 +1302,28 @@ def check(
     else:
         console.print("[green]✓[/] tracked artefacts  git and gate.yaml agree")
 
-    # The gate is enforced at commit time, locally — so an uninstalled hook is
-    # not a missing convenience, it is the gate not running at all. This check
-    # exists because that was true for the whole life of the repo and nothing
-    # said so: `maxFiles` and the staged-set denylist were unenforced while
-    # reading as configured.
-    from pf.loops.gate import hook_status
+    # The gate is enforced locally first — so an uninstalled hook is not a
+    # missing convenience, it is the gate not running at all. This check exists
+    # because that was true for the whole life of the repo and nothing said so:
+    # `maxFiles` and the staged-set denylist were unenforced while reading as
+    # configured.
+    #
+    # Both hooks, because they fail differently. Without `pre-commit` nothing
+    # judges a commit before it is made; without `pre-push` nothing re-measures
+    # one that was made with `--no-verify`, or before the hooks were installed
+    # at all — and the whole point of that second look is that the first one
+    # leaves no trace when it is skipped.
+    from pf.loops.gate import hooks_status
 
-    hstate, hdetail = hook_status(root())
-    if hstate == "ok":
-        console.print(f"[green]✓[/] commit gate       {hdetail}")
-    elif hstate == "no-git":
-        console.print(f"[dim]·[/] commit gate       {hdetail}")
-    else:
-        console.print(f"[red]✗[/] commit gate       {hdetail}")
-        console.print("    [dim]nothing enforces gate.yaml on commit — run `pf install-hook`[/]")
+    for hook, hstate, hdetail in hooks_status(root()):
+        label = f"{hook} gate".ljust(17)
+        if hstate == "ok":
+            console.print(f"[green]✓[/] {label} {hdetail}")
+        elif hstate == "no-git":
+            console.print(f"[dim]·[/] {label} {hdetail}")
+        else:
+            console.print(f"[red]✗[/] {label} {hdetail}")
+            console.print("    [dim]run `pf install-hook`[/]")
 
     topo = validate_topology()
     topo_errors = [i for i in topo if i.severity == "error"]
@@ -2621,37 +2630,108 @@ def cmd_memory_audit(group: str, project: str) -> None:
 
 @app.command("install-hook")
 def cmd_install_hook(
-    force: bool = typer.Option(False, "--force", help="replace a pre-commit hook that is not ours"),
+    force: bool = typer.Option(False, "--force", help="replace a hook that is not ours"),
 ) -> None:
-    """Install the pre-commit gate, so gate.yaml is enforced before a commit lands.
+    """Install the gate's hooks, so gate.yaml is enforced before a commit lands.
 
-    This is the only place `maxFiles` and the staged-set denylist are enforced —
-    CI does not re-apply them — so a checkout without this hook has no gate.
+    Two of them. `pre-commit` judges the staged set — the denylist, the evidence
+    and harness pairs, `maxFiles`, impact analysis. `pre-push` re-measures every
+    commit on its way out, which is the only local answer to `git commit
+    --no-verify` and to a clone that was never gated at all.
+
+    Neither is the last word: `agent-context.yml` re-applies the same file cap
+    to a pull request's commits, because `git push --no-verify` skips this half
+    as easily as `--no-verify` skips the other.
     """
-    from pf.loops.gate import hook_status, install_hook
+    from pf.loops.gate import hook_status, install_hooks
 
-    _, detail = install_hook(root(), force=force)
-    state, _ = hook_status(root())
-    if state == "ok":
-        console.print(f"[green]✓[/] {detail}")
-        return
-    console.print(f"[red]✗[/] {detail}")
-    raise typer.Exit(1)
+    failed = False
+    for hook, _, detail in install_hooks(root(), force=force):
+        state, _ = hook_status(root(), hook)
+        if state == "ok":
+            console.print(f"[green]✓[/] {hook}  {detail}")
+            continue
+        console.print(f"[red]✗[/] {hook}  {detail}")
+        failed = True
+    if failed:
+        raise typer.Exit(1)
+
+
+def _report_commit_cap(r: Path, shown: str, spec: list[str]) -> None:
+    """Print the per-commit verdicts for a range, and exit 1 if any denies.
+
+    Exits rather than returning a flag: a range that cannot be resolved must
+    fail loudly. An unfetched base or a shallow clone selects no commits, which
+    is indistinguishable from a branch where every commit is within the cap —
+    the one answer this check must never give by accident.
+    """
+    from pf.loops.gate import GitError, check_commits
+
+    try:
+        results = check_commits(r, spec)
+    except GitError as exc:
+        console.print(f"[red]✗[/] {exc}")
+        raise typer.Exit(1) from exc
+
+    for x in results:
+        tag = "[red]DENY[/]" if x.blocked else "[yellow]WARN[/]"
+        console.print(f"{tag} {x.path}  [{x.rule}]  {x.message}")
+    if any(x.blocked for x in results):
+        raise typer.Exit(1)
+    # "within the cap" would contradict a WARN printed two lines above it: an
+    # exempt commit is over the cap and passing, and the line has to say so.
+    console.print(f"[green]✓[/] no commit in {shown} exceeds the file cap without a reason")
 
 
 @app.command()
-def gate(paths: str = typer.Option(..., help="comma-separated paths")) -> None:
-    """Enforce gate.yaml over a set of paths. Used by the pre-commit hook."""
+def gate(
+    paths: str | None = typer.Option(None, help="comma-separated paths"),
+    added: str | None = typer.Option(
+        None,
+        "--added",
+        help="comma-separated subset of --paths that are new files; the rest count as modified. "
+        "Omitted means unknown, and unknown is judged as new.",
+    ),
+    commits: str | None = typer.Option(
+        None,
+        "--commits",
+        help="a git rev-list range, e.g. 'origin/main..HEAD'. Re-applies maxFiles to each commit "
+        "it selects, merges excluded. Used by the pre-push hook and by CI.",
+    ),
+) -> None:
+    """Enforce gate.yaml over a set of paths, or over a range of commits.
+
+    `--paths` is one run's staged set, which is what the pre-commit hook asks
+    about. `--commits` is the same `maxFiles` cap re-applied to each commit a
+    rev-list range selects, which is what the pre-push hook and CI ask about —
+    the cap has always been per-run, and until both of those existed, skipping
+    the hook skipped the cap with no record that it had been skipped.
+    """
+    import shlex
+
     from pf.kg.impact import impact_of_many
 
     r = root()
+    if commits:
+        _report_commit_cap(r, commits, shlex.split(commits))
+        if paths is None:
+            return
+    if paths is None:
+        console.print("[red]✗[/] pass --paths, --commits, or both")
+        raise typer.Exit(2)
     plist = [p.strip() for p in paths.split(",") if p.strip()]
-    results = check_paths(plist, r, in_project=False)
+    alist = None if added is None else [p.strip() for p in added.split(",") if p.strip()]
+    results = check_paths(plist, r, in_project=False, added=alist)
     blocked = [x for x in results if x.blocked]
     warned = [x for x in results if x.verdict == "warn"]
 
     for x in blocked:
         console.print(f"[red]DENY[/] {x.path}  [{x.rule}]  {x.message}")
+    # Evidence warnings are for platform paths, which have no project and so no
+    # blast radius to fold them into below; print them, or a warning is silent.
+    for x in warned:
+        if x.rule.startswith("tests_required"):
+            console.print(f"[yellow]WARN[/] {x.path}  [{x.rule}]  {x.message}")
 
     by_project: dict[tuple[str, str, Path], list[str]] = {}
     for x in warned:
@@ -3125,20 +3205,57 @@ def cmd_policy(
 
 @sem_app.command("mdl")
 def cmd_mdl(
-    group: str, project: str, out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)")
+    group: str = typer.Argument("", help="omit with --all"),
+    project: str = typer.Argument("", help="omit with --all"),
+    out: str = typer.Option("", help="output path (default <project>/mdl/mdl.json)"),
+    check: bool = typer.Option(False, "--check", help="is the committed manifest what the committed graph projects?"),
+    all_: bool = typer.Option(False, "--all", help="every project"),
+    strict: bool = typer.Option(False, "--strict", help="with --check, a project that cannot be judged fails too"),
 ) -> None:
-    """Export a WrenAI MDL manifest from the graph."""
+    """Export a WrenAI MDL manifest from the graph, or check the committed one.
+
+    `--check` compares `mdl/mdl.json` against a projection of the *committed*
+    `kg/graph.json`, rebuilding neither and reading no warehouse. Without it the
+    manifest was the one artefact in the chain nothing compared: it is excluded
+    from the converged gate, because a bare runner regenerates it from a graph
+    it cannot build — so two of them aged past the whole reporting layer before
+    an end-to-end run noticed.
+    """
+    if not (all_ or (group and project)):
+        console.print("[red]give a group and project, or --all[/]")
+        raise typer.Exit(1)
+    targets = _targets(group, project) if all_ else [(group, project, pdir(group, project))]
+
+    if check:
+        from pf.projections.mdl import check_manifest
+
+        drifted = unexercised = 0
+        for g, p, d in targets:
+            report = check_manifest(d, g, p)
+            console.print(report.render())
+            if not report.exercised:
+                unexercised += 1
+            elif report.total:
+                drifted += 1
+        if drifted:
+            console.print(f"[red]{drifted} stale manifest(s)[/] — run `pf semantic mdl` and commit mdl/mdl.json")
+        if unexercised and strict:
+            console.print(f"[red]{unexercised} manifest(s) could not be checked[/]")
+        raise typer.Exit(1 if drifted or (unexercised and strict) else 0)
+
     from pf.projections.mdl import export as export_mdl
 
-    d = pdir(group, project)
-    path = export_mdl(d, group, project, out or None)
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    console.print(f"[green]✓[/] {path}")
-    console.print(
-        f"  models={len(payload['models'])} relationships={len(payload['relationships'])} cubes={len(payload['cubes'])}"
-    )
-    for r in payload["relationships"]:
-        console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
+    for g, p, d in targets:
+        path = export_mdl(d, g, p, out or None)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        console.print(f"[green]✓[/] {path}")
+        console.print(
+            f"  models={len(payload['models'])} relationships={len(payload['relationships'])} "
+            f"cubes={len(payload['cubes'])}"
+        )
+        if len(targets) == 1:
+            for r in payload["relationships"]:
+                console.print(f"  [dim]{r['joinType']}[/] {r['condition']}")
 
 
 @sem_app.command("owl")
@@ -4148,6 +4265,116 @@ def cmd_arch_check() -> None:
     console.print("[green]✓[/] the architecture map matches the repository")
 
 
+# ------------------------------------------------------------ onboarding --
+guide_app = typer.Typer(help="The onboarding guide: `build`/`check`, generated from the repository.")
+app.add_typer(guide_app, name="guide")
+
+
+@guide_app.command("build")
+def cmd_guide_build() -> None:
+    """Regenerate `docs/ONBOARDING.md` and `docs/onboarding.html` from the repository itself."""
+    from pf.guide import build, html_path, md_path
+
+    guide, changed = build(root())
+    for out in (md_path(root()), html_path(root())):
+        note = "" if out in changed else " · already current"
+        console.print(
+            f"[green]✓[/] {out.relative_to(root())}  "
+            f"[dim]({len(guide.groups)} group(s), {guide.facts.projects} project(s), "
+            f"{len(guide.commands)} command(s), ~{len(out.read_text()) // 4} tokens{note})[/]"
+        )
+
+
+@guide_app.command("check")
+def cmd_guide_check() -> None:
+    """Are the committed guide pages current with the repository?
+
+    A stale guide is worse than none: it sends a newcomer confidently to a
+    command that was renamed, which is exactly the cost the page exists to remove.
+    """
+    from pf.guide import drift
+
+    reason = drift(root())
+    if reason:
+        console.print(f"[red]✗[/] {reason}")
+        raise typer.Exit(1)
+    console.print("[green]✓[/] the onboarding guide matches the repository")
+
+
+# ----------------------------------------------------------- harness maps --
+harness_app = typer.Typer(
+    cls=_ArchGroup,
+    help="Harness maps: `build`/`check` for every scope; `pf harness <group> [<project>]` for one.",
+)
+app.add_typer(harness_app, name="harness")
+
+
+def _harness_maps(group: str, project: str, *, all_: bool, check: bool, show: bool) -> None:
+    from pf import harnessmap
+    from pf.kg.card import estimate_tokens
+
+    if not all_ and not group:
+        console.print("[red]give a group, a group and project, or --all[/]")
+        raise typer.Exit(1)
+    g, p = ("", "") if all_ else (group, project)
+    if show:
+        for s in harnessmap.scopes(root(), g, p):
+            print(s.render(root()), end="")
+        raise typer.Exit(0)
+    if check:
+        drifts = harnessmap.drift(root(), g, p)
+        for d in drifts:
+            console.print(f"[{'green' if d.ok else 'red'}]{'✓' if d.ok else '✗'}[/] {d}")
+        if any(not d.ok for d in drifts):
+            console.print("[dim]run `pf harness build` to regenerate[/]")
+            raise typer.Exit(1)
+        raise typer.Exit(0)
+    for s, path, changed in harnessmap.write(root(), g, p):
+        n = estimate_tokens(path.read_text(encoding="utf-8"))
+        over = "" if n <= harnessmap.HARNESS_BUDGET else f"  [red]over {harnessmap.HARNESS_BUDGET}[/]"
+        note = "" if changed else " · already current"
+        console.print(f"[green]✓[/] {s.label}  [dim]{path.relative_to(root())} · ~{n} tokens{note}[/]{over}")
+
+
+@harness_app.command(
+    "project",
+    help="One scope's maps: a group's and its sisters', or a project's and its report's "
+    "(the forms `pf harness <group>` and `pf harness <group> <project>` run).",
+)
+def cmd_harness(
+    group: str = typer.Argument("", help="group (omit with --all)"),
+    project: str = typer.Argument("", help="project; omit for the group's map and every sister's"),
+    all_: bool = typer.Option(False, "--all", help="every group, project and report"),
+    check: bool = typer.Option(False, "--check", help="fail on a stale or missing map; writes nothing"),
+    show: bool = typer.Option(False, "--show", help="print it instead of writing it"),
+) -> None:
+    """Design this scope's harness map — what wraps an agent here, read from the files that enforce it.
+
+    `HARNESS.md` in a group, a project and its `reporting/`; regenerated by
+    every `pf bootstrap`, so a scaffolded project has one and an existing one
+    gets it on the next bootstrap. Every gate verdict in it is computed by the
+    function the PreToolUse hook calls, so it says what the hook does rather
+    than what `gate.yaml` appears to say. Never hand-edit it.
+    """
+    _harness_maps(group, project, all_=all_, check=check, show=show)
+
+
+@harness_app.command("build")
+def cmd_harness_build() -> None:
+    """Regenerate every `HARNESS.md`: each group's, each project's and each report's."""
+    _harness_maps("", "", all_=True, check=False, show=False)
+
+
+@harness_app.command("check")
+def cmd_harness_check() -> None:
+    """Are the committed harness maps current with the settings, the gate, the hooks, the workflows and the loops?
+
+    A stale map is worse than none: it tells an agent that a rule fires which
+    no longer does, or hides one that now does.
+    """
+    _harness_maps("", "", all_=True, check=True, show=False)
+
+
 # ------------------------------------------------------------- test index --
 test_app = typer.Typer(help="What the test suite guards, without reading it.")
 app.add_typer(test_app, name="test")
@@ -4393,7 +4620,7 @@ def cmd_context_refresh(
         False, "--dry-run", help="list what would change and exit 1 if anything; write nothing"
     ),
 ) -> None:
-    """Regenerate the memory index, the test index and the repo map in one step."""
+    """Regenerate the memory index, the test index, the repo map and the onboarding guide in one step."""
     from pf.agentcontext import refresh
 
     changed = refresh(root(), dry_run=dry_run)

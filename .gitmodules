@@ -98,3 +98,11 @@
 [submodule "vendor/duckdb-quack"]
 	path = vendor/duckdb-quack
 	url = https://github.com/duckdb/duckdb-quack
+[submodule "vendor/okf-weaver"]
+	path = vendor/okf-weaver
+	url = https://github.com/PackMaaan/okf-weaver
+	branch = main
+[submodule "vendor/ecc"]
+	path = vendor/ecc
+	url = https://github.com/dockerai09-ai/ECC
+	branch = main

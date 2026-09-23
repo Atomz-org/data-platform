@@ -3616,7 +3616,9 @@
         "type": "ratio",
         "description": "Mean daily settlement price, USD per quote unit. Group by commodity.",
         "numerator": "benchmark_price_usd_total",
-        "denominator": "benchmark_price_days"
+        "denominator": "benchmark_price_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3629,7 +3631,9 @@
         "type": "ratio",
         "description": "Mean customs duty per market unit, in this market's currency. Group by commodity.",
         "numerator": "duty_local_total",
-        "denominator": "landed_price_days"
+        "denominator": "landed_price_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3642,7 +3646,9 @@
         "type": "ratio",
         "description": "Mean import landed price in this market's currency per its market unit (benchmark \u00d7 USD/local \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.",
         "numerator": "landed_price_local_total",
-        "denominator": "landed_price_days"
+        "denominator": "landed_price_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3655,7 +3661,9 @@
         "type": "ratio",
         "description": "Mean units of this market's currency per US dollar, as applied to landed prices; 1 for a USD market.",
         "numerator": "usd_fx_rate_total",
-        "denominator": "landed_price_days"
+        "denominator": "landed_price_days",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3669,6 +3677,8 @@
         "description": "Days with a benchmark price. Group by commodity to spot feed gaps.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "count",
         "expr": "close_price",
         "agg_params": {}
@@ -3684,7 +3694,9 @@
         "type": "derived",
         "description": "Month-over-month change in the mean benchmark price. Group by commodity.",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3698,6 +3710,8 @@
         "description": "Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "close_price",
         "agg_params": {}
@@ -3714,6 +3728,8 @@
         "description": "Front-month futures volume from live feeds. Group by commodity.",
         "numerator": "",
         "denominator": "",
+        "filter": "{{ Dimension('commodity_price__price_basis') }} = 'futures'",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "volume",
         "agg_params": {}
@@ -3730,6 +3746,8 @@
         "description": "Building block for avg_duty_local. A sum of per-unit duties means nothing on its own.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "duty_local",
         "agg_params": {}
@@ -3746,6 +3764,8 @@
         "description": "Days a landed price exists \u2014 never for commodities this market prohibits importing.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "count",
         "expr": "landed_price_local",
         "agg_params": {}
@@ -3762,6 +3782,8 @@
         "description": "Building block for avg_landed_price_local. A sum of prices means nothing on its own.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "landed_price_local",
         "agg_params": {}
@@ -3777,7 +3799,9 @@
         "type": "derived",
         "description": "Month-over-month change in the mean landed price; moves with both the benchmark and the currency.",
         "numerator": "",
-        "denominator": ""
+        "denominator": "",
+        "filter": "",
+        "time_column": ""
       }
     },
     {
@@ -3791,6 +3815,8 @@
         "description": "Highest traded price in the period, USD per quote unit. Group by commodity.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "max",
         "expr": "coalesce(high_price, close_price)",
         "agg_params": {}
@@ -3807,6 +3833,8 @@
         "description": "Lowest traded price in the period, USD per quote unit. Group by commodity.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "min",
         "expr": "coalesce(low_price, close_price)",
         "agg_params": {}
@@ -3823,6 +3851,8 @@
         "description": "Building block for avg_usd_fx_rate \u2014 the rate each landed price actually used.",
         "numerator": "",
         "denominator": "",
+        "filter": "",
+        "time_column": "price_date",
         "agg": "sum",
         "expr": "usd_fx_rate",
         "agg_params": {}

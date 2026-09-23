@@ -21,6 +21,11 @@
       "description": "Find sources and build dlt pipelines"
     },
     {
+      "name": "ontology-design",
+      "source": "./toolkits/ontology-design",
+      "description": "Design the business vocabulary: classes, identity, roles and named relations"
+    },
+    {
       "name": "dlt-quality",
       "source": "./toolkits/dlt-quality",
       "description": "Schema contracts and data quality checks"

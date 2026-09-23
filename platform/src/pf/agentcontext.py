@@ -7,11 +7,19 @@ Three tools, three entry points, one protocol:
     GEMINI.md                          Gemini's entry point — imports the two above
     .github/copilot-instructions.md    Copilot's entry point — points at the two above
 
-and three pieces of generated context they all send the reader to:
+and four pieces of generated context they all send the reader to:
 
     .memory/MEMORY.md                  `pf memory index`
     platform/tests/README.md           `pf test index`
     docs/ARCHITECTURE.md               `pf arch build`
+    docs/ONBOARDING.md                 `pf guide build` (with its HTML twin)
+
+and the per-harness config layer — Codex, Cursor, Gemini, VS Code, OpenCode —
+rendered from `.mcp.json` by `pf.harness`, so a tool that is not Claude Code
+still reaches the graph and knows exactly which gate applies to it
+(`docs/HARNESSES.md`). Those are generated too, and checked here for the same
+reason: a stale `.codex/config.toml` is a Codex session with no graph and no
+error.
 
 Each generated piece already has its own drift check. What nothing checked was
 the hand-written layer *around* them: that `GEMINI.md` still imports the
@@ -55,10 +63,11 @@ SUPPORTING: tuple[str, ...] = (
 )
 
 #: Generated context the entry points send a reader to. Each has its own
-#: drift check; `refresh` regenerates all three.
+#: drift check; `refresh` regenerates all four.
 GENERATED: tuple[str, ...] = (
     ".memory/MEMORY.md",
     "docs/ARCHITECTURE.md",
+    "docs/ONBOARDING.md",
     "platform/tests/README.md",
 )
 
@@ -67,6 +76,8 @@ GENERATED: tuple[str, ...] = (
 _MENTIONS: tuple[tuple[str, tuple[str, ...], str], ...] = (
     ("AGENTS.md", ("CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md"), "every entry point"),
     ("AGENTS.md", GENERATED, "every generated context artefact"),
+    ("AGENTS.md", ("docs/HARNESSES.md",), "the harness scorecard — where enforcement is a hook and where it is a rule"),
+    ("AGENTS.md", ("HARNESS.md", "pf harness"), "the per-scope harness maps and the verb that regenerates them"),
     ("AGENTS.md", ("**Session**", "**Autonomous**", "**Inline**"), "the three execution scopes"),
     ("AGENTS.md", ("pf memory add", "pf context check"), "the write protocol and this check"),
     ("GEMINI.md", ("@./CLAUDE.md", "@./AGENTS.md"), "the imports of the router and the protocol"),
@@ -150,6 +161,13 @@ def check(root: str | Path) -> list[str]:
     from pf import codegraph
 
     problems.extend(codegraph.check(root))
+
+    # The per-harness configs, for the same reason: `pf context check` is the
+    # one command, and a Codex config that no longer lists the `pf` server is
+    # a drift that fails by *succeeding* — the session starts, with no graph.
+    from pf import harness
+
+    problems.extend(harness.check(root))
     return problems
 
 
@@ -187,8 +205,31 @@ def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
         write(testmap.index_path(tests), testmap.render_index(testmap.scan(tests)))
 
     if (root / "docs").is_dir() and (root / "platform" / "src" / "pf").is_dir():
-        from pf import archmap
+        from pf import archmap, guide
 
         write(archmap.doc_path(root), archmap.render(archmap.gather(root)))
+        # The guide's HTML twin is regenerated with it: one page, two renderings,
+        # and a check that fails on either.
+        g = guide.gather(root)
+        write(guide.md_path(root), guide.render_markdown(g))
+        write(guide.html_path(root), guide.render_html(g))
+
+    # The harness configs need only `.mcp.json`, so they are refreshed in any
+    # tree that has one — including a bare test skeleton, which is how the
+    # conforming-tree tests get theirs.
+    if (root / ".mcp.json").is_file():
+        from pf import harness
+
+        for rel, content in harness.targets(root).items():
+            write(root / rel, content)
+
+    # The per-scope harness maps — one per group, per project and per report.
+    # Read from each scope's settings, the gate, the hooks, its workflow and
+    # its loops, which is why a refresh is the fix when any of those move.
+    if (root / "groups").is_dir():
+        from pf import harnessmap
+
+        for scope in harnessmap.scopes(root):
+            write(scope.path(root), scope.render(root))
 
     return changed

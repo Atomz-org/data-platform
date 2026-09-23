@@ -9,7 +9,7 @@
 # is *every* PR: whichever tool wrote the change, the next tool must find the
 # context current.
 #
-# Four hard steps, one soft. `pf tokens` is soft (a warning, not a failure)
+# Seven hard steps, one soft. `pf tokens` is soft (a warning, not a failure)
 # because an over-budget card is a decision for a person — trim the card or
 # raise its budget — and a refresh cannot make it. Flip `continue-on-error`
 # off once that decision is made; `platform.yml` still fails on it for
@@ -43,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The commit cap below measures each commit this PR adds, so it needs
+          # the base branch and the commits themselves, not a shallow tip.
+          fetch-depth: 0
 
       # Pin by pin, not `submodules: recursive`: one unreachable upstream must
       # not take the whole check with it (see platform-tests.yml).
@@ -58,7 +62,31 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
 
-      - name: Entry points agree (CLAUDE.md, AGENTS.md, GEMINI.md, Copilot)
+      # The cap that had no second look. `maxFiles` is a *per-run* rule applied
+      # to whatever set one call hands the gate, and until this step the only
+      # caller was the local pre-commit hook over one staged set — so
+      # `git commit --no-verify`, or a clone where nobody had ever run `pf`,
+      # produced commits the gate never saw and nothing afterwards re-measured.
+      # The hook is not committable; git does not clone `.git/hooks`. A control
+      # that only runs where someone remembered to install it is the control
+      # this repo already learned not to trust.
+      #
+      # So the same rule, from the same gate.yaml, is re-applied here to each
+      # commit the pull request adds. Per commit, never over the union: a pull
+      # request legitimately touches more files than one run should, which is
+      # why `pf pr report` skips the cap entirely (see pf/pr.py). Merges are
+      # excluded — a merge's diff is the whole branch it absorbs, and the
+      # commits inside it are each judged on their own.
+      #
+      # An over-cap commit that cannot be split says so in its own message, in
+      # a `Gate-Exempt: <reason>` trailer, and passes as a warning. The rule was
+      # never that a change may not exceed twelve files; it is that exceeding it
+      # may not be silent.
+      - name: Every commit is within the file cap
+        if: github.event_name == 'pull_request'
+        run: uv run pf gate --commits "origin/${{ github.event.pull_request.base.ref }}..HEAD"
+
+      - name: Entry points agree (CLAUDE.md, AGENTS.md, GEMINI.md, Copilot) and harness configs are current
         run: uv run pf context check
 
       - name: Memory index is current
@@ -69,6 +97,39 @@ jobs:
 
       - name: Architecture map is current
         run: uv run pf arch check
+
+      # The newcomer's page. Generated from the CLI, the groups, the scaffold
+      # and the registries, so the PR that renames a command is the PR that
+      # would make it lie — and this is the job that notices.
+      - name: Onboarding guide is current
+        run: uv run pf guide check
+
+      # What wraps an agent in each group, project and report: its settings,
+      # the gate's verdicts on its paths, its hooks, workflow, loops and
+      # tools. The PR that enables a tool or silences a loop is the PR that
+      # makes a map lie, and this is the job that notices.
+      - name: Harness maps are current
+        run: uv run pf harness check
+
+      # The BI semantic layer, against the graph it is projected from. It was
+      # the one artefact in the chain nothing compared — excluded from the
+      # converged gate because a bare runner rebuilds it from a warehouse it
+      # cannot build — and two manifests aged past the whole reporting layer
+      # before an end-to-end run noticed. This compares the committed manifest
+      # with a projection of the committed `kg/graph.json`, rebuilding neither.
+      - name: MDL manifests are current with their graphs
+        run: uv run pf semantic mdl --check --all
+
+      # What a table and a column *mean*, as every agent and catalogue reads
+      # it — and the graph it is joined to. Built from tracked inputs only
+      # (`mdl/mdl.json`, `kg/graph.json`), so this compares the same way on a
+      # runner with no warehouse as on a laptop with one. The PR that renames a
+      # model or changes a role is the PR that makes a page lie, and `graph`
+      # catches the other half: a bundle and a graph rebuilt without each other.
+      - name: OKF bundles are current and joined to the graph
+        run: |
+          uv run pf tool okf check --all
+          uv run pf tool okf graph --all
 
       - name: Token budgets (advisory until the jaffle-shop card is decided)
         continue-on-error: true
@@ -147,6 +208,6 @@ jobs:
           fi
           git config user.name "agent-context[bot]"
           git config user.email "agent-context[bot]@users.noreply.github.com"
-          git add -A -- .memory '*/.memory' platform/tests/README.md docs/ARCHITECTURE.md
-          git commit -m "Refresh agent context" -m "Regenerated by the agent-context workflow: the memory index, the test index and the repo map, so the next agent — whichever tool — reads context that matches this branch."
+          git add -A -- .memory '*/.memory' platform/tests/README.md docs/ARCHITECTURE.md docs/ONBOARDING.md docs/onboarding.html docs/HARNESSES.md .codex .cursor .gemini .vscode/mcp.json .opencode '*/HARNESS.md'
+          git commit -m "Refresh agent context" -m "Regenerated by the agent-context workflow: the memory index, the test index, the repo map, the onboarding guide, the harness configs and the harness maps, so the next agent — whichever tool — reads context that matches this branch."
           git push

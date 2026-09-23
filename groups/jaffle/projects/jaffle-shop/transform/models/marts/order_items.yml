@@ -1,5 +1,10 @@
 models:
 - name: order_items
+  config:
+    # In the semantic layer, against the `semantic: false` the marts tree
+    # sets for the exercise corpus around it.
+    meta:
+      semantic: true
   # Junction table other models and unit tests depend on — a schema change
   # here breaks silently downstream, which is exactly what this watches for.
   data_tests:

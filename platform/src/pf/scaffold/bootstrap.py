@@ -587,6 +587,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # The suite reads the vendored upstreams: an OKF bundle is constructed
+      # through okf-weaver's models before a file is written, so without them
+      # thirty-three tests have nothing to build with. This was the one job in
+      # the fleet that never fetched them — `agent-context` and
+      # `platform-tests` both do — which made it the one place the suite ran
+      # degraded, and it said so only as failures.
+      #
+      # Pin by pin rather than `submodules: recursive`, for the reason the
+      # other workflows give: one unreachable upstream must not take the whole
+      # suite down with it.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\\..*\\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
@@ -675,6 +693,23 @@ jobs:
         # `architecture` job runs `pf kg build` and `pf arch --check` in the one
         # environment that is the same every time, a runner with no warehouse.
         #
+        # `okf/**` is excluded because it is a projection of `mdl/mdl.json`,
+        # which is excluded: a bare runner regenerates the MDL empty, so this
+        # job would rebuild every bundle from nothing and then fail on the
+        # difference it had just manufactured. It is checked where the
+        # comparison is honest — `pf tool okf check --all` and `pf tool okf
+        # graph --all` in `agent-context.yml`, which build from the *committed*
+        # MDL and graph on every pull request and regenerate neither.
+        #
+        # `HARNESS.md` joins `kg/architecture.md`, for the same reason and measured
+        # the same way: a project map's Evidence-report row counts the exposures
+        # in `_reporting__exposures.yml`, which `pf bootstrap --all` regenerates
+        # here from a reporting layer a bare runner cannot build — 17 became 3
+        # for commodity-us, 16 became 0 for jaffle-shop — and that file is already
+        # excluded above. A map that reads an excluded file inherits the
+        # exclusion. It is checked where the comparison is honest: `pf harness
+        # check` in `agent-context.yml`, which regenerates nothing.
+        #
         # `package-lock.yml` is excluded for the opposite reason to all of them:
         # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
@@ -685,6 +720,7 @@ jobs:
           if ! git diff --exit-code --ignore-submodules=dirty -- . \
               ':(exclude)**/kg/graph.json' \
               ':(exclude)**/mdl/mdl.json' \
+              ':(exclude)**/okf/**' \
               ':(exclude)**/catalog/*.json' \
               ':(exclude)**/governance/otop.json' \
               ':(exclude)**/transform/recce.yml' \
@@ -692,6 +728,7 @@ jobs:
               ':(exclude)**/transform/models/_reporting__exposures.yml' \
               ':(exclude)**/transform/package-lock.yml' \
               ':(exclude)**/kg/architecture.md' \
+              ':(exclude)**/HARNESS.md' \
               ':(exclude)**/transform/tests/expectations/*.sql'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"
@@ -1003,6 +1040,32 @@ def _dev_serving(root: Path, group: str, project: str) -> StepResult:
     return StepResult("dev serving", "ok", "docs/quack.md written")
 
 
+def _render_harness(root: Path, group: str, project: str) -> list[StepResult]:
+    """The harness maps this project answers to: the group's, its own and its report's.
+
+    Runs after the architecture map for the same reason that runs late: it
+    reads the CI workflow, the settings, the tools and the reporting layer that
+    earlier steps write. Every gate verdict in it is computed by the function
+    the PreToolUse hook calls, so a rule that never fires — an allowlist that
+    shadows an impact rule — is reported here as a gap rather than repeated as
+    a promise.
+
+    The group's map is rewritten too: a sister that just gained a report or a
+    tool override changes the family's table, and the group has no bootstrap
+    of its own.
+    """
+    from pf.harnessmap import HARNESS_BUDGET, Scope, scopes, write_scope
+    from pf.kg.card import estimate_tokens
+
+    out: list[StepResult] = []
+    for scope in (Scope("group", group), *scopes(root, group, project)):
+        path, _changed = write_scope(root, scope)
+        n = estimate_tokens(path.read_text(encoding="utf-8"))
+        status: Status = "ok" if n <= HARNESS_BUDGET else "failed"
+        out.append(StepResult("harness map", status, f"{scope.label}: ~{n} tokens / {HARNESS_BUDGET}"))
+    return out
+
+
 STEPS: list[Step] = [
     Step("directories", "every generated artefact has a stable home", _ensure_dirs),
     Step(
@@ -1108,6 +1171,11 @@ STEPS: list[Step] = [
         "architecture map",
         "every feature of this project, present or absent, so an agent routes instead of reading the tree",
         _render_architecture,
+    ),
+    Step(
+        "harness map",
+        "what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it",
+        _render_harness,
     ),
     Step("conformance", "fail here rather than in BI", _validate),
 ]

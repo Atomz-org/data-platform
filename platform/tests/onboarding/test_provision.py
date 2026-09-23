@@ -26,18 +26,33 @@ while these hold, and each of them is easy to lose without noticing:
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import pytest
 import yaml
+from conftest import REPO_ROOT
 from fastapi.testclient import TestClient
 from pf.scaffold import provision as sc
 
 
 def _root(tmp_path: Path) -> Path:
-    """A repository skeleton: the two marker directories and nothing else."""
+    """A repository skeleton: the two marker directories, and the vendor lock.
+
+    The lock is not decoration. The bootstrap ladder ends with `vendor docs`,
+    which renders the vendor card and fails the step when the card is over its
+    budget — and the card's state column is computed against the lock. With no
+    lock, every upstream renders as `unreviewed` rather than `ok`, some forty
+    tokens longer than the committed card, and a ladder that is clean in this
+    repository reports a failed step in a skeleton for no reason the skeleton
+    caused. The repository's own lock makes the card render here as it does
+    there; it does not make the budget looser.
+    """
     (tmp_path / "platform").mkdir(exist_ok=True)
     (tmp_path / "groups").mkdir(exist_ok=True)
+    lock = REPO_ROOT / "vendor.lock.json"
+    if lock.is_file():
+        shutil.copy(lock, tmp_path / "vendor.lock.json")
     return tmp_path
 
 

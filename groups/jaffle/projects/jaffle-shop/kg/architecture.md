@@ -127,12 +127,13 @@ flowchart TB
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
+| harness map | ✓ | `HARNESS.md` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
 | MCP servers | — | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten — `pf capability-add` |
 | decision records | ✓ 3 | `decisions/ADR-0002-snowflake-semantics-on-every-adapter.md` | why this project is shaped the way it is, where code cannot say so |
 | **delivery** | | | |
 | exposures | ✓ 22 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 11 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 12 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | ✓ 2 | `jaffle-shop-evidence-layer.html` | standalone HTML about this project, kept beside what it describes |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/jaffle_shop/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -144,10 +145,11 @@ flowchart TB
 | tool overrides | — | `tools.yaml` | opt out of a group tool or retune one; merged over the group's — `pf tool enable` |
 | project deps | ✓ | `pyproject.toml` | the project's own Python dependencies, on top of the platform's |
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
+| okf | ✓ | `okf/index.md` | Open Knowledge Format: the semantic layer as portable, validated context for agents. |
 
-**Capabilities:** `air`, `ducklake`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `air`, `ducklake`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
 
-**Tools enabled:** `elementary`, `expectations`, `openmetadata`, `recce`, `wren`
+**Tools enabled:** `elementary`, `expectations`, `okf`, `openmetadata`, `recce`, `wren`
 
 ## Gaps
 

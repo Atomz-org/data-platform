@@ -43,6 +43,13 @@ models:
       +schema: staging
     marts:
       +materialized: table
+      # 996 of the models under here are SQL exercises, not a BI surface, and
+      # the directory cannot tell the difference. The semantic layer — the MDL,
+      # the OKF bundle, every BI question — takes what is declared instead:
+      # this `false`, the `semantic: true` on the core marts beside their
+      # descriptions, and any model an exposure names. `pf semantic mdl`.
+      +meta:
+        semantic: false
       +tags:
       - layer:marts
       - domain:core

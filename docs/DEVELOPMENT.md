@@ -12,9 +12,12 @@ uv sync                                   # install
 uv run pf install-hook                    # REQUIRED on a fresh clone
 ```
 
-`install-hook` is not optional. Git does not clone `.git/hooks`, so until it
-runs, the pre-commit gate that refuses a hand-edited generated artefact is
-simply absent and nothing says so.
+`install-hook` is not optional, and it installs two hooks. Git does not clone
+`.git/hooks`, so until something runs it, the `pre-commit` gate that refuses a
+hand-edited generated artefact is simply absent and nothing says so; the
+`pre-push` gate that re-measures commits made without it is absent too. Any
+`pf` command fills an empty slot, so in practice you get them before your first
+commit — but a checkout where nobody ever runs `pf` has neither.
 
 What `.github/workflows/platform-tests.yml` runs, in order — run these before
 pushing a `platform/**` change, because that workflow is the only repo-wide
@@ -63,6 +66,8 @@ Hand-editing one of these is silently discarded by the next regeneration:
 | `**/kg/architecture.md` | `pf arch <g> <p>` / `--all` | the project, or the feature registry |
 | `**/kg/graph.json` | `pf kg build <g> <p>` | the project |
 | `docs/ARCHITECTURE.md` | `pf arch build` | the repository, or `pf/archmap.py` |
+| `docs/ONBOARDING.md`, `docs/onboarding.html` | `pf guide build` | the repository, or `pf/guide.py` |
+| `**/HARNESS.md` — a group's, a project's, its `reporting/`'s | `pf harness <g> [<p>]` / `build` | the settings, gate, hooks, workflow, loops and tools it is read from, or `pf/harnessmap.py` |
 | `platform/tests/README.md` | `pf test index` | the test docstrings |
 | `docs/VENDOR-CARD.md`, `docs/VENDOR.md` | `pf vendor docs` | `pf/vendor/registry.yaml` |
 | `gate.capabilities.yaml` | `pf bootstrap` | the capability |
@@ -123,17 +128,28 @@ deletion completely. Compare the sets:
 python3 -c "import json;print(len(json.load(open('.../kg/graph.json'))['nodes']))"
 ```
 
-Work in a full `git clone -s <repo>`, not a `git worktree`. `pf install-hook`
-does `mkdir` on `.git/hooks`, and in a worktree `.git` is a file, so it raises
-`NotADirectoryError`.
+A `git worktree` works now. It did not: `pf install-hook` assumed `.git/hooks`,
+and in a worktree `.git` is a *file*, so `mkdir` raised `NotADirectoryError`
+and `pf bootstrap` died there — leaving the kind of checkout an agent is most
+likely to be working in with no gate at all. It asks git where hooks live
+instead (`git rev-parse --git-path hooks`), which is the main checkout's
+directory, shared by every worktree, exactly as git reads it.
 
 ## The commit gate
 
-`gate.yaml` is the machine-readable policy, read by `pf gate`, the pre-commit
-hook and the PreToolUse hook. Three things to know before staging:
+`gate.yaml` is the machine-readable policy, read by `pf gate`, the two git
+hooks and the PreToolUse hook. Three things to know before staging:
 
 - **`maxFiles: 12`** per commit. Split the work; the repo's own history is
-  sequences like `(1 of 2)`.
+  sequences like `(1 of 2)`. Measured three times, over the same number:
+  `pre-commit` counts the staged set, `pre-push` re-counts every commit leaving
+  the machine, and `agent-context.yml` re-counts every commit a pull request
+  adds (`pf gate --commits <range>`). The second and third exist because the
+  first is skippable and silent about it — `--no-verify` walks past it, and a
+  clone with no hooks never had it. A commit that genuinely cannot be split
+  carries a `Gate-Exempt: <reason>` trailer and passes as a warning that quotes
+  the reason into the log and the review; the rule is not that a change may
+  never exceed twelve files, it is that exceeding it is never silent.
 - **`platform_denylist`** — a *project* session may not write `platform/**`,
   `vendor/**`, `pyproject.toml`, `uv.lock` or the gate files.
 - **`impact_required`** — changing model, macro or source files means the blast

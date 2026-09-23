@@ -1,0 +1,36 @@
+{
+  "servers": {
+    "code-review-graph": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "code-review-graph@2.3.9",
+        "serve",
+        "--repo",
+        "${workspaceFolder}/platform"
+      ]
+    },
+    "graphify": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "graphifyy",
+        "graphify-mcp",
+        "${workspaceFolder}/graphify-out/graph.json"
+      ]
+    },
+    "pf": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "pf",
+        "mcp"
+      ],
+      "env": {
+        "PF_PROJECT_DIR": "${workspaceFolder}"
+      }
+    }
+  }
+}

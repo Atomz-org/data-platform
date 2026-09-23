@@ -3,8 +3,3459 @@
   "schema": "jaffle_shop",
   "dataSource": "DUCKDB",
   "layoutVersion": 1,
-  "models": [],
+  "models": [
+    {
+      "name": "customers",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "customers"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The unique key of the orders mart."
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Customers' full name."
+          }
+        },
+        {
+          "name": "count_lifetime_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Total number of orders a customer has ever placed."
+          }
+        },
+        {
+          "name": "first_ordered_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The timestamp when a customer placed their first order."
+          }
+        },
+        {
+          "name": "last_ordered_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The timestamp of a customer's most recent order."
+          }
+        },
+        {
+          "name": "lifetime_spend_pretax",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The sum of all the pre-tax subtotals of every order a customer has placed."
+          }
+        },
+        {
+          "name": "lifetime_tax_paid",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The sum of all the tax portion of every order a customer has placed."
+          }
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The sum of all the order totals (including tax) that a customer has ever placed."
+          }
+        },
+        {
+          "name": "customer_type",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Options are 'new' or 'returning', indicating if a customer has ordered more than once or has only placed their first order to date."
+          }
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "Customer overview data mart, offering key details for each unique customer. One row per customer.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "dim_customer_360",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_customer_360"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_order_value",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "first_order_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "last_order_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "customer_tenure_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ltv_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "days_since_last_order",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "recency_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "frequency_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monetary_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rfm_total_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rfm_segment_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_member_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "loyalty_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_enrolled_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "loyalty_tenure_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_points_balance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_lifecycle_stage",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "preferred_store_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "preferred_store_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "preferred_store_visits",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "preferred_store_visit_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "distinct_stores_visited",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "top1_product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "top1_product_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "top1_purchase_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "top1_product_share_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "top2_product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "top2_product_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "top3_product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "top3_product_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_items_purchased",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_coupons_redeemed",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "campaigns_responded_to",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "campaign_response_rate_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_discount_received",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "acquisition_source",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "marketing_engagement_level",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "exec_company_kpis_monthly",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "exec_company_kpis_monthly"
+      },
+      "columns": [
+        {
+          "name": "month_start",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "First day of the month."
+          }
+        },
+        {
+          "name": "monthly_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Total company revenue for the month."
+          }
+        },
+        {
+          "name": "mom_revenue_growth",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Month-over-month revenue growth rate."
+          }
+        },
+        {
+          "name": "yoy_revenue_growth",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Year-over-year revenue growth rate."
+          }
+        },
+        {
+          "name": "monthly_orders",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_gross_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_tax",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_ticket_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_new_customers",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_daily_active_customers",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_waste_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "active_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "prev_month_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mom_orders_growth",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "same_month_last_year_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "properties": {
+        "description": "Monthly company KPIs with MoM and YoY growth rates.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "locations",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "locations"
+      },
+      "columns": [
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "location_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "tax_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "opened_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "Every store, one row per location, straight from the source.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "met_weekly_revenue_by_store",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "met_weekly_revenue_by_store"
+      },
+      "columns": [
+        {
+          "name": "week_start",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Start date of the week."
+          }
+        },
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Store location identifier."
+          }
+        },
+        {
+          "name": "wow_revenue_growth",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Week-over-week revenue growth rate."
+          }
+        },
+        {
+          "name": "store_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "weekly_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "weekly_orders",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "weekly_gross_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "weekly_tax_collected",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_order_value",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "prev_week_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "Weekly revenue aggregation per store with week-over-week growth.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "ml_feature_customer_churn",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "ml_feature_customer_churn"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Unique customer identifier."
+          }
+        },
+        {
+          "name": "days_since_last_order",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Days since the customer's most recent order."
+          }
+        },
+        {
+          "name": "lifetime_order_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Total number of orders placed."
+          }
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Total customer spend across all orders."
+          }
+        },
+        {
+          "name": "rfm_total_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Combined RFM score (3-15)."
+          }
+        },
+        {
+          "name": "is_loyalty_member",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Binary indicator for loyalty membership."
+          }
+        },
+        {
+          "name": "order_trend_slope",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Change rate in order frequency (recent 3m vs prior 3m)."
+          }
+        },
+        {
+          "name": "churn_label_proxy",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Binary label (1 = no order in 90+ days)."
+          }
+        },
+        {
+          "name": "recency_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "frequency_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "orders_per_month",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_order_value",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monetary_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rfm_segment_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_points_balance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "distinct_stores_visited",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "coupons_redeemed",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "marketing_engagement_level",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "recent_3m_order_avg",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "prior_3m_order_avg",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customer_tenure_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "Customer-level feature table for churn prediction models. Includes recency, frequency, monetary, loyalty, engagement, and trend features plus a proxy churn label (no order in 90+ days). Grain: one row per customer.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "order_items",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "order_items"
+      },
+      "columns": [
+        {
+          "name": "order_item_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "order_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "ordered_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "product_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_food_item",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_drink_item",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "supply_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "order_item_id",
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "orders",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "orders"
+      },
+      "columns": [
+        {
+          "name": "order_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The unique key of the orders mart."
+          }
+        },
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The foreign key relating to the customer who placed the order."
+          }
+        },
+        {
+          "name": "order_total",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The total amount of the order in USD including tax."
+          }
+        },
+        {
+          "name": "ordered_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The timestamp the order was placed at."
+          }
+        },
+        {
+          "name": "order_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The sum of supply expenses to fulfill the order."
+          }
+        },
+        {
+          "name": "is_food_order",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "A boolean indicating if this order included any food items."
+          }
+        },
+        {
+          "name": "is_drink_order",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "A boolean indicating if this order included any drink items."
+          }
+        },
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "subtotal_cents",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "tax_paid_cents",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "order_total_cents",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "subtotal",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "tax_paid",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "order_items_subtotal",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "count_food_items",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "count_drink_items",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "count_order_items",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customer_order_number",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "order_id",
+      "properties": {
+        "description": "Order overview data mart, offering key details for each order inlcluding if it's a customer's first order and a food vs. drink item breakdown. One row per order.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "products",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "products"
+      },
+      "columns": [
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "product_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_type",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_description",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_food_item",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_drink_item",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "product_id",
+      "properties": {
+        "description": "Every product the shop sells, one row per product, straight from the source.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rev_etl_crm_customer_sync",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rev_etl_crm_customer_sync"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ltv_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "first_order_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "last_order_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "preferred_store_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "rfm_total_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "synced_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "source_system",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "Customer data formatted for CRM sync including name, segment, LTV, and churn risk with source system metadata.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rev_etl_email_segment_at_risk",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rev_etl_email_segment_at_risk"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "churn_propensity_score",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "last_order_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "total_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "email_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exported_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "At-risk customers for win-back email campaigns filtered by churn propensity score above 70.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rev_etl_email_segment_high_value",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rev_etl_email_segment_high_value"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ltv_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "preferred_store_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "email_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exported_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "High-value customer list for email marketing targeting based on customer segment classification.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rev_etl_inventory_reorder",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rev_etl_inventory_reorder"
+      },
+      "columns": [
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "current_quantity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "reorder_point",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "suggested_reorder_quantity",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "estimated_days_of_stock",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "stock_alert_level",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exported_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "reorder_trigger",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "Items needing reorder for procurement system integration based on stock alerts for stockout and low stock conditions.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_campaign_effectiveness",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_campaign_effectiveness"
+      },
+      "columns": [
+        {
+          "name": "campaign_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "campaign_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "campaign_channel",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "attributed_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "attributed_customers",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "attributed_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_discounts_given",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "roi_ratio",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cost_per_order",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "first_spend_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "last_spend_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "effectiveness_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "net_profit",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "revenue_per_customer",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "campaign_id",
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_customer_acquisition_funnel",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_customer_acquisition_funnel"
+      },
+      "columns": [
+        {
+          "name": "acquisition_source",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_customers",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customers_with_campaign",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customers_from_referral",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "source_share",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "source_rank",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_customer_segments",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_customer_segments"
+      },
+      "columns": [
+        {
+          "name": "customer_segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "customer_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_orders",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_days_since_last_order",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_rfm_score",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_segment_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment_revenue_share_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_loyalty_program_health",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_loyalty_program_health"
+      },
+      "columns": [
+        {
+          "name": "current_tier_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "member_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "active_members",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_lifetime_points",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_current_balance",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_points_earned",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_points_redeemed",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "tier_redemption_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "program_total_members",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "program_active_members",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "program_redemption_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "tier_member_share",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_stock_alerts",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_stock_alerts"
+      },
+      "columns": [
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "current_quantity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "daily_depletion_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "estimated_days_of_stock",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "supplier_avg_lead_time_days",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "reorder_point",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "suggested_reorder_quantity",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "needs_reorder",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "stock_alert_level",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "last_movement_at",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        }
+      ],
+      "primaryKey": "product_id",
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "rpt_store_pnl",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_store_pnl"
+      },
+      "columns": [
+        {
+          "name": "store_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "report_month",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "monthly_labor_cost",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "operating_expenses",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "marketing_spend",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "inventory_holding_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_costs",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "net_profit",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "net_profit_margin_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "labor_cost_ratio_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "opex_ratio_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "marketing_ratio_pct",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "scr_customer_churn_propensity",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "scr_customer_churn_propensity"
+      },
+      "columns": [
+        {
+          "name": "customer_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Unique customer identifier."
+          }
+        },
+        {
+          "name": "churn_propensity_score",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Composite churn risk score (0-100), higher = more likely to churn."
+          }
+        },
+        {
+          "name": "churn_risk_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Risk classification (high, medium, low)."
+          }
+        },
+        {
+          "name": "customer_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "days_since_last_order",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_orders",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lifetime_spend",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rfm_total_score",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_tier",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "recency_score",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "frequency_score",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "loyalty_score",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "spend_score",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "customer_id",
+      "properties": {
+        "description": "0-100 churn risk score per customer based on recency, frequency, loyalty activity, and spend trend from dim_customer_360.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "supplies",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "supplies"
+      },
+      "columns": [
+        {
+          "name": "supply_uuid",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "supply_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "supply_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "supply_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_perishable_supply",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "supply_id",
+      "properties": {
+        "description": "Every supply a product consumes, one row per product-supply pair.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "view_store_mgr_daily_report",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "view_store_mgr_daily_report"
+      },
+      "columns": [
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "order_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "daily_revenue",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "order_count",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "avg_order_value",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "labor_cost",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "labor_hours",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "waste_cost",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "labor_cost_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "waste_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "day_assessment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "Daily store report with revenue, orders, labor cost, waste, and day assessment for store managers.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "view_store_mgr_inventory_status",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "view_store_mgr_inventory_status"
+      },
+      "columns": [
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "current_quantity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "reorder_point",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "estimated_days_of_stock",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "stock_alert_level",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "urgency",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "action_needed",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "location_id",
+      "properties": {
+        "description": "Current inventory levels with reorder alerts and urgency classification for store managers.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "view_store_mgr_product_performance",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "view_store_mgr_product_performance"
+      },
+      "columns": [
+        {
+          "name": "store_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "product_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "sales_month",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_quantity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "total_sales",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "product_rank_in_store",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "store_id",
+      "properties": {
+        "description": "Product sales at store level with monthly aggregation and in-store product ranking.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    },
+    {
+      "name": "view_store_mgr_staff_schedule",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "view_store_mgr_staff_schedule"
+      },
+      "columns": [
+        {
+          "name": "shift_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "location_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "employee_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "full_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "position_title",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "shift_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "scheduled_start",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "scheduled_end",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "scheduled_hours",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "actual_hours",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "shift_status",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "shift_id",
+      "properties": {
+        "description": "Staff shift schedule with employee details, hours, and shift status for store manager review.",
+        "grain": "",
+        "layer": "marts",
+        "pf.project": "jaffle-shop",
+        "pf.group": "jaffle"
+      }
+    }
+  ],
   "relationships": [],
-  "views": [],
-  "cubes": []
+  "views": [
+    {
+      "name": "customers_view",
+      "statement": "select\n  customers.customer_id,\n  customers.customer_name,\n  customers.count_lifetime_orders,\n  customers.first_ordered_at,\n  customers.last_ordered_at,\n  customers.lifetime_spend_pretax,\n  customers.lifetime_tax_paid,\n  customers.lifetime_spend,\n  customers.customer_type\nfrom customers",
+      "properties": {
+        "pf.exposures": "report_metrics_count_lifetime_orders, report_metrics_lifetime_spend_pretax",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Data Platform",
+        "pf.description": "Customer overview data mart, offering key details for each unique customer. One row per customer.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "dim_customer_360_view",
+      "statement": "select\n  dim_customer_360.customer_id,\n  dim_customer_360.customer_name,\n  dim_customer_360.lifetime_spend,\n  dim_customer_360.total_orders,\n  dim_customer_360.avg_order_value,\n  dim_customer_360.first_order_at,\n  dim_customer_360.last_order_at,\n  dim_customer_360.customer_tenure_days,\n  dim_customer_360.ltv_tier,\n  dim_customer_360.days_since_last_order,\n  dim_customer_360.recency_score,\n  dim_customer_360.frequency_score,\n  dim_customer_360.monetary_score,\n  dim_customer_360.rfm_total_score,\n  dim_customer_360.rfm_segment_code,\n  dim_customer_360.loyalty_member_id,\n  dim_customer_360.loyalty_tier,\n  dim_customer_360.loyalty_enrolled_at,\n  dim_customer_360.loyalty_tenure_days,\n  dim_customer_360.loyalty_points_balance,\n  dim_customer_360.loyalty_lifecycle_stage,\n  dim_customer_360.preferred_store_id,\n  dim_customer_360.preferred_store_name,\n  dim_customer_360.preferred_store_visits,\n  dim_customer_360.preferred_store_visit_pct,\n  dim_customer_360.distinct_stores_visited,\n  dim_customer_360.top1_product_id,\n  dim_customer_360.top1_product_name,\n  dim_customer_360.top1_purchase_count,\n  dim_customer_360.top1_product_share_pct,\n  dim_customer_360.top2_product_id,\n  dim_customer_360.top2_product_name,\n  dim_customer_360.top3_product_id,\n  dim_customer_360.top3_product_name,\n  dim_customer_360.total_items_purchased,\n  dim_customer_360.total_coupons_redeemed,\n  dim_customer_360.campaigns_responded_to,\n  dim_customer_360.campaign_response_rate_pct,\n  dim_customer_360.total_discount_received,\n  dim_customer_360.acquisition_source,\n  dim_customer_360.marketing_engagement_level\nfrom dim_customer_360",
+      "properties": {
+        "pf.exposures": "marketing_analytics",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Marketing Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "exec_company_kpis_monthly_view",
+      "statement": "select\n  exec_company_kpis_monthly.month_start,\n  exec_company_kpis_monthly.monthly_revenue,\n  exec_company_kpis_monthly.mom_revenue_growth,\n  exec_company_kpis_monthly.yoy_revenue_growth,\n  exec_company_kpis_monthly.monthly_orders,\n  exec_company_kpis_monthly.monthly_gross_revenue,\n  exec_company_kpis_monthly.monthly_tax,\n  exec_company_kpis_monthly.avg_ticket_size,\n  exec_company_kpis_monthly.monthly_new_customers,\n  exec_company_kpis_monthly.avg_daily_active_customers,\n  exec_company_kpis_monthly.monthly_waste_cost,\n  exec_company_kpis_monthly.active_days,\n  exec_company_kpis_monthly.prev_month_revenue,\n  exec_company_kpis_monthly.mom_orders_growth,\n  exec_company_kpis_monthly.same_month_last_year_revenue\nfrom exec_company_kpis_monthly",
+      "properties": {
+        "pf.exposures": "weekly_business_review",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance Team",
+        "pf.description": "Monthly company KPIs with MoM and YoY growth rates.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "met_weekly_revenue_by_store_view",
+      "statement": "select\n  met_weekly_revenue_by_store.week_start,\n  met_weekly_revenue_by_store.location_id,\n  met_weekly_revenue_by_store.wow_revenue_growth,\n  met_weekly_revenue_by_store.store_name,\n  met_weekly_revenue_by_store.weekly_revenue,\n  met_weekly_revenue_by_store.weekly_orders,\n  met_weekly_revenue_by_store.weekly_gross_revenue,\n  met_weekly_revenue_by_store.weekly_tax_collected,\n  met_weekly_revenue_by_store.avg_order_value,\n  met_weekly_revenue_by_store.prev_week_revenue\nfrom met_weekly_revenue_by_store",
+      "properties": {
+        "pf.exposures": "weekly_business_review",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance Team",
+        "pf.description": "Weekly revenue aggregation per store with week-over-week growth.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "ml_feature_customer_churn_view",
+      "statement": "select\n  ml_feature_customer_churn.customer_id,\n  ml_feature_customer_churn.days_since_last_order,\n  ml_feature_customer_churn.lifetime_order_count,\n  ml_feature_customer_churn.lifetime_spend,\n  ml_feature_customer_churn.rfm_total_score,\n  ml_feature_customer_churn.is_loyalty_member,\n  ml_feature_customer_churn.order_trend_slope,\n  ml_feature_customer_churn.churn_label_proxy,\n  ml_feature_customer_churn.recency_score,\n  ml_feature_customer_churn.frequency_score,\n  ml_feature_customer_churn.orders_per_month,\n  ml_feature_customer_churn.avg_order_value,\n  ml_feature_customer_churn.monetary_score,\n  ml_feature_customer_churn.rfm_segment_code,\n  ml_feature_customer_churn.loyalty_tier,\n  ml_feature_customer_churn.loyalty_points_balance,\n  ml_feature_customer_churn.distinct_stores_visited,\n  ml_feature_customer_churn.coupons_redeemed,\n  ml_feature_customer_churn.marketing_engagement_level,\n  ml_feature_customer_churn.recent_3m_order_avg,\n  ml_feature_customer_churn.prior_3m_order_avg,\n  ml_feature_customer_churn.customer_tenure_days\nfrom ml_feature_customer_churn",
+      "properties": {
+        "pf.exposures": "ml_churn_prediction",
+        "pf.exposure_types": "ml",
+        "pf.owners": "Data Science Team",
+        "pf.description": "Customer-level feature table for churn prediction models. Includes recency, frequency, monetary, loyalty, engagement, and trend features plus a proxy churn label (no order in 90+ days). Grain: one row per customer.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "order_items_view",
+      "statement": "select\n  order_items.order_item_id,\n  order_items.order_id,\n  order_items.product_id,\n  order_items.ordered_at,\n  order_items.product_name,\n  order_items.product_price,\n  order_items.is_food_item,\n  order_items.is_drink_item,\n  order_items.supply_cost\nfrom order_items",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_drink_revenue, report_metrics_drink_revenue_pct, report_metrics_food_revenue, report_metrics_food_revenue_pct, report_metrics_median_revenue, report_metrics_revenue",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Data Platform",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "orders_view",
+      "statement": "select\n  orders.order_id,\n  orders.customer_id,\n  orders.order_total,\n  orders.ordered_at,\n  orders.order_cost,\n  orders.is_food_order,\n  orders.is_drink_order,\n  orders.location_id,\n  orders.subtotal_cents,\n  orders.tax_paid_cents,\n  orders.order_total_cents,\n  orders.subtotal,\n  orders.tax_paid,\n  orders.order_items_subtotal,\n  orders.count_food_items,\n  orders.count_drink_items,\n  orders.count_order_items,\n  orders.customer_order_number\nfrom orders",
+      "properties": {
+        "pf.exposures": "report_index, report_metrics_drink_orders, report_metrics_food_orders, report_metrics_large_orders, report_metrics_new_customer_orders, report_metrics_order_cost, report_metrics_order_total, report_metrics_orders",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Data Platform",
+        "pf.description": "Order overview data mart, offering key details for each order inlcluding if it's a customer's first order and a food vs. drink item breakdown. One row per order.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rev_etl_crm_customer_sync_view",
+      "statement": "select\n  rev_etl_crm_customer_sync.customer_id,\n  rev_etl_crm_customer_sync.customer_name,\n  rev_etl_crm_customer_sync.ltv_tier,\n  rev_etl_crm_customer_sync.lifetime_spend,\n  rev_etl_crm_customer_sync.total_orders,\n  rev_etl_crm_customer_sync.first_order_at,\n  rev_etl_crm_customer_sync.last_order_at,\n  rev_etl_crm_customer_sync.preferred_store_id,\n  rev_etl_crm_customer_sync.rfm_total_score,\n  rev_etl_crm_customer_sync.synced_at,\n  rev_etl_crm_customer_sync.source_system\nfrom rev_etl_crm_customer_sync",
+      "properties": {
+        "pf.exposures": "crm_sync",
+        "pf.exposure_types": "application",
+        "pf.owners": "Marketing Ops",
+        "pf.description": "Customer data formatted for CRM sync including name, segment, LTV, and churn risk with source system metadata.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rev_etl_email_segment_at_risk_view",
+      "statement": "select\n  rev_etl_email_segment_at_risk.customer_id,\n  rev_etl_email_segment_at_risk.customer_name,\n  rev_etl_email_segment_at_risk.churn_propensity_score,\n  rev_etl_email_segment_at_risk.lifetime_spend,\n  rev_etl_email_segment_at_risk.last_order_at,\n  rev_etl_email_segment_at_risk.total_orders,\n  rev_etl_email_segment_at_risk.email_segment,\n  rev_etl_email_segment_at_risk.exported_at\nfrom rev_etl_email_segment_at_risk",
+      "properties": {
+        "pf.exposures": "crm_sync",
+        "pf.exposure_types": "application",
+        "pf.owners": "Marketing Ops",
+        "pf.description": "At-risk customers for win-back email campaigns filtered by churn propensity score above 70.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rev_etl_email_segment_high_value_view",
+      "statement": "select\n  rev_etl_email_segment_high_value.customer_id,\n  rev_etl_email_segment_high_value.customer_name,\n  rev_etl_email_segment_high_value.lifetime_spend,\n  rev_etl_email_segment_high_value.total_orders,\n  rev_etl_email_segment_high_value.ltv_tier,\n  rev_etl_email_segment_high_value.preferred_store_id,\n  rev_etl_email_segment_high_value.email_segment,\n  rev_etl_email_segment_high_value.exported_at\nfrom rev_etl_email_segment_high_value",
+      "properties": {
+        "pf.exposures": "crm_sync",
+        "pf.exposure_types": "application",
+        "pf.owners": "Marketing Ops",
+        "pf.description": "High-value customer list for email marketing targeting based on customer segment classification.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rev_etl_inventory_reorder_view",
+      "statement": "select\n  rev_etl_inventory_reorder.location_id,\n  rev_etl_inventory_reorder.product_id,\n  rev_etl_inventory_reorder.current_quantity,\n  rev_etl_inventory_reorder.reorder_point,\n  rev_etl_inventory_reorder.suggested_reorder_quantity,\n  rev_etl_inventory_reorder.estimated_days_of_stock,\n  rev_etl_inventory_reorder.stock_alert_level,\n  rev_etl_inventory_reorder.exported_at,\n  rev_etl_inventory_reorder.reorder_trigger\nfrom rev_etl_inventory_reorder",
+      "properties": {
+        "pf.exposures": "inventory_reorder_system",
+        "pf.exposure_types": "application",
+        "pf.owners": "Supply Chain Team",
+        "pf.description": "Items needing reorder for procurement system integration based on stock alerts for stockout and low stock conditions.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_campaign_effectiveness_view",
+      "statement": "select\n  rpt_campaign_effectiveness.campaign_id,\n  rpt_campaign_effectiveness.campaign_name,\n  rpt_campaign_effectiveness.campaign_channel,\n  rpt_campaign_effectiveness.total_spend,\n  rpt_campaign_effectiveness.attributed_orders,\n  rpt_campaign_effectiveness.attributed_customers,\n  rpt_campaign_effectiveness.attributed_revenue,\n  rpt_campaign_effectiveness.total_discounts_given,\n  rpt_campaign_effectiveness.roi_ratio,\n  rpt_campaign_effectiveness.cost_per_order,\n  rpt_campaign_effectiveness.first_spend_date,\n  rpt_campaign_effectiveness.last_spend_date,\n  rpt_campaign_effectiveness.effectiveness_tier,\n  rpt_campaign_effectiveness.net_profit,\n  rpt_campaign_effectiveness.revenue_per_customer\nfrom rpt_campaign_effectiveness",
+      "properties": {
+        "pf.exposures": "marketing_analytics",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Marketing Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_customer_acquisition_funnel_view",
+      "statement": "select\n  rpt_customer_acquisition_funnel.acquisition_source,\n  rpt_customer_acquisition_funnel.total_customers,\n  rpt_customer_acquisition_funnel.customers_with_campaign,\n  rpt_customer_acquisition_funnel.customers_from_referral,\n  rpt_customer_acquisition_funnel.source_share,\n  rpt_customer_acquisition_funnel.source_rank\nfrom rpt_customer_acquisition_funnel",
+      "properties": {
+        "pf.exposures": "marketing_analytics",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Marketing Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_customer_segments_view",
+      "statement": "select\n  rpt_customer_segments.customer_segment,\n  rpt_customer_segments.customer_count,\n  rpt_customer_segments.segment_pct,\n  rpt_customer_segments.avg_spend,\n  rpt_customer_segments.avg_orders,\n  rpt_customer_segments.avg_days_since_last_order,\n  rpt_customer_segments.avg_rfm_score,\n  rpt_customer_segments.total_segment_revenue,\n  rpt_customer_segments.segment_revenue_share_pct\nfrom rpt_customer_segments",
+      "properties": {
+        "pf.exposures": "weekly_business_review",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_loyalty_program_health_view",
+      "statement": "select\n  rpt_loyalty_program_health.current_tier_name,\n  rpt_loyalty_program_health.member_count,\n  rpt_loyalty_program_health.active_members,\n  rpt_loyalty_program_health.avg_lifetime_points,\n  rpt_loyalty_program_health.avg_current_balance,\n  rpt_loyalty_program_health.avg_points_earned,\n  rpt_loyalty_program_health.avg_points_redeemed,\n  rpt_loyalty_program_health.tier_redemption_rate,\n  rpt_loyalty_program_health.program_total_members,\n  rpt_loyalty_program_health.program_active_members,\n  rpt_loyalty_program_health.program_redemption_rate,\n  rpt_loyalty_program_health.tier_member_share\nfrom rpt_loyalty_program_health",
+      "properties": {
+        "pf.exposures": "marketing_analytics",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Marketing Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_stock_alerts_view",
+      "statement": "select\n  rpt_stock_alerts.product_id,\n  rpt_stock_alerts.location_id,\n  rpt_stock_alerts.current_quantity,\n  rpt_stock_alerts.daily_depletion_rate,\n  rpt_stock_alerts.estimated_days_of_stock,\n  rpt_stock_alerts.supplier_avg_lead_time_days,\n  rpt_stock_alerts.reorder_point,\n  rpt_stock_alerts.suggested_reorder_quantity,\n  rpt_stock_alerts.needs_reorder,\n  rpt_stock_alerts.stock_alert_level,\n  rpt_stock_alerts.last_movement_at\nfrom rpt_stock_alerts",
+      "properties": {
+        "pf.exposures": "inventory_reorder_system",
+        "pf.exposure_types": "application",
+        "pf.owners": "Supply Chain Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "rpt_store_pnl_view",
+      "statement": "select\n  rpt_store_pnl.store_name,\n  rpt_store_pnl.location_id,\n  rpt_store_pnl.report_month,\n  rpt_store_pnl.monthly_revenue,\n  rpt_store_pnl.monthly_labor_cost,\n  rpt_store_pnl.operating_expenses,\n  rpt_store_pnl.marketing_spend,\n  rpt_store_pnl.inventory_holding_cost,\n  rpt_store_pnl.total_costs,\n  rpt_store_pnl.net_profit,\n  rpt_store_pnl.net_profit_margin_pct,\n  rpt_store_pnl.labor_cost_ratio_pct,\n  rpt_store_pnl.opex_ratio_pct,\n  rpt_store_pnl.marketing_ratio_pct\nfrom rpt_store_pnl",
+      "properties": {
+        "pf.exposures": "weekly_business_review",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "Finance Team",
+        "pf.description": "",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "scr_customer_churn_propensity_view",
+      "statement": "select\n  scr_customer_churn_propensity.customer_id,\n  scr_customer_churn_propensity.churn_propensity_score,\n  scr_customer_churn_propensity.churn_risk_tier,\n  scr_customer_churn_propensity.customer_name,\n  scr_customer_churn_propensity.days_since_last_order,\n  scr_customer_churn_propensity.total_orders,\n  scr_customer_churn_propensity.lifetime_spend,\n  scr_customer_churn_propensity.rfm_total_score,\n  scr_customer_churn_propensity.loyalty_tier,\n  scr_customer_churn_propensity.recency_score,\n  scr_customer_churn_propensity.frequency_score,\n  scr_customer_churn_propensity.loyalty_score,\n  scr_customer_churn_propensity.spend_score\nfrom scr_customer_churn_propensity",
+      "properties": {
+        "pf.exposures": "ml_churn_prediction",
+        "pf.exposure_types": "ml",
+        "pf.owners": "Data Science Team",
+        "pf.description": "0-100 churn risk score per customer based on recency, frequency, loyalty activity, and spend trend from dim_customer_360.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "view_store_mgr_daily_report_view",
+      "statement": "select\n  view_store_mgr_daily_report.location_id,\n  view_store_mgr_daily_report.order_date,\n  view_store_mgr_daily_report.daily_revenue,\n  view_store_mgr_daily_report.order_count,\n  view_store_mgr_daily_report.avg_order_value,\n  view_store_mgr_daily_report.labor_cost,\n  view_store_mgr_daily_report.labor_hours,\n  view_store_mgr_daily_report.waste_cost,\n  view_store_mgr_daily_report.labor_cost_pct,\n  view_store_mgr_daily_report.waste_pct,\n  view_store_mgr_daily_report.day_assessment\nfrom view_store_mgr_daily_report",
+      "properties": {
+        "pf.exposures": "store_manager_portal",
+        "pf.exposure_types": "application",
+        "pf.owners": "Operations Team",
+        "pf.description": "Daily store report with revenue, orders, labor cost, waste, and day assessment for store managers.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "view_store_mgr_inventory_status_view",
+      "statement": "select\n  view_store_mgr_inventory_status.location_id,\n  view_store_mgr_inventory_status.product_id,\n  view_store_mgr_inventory_status.current_quantity,\n  view_store_mgr_inventory_status.reorder_point,\n  view_store_mgr_inventory_status.estimated_days_of_stock,\n  view_store_mgr_inventory_status.stock_alert_level,\n  view_store_mgr_inventory_status.urgency,\n  view_store_mgr_inventory_status.action_needed\nfrom view_store_mgr_inventory_status",
+      "properties": {
+        "pf.exposures": "store_manager_portal",
+        "pf.exposure_types": "application",
+        "pf.owners": "Operations Team",
+        "pf.description": "Current inventory levels with reorder alerts and urgency classification for store managers.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "view_store_mgr_product_performance_view",
+      "statement": "select\n  view_store_mgr_product_performance.store_id,\n  view_store_mgr_product_performance.product_id,\n  view_store_mgr_product_performance.sales_month,\n  view_store_mgr_product_performance.total_quantity,\n  view_store_mgr_product_performance.total_sales,\n  view_store_mgr_product_performance.product_rank_in_store\nfrom view_store_mgr_product_performance",
+      "properties": {
+        "pf.exposures": "store_manager_portal",
+        "pf.exposure_types": "application",
+        "pf.owners": "Operations Team",
+        "pf.description": "Product sales at store level with monthly aggregation and in-store product ranking.",
+        "pf.grain": ""
+      }
+    },
+    {
+      "name": "view_store_mgr_staff_schedule_view",
+      "statement": "select\n  view_store_mgr_staff_schedule.shift_id,\n  view_store_mgr_staff_schedule.location_id,\n  view_store_mgr_staff_schedule.employee_id,\n  view_store_mgr_staff_schedule.full_name,\n  view_store_mgr_staff_schedule.position_title,\n  view_store_mgr_staff_schedule.shift_date,\n  view_store_mgr_staff_schedule.scheduled_start,\n  view_store_mgr_staff_schedule.scheduled_end,\n  view_store_mgr_staff_schedule.scheduled_hours,\n  view_store_mgr_staff_schedule.actual_hours,\n  view_store_mgr_staff_schedule.shift_status\nfrom view_store_mgr_staff_schedule",
+      "properties": {
+        "pf.exposures": "store_manager_portal",
+        "pf.exposure_types": "application",
+        "pf.owners": "Operations Team",
+        "pf.description": "Staff shift schedule with employee details, hours, and shift status for store manager review.",
+        "pf.grain": ""
+      }
+    }
+  ],
+  "cubes": [
+    {
+      "name": "jaffle_shop_core",
+      "baseObject": "orders",
+      "measures": [
+        {
+          "name": "count_lifetime_orders",
+          "expression": "sum(count_lifetime_orders)",
+          "type": "DOUBLE",
+          "description": "Count Lifetime Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "drink_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Drink Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "drink_revenue",
+          "expression": "sum(case when is_drink_item then product_price else 0 end)",
+          "type": "DOUBLE",
+          "description": "Drink Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "drink_revenue_pct",
+          "expression": "sum(case when is_drink_item then product_price else 0 end) / nullif(sum(product_price), 0)",
+          "type": "DOUBLE",
+          "description": "Drink Revenue %",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "food_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Food Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "food_revenue",
+          "expression": "sum(case when is_food_item then product_price else 0 end)",
+          "type": "DOUBLE",
+          "description": "Food Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "food_revenue_pct",
+          "expression": "sum(case when is_food_item then product_price else 0 end) / nullif(sum(product_price), 0)",
+          "type": "DOUBLE",
+          "description": "Food Revenue %",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "large_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Large Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "lifetime_spend_pretax",
+          "expression": "sum(lifetime_spend_pretax)",
+          "type": "DOUBLE",
+          "description": "LTV Pre-tax",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "median_revenue",
+          "expression": "percentile_cont(0.5) within group (order by product_price)",
+          "type": "DOUBLE",
+          "description": "Median Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "new_customer_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "New Customers",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "order_cost",
+          "expression": "sum(order_cost)",
+          "type": "DOUBLE",
+          "description": "Order Cost",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "order_total",
+          "expression": "sum(order_total)",
+          "type": "DOUBLE",
+          "description": "Order Total",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "revenue",
+          "expression": "sum(product_price)",
+          "type": "DOUBLE",
+          "description": "Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "customer_name",
+          "expression": "customer_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_order_number",
+          "expression": "customer_order_number",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_type",
+          "expression": "customer_type",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_drink_item",
+          "expression": "is_drink_item",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_drink_order",
+          "expression": "is_drink_order",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_food_item",
+          "expression": "is_food_item",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_food_order",
+          "expression": "is_food_order",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_perishable_supply",
+          "expression": "is_perishable_supply",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "location_name",
+          "expression": "location_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "order_total_dim",
+          "expression": "order_total_dim",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "product_description",
+          "expression": "product_description",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "product_id",
+          "expression": "product_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "product_name",
+          "expression": "product_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "product_price",
+          "expression": "product_price",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "product_type",
+          "expression": "product_type",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "supply_cost",
+          "expression": "supply_cost",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "supply_id",
+          "expression": "supply_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "supply_name",
+          "expression": "supply_name",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "first_ordered_at",
+          "expression": "first_ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "last_ordered_at",
+          "expression": "last_ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "opened_date",
+          "expression": "opened_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "ordered_at",
+          "expression": "ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    }
+  ]
 }

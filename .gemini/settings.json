@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "uvx",
+      "args": [
+        "code-review-graph@2.3.9",
+        "serve",
+        "--repo",
+        "platform"
+      ]
+    },
+    "graphify": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "graphifyy",
+        "graphify-mcp",
+        "graphify-out/graph.json"
+      ]
+    },
+    "pf": {
+      "command": "uv",
+      "args": [
+        "run",
+        "pf",
+        "mcp"
+      ],
+      "env": {
+        "PF_PROJECT_DIR": "."
+      }
+    }
+  }
+}

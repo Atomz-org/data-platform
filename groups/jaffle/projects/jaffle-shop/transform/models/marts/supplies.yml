@@ -1,0 +1,10 @@
+version: 2
+
+models:
+- name: supplies
+  description: Every supply a product consumes, one row per product-supply pair.
+  config:
+    meta:
+      # An entity the exposed facts join to: in the semantic layer even
+      # though no exposure names it directly.
+      semantic: true

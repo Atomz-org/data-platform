@@ -112,6 +112,11 @@ def render_index(files: list[TestFile]) -> str:
         "Each directory names the part of the platform it guards, so a whole",
         "group can be run on its own: `uv run pytest platform/tests/<group>`.",
         "",
+        "One entry per group, not per file. Each file's own docstring is its",
+        "subject line, and `pf test where <term>` searches those subjects, the",
+        "filenames and the `pf.*` modules each file imports — so the index",
+        "orients and the command answers.",
+        "",
     ]
 
     for group in sorted(by_group, key=lambda g: (g not in GROUPS, g)):
@@ -119,21 +124,28 @@ def render_index(files: list[TestFile]) -> str:
         gloss = GROUPS.get(group, "")
         n = sum(f.tests for f in members)
         heading = f"## `{group}/`" if group else "## (ungrouped)"
-        lines += [f"{heading} — {gloss}" if gloss else heading, "", f"*{len(members)} files, {n} tests*", ""]
-        for f in members:
-            # The row is `test_` and `.py` shorter than the filename, and carries
-            # no per-file count: the group line above already totals them, and at
-            # fifty files those two columns were 900 characters of the budget.
-            # The link still names the file, which is what `pf test where` prints.
-            #
-            # A list, not a table. The table's pipes and its two header rows per
-            # group were ~110 tokens of pure framing across five groups, and at
-            # 53 files the index sat one row over its budget with nothing left
-            # to trim but framing. The link and the subject — the two things a
-            # row is for — are exactly what they were.
-            short = f.path.name.removeprefix("test_").removesuffix(".py")
-            lines.append(f"- [{short}]({f.rel.as_posix()}) — {f.subject}")
-        lines.append("")
+        # The rollup the budget was waiting for. This index carried one row per
+        # file with that file's subject, and the framing around those rows had
+        # already been trimmed twice — the per-file counts, then the table — so
+        # the third time it bound there was nothing left but the subjects, and
+        # they are the only part of a row worth reading.
+        #
+        # So the entry is the *group*: what it guards, how big it is, and its
+        # files as links. The subject did not disappear — it is the first line
+        # of each file's docstring, where it was always written, and
+        # `pf test where` searches every one of them. The index orients; the
+        # command answers. That holds at sixty files and at two hundred.
+        run = f"`uv run pytest platform/tests/{group}`" if group else "`uv run pytest platform/tests`"
+        lines += [
+            f"{heading} — {gloss}" if gloss else heading,
+            "",
+            f"*{len(members)} files, {n} tests · {run}*",
+            "",
+            " · ".join(
+                f"[{f.path.name.removeprefix('test_').removesuffix('.py')}]({f.rel.as_posix()})" for f in members
+            ),
+            "",
+        ]
 
     lines += [
         "## Finding the right file without opening any",

@@ -19,6 +19,7 @@ server has to do by hand.
 | Copilot in VS Code — chat, inline | `.github/copilot-instructions.md` | it points here; `chat.useAgentsMdFile: true` reads it directly |
 | Gemini CLI, Gemini Code Assist | `GEMINI.md` | imports this file |
 | Continue.dev, Ollama, mlx, anything that only takes a system prompt | the operator's prompt | paste this file, or one rule: *follow `AGENTS.md`* |
+| Any of the above, for the graph and the gate | `docs/HARNESSES.md` — the generated per-harness configs (`.codex/`, `.cursor/`, `.gemini/`, `.vscode/mcp.json`, `.opencode/`), and what each one actually enforces | it points here |
 
 ## 0. Which scope you are in
 
@@ -59,6 +60,7 @@ back unless asked.
 | what the system is | `groups/<g>/projects/<p>/kg/architecture.md` for a project, `docs/ARCHITECTURE.md` for the repo — both projections of `kg/graph.json` | models, columns, metrics, dependencies: ask before changing any of them |
 | what the engine's code does | the code graph over `platform/` — `pf code impact <file>`, `pf code search <name>`, or its MCP tools | callers, dependents and covering tests of a platform file, before you change it |
 | what has been decided | `docs/POLICY.md`, `decisions/`, the project's `CLAUDE.md` | standing rules a person reviewed; business rules the graph cannot encode |
+| what wraps you here | `HARNESS.md` in the group, the project and its `reporting/` — generated, checked on every PR | what you may read and write, what runs around each edit and commit, what CI and the loops will do — computed from the files that enforce it, gaps included |
 
 With a shell:
 
@@ -115,12 +117,15 @@ Hand-editing one is silently discarded by the next regeneration.
 | `**/kg/architecture.md` | `pf kg build <g> <p>` then `pf arch <g> <p>` | the project |
 | `**/kg/graph.json` | `pf kg build <g> <p>` | the project |
 | `docs/ARCHITECTURE.md` | `pf arch build` | the repository |
+| `docs/ONBOARDING.md`, `docs/onboarding.html` | `pf guide build` | the repository, or `pf/guide.py` |
+| `**/HARNESS.md` — a group's, a project's, its `reporting/`'s | `pf harness <g> [<p>]`, `pf bootstrap <g> <p>`, or `pf harness build` | the settings, gate, hooks, workflow, loops and tools it is read from |
 | `platform/tests/README.md` | `pf test index` | the test docstrings |
 | `.memory/MEMORY.md` | `pf memory index` (or `pf memory add`) | the notes |
 | `docs/VENDOR*.md` | `pf vendor docs` | `platform/src/pf/vendor/registry.yaml` |
+| `.codex/`, `.cursor/`, `.gemini/`, `.vscode/mcp.json`, `.opencode/`, `docs/HARNESSES.md` | `pf context refresh` | `.mcp.json` for the servers; `platform/src/pf/harness.py` for the rest |
 
-`pf context refresh` regenerates the memory index, the test index and the
-repo map in one step — the fix the `agent-context` workflow names when a pull
+`pf context refresh` regenerates the memory index, the test index, the
+repo map, the onboarding guide, the harness configs and the harness maps in one step — the fix the `agent-context` workflow names when a pull
 request leaves any of them stale.
 
 A regenerated artefact is safe to commit only when the generator could see
@@ -140,6 +145,8 @@ uv run ruff check platform/                       # any platform/** change
 uv run pf test check                              # added or moved a test file → pf test index
 uv run pf memory check                            # added or edited a note   → pf memory index
 uv run pf arch check                              # repo map current
+uv run pf guide check                             # onboarding guide current
+uv run pf harness check                           # harness maps current
 uv run pf context check                           # entry points still agree; every module has its README
 uv run pytest platform/tests -q                   # the platform suite
 uv run pf kg build <g> <p> && uv run pf arch <g> <p> --check   # any project change
@@ -150,6 +157,34 @@ uv run pf tokens                                  # touched a CLAUDE.md or a car
 Commits: **at most 12 files each** (`gate.yaml` `maxFiles`), a subject line
 that says what changed and a body that says why, never `--no-verify`. Split
 larger work into a sequence — the history is full of `(1 of 2)`.
+
+That cap is no longer yours to remember. It is re-applied to each commit by the
+`pre-push` hook and again by `agent-context.yml` on every pull request, so a
+commit made with `--no-verify`, or in a checkout with no hooks, is measured
+afterwards and the pull request goes red. If a commit truly cannot be split —
+one regeneration that writes 141 files, where half of it is a broken artefact —
+say so in the commit itself with a `Gate-Exempt: <reason>` trailer, which turns
+the refusal into a warning that quotes your reason into the review. Exceeding
+the cap is allowed. Exceeding it silently is not.
+
+**A feature lands with its evidence.** `gate.yaml`'s `tests_required` refuses
+a run that adds a file under `platform/src/pf/` or `platform/hooks/` with
+nothing under `platform/tests/`, or a skill under a toolkit with nothing under
+that toolkit's `evals/`; a run that only modifies one is warned. So the test
+travels in the same commit as the code, not the next one — split by feature,
+not by kind. Deleted tests are never shown to the gate, so removing one is
+not evidence. What the gate cannot judge is yours to: the evidence must fail
+before the change and pass after it, and the rest of this section must still
+be green — new behaviour never buys itself room by weakening an existing
+check.
+
+**A change lands with its harness map current.** `gate.yaml`'s
+`harness_required` refuses a run that changes a group, a project or its
+`reporting/` and leaves the scope's `HARNESS.md` stale, or regenerated but not
+staged. `pf harness <g> <p>` regenerates a project's map and its report's,
+`pf harness <g>` the whole family's; a change that leaves a map identical
+needs nothing. The maps are judged on currency, not presence, so the rule
+costs a commit exactly what the change altered.
 
 ## 5. Before you finish — the write protocol
 
@@ -216,8 +251,7 @@ the first commit after it is written.
 
 **Every pull request is checked for all of this.** The `agent-context`
 workflow runs on every PR, with no path filter: the entry points must agree
-(`pf context check`), and the memory index, the test index and the repo map
-must be current. When they are not, the run summary shows what
+(`pf context check`), and the memory index, the test index, the repo map, the onboarding guide and the harness maps must be current. When they are not, the run summary shows what
 `pf context refresh` would change; with an `AGENT_CONTEXT_TOKEN` secret the
 workflow commits that refresh to the branch itself.
 
@@ -234,3 +268,6 @@ workflow commits that refresh to the branch itself.
   execution against warehouses, not a report.
 - Expand `CLAUDE.md`. It is budgeted and CI-enforced; new material goes in
   `docs/` or in a memory note.
+- Land a feature without the test or eval that proves it, or make the
+  suite green by deleting or loosening an existing check. The gate refuses
+  the first (§4, `tests_required`); review is the guard for the second.

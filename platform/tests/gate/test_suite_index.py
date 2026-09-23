@@ -109,20 +109,20 @@ def test_the_index_is_small_enough_to_be_worth_reading() -> None:
     """
     text = (TESTS / "README.md").read_text()
     approx_tokens = len(text) // 4
-    # 1200 held the 32 files this layout started with. The open PRs bring the
-    # suite to ~45, and each row is worth its tokens, so the budget grew once,
-    # deliberately; a per-group rollup is the answer the next time it binds.
+    # 1200 held the 32 files this layout started with, and the budget was raised
+    # twice as the suite grew — the second time with a note that the next
+    # binding would be the rollup rather than a third raise.
     #
-    # It bound a second time at 55 files, when the provisioning suite was added
-    # and the index went to ~1621. Raised rather than rolled up, as a deliberate
-    # choice: the framing has already been trimmed twice (per-file counts, then
-    # the table), so the only thing left to cut is the per-file subject — and
-    # that line is the whole reason a reader consults the index instead of
-    # opening the file. The rollup is still the answer, and the next binding is
-    # where it should happen rather than a third raise.
-    assert approx_tokens < 1700, (
-        f"the test index is ~{approx_tokens} tokens; summarise a group rather "
-        f"than listing every file"
+    # It bound a third time at 59 files (~1735) and the rollup is what happened:
+    # `pf test index` now writes one entry per *group* — what it guards, how big
+    # it is, its files as links — and no per-file subject line. The subject was
+    # never lost: it is the first line of each file's docstring, which is where
+    # it was always written, and `pf test where` searches every one of them. The
+    # index went to ~1030 and the budget went back to where it started, so this
+    # is a ratchet again rather than a formality.
+    assert approx_tokens < 1200, (
+        f"the test index is ~{approx_tokens} tokens; it summarises a group "
+        f"rather than listing every file, so a new group is what grew it"
     )
 
 
@@ -201,13 +201,23 @@ def test_the_pre_commit_gate_sees_renames() -> None:
     keys on.
     """
     hook = REPO_ROOT / "platform" / "hooks" / "pre_commit.sh"
-    filters = [
-        line for line in hook.read_text().splitlines() if "--diff-filter=" in line
-    ]
+    lines = hook.read_text().splitlines()
+    filters = [line for line in lines if "--diff-filter=" in line]
     assert filters, "the pre-commit hook no longer filters staged paths"
     for line in filters:
-        letters = line.split("--diff-filter=")[1].split()[0].strip('"\'')
+        letters = line.split("--diff-filter=")[1].split()[0].strip('"\')')
+        if line.lstrip().startswith("ADDED="):
+            # A different question. The added subset feeds `tests_required`,
+            # which refuses a *new* source file without evidence and only warns
+            # on a changed one. A rename is a changed path, not a new one — so
+            # this filter must be `A` and nothing else, or `git mv` on a module
+            # would be refused for lacking a test it already has.
+            assert letters == "A", f"the added subset must be --diff-filter=A, not {letters}"
+            continue
         assert "R" in letters, (
             f"--diff-filter={letters} excludes renames; `git mv` would bypass "
             f"every gate rule"
         )
+    assert any(line.lstrip().startswith("ADDED=") for line in lines), (
+        "the hook must pass the added subset (--added), or every source edit is judged as new"
+    )

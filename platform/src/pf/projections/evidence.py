@@ -139,7 +139,7 @@ def _load(project_dir: Path) -> tuple[dict, dict]:
 _DIM_REF = re.compile(r"\{\{\s*Dimension\(\s*'([^']+)'\s*\)\s*\}\}")
 
 
-def _translate_filter(f: str) -> str:
+def translate_filter(f: str) -> str:
     """MetricFlow filter -> plain SQL.
 
     `{{ Dimension('payment__payment_status') }} = 'succeeded'` becomes
@@ -182,7 +182,7 @@ def collect_metrics(project_dir: Path,
     for m in sm.get("metrics") or []:
         tp = m.get("type_params") or {}
         kind = (m.get("type") or "simple").lower()
-        flt = _translate_filter(_filter_text(m.get("filter")))
+        flt = translate_filter(_filter_text(m.get("filter")))
 
         if kind == "simple":
             measure = _measure_name(tp.get("measure"))

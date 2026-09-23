@@ -75,6 +75,20 @@
       "branch": "main",
       "commit": "7feda8e01e22bc0886c86123f3884947e36d8c69"
     },
+    "ecc": {
+      "adopted": {
+        ".codex/config.toml": "4b862643e2b9592f0bb2340f2c8cbb96ce0f786c",
+        ".cursor/hooks.json": "9c3f9d23b5022dc597f4f81adfea721923f2da52",
+        ".cursor/hooks/before-shell-execution-block-no-verify.js": "4c9e07db6d7c696aced87f8026ada73c3c9a0f9b",
+        ".cursor/rules/common-security.md": "a45737c6b384ea7e7bdf98b219a127840baf572b",
+        ".opencode/opencode.json": "2933339c6ca4132b2e8c4b05c1b01c66cdfb3b42",
+        "scripts/codex/install-global-git-hooks.sh": "22702a5f56a9a46dc992d7eee2e306320eb62755",
+        "scripts/hooks/block-no-verify.js": "16e0044d7fd7c5707d4c807237b3d83027085bd1",
+        "scripts/lib/harness-adapter-compliance.js": "e1aafd75280a8e448ecd75f0d3be21e7046acbb3"
+      },
+      "branch": "main",
+      "commit": "bf70150eb2df8070024e5bdf08e4aa08959e2735"
+    },
     "evidence-bi": {
       "adopted": {
         "components": "d306e25e078ac7b832e694f662ec16b89b190aac",
