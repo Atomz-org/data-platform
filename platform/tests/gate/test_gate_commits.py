@@ -258,3 +258,44 @@ def test_this_branch_is_within_the_cap_commit_by_commit() -> None:
 
     denied = [r for r in check_commits(REPO_ROOT, [f"{base.stdout.strip()}..HEAD"]) if r.blocked]
     assert denied == [], "\n".join(f"{r.path}: {r.message}" for r in denied)
+
+
+# ------------------------------------------------------------ the command ----
+
+def _invoke(root: Path, spec: str, monkeypatch):
+    from pf import cli
+    from typer.testing import CliRunner
+
+    monkeypatch.setenv("PF_NO_HOOK_INSTALL", "1")
+    monkeypatch.setattr(cli, "root", lambda: root)
+    return CliRunner().invoke(cli.app, ["gate", "--commits", spec])
+
+
+def test_the_command_exits_non_zero_so_a_hook_and_a_workflow_both_stop(tmp_path, monkeypatch) -> None:
+    root = _repo(tmp_path, cap=2)
+    _commit(root, "large", ["a.txt", "b.txt", "c.txt"])
+
+    res = _invoke(root, "main~1..main", monkeypatch)
+    assert res.exit_code == 1, res.output
+    assert "DENY" in res.output
+
+
+def test_an_exempt_commit_passes_and_the_summary_does_not_contradict_it(tmp_path, monkeypatch) -> None:
+    root = _repo(tmp_path, cap=2)
+    _commit(root, "large", ["a.txt", "b.txt", "c.txt"], trailer=f"{EXEMPT_TRAILER}: one regeneration")
+
+    res = _invoke(root, "main~1..main", monkeypatch)
+    assert res.exit_code == 0, res.output
+    assert "WARN" in res.output
+    # It is over the cap and passing; a line claiming otherwise is a lie the
+    # reader has to reconcile against the warning above it.
+    assert "without a reason" in " ".join(res.output.split())
+
+
+def test_neither_flag_is_refused_rather_than_read_as_nothing_to_check(tmp_path, monkeypatch) -> None:
+    from pf import cli
+    from typer.testing import CliRunner
+
+    monkeypatch.setenv("PF_NO_HOOK_INSTALL", "1")
+    monkeypatch.setattr(cli, "root", lambda: _repo(tmp_path))
+    assert CliRunner().invoke(cli.app, ["gate"]).exit_code == 2

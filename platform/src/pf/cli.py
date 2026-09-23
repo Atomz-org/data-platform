@@ -2678,7 +2678,9 @@ def _report_commit_cap(r: Path, shown: str, spec: list[str]) -> None:
         console.print(f"{tag} {x.path}  [{x.rule}]  {x.message}")
     if any(x.blocked for x in results):
         raise typer.Exit(1)
-    console.print(f"[green]✓[/] every commit in {shown} is within the file cap")
+    # "within the cap" would contradict a WARN printed two lines above it: an
+    # exempt commit is over the cap and passing, and the line has to say so.
+    console.print(f"[green]✓[/] no commit in {shown} exceeds the file cap without a reason")
 
 
 @app.command()
