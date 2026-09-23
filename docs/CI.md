@@ -195,5 +195,9 @@ CI is the one nobody can skip. A commit that genuinely cannot be split says so
 in its own message with a `Gate-Exempt: <reason>` trailer, and passes as a
 warning that quotes your reason into the log and the review.
 
+[`CI-DIAGRAMS.md`](CI-DIAGRAMS.md) draws each of these workflows on its own,
+one diagram per workflow with a worked example, in a plain flowchart syntax that
+pastes straight into Miro.
+
 `docs/DEVELOPMENT.md` has the rest of the gate; `docs/GOVERNANCE.md` has the
 provenance chain; `docs/AIR.md` has the AI controls.
