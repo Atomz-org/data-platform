@@ -36,7 +36,28 @@ while read -r _ local_sha _ remote_sha; do
   else
     range=("$remote_sha..$local_sha")
   fi
-  uv run pf gate --commits "${range[*]}" || status=1
+
+  # `|| rc=$?` rather than `if`: the exit code is the point, and an `if` around
+  # the call discards it.
+  rc=0
+  uv run pf gate --commits "${range[*]}" || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    continue
+  fi
+
+  # Exit 2 is typer's usage error, and the only way to get one here is a `pf`
+  # that has no `--commits`: this repository keeps one hooks directory for
+  # every worktree, so a checkout whose branch predates the flag can end up
+  # running a hook installed by one that has it. Blocking the push over that
+  # would make an old branch unpushable for a reason its author cannot act on,
+  # so it reports and stands aside. The cap is still applied on the pull
+  # request by `agent-context.yml`, which is the layer that cannot be skipped.
+  if [ "$rc" -eq 2 ]; then
+    echo "pre-push: this checkout's pf has no 'gate --commits' — the per-commit" >&2
+    echo "pre-push: file cap was NOT measured here. CI re-applies it on the PR." >&2
+    continue
+  fi
+  status=1
 done
 
 exit "$status"

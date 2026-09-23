@@ -18,9 +18,11 @@ the one it fixes.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
+import pytest
 from conftest import REPO_ROOT
 from pf.loops.gate import HOOK_SOURCE, HOOK_TARGET, HOOKS, hook_status, hooks_status, install_hook, install_hooks
 
@@ -320,3 +322,86 @@ def test_a_link_to_a_file_that_is_gone_is_replaced_not_refused(tmp_path):
     changed, _ = install_hook(root)
     assert changed is True
     assert hook_status(root)[0] == "ok"
+
+
+# ------------------------------- the hooks directory belongs to the repo -----
+#
+# Git keeps ONE hooks directory per repository and every worktree execs it. That
+# makes "which checkout did the install" the wrong thing for a link to depend
+# on, and it broke exactly there: a worktree on a branch that added
+# `pre_push.sh` installed the hook into the main checkout, whose branch predated
+# the script — so every `git push` from the main checkout ran a hook calling
+# `pf gate --commits` that its own `pf` had never heard of, and died on a usage
+# error until the link was deleted by hand.
+
+def test_the_link_never_points_into_the_checkout_that_ran_the_install(tmp_path):
+    (tmp_path / "main").mkdir()
+    main = _repo(tmp_path / "main")
+    # The owner's branch predates the pre-push script.
+    (main / HOOKS["pre-push"]).unlink()
+    subprocess.run(["git", "add", "-A"], cwd=main, check=True, capture_output=True)
+    subprocess.run(["git", "-c", "user.email=g@x", "-c", "user.name=g", "commit", "-qm", "hooks"],
+                   cwd=main, check=True, capture_output=True)
+    linked = tmp_path / "linked"
+    subprocess.run(["git", "worktree", "add", "-q", str(linked), "-b", "side"],
+                   cwd=main, check=True, capture_output=True)
+    # ...and the worktree, on a later branch, does have it.
+    src = linked / HOOKS["pre-push"]
+    src.parent.mkdir(parents=True, exist_ok=True)
+    src.write_text("#!/usr/bin/env bash\nexec uv run pf gate --commits \"$@\"\n")
+
+    install_hook(linked, hook="pre-push")
+
+    link = (main / ".git" / "hooks" / "pre-push").readlink()
+    assert str(linked) not in str(link), f"the link reaches into a worktree: {link}"
+    assert str(link) == "../../platform/hooks/pre_push.sh"
+
+
+def test_a_hook_the_owner_cannot_serve_yet_is_dormant_rather_than_broken(tmp_path):
+    """Pointing at a file that is not there is the right answer, not a bug.
+
+    Git skips a hook it cannot execute, so the push works and the link starts
+    working by itself the moment that checkout has the script. The status says
+    `missing`, which is what it is — the alternative, refusing to install,
+    leaves the same checkout ungated forever with an extra manual step.
+    """
+    root = _repo(tmp_path)
+    (root / HOOKS["pre-push"]).unlink()
+    target = root / ".git" / "hooks" / "pre-push"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.symlink_to("../../platform/hooks/pre_push.sh")
+
+    assert hook_status(root, "pre-push")[0] == "missing"
+
+
+# --------------------------------------------- the hook, against a stub pf ---
+
+@pytest.mark.parametrize(("pf_exit", "hook_exit", "says"), [
+    (0, 0, ""),
+    (2, 0, "has no 'gate --commits'"),
+    (1, 1, ""),
+])
+def test_the_pre_push_hook_blocks_a_denial_and_stands_aside_for_an_older_pf(
+    tmp_path, pf_exit, hook_exit, says,
+):
+    """Exit 2 is typer's usage error, and here it can only mean one thing: the
+    `pf` in this checkout has no `--commits`. Every worktree shares one hooks
+    directory, so an older branch can end up running a newer checkout's hook.
+    Blocking its push over a flag its author cannot add is worse than saying so
+    and standing aside — CI still applies the cap on the pull request."""
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True, capture_output=True)
+    stub = tmp_path / "bin"
+    stub.mkdir()
+    (stub / "uv").write_text(f"#!/bin/sh\nexit {pf_exit}\n")
+    (stub / "uv").chmod(0o755)
+
+    proc = subprocess.run(
+        ["bash", str(REPO_ROOT / HOOKS["pre-push"])],
+        cwd=tmp_path,
+        input="refs/heads/x 1111111111111111111111111111111111111111 refs/heads/x " + "0" * 40 + "\n",
+        capture_output=True, text=True,
+        env={**os.environ, "PATH": f"{stub}:{os.environ['PATH']}"},
+    )
+    assert proc.returncode == hook_exit, proc.stderr
+    if says:
+        assert says in proc.stderr
