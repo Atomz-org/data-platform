@@ -30,6 +30,24 @@ from pf.projections import okf
 ROOT = REPO_ROOT
 
 
+def _unvendored() -> str:
+    """Empty when the weaver's models are here; the reason when they are not."""
+    try:
+        okf.vendored(ROOT)
+    except okf.NotVendored as exc:
+        return str(exc)
+    return ""
+
+
+#: Every test here builds a bundle, and a bundle is validated through the
+#: vendored models before a file is written, so a clone made without
+#: `--recursive` says so once instead of failing each test with a stack trace
+#: about a submodule it was never asked to fetch. This is not a way to pass
+#: without running: every workflow that runs this suite fetches the upstreams
+#: pin by pin first, so the skip is for a developer's clone and never for CI.
+pytestmark = pytest.mark.skipif(bool(_unvendored()), reason=_unvendored() or "")
+
+
 def _projects() -> list[tuple[str, str]]:
     groups = ROOT / "groups"
     if not groups.exists():

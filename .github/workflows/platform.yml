@@ -29,6 +29,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # The suite reads the vendored upstreams: an OKF bundle is constructed
+      # through okf-weaver's models before a file is written, so without them
+      # thirty-three tests have nothing to build with. This was the one job in
+      # the fleet that never fetched them — `agent-context` and
+      # `platform-tests` both do — which made it the one place the suite ran
+      # degraded, and it said so only as failures.
+      #
+      # Pin by pin rather than `submodules: recursive`, for the reason the
+      # other workflows give: one unreachable upstream must not take the whole
+      # suite down with it.
+      - name: Vendored upstreams
+        run: |
+          failed=""
+          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
+            git submodule update --init "$path" >/dev/null 2>&1 || failed="$failed $path"
+          done
+          [ -z "$failed" ] || echo "::warning title=Vendored upstreams unreachable::$failed"
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true

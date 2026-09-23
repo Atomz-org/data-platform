@@ -393,8 +393,20 @@ from conftest import REPO_ROOT as _REPO
 
 
 def _okf():
+    """The projection, or a skip that names what is missing.
+
+    Every test below builds a bundle, and a bundle is constructed through the
+    vendored OKF models before a file is written — so without the submodule
+    there is nothing to construct it with. A clone made without `--recursive`
+    should say that once rather than fail a dozen tests with a stack trace
+    about a directory it was never asked to fetch.
+    """
     from pf.projections import okf
 
+    try:
+        okf.vendored(_REPO)
+    except okf.NotVendored as exc:
+        pytest.skip(str(exc))
     return okf
 
 
