@@ -743,6 +743,114 @@ def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool
     return out
 
 
+@dataclass
+class CaptureReport:
+    """One harness file and where it was copied to inside the repo."""
+
+    session: str
+    src: Path
+    dst: Path
+    state: str  # copied | current | refused
+    note: str = ""
+
+    @property
+    def ok(self) -> bool:
+        return self.state in ("copied", "current")
+
+    def line(self, root: Path) -> str:
+        where = self.dst.relative_to(root) if self.dst.is_relative_to(root) else self.dst
+        head = f"{self.session[:8] or '?'} capture {self.state} -> {where}"
+        return f"{head}: {self.note}" if self.note else head
+
+
+def _copy_if_changed(src: Path, dst: Path) -> str:
+    """Copy one file into the repo when the copy is not already current.
+
+    Size and mtime rather than a hash: copy2 preserves mtime, so an unchanged
+    source compares equal without reading either file, and these run at every
+    session start over every session this repo has.
+
+    A transcript is appended to while the session runs, so a copy of one is a
+    prefix of whatever it says a moment later. That is a snapshot, not an
+    error -- the alternative is refusing to record the session that is asking.
+    """
+    try:
+        a = src.stat()
+    except OSError as exc:
+        return f"unreadable: {exc}"
+    if dst.is_file():
+        b = dst.stat()
+        if a.st_size == b.st_size and a.st_mtime_ns == b.st_mtime_ns:
+            return ""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    part = dst.with_name(dst.name + ".part")
+    try:
+        shutil.copy2(src, part)
+        part.replace(dst)
+    except OSError as exc:
+        part.unlink(missing_ok=True)
+        return f"{exc}"
+    return ""
+
+
+def _capture_set(session: Path, home: Path) -> list[tuple[Path, str]]:
+    """Every harness file for one session that is not already linked in, each
+    with the path it takes under the repo's copy of that session.
+
+    These live in the Claude Code folder, which the retention sweep walks with
+    `readdir` -- and `readdir` follows a symlinked directory. Linking any of
+    them would put repo history behind a 30-day delete, so they are copied.
+    The harness keeps its originals; the repo keeps a copy it owns.
+
+    Symlinks are skipped, which is what keeps `subagents/workflows` -- already
+    a link into `logs/workflows` -- from being copied back onto itself.
+    """
+    out: list[tuple[Path, str]] = []
+    transcript = session.parent / f"{session.name}.jsonl"
+    if transcript.is_file():
+        out.append((transcript, "transcript.jsonl"))
+    for sub in ("tool-results", "subagents"):
+        base = session / sub
+        if not base.is_dir() or base.is_symlink():
+            continue
+        for entry in sorted(base.rglob("*")):
+            if entry.is_symlink() or not entry.is_file():
+                continue
+            out.append((entry, f"{sub}/{entry.relative_to(base)}"))
+    return out
+
+
+def capture(root: Path, home: Path, *, session_dir: Path | None = None,
+            log: Callable[[str], None] | None = None) -> list[CaptureReport]:
+    """Copy into the repo every harness file that cannot safely be linked.
+
+    The counterpart to `link()`. Where a directory can be replaced by a link,
+    it is; where the retention sweep would follow that link and delete what it
+    found, the file is copied instead. Between them, nothing a session produces
+    stays only outside the repository.
+
+    Idempotent and cheap to repeat: a file already copied and unchanged reports
+    `current` and is not read. Nothing at the source is ever removed -- the
+    harness owns those files and is still using them.
+    """
+    out: list[CaptureReport] = []
+    for sess in ([session_dir] if session_dir is not None else sessions(root, home)):
+        here = root / SCRATCH_DIR / sess.name
+        for src, rel in _capture_set(sess, home):
+            dst = here / rel
+            before = dst.is_file() and dst.stat().st_size
+            note = _copy_if_changed(src, dst)
+            if note:
+                rep = CaptureReport(sess.name, src, dst, "refused", note)
+            else:
+                same = before is not False and dst.stat().st_size == before
+                rep = CaptureReport(sess.name, src, dst, "current" if same else "copied")
+            if log is not None and rep.state != "current":
+                log(rep.line(root))
+            out.append(rep)
+    return out
+
+
 def _write_dir_readme(root: Path) -> None:
     path = root / RUNS_DIR / "README.md"
     text = "\n".join([

@@ -4034,6 +4034,47 @@ def cmd_workflow_link(
         raise typer.Exit(1)
 
 
+@workflow_app.command("capture")
+def cmd_workflow_capture(
+    session: str = typer.Option("", "--session", help="one session id; default is every session of this repo"),
+    quiet: bool = typer.Option(False, "--quiet", help="print only what was copied or refused"),
+) -> None:
+    """Copy into the repo the session files that cannot safely be linked.
+
+    `link` replaces a directory with a symlink where that is safe. It is not
+    safe for the transcript, `tool-results/` or `subagents/`: those sit in the
+    Claude Code folder, whose retention sweep walks directories with `readdir`,
+    and `readdir` follows a symlink. A link there would put repo history behind
+    a 30-day delete, so these are copied instead and the harness keeps its own.
+
+    Idempotent and incremental -- an unchanged file is compared by size and
+    mtime and never read. Nothing at the source is removed."""
+    from pf import workflows
+
+    home = workflows.claude_home()
+    if session and (Path(session).name != session or session in (".", "..")):
+        console.print(f"[red]--session takes a session id, not a path: {escape(session)}[/]")
+        raise typer.Exit(1)
+    sess_dir = (home / "projects" / workflows.slug(root()) / session) if session else None
+    try:
+        reports = workflows.capture(root(), home, session_dir=sess_dir, log=None)
+    except OSError as exc:
+        console.print(f"[red]workflow capture: {type(exc).__name__}: {escape(str(exc))}[/]")
+        raise typer.Exit(1) from None
+    colour = {"copied": "green", "current": "dim", "refused": "red"}
+    for r in reports:
+        if quiet and r.state == "current":
+            continue
+        console.print(f"[{colour.get(r.state, 'white')}]{escape(r.line(root()))}[/]", soft_wrap=True)
+    if not reports:
+        console.print("[dim]no session files to capture[/]")
+        return
+    copied = sum(1 for r in reports if r.state == "copied")
+    console.print(f"[dim]{copied} copied, {len(reports) - copied} already current[/]")
+    if any(not r.ok for r in reports):
+        raise typer.Exit(1)
+
+
 @workflow_app.command("sync")
 def cmd_workflow_sync(
     move: bool = typer.Option(False, "--move", help="remove the session copy of each complete, verified run"),

@@ -81,6 +81,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/session_stop.py\"",
+            "statusMessage": "capturing session files"
+          }
+        ]
+      }
     ]
   }
 }

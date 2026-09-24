@@ -170,3 +170,78 @@ def test_creation_prefers_the_root_this_repo_already_uses(
     made = w.scratch_session(w.slug(root), SESSION, create=True)
     assert made is not None
     assert made.is_relative_to(real), f"created under the empty root: {made}"
+
+
+# --------------------------------------------------------------- capture ----
+#
+# What cannot be linked is copied. `subagents/`, `tool-results/` and the
+# transcript live in the Claude Code folder, whose retention sweep walks
+# directories with `readdir` -- which follows a symlink. A link there would put
+# repo history behind a 30-day delete, so the repo takes a copy and the harness
+# keeps its own.
+
+
+def _session_with_files(tmp_path: Path) -> tuple[Path, Path, Path]:
+    root = tmp_path / "repo"
+    (root / ".git").mkdir(parents=True)
+    home = tmp_path / "claude"
+    sess = home / "projects" / w.slug(root) / SESSION
+    (sess / "tool-results").mkdir(parents=True)
+    (sess / "subagents").mkdir(parents=True)
+    (sess.parent / f"{SESSION}.jsonl").write_text('{"turn":1}\n', encoding="utf-8")
+    (sess / "tool-results" / "abc.txt").write_text("tool output", encoding="utf-8")
+    (sess / "subagents" / "agent-1.jsonl").write_text('{"agent":1}\n', encoding="utf-8")
+    return root, home, sess
+
+
+def test_capture_brings_every_unlinkable_file_into_the_repo(tmp_path: Path) -> None:
+    root, home, sess = _session_with_files(tmp_path)
+    reports = w.capture(root, home, session_dir=sess)
+    assert reports and all(r.ok for r in reports), [r.note for r in reports if not r.ok]
+    here = root / w.SCRATCH_DIR / SESSION
+    assert (here / "transcript.jsonl").read_text(encoding="utf-8") == '{"turn":1}\n'
+    assert (here / "tool-results" / "abc.txt").read_text(encoding="utf-8") == "tool output"
+    assert (here / "subagents" / "agent-1.jsonl").read_text(encoding="utf-8") == '{"agent":1}\n'
+    for r in reports:
+        assert r.dst.is_relative_to(root), f"captured outside the repo: {r.dst}"
+
+
+def test_capture_never_removes_what_the_harness_still_owns(tmp_path: Path) -> None:
+    """The harness is still using these files; only `link` ever moves anything."""
+    root, home, sess = _session_with_files(tmp_path)
+    w.capture(root, home, session_dir=sess)
+    assert (sess.parent / f"{SESSION}.jsonl").is_file()
+    assert (sess / "tool-results" / "abc.txt").is_file()
+    assert (sess / "subagents" / "agent-1.jsonl").is_file()
+
+
+def test_capturing_twice_copies_nothing_the_second_time(tmp_path: Path) -> None:
+    root, home, sess = _session_with_files(tmp_path)
+    w.capture(root, home, session_dir=sess)
+    again = w.capture(root, home, session_dir=sess)
+    assert {r.state for r in again} == {"current"}
+
+
+def test_a_changed_file_is_captured_again(tmp_path: Path) -> None:
+    root, home, sess = _session_with_files(tmp_path)
+    w.capture(root, home, session_dir=sess)
+    src = sess.parent / f"{SESSION}.jsonl"
+    src.write_text('{"turn":1}\n{"turn":2}\n', encoding="utf-8")
+    states = {r.dst.name: r.state for r in w.capture(root, home, session_dir=sess)}
+    assert states["transcript.jsonl"] == "copied"
+    assert states["abc.txt"] == "current"
+    landed = root / w.SCRATCH_DIR / SESSION / "transcript.jsonl"
+    assert landed.read_text(encoding="utf-8").count("turn") == 2
+
+
+def test_a_linked_directory_is_not_copied_back_onto_itself(tmp_path: Path) -> None:
+    """subagents/workflows is already a link into logs/; following it would copy
+    the repo's own run history into a second place under .tmp/."""
+    root, home, sess = _session_with_files(tmp_path)
+    target = root / "logs" / "workflows"
+    target.mkdir(parents=True)
+    (target / "run.json").write_text("{}", encoding="utf-8")
+    (sess / "subagents" / "workflows").symlink_to(target)
+    names = {r.dst.name for r in w.capture(root, home, session_dir=sess)}
+    assert "run.json" not in names
+    assert not (root / w.SCRATCH_DIR / SESSION / "subagents" / "workflows").exists()

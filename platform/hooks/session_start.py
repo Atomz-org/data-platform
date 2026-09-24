@@ -82,6 +82,15 @@ def main() -> int:
         print(f"workflow link: {type(exc).__name__}: {exc}")
         return 0
 
+    # The files the sweep would delete if they were linked. Only this session:
+    # a first capture of every session of this repo can be hundreds of
+    # megabytes, and a session must not wait for that to start. `pf workflow
+    # capture` with no --session backfills the rest.
+    try:
+        reports += workflows.capture(root, home, session_dir=sess)
+    except Exception as exc:  # noqa: BLE001 - a session must start regardless
+        print(f"session capture: {type(exc).__name__}: {exc}")
+
     refused = [r for r in reports if not r.ok]
     for r in refused:
         print(r.line(root))

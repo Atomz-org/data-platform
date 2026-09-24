@@ -87,6 +87,54 @@ running an agent you do not fully trust.
 
 ---
 
+## I-0006 — Session observability: what is inside the repo, and how
+
+**Status:** closed · **Found:** 2026-09-24
+
+Everything a Claude Code session produces for this repository now lands inside
+it. Two mechanisms, chosen per directory by one question: would Claude Code's
+retention sweep follow a symlink there and delete what it found?
+
+| What | Where it lands | How | Why that way |
+|---|---|---|---|
+| Workflow runs | `logs/workflows/` | symlink | Leaf entry; the sweep unlinks the link, not the target |
+| Workflow scripts | `logs/workflows/scripts/` | symlink | Same |
+| Scratch files | `.tmp/<session>/scratchpad/` | symlink | Temp root, never swept |
+| Background task output | `.tmp/<session>/tasks/` | symlink | Temp root, never swept |
+| Pasted images | `.tmp/<session>/images/` | symlink | Temp root, never swept |
+| Session transcript | `.tmp/<session>/transcript.jsonl` | copy | In the Claude Code folder; the sweep's own target |
+| Tool results | `.tmp/<session>/tool-results/` | copy | In the Claude Code folder |
+| Subagent transcripts | `.tmp/<session>/subagents/` | copy | `subagents/` is one of the three directories the sweep walks |
+
+**Why not link the last three.** The sweep walks `subagents`, `workflows` and
+`remote-agents` with `readdir`, and `readdir` follows a symlinked directory. A
+link from there into the repo would hand thirty days of repo history to a
+delete. `pf/loops/gate.py`'s sibling reasoning in `workflows._pairs()` records
+the same finding. Copying keeps the file in the repo and leaves the harness
+owning its original — which is the point: the repo's copy is one the repo owns.
+
+**When it runs.** `SessionStart` links, then captures whatever the session
+already held. `Stop` captures again at the end of each turn, which is when the
+files worth keeping exist. Both are incremental: an unchanged file is compared
+by size and mtime and never read.
+
+**What is not automatic.** A first capture of every session of this repo is
+~196 MB across 15 sessions, so a session start does not wait for it. Older
+sessions are backfilled on demand:
+
+```bash
+uv run pf workflow capture           # every session of this repo
+uv run pf workflow capture --session <id>
+```
+
+**What this is not.** `.tmp/` and `logs/` are both gitignored, so none of this
+is committed. Being inside the repository means it is findable, backed up with
+the checkout and visible to the operator — not that it is in git history. A
+transcript captured while its session is running is a prefix of the final one;
+the `Stop` hook re-captures, so the last copy of a finished session is complete.
+
+---
+
 ## I-0005 — README says two upstreams constrain shipping; there are arguably three
 
 **Status:** open · **Found:** 2026-09-24 · **Severity:** low
