@@ -67,15 +67,23 @@ silently joining these two; it does not fix these two.
 
 ---
 
-## I-0002 — No devcontainer
+## I-0002 — Agent network egress is unrestricted
 
-**Status:** open · **Found:** 2026-09-24 · **Severity:** medium
+**Status:** partly addressed · **Found:** 2026-09-24 · **Severity:** medium
 
-The agent harness bounds what an agent may write (`gate.yaml`, the PreToolUse
-hook, the permission lists in `.claude/settings.json`), but nothing bounds the
-filesystem and network the agent process can reach. A devcontainer is the
-missing outer boundary: everything above it is policy the agent could in
-principle be talked around, and a container is not.
+Originally filed as "no devcontainer". `.devcontainer/` now exists and closes
+the filesystem half: only this repository is mounted, the container runs as a
+non-root user with `--cap-drop ALL` and `no-new-privileges`, and no host
+credentials are mounted. That is the part that needed a boundary rather than a
+rule — everything in `gate.yaml` and the hooks is policy an agent could in
+principle be talked around; a mount namespace is not.
+
+**Still open: network egress.** A process inside the container can still reach
+the internet. Restricting it needs an egress proxy or a firewall on the
+container network, and neither is configured. `.devcontainer/README.md` says so
+plainly rather than letting the word "container" imply an isolation that is not
+there — which matters most for exactly the case the container was built for,
+running an agent you do not fully trust.
 
 ---
 

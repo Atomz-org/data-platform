@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "data-platform",
+  "build": { "dockerfile": "Dockerfile" },
+
+  // The reason this file exists. gate.yaml, the PreToolUse hook and the
+  // permission lists bound what an agent may write *inside* the repository.
+  // Nothing bounded what the agent process could reach outside it: the host
+  // home directory, ~/.ssh, ~/.aws, every other checkout on the machine. Those
+  // are policy an agent could in principle be talked around; a container is
+  // not. See IMPROVEMENTS.md I-0002.
+  //
+  // Only the repository is mounted. Nothing here mounts host credentials, and
+  // nothing should be added that does — pass secrets as environment variables
+  // for the one command that needs them instead.
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+
+  "remoteUser": "platform",
+  "containerUser": "platform",
+
+  "runArgs": [
+    "--security-opt", "no-new-privileges",
+    "--cap-drop", "ALL"
+  ],
+
+  "containerEnv": {
+    "PF_NOTIFY": "0",
+    "UV_LINK_MODE": "copy"
+  },
+
+  // --frozen so a container build can never silently resolve a different
+  // dependency set than CI; install-hook because git does not clone .git/hooks
+  // and the commit gate is the checkpoint most of this repo's rules run at.
+  "onCreateCommand": "uv sync --frozen && uv run pf install-hook",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python"
+      }
+    }
+  }
+}
