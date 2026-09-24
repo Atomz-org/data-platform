@@ -39,11 +39,13 @@ before it counts as complete, and only complete runs are ever finalized.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
 import re
 import shutil
+import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -51,6 +53,87 @@ from pathlib import Path
 
 RUNS_DIR = "logs/workflows"
 SCRIPTS_DIR = "logs/workflows/scripts"
+#: Where a session's own working directories are pointed. `.tmp/` rather than
+#: `logs/`: this is scratch, not a durable run record, and `.tmp/` is ignored.
+#: Namespaced by session id so two sessions in one checkout cannot overwrite
+#: each other, which is also what makes the directory readable afterwards.
+SCRATCH_DIR = ".tmp"
+
+#: Session directories the harness keeps under a temp root instead of the
+#: Claude Code folder: scratch files, background task output, pasted images.
+#: Nothing sweeps these (the retention walk in _pairs() reaches only the Claude
+#: Code folder), so each is linked whole rather than by leaf.
+SCRATCH_KINDS = ("scratchpad", "tasks", "images")
+
+
+def _tmp_roots() -> list[Path]:
+    """Every base the harness might put a session's working directories under.
+
+    Discovered rather than hardcoded. `/private/tmp/claude-<uid>/` is today's
+    shape on macOS; it is a convention, not an interface, and a link that
+    silently stops being made after a harness change is exactly the failure
+    this function exists to avoid.
+    """
+    seen: list[Path] = []
+    for v in (os.environ.get("TMPDIR"), tempfile.gettempdir(), "/tmp", "/private/tmp"):
+        if not v:
+            continue
+        with contextlib.suppress(OSError):
+            r = Path(v).resolve()
+            if r.is_dir() and r not in seen:
+                seen.append(r)
+    return seen
+
+
+def scratch_session(slug_: str, session_id: str, *, create: bool = False) -> Path | None:
+    """The harness's temp directory for one session, or None if it has none.
+
+    The conventional `claude-<uid>` segment is tried first and a one-level scan
+    follows, so renaming that segment changes which directory is found rather
+    than stopping the search. Both legs require `<slug>/<session-id>` beneath,
+    which is specific enough that a stranger's directory cannot match.
+    """
+    if not slug_ or not session_id:
+        return None
+    uid = getattr(os, "getuid", lambda: None)()
+    for base in _tmp_roots():
+        if uid is not None:
+            direct = base / f"claude-{uid}" / slug_ / session_id
+            if direct.is_dir():
+                return direct
+        with contextlib.suppress(OSError):
+            for child in sorted(base.iterdir()):
+                cand = child / slug_ / session_id
+                if cand.is_dir():
+                    return cand
+    if not create or uid is None:
+        return None
+    # Nothing found and one is wanted: at SessionStart the harness has often
+    # not made the folder yet, and a link made after the first write is already
+    # too late for it. Only the conventional shape can be built blind, so that
+    # is what is built -- discovery above is what keeps a rename working.
+    # Which root, when several exist, is decided by where this repo already
+    # has sessions, not by the order _tmp_roots() returns. TMPDIR on macOS is
+    # a per-user folder under /var/folders while the harness uses /private/tmp;
+    # creating it in the wrong one makes a link the harness never looks at.
+    seg = f"claude-{uid}"
+    bases = _tmp_roots()
+
+    def population(b: Path) -> int:
+        """How many of this repo's sessions already live under this root."""
+        try:
+            return sum(1 for _ in (b / seg / slug_).iterdir())
+        except OSError:
+            return -1
+
+    ranked = sorted(bases, key=lambda b: (-population(b), bases.index(b)))
+    for base in ranked:
+        made = base / seg / slug_ / session_id
+        with contextlib.suppress(OSError):
+            made.mkdir(parents=True, exist_ok=True)
+            return made
+    return None
+
 QUIET_FOR = 120.0
 # Files adoption adds beside the harness's own. They are excluded from
 # last_change so a freshly written README does not make an adopted run look live.
@@ -421,7 +504,7 @@ class LinkReport:
         return f"{head}{': ' + self.note if self.note else ''}"
 
 
-def _pairs(session: Path, root: Path) -> list[tuple[str, Path, Path]]:
+def _pairs(session: Path, root: Path) -> list[tuple[str, Path, Path, Path]]:
     """The session directories to replace with links, each with the repo
     directory it should point at.
 
@@ -454,8 +537,13 @@ def _pairs(session: Path, root: Path) -> list[tuple[str, Path, Path]]:
     and the next session's hook puts back any link the sweep removes. The launch
     record only duplicates the script text, which is in `scripts/`, so what stays
     behind is a timestamp and a task id."""
-    return [("runs", session / "subagents" / "workflows", root / RUNS_DIR),
-            ("scripts", session / "workflows" / "scripts", root / SCRIPTS_DIR)]
+    pairs = [("runs", session / "subagents" / "workflows", root / RUNS_DIR, session),
+             ("scripts", session / "workflows" / "scripts", root / SCRIPTS_DIR, session)]
+    tmp = scratch_session(slug(root), session.name, create=True)
+    if tmp is not None:
+        here = root / SCRATCH_DIR / session.name
+        pairs += [(k, tmp / k, here / k, tmp) for k in SCRATCH_KINDS]
+    return pairs
 
 
 def _narrow(session: Path, root: Path, *, dry_run: bool) -> str:
@@ -633,9 +721,9 @@ def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool
         if note:
             here.append(LinkReport(sess.name, "sweep", sess / "workflows", root / RUNS_DIR,
                                    "unlinked" if dry_run else "narrowed", note))
-        for kind, path, target in _pairs(sess, root):
+        for kind, path, target, owner in _pairs(sess, root):
             try:
-                here.append(_link_one(kind, path, target, root, home, sess, adopt=adopt,
+                here.append(_link_one(kind, path, target, root, home, owner, adopt=adopt,
                                       dry_run=dry_run, quiet_for=quiet_for, log=log))
             except (OSError, RuntimeError) as exc:
                 # A target that became a file, or a loop: pathlib raises

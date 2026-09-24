@@ -5,7 +5,8 @@ __pycache__/
 node_modules/
 .env
 graphify-out/
-
+.scratchpad
+.tmp/
 # Generated artefacts. These must stay in step with gate.yaml's denylist —
 # `pf check` fails if git is tracking anything the gate calls generated. They
 # drifted once: the patterns here were written without `**/`, which anchors them
