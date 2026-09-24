@@ -248,6 +248,9 @@ third-party material is in [NOTICE](NOTICE) and
 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md); the per-path provenance
 record is `platform/src/pf/vendor/registry.yaml` (`pf vendor why <file>`).
 Upstreams under `vendor/` are submodule pointers and keep their own licenses.
+[COMMERCIAL.md](COMMERCIAL.md) reads all of that back for someone deciding
+whether they can ship something built on this: Apache 2.0 grants commercial use
+already, and the care is owed to three pinned upstreams, not to this licence.
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Security
 reports go through [SECURITY.md](SECURITY.md), not the issue tracker.

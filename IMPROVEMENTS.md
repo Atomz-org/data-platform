@@ -87,6 +87,30 @@ running an agent you do not fully trust.
 
 ---
 
+## I-0005 — README says two upstreams constrain shipping; there are arguably three
+
+**Status:** open · **Found:** 2026-09-24 · **Severity:** low
+
+`README.md:211` describes `pf vendor licences` as showing *"Licences, and the
+two that constrain how this ships"*. Reading the registry notes, three carry a
+shipping caveat: `dlthub-ai-workbench` (proprietary, scope limited to dltHub
+Services), `asqav-compliance` (Elastic-2.0, no hosted service to third
+parties), and `okf-weaver` (no licence declared, so all rights reserved —
+*"confirm the terms before this platform, or a bundle produced through it, is
+shipped to anyone else"*).
+
+The likely reason for "two" is that `okf-weaver` is owned by this platform's
+own maintainer, so it may not have been counted as an external constraint.
+That is a defensible reading, which is why the count was left alone rather
+than corrected.
+
+"Constrains shipping" is not a modelled field — it is prose in the README, so
+nothing derives or checks it. Either settle the count, or make it a registry
+field so `pf vendor licences` derives it and the number cannot drift.
+`COMMERCIAL.md` currently says three.
+
+---
+
 ## I-0004 — The memory index is full
 
 **Status:** open · **Found:** 2026-09-24 · **Severity:** low
