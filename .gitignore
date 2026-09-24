@@ -5,7 +5,19 @@ __pycache__/
 node_modules/
 .env
 graphify-out/
-
+.scratchpad
+# Where this repo's agent sessions do their work. `.claude/settings.json` points
+# CLAUDE_CODE_TMPDIR here, so the harness writes a session's scratchpad, task
+# output and pasted images inside the checkout instead of under /private/tmp —
+# findable, backed up with the repo, and gone when the repo is.
+#
+# `git clean -xdf` takes it, along with any live session's state. That is the
+# trade for having it here rather than in a system temp directory.
+.tmp/
+# Personal overrides: permissions one developer granted, MCP servers one
+# developer enabled, absolute paths for one machine. The shared settings are in
+# .claude/settings.json and those are the ones that get reviewed.
+.claude/settings.local.json
 # Generated artefacts. These must stay in step with gate.yaml's denylist —
 # `pf check` fails if git is tracking anything the gate calls generated. They
 # drifted once: the patterns here were written without `**/`, which anchors them

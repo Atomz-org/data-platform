@@ -21,6 +21,10 @@ hooks:              ; @uv run pf install-hook
 fmt:                ; @.venv/bin/ruff format platform groups && .venv/bin/ruff check --fix-only --select I platform groups
 fmt-sql g p:        ; @.venv/bin/sqlfluff fix --disable-progress-bar --ignore-local-config --config .sqlfluff groups/{{g}}/projects/{{p}}/transform/models
 mcp:                ; @uv run pf mcp
+# A session whose scratchpad, task output and images stay in this checkout.
+# The env var has to be set before the harness starts, so it cannot live in
+# .claude/settings.json — docs/CLAUDE-CODE.md says why.
+claude *args:       ; @sh bin/claude-here {{args}}
 plugins:            ; @claude plugin validate platform/.claude-plugin/marketplace.json
 
 # tools

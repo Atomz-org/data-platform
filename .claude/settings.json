@@ -46,7 +46,8 @@
   },
   "env": {
     "PF_NOTIFY": "1",
-    "PF_NOTIFY_VOICE": "1"
+    "PF_NOTIFY_VOICE": "1",
+    "CLAUDE_CODE_TMPDIR": "${CLAUDE_PROJECT_DIR}/.tmp"
   },
   "hooks": {
     "PostToolUse": [
@@ -67,6 +68,28 @@
           {
             "type": "command",
             "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/pre_tool_use.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p \"$CLAUDE_PROJECT_DIR/.tmp\" 2>/dev/null; cat <<'PFEOF'\n{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"Hard rule for this repo: every file you write stays inside the checkout. Scratch and temporary files go in $CLAUDE_PROJECT_DIR/.tmp/ (gitignored) \\u2014 never /tmp, /private/tmp, or the session scratchpad path the environment names. That covers PR bodies, notes, scripts and intermediate output. Always use an absolute path under .tmp/.\"}}\nPFEOF",
+            "statusMessage": "scratch dir"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --project \"$CLAUDE_PROJECT_DIR\" python \"$CLAUDE_PROJECT_DIR/platform/hooks/session_stop.py\"",
+            "statusMessage": "capturing session files"
           }
         ]
       }

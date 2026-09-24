@@ -406,6 +406,7 @@ def check_paths(
             )
         )
     results.extend(check_evidence(paths, root, added))
+    results.extend(check_record_immutability(paths, root, added))
     results.extend(check_harness(paths, root))
     return results
 
@@ -570,6 +571,80 @@ def check_evidence(paths: list[str], root: Path, added: list[str] | None = None)
                     f"a feature lands with the test or eval that proves it",
                 )
             )
+    return out
+
+
+def _body_without_status(text: str) -> list[str]:
+    """Every line of a record except the one that carries its status."""
+    return [ln for ln in text.splitlines() if not ln.lstrip().startswith("**Status:**")]
+
+
+def _is_accepted(text: str) -> bool:
+    for ln in text.splitlines():
+        if ln.lstrip().startswith("**Status:**"):
+            return "accepted" in ln.split("**Status:**", 1)[1].split("·")[0].lower()
+    return False
+
+
+def check_record_immutability(
+    paths: list[str], root: Path, added: list[str] | None = None
+) -> list[GateResult]:
+    """An accepted decision is corrected by adding a record, not by editing one.
+
+    `decisions/README.md` has always said "Never delete one; supersede it", and
+    until now nothing enforced it. An edited decision is worse than a missing
+    one: the log still reads as a record of what was decided while no longer
+    being one, and the review that was supposed to catch the change has no old
+    text left to diff against.
+
+    Three things are deliberately not refused. A record being drafted — one
+    whose Status does not yet read `accepted` — is still being written. The
+    Status line itself is exempt, because marking a record superseded is how a
+    correction is meant to land. And a record git has never seen is an addition,
+    not an edit.
+
+    The comparison is against the index, not HEAD, for the same reason
+    `_map_state` is: the index is what the commit will carry.
+    """
+    policy = load_policy(root)
+    patterns = [p for p in (policy.get("records_immutable") or []) if isinstance(p, str)]
+    if not patterns:
+        return []
+    new = None if added is None else {_norm(p) for p in added}
+    out: list[GateResult] = []
+    for raw in paths:
+        rel = _norm(raw)
+        if not any(_glob(rel, pat) for pat in patterns):
+            continue
+        if new is not None and rel in new:
+            continue
+        try:
+            before = _git(root, "show", f"HEAD:{rel}")
+        except GitError:
+            # Not in HEAD: an addition, whatever the caller said. git is the
+            # authority here, because a caller that mis-reports a new file as
+            # modified would otherwise freeze a record that has no old text.
+            continue
+        if not before.strip():
+            continue
+        if not _is_accepted(before):
+            continue
+        after_path = root / rel
+        try:
+            after = after_path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if _body_without_status(before) == _body_without_status(after):
+            continue
+        out.append(
+            GateResult(
+                "deny",
+                "records_immutable",
+                rel,
+                "an accepted decision was edited — correct it by adding a new "
+                "record that supersedes this one, and change only its Status line here",
+            )
+        )
     return out
 
 

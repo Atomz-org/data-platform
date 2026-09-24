@@ -372,7 +372,9 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 | [PROJECT-ATLAS.md](PROJECT-ATLAS.md) | The per-project atlas |
 | [SCAFFOLDING.md](SCAFFOLDING.md) | Scaffolding a project |
 | [SEMANTICS.md](SEMANTICS.md) | The semantic stack |
+| [SESSION-CONTAINMENT.md](SESSION-CONTAINMENT.md) | Control: session containment |
 | [STACK.md](STACK.md) | The control plane |
+| [VARDPORTAL-GOVERNANCE-PORT.md](VARDPORTAL-GOVERNANCE-PORT.md) | Porting vardportal's guardrails into data-platform |
 | [VENDOR-CARD.md](VENDOR-CARD.md) | Vendored upstreams — index |
 | [VENDOR.md](VENDOR.md) | Vendored upstreams |
 
