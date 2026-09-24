@@ -133,7 +133,10 @@ project has drifted behind a change to the scaffold.
 This page is the map. [`docs/cicd/`](cicd/) is the depth: one page each for
 `gates`, `converged` and `tests` with the exact condition that turns them red,
 plus [cicd/audit-trail.md](cicd/audit-trail.md) on the provenance chain and
-what CI does and does not verify about it.
+what CI does and does not verify about it, and
+[cicd/provenance.md](cicd/provenance.md) on the mechanism itself — a real
+recorded action, its hash recomputed by hand, and a catalogue of every failure
+mode with what each looks like when it happens.
 
 ## A check is red. Which workflow, and what do I run?
 

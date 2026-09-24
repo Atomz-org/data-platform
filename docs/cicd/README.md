@@ -13,6 +13,7 @@ exact condition that turns each one red.
 | [converged.md](converged.md) | Is what is checked in still what the generator produces? |
 | [tests.md](tests.md) | Does the shared code still work, and is every index that describes it current? |
 | [audit-trail.md](audit-trail.md) | How this replaces a hand-written `.compliance-trace/` folder — and where it currently falls short |
+| [provenance.md](provenance.md) | The mechanism in full: a real worked record, the hash recomputed by hand, and every way it fails |
 
 ---
 
