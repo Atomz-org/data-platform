@@ -106,6 +106,32 @@ lands; every other tool **runs the gate itself before committing**:
 uv run pf gate --paths "$(git diff --cached --name-only | tr '\n' ',')"
 ```
 
+### When the gate answers back
+
+The hooks and the gate return two different things, and the difference is the
+whole point.
+
+**Advisory feedback** — a formatter, a lint result, a missing test, a blast
+radius printed before a model edit. It arrives as a `warn` verdict or on
+stdout, and the tool still runs. Treat it as an automated quality check:
+correct it and carry on. If the same target fails the same way three times,
+stop and report rather than trying a fourth shape.
+
+**A refusal** — a `deny` verdict, `exit 2` from the PreToolUse hook, or a
+`permissionDecision: "deny"`. This is a decision, not a diagnostic. **Stop.**
+Report which rule fired — the message names it, `BLOCKED by gate.yaml
+[<rule>]` — and what you were trying to do.
+
+Do not rephrase the command, split the change to slip under a threshold, route
+around the rule with a different tool, or retry it unchanged. A refusal you can
+talk your way past is not a control, and every rule in `gate.yaml` is there
+because something went wrong once without it. If the rule is wrong, that is a
+pull request against `gate.yaml` with a reason, reviewed by a person — never a
+retry loop. The same goes for anything on the `ask` list in
+`.claude/settings.json`: a human answers those, and "the agent decided it was
+fine" is not an answer.
+
+
 ## 3. Generated files: change the generator, not the file
 
 Much of this tree is generated *and* committed so it can be diffed in review.
@@ -271,3 +297,8 @@ workflow commits that refresh to the branch itself.
 - Land a feature without the test or eval that proves it, or make the
   suite green by deleting or loosening an existing check. The gate refuses
   the first (§4, `tests_required`); review is the guard for the second.
+- Retry, rephrase, split or re-route a command the gate refused, or treat a
+  `deny` as a lint result to iterate against (§2). Report it instead.
+- Edit an accepted decision record. Correct it by adding one that supersedes
+  it and changing only the old record's Status line; `records_immutable`
+  refuses the rest.
