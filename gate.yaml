@@ -237,6 +237,21 @@ platform_denylist:
   - "gate.yaml"
   - "gate.capabilities.yaml"
 
+# An accepted decision is corrected by adding a record, not by editing one.
+#
+# `decisions/README.md` has always said "Never delete one; supersede it", and
+# nothing enforced it. A convention that only lives in prose is the first thing
+# a long session forgets, and an edited decision is worse than a missing one:
+# the log still reads as a record of what was decided, while no longer being
+# one. The reviewed-in-a-pull-request story depends on the old text still being
+# there to diff against.
+#
+# The Status line is exempt, because marking a record superseded is exactly how
+# the correction is supposed to land. Everything else in the file is frozen
+# once Status reads `accepted`; a record still being drafted is not.
+records_immutable:
+  - "**/decisions/ADR-*.md"
+
 # Changing these requires the blast radius to be reported first.
 impact_required:
   - "**/transform/models/**/*.sql"
