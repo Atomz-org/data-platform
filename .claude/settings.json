@@ -70,6 +70,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "mkdir -p \"$CLAUDE_PROJECT_DIR/.tmp\" 2>/dev/null; cat <<'PFEOF'\n{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"Temporary and scratch files in this repo go in .tmp/ at the repo root (gitignored) \\u2014 not the session scratchpad under /private/tmp. That includes PR bodies, notes, intermediate output and anything else the user may want to open afterwards. Use an absolute path: $CLAUDE_PROJECT_DIR/.tmp/<name>.\"}}\nPFEOF",
+            "statusMessage": "scratch dir"
+          }
+        ]
+      }
     ]
   }
 }
