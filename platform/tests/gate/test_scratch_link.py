@@ -80,13 +80,13 @@ def test_a_stranger_directory_is_not_claimed(harness) -> None:
 def test_every_pair_targets_a_path_inside_the_repository(harness) -> None:
     """The whole point: nothing this repo's sessions write lands outside it."""
     root, home = harness
-    for kind, _path, target, _owner in w._pairs(_session(home, root), root):
+    for kind, _path, target, _owner in w._pairs(_session(home, root), root, create=True):
         assert target.is_relative_to(root), f"{kind} points outside the repo: {target}"
 
 
 def test_the_scratch_directories_are_all_covered(harness) -> None:
     root, home = harness
-    kinds = {k for k, *_ in w._pairs(_session(home, root), root)}
+    kinds = {k for k, *_ in w._pairs(_session(home, root), root, create=True)}
     assert set(w.SCRATCH_KINDS) <= kinds
     assert {"runs", "scripts"} <= kinds, "the existing workflow links must survive"
 
@@ -95,7 +95,7 @@ def test_an_empty_session_links_cleanly(harness) -> None:
     """The ordinary SessionStart path: nothing written yet, so nothing to adopt."""
     root, home = harness
     sess = _session(home, root)
-    reports = w.link(root, home, session_dir=sess)
+    reports = w.link(root, home, session_dir=sess, create=True)
     scratch = {r.kind: r for r in reports if r.kind in w.SCRATCH_KINDS}
     assert set(scratch) == set(w.SCRATCH_KINDS)
     for kind, r in scratch.items():
@@ -107,8 +107,8 @@ def test_an_empty_session_links_cleanly(harness) -> None:
 def test_linking_twice_changes_nothing(harness) -> None:
     root, home = harness
     sess = _session(home, root)
-    w.link(root, home, session_dir=sess)
-    again = [r for r in w.link(root, home, session_dir=sess) if r.kind in w.SCRATCH_KINDS]
+    w.link(root, home, session_dir=sess, create=True)
+    again = [r for r in w.link(root, home, session_dir=sess, create=True) if r.kind in w.SCRATCH_KINDS]
     assert [r.state for r in again] == ["linked"] * len(w.SCRATCH_KINDS)
 
 
@@ -116,7 +116,7 @@ def test_a_file_written_through_the_link_lands_in_the_repo(harness) -> None:
     """End to end, because that is the claim being made to the operator."""
     root, home = harness
     sess = _session(home, root)
-    w.link(root, home, session_dir=sess)
+    w.link(root, home, session_dir=sess, create=True)
     tmp = w.scratch_session(w.slug(root), SESSION)
     assert tmp is not None
     (tmp / "scratchpad" / "note.md").write_text("written by the session", encoding="utf-8")
@@ -129,14 +129,14 @@ def test_a_relinked_session_repairs_a_link_pointing_elsewhere(harness) -> None:
     """If the harness moves, the next session must not keep the stale link."""
     root, home = harness
     sess = _session(home, root)
-    w.link(root, home, session_dir=sess)
+    w.link(root, home, session_dir=sess, create=True)
     tmp = w.scratch_session(w.slug(root), SESSION)
     assert tmp is not None
     elsewhere = root.parent / "elsewhere"
     elsewhere.mkdir()
     (tmp / "scratchpad").unlink()
     (tmp / "scratchpad").symlink_to(elsewhere)
-    report = next(r for r in w.link(root, home, session_dir=sess)
+    report = next(r for r in w.link(root, home, session_dir=sess, create=True)
                   if r.kind == "scratchpad")
     assert report.state == "refused"
     assert "already a link" in report.note
@@ -245,3 +245,23 @@ def test_a_linked_directory_is_not_copied_back_onto_itself(tmp_path: Path) -> No
     names = {r.dst.name for r in w.capture(root, home, session_dir=sess)}
     assert "run.json" not in names
     assert not (root / w.SCRATCH_DIR / SESSION / "subagents" / "workflows").exists()
+
+
+def test_listing_the_pairs_creates_nothing(harness) -> None:
+    """`_pairs` is consulted by --check and by tests over throwaway repos. It
+    created the temp directory it was about to report on, so a dry run changed
+    the filesystem and a test linking a fake repo wrote into the real temp
+    root. Creation is opt-in now; this is the case that caught it."""
+    root, home = harness
+    kinds = {k for k, *_ in w._pairs(_session(home, root), root)}
+    assert kinds == {"runs", "scripts"}, "listing invented a scratch directory"
+    assert w.scratch_session(w.slug(root), SESSION) is None
+
+
+def test_a_dry_run_never_creates_even_when_asked_to(harness) -> None:
+    """dry_run wins over create: --check reports, it does not arrange."""
+    root, home = harness
+    reports = w.link(root, home, session_dir=_session(home, root),
+                     dry_run=True, create=True)
+    assert w.scratch_session(w.slug(root), SESSION) is None
+    assert {r.kind for r in reports} == {"runs", "scripts"}

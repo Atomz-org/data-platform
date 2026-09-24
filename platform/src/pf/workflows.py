@@ -504,7 +504,7 @@ class LinkReport:
         return f"{head}{': ' + self.note if self.note else ''}"
 
 
-def _pairs(session: Path, root: Path) -> list[tuple[str, Path, Path, Path]]:
+def _pairs(session: Path, root: Path, *, create: bool = False) -> list[tuple[str, Path, Path, Path]]:
     """The session directories to replace with links, each with the repo
     directory it should point at.
 
@@ -539,7 +539,7 @@ def _pairs(session: Path, root: Path) -> list[tuple[str, Path, Path, Path]]:
     behind is a timestamp and a task id."""
     pairs = [("runs", session / "subagents" / "workflows", root / RUNS_DIR, session),
              ("scripts", session / "workflows" / "scripts", root / SCRIPTS_DIR, session)]
-    tmp = scratch_session(slug(root), session.name, create=True)
+    tmp = scratch_session(slug(root), session.name, create=create)
     if tmp is not None:
         here = root / SCRATCH_DIR / session.name
         pairs += [(k, tmp / k, here / k, tmp) for k in SCRATCH_KINDS]
@@ -703,11 +703,18 @@ def _link_one(kind: str, path: Path, target: Path, root: Path, home: Path, sessi
 
 
 def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool = False,
-         dry_run: bool = False, quiet_for: float = QUIET_FOR,
+         dry_run: bool = False, create: bool = False, quiet_for: float = QUIET_FOR,
          log: Callable[[str], None] | None = None) -> list[LinkReport]:
     """Point a session's run and script directories at the repo, so the harness
     writes future runs inside it. Idempotent: an existing correct link reports
     `linked` and is left alone.
+
+    `create` makes the temp-root directories when the harness has not made them
+    yet. Off by default and forced off for a dry run, because only the
+    SessionStart hook knows a new session is beginning: a `pf workflow link` or
+    a `--check` that invented directories would report on ones it had just made
+    itself, and a test linking a throwaway repo would write into the real temp
+    root.
 
     `session_dir` names one session and is created if it does not exist yet,
     which is what the SessionStart hook needs: at that moment the harness has
@@ -721,7 +728,7 @@ def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool
         if note:
             here.append(LinkReport(sess.name, "sweep", sess / "workflows", root / RUNS_DIR,
                                    "unlinked" if dry_run else "narrowed", note))
-        for kind, path, target, owner in _pairs(sess, root):
+        for kind, path, target, owner in _pairs(sess, root, create=create and not dry_run):
             try:
                 here.append(_link_one(kind, path, target, root, home, owner, adopt=adopt,
                                       dry_run=dry_run, quiet_for=quiet_for, log=log))

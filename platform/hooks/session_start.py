@@ -77,7 +77,7 @@ def main() -> int:
         sess = session_dir(payload, home, root)
         if sess is None:
             return 0
-        reports = workflows.link(root, home, session_dir=sess)
+        reports = workflows.link(root, home, session_dir=sess, create=True)
     except Exception as exc:  # noqa: BLE001 - a session must start regardless
         print(f"workflow link: {type(exc).__name__}: {exc}")
         return 0
