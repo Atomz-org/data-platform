@@ -22,11 +22,8 @@ neutralise it. That is the `.env.example` bug in general form.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 from conftest import REPO_ROOT
-
 from pf.loops.gate import check_path, load_policy
 
 POLICY = load_policy(REPO_ROOT)

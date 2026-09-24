@@ -12,7 +12,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from pf.loops.gate import check_record_immutability
 
 POLICY = "version: 1\nrecords_immutable:\n  - '**/decisions/ADR-*.md'\n"

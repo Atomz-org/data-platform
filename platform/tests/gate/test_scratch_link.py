@@ -18,7 +18,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from pf import workflows as w
 
 SESSION = "11111111-2222-3333-4444-555555555555"
