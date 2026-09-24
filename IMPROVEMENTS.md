@@ -87,6 +87,32 @@ running an agent you do not fully trust.
 
 ---
 
+## I-0004 — The memory index is full
+
+**Status:** open · **Found:** 2026-09-24 · **Severity:** low
+
+`.memory/MEMORY.md` sits at ~1598 tokens against the 1600-token budget that
+`test_the_index_is_small_enough_to_be_worth_reading` enforces. Two tokens of
+headroom, and a row costs roughly forty — so **the next `pf memory add` of any
+kind breaks the build**, whatever it says. This was found by adding one note
+and watching it fail.
+
+The test says what to do: *"When this binds, roll a module up rather than
+raising the number."* Nothing has been rolled up, because condensing other
+sessions' lessons is a judgement about their material, not this one's. Two
+candidates that touch no active lesson:
+
+- The two `*(resolved)*` notes still carry full-length descriptions. A resolved
+  note's index line does not need to carry the detail; the body keeps it. That
+  recovers perhaps 15 tokens.
+- `commodity-tenants-stack-2026-09`'s description reads as though it was
+  truncated mid-sentence — *"The commodity tenants work (india/us/rollup) is
+  PR"* — and should be either finished or shortened deliberately.
+
+The rest needs a decision about which module to summarise.
+
+---
+
 ## I-0003 — Eight subsystems of the vardportal review were never read
 
 **Status:** open · **Found:** 2026-09-24 · **Severity:** low
