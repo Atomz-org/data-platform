@@ -34,6 +34,99 @@ hooks moved in beside the `hooks.json` that calls them, so a hook is one
 directory rather than two. `.github/scripts/` keeps its name — that one is
 GitHub's convention, not ours.
 
+## Everything a session writes stays in the checkout
+
+> Stated as a control — objective, threat model, evidence, residual risk and
+> the one thing still unverified — in
+> [`docs/SESSION-CONTAINMENT.md`](SESSION-CONTAINMENT.md). This section is how
+> it works; that page is what it guarantees.
+
+A Claude Code session writes in two places that are not the repository: the
+Claude Code folder (`~/.claude/projects/<slug>/<session>/`) holds runs,
+subagent transcripts and tool results, and a **temp root** holds the session's
+scratchpad, background task output and pasted images. On macOS that temp root
+defaults to `/private/tmp/claude-<uid>/`.
+
+Both defaults are wrong for this repo. Files there are not findable, not backed
+up, not covered by any retention anyone here chose, and they disappear with the
+session — which makes them useless as a record of what an agent did.
+
+**The rule, in force order:**
+
+| # | Mechanism | Covers |
+|---|---|---|
+| 1 | `CLAUDE_CODE_TMPDIR` exported **before the harness starts** — `.envrc`, or `just claude` / `sh bin/claude-here` | the harness writes scratchpad, tasks and images inside the checkout from its first byte |
+| 2 | `platform/hooks/session_start.py` symlinks what (1) did not catch | a session started with a plain `claude` is redirected anyway |
+| 3 | the SessionStart context line | tells the agent to put its own scratch files under `.tmp/` |
+| 4 | `pf workflow capture` | copies what cannot safely be linked — see below |
+
+**(1) is prevention; the rest is recovery.** Redirecting a directory after the
+harness has made it has a window before the hook runs, races a session that is
+already writing, and cannot move `tasks/` at all once the harness has looked at
+it. When (1) is in force `pf workflow link --check` reports each scratch kind as
+`linked: the harness writes here directly`, and no symlink is created.
+
+### Why it cannot be a setting
+
+This is the part that surprises people, and it cost a session to learn:
+
+> **`.claude/settings.json` cannot do it.** Claude Code resolves its temp root
+> once, at process start, from the environment it inherits. An `env` block in
+> project settings is applied to the tool and hook subprocesses the harness
+> spawns *afterwards* — by then the session folder has already been placed. The
+> variable has to be exported by whatever launches `claude`.
+
+The harness says so itself in the error it prints when that folder moves under
+it: *"restart Claude Code with CLAUDE_CODE_TMPDIR set"* — set by the launching
+shell, not by the project it is about to open.
+
+`CLAUDE_CODE_TMPDIR` is still declared in `.claude/settings.json` so that tools
+and hooks agree with the harness when it *is* set. `workflows._literal()`
+discards a value still containing `$`: an unexpanded `${CLAUDE_PROJECT_DIR}`
+would otherwise resolve against the working directory, invent a root named after
+the variable, and rank it ahead of the one actually in use.
+
+### Why the Claude Code folder is copied, not linked
+
+Claude Code's retention sweep walks `subagents`, `workflows` and `remote-agents`
+under a session folder and deletes anything older than `cleanupPeriodDays` (30
+by default). It recurses with `readdir`, which **follows a symlinked directory**
+— so linking one of those three into the repo would put repo history behind a
+30-day delete. Leaf entries are safe (the sweep lstats them and at most unlinks
+the link), which is why `subagents/workflows` and `workflows/scripts` are linked
+and their parents are not. Everything else there is copied by
+`pf workflow capture`, and the harness keeps its own.
+
+### The one thing a hook will not do
+
+`tasks/` is never adopted from a running session. Claude Code notes that
+directory at startup and checks it on every tool call; finding it moved or
+replaced by a link it refuses to swap the output file into place, and **no
+command's output reaches the model again until the session restarts**. Creating
+and linking it before the harness first looks is fine and is what a new session
+does. Replacing a populated one underneath a live process is not, so that waits
+for `pf workflow link --adopt` between sessions
+(`workflows.ADOPT_NOT_WHILE_LIVE`).
+
+### Checking it
+
+```bash
+echo "$CLAUDE_CODE_TMPDIR"          # should be <repo>/.tmp, fully expanded
+uv run pf workflow link --check     # every session, every kind, where it points
+```
+
+Three outcomes for the second command, per kind:
+
+| Reported | Means |
+|---|---|
+| `linked: the harness writes here directly` | (1) is in force — nothing to redirect |
+| `linked -> .tmp/<session>/<kind>` | (2) caught it; the bytes are in the repo, the path is not |
+| `refused: …` | that session is writing outside the repo, and the line says why |
+
+A kind reported `refused` means that session is writing outside the repo and
+the line says why. `.tmp/` is gitignored — and `git clean -xdf` takes it, along
+with any live session's state. That is the trade for having it here.
+
 ## Finding a test without reading the suite
 
 `platform/tests/` is grouped by the part of the platform each file guards —

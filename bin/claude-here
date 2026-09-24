@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+# Start Claude Code with its working directories inside this checkout.
+#
+#     sh bin/claude-here          (or ./bin/claude-here once it is executable)
+#
+# ## Why a launcher and not a setting
+#
+# Claude Code resolves its temp root once, when the process starts, from the
+# environment it inherits. Nothing in `.claude/settings.json` can reach that
+# moment: an `env` block there is applied to the tool and hook subprocesses the
+# harness spawns *afterwards*, so the decision about where the session folder
+# goes has already been made by the time it is read. The harness says as much
+# in the error it prints when that folder moves under it -- "restart Claude Code
+# with CLAUDE_CODE_TMPDIR set" -- set, that is, by whatever does the starting.
+#
+# ## What it buys
+#
+# Without it, a session's scratchpad, background task output and pasted images
+# are created under `/private/tmp/claude-<uid>/<slug>/<session>/`, and the
+# SessionStart hook redirects them afterwards with symlinks. That works, and it
+# is what has been keeping this repo's files where they belong. But it is
+# recovery rather than prevention: there is a window before the hook runs, it
+# races a session that is already writing, and it can never move `tasks/` once
+# the harness has looked at it -- doing so costs the session every command's
+# output until it restarts.
+#
+# Exported here, the harness writes inside the checkout from its first byte.
+# Nothing to redirect, no window, nothing to adopt later.
+#
+# Not named `claude`, deliberately: this directory could end up on PATH, and a
+# launcher that shadows the binary it execs is a fork bomb.
+set -eu
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(git -C "$here" rev-parse --show-toplevel)
+
+CLAUDE_CODE_TMPDIR="$root/.tmp"
+export CLAUDE_CODE_TMPDIR
+mkdir -p "$CLAUDE_CODE_TMPDIR"
+
+exec claude "$@"

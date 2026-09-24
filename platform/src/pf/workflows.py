@@ -65,6 +65,40 @@ SCRATCH_DIR = ".tmp"
 #: Code folder), so each is linked whole rather than by leaf.
 SCRATCH_KINDS = ("scratchpad", "tasks", "images")
 
+#: Kinds that must not be adopted while the session owning them is running.
+#:
+#: Claude Code notes the tasks directory when a session starts and checks it
+#: again for every tool call. Finding it moved, or replaced by a link, it
+#: refuses to swap the output file into place and reports
+#:
+#:     task output swap refused (tasks dir moved or linked)
+#:
+#: The session keeps running, but no command's output reaches the model again
+#: until it is restarted — so adopting this one from a hook trades a tidy
+#: directory for a session that cannot see. Creating and linking it *before*
+#: the harness first looks is fine, and is what a new session does; it is only
+#: replacing a populated one underneath a live process that breaks.
+#:
+#: The other kinds survive it: the harness resolves them per use. Adopting
+#: `tasks` stays available to `pf workflow link --adopt`, which a person runs
+#: between sessions.
+ADOPT_NOT_WHILE_LIVE = frozenset({"tasks"})
+
+
+def _literal(name: str) -> str | None:
+    """An environment variable's value, or None if it is still a template.
+
+    A settings `env` block that writes `${CLAUDE_PROJECT_DIR}/.tmp` reaches a
+    subprocess verbatim when the harness does not expand it. Resolving that
+    against the working directory would invent a directory named after the
+    variable, rank it ahead of the root the harness actually writes to, and
+    create a session folder there that nothing ever looks at — the exact silent
+    failure `_tmp_roots` is shaped to avoid. A value nobody expanded is not a
+    path; it is a misconfiguration, and it is ignored.
+    """
+    v = os.environ.get(name)
+    return None if not v or "$" in v else v
+
 
 def _tmp_roots() -> list[Path]:
     """Every base the harness might put a session's working directories under.
@@ -73,9 +107,23 @@ def _tmp_roots() -> list[Path]:
     shape on macOS; it is a convention, not an interface, and a link that
     silently stops being made after a harness change is exactly the failure
     this function exists to avoid.
+
+    `CLAUDE_CODE_TMPDIR` comes first because it is the only entry here that is
+    an interface: Claude Code reads it to place its temp root, and names it in
+    the error it prints when that root turns out not to be where it left it.
+    Setting it to `<repo>/.tmp` is the durable form of everything else in this
+    module — the harness writes inside the checkout from its first byte, so
+    there is no directory to redirect, no window between creating and linking,
+    and nothing to adopt later.
     """
     seen: list[Path] = []
-    for v in (os.environ.get("TMPDIR"), tempfile.gettempdir(), "/tmp", "/private/tmp"):
+    for v in (
+        _literal("CLAUDE_CODE_TMPDIR"),
+        os.environ.get("TMPDIR"),
+        tempfile.gettempdir(),
+        "/tmp",
+        "/private/tmp",
+    ):
         if not v:
             continue
         with contextlib.suppress(OSError):
@@ -134,6 +182,7 @@ def scratch_session(slug_: str, session_id: str, *, create: bool = False) -> Pat
             return made
     return None
 
+
 QUIET_FOR = 120.0
 # Files adoption adds beside the harness's own. They are excluded from
 # last_change so a freshly written README does not make an adopted run look live.
@@ -189,8 +238,7 @@ def sessions(root: Path, home: Path) -> list[Path]:
             # `is_symlink` first: is_dir() follows a link, so a session entry
             # pointing at an unrelated directory would otherwise be treated as
             # one of this repo's and have its contents adopted.
-            out += [p for p in projects.iterdir()
-                    if p.is_dir() and not p.is_symlink() and p.name != "memory"]
+            out += [p for p in projects.iterdir() if p.is_dir() and not p.is_symlink() and p.name != "memory"]
     return sorted(out, key=lambda p: (p.parent.name, p.name))
 
 
@@ -250,8 +298,7 @@ class Run:
     @property
     def live(self) -> bool:
         """Still running, or changed too recently to be sure it is not."""
-        return (self.started > self.finished
-                or time.time() - self.last_change < self.quiet_for)
+        return self.started > self.finished or time.time() - self.last_change < self.quiet_for
 
     @property
     def complete(self) -> bool:
@@ -285,7 +332,7 @@ class Run:
         if running:
             label = running[-1].label
             if len(label) > LABEL_WIDTH:
-                label = label[:LABEL_WIDTH - 1] + "…"
+                label = label[: LABEL_WIDTH - 1] + "…"
             parts.append(label)
         return " · ".join(parts)
 
@@ -319,7 +366,7 @@ def _agents(d: Path) -> list[Agent]:
     so an unparsable line is skipped rather than fatal."""
     meta: dict[str, dict] = {}
     for m in sorted(d.glob("agent-*.meta.json")):
-        aid = m.name[len("agent-"):-len(".meta.json")]
+        aid = m.name[len("agent-") : -len(".meta.json")]
         try:
             meta[aid] = json.loads(m.read_text())
         except (OSError, ValueError):
@@ -339,8 +386,7 @@ def _agents(d: Path) -> list[Agent]:
             row = rows.get(aid)
             if row is None:
                 order.append(aid)
-                row = rows[aid] = {"label": rec.get("label", ""),
-                                   "phase": rec.get("phase", ""), "state": "running"}
+                row = rows[aid] = {"label": rec.get("label", ""), "phase": rec.get("phase", ""), "state": "running"}
             if rec.get("type") == "result":
                 row["state"] = "done"
             elif rec.get("type") == "failed":
@@ -352,8 +398,9 @@ def _agents(d: Path) -> list[Agent]:
     out = []
     for aid in order:
         row, m = rows[aid], meta.get(aid, {})
-        out.append(Agent(aid, m.get("description") or row["label"],
-                         m.get("workflowPhase") or row["phase"], row["state"]))
+        out.append(
+            Agent(aid, m.get("description") or row["label"], m.get("workflowPhase") or row["phase"], row["state"])
+        )
     return out
 
 
@@ -376,10 +423,14 @@ def _load(d: Path, quiet_for: float) -> Run:
         fallback = d.stat().st_mtime
     except FileNotFoundError:
         fallback = 0.0
-    return Run(run_id=d.name, agents=_agents(d), files=len(stats),
-               bytes=sum(st.st_size for _, st in stats),
-               last_change=max(harness) if harness else fallback,
-               quiet_for=quiet_for)
+    return Run(
+        run_id=d.name,
+        agents=_agents(d),
+        files=len(stats),
+        bytes=sum(st.st_size for _, st in stats),
+        last_change=max(harness) if harness else fallback,
+        quiet_for=quiet_for,
+    )
 
 
 def _is_run(d: Path) -> bool:
@@ -388,8 +439,7 @@ def _is_run(d: Path) -> bool:
     and treating that moment as "not a run" both hides it from `list` and makes
     adoption refuse the whole session for holding something it cannot name.
     `scripts/`, the only other directory here, matches none of these."""
-    return ((d / "journal.jsonl").is_file()
-            or any(d.glob("agent-*.jsonl")) or any(d.glob("agent-*.meta.json")))
+    return (d / "journal.jsonl").is_file() or any(d.glob("agent-*.jsonl")) or any(d.glob("agent-*.meta.json"))
 
 
 def _script_in(scripts: Path, run_id: str) -> Path | None:
@@ -453,7 +503,7 @@ def discover(root: Path, home: Path, *, quiet_for: float = QUIET_FOR) -> list[Ru
             run.session = sess.name
             run.source = d
             run.script = _script_for(sess, d.name)
-            run.name = run.script.stem[:-len(d.name) - 1] if run.script else ""
+            run.name = run.script.stem[: -len(d.name) - 1] if run.script else ""
             prev = runs.get(d.name)
             # Two sessions can hold the same run id only when one is a copy.
             # Prefer a sighting that still has a session copy over one that does
@@ -461,8 +511,7 @@ def discover(root: Path, home: Path, *, quiet_for: float = QUIET_FOR) -> list[Ru
             # is the one still being written, and reporting the other would say
             # the run is in hand while its bytes grow under ~/.claude. Adoption
             # takes the newest each pass, so the older ones are reached in turn.
-            if (prev is None or prev.source is None
-                    or run.last_change > prev.last_change):
+            if prev is None or prev.source is None or run.last_change > prev.last_change:
                 runs[d.name] = run
     repo = root / RUNS_DIR
     if repo.is_dir():
@@ -471,7 +520,7 @@ def discover(root: Path, home: Path, *, quiet_for: float = QUIET_FOR) -> list[Ru
             if run is None:
                 run = runs[d.name] = _load(d, quiet_for)
                 run.script = _script_in(root / SCRIPTS_DIR, d.name)
-                run.name = run.script.stem[:-len(d.name) - 1] if run.script else ""
+                run.name = run.script.stem[: -len(d.name) - 1] if run.script else ""
             elif run.source is not None and _aliased(run.source, d):
                 continue
             run.mirror = d
@@ -537,8 +586,10 @@ def _pairs(session: Path, root: Path, *, create: bool = False) -> list[tuple[str
     and the next session's hook puts back any link the sweep removes. The launch
     record only duplicates the script text, which is in `scripts/`, so what stays
     behind is a timestamp and a task id."""
-    pairs = [("runs", session / "subagents" / "workflows", root / RUNS_DIR, session),
-             ("scripts", session / "workflows" / "scripts", root / SCRIPTS_DIR, session)]
+    pairs = [
+        ("runs", session / "subagents" / "workflows", root / RUNS_DIR, session),
+        ("scripts", session / "workflows" / "scripts", root / SCRIPTS_DIR, session),
+    ]
     tmp = scratch_session(slug(root), session.name, create=create)
     if tmp is not None:
         here = root / SCRATCH_DIR / session.name
@@ -568,8 +619,9 @@ def _narrow(session: Path, root: Path, *, dry_run: bool) -> str:
     return "no longer links into the repo; only scripts/ does"
 
 
-def _adopt(kind: str, path: Path, target: Path, root: Path, session: Path,
-           quiet_for: float, log: Callable[[str], None] | None) -> str:
+def _adopt(
+    kind: str, path: Path, target: Path, root: Path, session: Path, quiet_for: float, log: Callable[[str], None] | None
+) -> str:
     """Move what a session wrote before it was linked into the repo, and return
     "" when the directory is empty afterwards or the reason it is not.
 
@@ -582,12 +634,17 @@ def _adopt(kind: str, path: Path, target: Path, root: Path, session: Path,
     Liveness is checked for every run before any of them is touched. Finding out
     half way through leaves some runs moved, one copied but not moved, and the
     link still not made, which is three states to explain instead of one."""
-    live = [e.name for e in sorted(path.iterdir())
-            if kind == "runs" and e.is_dir() and not e.is_symlink() and _is_run(e)
-            and _load(e, quiet_for).live]
+    live = [
+        e.name
+        for e in sorted(path.iterdir())
+        if kind == "runs" and e.is_dir() and not e.is_symlink() and _is_run(e) and _load(e, quiet_for).live
+    ]
     if live:
-        return (f"{live[0]} is still running" if len(live) == 1
-                else f"{len(live)} runs are still running ({live[0]} and others)")
+        return (
+            f"{live[0]} is still running"
+            if len(live) == 1
+            else f"{len(live)} runs are still running ({live[0]} and others)"
+        )
     for entry in sorted(path.iterdir()):
         # A link into the repo left by an earlier version of this command:
         # what it pointed at is already here, so only the link is left to drop.
@@ -595,13 +652,20 @@ def _adopt(kind: str, path: Path, target: Path, root: Path, session: Path,
             if entry.resolve().is_relative_to(target.resolve()):
                 entry.unlink()
                 continue
-            # Points somewhere else entirely. Copying what it points at and then
-            # removing it is not this command's call, and rmtree refuses a link
-            # anyway, which would leave the session unlinkable with an OSError
-            # for an explanation.
-            return f"{entry.name} is a link to {entry.readlink()}; move it by hand"
+            # Points somewhere else entirely — the harness's own bookkeeping, or
+            # a stranger's file. Copying what it points at is still not this
+            # command's call; moving the link is.
+            note = _adopt_link(kind, entry, target / entry.name, log)
+            if note:
+                return note
+            continue
         if entry.is_dir():
-            if kind == "runs" and _is_run(entry):
+            if kind != "runs":
+                note = _adopt_tree(entry, target / entry.name, log)
+                if note:
+                    return note
+                continue
+            if _is_run(entry):
                 run = _load(entry, quiet_for)
                 run.session, run.source = session.name, entry
                 run.script = _script_for(session, entry.name)
@@ -643,9 +707,89 @@ def _adopt_one(entry: Path, dst: Path, log: Callable[[str], None] | None) -> str
     return ""
 
 
-def _link_one(kind: str, path: Path, target: Path, root: Path, home: Path, session: Path,
-              *, adopt: bool, dry_run: bool, quiet_for: float,
-              log: Callable[[str], None] | None) -> LinkReport:
+def _adopt_link(kind: str, entry: Path, dst: Path, log: Callable[[str], None] | None) -> str:
+    """Move a symlink the harness left behind, without following it.
+
+    The harness links a task's output at its agent transcript in the session
+    folder, so `tasks/` legitimately holds links out of the tree being adopted.
+    Refusing them stranded the other fifty files in the directory: adoption is
+    all-or-nothing, because a directory that does not empty cannot be replaced
+    by a link.
+
+    Only the link moves. What it points at is not copied — that is `capture()`'s
+    job, and deciding here that a stranger's file belongs in the repo is the
+    call this command has always declined to make. Moving a link changes nothing
+    about what it references *provided the target is absolute*; a relative one
+    would silently come to mean a different file, so that is still a refusal.
+    """
+    if kind == "runs":
+        return f"{entry.name} is a link to {entry.readlink()}; move it by hand"
+    raw = entry.readlink()
+    if not raw.is_absolute():
+        return f"{entry.name} is a relative link to {raw}; moving it would repoint it — move it by hand"
+    if dst.exists() or dst.is_symlink():
+        if dst.is_symlink() and dst.readlink() == raw:
+            entry.unlink()
+            return ""
+        return f"{entry.name} is already in the repo pointing somewhere else"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    dst.symlink_to(raw)
+    entry.unlink()
+    if log is not None:
+        log(f"adopted {entry.name} (link)")
+    return ""
+
+
+def _adopt_tree(entry: Path, dst: Path, log: Callable[[str], None] | None) -> str:
+    """Move a directory a session wrote into its scratch space.
+
+    A scratchpad holds directories as readily as files — a probe with a test
+    beside it, a repository someone cloned to read. Refusing them meant the one
+    directory blocked the whole kind, so a long session's scratch stayed outside
+    the repo for the rest of its life.
+
+    A rename is preferred and is what happens in practice: the temp root and the
+    checkout are on the same volume, so the move is atomic, instant whatever the
+    tree weighs, and has no window in which two copies exist. The copy is the
+    cross-device fallback, and it verifies every file by hash before removing
+    anything — the same contract as `_adopt_one`, applied leaf by leaf.
+    """
+    if entry.resolve() == dst.resolve():
+        return ""  # reached through a link; already where it is going
+    if dst.exists():
+        return f"{entry.name} is already in the repo; move it by hand"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        entry.rename(dst)
+    except OSError:
+        shutil.copytree(entry, dst, symlinks=True)
+        for src in entry.rglob("*"):
+            if not src.is_file() or src.is_symlink():
+                continue
+            copy = dst / src.relative_to(entry)
+            if not copy.is_file() or _sha256(copy) != _sha256(src):
+                shutil.rmtree(dst, ignore_errors=True)
+                return f"{entry.name} did not copy cleanly ({src.name})"
+        shutil.rmtree(entry)
+    if log is not None:
+        log(f"adopted {entry.name}/")
+    return ""
+
+
+def _link_one(
+    kind: str,
+    path: Path,
+    target: Path,
+    root: Path,
+    home: Path,
+    session: Path,
+    *,
+    adopt: bool,
+    dry_run: bool,
+    live: bool = False,
+    quiet_for: float,
+    log: Callable[[str], None] | None,
+) -> LinkReport:
     def rep(state: str, note: str = "") -> LinkReport:
         return LinkReport(session.name, kind, path, target, state, note)
 
@@ -672,6 +816,25 @@ def _link_one(kind: str, path: Path, target: Path, root: Path, home: Path, sessi
         return rep("refused", f"{path.parent} leads outside the session folder")
     if path.exists() and not path.is_dir():
         return rep("refused", "exists and is not a directory")
+    # Already where it needs to be. With CLAUDE_CODE_TMPDIR set to `<repo>/.tmp`
+    # the harness writes into the checkout directly, so `path` is inside `root`
+    # and the whole redirection is moot: linking one directory in the repo at
+    # another adds a hop, a second place to look, and a link to keep correct,
+    # for a property that already holds. Reported rather than skipped so
+    # `--check` still accounts for every kind.
+    #
+    # Deliberately *after* the boundary check above, not before it. Placed
+    # earlier this turned that refusal into a pass whenever the stranger's
+    # directory happened to sit inside the checkout — which is exactly where a
+    # symlinked parent in someone's session folder is most likely to point.
+    # Containment is a convenience; the boundary is a safety property, and a
+    # convenience must never be allowed to answer first.
+    #
+    # `path` is known not to be a link here (the branch above returned), which
+    # matters because `resolve()` follows one: a session already redirected into
+    # the repo would otherwise be described as one that never needed it.
+    if (path.parent.resolve() / path.name).is_relative_to(root.resolve()):
+        return rep("linked", "the harness writes here directly")
     if path.is_dir() and path.resolve() == target.resolve():
         # Not a link itself, but reached through one higher up, so its contents
         # are already the target's. _narrow() removes that parent link before
@@ -683,9 +846,17 @@ def _link_one(kind: str, path: Path, target: Path, root: Path, home: Path, sessi
     # and must not depend on which flags the caller happened to pass.
     if dry_run:
         return rep("unlinked", f"{len(entries)} item(s) to adopt" if entries else "")
+    if entries and live and kind in ADOPT_NOT_WHILE_LIVE:
+        # Not "refused because you forgot a flag": adopting this one would cost
+        # the running session its ability to see command output. Say which.
+        return rep(
+            "refused",
+            f"holds {len(entries)} item(s) and cannot be adopted "
+            f"while the session runs; `pf workflow link --adopt` "
+            f"after it ends",
+        )
     if entries and not adopt:
-        return rep("refused", f"holds {len(entries)} item(s) written before it was "
-                              "linked; re-run with --adopt")
+        return rep("refused", f"holds {len(entries)} item(s) written before it was linked; re-run with --adopt")
     if entries:
         note = _adopt(kind, path, target, root, session, quiet_for, log)
         if note:
@@ -702,9 +873,18 @@ def _link_one(kind: str, path: Path, target: Path, root: Path, home: Path, sessi
     return rep("adopted" if entries else "created")
 
 
-def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool = False,
-         dry_run: bool = False, create: bool = False, quiet_for: float = QUIET_FOR,
-         log: Callable[[str], None] | None = None) -> list[LinkReport]:
+def link(
+    root: Path,
+    home: Path,
+    *,
+    session_dir: Path | None = None,
+    adopt: bool = False,
+    dry_run: bool = False,
+    create: bool = False,
+    live: bool = False,
+    quiet_for: float = QUIET_FOR,
+    log: Callable[[str], None] | None = None,
+) -> list[LinkReport]:
     """Point a session's run and script directories at the repo, so the harness
     writes future runs inside it. Idempotent: an existing correct link reports
     `linked` and is left alone.
@@ -720,24 +900,46 @@ def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool
     which is what the SessionStart hook needs: at that moment the harness has
     not necessarily made the folder, and a link created afterwards would miss
     the first run of the session. Without it, every session of this repo is
-    linked, which is how an old session gets adopted by hand."""
+    linked, which is how an old session gets adopted by hand.
+
+    `live` says the session being linked is the one running right now, which is
+    always true from the SessionStart hook and never true from the CLI. It holds
+    back adoption for `ADOPT_NOT_WHILE_LIVE` — the kinds whose directory the
+    harness has already noted and will not accept a replacement for. Creating
+    and linking those from nothing is still done; only taking a populated one
+    out from under the running process is refused, with a note saying so."""
     out: list[LinkReport] = []
-    for sess in ([session_dir] if session_dir is not None else sessions(root, home)):
+    for sess in [session_dir] if session_dir is not None else sessions(root, home):
         here: list[LinkReport] = []
         note = _narrow(sess, root, dry_run=dry_run)
         if note:
-            here.append(LinkReport(sess.name, "sweep", sess / "workflows", root / RUNS_DIR,
-                                   "unlinked" if dry_run else "narrowed", note))
+            here.append(
+                LinkReport(
+                    sess.name, "sweep", sess / "workflows", root / RUNS_DIR, "unlinked" if dry_run else "narrowed", note
+                )
+            )
         for kind, path, target, owner in _pairs(sess, root, create=create and not dry_run):
             try:
-                here.append(_link_one(kind, path, target, root, home, owner, adopt=adopt,
-                                      dry_run=dry_run, quiet_for=quiet_for, log=log))
+                here.append(
+                    _link_one(
+                        kind,
+                        path,
+                        target,
+                        root,
+                        home,
+                        owner,
+                        adopt=adopt,
+                        dry_run=dry_run,
+                        live=live,
+                        quiet_for=quiet_for,
+                        log=log,
+                    )
+                )
             except (OSError, RuntimeError) as exc:
                 # A target that became a file, or a loop: pathlib raises
                 # RuntimeError rather than OSError for a symlink cycle, and a
                 # link command must report that, not traceback out of the CLI.
-                here.append(LinkReport(sess.name, kind, path, target, "refused",
-                                       f"{type(exc).__name__}: {exc}"))
+                here.append(LinkReport(sess.name, kind, path, target, "refused", f"{type(exc).__name__}: {exc}"))
         for r in here:
             if log is not None and r.state != "linked":
                 log(r.line(root))
@@ -748,6 +950,62 @@ def link(root: Path, home: Path, *, session_dir: Path | None = None, adopt: bool
     if not dry_run and any(r.ok for r in out):
         _write_dir_readme(root)
     return out
+
+
+def containment(root: Path, reports: list) -> tuple[str, list[str]]:
+    """Where this session's files will land, as a verdict and lines to print.
+
+        direct    the harness writes inside the checkout — nothing redirected
+        linked    redirected into it — the bytes are inside, the paths are not
+        outside   something refused; this session writes outside the repo
+
+    Decided from the paths themselves, never from a report's wording: a control
+    that pattern-matches on prose stops working the day someone improves the
+    prose.
+
+    A verdict is returned for the good cases too, and the SessionStart hook
+    prints it every session. Silence was the earlier choice and it was wrong for
+    this rule. These directories are moved into the checkout precisely so that
+    what an agent did is findable afterwards, and a control that is silent when
+    it works cannot be told apart from one that is silent because it broke —
+    which is how several sessions ran outside the repo without anyone noticing.
+    One short line is the whole cost. `docs/SESSION-CONTAINMENT.md` is the
+    control statement.
+    """
+    scratch = [r for r in reports if getattr(r, "kind", "") in SCRATCH_KINDS]
+    refused = [r for r in reports if not r.ok]
+
+    if refused:
+        lines = [r.line(root) for r in refused]
+        lines.append(f"files: {len(refused)} of {len(reports)} land OUTSIDE the repo")
+        # The durable fix, offered only when it is not already in force. An
+        # unexpanded `${...}` counts as not set: it is a misconfiguration, and
+        # saying nothing would leave the reader believing the variable is on.
+        if _literal("CLAUDE_CODE_TMPDIR") is None:
+            lines.append(
+                "Start with `just claude` (or `sh bin/claude-here`): it exports "
+                "CLAUDE_CODE_TMPDIR before the harness starts, so these are "
+                "created in the checkout rather than redirected afterwards. A "
+                "settings `env` block cannot — it is read after the harness has "
+                "already chosen where to write."
+            )
+        return "outside", lines
+
+    # `root` reaches the hook from the payload's cwd unresolved while the
+    # harness's paths come back resolved, so both sides are resolved here —
+    # but never the final component. `resolve()` follows a symlink, and every
+    # redirected directory is a symlink *into* the repo: following it would
+    # report a session the hook had to rescue as one that never needed
+    # rescuing. That is the one error this control must not make, and it made
+    # it once: `direct` printed while the harness was still writing to
+    # /private/tmp.
+    here = root.resolve()
+    inside = [
+        r for r in scratch if not r.path.is_symlink() and (r.path.parent.resolve() / r.path.name).is_relative_to(here)
+    ]
+    if scratch and len(inside) == len(scratch):
+        return "direct", [f"files: {SCRATCH_DIR}/ (direct)"]
+    return "linked", [f"files: {SCRATCH_DIR}/ (linked)"]
 
 
 @dataclass
@@ -827,8 +1085,9 @@ def _capture_set(session: Path, home: Path) -> list[tuple[Path, str]]:
     return out
 
 
-def capture(root: Path, home: Path, *, session_dir: Path | None = None,
-            log: Callable[[str], None] | None = None) -> list[CaptureReport]:
+def capture(
+    root: Path, home: Path, *, session_dir: Path | None = None, log: Callable[[str], None] | None = None
+) -> list[CaptureReport]:
     """Copy into the repo every harness file that cannot safely be linked.
 
     The counterpart to `link()`. Where a directory can be replaced by a link,
@@ -841,7 +1100,7 @@ def capture(root: Path, home: Path, *, session_dir: Path | None = None,
     harness owns those files and is still using them.
     """
     out: list[CaptureReport] = []
-    for sess in ([session_dir] if session_dir is not None else sessions(root, home)):
+    for sess in [session_dir] if session_dir is not None else sessions(root, home):
         here = root / SCRATCH_DIR / sess.name
         for src, rel in _capture_set(sess, home):
             dst = here / rel
@@ -860,31 +1119,33 @@ def capture(root: Path, home: Path, *, session_dir: Path | None = None,
 
 def _write_dir_readme(root: Path) -> None:
     path = root / RUNS_DIR / "README.md"
-    text = "\n".join([
-        "# Workflow runs",
-        "",
-        "Claude Code writes each `Workflow` run here as it happens. The session",
-        "directories it would otherwise use,",
-        "`~/.claude/projects/<slug>/<session>/subagents/workflows` and",
-        "`.../workflows/scripts`, are symlinks to this folder and to `scripts/`,",
-        "created by `pf workflow link` from a SessionStart hook.",
-        "",
-        "- `<run-id>/journal.jsonl`: launched, started, result and failed records",
-        "- `<run-id>/agent-<id>.jsonl`: one subagent's transcript, `.meta.json` its label",
-        "- `scripts/<name>-<run-id>.js`: the script that defined the run; pass it back",
-        "  to the Workflow tool with `resumeFromRunId` to resume",
-        "",
-        "`<run-id>.json`, the launch record, stays under `~/.claude`: linking the",
-        "directory it sits in would let Claude Code's retention sweep follow the link",
-        "and delete this history. A few are here from before that was understood.",
-        "",
-        "`pf workflow list` indexes them, `pf workflow watch` follows a live one and",
-        "`pf workflow show <run-id>` prints one run's phases and agents.",
-        "",
-        "Ignored by git via `**/logs/`: these are evidence for the branch you are on,",
-        "not something to commit.",
-        "",
-    ])
+    text = "\n".join(
+        [
+            "# Workflow runs",
+            "",
+            "Claude Code writes each `Workflow` run here as it happens. The session",
+            "directories it would otherwise use,",
+            "`~/.claude/projects/<slug>/<session>/subagents/workflows` and",
+            "`.../workflows/scripts`, are symlinks to this folder and to `scripts/`,",
+            "created by `pf workflow link` from a SessionStart hook.",
+            "",
+            "- `<run-id>/journal.jsonl`: launched, started, result and failed records",
+            "- `<run-id>/agent-<id>.jsonl`: one subagent's transcript, `.meta.json` its label",
+            "- `scripts/<name>-<run-id>.js`: the script that defined the run; pass it back",
+            "  to the Workflow tool with `resumeFromRunId` to resume",
+            "",
+            "`<run-id>.json`, the launch record, stays under `~/.claude`: linking the",
+            "directory it sits in would let Claude Code's retention sweep follow the link",
+            "and delete this history. A few are here from before that was understood.",
+            "",
+            "`pf workflow list` indexes them, `pf workflow watch` follows a live one and",
+            "`pf workflow show <run-id>` prints one run's phases and agents.",
+            "",
+            "Ignored by git via `**/logs/`: these are evidence for the branch you are on,",
+            "not something to commit.",
+            "",
+        ]
+    )
     if not path.is_file() or path.read_text() != text:
         path.write_text(text)
 
@@ -897,8 +1158,11 @@ def _plan(run: Run) -> list[tuple[Path, Path, str]]:
     script lives outside the run dir, so it is copied in as `script.js`."""
     if run.source is None or run.mirror is None:
         return []
-    plan = [(p, run.mirror / p.relative_to(run.source), str(p.relative_to(run.source)))
-            for p in sorted(run.source.rglob("*")) if p.is_file()]
+    plan = [
+        (p, run.mirror / p.relative_to(run.source), str(p.relative_to(run.source)))
+        for p in sorted(run.source.rglob("*"))
+        if p.is_file()
+    ]
     if run.script is not None and run.script.is_file():
         plan.append((run.script, run.mirror / "script.js", "script.js"))
     return plan
@@ -934,26 +1198,28 @@ def _aliased(source: Path, mirror: Path) -> str:
 
 
 def _readme(run: Run) -> str:
-    return "\n".join([
-        f"# Workflow run {run.run_id}",
-        "",
-        f"- name: {run.name or '(unnamed)'}",
-        f"- session: {run.session or '(unknown)'}",
-        f"- origin: {run.source}",
-        (f"- agents: {run.started} started, {run.finished} finished, "
-         f"{run.failed} failed"),
-        "",
-        "- `script.js`: the workflow script that defined the run",
-        "- `journal.jsonl`: launched, started, result and failed records, in order",
-        ("- `agent-<id>.jsonl`: one subagent's transcript; "
-         "`agent-<id>.meta.json` its label and phase"),
-        "",
-        ("Written by a session that was not linked into the repo, then adopted by "
-         "`pf workflow link --adopt` or `pf workflow sync --move`. A run written "
-         "through a link has no README: nothing writes into it. Ignored by git "
-         "via `**/logs/`."),
-        "",
-    ])
+    return "\n".join(
+        [
+            f"# Workflow run {run.run_id}",
+            "",
+            f"- name: {run.name or '(unnamed)'}",
+            f"- session: {run.session or '(unknown)'}",
+            f"- origin: {run.source}",
+            (f"- agents: {run.started} started, {run.finished} finished, {run.failed} failed"),
+            "",
+            "- `script.js`: the workflow script that defined the run",
+            "- `journal.jsonl`: launched, started, result and failed records, in order",
+            ("- `agent-<id>.jsonl`: one subagent's transcript; `agent-<id>.meta.json` its label and phase"),
+            "",
+            (
+                "Written by a session that was not linked into the repo, then adopted by "
+                "`pf workflow link --adopt` or `pf workflow sync --move`. A run written "
+                "through a link has no README: nothing writes into it. Ignored by git "
+                "via `**/logs/`."
+            ),
+            "",
+        ]
+    )
 
 
 def mirror(run: Run, root: Path, *, log: Callable[[str], None] | None = None) -> MirrorReport:
@@ -1006,8 +1272,9 @@ def verify(run: Run) -> list[str]:
     if run.source is None:
         return []
     if run.mirror is None:
-        return [str(p.relative_to(run.source)) for p in sorted(run.source.rglob("*"))
-                if p.is_file()] + (["script.js"] if run.script else [])
+        return [str(p.relative_to(run.source)) for p in sorted(run.source.rglob("*")) if p.is_file()] + (
+            ["script.js"] if run.script else []
+        )
     out = []
     for src, dst, name in _plan(run):
         try:
@@ -1032,8 +1299,7 @@ def finalize(run: Run, root: Path, *, log: Callable[[str], None] | None = None) 
     # would still say every agent finished long ago.
     now = _load(run.source, run.quiet_for)
     if now.started > now.finished:
-        return False, (f"live: {now.started - now.finished} of {now.started} "
-                       "agents still running")
+        return False, (f"live: {now.started - now.finished} of {now.started} agents still running")
     # Floored at QUIET_FOR whatever the caller asked for. `--quiet-for` exists to
     # relabel a run live or complete in `list` and `watch`, which is harmless;
     # here the same number decides an irreversible rmtree of a directory the
@@ -1072,8 +1338,14 @@ def finalize(run: Run, root: Path, *, log: Callable[[str], None] | None = None) 
     return True, note
 
 
-def sync(root: Path, home: Path, *, move: bool = False, quiet_for: float = QUIET_FOR,
-         log: Callable[[str], None] | None = None) -> list[SyncResult]:
+def sync(
+    root: Path,
+    home: Path,
+    *,
+    move: bool = False,
+    quiet_for: float = QUIET_FOR,
+    log: Callable[[str], None] | None = None,
+) -> list[SyncResult]:
     """Adopt every run that still has a session copy: copy it into the repo
     and, with `move`, remove the session copy once it verifies.
 
@@ -1091,17 +1363,22 @@ def sync(root: Path, home: Path, *, move: bool = False, quiet_for: float = QUIET
             if move and not rep.refused:
                 moved, note = finalize(run, root, log=log)
         except OSError as exc:  # one run's trouble must not stop the others
-            out.append(SyncResult(run.run_id, run.name, 0, 0, False,
-                                  f"skipped: {type(exc).__name__}: {exc}"))
+            out.append(SyncResult(run.run_id, run.name, 0, 0, False, f"skipped: {type(exc).__name__}: {exc}"))
             continue
-        out.append(SyncResult(run.run_id, run.name, len(rep.copied), rep.bytes, moved, note,
-                              rep.refused))
+        out.append(SyncResult(run.run_id, run.name, len(rep.copied), rep.bytes, moved, note, rep.refused))
     return out
 
 
-def watch(root: Path, home: Path, *, interval: float = 2.0, quiet_for: float = QUIET_FOR,
-          log: Callable[[str], None] = print, until: Callable[[], bool] | None = None,
-          max_rounds: int | None = None) -> None:
+def watch(
+    root: Path,
+    home: Path,
+    *,
+    interval: float = 2.0,
+    quiet_for: float = QUIET_FOR,
+    log: Callable[[str], None] = print,
+    until: Callable[[], bool] | None = None,
+    max_rounds: int | None = None,
+) -> None:
     """Follow every run of this repo and print only what changed: a run's
     progress line when its counts moved or its size crossed a SIZE_STEP, one
     line per agent that started or finished. A linked run is read where the

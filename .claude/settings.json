@@ -46,7 +46,8 @@
   },
   "env": {
     "PF_NOTIFY": "1",
-    "PF_NOTIFY_VOICE": "1"
+    "PF_NOTIFY_VOICE": "1",
+    "CLAUDE_CODE_TMPDIR": "${CLAUDE_PROJECT_DIR}/.tmp"
   },
   "hooks": {
     "PostToolUse": [
@@ -76,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "mkdir -p \"$CLAUDE_PROJECT_DIR/.tmp\" 2>/dev/null; cat <<'PFEOF'\n{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"Temporary and scratch files in this repo go in .tmp/ at the repo root (gitignored) \\u2014 not the session scratchpad under /private/tmp. That includes PR bodies, notes, intermediate output and anything else the user may want to open afterwards. Use an absolute path: $CLAUDE_PROJECT_DIR/.tmp/<name>.\"}}\nPFEOF",
+            "command": "mkdir -p \"$CLAUDE_PROJECT_DIR/.tmp\" 2>/dev/null; cat <<'PFEOF'\n{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"Hard rule for this repo: every file you write stays inside the checkout. Scratch and temporary files go in $CLAUDE_PROJECT_DIR/.tmp/ (gitignored) \\u2014 never /tmp, /private/tmp, or the session scratchpad path the environment names. That covers PR bodies, notes, scripts and intermediate output. Always use an absolute path under .tmp/.\"}}\nPFEOF",
             "statusMessage": "scratch dir"
           }
         ]

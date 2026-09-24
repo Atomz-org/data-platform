@@ -13,6 +13,30 @@ the harness may not have created the session folder yet, and a link made after
 the first run has started is already too late for that run. The session id comes
 from the payload, so the folder is created here, linked, and waiting.
 
+## Why this adopts
+
+SessionStart does not only fire on a new session. It fires again on `resume`,
+on `clear` and on every `compact` — by which point the session has been running
+for hours and the harness has filled its scratchpad, tasks and images
+directories. `link()` refuses a directory that already holds files, so without
+adoption those three would refuse on the first compaction and go on refusing for
+the rest of the session, which is exactly the case where a long session's files
+are most worth having in the repo.
+
+Adopting is not the unsafe half of the operation. `_adopt` copies each file,
+proves the copy by hash, and only then removes the original; it refuses a live
+run rather than taking a directory out from under it, and refuses anything it
+cannot name rather than deciding on someone's behalf that a file is disposable.
+A refusal here is the same refusal, printed for a human to act on.
+
+The exception is `tasks/`, which `live=True` holds back — see
+`workflows.ADOPT_NOT_WHILE_LIVE`. The harness notes that directory when the
+session starts and refuses to write a tool's output if it later finds it moved
+or linked, which costs the session every command's output until it restarts.
+Linking it from nothing is fine and is what a new session does; replacing a
+populated one under a running process is not, so that one waits for
+`pf workflow link --adopt` between sessions.
+
 Nothing is printed unless a link could not be made. A SessionStart hook's stdout
 is added to the session context, and both the steady state (already linked) and
 the expected state for a new session (just created) would otherwise put lines in
@@ -23,9 +47,11 @@ exit 0 always. A repo whose session folder cannot be linked still works; its run
 land under ~/.claude, `pf workflow list` says so, and
 `pf workflow link --adopt` brings them in.
 """
+
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -77,7 +103,7 @@ def main() -> int:
         sess = session_dir(payload, home, root)
         if sess is None:
             return 0
-        reports = workflows.link(root, home, session_dir=sess, create=True)
+        reports = workflows.link(root, home, session_dir=sess, create=True, adopt=True, live=True)
     except Exception as exc:  # noqa: BLE001 - a session must start regardless
         print(f"workflow link: {type(exc).__name__}: {exc}")
         return 0
@@ -91,13 +117,50 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 - a session must start regardless
         print(f"session capture: {type(exc).__name__}: {exc}")
 
-    refused = [r for r in reports if not r.ok]
-    for r in refused:
-        print(r.line(root))
-    if refused:
-        print("This session's workflow runs will be written under ~/.claude "
-              "instead of logs/workflows/. `pf workflow link --adopt` fixes it.")
+    state, lines = workflows.containment(root, reports)
+
+    if state == "outside" and enforcing():
+        # Fail-closed, opt-in, and deliberately the same shape as
+        # PF_PROVENANCE_ENFORCE: a control whose default failure mode is "the
+        # whole team stops" gets switched off, and a control that is switched
+        # off enforces nothing. An organisation that needs the guarantee sets
+        # the flag and accepts the trade. Only the JSON goes to stdout here —
+        # anything printed beside it would stop the harness parsing it.
+        print(
+            json.dumps(
+                {
+                    "continue": False,
+                    "stopReason": "\n".join(
+                        [
+                            "Refusing to start: this session would write outside the repo.",
+                            *lines,
+                            (
+                                "PF_SCRATCH_ENFORCE=1 requires every file to land in the "
+                                "checkout. Start with `just claude`, or clear the flag to "
+                                "proceed anyway."
+                            ),
+                        ]
+                    ),
+                }
+            )
+        )
+        return 0
+
+    for line in lines:
+        print(line)
     return 0
+
+
+def enforcing() -> bool:
+    """Whether a session that cannot keep its files in the repo may start.
+
+    Off by default, and the same shape as `PF_PROVENANCE_ENFORCE` on purpose: a
+    control whose default failure mode is "the whole team stops" gets switched
+    off, and a control that is switched off enforces nothing. The verdict
+    `pf.workflows.containment` returns is reported either way, so the fail-open
+    case is observed rather than assumed.
+    """
+    return os.environ.get("PF_SCRATCH_ENFORCE", "0") not in ("0", "", "false")
 
 
 if __name__ == "__main__":

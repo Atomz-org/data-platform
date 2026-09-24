@@ -55,8 +55,9 @@ def home(tmp_path: Path, repo: Path) -> Path:
     mine = h / "projects" / slug(repo)
     (mine / "memory").mkdir(parents=True)
     (mine / f"{SESSION_A}.jsonl").write_text("{}\n")
-    other = (h / "projects" / "-Users-someone-other-repo" / "11111111-1111"
-             / "subagents" / "workflows" / "wf_other000-000")
+    other = (
+        h / "projects" / "-Users-someone-other-repo" / "11111111-1111" / "subagents" / "workflows" / "wf_other000-000"
+    )
     other.mkdir(parents=True)
     (other / "journal.jsonl").write_text('{"type":"launched"}\n')
     return h
@@ -69,32 +70,38 @@ def age(d: Path, seconds: float) -> None:
     os.utime(d, (t, t))
 
 
-def write_run(home: Path, repo: Path, session: str, run_id: str, name: str,
-              agents: list[tuple[str, str, str, str]], *, quiet: float = 1000.0,
-              script: bool = True) -> Path:
+def write_run(
+    home: Path,
+    repo: Path,
+    session: str,
+    run_id: str,
+    name: str,
+    agents: list[tuple[str, str, str, str]],
+    *,
+    quiet: float = 1000.0,
+    script: bool = True,
+) -> Path:
     """agents: (agent_id, label, phase, state). Journal order is start order;
     result and failed records follow, as the harness writes them."""
     d = home / "projects" / slug(repo) / session / "subagents" / "workflows" / run_id
     d.mkdir(parents=True)
     lines: list[dict] = [{"type": "launched"}]
     for aid, label, phase, _ in agents:
-        lines.append({"type": "started", "key": f"v2:{aid}", "agentId": aid,
-                      "label": label, "phase": phase})
-        (d / f"agent-{aid}.meta.json").write_text(json.dumps(
-            {"agentType": "workflow-subagent", "description": label, "workflowPhase": phase}))
+        lines.append({"type": "started", "key": f"v2:{aid}", "agentId": aid, "label": label, "phase": phase})
+        (d / f"agent-{aid}.meta.json").write_text(
+            json.dumps({"agentType": "workflow-subagent", "description": label, "workflowPhase": phase})
+        )
         (d / f"agent-{aid}.jsonl").write_text(f'{{"type":"user","agent":"{aid}"}}\n' * 4)
     for aid, _, _, state in agents:
         if state == DONE:
-            lines.append({"type": "result", "key": f"v2:{aid}", "agentId": aid,
-                          "result": {"summary": "ok"}})
+            lines.append({"type": "result", "key": f"v2:{aid}", "agentId": aid, "result": {"summary": "ok"}})
         elif state == FAILED:
             lines.append({"type": "failed", "key": f"v2:{aid}", "agentId": aid})
     (d / "journal.jsonl").write_text("".join(json.dumps(rec) + "\n" for rec in lines))
     if script:
         scripts = home / "projects" / slug(repo) / session / "workflows" / "scripts"
         scripts.mkdir(parents=True, exist_ok=True)
-        (scripts / f"{name}-{run_id}.js").write_text(
-            f"export const meta = {{\n  name: '{name}',\n  phases: [],\n}};\n")
+        (scripts / f"{name}-{run_id}.js").write_text(f"export const meta = {{\n  name: '{name}',\n  phases: [],\n}};\n")
     age(d, quiet)
     return d
 
@@ -111,8 +118,9 @@ def sha(p: Path) -> str:
 
 
 def test_slug_replaces_every_non_alphanumeric_including_underscore() -> None:
-    assert (slug(Path("/Users/s/Documents/data_platform/data-platform"))
-            == "-Users-s-Documents-data-platform-data-platform")
+    assert (
+        slug(Path("/Users/s/Documents/data_platform/data-platform")) == "-Users-s-Documents-data-platform-data-platform"
+    )
 
 
 def test_claude_home_honours_config_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -138,16 +146,17 @@ def test_sessions_skips_memory_and_files(repo: Path, home: Path) -> None:
 
 
 def test_discover_spans_sessions_ignores_other_slugs_and_merges_mirrors(repo: Path, home: Path) -> None:
-    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-              [("a1", "verify:1", "Verify", DONE)])
-    write_run(home, repo, SESSION_B, "wf_bbbbbbbb-002", "impl-runs",
-              [("b1", "impl:workflows", "Implement", RUNNING)], quiet=0)
+    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("a1", "verify:1", "Verify", DONE)])
+    write_run(
+        home, repo, SESSION_B, "wf_bbbbbbbb-002", "impl-runs", [("b1", "impl:workflows", "Implement", RUNNING)], quiet=0
+    )
     only = repo / "logs" / "workflows" / "wf_cccccccc-003"
     only.mkdir(parents=True)
     (only / "journal.jsonl").write_text(
         '{"type":"launched"}\n'
         '{"type":"started","agentId":"c1","label":"fix:x","phase":"Fix"}\n'
-        '{"type":"result","agentId":"c1","result":{}}\n')
+        '{"type":"result","agentId":"c1","result":{}}\n'
+    )
     (only / "script.js").write_text("export const meta = {\n  name: 'moved-by-hand',\n};\n")
     (only / "README.md").write_text("# Workflow run wf_cccccccc-003\n")
     age(only, 500)
@@ -155,12 +164,17 @@ def test_discover_spans_sessions_ignores_other_slugs_and_merges_mirrors(repo: Pa
     both.mkdir(parents=True)
     # A directory in logs/workflows counts as a run once it has a journal; that
     # is what tells a half-copied run apart from `scripts/`.
-    shutil.copy2(home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows"
-                 / "wf_aaaaaaaa-001" / "journal.jsonl", both / "journal.jsonl")
+    shutil.copy2(
+        home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows" / "wf_aaaaaaaa-001" / "journal.jsonl",
+        both / "journal.jsonl",
+    )
 
     found = discover(repo, home)
     assert [r.run_id for r in found] == [  # newest change first
-        "wf_bbbbbbbb-002", "wf_cccccccc-003", "wf_aaaaaaaa-001"]
+        "wf_bbbbbbbb-002",
+        "wf_cccccccc-003",
+        "wf_aaaaaaaa-001",
+    ]
     b, c, a = found
     assert a.session == SESSION_A and a.name == "verify-stack"
     assert a.source is not None and a.mirror == both and a.script is not None
@@ -170,25 +184,31 @@ def test_discover_spans_sessions_ignores_other_slugs_and_merges_mirrors(repo: Pa
 
 
 def test_agent_states_come_from_the_journal_and_phases_keep_order(repo: Path, home: Path) -> None:
-    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [
-        ("u1", "read:a", "Understand", DONE),
-        ("u2", "read:b", "Understand", FAILED),
-        ("v1", "verify:1", "Verify", DONE),
-        ("v2", "verify:2", "Verify", RUNNING),
-    ])
+    write_run(
+        home,
+        repo,
+        SESSION_A,
+        "wf_aaaaaaaa-001",
+        "verify-stack",
+        [
+            ("u1", "read:a", "Understand", DONE),
+            ("u2", "read:b", "Understand", FAILED),
+            ("v1", "verify:1", "Verify", DONE),
+            ("v2", "verify:2", "Verify", RUNNING),
+        ],
+    )
     run = one(repo, home, "wf_aaaaaaaa-001")
-    assert [(a.agent_id, a.state) for a in run.agents] == [
-        ("u1", DONE), ("u2", FAILED), ("v1", DONE), ("v2", RUNNING)]
+    assert [(a.agent_id, a.state) for a in run.agents] == [("u1", DONE), ("u2", FAILED), ("v1", DONE), ("v2", RUNNING)]
     assert (run.started, run.finished, run.failed) == (4, 3, 1)
     assert list(run.phases.items()) == [("Understand", (2, 2)), ("Verify", (2, 1))]
     assert run.live and not run.complete
 
 
 def test_meta_overrides_journal_label_and_a_torn_journal_line_is_skipped(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "journal-label", "Verify", DONE)])
-    (d / "agent-v1.meta.json").write_text(json.dumps(
-        {"agentType": "workflow-subagent", "description": "meta-label", "workflowPhase": "Review"}))
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "journal-label", "Verify", DONE)])
+    (d / "agent-v1.meta.json").write_text(
+        json.dumps({"agentType": "workflow-subagent", "description": "meta-label", "workflowPhase": "Review"})
+    )
     with (d / "journal.jsonl").open("a") as f:
         f.write('{"type":"started","agentId":"v2","label":"half')  # mid-write
     run = one(repo, home, "wf_aaaaaaaa-001")
@@ -199,13 +219,25 @@ def test_meta_overrides_journal_label_and_a_torn_journal_line_is_skipped(repo: P
 
 
 def test_mirror_copies_everything_once_then_nothing(repo: Path, home: Path) -> None:
-    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-              [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", DONE)])
+    write_run(
+        home,
+        repo,
+        SESSION_A,
+        "wf_aaaaaaaa-001",
+        "verify-stack",
+        [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", DONE)],
+    )
     run = one(repo, home, "wf_aaaaaaaa-001")
     lines: list[str] = []
     rep = mirror(run, repo, log=lines.append)
-    assert sorted(rep.copied) == ["agent-v1.jsonl", "agent-v1.meta.json", "agent-v2.jsonl",
-                                  "agent-v2.meta.json", "journal.jsonl", "script.js"]
+    assert sorted(rep.copied) == [
+        "agent-v1.jsonl",
+        "agent-v1.meta.json",
+        "agent-v2.jsonl",
+        "agent-v2.meta.json",
+        "journal.jsonl",
+        "script.js",
+    ]
     assert rep.skipped == 0 and rep.bytes > 0
     assert lines[0].startswith("[1/6]") and lines[-1].startswith("[6/6] 100% ")
     dest = repo / "logs" / "workflows" / "wf_aaaaaaaa-001"
@@ -222,8 +254,7 @@ def test_mirror_copies_everything_once_then_nothing(repo: Path, home: Path) -> N
 
 
 def test_mirror_recopies_a_source_file_that_grew(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", RUNNING)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", RUNNING)])
     mirror(one(repo, home, "wf_aaaaaaaa-001"), repo)
     with (d / "agent-v1.jsonl").open("a") as f:
         f.write('{"type":"assistant","text":"more"}\n')
@@ -234,8 +265,7 @@ def test_mirror_recopies_a_source_file_that_grew(repo: Path, home: Path) -> None
 
 
 def test_verify_reports_a_mirror_file_that_differs_only_by_content(repo: Path, home: Path) -> None:
-    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-              [("v1", "verify:1", "Verify", DONE)])
+    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     assert verify(run) == []
@@ -252,9 +282,18 @@ def test_verify_reports_a_mirror_file_that_differs_only_by_content(repo: Path, h
 
 
 def test_finalize_refuses_a_live_run(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", RUNNING),
-                   ("v3", "verify:3", "Verify", RUNNING)])
+    d = write_run(
+        home,
+        repo,
+        SESSION_A,
+        "wf_aaaaaaaa-001",
+        "verify-stack",
+        [
+            ("v1", "verify:1", "Verify", DONE),
+            ("v2", "verify:2", "Verify", RUNNING),
+            ("v3", "verify:3", "Verify", RUNNING),
+        ],
+    )
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     assert finalize(run, repo) == (False, "live: 2 of 3 agents still running")
@@ -262,8 +301,9 @@ def test_finalize_refuses_a_live_run(repo: Path, home: Path) -> None:
 
 
 def test_finalize_refuses_a_run_inside_its_quiet_period(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)], quiet=0)
+    d = write_run(
+        home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)], quiet=0
+    )
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     ok, reason = finalize(run, repo)
@@ -275,8 +315,7 @@ def test_finalize_repairs_a_damaged_mirror_copy_then_moves(repo: Path, home: Pat
     """Same size, same mtime, different bytes: mirror() cannot see it and would
     skip the file forever. finalize() re-copies what fails the hash once, and
     the run moves with a whole mirror rather than being refused every turn."""
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     src = d / "journal.jsonl"
@@ -291,9 +330,9 @@ def test_finalize_repairs_a_damaged_mirror_copy_then_moves(repo: Path, home: Pat
 
 
 def test_finalize_refuses_a_mismatch_the_repair_cannot_fix(
-        repo: Path, home: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    repo: Path, home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     (run.mirror / "journal.jsonl").write_text("truncated")
@@ -309,22 +348,29 @@ def test_finalize_rereads_the_run_before_removing_it(repo: Path, home: Path) -> 
     """The discover() snapshot said one agent, finished long ago. A run that
     resumed since then has a new started record; the snapshot alone would
     have let rmtree through."""
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     assert run.started == run.finished == 1
     with (d / "journal.jsonl").open("a") as f:
-        f.write(json.dumps({"type": "started", "key": "v2:v9", "agentId": "v9",
-                            "label": "verify:9", "phase": "Verify"}) + "\n")
+        f.write(
+            json.dumps({"type": "started", "key": "v2:v9", "agentId": "v9", "label": "verify:9", "phase": "Verify"})
+            + "\n"
+        )
     age(d, 1000)  # quiet by mtime, so only the re-read can catch it
     assert finalize(run, repo) == (False, "live: 1 of 2 agents still running")
     assert d.is_dir()
 
 
 def test_finalize_moves_a_complete_quiet_run_and_keeps_the_script(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", FAILED)])
+    d = write_run(
+        home,
+        repo,
+        SESSION_A,
+        "wf_aaaaaaaa-001",
+        "verify-stack",
+        [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", FAILED)],
+    )
     run = one(repo, home, "wf_aaaaaaaa-001")
     hashes = {p.name: sha(p) for p in d.iterdir()}
     hashes["script.js"] = sha(run.script)
@@ -344,8 +390,7 @@ def test_finalize_moves_a_complete_quiet_run_and_keeps_the_script(repo: Path, ho
 
 
 def test_a_symlinked_mirror_is_refused_and_the_session_copy_survives(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     link = repo / "logs" / "workflows" / "wf_aaaaaaaa-001"
     link.parent.mkdir(parents=True)
     link.symlink_to(d)
@@ -360,14 +405,12 @@ def test_a_symlinked_mirror_is_refused_and_the_session_copy_survives(repo: Path,
     assert d.is_dir() and run.source == d
 
     results = sync(repo, home, move=True)
-    assert [(r.copied, r.moved, r.refused) for r in results] == [
-        (0, False, "mirror path is a symlink")]
+    assert [(r.copied, r.moved, r.refused) for r in results] == [(0, False, "mirror path is a symlink")]
     assert d.is_dir() and (d / "journal.jsonl").is_file() and link.is_symlink()
 
 
 def test_a_linked_mirror_root_is_refused_by_resolved_path(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     (repo / "logs").mkdir()
     (repo / "logs" / "workflows").symlink_to(d.parent)
     entry = repo / "logs" / "workflows" / "wf_aaaaaaaa-001"
@@ -378,17 +421,20 @@ def test_a_linked_mirror_root_is_refused_by_resolved_path(repo: Path, home: Path
     assert mirror(run, repo).refused == "mirror path resolves into the session folder"
     assert finalize(run, repo) == (False, "mirror path resolves into the session folder")
     assert d.is_dir() and sorted(p.name for p in d.iterdir()) == [
-        "agent-v1.jsonl", "agent-v1.meta.json", "journal.jsonl"]
+        "agent-v1.jsonl",
+        "agent-v1.meta.json",
+        "journal.jsonl",
+    ]
 
 
 # --- sync and watch ----------------------------------------------------------
 
 
 def test_sync_with_move_reports_each_run(repo: Path, home: Path) -> None:
-    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-              [("v1", "verify:1", "Verify", DONE)])
-    write_run(home, repo, SESSION_B, "wf_bbbbbbbb-002", "impl-runs",
-              [("b1", "impl:workflows", "Implement", RUNNING)], quiet=0)
+    write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
+    write_run(
+        home, repo, SESSION_B, "wf_bbbbbbbb-002", "impl-runs", [("b1", "impl:workflows", "Implement", RUNNING)], quiet=0
+    )
     first = {r.run_id: r for r in sync(repo, home)}
     assert first["wf_aaaaaaaa-001"].copied == 4 and not first["wf_aaaaaaaa-001"].moved
     assert first["wf_bbbbbbbb-002"].copied == 4 and first["wf_bbbbbbbb-002"].note == ""
@@ -399,14 +445,19 @@ def test_sync_with_move_reports_each_run(repo: Path, home: Path) -> None:
     assert not second["wf_bbbbbbbb-002"].moved
     assert second["wf_bbbbbbbb-002"].note == "live: 1 of 1 agents still running"
     assert (repo / "logs" / "workflows" / "wf_aaaaaaaa-001" / "journal.jsonl").is_file()
-    assert not (home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows"
-                / "wf_aaaaaaaa-001").exists()
+    assert not (home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows" / "wf_aaaaaaaa-001").exists()
     assert [r.run_id for r in sync(repo, home, move=True)] == ["wf_bbbbbbbb-002"]
 
 
 def test_watch_prints_only_on_change(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", RUNNING)])
+    d = write_run(
+        home,
+        repo,
+        SESSION_A,
+        "wf_aaaaaaaa-001",
+        "verify-stack",
+        [("v1", "verify:1", "Verify", DONE), ("v2", "verify:2", "Verify", RUNNING)],
+    )
     lines: list[str] = []
     per_round: list[int] = []
 
@@ -429,8 +480,7 @@ def test_watch_prints_only_on_change(repo: Path, home: Path) -> None:
 
 
 def test_watch_announces_a_new_agent_and_a_failure(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     lines: list[str] = []
     rounds = [0]
 
@@ -459,8 +509,9 @@ def test_progress_line_format() -> None:
     agents += [Agent(f"v{i}", f"verify:{i}", "Verify", RUNNING) for i in range(12, 47)]
     agents += [Agent("v47", "verify:2:Cached-prefix-tokens-hold", "Verify", RUNNING)]
     run = Run("wf_7a1bfaf8-4d1", name="commodity-engineering", agents=agents, bytes=16_900_000)
-    assert run.progress_line() == ("wf_7a1bfaf8-4d1 commodity-engineering · Verify 12/48 done "
-                                   "(1 failed) · 16.9 MB · verify:2:Cached-prefix…")
+    assert run.progress_line() == (
+        "wf_7a1bfaf8-4d1 commodity-engineering · Verify 12/48 done (1 failed) · 16.9 MB · verify:2:Cached-prefix…"
+    )
     assert Run("wf_x").progress_line() == "wf_x · launched, no agents yet · 0 B"
 
 
@@ -471,8 +522,7 @@ def test_a_source_moved_away_mid_flight_breaks_nothing(repo: Path, home: Path) -
     """The Stop hook moves finished runs while a `watch` in another terminal
     is still scanning them. Every reader must shrug at a path that was there
     a moment ago."""
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     run = one(repo, home, "wf_aaaaaaaa-001")
     mirror(run, repo)
     shutil.rmtree(d)
@@ -483,8 +533,7 @@ def test_a_source_moved_away_mid_flight_breaks_nothing(repo: Path, home: Path) -
 
 
 def test_watch_survives_a_run_removed_between_rounds(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", DONE)])
     lines: list[str] = []
     rounds = {"n": 0}
 
@@ -503,8 +552,7 @@ def test_watch_is_quiet_while_a_transcript_merely_grows(repo: Path, home: Path) 
     """Every round a live transcript is a few kilobytes longer. That is not
     news; a line per round is a ticker nobody reads. Size is reported only
     when it crosses a step."""
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("v1", "verify:1", "Verify", RUNNING)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("v1", "verify:1", "Verify", RUNNING)])
     lines: list[str] = []
     per_round: list[int] = []
     transcript = d / "agent-v1.jsonl"
@@ -541,8 +589,7 @@ def test_link_points_both_session_directories_at_the_repo(repo: Path, home: Path
     assert [(r.kind, r.state) for r in reports] == [("runs", "created"), ("scripts", "created")]
     runs, scripts = sess / "subagents" / "workflows", sess / "workflows" / "scripts"
     assert runs.is_symlink() and runs.resolve() == (repo / "logs" / "workflows").resolve()
-    assert scripts.is_symlink() and scripts.resolve() == (repo / "logs" / "workflows"
-                                                         / "scripts").resolve()
+    assert scripts.is_symlink() and scripts.resolve() == (repo / "logs" / "workflows" / "scripts").resolve()
     # `workflows/` itself stays a real directory on purpose: Claude Code's
     # retention sweep recurses into it with readdir, which follows a symlinked
     # directory but not a symlinked entry inside one.
@@ -567,8 +614,7 @@ def test_link_is_idempotent(repo: Path, home: Path) -> None:
 
 
 def test_link_refuses_a_session_that_already_holds_runs(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("a1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("a1", "verify:1", "Verify", DONE)])
 
     reports = link(repo, home)
 
@@ -578,8 +624,7 @@ def test_link_refuses_a_session_that_already_holds_runs(repo: Path, home: Path) 
 
 
 def test_link_adopts_runs_and_scripts_and_leaves_the_launch_record(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("a1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("a1", "verify:1", "Verify", DONE)])
     sess = home / "projects" / slug(repo) / SESSION_A
     record = sess / "workflows" / "wf_aaaaaaaa-001.json"
     record.write_text('{"runId":"wf_aaaaaaaa-001","script":"export const meta = {}"}')
@@ -591,8 +636,11 @@ def test_link_adopts_runs_and_scripts_and_leaves_the_launch_record(repo: Path, h
 
     assert {r.state for r in reports} == {"adopted"}
     repo_runs = repo / "logs" / "workflows"
-    moved = {p.name: sha(p) for p in sorted((repo_runs / "wf_aaaaaaaa-001").rglob("*"))
-             if p.is_file() and p.name not in workflows.ADOPTION_EXTRAS}
+    moved = {
+        p.name: sha(p)
+        for p in sorted((repo_runs / "wf_aaaaaaaa-001").rglob("*"))
+        if p.is_file() and p.name not in workflows.ADOPTION_EXTRAS
+    }
     assert moved == before  # byte for byte, not merely present
     assert sha(repo_runs / "scripts" / script.name) == script_sha
     assert (sess / "subagents" / "workflows").is_symlink()
@@ -613,8 +661,9 @@ def test_link_adopts_runs_and_scripts_and_leaves_the_launch_record(repo: Path, h
 
 
 def test_link_refuses_to_adopt_while_an_agent_is_still_running(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "impl-runs",
-                  [("a1", "impl:x", "Implement", RUNNING)], quiet=0)
+    d = write_run(
+        home, repo, SESSION_A, "wf_aaaaaaaa-001", "impl-runs", [("a1", "impl:x", "Implement", RUNNING)], quiet=0
+    )
 
     reports = link(repo, home, adopt=True)
 
@@ -667,8 +716,7 @@ def test_link_refuses_a_target_inside_the_claude_folder(repo: Path, home: Path) 
 
 
 def test_link_dry_run_states_the_facts_and_changes_nothing(repo: Path, home: Path) -> None:
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("a1", "verify:1", "Verify", DONE)])
+    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("a1", "verify:1", "Verify", DONE)])
 
     reports = link(repo, home, dry_run=True)
 
@@ -758,13 +806,14 @@ def test_link_refuses_a_file_it_does_not_recognise(repo: Path, home: Path) -> No
 # --- a run written in place --------------------------------------------------
 
 
-def linked_run(repo: Path, home: Path, run_id: str, name: str,
-               agents: list[tuple[str, str, str, str]], *, quiet: float = 1000.0) -> Path:
+def linked_run(
+    repo: Path, home: Path, run_id: str, name: str, agents: list[tuple[str, str, str, str]], *, quiet: float = 1000.0
+) -> Path:
     """A run as the harness writes it once the session is linked: through the
     session path, landing in the repo."""
     session_folder(home, repo, SESSION_A)
     link(repo, home)
-    d = (home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows" / run_id)
+    d = home / "projects" / slug(repo) / SESSION_A / "subagents" / "workflows" / run_id
     d.mkdir()
     lines = [{"type": "launched"}]
     for aid, label, phase, state in agents:
@@ -775,15 +824,13 @@ def linked_run(repo: Path, home: Path, run_id: str, name: str,
     (d / "journal.jsonl").write_text("".join(json.dumps(r) + "\n" for r in lines))
     scripts = repo / "logs" / "workflows" / "scripts"
     scripts.mkdir(parents=True, exist_ok=True)
-    (scripts / f"{name}-{run_id}.js").write_text(
-        f"export const meta = {{\n  name: '{name}',\n}};\n")
+    (scripts / f"{name}-{run_id}.js").write_text(f"export const meta = {{\n  name: '{name}',\n}};\n")
     age(repo / "logs" / "workflows" / run_id, quiet)
     return repo / "logs" / "workflows" / run_id
 
 
 def test_a_run_written_through_the_link_is_reported_as_in_the_repo(repo: Path, home: Path) -> None:
-    d = linked_run(repo, home, "wf_dddddddd-004", "in-place",
-                   [("d1", "impl:x", "Implement", DONE)])
+    d = linked_run(repo, home, "wf_dddddddd-004", "in-place", [("d1", "impl:x", "Implement", DONE)])
 
     run = one(repo, home, "wf_dddddddd-004")
 
@@ -795,8 +842,7 @@ def test_a_run_written_through_the_link_is_reported_as_in_the_repo(repo: Path, h
 
 
 def test_neither_sync_nor_finalize_touches_a_run_written_in_place(repo: Path, home: Path) -> None:
-    d = linked_run(repo, home, "wf_dddddddd-004", "in-place",
-                   [("d1", "impl:x", "Implement", DONE)])
+    d = linked_run(repo, home, "wf_dddddddd-004", "in-place", [("d1", "impl:x", "Implement", DONE)])
     run = one(repo, home, "wf_dddddddd-004")
 
     assert sync(repo, home, move=True) == []
@@ -837,12 +883,10 @@ def test_the_hook_takes_the_session_folder_from_the_transcript_path(repo: Path, 
     assert got == home / "projects" / slug(repo) / SESSION_B
 
 
-def test_the_hook_falls_back_to_the_session_id_and_gives_up_without_one(
-        repo: Path, home: Path) -> None:
+def test_the_hook_falls_back_to_the_session_id_and_gives_up_without_one(repo: Path, home: Path) -> None:
     mod = hook_module()
 
-    assert mod.session_dir({"session_id": SESSION_B}, home, repo) == (
-        home / "projects" / slug(repo) / SESSION_B)
+    assert mod.session_dir({"session_id": SESSION_B}, home, repo) == (home / "projects" / slug(repo) / SESSION_B)
     assert mod.session_dir({}, home, repo) is None
 
 
@@ -854,8 +898,9 @@ def test_finalize_refuses_even_when_asked_for_no_quiet_period(repo: Path, home: 
     so the quiet period is the only guard left between adoption and an rmtree of
     a directory the harness is still writing to. `--quiet-for 0` asks for that
     guard to be switched off; finalize floors it instead."""
-    d = write_run(home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack",
-                  [("a1", "verify:1", "Verify", DONE)], quiet=0)
+    d = write_run(
+        home, repo, SESSION_A, "wf_aaaaaaaa-001", "verify-stack", [("a1", "verify:1", "Verify", DONE)], quiet=0
+    )
     run = {r.run_id: r for r in discover(repo, home, quiet_for=0.0)}["wf_aaaaaaaa-001"]
     assert run.complete  # complete by the caller's own reckoning
     mirror(run, repo)
@@ -873,8 +918,9 @@ def test_a_linked_session_does_not_erase_another_session_s_copy(repo: Path, home
     still growing under ~/.claude, and stop adoption ever looking at it."""
     session_folder(home, repo, SESSION_B)
     link(repo, home)
-    d = write_run(home, repo, SESSION_A, "wf_dddddddd-004", "in-place",
-                  [("d1", "impl:x", "Implement", RUNNING)], quiet=0)
+    d = write_run(
+        home, repo, SESSION_A, "wf_dddddddd-004", "in-place", [("d1", "impl:x", "Implement", RUNNING)], quiet=0
+    )
     mirror(one(repo, home, "wf_dddddddd-004"), repo)  # copied, not yet moved
 
     found = one(repo, home, "wf_dddddddd-004")
@@ -913,16 +959,14 @@ def test_link_refuses_a_path_that_leads_outside_the_session_folder(repo: Path, h
     assert (outside / "workflows" / "notes.md").is_file()
 
 
-def test_a_run_directory_the_harness_has_not_journalled_yet_is_visible(
-        repo: Path, home: Path) -> None:
+def test_a_run_directory_the_harness_has_not_journalled_yet_is_visible(repo: Path, home: Path) -> None:
     """Before the journal exists there is already a directory and a meta file.
     Calling that "not a run" hides it from `list` and makes adoption refuse the
     whole session for holding something it cannot name."""
     sess = session_folder(home, repo, SESSION_A)
     d = sess / "subagents" / "workflows" / "wf_ffffffff-006"
     d.mkdir(parents=True)
-    (d / "agent-f1.meta.json").write_text(
-        json.dumps({"description": "impl:x", "workflowPhase": "Implement"}))
+    (d / "agent-f1.meta.json").write_text(json.dumps({"description": "impl:x", "workflowPhase": "Implement"}))
 
     run = one(repo, home, "wf_ffffffff-006")
 
@@ -948,9 +992,17 @@ def test_sessions_include_a_project_cwd_session(repo: Path, home: Path) -> None:
     assert {r.session for r in link(repo, home, dry_run=True)} == {SESSION_A, SESSION_B}
 
 
-def test_the_hook_is_silent_unless_a_link_could_not_be_made(
-        repo: Path, home: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """Its stdout goes into the model's context at every session start."""
+def test_the_hook_states_where_this_session_writes(repo: Path, home: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Its stdout goes into the model's context at every session start, so it is
+    one short line — but it is never nothing.
+
+    Silence on success was the earlier contract and it hid the failure that
+    actually happened: a link was refused, the refusal was printed once, and
+    every session afterwards said nothing at all. The repository's position
+    stayed "contained" while the state was "outside", and no one could tell the
+    two apart without running a command they had no reason to run. SC-4 in
+    docs/SESSION-CONTAINMENT.md.
+    """
     mod = hook_module()
     sess = home / "projects" / slug(repo) / SESSION_B
     payload = json.dumps({"session_id": SESSION_B, "cwd": str(repo)})
@@ -960,7 +1012,9 @@ def test_the_hook_is_silent_unless_a_link_could_not_be_made(
     monkey.setattr(mod, "repo_root", lambda _start: repo)
     monkey.setenv("CLAUDE_CONFIG_DIR", str(home))
     assert mod.main() == 0
-    assert capsys.readouterr().out == ""  # created both links, said nothing
+    said = capsys.readouterr().out.strip().splitlines()
+    assert said, "a session that said nothing cannot be told from a broken one"
+    assert said[-1].startswith("files: "), said
     assert (sess / "subagents" / "workflows").is_symlink()
 
     # now make one of them impossible and check the refusal is reported
@@ -969,12 +1023,11 @@ def test_the_hook_is_silent_unless_a_link_could_not_be_made(
     monkey.setattr("sys.stdin", io.StringIO(payload))
     assert mod.main() == 0
     out = capsys.readouterr().out
-    assert "already a link" in out and "written under ~/.claude" in out
+    assert "already a link" in out and "OUTSIDE the repo" in out
     monkey.undo()
 
 
-def test_link_refuses_a_directory_reached_through_a_symlinked_parent(
-        repo: Path, home: Path) -> None:
+def test_link_refuses_a_directory_reached_through_a_symlinked_parent(repo: Path, home: Path) -> None:
     """The boundary check cannot be gated on the leaf existing: a foreign
     directory with no `workflows` child passes every other test and ends at
     symlink_to(), which writes a link into a stranger's directory and then
@@ -991,8 +1044,7 @@ def test_link_refuses_a_directory_reached_through_a_symlinked_parent(
     assert sorted(p.name for p in outside.iterdir()) == ["their-file.txt"]
 
 
-def test_a_session_directory_that_is_a_link_is_not_one_of_ours(
-        repo: Path, home: Path) -> None:
+def test_a_session_directory_that_is_a_link_is_not_one_of_ours(repo: Path, home: Path) -> None:
     """`is_dir()` follows a link, so an entry pointing at an unrelated directory
     would be enumerated as this repo's session and have its contents adopted."""
     elsewhere = repo / "other-agent" / "subagents" / "workflows" / "wf_zzzzzzzz-009"
@@ -1006,14 +1058,13 @@ def test_a_session_directory_that_is_a_link_is_not_one_of_ours(
     assert not (repo / "logs" / "workflows" / "wf_zzzzzzzz-009").exists()
 
 
-def test_discover_prefers_the_session_copy_that_is_still_growing(
-        repo: Path, home: Path) -> None:
+def test_discover_prefers_the_session_copy_that_is_still_growing(repo: Path, home: Path) -> None:
     """Two sessions holding the same run id: one is a stale copy. Reporting the
     stale one hides a directory that is still being written."""
-    write_run(home, repo, SESSION_A, "wf_dddddddd-004", "in-place",
-              [("d1", "impl:x", "Implement", DONE)], quiet=5000)
-    fresh = write_run(home, repo, SESSION_B, "wf_dddddddd-004", "in-place",
-                      [("d1", "impl:x", "Implement", DONE)], quiet=10)
+    write_run(home, repo, SESSION_A, "wf_dddddddd-004", "in-place", [("d1", "impl:x", "Implement", DONE)], quiet=5000)
+    fresh = write_run(
+        home, repo, SESSION_B, "wf_dddddddd-004", "in-place", [("d1", "impl:x", "Implement", DONE)], quiet=10
+    )
 
     run = one(repo, home, "wf_dddddddd-004")
 
