@@ -51,6 +51,11 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
+      # The suite's currency tests compare generated files with the tree; the
+      # files themselves are healed by `agent-context`, not failed on, so the
+      # suite judges a regenerated tree as `agent-context` does (see there).
+      - name: Regenerate generated context
+        run: uv run pf context refresh
       - run: uv run pytest platform/tests -q
       # `platform` only: a group's own code is linted by that group's project
       # workflow, and a platform change should not be blocked by lint debt in a

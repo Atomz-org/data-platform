@@ -60,18 +60,17 @@ while read -r _ local_sha _ remote_sha; do
   status=1
 done
 
-# Generated context, measured before the push rather than after it. The
-# commonest red `agent-context` run is a change that left an index, a map, an
-# MDL manifest or an OKF bundle behind, and it costs a CI round to learn the one
-# command that fixes it. Advisory, never blocking: the render reads this
-# working tree, and an untracked file here that the runner will never see can
-# make a current map look stale. CI is the judge; this is the early warning.
+# Generated context, named before the push. CI regenerates it and no longer
+# fails on it (see agent-context.yml), so this is information, not a gate:
+# committing the regenerated files keeps the diff under review whole and saves
+# the bot a commit on the branch. Never blocking — it renders this working
+# tree, where an untracked file the runner will never see can differ.
 if [ "$status" -eq 0 ] && [ -z "${PF_SKIP_CONTEXT_CHECK:-}" ]; then
   out="$(mktemp)"
   if ! uv run pf context refresh --dry-run >"$out" 2>&1; then
-    echo "pre-push: generated context looks stale — agent-context will fail on:" >&2
+    echo "pre-push: generated files this branch would change (CI regenerates them; not a failure):" >&2
     grep -E '^\s+~ ' "$out" | head -20 >&2 || true
-    echo "pre-push: run 'uv run pf context refresh' and commit the result (pushing anyway)." >&2
+    echo "pre-push: to include them in this push: uv run pf context refresh && commit." >&2
   fi
   rm -f "$out"
 fi
