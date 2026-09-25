@@ -4660,11 +4660,25 @@ def cmd_context_refresh(
     dry_run: bool = typer.Option(
         False, "--dry-run", help="list what would change and exit 1 if anything; write nothing"
     ),
+    paths_to: str = typer.Option(
+        "", "--paths-to", help="also write the changed paths, one per line, repo-relative, to this file"
+    ),
 ) -> None:
-    """Regenerate the memory index, the test index, the repo map and the onboarding guide in one step."""
+    """Regenerate every generated artefact the agent-context checks compare, in one step.
+
+    The memory and test indexes, the repo map, the onboarding guide, the harness
+    configs and maps, and per project the MDL manifest and the OKF bundle
+    projected from its committed graph. Projects are discovered, so adding or
+    removing one needs no change here. The graph itself is `pf kg build`.
+    """
     from pf.agentcontext import refresh
 
-    changed = refresh(root(), dry_run=dry_run)
+    notes: list[str] = []
+    changed = refresh(root(), dry_run=dry_run, notes=notes)
+    for n in notes:
+        console.print(f"[yellow]![/] {escape(n)}")
+    if paths_to:
+        Path(paths_to).write_text("".join(f"{p.relative_to(root()).as_posix()}\n" for p in changed))
     if not changed:
         console.print("[green]✓[/] agent context already current")
         return

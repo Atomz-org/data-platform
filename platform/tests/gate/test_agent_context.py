@@ -28,6 +28,7 @@ import json
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 from conftest import REPO_ROOT
 from pf import harnessmap
@@ -365,6 +366,62 @@ def test_refresh_writes_the_missing_pieces_and_then_nothing(tmp_path: Path) -> N
     assert refresh(root, dry_run=True) == []
 
 
+def test_refresh_heals_what_the_workflow_checks_from_the_graph(tmp_path: Path) -> None:
+    """The MDL manifest and the OKF bundle are checked by agent-context, so refresh regenerates them.
+
+    They were checked and never refreshed, and the workflow's own fix staged a
+    list that did not name them — so a PR that added metrics went red on them
+    with no one-command fix. Deleting both, planting a page the layer does not
+    have, and refreshing must restore exactly the committed bytes.
+    """
+    import shutil
+
+    shutil.copytree(
+        REPO_ROOT / "groups" / "jaffle",
+        tmp_path / "groups" / "jaffle",
+        ignore=shutil.ignore_patterns("target", "dbt_packages", "logs", "*.duckdb*"),
+    )
+    shutil.copytree(REPO_ROOT / "platform" / "okf", tmp_path / "platform" / "okf")
+    (tmp_path / "platform" / "src" / "pf").mkdir(parents=True)
+    pdir = tmp_path / "groups" / "jaffle" / "projects" / "jaffle-shop"
+
+    def ours(paths: list[Path]) -> set[Path]:
+        # The harness maps are stale in any bare tree (no gate, no hooks); the
+        # projections are what this is about.
+        return {p for p in paths if (pdir / "mdl") in p.parents or (pdir / "okf") in p.parents}
+
+    # A page the bundle lost, and one it should not have.
+    page = sorted((pdir / "okf" / "metrics").glob("*.md"))[0]
+    text = page.read_text()
+    page.unlink()
+    stray = pdir / "okf" / "metrics" / "not_in_the_layer.md"
+    stray.write_text("---\nname: gone\n---\n")
+    assert ours(refresh(tmp_path, dry_run=True)) == {page, stray}
+    assert ours(refresh(tmp_path)) == {page, stray}
+    assert page.read_text() == text
+    assert not stray.exists()
+
+    # The manifest, which the bundle is built from — so it is regenerated first
+    # and the bundle, built from the restored bytes, does not move.
+    mdl_json = pdir / "mdl" / "mdl.json"
+    text = mdl_json.read_text()
+    mdl_json.unlink()
+    assert ours(refresh(tmp_path)) == {mdl_json}
+    assert mdl_json.read_text() == text
+    assert ours(refresh(tmp_path, dry_run=True)) == set()
+
+
+def test_refresh_discovers_projects_rather_than_listing_them(tmp_path: Path) -> None:
+    """A project added under groups/ is covered by the next refresh with no edit to the platform."""
+    from pf.agentcontext import projects
+
+    assert projects(tmp_path) == []
+    (tmp_path / "groups" / "g" / "projects" / "p").mkdir(parents=True)
+    (tmp_path / "groups" / "g" / "projects" / ".hidden").mkdir()
+    (tmp_path / "groups" / ".h" / "projects" / "q").mkdir(parents=True)
+    assert projects(tmp_path) == [("g", "p", tmp_path / "groups" / "g" / "projects" / "p")]
+
+
 # --------------------------------------------------------- the guide -------
 _EXTERNAL = re.compile(r'(?:src|href)="https?://([^/"]+)')
 
@@ -589,3 +646,32 @@ def test_harness_maps_are_excluded_from_the_converged_diff() -> None:
         "**/kg/architecture.md",
     ):
         assert f"':(exclude){excluded}'" in diff_line, f"{excluded} must stay excluded from the converged diff"
+
+
+def test_tracked_files_are_found_from_a_linked_worktree_hook(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Git hands a worktree's hooks `GIT_DIR` with no work tree; the harness map must still see tracked files.
+
+    With it inherited, `git ls-files -- .` run from a subdirectory lists nothing
+    under it, every map rendered inside `git commit` differs from the one
+    `pf harness` writes, and the gate denies the commit as stale — in every
+    linked worktree, and only there.
+    """
+    import subprocess
+
+    def git(*args: str, cwd: Path) -> str:
+        return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+
+    main = tmp_path / "main"
+    (main / "groups" / "g").mkdir(parents=True)
+    (main / "groups" / "g" / "f.txt").write_text("x")
+    git("init", "-q", cwd=main)
+    git("add", "-A", cwd=main)
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c", cwd=main)
+    wt = tmp_path / "wt"
+    git("worktree", "add", "-q", "--detach", str(wt), cwd=main)
+
+    base = wt / "groups" / "g"
+    assert harnessmap._tracked(base) == {"f.txt"}
+    # What git exports to a hook in a linked worktree.
+    monkeypatch.setenv("GIT_DIR", git("rev-parse", "--absolute-git-dir", cwd=wt))
+    assert harnessmap._tracked(base) == {"f.txt"}
