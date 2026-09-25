@@ -60,4 +60,20 @@ while read -r _ local_sha _ remote_sha; do
   status=1
 done
 
+# Generated context, measured before the push rather than after it. The
+# commonest red `agent-context` run is a change that left an index, a map, an
+# MDL manifest or an OKF bundle behind, and it costs a CI round to learn the one
+# command that fixes it. Advisory, never blocking: the render reads this
+# working tree, and an untracked file here that the runner will never see can
+# make a current map look stale. CI is the judge; this is the early warning.
+if [ "$status" -eq 0 ] && [ -z "${PF_SKIP_CONTEXT_CHECK:-}" ]; then
+  out="$(mktemp)"
+  if ! uv run pf context refresh --dry-run >"$out" 2>&1; then
+    echo "pre-push: generated context looks stale — agent-context will fail on:" >&2
+    grep -E '^\s+~ ' "$out" | head -20 >&2 || true
+    echo "pre-push: run 'uv run pf context refresh' and commit the result (pushing anyway)." >&2
+  fi
+  rm -f "$out"
+fi
+
 exit "$status"
