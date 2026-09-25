@@ -66,26 +66,18 @@ jobs:
       - name: Lint
         run: uv run ruff check platform/
 
-      # Fails when a test file was added without `pf test index`. The index is
-      # what makes the suite navigable without reading it, and one generated
-      # before a file was added answers "where is that tested" with confident
-      # silence.
-      - name: Test index is current
-        run: uv run pf test check
-
-      # Fails when a memory note was added, removed or re-described without
-      # `pf memory index`. Same reasoning as the test index: an index that
-      # omits a lesson answers "does anyone know about this" with confident
-      # silence, and that is worse than having no index at all.
-      - name: Memory index is current
-        run: uv run pf memory check
-
-      # Fails when the repository's shape changed and `docs/ARCHITECTURE.md`
-      # still describes the old one. A stale map is worse than none: it sends a
-      # reader confidently to a path that moved, which is the cost the map
-      # exists to remove.
-      - name: Architecture map is current
-        run: uv run pf arch check
+      # The test index, memory index and architecture map used to be checked
+      # here as well as in `agent-context`, which runs on every pull request
+      # with no path filter. One unregenerated index then failed both, and the
+      # suite below a third time. `agent-context` owns them now, and heals them.
+      #
+      # The suite still holds currency tests — that each generated file is what
+      # the tree produces — so it runs against a regenerated tree, exactly as
+      # `agent-context` does. There they test what they can still catch: that
+      # `pf context refresh` covers everything they compare, and renders it
+      # deterministically. A stale file the refresh fixes is not a failure.
+      - name: Regenerate generated context
+        run: uv run pf context refresh
 
       # The suite carries its own structural guards — that every test file is
       # committed, that none computes the repo root by counting parents, and

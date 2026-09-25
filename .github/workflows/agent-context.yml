@@ -2,27 +2,41 @@
 #
 # Three tools read three entry points — CLAUDE.md, AGENTS.md (+ GEMINI.md,
 # which imports it), .github/copilot-instructions.md — and all of them send the
-# reader to the same generated context: the memory index, the test index, the
-# repo map. `platform-tests.yml` checks the generated pieces, but only on PRs
-# that touch platform paths; a PR that adds a project model and a memory note
-# under groups/ never ran it. This one has no path filter, because the point
-# is *every* PR: whichever tool wrote the change, the next tool must find the
-# context current.
+# reader to the same generated context: the memory and test indexes, the repo
+# map, the onboarding guide, the harness maps, each project's MDL manifest and
+# OKF bundle. No path filter, because the point is *every* PR.
 #
-# Seven hard steps, one soft. `pf tokens` is soft (a warning, not a failure)
-# because an over-budget card is a decision for a person — trim the card or
-# raise its budget — and a refresh cannot make it. Flip `continue-on-error`
-# off once that decision is made; `platform.yml` still fails on it for
-# platform changes.
+# ## Generated files are healed, not failed
 #
-# `refresh` does what the failure message says, when it can. It commits the
-# regenerated files to a same-repository PR branch — never a fork's, never
-# main — and only with AGENT_CONTEXT_TOKEN, a fine-grained PAT with
-# `contents: write`. GITHUB_TOKEN would push fine, but a push made with it
-# never starts another workflow run, so the fixed commit would sit on the PR
-# with no checks at all, which a required check reads as "waiting" forever.
-# Without the secret the job says so and exits green, and the red `check`
-# above it still tells the author the one command to run.
+# Every one of those generated files is a pure function of the tree, and
+# `pf context refresh` rewrites all of them. Failing a pull request because
+# one was not rewritten was the commonest red run in this repository, and the
+# cheapest to cause: one new test file turned four checks red (this job,
+# `platform-tests`, and three currency tests inside the suite that `platform`
+# and `platform-tests` both run). So the policy is now:
+#
+#   check      regenerates first, then runs every check against the result.
+#              Staleness is a warning with the file list in the run summary;
+#              a check goes red only for what a refresh cannot fix — a pointer
+#              to a section that does not exist, an OKF page naming no graph
+#              node, an over-cap commit, a real test failure.
+#   refresh    (pull requests) pushes the regenerated files to the branch when
+#              AGENT_CONTEXT_TOKEN can push, so the diff under review is
+#              whole. Optional: a token that cannot push is a warning, never
+#              a red check, because `heal-main` makes the outcome the same.
+#   heal-main  (every push to main) regenerates and commits to main with the
+#              workflow's own GITHUB_TOKEN. This is the guarantee: whatever
+#              merged, and in whatever order two pull requests landed, main is
+#              current minutes later, so no branch cut from it inherits a stale
+#              file it did not touch. Its push starts no workflow run — GitHub
+#              does not trigger runs from GITHUB_TOKEN pushes — so it cannot
+#              loop.
+#
+# The trade: a pull request can merge with its generated files unrefreshed,
+# and main describes the previous tree for the minutes `heal-main` takes. Every
+# reader of these files is an agent or a person between sessions, not a build
+# step, so minutes of lag cost nothing; a red X on every PR that adds a test
+# cost a CI round and a context switch each time.
 name: agent-context
 
 on:
@@ -41,6 +55,8 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      stale: ${{ steps.regenerate.outputs.stale }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,6 +77,31 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --frozen
+
+      # Before any check: rewrite every generated file, and say which moved.
+      # The checks below then judge the regenerated tree, so they fail only on
+      # what a refresh cannot fix. The list goes to the run summary and to the
+      # `refresh` job through the `stale` output.
+      - name: Regenerate generated context
+        id: regenerate
+        run: |
+          uv run pf context refresh --paths-to "$RUNNER_TEMP/regenerated.txt"
+          if [ -s "$RUNNER_TEMP/regenerated.txt" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            n=$(wc -l < "$RUNNER_TEMP/regenerated.txt" | tr -d ' ')
+            echo "::warning title=Generated context was out of date::$n generated file(s) differ from what this branch produces. Not a failure — they are regenerated for you (see the run summary)."
+            {
+              echo "## Generated context regenerated in CI"
+              echo
+              echo "These files differ from what this branch produces. The checks below ran against the regenerated versions."
+              echo "They are pushed to this branch when \`AGENT_CONTEXT_TOKEN\` can push, and to \`main\` after merge regardless."
+              echo "To include them yourself: \`uv run pf context refresh\` and commit."
+              echo
+              echo '```'
+              cat "$RUNNER_TEMP/regenerated.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       # The cap that had no second look. `maxFiles` is a *per-run* rule applied
       # to whatever set one call hands the gate, and until this step the only
@@ -136,30 +177,22 @@ jobs:
         run: |
           uv run pf tokens || echo "::warning title=Over budget::a CLAUDE.md or a card is over its token budget — \`uv run pf tokens\` names it; trim it or raise the budget in platform/src/pf/kg/card.py"
 
-      # What a refresh would change, in the run summary — so the author sees
-      # the diff without cloning, whether or not the refresh job may push.
-      - name: What is stale
-        if: failure()
-        run: |
-          {
-            echo "## Agent context is stale"
-            echo
-            echo '`uv run pf context refresh` regenerates:'
-            echo
-            echo '```'
-            uv run pf context refresh --dry-run || true
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
+  # Pushes the files `check` regenerated to a same-repository PR branch —
+  # never a fork's — so the diff under review includes them. It needs
+  # AGENT_CONTEXT_TOKEN rather than GITHUB_TOKEN: a push made with GITHUB_TOKEN
+  # starts no workflow run, so the PR's head would carry no checks at all. Any
+  # failure to push is a warning: `heal-main` regenerates after merge anyway,
+  # and a misconfigured token must not put a red X on every pull request.
   refresh:
     needs: check
     if: >-
-      failure() &&
+      always() &&
+      needs.check.outputs.stale == 'true' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Check for token
         id: guard
@@ -167,10 +200,7 @@ jobs:
           TOKEN: ${{ secrets.AGENT_CONTEXT_TOKEN }}
         run: |
           if [ -z "$TOKEN" ]; then
-            echo "AGENT_CONTEXT_TOKEN is not set — not pushing a refresh. Run"
-            echo "  uv run pf context refresh"
-            echo "locally and commit what it regenerates. To let this job do it,"
-            echo "add a fine-grained PAT with contents: write as AGENT_CONTEXT_TOKEN."
+            echo "::notice title=Not pushing generated context::AGENT_CONTEXT_TOKEN is not set; heal-main regenerates after merge."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
@@ -184,28 +214,15 @@ jobs:
 
       - name: Vendored upstreams
         if: steps.guard.outputs.ready == 'true'
-        run: |
-          for path in $(git config -f .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}'); do
-            git submodule update --init "$path" >/dev/null 2>&1 || true
-          done
+        run: git submodule update --init vendor/okf-weaver >/dev/null 2>&1 || echo "::warning::okf-weaver unreachable; OKF bundles not refreshed"
       - uses: astral-sh/setup-uv@v5
         if: steps.guard.outputs.ready == 'true'
+        with:
+          enable-cache: true
       - run: uv sync --frozen
         if: steps.guard.outputs.ready == 'true'
 
-      # The regenerated files are the commit; nothing else. Staged from the
-      # list `pf context refresh` reports rather than a list kept here: a
-      # hand-kept list had already fallen behind what the check compares (the
-      # MDL manifests and OKF bundles were checked above and never staged),
-      # and every project, group or generated artefact added later would have
-      # needed an edit here to be healed. Deletions ride along — a page the
-      # semantic layer dropped is removed by the refresh and staged by `-A`.
-      #
-      # One commit per slice of at most `maxFiles` paths, so the refresh passes
-      # the same per-commit cap every other commit does, with no exemption.
-      # Harness maps go in the first slice: the gate denies a commit to a scope
-      # while that scope's regenerated map sits unstaged beside it.
-      - name: Refresh and commit
+      - name: Refresh, commit and push
         if: steps.guard.outputs.ready == 'true'
         env:
           PF_AGENT: actions:agent-context
@@ -213,19 +230,80 @@ jobs:
           uv run pf install-hook
           uv run pf context refresh --paths-to "$RUNNER_TEMP/refreshed.txt"
           if [ ! -s "$RUNNER_TEMP/refreshed.txt" ]; then
-            echo "nothing to commit — the check failed on something a refresh cannot fix; read its log"
+            echo "nothing to commit — the branch already holds what it produces"
             exit 0
           fi
           git config user.name "agent-context[bot]"
           git config user.email "agent-context[bot]@users.noreply.github.com"
           cap=$(uv run python -c "from pathlib import Path; from pf.loops.gate import load_policy; print(int(load_policy(Path('.')).get('maxFiles') or 12))")
-          { grep -E '(^|/)HARNESS\.md$' "$RUNNER_TEMP/refreshed.txt" || true
-            grep -vE '(^|/)HARNESS\.md$' "$RUNNER_TEMP/refreshed.txt" || true
-          } | split -l "$cap" - "$RUNNER_TEMP/slice."
-          n=0
-          for slice in "$RUNNER_TEMP"/slice.*; do
-            n=$((n + 1))
-            xargs -a "$slice" git add -A --
-            git commit -m "Refresh agent context ($n)" -m "Regenerated by \`pf context refresh\` in the agent-context workflow, so the next agent — whichever tool — reads context that matches this branch."
+          bash platform/hooks/commit_refreshed.sh "$RUNNER_TEMP/refreshed.txt" "$cap" "Refresh agent context"
+          if ! git push 2>"$RUNNER_TEMP/push.err"; then
+            cat "$RUNNER_TEMP/push.err"
+            echo "::warning title=Could not push generated context::$(tail -1 "$RUNNER_TEMP/push.err"). AGENT_CONTEXT_TOKEN needs Contents: read and write on this repository, owned by the organisation and approved by it. Not a failure: heal-main regenerates after merge."
+            {
+              echo "## Generated context not pushed"
+              echo
+              echo "The push was refused: \`$(tail -1 "$RUNNER_TEMP/push.err")\`."
+              echo "Check the token behind AGENT_CONTEXT_TOKEN: resource owner = the organisation, repository access includes this repository, **Contents: Read and write**, and approved if the organisation requires approval."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # The guarantee. After every merge, main is regenerated and whatever moved is
+  # committed straight to main with the workflow's own token — main has no
+  # branch protection, and a GITHUB_TOKEN push starts no workflow run, so this
+  # cannot trigger itself. If main moved while it worked, it starts again from
+  # the new tip rather than rebasing generated files onto each other.
+  heal-main:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: agent-context-heal-main
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Vendored upstreams
+        run: git submodule update --init vendor/okf-weaver >/dev/null 2>&1 || echo "::warning::okf-weaver unreachable; OKF bundles not refreshed"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+
+      - name: Regenerate, commit and push to main
+        env:
+          PF_AGENT: actions:agent-context
+        run: |
+          uv run pf install-hook
+          git config user.name "agent-context[bot]"
+          git config user.email "agent-context[bot]@users.noreply.github.com"
+          cap=$(uv run python -c "from pathlib import Path; from pf.loops.gate import load_policy; print(int(load_policy(Path('.')).get('maxFiles') or 12))")
+          for attempt in 1 2 3; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            uv run pf context refresh --paths-to "$RUNNER_TEMP/healed.txt"
+            if [ ! -s "$RUNNER_TEMP/healed.txt" ]; then
+              echo "main is current"
+              exit 0
+            fi
+            made=$(bash platform/hooks/commit_refreshed.sh "$RUNNER_TEMP/healed.txt" "$cap" "Heal generated context on main")
+            if git push origin HEAD:main; then
+              {
+                echo "## Healed main"
+                echo
+                echo "$made commit(s) regenerating:"
+                echo '```'
+                cat "$RUNNER_TEMP/healed.txt"
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "main moved during the refresh (attempt $attempt); starting again from the new tip"
           done
-          git push
+          echo "::error title=Could not heal main::three attempts lost the race to newer merges; the next push to main retries"
+          exit 1
