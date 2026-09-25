@@ -24,6 +24,13 @@ GROUP_CLAUDE_BUDGET = 400
 # always-on file that a growing fleet tempts someone to list every group in,
 # and a table there is paid by every tenant's session forever.
 ROUTER_BUDGET = 700
+# The toolkit precedence ladder, platform/toolkits/ROUTING.md. Loaded by every
+# session and by every LLM-backed loop as part of its byte-stable system
+# prefix, so each rule added there is paid on every request in the repository.
+# Sized for the ladder in use (~456 with requirement-pipeline's step 6) plus one
+# more precedence step; the rule after that moves this number in a reviewed
+# pull request that says why, never a quiet edit.
+ROUTING_BUDGET = 500
 
 
 COVERAGE_KINDS = ("feeds", "measures")

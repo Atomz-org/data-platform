@@ -37,6 +37,7 @@ from pf.kg.card import (
     PROJECT_CARD_BUDGET,
     PROJECT_CLAUDE_BUDGET,
     ROUTER_BUDGET,
+    ROUTING_BUDGET,
     estimate_tokens,
     render_group_card,
     render_project_card,
@@ -1655,8 +1656,8 @@ def tokens(
     routing = root() / "platform" / "toolkits" / "ROUTING.md"
     if routing.exists():
         n = _count(routing.read_text(encoding="utf-8"), exact)
-        rows.append(("platform", "ROUTING.md", n, 400, "OK" if n <= 400 else "OVER"))
-        over = over or n > 400
+        rows.append(("platform", "ROUTING.md", n, ROUTING_BUDGET, "OK" if n <= ROUTING_BUDGET else "OVER"))
+        over = over or n > ROUTING_BUDGET
         platform_total += n
 
     from pf.vendor.card import VENDOR_CARD_BUDGET
