@@ -308,9 +308,12 @@ def _tracked(base: Path) -> set[str] | None:
     is a count that differs between the laptop that made the file and the
     runner that checks the map.
     """
+    from pf.gitenv import git_env
+
     proc = subprocess.run(
         ["git", "ls-files", "--cached", "--", "."],
         cwd=str(base),
+        env=git_env(),
         capture_output=True,
         text=True,
         check=False,

@@ -5,6 +5,7 @@ projects only own models.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -199,7 +200,7 @@ def parse(project_dir: str | Path, duckdb_path: str | Path | None = None) -> sub
 
 
 def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = None) -> bool:
-    """Produce `target/manifest.json` if it is not already there.
+    """Produce `target/manifest.json` if it is missing or older than its inputs.
 
     The manifest is where the models, their columns and their lineage come
     from. Everything that reads it treats it as optional and degrades when it is
@@ -231,11 +232,46 @@ def ensure_manifest(project_dir: str | Path, duckdb_path: str | Path | None = No
         if declared > have:
             deps(project_dir, duckdb_path=duckdb_path)
             parse(project_dir, duckdb_path=duckdb_path)
-        elif not manifest_path.exists():
+        elif manifest_is_stale(project_dir):
             parse(project_dir, duckdb_path=duckdb_path)
     except FileNotFoundError:
         pass  # dbt is not installed — the caller degrades as it always did
     return manifest_path.exists()
+
+
+#: What dbt writes or installs under transform/, never what it reads.
+_DBT_OUTPUTS = frozenset({"target", "dbt_packages", "logs"})
+#: What dbt reads: models, sources, semantic models, exposures, macros, seeds.
+_DBT_INPUTS = frozenset({".sql", ".yml", ".yaml", ".csv", ".py", ".md"})
+
+
+def manifest_is_stale(project_dir: str | Path) -> bool:
+    """Is `target/manifest.json` missing, or older than any file dbt parses?
+
+    A manifest that merely exists was enough before, and it is how a laptop's
+    graph came to lack every exposure a branch had added: the manifest was
+    parsed before the exposures were written, `pf kg build` trusted it, and the
+    graph committed from it was stale against the runner's, which has no
+    manifest and parses fresh. Measured over the whole of transform/ rather
+    than dbt_project.yml's path lists, so a project that adds a models path,
+    a semantic layer or a seed directory is covered without naming it here.
+    """
+    transform = Path(project_dir) / "transform"
+    manifest_path = transform / "target" / "manifest.json"
+    if not manifest_path.exists():
+        return True
+    built = manifest_path.stat().st_mtime
+    for here, dirs, files in os.walk(transform):
+        # Pruned, not filtered: dbt_packages alone can hold thousands of files.
+        # Hidden entries too: dbt keeps `.user.yml` beside profiles.yml, and a
+        # file dbt writes on every run must not read as an edit.
+        dirs[:] = [d for d in dirs if not d.startswith(".") and not (here == str(transform) and d in _DBT_OUTPUTS)]
+        for name in files:
+            if name.startswith(".") or Path(name).suffix not in _DBT_INPUTS:
+                continue
+            if (Path(here) / name).stat().st_mtime > built:
+                return True
+    return False
 
 
 def manifest(project_dir: str | Path) -> dict[str, Any]:

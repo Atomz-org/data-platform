@@ -683,8 +683,12 @@ def _tracked(base: Path) -> set[Path] | None:
     """
     if not base.is_dir():
         return None
+    from pf.gitenv import git_env
+
     try:
-        r = subprocess.run(["git", "ls-files", "-z", "--cached", "--", "."], cwd=base, capture_output=True, check=True)
+        r = subprocess.run(
+            ["git", "ls-files", "-z", "--cached", "--", "."], cwd=base, env=git_env(), capture_output=True, check=True
+        )
     except (OSError, subprocess.CalledProcessError):
         return None
     return {(base / p.decode()).resolve() for p in r.stdout.split(b"\0") if p}
