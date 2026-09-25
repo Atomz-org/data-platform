@@ -5,10 +5,10 @@ okf_x_group: commodity
 okf_x_project: commodity-india
 okf_x_platform_bundle: ../../../../../platform/okf/index.md
 okf_x_kg_graph: ../kg/graph.json
-okf_x_kg_models: 14
-okf_x_tables: 8
+okf_x_kg_models: 16
+okf_x_tables: 10
 okf_x_concepts: 2
-okf_x_metrics: 15
+okf_x_metrics: 32
 ---
 
 # commodity/commodity-india
@@ -21,13 +21,15 @@ confidence `0.00` is one the platform does not hold yet; declare it in
 
 The concepts below are the platform's, shared by every sister: [Platform ontology](../../../../../platform/okf/index.md).
 
-Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 14 model(s); the 8 below are the ones the semantic layer projects to BI.
+Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 16 model(s); the 10 below are the ones the semantic layer projects to BI.
 
 # Tables
 
 * [dim_commodities](/tables/dim_commodities.md) — `Commodity` - Every tracked commodity — the group catalog — with this market's facts beside it: the unit the local market quotes in and the duty in force today.
 * [fct_commodity_prices_daily](/tables/fct_commodity_prices_daily.md) — `PriceObservation` - Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.
+* [fct_commodity_trading_signals_daily](/tables/fct_commodity_trading_signals_daily.md) — `PriceObservation` - Timing signals on the USD benchmark — where a price sits in its own recent history, not what it costs. Every measure is unit-free, so unlike the price itself these are safe to compare across commodities.
 * [fct_fx_rates_daily](/tables/fct_fx_rates_daily.md) - Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.
+* [fct_landed_price_attribution_daily](/tables/fct_landed_price_attribution_daily.md) — `PriceObservation` - Why the landed rupee price moved over 20 trading days, split into the benchmark, the rupee and duty. An Indian buyer decides on landed rupees, and a USD-only signal cannot tell a commodity move from a currency move — which is the difference between a buying decision and a treasury one.
 * [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md) — `PriceObservation` - Import landed price per commodity per day in this market's currency per its market unit: benchmark × USD/local × (1 + customs duty). The benchmark stands in for CIF value — freight, insurance, landing charges and local taxes are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters. The same shape in every sister; `market_code` and `currency_code` say whose it is.
 * [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md) — `PriceObservation` - The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot — GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks — not an MCX quote.
 * [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md) — `PriceObservation` - Landed gold and silver in Indian retail conventions — per gram, 10 g and kg, by purity.
@@ -41,18 +43,35 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 
 # Metrics
 
+* [attribution_days](/metrics/attribution_days.md) - 
 * [avg_benchmark_price_usd](/metrics/avg_benchmark_price_usd.md) - Mean daily settlement price, USD per quote unit. Group by commodity.
 * [avg_duty_local](/metrics/avg_duty_local.md) - Mean customs duty per market unit, in this market's currency. Group by commodity.
+* [avg_fx_share_of_move](/metrics/avg_fx_share_of_move.md) - Share of the 20-day landed move attributable to USD/INR rather than the benchmark or duty. High means the commodity call and the currency call have come apart, and timing the commodity will not recover the cost.
 * [avg_landed_price_local](/metrics/avg_landed_price_local.md) - Mean import landed price in this market's currency per its market unit (benchmark × USD/local × (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.
+* [avg_momentum_20d](/metrics/avg_momentum_20d.md) - Mean 20-day rate of change. Group by commodity.
+* [avg_range_position](/metrics/avg_range_position.md) - 0 at the 52-week low, 1 at the high. Group by commodity — averaging this across commodities is a number about the basket, not about anything tradable.
+* [avg_realised_vol](/metrics/avg_realised_vol.md) - 20-day dispersion annualised on 252 trading days. Group by commodity.
 * [avg_usd_fx_rate](/metrics/avg_usd_fx_rate.md) - Mean units of this market's currency per US dollar, as applied to landed prices; 1 for a USD market.
+* [benchmark_contribution_total](/metrics/benchmark_contribution_total.md) - 
 * [benchmark_price_days](/metrics/benchmark_price_days.md) - Days with a benchmark price. Group by commodity to spot feed gaps.
 * [benchmark_price_mom_change](/metrics/benchmark_price_mom_change.md) - Month-over-month change in the mean benchmark price. Group by commodity.
 * [benchmark_price_usd_total](/metrics/benchmark_price_usd_total.md) - Building block for avg_benchmark_price_usd. A sum of prices means nothing on its own.
 * [contracts_traded](/metrics/contracts_traded.md) - Front-month futures volume from live feeds. Group by commodity.
+* [duty_contribution_total](/metrics/duty_contribution_total.md) - 
 * [duty_local_total](/metrics/duty_local_total.md) - Building block for avg_duty_local. A sum of per-unit duties means nothing on its own.
+* [fx_contribution_total](/metrics/fx_contribution_total.md) - Signed rupee contribution summed over days. Group by commodity.
+* [fx_share_days](/metrics/fx_share_days.md) - 
+* [fx_share_total](/metrics/fx_share_total.md) - 
 * [landed_price_days](/metrics/landed_price_days.md) - Days a landed price exists — never for commodities this market prohibits importing.
 * [landed_price_local_total](/metrics/landed_price_local_total.md) - Building block for avg_landed_price_local. A sum of prices means nothing on its own.
 * [landed_price_mom_change](/metrics/landed_price_mom_change.md) - Month-over-month change in the mean landed price; moves with both the benchmark and the currency.
+* [momentum_20d_days](/metrics/momentum_20d_days.md) - 
+* [momentum_20d_total](/metrics/momentum_20d_total.md) - 
 * [period_high_price_usd](/metrics/period_high_price_usd.md) - Highest traded price in the period, USD per quote unit. Group by commodity.
 * [period_low_price_usd](/metrics/period_low_price_usd.md) - Lowest traded price in the period, USD per quote unit. Group by commodity.
+* [range_position_days](/metrics/range_position_days.md) - 
+* [range_position_total](/metrics/range_position_total.md) - Sum of daily range positions. A component of avg_range_position, not a figure to read.
+* [realised_vol_days](/metrics/realised_vol_days.md) - 
+* [realised_vol_total](/metrics/realised_vol_total.md) - 
+* [signal_days](/metrics/signal_days.md) - Days with a signal reading. The denominator every mean below divides by.
 * [usd_fx_rate_total](/metrics/usd_fx_rate_total.md) - Building block for avg_usd_fx_rate — the rate each landed price actually used.

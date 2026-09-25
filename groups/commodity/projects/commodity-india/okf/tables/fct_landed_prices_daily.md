@@ -61,7 +61,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 # Lineage
 
 * **Upstream:** `int_commodity_prices__usd`, `int_fx_rates__daily`
-* **Downstream:** [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md), [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md), [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md)
+* **Downstream:** [fct_landed_price_attribution_daily](/tables/fct_landed_price_attribution_daily.md), [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md), [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md), [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md)
 * **Read by:** `report_index` (data-platform), `report_landed_cost` (data-platform), `report_metrics_avg_duty_local` (data-platform), `report_metrics_avg_landed_price_local` (data-platform), `report_metrics_avg_usd_fx_rate` (data-platform), `report_metrics_duty_local_total` (data-platform), and 3 more
 
 # Governance

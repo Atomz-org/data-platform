@@ -54,7 +54,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 # Lineage
 
 * **Upstream:** `int_commodity_prices__usd`
-* **Downstream:** [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md)
+* **Downstream:** [fct_commodity_trading_signals_daily](/tables/fct_commodity_trading_signals_daily.md), [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md)
 * **Read by:** `commodity_price_board` (Commodity Research), `report_index` (data-platform), `report_landed_cost` (data-platform), `report_metrics_avg_benchmark_price_usd` (data-platform), `report_metrics_benchmark_price_days` (data-platform), `report_metrics_benchmark_price_usd_total` (data-platform), and 3 more
 
 # Governance
