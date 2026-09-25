@@ -189,3 +189,38 @@ def test_a_package_wired_after_the_last_parse_is_installed(
     assert _wire_group_package(tmp_path, "g", project)
     assert ensure_manifest(project)
     assert (project / "transform" / "dbt_packages" / "g_shared" / "dbt_project.yml").exists()
+
+
+def test_a_manifest_older_than_what_dbt_reads_is_stale(tmp_path: Path) -> None:
+    """A manifest that merely exists is not current: an exposure written after it must force a parse.
+
+    Trusting any existing manifest is how a laptop committed a graph missing
+    every exposure its branch added, while the runner — which has no manifest
+    and parses fresh — found them all and failed the PR.
+    """
+    from pf.runtime.dbt_runtime import manifest_is_stale
+
+    transform = tmp_path / "transform"
+    (transform / "models").mkdir(parents=True)
+    model = transform / "models" / "m.sql"
+    model.write_text("select 1")
+    assert manifest_is_stale(tmp_path), "no manifest at all"
+
+    manifest = transform / "target" / "manifest.json"
+    manifest.parent.mkdir()
+    manifest.write_text("{}")
+    os.utime(model, (1, 1))
+    assert not manifest_is_stale(tmp_path)
+
+    later = manifest.stat().st_mtime + 10
+    # What dbt writes or installs is never an edit.
+    for out in ("target/run_results.json", "dbt_packages/p/models/x.sql", "logs/dbt.log", ".user.yml"):
+        (transform / out).parent.mkdir(parents=True, exist_ok=True)
+        (transform / out).write_text("x")
+        os.utime(transform / out, (later, later))
+    assert not manifest_is_stale(tmp_path)
+
+    exposures = transform / "models" / "_exposures.yml"
+    exposures.write_text("exposures: []")
+    os.utime(exposures, (later, later))
+    assert manifest_is_stale(tmp_path)
