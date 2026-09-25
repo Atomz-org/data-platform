@@ -77,6 +77,9 @@ import yaml
 VENDOR_SRC = Path("vendor") / "okf-weaver" / "backend" / "src"
 OKF_REL = "okf"
 PLATFORM_REL = Path("platform") / OKF_REL
+#: The page directories a build owns: a page in one that the layer no longer
+#: produces is removed by a build and named stale by a check.
+MANAGED_DIRS: tuple[str, ...] = ("tables", "concepts", "metrics", "roles", "relations")
 PLATFORM_NAME = "Platform ontology"
 #: The tracked graph export, beside the bundle in the same project.
 KG_REL = Path("kg") / "graph.json"
@@ -1080,7 +1083,7 @@ def _sync(out: Path, files: dict[str, str]) -> tuple[list[Path], list[Path]]:
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(text, encoding="utf-8")
             written.append(p)
-    for sub in ("tables", "concepts", "metrics", "roles", "relations"):
+    for sub in MANAGED_DIRS:
         d = out / sub
         if not d.is_dir():
             continue
@@ -1172,7 +1175,7 @@ def _drift(out: Path, files: dict[str, str]) -> list[str]:
             problems.append(f"{rel}: missing")
         elif p.read_text(encoding="utf-8") != text:
             problems.append(f"{rel}: stale")
-    for sub in ("tables", "concepts", "metrics", "roles", "relations"):
+    for sub in MANAGED_DIRS:
         d = out / sub
         for p in sorted(d.glob("*.md")) if d.is_dir() else []:
             if f"{sub}/{p.name}" not in files:

@@ -38,8 +38,15 @@ command whichever piece went stale. Token budgets are deliberately not here:
 `pf tokens` owns them, and an over-budget card is a decision for a person,
 not something a refresh can make.
 
-The `agent-context` workflow runs `check` and the three drift checks on every
-pull request — no path filter, because the point is *every* PR.
+`refresh` also regenerates what each project projects from its committed
+graph — `mdl/mdl.json` and the OKF bundles — because the workflow checks them
+too, and a refresh that fixes some of what the check names leaves the author
+to find the rest one red run at a time. Projects are discovered on every run,
+so a group, a project or a feature added or removed needs no edit here.
+
+The `agent-context` workflow runs `check` and the drift checks on every pull
+request — no path filter, because the point is *every* PR — and its `refresh`
+job commits exactly the paths `refresh` reports.
 """
 
 from __future__ import annotations
@@ -171,13 +178,51 @@ def check(root: str | Path) -> list[str]:
     return problems
 
 
-def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
+def projects(root: str | Path) -> list[tuple[str, str, Path]]:
+    """Every `(group, project, directory)` under `groups/`, discovered, never listed.
+
+    The same walk as `pf.cli.all_projects`, from an explicit root: a group or a
+    project added or removed changes what `refresh` covers without an edit here.
+    """
+    gdir = Path(root) / "groups"
+    out: list[tuple[str, str, Path]] = []
+    if not gdir.is_dir():
+        return out
+    for g in sorted(x for x in gdir.iterdir() if x.is_dir() and not x.name.startswith(".")):
+        pdir = g / "projects"
+        if pdir.is_dir():
+            found = sorted(x for x in pdir.iterdir() if x.is_dir() and not x.name.startswith("."))
+            out.extend((g.name, p.name, p) for p in found)
+    return out
+
+
+def refresh(root: str | Path, *, dry_run: bool = False, notes: list[str] | None = None) -> list[Path]:
     """Regenerate every generated piece of context and return what changed.
 
     With `dry_run`, nothing is written and the return value is what *would*
     change — how CI tells "stale" from "current" without touching the tree.
     Pieces whose inputs are not present in this tree are skipped, so a bare
     skeleton (a test's, a new clone's) refreshes what it has and no more.
+
+    Everything the `agent-context` workflow compares is regenerated here, in
+    the order each reads the last: what each project projects from its
+    committed graph (the MDL manifest, then the OKF bundle, which reads it),
+    then the repo-wide pieces that count across projects, and the harness maps
+    last because they read all of it. So "stale" has one fix, whichever check
+    said so and whichever project, feature or group the change added or
+    removed — projects are discovered, never listed.
+
+    The graph itself is not rebuilt. `kg/graph.json` is built from a dbt
+    parse and, where there is one, the warehouse, so a rebuild on a machine
+    without the warehouse is a *poorer* graph rather than a fresher one, and
+    everything projected from it would lose pages with it. `pf kg build` owns
+    the graph; this regenerates what is derived from the committed one, which
+    is exactly what the checks compare. Each project's `kg/architecture.md` is
+    left to `pf arch` for the same reason: it counts from `kg/graph.duckdb`,
+    which nothing commits.
+
+    `notes`, when given, collects what could not be refreshed in this tree and
+    why — a piece whose inputs are absent is skipped, never failed silently.
     """
     root = Path(root)
     changed: list[Path] = []
@@ -189,6 +234,54 @@ def refresh(root: str | Path, *, dry_run: bool = False) -> list[Path]:
         if not dry_run:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content, encoding="utf-8")
+
+    def remove(path: Path) -> None:
+        changed.append(path)
+        if not dry_run:
+            path.unlink()
+
+    targets = projects(root)
+
+    # What each project projects from its committed graph. The same builder
+    # the check compares against — `tracked=True`, as `pf semantic mdl --check`
+    # uses — so a refresh cannot write what the check would then call stale.
+    if targets:
+        import json
+
+        from pf.projections import mdl
+
+        for g, p, d in targets:
+            if (d / "kg" / "graph.json").is_file():
+                built = mdl.build_manifest(d, g, p, tracked=True)
+                write(d / "mdl" / "mdl.json", json.dumps(built, indent=2) + "\n")
+
+    # The OKF bundles, every tier `pf tool okf check --all` judges: the
+    # platform's, each group that has projects, each project. A page the layer
+    # no longer has is removed, exactly as `pf tool okf build` does.
+    if targets and (root / "platform" / "src" / "pf").is_dir():
+        from pf.projections import okf
+
+        def bundle(out: Path, files: dict[str, str]) -> None:
+            for rel, text in files.items():
+                write(out / rel, text)
+            for sub in okf.MANAGED_DIRS:
+                d = out / sub
+                for page in sorted(d.glob("*.md")) if d.is_dir() else []:
+                    if f"{sub}/{page.name}" not in files:
+                        remove(page)
+
+        # The bundle's schema is the vendored weaver's; without the submodule
+        # there is nothing to render against. Said, not swallowed — a refresh
+        # that quietly did less than the check compares is the gap this closes.
+        try:
+            bundle(root / okf.PLATFORM_REL, okf.build_platform(root))
+            for g in sorted({g for g, _, _ in targets}):
+                bundle(okf.group_bundle(root, g), okf.build_group(root, g))
+            for g, p, d in targets:
+                bundle(d / okf.OKF_REL, okf.build_project(root, g, p))
+        except okf.NotVendored as exc:
+            if notes is not None:
+                notes.append(f"OKF bundles not refreshed: {exc}")
 
     from pf import memory
 
