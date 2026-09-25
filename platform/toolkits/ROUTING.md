@@ -15,6 +15,9 @@ governed metric question with ad-hoc SQL.
 4. **Cross-sister** → the `_rollup` project only, via ATTACH READ_ONLY. Never
    read a sister project's files.
 5. **Data does not exist yet** → `dlt-ingest`.
+6. **A whole requirement** (a Confluence page describing a KPI, report or data
+   product to build) → `requirement-pipeline: build-from-requirement`. It
+   routes each layer back to the toolkits above. Do not start at step 5.
 
 Raw SQL that recomputes a defined metric is a bug, not a shortcut.
 

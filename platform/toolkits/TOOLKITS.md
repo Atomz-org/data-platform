@@ -121,6 +121,14 @@ Precedence between toolkits is in `ROUTING.md`.
   `dignified-python`
   - Match the surrounding code's naming, comment density and idiom rather than importing a personal style.
 
+## requirement-pipeline — A business requirement in Confluence to build end to end: raw, staging, intermediate, marts, metrics, report, orchestration, catalogue.
+  `build-from-requirement`
+  - The spec is the contract: extract once into `spec.yaml`, cite the page for every field, and record every unknown as an open question, never a guess.
+  - Orchestrates; never re-derives. Every phase routes to the toolkit skill that owns it (`references/skill-map.md`), and the validator prints that routing per phase for the spec at hand.
+  - Reuse before build: `answer-with-metrics` and the graph first. `validate_spec.py --project-dir` marks each artefact create / reuse / modify, and only the phases that touch one run.
+  - Any `modify` captures a recce baseline before the change and diffs it at hand-off. Read-only review agents (`sql-reviewer`, `semantic-conformance`, `impact-verifier`, `secrets-auditor`) check each layer.
+  - Stop at the three checkpoints (spec, landed data, hand-off). A blocking open question ends an autonomous run with a report.
+
 ## viz-standards — Any chart or diagram — an Evidence page, mermaid in a PR comment or doc, a plot in a notebook.
   `charts-and-diagrams`
   - Pick the form first and the colour last; no palette rescues the wrong form.
