@@ -1011,11 +1011,27 @@ def test_the_hook_states_where_this_session_writes(repo: Path, home: Path, capsy
     monkey.setattr("sys.stdin", io.StringIO(payload))
     monkey.setattr(mod, "repo_root", lambda _start: repo)
     monkey.setenv("CLAUDE_CONFIG_DIR", str(home))
+    # Pinned, not inherited: whether the `just claude` hint is printed depends
+    # on it, and a laptop started with `just claude` has it set while a runner
+    # does not — so the same assertion passed locally and failed in CI.
+    monkey.delenv("CLAUDE_CODE_TMPDIR", raising=False)
     assert mod.main() == 0
     said = capsys.readouterr().out.strip().splitlines()
     assert said, "a session that said nothing cannot be told from a broken one"
-    assert said[-1].startswith("files: "), said
+    assert any(line.startswith("files: ") for line in said), said
     assert (sess / "subagents" / "workflows").is_symlink()
+    # A live session's tasks/ stays where the harness put it (SC-6), so a
+    # session not started with `just claude` is told how to keep it inside.
+    assert "just claude" in said[-1], said
+
+    # Started with `just claude`, the hint is already in force and not repeated:
+    # the verdict is the last word.
+    monkey.setenv("CLAUDE_CODE_TMPDIR", str(repo / ".tmp"))
+    monkey.setattr("sys.stdin", io.StringIO(payload))
+    assert mod.main() == 0
+    said = capsys.readouterr().out.strip().splitlines()
+    assert said[-1].startswith("files: "), said
+    monkey.delenv("CLAUDE_CODE_TMPDIR")
 
     # now make one of them impossible and check the refusal is reported
     (sess / "subagents" / "workflows").unlink()
