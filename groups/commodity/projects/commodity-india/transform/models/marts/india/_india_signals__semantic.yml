@@ -1,0 +1,177 @@
+version: 2
+# India's own semantic layer, over India's own marts.
+#
+# Deliberately not in `models/semantic/`: that path is conformed, compared
+# byte-for-byte across sisters by `test_conformed_models_are_identical`, and a
+# metric defined there must mean the same thing in every market. A stance and an
+# FX attribution are this desk's judgement, so they live where a sister is free
+# not to have them.
+#
+# The measure rules from the conformed layer still apply, because they are about
+# arithmetic rather than scope: every measure is a sum, count, max or min that a
+# ratio metric divides at query grain — never `average`, which a page cannot
+# re-aggregate when it rolls days into months. `commodity_id` is the first
+# categorical dimension on each fact, so a query groups per commodity and never
+# averages a signal across commodities whose units differ (ADR-0003).
+
+semantic_models:
+  - name: commodity_trading_signals
+    description: Daily timing signals on the USD benchmark. Unit-free, so comparable across commodities.
+    model: ref('fct_commodity_trading_signals_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: trading_signal, type: primary, expr: price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: stance, type: categorical}
+      - {name: ma_regime, type: categorical}
+      - {name: ma_crossover, type: categorical}
+      - {name: volatility_regime, type: categorical}
+      - {name: price_basis, type: categorical}
+    measures:
+      - {name: range_position_sum, agg: sum, expr: pct_of_52w_range}
+      - {name: range_position_count, agg: count, expr: pct_of_52w_range}
+      - {name: realised_vol_sum, agg: sum, expr: realised_vol_20d}
+      - {name: realised_vol_count, agg: count, expr: realised_vol_20d}
+      - {name: momentum_20d_sum, agg: sum, expr: momentum_20d_pct}
+      - {name: momentum_20d_count, agg: count, expr: momentum_20d_pct}
+      # Counted off price_id rather than a flag, so the denominator is days and
+      # the filter that selects a stance is the caller's, not the measure's.
+      - {name: signal_days, agg: count, expr: price_id}
+
+  - name: landed_price_attribution
+    description: Why the landed rupee price moved over 20 trading days — benchmark, currency, duty.
+    model: ref('fct_landed_price_attribution_daily')
+    defaults:
+      agg_time_dimension: price_date
+    entities:
+      - {name: attribution, type: primary, expr: price_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: price_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: commodity_id, type: categorical}
+      - {name: market_code, type: categorical}
+      - {name: currency_code, type: categorical}
+      - {name: primary_driver, type: categorical}
+      - {name: is_duty_rate_confirmed, type: categorical}
+    measures:
+      - {name: fx_share_sum, agg: sum, expr: fx_share_of_move}
+      - {name: fx_share_count, agg: count, expr: fx_share_of_move}
+      - {name: fx_contribution_sum, agg: sum, expr: fx_contribution_pct}
+      - {name: benchmark_contribution_sum, agg: sum, expr: benchmark_contribution_pct}
+      - {name: duty_contribution_sum, agg: sum, expr: duty_contribution_pct}
+      - {name: attribution_days, agg: count, expr: price_id}
+
+metrics:
+  - name: signal_days
+    label: Signal Days
+    description: Days with a signal reading. The denominator every mean below divides by.
+    type: simple
+    type_params: {measure: signal_days}
+
+  - name: range_position_total
+    label: Range Position (component)
+    description: Sum of daily range positions. A component of avg_range_position, not a figure to read.
+    type: simple
+    type_params: {measure: range_position_sum}
+
+  - name: range_position_days
+    label: Days With a Range Position
+    type: simple
+    type_params: {measure: range_position_count}
+
+  - name: avg_range_position
+    label: Avg Position in 52-Week Range
+    description: >
+      0 at the 52-week low, 1 at the high. Group by commodity — averaging this
+      across commodities is a number about the basket, not about anything
+      tradable.
+    type: ratio
+    type_params:
+      numerator: range_position_total
+      denominator: range_position_days
+
+  - name: realised_vol_total
+    label: Realised Volatility (component)
+    type: simple
+    type_params: {measure: realised_vol_sum}
+
+  - name: realised_vol_days
+    label: Days With a Volatility Reading
+    type: simple
+    type_params: {measure: realised_vol_count}
+
+  - name: avg_realised_vol
+    label: Avg Realised Volatility (annualised)
+    description: 20-day dispersion annualised on 252 trading days. Group by commodity.
+    type: ratio
+    type_params:
+      numerator: realised_vol_total
+      denominator: realised_vol_days
+
+  - name: momentum_20d_total
+    label: 20-Day Momentum (component)
+    type: simple
+    type_params: {measure: momentum_20d_sum}
+
+  - name: momentum_20d_days
+    label: Days With a Momentum Reading
+    type: simple
+    type_params: {measure: momentum_20d_count}
+
+  - name: avg_momentum_20d
+    label: Avg 20-Day Momentum
+    description: Mean 20-day rate of change. Group by commodity.
+    type: ratio
+    type_params:
+      numerator: momentum_20d_total
+      denominator: momentum_20d_days
+
+  - name: attribution_days
+    label: Attribution Days
+    type: simple
+    type_params: {measure: attribution_days}
+
+  - name: fx_share_total
+    label: FX Share (component)
+    type: simple
+    type_params: {measure: fx_share_sum}
+
+  - name: fx_share_days
+    label: Days With an FX Share
+    type: simple
+    type_params: {measure: fx_share_count}
+
+  - name: avg_fx_share_of_move
+    label: Avg Rupee Share of the Move
+    description: >
+      Share of the 20-day landed move attributable to USD/INR rather than the
+      benchmark or duty. High means the commodity call and the currency call have
+      come apart, and timing the commodity will not recover the cost.
+    type: ratio
+    type_params:
+      numerator: fx_share_total
+      denominator: fx_share_days
+
+  - name: fx_contribution_total
+    label: FX Contribution (component)
+    description: Signed rupee contribution summed over days. Group by commodity.
+    type: simple
+    type_params: {measure: fx_contribution_sum}
+
+  - name: benchmark_contribution_total
+    label: Benchmark Contribution (component)
+    type: simple
+    type_params: {measure: benchmark_contribution_sum}
+
+  - name: duty_contribution_total
+    label: Duty Contribution (component)
+    type: simple
+    type_params: {measure: duty_contribution_sum}

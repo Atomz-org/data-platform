@@ -157,7 +157,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 | dbt project | `transform/` | targets dev `duckdb`, ci `duckdb`, prod `snowflake`, base `duckdb`; `target/` and `dbt_packages/` denied; bound to its manifest: `okf`, `openmetadata`, `recce`, `wren` |
 | semantic layer | `transform/models/semantic/` | MetricFlow metrics, projected to `mdl/mdl.json` (denied, carried) by `pf semantic mdl`; queried by `mf`, `pf ask` and the `query_metrics` MCP tool |
 | knowledge graph | `kg/` | `graph.json` tracked and `graph.duckdb` denied (`pf kg build`); `context_card.md` denied (`pf kg card`); `architecture.md` carried (`pf arch`); CI `kg-current` and `architecture` |
-| Evidence report | `reporting/` | its own [`HARNESS.md`](reporting/HARNESS.md); 17 exposures reach its pages |
+| Evidence report | `reporting/` | its own [`HARNESS.md`](reporting/HARNESS.md); 34 exposures reach its pages |
 | evals | `evals/cases/` | hand-written cases tracked; `generated/` ignored and denied |
 | governance | `governance/`, `air.yaml`, `decisions/` | the policy overlay and the AIR declaration are impact-gated; the register is denied; decisions are free to write |
 | memory | `.memory/notes/` | free to write; `pf memory add groups/commodity/projects/commodity-india …` |
