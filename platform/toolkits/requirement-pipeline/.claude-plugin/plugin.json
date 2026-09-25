@@ -1,0 +1,9 @@
+{
+  "name": "requirement-pipeline",
+  "version": "0.1.0",
+  "description": "Platform toolkit: a Confluence business requirement, built end to end — dlt raw, dbt staging/intermediate/marts, MetricFlow, Evidence, Dagster, OpenMetadata",
+  "author": {
+    "name": "Suresh Swaminathan",
+    "email": "sureshswaminathan.96@gmail.com"
+  }
+}

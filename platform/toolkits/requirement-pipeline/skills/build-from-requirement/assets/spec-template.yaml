@@ -1,0 +1,85 @@
+# Requirement spec — copy to groups/<g>/projects/<p>/requirements/<REQ>/spec.yaml
+# Field rules: references/requirement-spec.md. Every filled leaf gets a `from:`
+# naming where on the Confluence page it came from; unknown → null + open question.
+spec_version: 1
+
+requirement:
+  id: REQ-<page_id>
+  title: null
+  summary: null
+  status: draft                     # draft → confirmed at Checkpoint 1
+  source: {system: confluence, page_id: null, version: null, url: null}
+  owner: {name: null, email: null}
+  links: []                         # Jira keys
+  out_of_scope: []
+
+target: {group: null, project: null}
+
+concepts: []
+#  - {name: Order, exists: true, identity: "order number", from: "§Definitions"}
+
+sources: []
+#  - name: <source>
+#    kind: rest_api | sql_database | filesystem
+#    connection: {base_url: null, secret_ref: null}
+#    freshness: {warn_after: 24h, error_after: 48h}
+#    sample: null                   # a sample file the page attaches → read-file profiles it
+#    resources:
+#      - name: <resource>
+#        endpoint: null             # or table: / glob:
+#        write_disposition: merge   # append | merge | replace
+#        primary_key: [id]
+#        incremental: {cursor: updated_at, initial_value: null, lag: 1h}
+#        concept: <Concept>
+#        grain: null
+#        roles: {id: natural_key}
+#        links: {}
+#        from: null
+
+business_rules: []
+#  - id: BR-1
+#    statement: null
+#    layer: intermediate            # staging | intermediate | mart | metric
+#    implemented_in: []
+#    test: {type: unit_test}        # choose-a-test: data_test | expectation | unit_test | contract | metric_filter | anomaly_monitor
+#    reference_sql: null            # {dialect: snowflake, sql: "...", from: "§Logic"} — evidence of intent, not code
+#    from: null
+
+models:
+  intermediate: []
+  #  - {name: int_<entity>__<verb>, description: null, inputs: [], rules: [], from: null}
+  marts: []
+  #  - name: fct_<events>
+  #    kind: fact                   # fact | dimension | report
+  #    grain: null
+  #    concept: null
+  #    inputs: []
+  #    rules: []
+  #    columns: [{name: null, role: null, description: null}]
+
+metrics: []
+#  - name: null
+#    label: null
+#    description: null
+#    type: simple                   # simple | ratio | derived | cumulative | conversion
+#    mart: null
+#    measure: {agg: sum, expr: null}
+#    filter: null
+#    time_dimension: null
+#    dimensions: []
+#    owner: null
+#    rules: []
+#    from: null
+
+reports: []
+#  - {page: null, question: null, audience: null, metrics: [], grain: month, filters: []}
+
+schedule: {cron: null, timezone: UTC, partitioning: none, backfill_from: null, sla: null}
+
+catalog: {domain: null, data_product: null, owners: [], tier: null, glossary_terms: [], pii: []}
+
+acceptance: []
+#  - {id: AC-1, statement: null, check: {metric: null, grain: month, expect: {between: [0, 1]}}}
+
+open_questions: []
+#  - {id: Q-1, question: null, blocking: true, ask: null, answer: null, answer_from: null}

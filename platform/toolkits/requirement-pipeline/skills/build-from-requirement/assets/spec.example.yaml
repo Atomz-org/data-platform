@@ -1,0 +1,106 @@
+# A filled spec for a generic requirement, "Online order revenue".
+# Domain-neutral on purpose: it is the fixture the validator's tests run against,
+# and the shape an agent should aim for. It names no real group or project.
+spec_version: 1
+
+requirement:
+  id: REQ-481516
+  title: Online order revenue
+  summary: Finance needs daily gross and net revenue for online orders, and average order value, by sales channel.
+  status: confirmed
+  source: {system: confluence, page_id: "481516", version: 7, url: "https://example.atlassian.net/wiki/spaces/FIN/pages/481516"}
+  owner: {name: Finance Analytics, email: finance-analytics@example.com}
+  links: [FIN-204]
+  out_of_scope: [refund forecasting]
+
+target: {group: example, project: example-retail}
+
+concepts:
+  - {name: Order, exists: true, identity: order number, from: "§Definitions row 1"}
+  - {name: Customer, exists: true, identity: customer id, from: "§Definitions row 2"}
+
+sources:
+  - name: shop_api
+    kind: rest_api
+    connection: {base_url: "https://api.shop.example.com/v2", secret_ref: sources.shop_api.api_key}
+    freshness: {warn_after: 6h, error_after: 24h}
+    resources:
+      - name: orders
+        endpoint: orders
+        write_disposition: merge
+        primary_key: [id]
+        incremental: {cursor: updated_at, initial_value: "2024-01-01T00:00:00Z", lag: 2h}
+        concept: Order
+        grain: one order
+        roles:
+          id: natural_key
+          customer_id: foreign_key
+          total_amount: money_amount
+          currency: currency_code
+          placed_at: event_time
+          status: status_enum
+          channel: status_enum
+          email: pii_email
+        links: {customer_id: Customer}
+        from: "§Data sources row 1"
+
+business_rules:
+  - id: BR-1
+    statement: Test orders (channel = 'internal_test') are excluded from all reporting.
+    layer: intermediate
+    implemented_in: [int_orders__excluding_tests]
+    test: {type: data_test, name: expression, expression: "channel <> 'internal_test'"}
+    from: "§Business rules 1"
+  - id: BR-2
+    statement: Net revenue counts only orders whose status is completed.
+    layer: metric
+    implemented_in: [net_revenue]
+    test: {type: metric_filter}
+    from: "§Business rules 2"
+  - id: BR-3
+    statement: All amounts are reported in USD using the daily rate of the order date.
+    layer: intermediate
+    implemented_in: [int_orders__converted_to_usd]
+    test: {type: unit_test}
+    from: "§Business rules 3"
+
+models:
+  intermediate:
+    - {name: int_orders__excluding_tests, description: Orders without internal test traffic., inputs: [stg_shop_api__orders], rules: [BR-1], from: "§Business rules 1"}
+    - {name: int_orders__converted_to_usd, description: Order amounts in USD at the order-date rate., inputs: [int_orders__excluding_tests], rules: [BR-3], from: "§Business rules 3"}
+  marts:
+    - name: fct_orders
+      kind: fact
+      grain: one order
+      concept: Order
+      inputs: [int_orders__converted_to_usd]
+      rules: [BR-1, BR-3]
+      columns:
+        - {name: order_id, role: natural_key, description: Order number.}
+        - {name: customer_id, role: foreign_key, description: Who placed it.}
+        - {name: placed_at, role: event_time, description: When it was placed.}
+        - {name: status, role: status_enum, description: Order lifecycle status.}
+        - {name: channel, role: status_enum, description: Sales channel.}
+        - {name: amount_usd, role: money_amount, description: Order total in USD.}
+        - {name: currency_code, role: currency_code, description: Always USD.}
+
+metrics:
+  - {name: gross_revenue, label: Gross Revenue, description: Total of all non-test orders in USD., type: simple, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, time_dimension: placed_at, dimensions: [channel, status], owner: Finance Analytics, rules: [BR-1, BR-3], from: "§KPIs row 1"}
+  - {name: net_revenue, label: Net Revenue, description: Total of completed orders in USD., type: simple, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 2"}
+  - {name: completed_orders, label: Completed Orders, description: Count of completed orders., type: simple, mart: fct_orders, measure: {agg: count, expr: order_id}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 3"}
+  - {name: average_order_value, label: Average Order Value, description: Net revenue per completed order., type: ratio, numerator: net_revenue, denominator: completed_orders, owner: Finance Analytics, from: "§KPIs row 4"}
+
+reports:
+  - {page: online-revenue, question: "How is online revenue trending by channel?", audience: Finance leadership, metrics: [gross_revenue, net_revenue, average_order_value], grain: day, filters: [channel]}
+
+schedule: {cron: "0 5 * * *", timezone: UTC, partitioning: none, backfill_from: "2024-01-01", sla: "fct_orders fresh by 06:30 UTC"}
+
+catalog: {domain: Finance, data_product: Online Revenue, owners: [finance-analytics@example.com], tier: Tier2, glossary_terms: [Order, Net Revenue], pii: [email]}
+
+acceptance:
+  - {id: AC-1, statement: March 2025 net revenue reconciles to the finance ledger within 0.5%., check: {metric: net_revenue, grain: month, where: "metric_time = '2025-03-01'", expect: {reconciles_to: "ledger total ± 0.5%"}}}
+  - {id: AC-2, statement: No internal test orders appear in any report., check: {test: int_orders__excluding_tests_channel_expression}}
+  - {id: AC-3, statement: Average order value is between 20 and 500 USD on any day., check: {metric: average_order_value, grain: day, expect: {between: [20, 500]}}}
+
+open_questions:
+  - {id: Q-1, question: "Are cancelled-then-reinstated orders counted once or twice?", blocking: true, ask: Finance Analytics, answer: "Once — the latest status wins.", answer_from: "page v7 comment by owner"}
