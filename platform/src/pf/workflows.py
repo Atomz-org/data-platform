@@ -74,10 +74,12 @@ SCRATCH_KINDS = ("scratchpad", "tasks", "images")
 #:     task output swap refused (tasks dir moved or linked)
 #:
 #: The session keeps running, but no command's output reaches the model again
-#: until it is restarted — so adopting this one from a hook trades a tidy
-#: directory for a session that cannot see. Creating and linking it *before*
-#: the harness first looks is fine, and is what a new session does; it is only
-#: replacing a populated one underneath a live process that breaks.
+#: until it is restarted — so linking this one from a hook trades a tidy
+#: directory for a session that cannot see. That holds for an empty or missing
+#: directory too: by the time SessionStart fires the harness has already looked,
+#: so there is no "before" for a hook to link it in. The one way to keep it in
+#: the checkout is CLAUDE_CODE_TMPDIR set before the harness starts
+#: (`just claude`), where nothing needs linking at all.
 #:
 #: The other kinds survive it: the harness resolves them per use. Adopting
 #: `tasks` stays available to `pf workflow link --adopt`, which a person runs
@@ -846,14 +848,16 @@ def _link_one(
     # and must not depend on which flags the caller happened to pass.
     if dry_run:
         return rep("unlinked", f"{len(entries)} item(s) to adopt" if entries else "")
-    if entries and live and kind in ADOPT_NOT_WHILE_LIVE:
-        # Not "refused because you forgot a flag": adopting this one would cost
-        # the running session its ability to see command output. Say which.
+    if live and kind in ADOPT_NOT_WHILE_LIVE:
+        # Empty or not: the harness has already noted this directory by the time
+        # SessionStart fires, so even an empty one swapped for a link costs the
+        # running session every command's output. Not "refused because you
+        # forgot a flag" — say which, and what keeps it in the checkout instead.
         return rep(
             "refused",
-            f"holds {len(entries)} item(s) and cannot be adopted "
-            f"while the session runs; `pf workflow link --adopt` "
-            f"after it ends",
+            "left in place while the session runs (the harness refuses a linked "
+            "tasks dir); start with `just claude`, or `pf workflow link --adopt` "
+            "after it ends",
         )
     if entries and not adopt:
         return rep("refused", f"holds {len(entries)} item(s) written before it was linked; re-run with --adopt")
@@ -904,10 +908,10 @@ def link(
 
     `live` says the session being linked is the one running right now, which is
     always true from the SessionStart hook and never true from the CLI. It holds
-    back adoption for `ADOPT_NOT_WHILE_LIVE` — the kinds whose directory the
-    harness has already noted and will not accept a replacement for. Creating
-    and linking those from nothing is still done; only taking a populated one
-    out from under the running process is refused, with a note saying so."""
+    back `ADOPT_NOT_WHILE_LIVE` — the kinds whose directory the harness has
+    already noted and will not accept a replacement for. Those are left where
+    the harness put them, empty or not, and reported as refused with a note
+    saying so."""
     out: list[LinkReport] = []
     for sess in [session_dir] if session_dir is not None else sessions(root, home):
         here: list[LinkReport] = []

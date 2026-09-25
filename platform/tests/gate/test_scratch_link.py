@@ -282,16 +282,18 @@ def test_the_tasks_directory_is_adopted_once_nothing_is_running(harness) -> None
     assert (tmp / "tasks").is_symlink()
 
 
-def test_an_empty_tasks_directory_is_still_linked_while_live(harness) -> None:
-    """Only *replacing a populated* one is the hazard. A new session must still
-    get its link, which is the case that makes the whole mechanism work."""
+def test_an_empty_tasks_directory_is_left_in_place_while_live(harness) -> None:
+    """Empty is no exception (SC-6). The harness notes `tasks/` before
+    SessionStart fires, so linking even an empty one from the hook cost a new
+    session every command's output on 2026-09-25. It stays put, and the note
+    names the two ways to keep it in the checkout instead."""
     root, home, tmp = _populated(harness)
 
     report = _report(root, home, "tasks", adopt=True, live=True)
 
-    assert report.ok, f"{report.state}: {report.note}"
-    assert (tmp / "tasks").is_symlink()
-    assert (tmp / "tasks").resolve().is_relative_to(root)
+    assert report.state == "refused", f"{report.state}: {report.note}"
+    assert not (tmp / "tasks").is_symlink()
+    assert "just claude" in report.note and "--adopt" in report.note
 
 
 # ------------------------------------------------- CLAUDE_CODE_TMPDIR ----

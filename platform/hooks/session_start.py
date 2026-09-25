@@ -33,8 +33,9 @@ The exception is `tasks/`, which `live=True` holds back — see
 `workflows.ADOPT_NOT_WHILE_LIVE`. The harness notes that directory when the
 session starts and refuses to write a tool's output if it later finds it moved
 or linked, which costs the session every command's output until it restarts.
-Linking it from nothing is fine and is what a new session does; replacing a
-populated one under a running process is not, so that one waits for
+The harness has already looked by the time this hook runs, so that holds for an
+empty directory too: `tasks/` is never linked from here. It stays in the temp
+root unless the session was started with `just claude`, and otherwise waits for
 `pf workflow link --adopt` between sessions.
 
 Nothing is printed unless a link could not be made. A SessionStart hook's stdout
