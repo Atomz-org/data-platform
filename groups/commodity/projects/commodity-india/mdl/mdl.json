@@ -379,6 +379,223 @@
       }
     },
     {
+      "name": "fct_commodity_trading_signals_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_commodity_trading_signals_daily"
+      },
+      "columns": [
+        {
+          "name": "price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "pct_of_52w_range",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "0 at the 52-week low, 1 at the high. Bounded by construction: the range is widened to include the close, because the feed ships candles whose high sits below their close (see assert_candles_bracket_the_close)."
+          }
+        },
+        {
+          "name": "ma_gap_50d_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Close against the 50-day mean, as a share of that mean."
+          }
+        },
+        {
+          "name": "ma_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "20-day mean above or below the 50-day. Null until both windows are full."
+          }
+        },
+        {
+          "name": "ma_crossover",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The day the regime turned, so a desk can act on the event rather than the state."
+          }
+        },
+        {
+          "name": "z_score_60d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Standard deviations from the 60-day mean. Null until that window is full."
+          }
+        },
+        {
+          "name": "momentum_20d_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "realised_vol_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Annualised from 20 days of daily dispersion, on 252 trading days."
+          }
+        },
+        {
+          "name": "volatility_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Against this commodity's own dispersion \u2014 30% is calm for gas and extreme for rice."
+          }
+        },
+        {
+          "name": "stance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "A shortlist to look at, never a recommendation. Cheap and rising is accumulate; cheap and still falling returns hold, because the range signal alone cannot tell a bottom from a knife."
+          }
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_basis",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "moving_avg_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "moving_avg_50d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "price_id",
+      "properties": {
+        "description": "Timing signals on the USD benchmark \u2014 where a price sits in its own recent history, not what it costs. Every measure is unit-free, so unlike the price itself these are safe to compare across commodities.",
+        "grain": "one commodity per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
       "name": "fct_fx_rates_daily",
       "tableReference": {
         "schema": "main_marts",
@@ -470,6 +687,225 @@
       "properties": {
         "description": "Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.",
         "grain": "one currency per calendar day",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_landed_price_attribution_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_landed_price_attribution_daily"
+      },
+      "columns": [
+        {
+          "name": "price_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "price_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "market_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "geo_country"
+          }
+        },
+        {
+          "name": "currency_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "currency_code"
+          }
+        },
+        {
+          "name": "landed_price_local",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "landed_change_20d_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "The total the three contributions sum to, by construction."
+          }
+        },
+        {
+          "name": "benchmark_contribution_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fx_contribution_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "duty_contribution_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fx_share_of_move",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "Unsigned share of the rupee in the move, for ranking. Unsigned because the interesting case is a benchmark and a currency cancelling out, where the signed shares run past 1 and -1."
+          }
+        },
+        {
+          "name": "primary_driver",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "False for rows before the June 2026 verification (ADR-0001)."
+          }
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "market_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_import_prohibited",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_price_local_20d_ago",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "benchmark_usd_per_market_unit",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "benchmark_20d_ago",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "usd_fx_rate",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "fx_20d_ago",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "effective_duty_rate",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "duty_rate_20d_ago",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "price_id",
+      "properties": {
+        "description": "Why the landed rupee price moved over 20 trading days, split into the benchmark, the rupee and duty. An Indian buyer decides on landed rupees, and a USD-only signal cannot tell a commodity move from a currency move \u2014 which is the difference between a buying decision and a treasury one.",
+        "grain": "one commodity per price date",
         "layer": "marts",
         "pf.project": "commodity-india",
         "pf.group": "commodity"
@@ -1405,6 +1841,36 @@
       }
     },
     {
+      "name": "fct_commodity_trading_signals_daily_dim_commodities",
+      "models": [
+        "fct_commodity_trading_signals_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_commodity_trading_signals_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_landed_price_attribution_daily_dim_commodities",
+      "models": [
+        "fct_landed_price_attribution_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_landed_price_attribution_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
       "name": "fct_landed_prices_daily_dim_commodities",
       "models": [
         "fct_landed_prices_daily",
@@ -1478,6 +1944,17 @@
       }
     },
     {
+      "name": "fct_commodity_trading_signals_daily_view",
+      "statement": "select\n  fct_commodity_trading_signals_daily.price_id,\n  fct_commodity_trading_signals_daily.commodity_id,\n  fct_commodity_trading_signals_daily.price_date,\n  fct_commodity_trading_signals_daily.close_price,\n  fct_commodity_trading_signals_daily.pct_of_52w_range,\n  fct_commodity_trading_signals_daily.ma_gap_50d_pct,\n  fct_commodity_trading_signals_daily.ma_regime,\n  fct_commodity_trading_signals_daily.ma_crossover,\n  fct_commodity_trading_signals_daily.z_score_60d,\n  fct_commodity_trading_signals_daily.momentum_20d_pct,\n  fct_commodity_trading_signals_daily.realised_vol_20d,\n  fct_commodity_trading_signals_daily.volatility_regime,\n  fct_commodity_trading_signals_daily.stance,\n  fct_commodity_trading_signals_daily.is_latest,\n  fct_commodity_trading_signals_daily.price_basis,\n  fct_commodity_trading_signals_daily.quote_unit,\n  fct_commodity_trading_signals_daily.currency_code,\n  fct_commodity_trading_signals_daily.price_change_pct,\n  fct_commodity_trading_signals_daily.moving_avg_20d,\n  fct_commodity_trading_signals_daily.moving_avg_50d,\n  fct_commodity_trading_signals_daily.high_252d,\n  fct_commodity_trading_signals_daily.low_252d,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_commodity_trading_signals_daily\n  left join dim_commodities on fct_commodity_trading_signals_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_metrics_avg_momentum_20d, report_metrics_avg_range_position, report_metrics_avg_realised_vol, report_metrics_momentum_20d_days, report_metrics_momentum_20d_total, report_metrics_range_position_days, report_metrics_range_position_total, report_metrics_realised_vol_days, report_metrics_realised_vol_total, report_metrics_signal_days",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Timing signals on the USD benchmark \u2014 where a price sits in its own recent history, not what it costs. Every measure is unit-free, so unlike the price itself these are safe to compare across commodities.",
+        "pf.grain": "one commodity per price date"
+      }
+    },
+    {
       "name": "fct_fx_rates_daily_view",
       "statement": "select\n  fct_fx_rates_daily.fx_day_id,\n  fct_fx_rates_daily.quote_currency_code,\n  fct_fx_rates_daily.rate_date,\n  fct_fx_rates_daily.usd_rate,\n  fct_fx_rates_daily.base_currency_code,\n  fct_fx_rates_daily.fixed_on,\n  fct_fx_rates_daily.is_carried_forward,\n  fct_fx_rates_daily.prev_usd_rate,\n  fct_fx_rates_daily.usd_rate_change_pct\nfrom fct_fx_rates_daily",
       "properties": {
@@ -1486,6 +1963,17 @@
         "pf.owners": "Commodity Research",
         "pf.description": "Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.",
         "pf.grain": "one currency per calendar day"
+      }
+    },
+    {
+      "name": "fct_landed_price_attribution_daily_view",
+      "statement": "select\n  fct_landed_price_attribution_daily.price_id,\n  fct_landed_price_attribution_daily.commodity_id,\n  fct_landed_price_attribution_daily.price_date,\n  fct_landed_price_attribution_daily.market_code,\n  fct_landed_price_attribution_daily.currency_code,\n  fct_landed_price_attribution_daily.landed_price_local,\n  fct_landed_price_attribution_daily.landed_change_20d_pct,\n  fct_landed_price_attribution_daily.benchmark_contribution_pct,\n  fct_landed_price_attribution_daily.fx_contribution_pct,\n  fct_landed_price_attribution_daily.duty_contribution_pct,\n  fct_landed_price_attribution_daily.fx_share_of_move,\n  fct_landed_price_attribution_daily.primary_driver,\n  fct_landed_price_attribution_daily.is_duty_rate_confirmed,\n  fct_landed_price_attribution_daily.is_latest,\n  fct_landed_price_attribution_daily.market_unit,\n  fct_landed_price_attribution_daily.is_import_prohibited,\n  fct_landed_price_attribution_daily.landed_price_local_20d_ago,\n  fct_landed_price_attribution_daily.benchmark_usd_per_market_unit,\n  fct_landed_price_attribution_daily.benchmark_20d_ago,\n  fct_landed_price_attribution_daily.usd_fx_rate,\n  fct_landed_price_attribution_daily.fx_20d_ago,\n  fct_landed_price_attribution_daily.effective_duty_rate,\n  fct_landed_price_attribution_daily.duty_rate_20d_ago,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit,\n  dim_commodities.market_code as commodities_market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited as commodities_is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_landed_price_attribution_daily\n  left join dim_commodities on fct_landed_price_attribution_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_metrics_attribution_days, report_metrics_avg_fx_share_of_move, report_metrics_benchmark_contribution_total, report_metrics_duty_contribution_total, report_metrics_fx_contribution_total, report_metrics_fx_share_days, report_metrics_fx_share_total",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Why the landed rupee price moved over 20 trading days, split into the benchmark, the rupee and duty. An Indian buyer decides on landed rupees, and a USD-only signal cannot tell a commodity move from a currency move \u2014 which is the difference between a buying decision and a treasury one.",
+        "pf.grain": "one commodity per price date"
       }
     },
     {
@@ -1547,8 +2035,17 @@
   "cubes": [
     {
       "name": "commodity_india_core",
-      "baseObject": "fct_commodity_prices_daily",
+      "baseObject": "fct_commodity_trading_signals_daily",
       "measures": [
+        {
+          "name": "attribution_days",
+          "expression": "count(price_id)",
+          "type": "DOUBLE",
+          "description": "Attribution Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
         {
           "name": "avg_benchmark_price_usd",
           "expression": "sum(close_price) / nullif(count(close_price), 0)",
@@ -1568,10 +2065,46 @@
           }
         },
         {
+          "name": "avg_fx_share_of_move",
+          "expression": "sum(fx_share_of_move) / nullif(count(fx_share_of_move), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Rupee Share of the Move",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
           "name": "avg_landed_price_local",
           "expression": "sum(landed_price_local) / nullif(count(landed_price_local), 0)",
           "type": "DOUBLE",
           "description": "Avg Landed Price (market currency)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_momentum_20d",
+          "expression": "sum(momentum_20d_pct) / nullif(count(momentum_20d_pct), 0)",
+          "type": "DOUBLE",
+          "description": "Avg 20-Day Momentum",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_range_position",
+          "expression": "sum(pct_of_52w_range) / nullif(count(pct_of_52w_range), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Position in 52-Week Range",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_realised_vol",
+          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Realised Volatility (annualised)",
           "properties": {
             "pf.metric_type": "ratio"
           }
@@ -1583,6 +2116,15 @@
           "description": "Avg Applied FX Rate",
           "properties": {
             "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "benchmark_contribution_total",
+          "expression": "sum(benchmark_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Benchmark Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
           }
         },
         {
@@ -1613,10 +2155,46 @@
           }
         },
         {
+          "name": "duty_contribution_total",
+          "expression": "sum(duty_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Duty Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
           "name": "duty_local_total",
           "expression": "sum(duty_local)",
           "type": "DOUBLE",
           "description": "Customs Duty Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_contribution_total",
+          "expression": "sum(fx_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "FX Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_days",
+          "expression": "count(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "Days With an FX Share",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_total",
+          "expression": "sum(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "FX Share (component)",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -1640,6 +2218,24 @@
           }
         },
         {
+          "name": "momentum_20d_days",
+          "expression": "count(momentum_20d_pct)",
+          "type": "DOUBLE",
+          "description": "Days With a Momentum Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "momentum_20d_total",
+          "expression": "sum(momentum_20d_pct)",
+          "type": "DOUBLE",
+          "description": "20-Day Momentum (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
           "name": "period_high_price_usd",
           "expression": "max(coalesce(high_price, close_price))",
           "type": "DOUBLE",
@@ -1653,6 +2249,51 @@
           "expression": "min(coalesce(low_price, close_price))",
           "type": "DOUBLE",
           "description": "Period Low (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "range_position_days",
+          "expression": "count(pct_of_52w_range)",
+          "type": "DOUBLE",
+          "description": "Days With a Range Position",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "range_position_total",
+          "expression": "sum(pct_of_52w_range)",
+          "type": "DOUBLE",
+          "description": "Range Position (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "realised_vol_days",
+          "expression": "count(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "Days With a Volatility Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "realised_vol_total",
+          "expression": "sum(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "Realised Volatility (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "signal_days",
+          "expression": "count(price_id)",
+          "type": "DOUBLE",
+          "description": "Signal Days",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -1717,6 +2358,18 @@
           "description": ""
         },
         {
+          "name": "ma_crossover",
+          "expression": "ma_crossover",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "ma_regime",
+          "expression": "ma_regime",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
           "name": "market_code",
           "expression": "market_code",
           "type": "VARCHAR",
@@ -1735,6 +2388,12 @@
           "description": ""
         },
         {
+          "name": "primary_driver",
+          "expression": "primary_driver",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
           "name": "quote_currency_code",
           "expression": "quote_currency_code",
           "type": "VARCHAR",
@@ -1749,6 +2408,18 @@
         {
           "name": "segment",
           "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "stance",
+          "expression": "stance",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "volatility_regime",
+          "expression": "volatility_regime",
           "type": "VARCHAR",
           "description": ""
         }

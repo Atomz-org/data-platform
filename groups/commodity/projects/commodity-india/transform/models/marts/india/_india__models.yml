@@ -94,6 +94,111 @@ models:
       - name: is_stale
         description: The underlying benchmark is more than four days old.
 
+
+  - name: fct_commodity_trading_signals_daily
+    description: >
+      Timing signals on the USD benchmark — where a price sits in its own recent
+      history, not what it costs. Every measure is unit-free, so unlike the price
+      itself these are safe to compare across commodities.
+    access: public
+    meta: {grain: one commodity per price date}
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships: {to: ref('dim_commodities'), field: commodity_id}
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: close_price
+        meta: {role: unit_price}
+      - name: pct_of_52w_range
+        description: >
+          0 at the 52-week low, 1 at the high. Bounded by construction: the range
+          is widened to include the close, because the feed ships candles whose
+          high sits below their close (see assert_candles_bracket_the_close).
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 1, inclusive: true}
+      - name: ma_gap_50d_pct
+        description: Close against the 50-day mean, as a share of that mean.
+      - name: ma_regime
+        description: 20-day mean above or below the 50-day. Null until both windows are full.
+        data_tests:
+          - accepted_values: {values: ['uptrend', 'downtrend']}
+      - name: ma_crossover
+        description: The day the regime turned, so a desk can act on the event rather than the state.
+        data_tests:
+          - accepted_values: {values: ['golden_cross', 'death_cross', 'none']}
+      - name: z_score_60d
+        description: Standard deviations from the 60-day mean. Null until that window is full.
+      - name: momentum_20d_pct
+      - name: realised_vol_20d
+        description: Annualised from 20 days of daily dispersion, on 252 trading days.
+      - name: volatility_regime
+        description: Against this commodity's own dispersion — 30% is calm for gas and extreme for rice.
+        data_tests:
+          - accepted_values: {values: ['low', 'normal', 'high']}
+      - name: stance
+        description: >
+          A shortlist to look at, never a recommendation. Cheap and rising is
+          accumulate; cheap and still falling returns hold, because the range
+          signal alone cannot tell a bottom from a knife.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ['accumulate', 'reduce', 'watch_for_entry', 'watch_for_exit', 'hold', 'no_reading']
+      - name: is_latest
+        data_tests: [not_null]
+
+  - name: fct_landed_price_attribution_daily
+    description: >
+      Why the landed rupee price moved over 20 trading days, split into the
+      benchmark, the rupee and duty. An Indian buyer decides on landed rupees,
+      and a USD-only signal cannot tell a commodity move from a currency move —
+      which is the difference between a buying decision and a treasury one.
+    access: public
+    meta: {grain: one commodity per price date}
+    columns:
+      - name: price_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - not_null
+          - relationships: {to: ref('dim_commodities'), field: commodity_id}
+      - name: price_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: market_code
+        meta: {role: geo_country}
+      - name: currency_code
+        meta: {role: currency_code}
+      - name: landed_price_local
+        meta: {role: unit_price}
+      - name: landed_change_20d_pct
+        description: The total the three contributions sum to, by construction.
+      - name: benchmark_contribution_pct
+      - name: fx_contribution_pct
+      - name: duty_contribution_pct
+      - name: fx_share_of_move
+        description: >
+          Unsigned share of the rupee in the move, for ranking. Unsigned because
+          the interesting case is a benchmark and a currency cancelling out,
+          where the signed shares run past 1 and -1.
+        data_tests:
+          - dbt_utils.accepted_range: {min_value: 0, max_value: 1, inclusive: true}
+      - name: primary_driver
+        data_tests:
+          - accepted_values: {values: ['benchmark', 'currency', 'duty']}
+      - name: is_duty_rate_confirmed
+        description: False for rows before the June 2026 verification (ADR-0001).
+      - name: is_latest
+        data_tests: [not_null]
 unit_tests:
   - name: retail_prices_apply_purity_and_unit_conventions
     description: 22K is 22/24 of the landed fine-metal price; per kg comes from the units seed.

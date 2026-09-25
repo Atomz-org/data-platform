@@ -14,6 +14,23 @@ queries:
   - metrics/avg_landed_price_local.sql
   - metrics/avg_duty_local.sql
   - metrics/avg_usd_fx_rate.sql
+  - metrics/signal_days.sql
+  - metrics/range_position_total.sql
+  - metrics/range_position_days.sql
+  - metrics/avg_range_position.sql
+  - metrics/realised_vol_total.sql
+  - metrics/realised_vol_days.sql
+  - metrics/avg_realised_vol.sql
+  - metrics/momentum_20d_total.sql
+  - metrics/momentum_20d_days.sql
+  - metrics/avg_momentum_20d.sql
+  - metrics/attribution_days.sql
+  - metrics/fx_share_total.sql
+  - metrics/fx_share_days.sql
+  - metrics/avg_fx_share_of_move.sql
+  - metrics/fx_contribution_total.sql
+  - metrics/benchmark_contribution_total.sql
+  - metrics/duty_contribution_total.sql
 ---
 
 Every number on this page is a governed metric compiled from the dbt
