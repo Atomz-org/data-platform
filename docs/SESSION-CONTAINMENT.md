@@ -49,7 +49,7 @@ ways a direct write cannot.
 | **SC-3** | `pf workflow capture` copies what cannot safely be linked | corrective | verified by test |
 | **SC-4** | The hook states the verdict on every session — `direct`, `linked`, or `OUTSIDE` | **detective** | new, untested |
 | **SC-5** | `PF_SCRATCH_ENFORCE=1` refuses to start a session that would write outside | preventive | new, untested, **off by default** |
-| **SC-6** | `workflows.ADOPT_NOT_WHILE_LIVE` — never move `tasks/` under a running session | safety | new, untested |
+| **SC-6** | `workflows.ADOPT_NOT_WHILE_LIVE` — never link `tasks/` under a running session, empty or not | safety | test added (`test_workflows_live_tasks.py`) |
 
 **SC-1 is the only preventive control that removes the problem rather than
 repairing it.** Everything else is compensating. It is also the one that has
@@ -117,6 +117,14 @@ Three things came out of it, and they are the reason SC-6 exists:
 3. It is an argument for SC-1 over SC-2 on its own merits: a directory created
    in the right place is never moved, so it can never be moved at the wrong
    moment.
+
+On 2026-09-25 it recurred in a *new* session. SC-6 as first written held back
+only a populated `tasks/`, on the premise that linking an empty one "before the
+harness first looks" was safe. There is no such moment: the harness has noted
+the directory before SessionStart fires, so the hook's link of an empty
+`tasks/` cost the session every command from its first. SC-6 now leaves
+`tasks/` alone under a live session whether it is empty or not; only SC-1
+(`just claude`) keeps it in the checkout.
 
 ## 6. Residual risk — accepted
 

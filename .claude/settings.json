@@ -46,8 +46,7 @@
   },
   "env": {
     "PF_NOTIFY": "1",
-    "PF_NOTIFY_VOICE": "1",
-    "CLAUDE_CODE_TMPDIR": "${CLAUDE_PROJECT_DIR}/.tmp"
+    "PF_NOTIFY_VOICE": "1"
   },
   "hooks": {
     "PostToolUse": [
