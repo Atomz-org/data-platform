@@ -95,19 +95,6 @@
       }
     },
     {
-      "id": "col:model:fct_landed_prices_daily.benchmark_price_usd",
-      "kind": "Column",
-      "name": "benchmark_price_usd",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_landed_prices_daily",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.benchmark_price_usd",
       "kind": "Column",
       "name": "benchmark_price_usd",
@@ -121,17 +108,16 @@
       }
     },
     {
-      "id": "col:model:fct_landed_prices_daily.benchmark_usd_per_market_unit",
+      "id": "col:model:fct_landed_prices_daily.benchmark_price_usd",
       "kind": "Column",
-      "name": "benchmark_usd_per_market_unit",
+      "name": "benchmark_price_usd",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "",
+        "role": "unit_price",
         "pii": false,
         "model": "fct_landed_prices_daily",
-        "data_type": "DOUBLE",
-        "documented": false
+        "data_type": "DOUBLE"
       }
     },
     {
@@ -144,6 +130,20 @@
         "role": "",
         "pii": false,
         "model": "fct_landed_price_attribution_daily",
+        "data_type": "DOUBLE",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_landed_prices_daily.benchmark_usd_per_market_unit",
+      "kind": "Column",
+      "name": "benchmark_usd_per_market_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_landed_prices_daily",
         "data_type": "DOUBLE",
         "documented": false
       }
@@ -187,6 +187,32 @@
       }
     },
     {
+      "id": "col:model:fct_commodity_trading_signals_daily.close_price",
+      "kind": "Column",
+      "name": "close_price",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "fct_commodity_trading_signals_daily",
+        "data_type": "DOUBLE"
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.close_price",
+      "kind": "Column",
+      "name": "close_price",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
+        "data_type": "DOUBLE"
+      }
+    },
+    {
       "id": "col:model:int_commodity_prices__usd.close_price",
       "kind": "Column",
       "name": "close_price",
@@ -213,46 +239,7 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.close_price",
-      "kind": "Column",
-      "name": "close_price",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_trading_signals_daily.close_price",
-      "kind": "Column",
-      "name": "close_price",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_commodity_trading_signals_daily",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
-      "id": "col:table:gold_api.spot_prices.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "spot_prices",
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:fct_landed_prices_daily.commodity_id",
+      "id": "col:model:fct_landed_price_attribution_daily.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "marts",
@@ -260,26 +247,13 @@
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "fct_landed_prices_daily",
+        "model": "fct_landed_price_attribution_daily",
         "data_type": "VARCHAR",
         "links_to": "Commodity"
       }
     },
     {
-      "id": "col:table:yahoo_finance.futures_prices.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "raw",
-      "label": "foreign_key",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "table": "futures_prices",
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:stg_yahoo_finance__futures_prices.commodity_id",
+      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "staging",
@@ -287,7 +261,7 @@
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
+        "model": "stg_gold_api__spot_prices",
         "data_type": "VARCHAR",
         "links_to": "Commodity"
       }
@@ -307,7 +281,7 @@
       }
     },
     {
-      "id": "col:model:fct_landed_price_attribution_daily.commodity_id",
+      "id": "col:model:fct_landed_prices_daily.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "marts",
@@ -315,9 +289,63 @@
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "fct_landed_price_attribution_daily",
+        "model": "fct_landed_prices_daily",
         "data_type": "VARCHAR",
         "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_prices_daily.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": "VARCHAR",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:rpt_mcx_contract_board.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "rpt_mcx_contract_board",
+        "data_type": "VARCHAR",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:table:gold_api.spot_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "spot_prices",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "VARCHAR"
       }
     },
     {
@@ -331,6 +359,33 @@
         "pii": false,
         "model": "int_commodity_prices__usd",
         "data_type": "VARCHAR",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": "VARCHAR",
+        "links_to": "Commodity"
+      }
+    },
+    {
+      "id": "col:table:yahoo_finance.futures_prices.commodity_id",
+      "kind": "Column",
+      "name": "commodity_id",
+      "layer": "raw",
+      "label": "foreign_key",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "table": "futures_prices",
         "links_to": "Commodity"
       }
     },
@@ -362,21 +417,7 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": "VARCHAR",
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:stg_gold_api__spot_prices.commodity_id",
+      "id": "col:model:stg_yahoo_finance__futures_prices.commodity_id",
       "kind": "Column",
       "name": "commodity_id",
       "layer": "staging",
@@ -384,48 +425,7 @@
       "props": {
         "role": "foreign_key",
         "pii": false,
-        "model": "stg_gold_api__spot_prices",
-        "data_type": "VARCHAR",
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": "VARCHAR",
-        "links_to": "Commodity"
-      }
-    },
-    {
-      "id": "col:model:rpt_mcx_contract_board.commodity_id",
-      "kind": "Column",
-      "name": "commodity_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "rpt_mcx_contract_board",
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": "VARCHAR",
         "links_to": "Commodity"
       }
@@ -459,19 +459,6 @@
       }
     },
     {
-      "id": "col:model:rpt_mcx_contract_board.contract_code",
-      "kind": "Column",
-      "name": "contract_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "rpt_mcx_contract_board",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
       "id": "col:model:fct_mcx_lot_equivalents_daily.contract_code",
       "kind": "Column",
       "name": "contract_code",
@@ -485,17 +472,16 @@
       }
     },
     {
-      "id": "col:model:rpt_mcx_contract_board.contract_name",
+      "id": "col:model:rpt_mcx_contract_board.contract_code",
       "kind": "Column",
-      "name": "contract_name",
+      "name": "contract_code",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "",
+        "role": "natural_key",
         "pii": false,
         "model": "rpt_mcx_contract_board",
-        "data_type": "VARCHAR",
-        "documented": false
+        "data_type": "VARCHAR"
       }
     },
     {
@@ -508,6 +494,20 @@
         "role": "",
         "pii": false,
         "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:rpt_mcx_contract_board.contract_name",
+      "kind": "Column",
+      "name": "contract_name",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_mcx_contract_board",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -537,6 +537,33 @@
       }
     },
     {
+      "id": "col:model:fct_commodity_trading_signals_daily.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_commodity_trading_signals_daily",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
       "id": "col:model:fct_landed_prices_daily.currency_code",
       "kind": "Column",
       "name": "currency_code",
@@ -563,17 +590,42 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_trading_signals_daily.currency_code",
+      "id": "col:model:int_commodity_prices__usd.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "intermediate",
+      "label": "Always a major currency after conversion.",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "int_commodity_prices__usd",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:stg_gold_api__spot_prices.currency_code",
+      "kind": "Column",
+      "name": "currency_code",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "currency_code",
+        "pii": false,
+        "model": "stg_gold_api__spot_prices",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:fct_landed_price_attribution_daily.currency_code",
       "kind": "Column",
       "name": "currency_code",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "",
+        "role": "currency_code",
         "pii": false,
-        "model": "fct_commodity_trading_signals_daily",
-        "data_type": "VARCHAR",
-        "documented": false
+        "model": "fct_landed_price_attribution_daily",
+        "data_type": "VARCHAR"
       }
     },
     {
@@ -599,58 +651,6 @@
         "role": "currency_code",
         "pii": false,
         "model": "dim_commodities",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:fct_landed_price_attribution_daily.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "fct_landed_price_attribution_daily",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:int_commodity_prices__usd.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "intermediate",
-      "label": "Always a major currency after conversion.",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:stg_gold_api__spot_prices.currency_code",
-      "kind": "Column",
-      "name": "currency_code",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "currency_code",
-        "pii": false,
-        "model": "stg_gold_api__spot_prices",
         "data_type": "VARCHAR"
       }
     },
@@ -709,20 +709,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.duty_basis",
-      "kind": "Column",
-      "name": "duty_basis",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_landed_prices_daily.duty_basis",
       "kind": "Column",
       "name": "duty_basis",
@@ -732,6 +718,20 @@
         "role": "",
         "pii": false,
         "model": "fct_landed_prices_daily",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.duty_basis",
+      "kind": "Column",
+      "name": "duty_basis",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -818,7 +818,7 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.exchange",
+      "id": "col:model:rpt_mcx_contract_board.exchange",
       "kind": "Column",
       "name": "exchange",
       "layer": "marts",
@@ -826,7 +826,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "rpt_commodity_price_board",
+        "model": "rpt_mcx_contract_board",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -845,7 +845,7 @@
       }
     },
     {
-      "id": "col:model:rpt_mcx_contract_board.exchange",
+      "id": "col:model:rpt_commodity_price_board.exchange",
       "kind": "Column",
       "name": "exchange",
       "layer": "marts",
@@ -853,7 +853,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "rpt_mcx_contract_board",
+        "model": "rpt_commodity_price_board",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -955,19 +955,6 @@
       }
     },
     {
-      "id": "col:model:fct_fx_rates_daily.fx_day_id",
-      "kind": "Column",
-      "name": "fx_day_id",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "fct_fx_rates_daily",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
       "id": "col:model:int_fx_rates__daily.fx_day_id",
       "kind": "Column",
       "name": "fx_day_id",
@@ -977,6 +964,19 @@
         "role": "natural_key",
         "pii": false,
         "model": "int_fx_rates__daily",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:fct_fx_rates_daily.fx_day_id",
+      "kind": "Column",
+      "name": "fx_day_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_fx_rates_daily",
         "data_type": "VARCHAR"
       }
     },
@@ -995,18 +995,6 @@
       }
     },
     {
-      "id": "col:table:yahoo_finance.fx_rates.fx_rate_id",
-      "kind": "Column",
-      "name": "fx_rate_id",
-      "layer": "raw",
-      "label": "natural_key",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "table": "fx_rates"
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__fx_rates.fx_rate_id",
       "kind": "Column",
       "name": "fx_rate_id",
@@ -1017,6 +1005,18 @@
         "pii": false,
         "model": "stg_yahoo_finance__fx_rates",
         "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:table:yahoo_finance.fx_rates.fx_rate_id",
+      "kind": "Column",
+      "name": "fx_rate_id",
+      "layer": "raw",
+      "label": "natural_key",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "table": "fx_rates"
       }
     },
     {
@@ -1059,20 +1059,6 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.high_252d",
-      "kind": "Column",
-      "name": "high_252d",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.high_252d",
       "kind": "Column",
       "name": "high_252d",
@@ -1101,6 +1087,20 @@
       }
     },
     {
+      "id": "col:model:fct_commodity_prices_daily.high_252d",
+      "kind": "Column",
+      "name": "high_252d",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": "DOUBLE",
+        "documented": false
+      }
+    },
+    {
       "id": "col:model:int_commodity_prices__usd.high_price",
       "kind": "Column",
       "name": "high_price",
@@ -1115,19 +1115,6 @@
       }
     },
     {
-      "id": "col:model:stg_yahoo_finance__futures_prices.high_price",
-      "kind": "Column",
-      "name": "high_price",
-      "layer": "staging",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "stg_yahoo_finance__futures_prices",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.high_price",
       "kind": "Column",
       "name": "high_price",
@@ -1137,6 +1124,19 @@
         "role": "unit_price",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": "DOUBLE"
+      }
+    },
+    {
+      "id": "col:model:stg_yahoo_finance__futures_prices.high_price",
+      "kind": "Column",
+      "name": "high_price",
+      "layer": "staging",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "stg_yahoo_finance__futures_prices",
         "data_type": "DOUBLE"
       }
     },
@@ -1169,20 +1169,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.is_duty_rate_confirmed",
-      "kind": "Column",
-      "name": "is_duty_rate_confirmed",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "BOOLEAN",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_mcx_lot_equivalents_daily.is_duty_rate_confirmed",
       "kind": "Column",
       "name": "is_duty_rate_confirmed",
@@ -1197,7 +1183,7 @@
       }
     },
     {
-      "id": "col:model:fct_landed_prices_daily.is_duty_rate_confirmed",
+      "id": "col:model:rpt_commodity_price_board.is_duty_rate_confirmed",
       "kind": "Column",
       "name": "is_duty_rate_confirmed",
       "layer": "marts",
@@ -1205,8 +1191,23 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_landed_prices_daily",
-        "data_type": "BOOLEAN"
+        "model": "rpt_commodity_price_board",
+        "data_type": "BOOLEAN",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_precious_metal_retail_prices_daily.is_duty_rate_confirmed",
+      "kind": "Column",
+      "name": "is_duty_rate_confirmed",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": "BOOLEAN",
+        "documented": false
       }
     },
     {
@@ -1237,7 +1238,7 @@
       }
     },
     {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.is_duty_rate_confirmed",
+      "id": "col:model:fct_landed_prices_daily.is_duty_rate_confirmed",
       "kind": "Column",
       "name": "is_duty_rate_confirmed",
       "layer": "marts",
@@ -1245,13 +1246,12 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": "BOOLEAN",
-        "documented": false
+        "model": "fct_landed_prices_daily",
+        "data_type": "BOOLEAN"
       }
     },
     {
-      "id": "col:model:fct_landed_prices_daily.is_import_prohibited",
+      "id": "col:model:rpt_commodity_price_board.is_import_prohibited",
       "kind": "Column",
       "name": "is_import_prohibited",
       "layer": "marts",
@@ -1259,7 +1259,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_landed_prices_daily",
+        "model": "rpt_commodity_price_board",
         "data_type": "BOOLEAN",
         "documented": false
       }
@@ -1292,7 +1292,7 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.is_import_prohibited",
+      "id": "col:model:fct_landed_prices_daily.is_import_prohibited",
       "kind": "Column",
       "name": "is_import_prohibited",
       "layer": "marts",
@@ -1300,7 +1300,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "rpt_commodity_price_board",
+        "model": "fct_landed_prices_daily",
         "data_type": "BOOLEAN",
         "documented": false
       }
@@ -1319,19 +1319,6 @@
       }
     },
     {
-      "id": "col:model:fct_landed_price_attribution_daily.is_latest",
-      "kind": "Column",
-      "name": "is_latest",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_landed_price_attribution_daily",
-        "data_type": "BOOLEAN"
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.is_latest",
       "kind": "Column",
       "name": "is_latest",
@@ -1345,15 +1332,15 @@
       }
     },
     {
-      "id": "col:model:rpt_mcx_contract_board.is_stale",
+      "id": "col:model:fct_landed_price_attribution_daily.is_latest",
       "kind": "Column",
-      "name": "is_stale",
+      "name": "is_latest",
       "layer": "marts",
-      "label": "The underlying benchmark is more than four days old.",
+      "label": "",
       "props": {
         "role": "",
         "pii": false,
-        "model": "rpt_mcx_contract_board",
+        "model": "fct_landed_price_attribution_daily",
         "data_type": "BOOLEAN"
       }
     },
@@ -1367,6 +1354,19 @@
         "role": "",
         "pii": false,
         "model": "rpt_commodity_price_board",
+        "data_type": "BOOLEAN"
+      }
+    },
+    {
+      "id": "col:model:rpt_mcx_contract_board.is_stale",
+      "kind": "Column",
+      "name": "is_stale",
+      "layer": "marts",
+      "label": "The underlying benchmark is more than four days old.",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_mcx_contract_board",
         "data_type": "BOOLEAN"
       }
     },
@@ -1398,20 +1398,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.landed_price_change_pct",
-      "kind": "Column",
-      "name": "landed_price_change_pct",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_landed_prices_daily.landed_price_change_pct",
       "kind": "Column",
       "name": "landed_price_change_pct",
@@ -1421,6 +1407,20 @@
         "role": "",
         "pii": false,
         "model": "fct_landed_prices_daily",
+        "data_type": "DOUBLE",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.landed_price_change_pct",
+      "kind": "Column",
+      "name": "landed_price_change_pct",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
         "data_type": "DOUBLE",
         "documented": false
       }
@@ -1453,19 +1453,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.landed_price_local",
-      "kind": "Column",
-      "name": "landed_price_local",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "DECIMAL(18,4)"
-      }
-    },
-    {
       "id": "col:model:fct_landed_prices_daily.landed_price_local",
       "kind": "Column",
       "name": "landed_price_local",
@@ -1475,6 +1462,19 @@
         "role": "unit_price",
         "pii": false,
         "model": "fct_landed_prices_daily",
+        "data_type": "DECIMAL(18,4)"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.landed_price_local",
+      "kind": "Column",
+      "name": "landed_price_local",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
         "data_type": "DECIMAL(18,4)"
       }
     },
@@ -1506,20 +1506,6 @@
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_size",
-      "kind": "Column",
-      "name": "lot_size",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:rpt_mcx_contract_board.lot_size",
       "kind": "Column",
       "name": "lot_size",
@@ -1529,6 +1515,20 @@
         "role": "",
         "pii": false,
         "model": "rpt_mcx_contract_board",
+        "data_type": "DOUBLE",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_size",
+      "kind": "Column",
+      "name": "lot_size",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
         "data_type": "DOUBLE",
         "documented": false
       }
@@ -1562,19 +1562,6 @@
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_value_inr",
-      "kind": "Column",
-      "name": "lot_value_inr",
-      "layer": "marts",
-      "label": "Landed \u20b9 for one full lot (lot_size \u00d7 lot_unit).",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": "DECIMAL(18,2)"
-      }
-    },
-    {
       "id": "col:model:rpt_mcx_contract_board.lot_value_inr",
       "kind": "Column",
       "name": "lot_value_inr",
@@ -1588,6 +1575,19 @@
       }
     },
     {
+      "id": "col:model:fct_mcx_lot_equivalents_daily.lot_value_inr",
+      "kind": "Column",
+      "name": "lot_value_inr",
+      "layer": "marts",
+      "label": "Landed \u20b9 for one full lot (lot_size \u00d7 lot_unit).",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": "DECIMAL(18,2)"
+      }
+    },
+    {
       "id": "col:table:yahoo_finance.futures_prices.low",
       "kind": "Column",
       "name": "low",
@@ -1597,6 +1597,20 @@
         "role": "unit_price",
         "pii": false,
         "table": "futures_prices"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.low_252d",
+      "kind": "Column",
+      "name": "low_252d",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "DOUBLE",
+        "documented": false
       }
     },
     {
@@ -1628,33 +1642,6 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.low_252d",
-      "kind": "Column",
-      "name": "low_252d",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_prices_daily.low_price",
-      "kind": "Column",
-      "name": "low_price",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_price",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__futures_prices.low_price",
       "kind": "Column",
       "name": "low_price",
@@ -1679,6 +1666,19 @@
         "model": "int_commodity_prices__usd",
         "data_type": "DOUBLE",
         "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_prices_daily.low_price",
+      "kind": "Column",
+      "name": "low_price",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_price",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": "DOUBLE"
       }
     },
     {
@@ -1734,6 +1734,20 @@
       }
     },
     {
+      "id": "col:model:rpt_commodity_price_board.market_code",
+      "kind": "Column",
+      "name": "market_code",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "foreign_key",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "VARCHAR",
+        "links_to": "Market"
+      }
+    },
+    {
       "id": "col:model:dim_commodities.market_code",
       "kind": "Column",
       "name": "market_code",
@@ -1759,61 +1773,6 @@
         "model": "fct_landed_prices_daily",
         "data_type": "VARCHAR",
         "links_to": "Market"
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.market_code",
-      "kind": "Column",
-      "name": "market_code",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "foreign_key",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR",
-        "links_to": "Market"
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.market_unit",
-      "kind": "Column",
-      "name": "market_unit",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:fct_landed_prices_daily.market_unit",
-      "kind": "Column",
-      "name": "market_unit",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "unit_of_measure",
-        "pii": false,
-        "model": "fct_landed_prices_daily",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:fct_landed_price_attribution_daily.market_unit",
-      "kind": "Column",
-      "name": "market_unit",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_landed_price_attribution_daily",
-        "data_type": "VARCHAR",
-        "documented": false
       }
     },
     {
@@ -1844,6 +1803,47 @@
       }
     },
     {
+      "id": "col:model:fct_landed_prices_daily.market_unit",
+      "kind": "Column",
+      "name": "market_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_of_measure",
+        "pii": false,
+        "model": "fct_landed_prices_daily",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.market_unit",
+      "kind": "Column",
+      "name": "market_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_landed_price_attribution_daily.market_unit",
+      "kind": "Column",
+      "name": "market_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_landed_price_attribution_daily",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
       "id": "col:model:fct_commodity_trading_signals_daily.momentum_20d_pct",
       "kind": "Column",
       "name": "momentum_20d_pct",
@@ -1857,20 +1857,6 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_trading_signals_daily.moving_avg_20d",
-      "kind": "Column",
-      "name": "moving_avg_20d",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_commodity_trading_signals_daily",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.moving_avg_20d",
       "kind": "Column",
       "name": "moving_avg_20d",
@@ -1880,6 +1866,20 @@
         "role": "",
         "pii": false,
         "model": "fct_commodity_prices_daily",
+        "data_type": "DOUBLE",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_trading_signals_daily.moving_avg_20d",
+      "kind": "Column",
+      "name": "moving_avg_20d",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_commodity_trading_signals_daily",
         "data_type": "DOUBLE",
         "documented": false
       }
@@ -1925,20 +1925,6 @@
       }
     },
     {
-      "id": "col:model:int_commodity_prices__usd.open_price",
-      "kind": "Column",
-      "name": "open_price",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": "DOUBLE",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:fct_commodity_prices_daily.open_price",
       "kind": "Column",
       "name": "open_price",
@@ -1963,6 +1949,20 @@
         "pii": false,
         "model": "stg_yahoo_finance__futures_prices",
         "data_type": "DOUBLE"
+      }
+    },
+    {
+      "id": "col:model:int_commodity_prices__usd.open_price",
+      "kind": "Column",
+      "name": "open_price",
+      "layer": "intermediate",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "int_commodity_prices__usd",
+        "data_type": "DOUBLE",
+        "documented": false
       }
     },
     {
@@ -2047,16 +2047,17 @@
       }
     },
     {
-      "id": "col:model:int_commodity_prices__usd.price_basis",
+      "id": "col:model:fct_precious_metal_retail_prices_daily.price_basis",
       "kind": "Column",
       "name": "price_basis",
-      "layer": "intermediate",
+      "layer": "marts",
       "label": "",
       "props": {
-        "role": "status_enum",
+        "role": "",
         "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": "VARCHAR"
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -2074,71 +2075,16 @@
       }
     },
     {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.price_basis",
+      "id": "col:model:int_commodity_prices__usd.price_basis",
       "kind": "Column",
       "name": "price_basis",
-      "layer": "marts",
+      "layer": "intermediate",
       "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "futures, or indicative when the underlying has no live feed (zinc).",
       "props": {
         "role": "status_enum",
         "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
+        "model": "int_commodity_prices__usd",
         "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:rpt_commodity_price_board.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:dim_commodities.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "futures (live Yahoo feed) or indicative (group seed level).",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "dim_commodities",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:fct_landed_prices_daily.price_basis",
-      "kind": "Column",
-      "name": "price_basis",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_landed_prices_daily",
-        "data_type": "VARCHAR",
-        "documented": false
       }
     },
     {
@@ -2170,6 +2116,60 @@
       }
     },
     {
+      "id": "col:model:fct_mcx_lot_equivalents_daily.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "futures, or indicative when the underlying has no live feed (zinc).",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:fct_landed_prices_daily.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "fct_landed_prices_daily",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "rpt_commodity_price_board",
+        "data_type": "VARCHAR",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.price_basis",
+      "kind": "Column",
+      "name": "price_basis",
+      "layer": "marts",
+      "label": "futures (live Yahoo feed) or indicative (group seed level).",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "dim_commodities",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
       "id": "col:model:fct_commodity_prices_daily.price_change",
       "kind": "Column",
       "name": "price_change",
@@ -2198,6 +2198,19 @@
       }
     },
     {
+      "id": "col:model:fct_commodity_prices_daily.price_change_pct",
+      "kind": "Column",
+      "name": "price_change_pct",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "rate_fraction",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": "DOUBLE"
+      }
+    },
+    {
       "id": "col:model:rpt_commodity_price_board.price_change_pct",
       "kind": "Column",
       "name": "price_change_pct",
@@ -2212,59 +2225,6 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.price_change_pct",
-      "kind": "Column",
-      "name": "price_change_pct",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "rate_fraction",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
-      "id": "col:model:rpt_mcx_contract_board.price_date",
-      "kind": "Column",
-      "name": "price_date",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "rpt_mcx_contract_board",
-        "data_type": "DATE",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:fct_precious_metal_retail_prices_daily.price_date",
-      "kind": "Column",
-      "name": "price_date",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "fct_precious_metal_retail_prices_daily",
-        "data_type": "DATE"
-      }
-    },
-    {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.price_date",
-      "kind": "Column",
-      "name": "price_date",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": "DATE"
-      }
-    },
-    {
       "id": "col:model:fct_landed_price_attribution_daily.price_date",
       "kind": "Column",
       "name": "price_date",
@@ -2274,19 +2234,6 @@
         "role": "event_time",
         "pii": false,
         "model": "fct_landed_price_attribution_daily",
-        "data_type": "DATE"
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_trading_signals_daily.price_date",
-      "kind": "Column",
-      "name": "price_date",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "event_time",
-        "pii": false,
-        "model": "fct_commodity_trading_signals_daily",
         "data_type": "DATE"
       }
     },
@@ -2305,7 +2252,7 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.price_date",
+      "id": "col:model:fct_precious_metal_retail_prices_daily.price_date",
       "kind": "Column",
       "name": "price_date",
       "layer": "marts",
@@ -2313,7 +2260,47 @@
       "props": {
         "role": "event_time",
         "pii": false,
-        "model": "fct_commodity_prices_daily",
+        "model": "fct_precious_metal_retail_prices_daily",
+        "data_type": "DATE"
+      }
+    },
+    {
+      "id": "col:model:rpt_mcx_contract_board.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "rpt_mcx_contract_board",
+        "data_type": "DATE",
+        "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_mcx_lot_equivalents_daily.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": "DATE"
+      }
+    },
+    {
+      "id": "col:model:fct_commodity_trading_signals_daily.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_commodity_trading_signals_daily",
         "data_type": "DATE"
       }
     },
@@ -2332,6 +2319,19 @@
       }
     },
     {
+      "id": "col:model:fct_commodity_prices_daily.price_date",
+      "kind": "Column",
+      "name": "price_date",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "event_time",
+        "pii": false,
+        "model": "fct_commodity_prices_daily",
+        "data_type": "DATE"
+      }
+    },
+    {
       "id": "col:model:fct_landed_prices_daily.price_date",
       "kind": "Column",
       "name": "price_date",
@@ -2345,20 +2345,7 @@
       }
     },
     {
-      "id": "col:model:int_commodity_prices__usd.price_id",
-      "kind": "Column",
-      "name": "price_id",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "natural_key",
-        "pii": false,
-        "model": "int_commodity_prices__usd",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
-      "id": "col:model:fct_landed_price_attribution_daily.price_id",
+      "id": "col:model:fct_commodity_prices_daily.price_id",
       "kind": "Column",
       "name": "price_id",
       "layer": "marts",
@@ -2366,7 +2353,7 @@
       "props": {
         "role": "natural_key",
         "pii": false,
-        "model": "fct_landed_price_attribution_daily",
+        "model": "fct_commodity_prices_daily",
         "data_type": "VARCHAR"
       }
     },
@@ -2384,15 +2371,15 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_prices_daily.price_id",
+      "id": "col:model:int_commodity_prices__usd.price_id",
       "kind": "Column",
       "name": "price_id",
-      "layer": "marts",
+      "layer": "intermediate",
       "label": "",
       "props": {
         "role": "natural_key",
         "pii": false,
-        "model": "fct_commodity_prices_daily",
+        "model": "int_commodity_prices__usd",
         "data_type": "VARCHAR"
       }
     },
@@ -2406,6 +2393,19 @@
         "role": "natural_key",
         "pii": false,
         "model": "fct_landed_prices_daily",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:fct_landed_price_attribution_daily.price_id",
+      "kind": "Column",
+      "name": "price_id",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "natural_key",
+        "pii": false,
+        "model": "fct_landed_price_attribution_daily",
         "data_type": "VARCHAR"
       }
     },
@@ -2501,20 +2501,6 @@
       }
     },
     {
-      "id": "col:model:int_fx_rates__daily.quote_currency_code",
-      "kind": "Column",
-      "name": "quote_currency_code",
-      "layer": "intermediate",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "int_fx_rates__daily",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
       "id": "col:model:stg_yahoo_finance__fx_rates.quote_currency_code",
       "kind": "Column",
       "name": "quote_currency_code",
@@ -2538,6 +2524,20 @@
         "pii": false,
         "model": "fct_fx_rates_daily",
         "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:int_fx_rates__daily.quote_currency_code",
+      "kind": "Column",
+      "name": "quote_currency_code",
+      "layer": "intermediate",
+      "label": "",
+      "props": {
+        "role": "",
+        "pii": false,
+        "model": "int_fx_rates__daily",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
@@ -2620,7 +2620,7 @@
       }
     },
     {
-      "id": "col:model:rpt_commodity_price_board.quote_unit",
+      "id": "col:model:fct_commodity_trading_signals_daily.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
       "layer": "marts",
@@ -2628,21 +2628,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "rpt_commodity_price_board",
-        "data_type": "VARCHAR",
-        "documented": false
-      }
-    },
-    {
-      "id": "col:model:fct_commodity_prices_daily.quote_unit",
-      "kind": "Column",
-      "name": "quote_unit",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "",
-        "pii": false,
-        "model": "fct_commodity_prices_daily",
+        "model": "fct_commodity_trading_signals_daily",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -2662,29 +2648,29 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.quote_unit",
+      "id": "col:model:fct_commodity_prices_daily.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
       "layer": "marts",
       "label": "",
       "props": {
-        "role": "unit_of_measure",
+        "role": "",
         "pii": false,
-        "model": "dim_commodities",
-        "data_type": "VARCHAR"
+        "model": "fct_commodity_prices_daily",
+        "data_type": "VARCHAR",
+        "documented": false
       }
     },
     {
-      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_unit",
+      "id": "col:table:gold_api.spot_prices.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "marts",
-      "label": "",
+      "layer": "raw",
+      "label": "unit_of_measure",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "model": "fct_mcx_lot_equivalents_daily",
-        "data_type": "VARCHAR"
+        "table": "spot_prices"
       }
     },
     {
@@ -2715,7 +2701,20 @@
       }
     },
     {
-      "id": "col:model:fct_commodity_trading_signals_daily.quote_unit",
+      "id": "col:model:fct_mcx_lot_equivalents_daily.quote_unit",
+      "kind": "Column",
+      "name": "quote_unit",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "unit_of_measure",
+        "pii": false,
+        "model": "fct_mcx_lot_equivalents_daily",
+        "data_type": "VARCHAR"
+      }
+    },
+    {
+      "id": "col:model:rpt_commodity_price_board.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
       "layer": "marts",
@@ -2723,7 +2722,7 @@
       "props": {
         "role": "",
         "pii": false,
-        "model": "fct_commodity_trading_signals_daily",
+        "model": "rpt_commodity_price_board",
         "data_type": "VARCHAR",
         "documented": false
       }
@@ -2743,15 +2742,16 @@
       }
     },
     {
-      "id": "col:table:gold_api.spot_prices.quote_unit",
+      "id": "col:model:dim_commodities.quote_unit",
       "kind": "Column",
       "name": "quote_unit",
-      "layer": "raw",
-      "label": "unit_of_measure",
+      "layer": "marts",
+      "label": "",
       "props": {
         "role": "unit_of_measure",
         "pii": false,
-        "table": "spot_prices"
+        "model": "dim_commodities",
+        "data_type": "VARCHAR"
       }
     },
     {
@@ -2768,6 +2768,18 @@
       }
     },
     {
+      "id": "col:table:yahoo_finance.fx_rates.rate",
+      "kind": "Column",
+      "name": "rate",
+      "layer": "raw",
+      "label": "exchange_rate",
+      "props": {
+        "role": "exchange_rate",
+        "pii": false,
+        "table": "fx_rates"
+      }
+    },
+    {
       "id": "col:model:stg_yahoo_finance__fx_rates.rate",
       "kind": "Column",
       "name": "rate",
@@ -2778,18 +2790,6 @@
         "pii": false,
         "model": "stg_yahoo_finance__fx_rates",
         "data_type": "DOUBLE"
-      }
-    },
-    {
-      "id": "col:table:yahoo_finance.fx_rates.rate",
-      "kind": "Column",
-      "name": "rate",
-      "layer": "raw",
-      "label": "exchange_rate",
-      "props": {
-        "role": "exchange_rate",
-        "pii": false,
-        "table": "fx_rates"
       }
     },
     {
@@ -2871,19 +2871,6 @@
       }
     },
     {
-      "id": "col:model:dim_commodities.segment",
-      "kind": "Column",
-      "name": "segment",
-      "layer": "marts",
-      "label": "",
-      "props": {
-        "role": "status_enum",
-        "pii": false,
-        "model": "dim_commodities",
-        "data_type": "VARCHAR"
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.segment",
       "kind": "Column",
       "name": "segment",
@@ -2895,6 +2882,19 @@
         "model": "rpt_commodity_price_board",
         "data_type": "VARCHAR",
         "documented": false
+      }
+    },
+    {
+      "id": "col:model:dim_commodities.segment",
+      "kind": "Column",
+      "name": "segment",
+      "layer": "marts",
+      "label": "",
+      "props": {
+        "role": "status_enum",
+        "pii": false,
+        "model": "dim_commodities",
+        "data_type": "VARCHAR"
       }
     },
     {
@@ -3055,19 +3055,6 @@
       }
     },
     {
-      "id": "col:model:fct_landed_prices_daily.usd_fx_rate",
-      "kind": "Column",
-      "name": "usd_fx_rate",
-      "layer": "marts",
-      "label": "Units of this market's currency per 1 USD on the price date; 1 when the market prices in USD.",
-      "props": {
-        "role": "exchange_rate",
-        "pii": false,
-        "model": "fct_landed_prices_daily",
-        "data_type": "DOUBLE"
-      }
-    },
-    {
       "id": "col:model:rpt_commodity_price_board.usd_fx_rate",
       "kind": "Column",
       "name": "usd_fx_rate",
@@ -3092,6 +3079,19 @@
         "model": "fct_landed_price_attribution_daily",
         "data_type": "DOUBLE",
         "documented": false
+      }
+    },
+    {
+      "id": "col:model:fct_landed_prices_daily.usd_fx_rate",
+      "kind": "Column",
+      "name": "usd_fx_rate",
+      "layer": "marts",
+      "label": "Units of this market's currency per 1 USD on the price date; 1 when the market prices in USD.",
+      "props": {
+        "role": "exchange_rate",
+        "pii": false,
+        "model": "fct_landed_prices_daily",
+        "data_type": "DOUBLE"
       }
     },
     {
@@ -3162,6 +3162,18 @@
       }
     },
     {
+      "id": "col:table:yahoo_finance.futures_prices.volume",
+      "kind": "Column",
+      "name": "volume",
+      "layer": "raw",
+      "label": "quantity",
+      "props": {
+        "role": "quantity",
+        "pii": false,
+        "table": "futures_prices"
+      }
+    },
+    {
       "id": "col:model:stg_yahoo_finance__futures_prices.volume",
       "kind": "Column",
       "name": "volume",
@@ -3172,18 +3184,6 @@
         "pii": false,
         "model": "stg_yahoo_finance__futures_prices",
         "data_type": "BIGINT"
-      }
-    },
-    {
-      "id": "col:table:yahoo_finance.futures_prices.volume",
-      "kind": "Column",
-      "name": "volume",
-      "layer": "raw",
-      "label": "quantity",
-      "props": {
-        "role": "quantity",
-        "pii": false,
-        "table": "futures_prices"
       }
     },
     {
@@ -3585,17 +3585,6 @@
       }
     },
     {
-      "id": "dim:landed_price_attribution__commodity_id",
-      "kind": "Dimension",
-      "name": "commodity_id",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "landed_price_attribution"
-      }
-    },
-    {
       "id": "dim:commodity_trading_signals__commodity_id",
       "kind": "Dimension",
       "name": "commodity_id",
@@ -3604,17 +3593,6 @@
       "props": {
         "type": "categorical",
         "semantic_model": "commodity_trading_signals"
-      }
-    },
-    {
-      "id": "dim:commodity_prices__commodity_id",
-      "kind": "Dimension",
-      "name": "commodity_id",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "commodity_prices"
       }
     },
     {
@@ -3629,9 +3607,42 @@
       }
     },
     {
+      "id": "dim:commodity_prices__commodity_id",
+      "kind": "Dimension",
+      "name": "commodity_id",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "commodity_prices"
+      }
+    },
+    {
+      "id": "dim:landed_price_attribution__commodity_id",
+      "kind": "Dimension",
+      "name": "commodity_id",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "landed_price_attribution"
+      }
+    },
+    {
       "id": "dim:commodities__commodity_name",
       "kind": "Dimension",
       "name": "commodity_name",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "commodities"
+      }
+    },
+    {
+      "id": "dim:commodities__currency_code",
+      "kind": "Dimension",
+      "name": "currency_code",
       "layer": "semantic",
       "label": "",
       "props": {
@@ -3662,17 +3673,6 @@
       }
     },
     {
-      "id": "dim:commodities__currency_code",
-      "kind": "Dimension",
-      "name": "currency_code",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "commodities"
-      }
-    },
-    {
       "id": "dim:commodities__exchange",
       "kind": "Dimension",
       "name": "exchange",
@@ -3695,17 +3695,6 @@
       }
     },
     {
-      "id": "dim:landed_price_attribution__is_duty_rate_confirmed",
-      "kind": "Dimension",
-      "name": "is_duty_rate_confirmed",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "landed_price_attribution"
-      }
-    },
-    {
       "id": "dim:landed_prices__is_duty_rate_confirmed",
       "kind": "Dimension",
       "name": "is_duty_rate_confirmed",
@@ -3714,6 +3703,17 @@
       "props": {
         "type": "categorical",
         "semantic_model": "landed_prices"
+      }
+    },
+    {
+      "id": "dim:landed_price_attribution__is_duty_rate_confirmed",
+      "kind": "Dimension",
+      "name": "is_duty_rate_confirmed",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "landed_price_attribution"
       }
     },
     {
@@ -3761,17 +3761,6 @@
       }
     },
     {
-      "id": "dim:landed_prices__market_code",
-      "kind": "Dimension",
-      "name": "market_code",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "landed_prices"
-      }
-    },
-    {
       "id": "dim:landed_price_attribution__market_code",
       "kind": "Dimension",
       "name": "market_code",
@@ -3780,6 +3769,17 @@
       "props": {
         "type": "categorical",
         "semantic_model": "landed_price_attribution"
+      }
+    },
+    {
+      "id": "dim:landed_prices__market_code",
+      "kind": "Dimension",
+      "name": "market_code",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "landed_prices"
       }
     },
     {
@@ -3816,6 +3816,17 @@
       }
     },
     {
+      "id": "dim:commodities__price_basis",
+      "kind": "Dimension",
+      "name": "price_basis",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "categorical",
+        "semantic_model": "commodities"
+      }
+    },
+    {
       "id": "dim:landed_prices__price_basis",
       "kind": "Dimension",
       "name": "price_basis",
@@ -3838,25 +3849,14 @@
       }
     },
     {
-      "id": "dim:commodities__price_basis",
-      "kind": "Dimension",
-      "name": "price_basis",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "categorical",
-        "semantic_model": "commodities"
-      }
-    },
-    {
-      "id": "dim:commodity_trading_signals__price_date",
+      "id": "dim:landed_prices__price_date",
       "kind": "Dimension",
       "name": "price_date",
       "layer": "semantic",
       "label": "",
       "props": {
         "type": "time",
-        "semantic_model": "commodity_trading_signals"
+        "semantic_model": "landed_prices"
       }
     },
     {
@@ -3871,17 +3871,6 @@
       }
     },
     {
-      "id": "dim:landed_prices__price_date",
-      "kind": "Dimension",
-      "name": "price_date",
-      "layer": "semantic",
-      "label": "",
-      "props": {
-        "type": "time",
-        "semantic_model": "landed_prices"
-      }
-    },
-    {
       "id": "dim:commodity_prices__price_date",
       "kind": "Dimension",
       "name": "price_date",
@@ -3890,6 +3879,17 @@
       "props": {
         "type": "time",
         "semantic_model": "commodity_prices"
+      }
+    },
+    {
+      "id": "dim:commodity_trading_signals__price_date",
+      "kind": "Dimension",
+      "name": "price_date",
+      "layer": "semantic",
+      "label": "",
+      "props": {
+        "type": "time",
+        "semantic_model": "commodity_trading_signals"
       }
     },
     {
@@ -4172,6 +4172,19 @@
       }
     },
     {
+      "id": "exposure:report_metrics_attribution_days",
+      "kind": "Exposure",
+      "name": "report_metrics_attribution_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/attribution_days.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_avg_benchmark_price_usd",
       "kind": "Exposure",
       "name": "report_metrics_avg_benchmark_price_usd",
@@ -4198,6 +4211,19 @@
       }
     },
     {
+      "id": "exposure:report_metrics_avg_fx_share_of_move",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_fx_share_of_move",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_fx_share_of_move.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_avg_landed_price_local",
       "kind": "Exposure",
       "name": "report_metrics_avg_landed_price_local",
@@ -4211,6 +4237,45 @@
       }
     },
     {
+      "id": "exposure:report_metrics_avg_momentum_20d",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_momentum_20d",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_momentum_20d.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_range_position",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_range_position",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_range_position.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_avg_realised_vol",
+      "kind": "Exposure",
+      "name": "report_metrics_avg_realised_vol",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/avg_realised_vol.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_avg_usd_fx_rate",
       "kind": "Exposure",
       "name": "report_metrics_avg_usd_fx_rate",
@@ -4221,6 +4286,19 @@
         "owner": "data-platform",
         "email": "sureshswaminathan.96@gmail.com",
         "url": "reporting/pages/metrics/avg_usd_fx_rate.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_benchmark_contribution_total",
+      "kind": "Exposure",
+      "name": "report_metrics_benchmark_contribution_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/benchmark_contribution_total.md"
       }
     },
     {
@@ -4263,6 +4341,19 @@
       }
     },
     {
+      "id": "exposure:report_metrics_duty_contribution_total",
+      "kind": "Exposure",
+      "name": "report_metrics_duty_contribution_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/duty_contribution_total.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_duty_local_total",
       "kind": "Exposure",
       "name": "report_metrics_duty_local_total",
@@ -4273,6 +4364,45 @@
         "owner": "data-platform",
         "email": "sureshswaminathan.96@gmail.com",
         "url": "reporting/pages/metrics/duty_local_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_fx_contribution_total",
+      "kind": "Exposure",
+      "name": "report_metrics_fx_contribution_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/fx_contribution_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_fx_share_days",
+      "kind": "Exposure",
+      "name": "report_metrics_fx_share_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/fx_share_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_fx_share_total",
+      "kind": "Exposure",
+      "name": "report_metrics_fx_share_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/fx_share_total.md"
       }
     },
     {
@@ -4302,6 +4432,32 @@
       }
     },
     {
+      "id": "exposure:report_metrics_momentum_20d_days",
+      "kind": "Exposure",
+      "name": "report_metrics_momentum_20d_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/momentum_20d_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_momentum_20d_total",
+      "kind": "Exposure",
+      "name": "report_metrics_momentum_20d_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/momentum_20d_total.md"
+      }
+    },
+    {
       "id": "exposure:report_metrics_period_high_price_usd",
       "kind": "Exposure",
       "name": "report_metrics_period_high_price_usd",
@@ -4325,6 +4481,71 @@
         "owner": "data-platform",
         "email": "sureshswaminathan.96@gmail.com",
         "url": "reporting/pages/metrics/period_low_price_usd.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_range_position_days",
+      "kind": "Exposure",
+      "name": "report_metrics_range_position_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/range_position_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_range_position_total",
+      "kind": "Exposure",
+      "name": "report_metrics_range_position_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/range_position_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_realised_vol_days",
+      "kind": "Exposure",
+      "name": "report_metrics_realised_vol_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/realised_vol_days.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_realised_vol_total",
+      "kind": "Exposure",
+      "name": "report_metrics_realised_vol_total",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/realised_vol_total.md"
+      }
+    },
+    {
+      "id": "exposure:report_metrics_signal_days",
+      "kind": "Exposure",
+      "name": "report_metrics_signal_days",
+      "layer": "consumption",
+      "label": "Evidence page generated by `pf report build`. Edit the metric or the page, never this file.",
+      "props": {
+        "type": "dashboard",
+        "owner": "data-platform",
+        "email": "sureshswaminathan.96@gmail.com",
+        "url": "reporting/pages/metrics/signal_days.md"
       }
     },
     {
@@ -10594,6 +10815,90 @@
       "props": {}
     },
     {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.price_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.commodity_id",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.price_date",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.close_price",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.pct_of_52w_range",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.ma_gap_50d_pct",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.ma_regime",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.ma_crossover",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.z_score_60d",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.momentum_20d_pct",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.realised_vol_20d",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.volatility_regime",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.stance",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "col:model:fct_commodity_trading_signals_daily.is_latest",
+      "kind": "has_column",
+      "props": {}
+    },
+    {
       "src": "model:rpt_mcx_contract_board",
       "dst": "col:model:rpt_mcx_contract_board.contract_code",
       "kind": "has_column",
@@ -10810,90 +11115,6 @@
       "props": {}
     },
     {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.price_id",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.commodity_id",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.price_date",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.close_price",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.pct_of_52w_range",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.ma_gap_50d_pct",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.ma_regime",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.ma_crossover",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.z_score_60d",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.momentum_20d_pct",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.realised_vol_20d",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.volatility_regime",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.stance",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "col:model:fct_commodity_trading_signals_daily.is_latest",
-      "kind": "has_column",
-      "props": {}
-    },
-    {
       "src": "table:yahoo_finance.fx_rates",
       "dst": "model:stg_yahoo_finance__fx_rates",
       "kind": "feeds",
@@ -10966,6 +11187,12 @@
       "props": {}
     },
     {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "model:fct_commodity_trading_signals_daily",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_mcx_lot_equivalents_daily",
       "dst": "model:rpt_mcx_contract_board",
       "kind": "feeds",
@@ -11010,6 +11237,12 @@
     {
       "src": "model:int_commodity_prices__usd",
       "dst": "test:test.commodity_india.assert_every_commodity_is_priced",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "test:test.commodity_india.assert_candles_bracket_the_close",
       "kind": "tested_by",
       "props": {}
     },
@@ -11446,102 +11679,6 @@
       "props": {}
     },
     {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.commodity_india.unique_metricflow_time_spine_date_day.ddb41ceac8",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:metricflow_time_spine",
-      "dst": "test:test.commodity_india.not_null_metricflow_time_spine_date_day.54acf49e8d",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.unique_int_commodity_prices__usd_price_id.9965ce6c5a",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_price_id.d00570299b",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_commodity_id.3317fa3699",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.accepted_values_int_commodity_prices__usd_price_basis__futures__indicative.5eb5641743",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.accepted_values_int_commodity_prices__usd_currency_code__USD.ad1731965f",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_close_price.32a1b57cfd",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_commodity_prices__usd",
-      "dst": "test:test.commodity_india.dbt_utils_unique_combination_of_columns_int_commodity_prices__usd_commodity_id__price_date__price_basis.71487cb6a3",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_fx_rates__daily",
-      "dst": "test:test.commodity_india.unique_int_fx_rates__daily_fx_day_id.6c39ed88f7",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_fx_rates__daily",
-      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_fx_day_id.aceee141a0",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_fx_rates__daily",
-      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_usd_rate.6386cdf740",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_fx_rates__daily",
-      "dst": "test:test.commodity_india.dbt_utils_expression_is_true_int_fx_rates__daily_usd_rate___0.254403d14a",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:int_fx_rates__daily",
-      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_fixed_on.f5012dcb08",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "model:fct_commodity_trading_signals_daily",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "test:test.commodity_india.assert_candles_bracket_the_close",
-      "kind": "tested_by",
-      "props": {}
-    },
-    {
       "src": "model:fct_commodity_trading_signals_daily",
       "dst": "test:test.commodity_india.unique_fct_commodity_trading_signals_daily_price_id.be0af500f3",
       "kind": "tested_by",
@@ -11674,6 +11811,90 @@
       "props": {}
     },
     {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.commodity_india.unique_metricflow_time_spine_date_day.ddb41ceac8",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:metricflow_time_spine",
+      "dst": "test:test.commodity_india.not_null_metricflow_time_spine_date_day.54acf49e8d",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.unique_int_commodity_prices__usd_price_id.9965ce6c5a",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_price_id.d00570299b",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_commodity_id.3317fa3699",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.accepted_values_int_commodity_prices__usd_price_basis__futures__indicative.5eb5641743",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.accepted_values_int_commodity_prices__usd_currency_code__USD.ad1731965f",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.not_null_int_commodity_prices__usd_close_price.32a1b57cfd",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_commodity_prices__usd",
+      "dst": "test:test.commodity_india.dbt_utils_unique_combination_of_columns_int_commodity_prices__usd_commodity_id__price_date__price_basis.71487cb6a3",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_fx_rates__daily",
+      "dst": "test:test.commodity_india.unique_int_fx_rates__daily_fx_day_id.6c39ed88f7",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_fx_rates__daily",
+      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_fx_day_id.aceee141a0",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_fx_rates__daily",
+      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_usd_rate.6386cdf740",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_fx_rates__daily",
+      "dst": "test:test.commodity_india.dbt_utils_expression_is_true_int_fx_rates__daily_usd_rate___0.254403d14a",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
+      "src": "model:int_fx_rates__daily",
+      "dst": "test:test.commodity_india.not_null_int_fx_rates__daily_fixed_on.f5012dcb08",
+      "kind": "tested_by",
+      "props": {}
+    },
+    {
       "src": "model:fct_commodity_prices_daily",
       "dst": "exposure:report_index",
       "kind": "feeds",
@@ -11710,6 +11931,12 @@
       "props": {}
     },
     {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_attribution_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_commodity_prices_daily",
       "dst": "exposure:report_metrics_avg_benchmark_price_usd",
       "kind": "feeds",
@@ -11722,14 +11949,44 @@
       "props": {}
     },
     {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_avg_fx_share_of_move",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_landed_prices_daily",
       "dst": "exposure:report_metrics_avg_landed_price_local",
       "kind": "feeds",
       "props": {}
     },
     {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_avg_momentum_20d",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_avg_range_position",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_avg_realised_vol",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_landed_prices_daily",
       "dst": "exposure:report_metrics_avg_usd_fx_rate",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_benchmark_contribution_total",
       "kind": "feeds",
       "props": {}
     },
@@ -11752,8 +12009,32 @@
       "props": {}
     },
     {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_duty_contribution_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_landed_prices_daily",
       "dst": "exposure:report_metrics_duty_local_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_fx_contribution_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_fx_share_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "exposure:report_metrics_fx_share_total",
       "kind": "feeds",
       "props": {}
     },
@@ -11770,6 +12051,18 @@
       "props": {}
     },
     {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_momentum_20d_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_momentum_20d_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
       "src": "model:fct_commodity_prices_daily",
       "dst": "exposure:report_metrics_period_high_price_usd",
       "kind": "feeds",
@@ -11778,6 +12071,36 @@
     {
       "src": "model:fct_commodity_prices_daily",
       "dst": "exposure:report_metrics_period_low_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_range_position_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_range_position_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_realised_vol_days",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_realised_vol_total",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "exposure:report_metrics_signal_days",
       "kind": "feeds",
       "props": {}
     },
@@ -12424,6 +12747,84 @@
       "props": {}
     },
     {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__price_date",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__commodity_id",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__stance",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__ma_regime",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__ma_crossover",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__volatility_regime",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_trading_signals_daily",
+      "dst": "dim:commodity_trading_signals__price_basis",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__price_date",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__commodity_id",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__market_code",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__currency_code",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__primary_driver",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
+      "src": "model:fct_landed_price_attribution_daily",
+      "dst": "dim:landed_price_attribution__is_duty_rate_confirmed",
+      "kind": "grouped_by",
+      "props": {}
+    },
+    {
       "src": "model:dim_commodities",
       "dst": "dim:commodities__commodity_name",
       "kind": "grouped_by",
@@ -12559,216 +12960,6 @@
       "src": "model:fct_fx_rates_daily",
       "dst": "dim:fx_rates__is_carried_forward",
       "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__price_date",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__commodity_id",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__stance",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__ma_regime",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__ma_crossover",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__volatility_regime",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_trading_signals_daily",
-      "dst": "dim:commodity_trading_signals__price_basis",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__price_date",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__commodity_id",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__market_code",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__currency_code",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__primary_driver",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_landed_price_attribution_daily",
-      "dst": "dim:landed_price_attribution__is_duty_rate_confirmed",
-      "kind": "grouped_by",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "metric:benchmark_price_usd_total",
-      "kind": "measures",
-      "props": {
-        "measure": "benchmark_price_usd_sum"
-      }
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "metric:benchmark_price_days",
-      "kind": "measures",
-      "props": {
-        "measure": "benchmark_price_count"
-      }
-    },
-    {
-      "src": "model:fct_landed_prices_daily",
-      "dst": "metric:landed_price_local_total",
-      "kind": "measures",
-      "props": {
-        "measure": "landed_price_local_sum"
-      }
-    },
-    {
-      "src": "model:fct_landed_prices_daily",
-      "dst": "metric:landed_price_days",
-      "kind": "measures",
-      "props": {
-        "measure": "landed_price_count"
-      }
-    },
-    {
-      "src": "model:fct_landed_prices_daily",
-      "dst": "metric:duty_local_total",
-      "kind": "measures",
-      "props": {
-        "measure": "duty_local_sum"
-      }
-    },
-    {
-      "src": "model:fct_landed_prices_daily",
-      "dst": "metric:usd_fx_rate_total",
-      "kind": "measures",
-      "props": {
-        "measure": "usd_fx_rate_sum"
-      }
-    },
-    {
-      "src": "metric:benchmark_price_usd_total",
-      "dst": "metric:avg_benchmark_price_usd",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:benchmark_price_days",
-      "dst": "metric:avg_benchmark_price_usd",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "metric:period_high_price_usd",
-      "kind": "measures",
-      "props": {
-        "measure": "high_price_usd_max"
-      }
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "metric:period_low_price_usd",
-      "kind": "measures",
-      "props": {
-        "measure": "low_price_usd_min"
-      }
-    },
-    {
-      "src": "model:fct_commodity_prices_daily",
-      "dst": "metric:contracts_traded",
-      "kind": "measures",
-      "props": {
-        "measure": "contract_volume"
-      }
-    },
-    {
-      "src": "metric:avg_benchmark_price_usd",
-      "dst": "metric:benchmark_price_mom_change",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:landed_price_local_total",
-      "dst": "metric:avg_landed_price_local",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:landed_price_days",
-      "dst": "metric:avg_landed_price_local",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:duty_local_total",
-      "dst": "metric:avg_duty_local",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:landed_price_days",
-      "dst": "metric:avg_duty_local",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:usd_fx_rate_total",
-      "dst": "metric:avg_usd_fx_rate",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:landed_price_days",
-      "dst": "metric:avg_usd_fx_rate",
-      "kind": "feeds",
-      "props": {}
-    },
-    {
-      "src": "metric:avg_landed_price_local",
-      "dst": "metric:landed_price_mom_change",
-      "kind": "feeds",
       "props": {}
     },
     {
@@ -12924,6 +13115,144 @@
       }
     },
     {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "metric:benchmark_price_usd_total",
+      "kind": "measures",
+      "props": {
+        "measure": "benchmark_price_usd_sum"
+      }
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "metric:benchmark_price_days",
+      "kind": "measures",
+      "props": {
+        "measure": "benchmark_price_count"
+      }
+    },
+    {
+      "src": "model:fct_landed_prices_daily",
+      "dst": "metric:landed_price_local_total",
+      "kind": "measures",
+      "props": {
+        "measure": "landed_price_local_sum"
+      }
+    },
+    {
+      "src": "model:fct_landed_prices_daily",
+      "dst": "metric:landed_price_days",
+      "kind": "measures",
+      "props": {
+        "measure": "landed_price_count"
+      }
+    },
+    {
+      "src": "model:fct_landed_prices_daily",
+      "dst": "metric:duty_local_total",
+      "kind": "measures",
+      "props": {
+        "measure": "duty_local_sum"
+      }
+    },
+    {
+      "src": "model:fct_landed_prices_daily",
+      "dst": "metric:usd_fx_rate_total",
+      "kind": "measures",
+      "props": {
+        "measure": "usd_fx_rate_sum"
+      }
+    },
+    {
+      "src": "metric:benchmark_price_usd_total",
+      "dst": "metric:avg_benchmark_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:benchmark_price_days",
+      "dst": "metric:avg_benchmark_price_usd",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "metric:period_high_price_usd",
+      "kind": "measures",
+      "props": {
+        "measure": "high_price_usd_max"
+      }
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "metric:period_low_price_usd",
+      "kind": "measures",
+      "props": {
+        "measure": "low_price_usd_min"
+      }
+    },
+    {
+      "src": "model:fct_commodity_prices_daily",
+      "dst": "metric:contracts_traded",
+      "kind": "measures",
+      "props": {
+        "measure": "contract_volume"
+      }
+    },
+    {
+      "src": "metric:avg_benchmark_price_usd",
+      "dst": "metric:benchmark_price_mom_change",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:landed_price_local_total",
+      "dst": "metric:avg_landed_price_local",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:landed_price_days",
+      "dst": "metric:avg_landed_price_local",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:duty_local_total",
+      "dst": "metric:avg_duty_local",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:landed_price_days",
+      "dst": "metric:avg_duty_local",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:usd_fx_rate_total",
+      "dst": "metric:avg_usd_fx_rate",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:landed_price_days",
+      "dst": "metric:avg_usd_fx_rate",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "metric:avg_landed_price_local",
+      "dst": "metric:landed_price_mom_change",
+      "kind": "feeds",
+      "props": {}
+    },
+    {
+      "src": "decision:ADR-0002",
+      "dst": "dim:landed_price_attribution__currency_code",
+      "kind": "decides",
+      "props": {}
+    },
+    {
       "src": "decision:ADR-0002",
       "dst": "dim:commodities__currency_code",
       "kind": "decides",
@@ -12937,25 +13266,7 @@
     },
     {
       "src": "decision:ADR-0002",
-      "dst": "dim:landed_price_attribution__currency_code",
-      "kind": "decides",
-      "props": {}
-    },
-    {
-      "src": "decision:ADR-0002",
       "dst": "model:int_commodity_prices__usd",
-      "kind": "decides",
-      "props": {}
-    },
-    {
-      "src": "decision:ADR-0003",
-      "dst": "dim:commodity_prices__commodity_id",
-      "kind": "decides",
-      "props": {}
-    },
-    {
-      "src": "decision:ADR-0003",
-      "dst": "dim:landed_prices__commodity_id",
       "kind": "decides",
       "props": {}
     },
@@ -12968,6 +13279,18 @@
     {
       "src": "decision:ADR-0003",
       "dst": "dim:landed_price_attribution__commodity_id",
+      "kind": "decides",
+      "props": {}
+    },
+    {
+      "src": "decision:ADR-0003",
+      "dst": "dim:commodity_prices__commodity_id",
+      "kind": "decides",
+      "props": {}
+    },
+    {
+      "src": "decision:ADR-0003",
+      "dst": "dim:landed_prices__commodity_id",
       "kind": "decides",
       "props": {}
     },
@@ -13021,6 +13344,12 @@
     },
     {
       "src": "decision:ADR-0005",
+      "dst": "dim:landed_price_attribution__market_code",
+      "kind": "decides",
+      "props": {}
+    },
+    {
+      "src": "decision:ADR-0005",
       "dst": "dim:commodities__market_code",
       "kind": "decides",
       "props": {}
@@ -13033,7 +13362,7 @@
     },
     {
       "src": "decision:ADR-0005",
-      "dst": "dim:landed_price_attribution__market_code",
+      "dst": "dim:landed_price_attribution__currency_code",
       "kind": "decides",
       "props": {}
     },
@@ -13046,12 +13375,6 @@
     {
       "src": "decision:ADR-0005",
       "dst": "dim:landed_prices__currency_code",
-      "kind": "decides",
-      "props": {}
-    },
-    {
-      "src": "decision:ADR-0005",
-      "dst": "dim:landed_price_attribution__currency_code",
       "kind": "decides",
       "props": {}
     },
