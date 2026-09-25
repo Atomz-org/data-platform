@@ -47,12 +47,14 @@
     },
     "dlthub-ai-workbench": {
       "adopted": {
-        "TOOLKITS.md": "64ea52830b4c1aac4aee7cf29273c22efc7722b3",
+        "TOOLKITS.md": "97753d4f35e875d7f76f9b804c20e30c47db29fa",
         "workbench/data-exploration/skills/explore-data/SKILL.md": "e0a93065ca04f1a72dda8d6ebe52ecc696ebbb08",
         "workbench/data-quality/skills/setup-data-quality/SKILL.md": "70ce52a9b69d0e25ff9c53de326e4665f645952d",
         "workbench/filesystem-pipeline/skills/create-filesystem-pipeline/SKILL.md": "b6d74d63bf0c9090b05a3c51e6d4f7224b90c966",
         "workbench/init/skills/setup-secrets/SKILL.md": "cbcaa91441d61809a5321dcb184467e21da3e116",
         "workbench/quick-start/skills/quick-start/SKILL.md": "b93b52b94c34b6213b713325bd3e13e8f2473462",
+        "workbench/rest-api-pipeline/skills/create-rest-api-pipeline/SKILL.md": "7e0a8ac5330cca376848d004b4c375f0eb8a5f16",
+        "workbench/rest-api-pipeline/skills/debug-pipeline/SKILL.md": "21b03b8cde5f1af2149f87e7d61eee6bd8b91489",
         "workbench/rest-api-pipeline/skills/optimize-rest-api-performance/SKILL.md": "bc4247ee52523fb38bd6a51eb67f175b9907afe5",
         "workbench/sql-database-pipeline/skills/create-sql-database-pipeline/SKILL.md": "7b70fd699dc9c8132f930e67fc99cbe8ef05df2d",
         "workbench/sql-database-pipeline/skills/find-source/SKILL.md": "68ac436634c2d5be98cb64836d433c2aca3d3093",
@@ -61,7 +63,7 @@
         "workbench/transformations/skills/generate-cdm/SKILL.md": "3bbe9c55465884e0a313da2f32210e284db84015"
       },
       "branch": "master",
-      "commit": "4575f468ca49aad841ac3cc8d370a10378af518a"
+      "commit": "10c9d0c7240d371f5d63749fa7907995ec412040"
     },
     "duckdb-skills": {
       "adopted": {
