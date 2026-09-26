@@ -226,6 +226,13 @@ jobs:
         uses: ./vendor/asqav-compliance
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Our vocabulary, not the scanner's: which calls write the audit
+          # record (`trace.get()`, `tr.intent(...)`, `provenance.action(...)`)
+          # and which paths are not agent code (tests, vendor/). Additive — the
+          # built-in patterns still apply and the report says a config was used.
+          # Read by our fork's config support (Atomz-org/asqav-compliance#1);
+          # the registry entry records why the fork carries it.
+          config: .asqav.json
           # Reported, never enforced. The scanner is regex over source, so it
           # scores a file that merely mentions `revoke` the same as one that
           # implements a kill switch — useful as a prompt to look, wrong as a

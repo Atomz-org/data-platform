@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "about": "How this repository spells the controls the ASQAV scan (vendor/asqav-compliance, .github/workflows/ai-governance.yml) looks for. Additive: the scanner's built-in patterns still apply; this only teaches it our vocabulary. Every pattern names a call that writes to the audit record, not a word that could appear in a comment. The record itself is verified by `pf provenance verify`, which blocks; this scan reports. Registry: platform/src/pf/vendor/registry.yaml (asqav-compliance).",
+  "exclude": [
+    "**/tests/**",
+    "**/test_*.py",
+    "**/conftest.py",
+    "vendor/**"
+  ],
+  "patterns": {
+    "auditTrail": [
+      "\\btrace\\.(get|start|decision)\\(",
+      "\\btr\\.(intent|request|response|decision|execution)\\(",
+      "\\bprovenance\\.action\\("
+    ]
+  }
+}
