@@ -20,4 +20,5 @@ okf_x_identity: market_code
 # Relations
 
 * [customer_located_in_location](/relations/customer_located_in_location.md) — Customer located in Location
+* [exchange_contract_listed_in_market](/relations/exchange_contract_listed_in_market.md) — ExchangeContract is listed in Market
 * [price_observation_in_market](/relations/price_observation_in_market.md) — PriceObservation is landed in Market
