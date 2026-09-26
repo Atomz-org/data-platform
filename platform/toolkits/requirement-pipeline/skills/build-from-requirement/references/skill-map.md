@@ -133,6 +133,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | `triage-alerts` | an Elementary anomaly needs reading | → metric, expected range and actual value, quoted |
 | `pf loop run observability-triage` | after the build is green | → recurrence and classification of whatever fired, before a report trusts the marts |
 | `answer-with-metrics` | each metric-shaped `AC-n` | → the number, with its metric and filter named |
+| `ask-through-wren` (`wren-analytics`) | an `AC-n` shaped as rows, not a number ("which", "top N", "show me"), that no metric covers | → one SELECT over MDL model names through `pf tool wren query`: policy, plan, dry-run, execute, ledger. The answer carries the planned SQL and the run id; on confirmation `pf tool wren store` keeps the pair in `mdl/wren/knowledge/sql/` |
 | `query` (`duckdb-ops`) | debugging a failing test's rows | → read-only, truncated evidence. Never used to prove an AC |
 
 ## Phase 10 — Orchestration
@@ -158,6 +159,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 |---|---|---|
 | `pf tool openmetadata …` | `catalog` is set | → payload verified, then ingest and publish (`layer-contracts.md` §Catalogue) |
 | `design-ontology` "Publishing it" | always, after the final graph | → `pf semantic mdl <g> <p>`, `pf tool okf build <g> <p> --group`, `pf tool okf check <g> <p>`, `pf air coverage` |
+| `ask-through-wren` "Operating the workspace" | always, after `pf semantic mdl` | → `pf tool wren check <g> <p>`: the committed `mdl/wren/` workspace (project file, rules) is what the manifest projects. `pf semantic mdl` rewrote it; the diff is the changed rules, committed and reviewed like code |
 
 ## Phase 13 — Close
 

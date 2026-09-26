@@ -85,10 +85,11 @@ SKILLS: dict[int, list[str]] = {
     7: ["using-dbt", "run-commands", "contracts-and-access", "add-tests", "add-expectations",
         "quality-stack", "sql-reviewer"],
     8: ["build-semantic-layer", "semantic-conformance", "answer-with-metrics"],
-    9: ["run-commands", "troubleshoot-runs", "triage-observability", "triage-alerts", "answer-with-metrics"],
+    9: ["run-commands", "troubleshoot-runs", "triage-observability", "triage-alerts", "answer-with-metrics",
+        "ask-through-wren"],
     10: ["build-assets", "dignified-python"],
     11: ["build-dashboard", "charts-and-diagrams", "dashboard-loop"],
-    12: ["design-ontology"],
+    12: ["design-ontology", "ask-through-wren"],
     13: ["design-architecture", "charts-and-diagrams", "recce-review", "impact-verifier",
          "secrets-auditor", "ship"],
 }
