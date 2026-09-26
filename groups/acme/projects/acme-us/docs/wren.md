@@ -22,14 +22,17 @@ pf tool wren check acme acme-us           # is the committed workspace what the 
 pf tool wren context acme acme-us "<q>"   # rules + remembered questions + schema, for one question
 pf tool wren plan acme acme-us "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query acme acme-us "<sql>"   # policy → plan → dry-run → execute → ledger
+pf tool wren cube acme acme-us --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
 pf tool wren store acme acme-us --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor acme acme-us               # is the engine actually usable
 ```
 
 ## The road every question takes
 
-`pf tool wren query` (and the `wren_query` MCP tool) never runs what it is
-given. It checks the statement is one read-only `SELECT`, plans it through the
+`pf tool wren query` and `pf tool wren cube` (the `wren_query` and `wren_cube`
+MCP tools) never run what they are given. A cube question is first translated
+into one `SELECT` by the engine. The gate checks the statement is one read-only
+`SELECT`, plans it through the
 LLM-facing manifest, `EXPLAIN`s the plan on this project's warehouse read-only,
 executes it row-limited, and appends the outcome — refused or not — to
 `groups/acme/loop-ledger.json` as a `wren-query` run. A statement refused

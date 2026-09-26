@@ -370,8 +370,8 @@
   ],
   "cubes": [
     {
-      "name": "acme_us_core",
-      "baseObject": "fct_payments",
+      "name": "dim_customers_metrics",
+      "baseObject": "dim_customers",
       "measures": [
         {
           "name": "active_customers",
@@ -381,7 +381,35 @@
           "properties": {
             "pf.metric_type": "simple"
           }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "country_code",
+          "expression": "country_code",
+          "type": "VARCHAR",
+          "description": ""
         },
+        {
+          "name": "customer_segment",
+          "expression": "customer_segment",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "created_at",
+          "expression": "created_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_payments_metrics",
+      "baseObject": "fct_payments",
+      "measures": [
         {
           "name": "aov",
           "expression": "sum(amount) / nullif(count(payment_id), 0)",
@@ -446,12 +474,6 @@
         }
       ],
       "timeDimensions": [
-        {
-          "name": "created_at",
-          "expression": "created_at",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
         {
           "name": "paid_at",
           "expression": "paid_at",
