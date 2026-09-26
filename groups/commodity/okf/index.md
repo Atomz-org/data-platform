@@ -4,9 +4,9 @@ name: commodity ontology
 okf_x_scope: group
 okf_x_group: commodity
 okf_x_platform_bundle: ../../../platform/okf/index.md
-okf_x_concepts: 5
+okf_x_concepts: 7
 okf_x_roles: 6
-okf_x_relations: 3
+okf_x_relations: 6
 ---
 
 # commodity ontology
@@ -21,6 +21,8 @@ Everything else this family uses is the platform's: [Platform ontology](../../..
 # Concepts
 
 * [Commodity](/concepts/Commodity.md) - A traded raw material with an international benchmark, quoted per a physical unit.
+* [ContractSession](/concepts/ContractSession.md) - One exchange contract's trading day as the exchange settles it — open, high, low, close, the previous settlement, volume and open interest in lots, and turnover. Prices are per the contract's quote basis and never summed; volume and turnover are additive within a day.
+* [ExchangeContract](/concepts/ExchangeContract.md) - A standardised exchange-traded derivative on one commodity — a futures contract, or one expiry's chain of options — identified by exchange, instrument, contract code and expiry.
 * [FxRate](/concepts/FxRate.md) - A daily exchange-rate fix — units of quote currency per one unit of base currency.
 * [ImportTariff](/concepts/ImportTariff.md) - Customs duty a jurisdiction levies on importing a commodity, valid over an interval.
 * [Market](/concepts/Market.md) - A jurisdiction commodities are landed in — one sister project, one currency, one customs regime. The tenant of this family.
@@ -37,6 +39,9 @@ Everything else this family uses is the platform's: [Platform ontology](../../..
 
 # Relations
 
+* [contract_session_of_exchange_contract](/relations/contract_session_of_exchange_contract.md) - ContractSession settles ExchangeContract
+* [exchange_contract_listed_in_market](/relations/exchange_contract_listed_in_market.md) - ExchangeContract is listed in Market
+* [exchange_contract_on_commodity](/relations/exchange_contract_on_commodity.md) - ExchangeContract is written on Commodity
 * [import_tariff_on_commodity](/relations/import_tariff_on_commodity.md) - ImportTariff is levied on Commodity
 * [price_observation_in_market](/relations/price_observation_in_market.md) - PriceObservation is landed in Market
 * [price_observation_of_commodity](/relations/price_observation_of_commodity.md) - PriceObservation prices Commodity

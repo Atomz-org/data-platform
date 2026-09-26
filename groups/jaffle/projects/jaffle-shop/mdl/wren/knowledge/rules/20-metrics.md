@@ -1,30 +1,60 @@
 # Metrics
 
-## Cube `jaffle_shop_core` on `orders`
+## Cube `customers_metrics` on `customers`
 
-Ask it with `wren cube query --cube <name> --measures <m> --dimensions <d>`; the
-engine writes the GROUP BY.
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
+
+Measures:
+
+| measure | expression | meaning |
+|---|---|---|
+| `count_lifetime_orders` | `sum(customers.count_lifetime_orders)` | Count Lifetime Orders |
+| `lifetime_spend_pretax` | `sum(customers.lifetime_spend_pretax)` | LTV Pre-tax |
+
+Dimensions: `customer_name`, `customer_type`
+Time dimensions: `first_ordered_at`, `last_ordered_at`
+
+## Cube `order_items_metrics` on `order_items`
+
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
+
+Measures:
+
+| measure | expression | meaning |
+|---|---|---|
+| `drink_revenue` | `sum(case when is_drink_item then product_price else 0 end)` | Drink Revenue |
+| `drink_revenue_pct` | `sum(case when is_drink_item then product_price else 0 end) / nullif(sum(product_price), 0)` | Drink Revenue % |
+| `food_revenue` | `sum(case when is_food_item then product_price else 0 end)` | Food Revenue |
+| `food_revenue_pct` | `sum(case when is_food_item then product_price else 0 end) / nullif(sum(product_price), 0)` | Food Revenue % |
+| `median_revenue` | `percentile_cont(0.5) within group (order by product_price)` | Median Revenue |
+| `revenue` | `sum(product_price)` | Revenue |
+
+Dimensions: `is_drink_item`, `is_food_item`
+Time dimensions: `ordered_at`
+
+## Cube `orders_metrics` on `orders`
+
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
 
 Measures:
 
 | measure | expression | meaning |
 |---|---|---|
 | `drink_orders` | `sum(1)` | Drink Orders |
-| `drink_revenue` | `sum(case when is_drink_item then product_price else 0 end)` | Drink Revenue |
-| `drink_revenue_pct` | `sum(case when is_drink_item then product_price else 0 end) / nullif(sum(product_price), 0)` | Drink Revenue % |
 | `food_orders` | `sum(1)` | Food Orders |
-| `food_revenue` | `sum(case when is_food_item then product_price else 0 end)` | Food Revenue |
-| `food_revenue_pct` | `sum(case when is_food_item then product_price else 0 end) / nullif(sum(product_price), 0)` | Food Revenue % |
 | `large_orders` | `sum(1)` | Large Orders |
-| `median_revenue` | `percentile_cont(0.5) within group (order by product_price)` | Median Revenue |
 | `new_customer_orders` | `sum(1)` | New Customers |
 | `order_cost` | `sum(orders.order_cost)` | Order Cost |
 | `order_total` | `sum(orders.order_total)` | Order Total |
-| `orders` | `sum(1)` | Orders |
-| `revenue` | `sum(product_price)` | Revenue |
 
-Dimensions: `customer_name`, `customer_order_number`, `customer_type`, `is_drink_item`, `is_drink_order`, `is_food_item`, `is_food_order`, `is_perishable_supply`, `location_name`, `order_total_dim`, `product_description`, `product_id`, `product_name`, `product_price`, `product_type`, `supply_cost`, `supply_id`, `supply_name`
-Time dimensions: `first_ordered_at`, `last_ordered_at`, `opened_date`, `ordered_at`
+Dimensions: `customer_order_number`, `is_drink_order`, `is_food_order`
+Time dimensions: `ordered_at`
 
 ## Metric definitions
 

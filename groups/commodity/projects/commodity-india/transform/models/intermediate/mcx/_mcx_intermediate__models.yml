@@ -1,0 +1,80 @@
+version: 2
+# India's MCX intermediate models — market-local (see the group conformance
+# test), so no sister is expected to have them.
+
+models:
+  - name: int_mcx__futures_sessions
+    description: >
+      MCX futures sessions made readable: expiry rank (near/next/far), days to
+      expiry, open-interest change within the contract, notional per lot, and
+      MCX's zero open/high/low on untraded days turned into nulls. Prices stay
+      ₹ per the contract's quote basis.
+    meta: {grain: one MCX futures contract per trading day, layer: intermediate}
+    columns:
+      - name: session_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_id
+        meta: {role: foreign_key, links_to: ExchangeContract}
+        data_tests: [not_null]
+      - name: trade_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: expiry_rank
+        data_tests: [not_null]
+      - name: close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+
+  - name: int_mcx__continuous_daily
+    description: >
+      One row per MCX code and session on the most-active contract (highest open
+      interest), with roll-free returns and ratio back-adjusted prices, plus the
+      whole curve that day: volume, OI, turnover, near/next closes.
+    meta: {grain: one MCX contract code per trading day, layer: intermediate}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [contract_code, trade_date]
+    columns:
+      - name: continuous_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: adj_close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+
+  - name: int_mcx__smoothed_indicators
+    description: >
+      Recursive indicators on the back-adjusted continuous series: EMA 12/26,
+      MACD and its signal, Wilder RSI(14) and ATR(14). Warm-up rows are gated in
+      the mart, not here.
+    meta: {grain: one MCX contract code per trading day, layer: intermediate}
+    columns:
+      - name: continuous_id
+        meta: {role: natural_key}
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_mcx__continuous_daily')
+                field: continuous_id
+      - name: rsi_14
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+
+  - name: int_mcx__options_chain_daily
+    description: >
+      One MCX option chain per session: call/put OI and volume, put/call ratios,
+      OI walls and max pain.
+    meta: {grain: one MCX option chain per trading day, layer: intermediate}
+    columns:
+      - name: chain_day_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_id
+        meta: {role: foreign_key, links_to: ExchangeContract}

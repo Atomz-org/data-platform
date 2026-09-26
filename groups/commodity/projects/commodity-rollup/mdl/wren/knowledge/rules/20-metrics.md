@@ -1,9 +1,10 @@
 # Metrics
 
-## Cube `commodity_rollup_core` on `fct_market_spreads_daily`
+## Cube `fct_landed_prices_daily_metrics` on `fct_landed_prices_daily`
 
-Ask it with `wren cube query --cube <name> --measures <m> --dimensions <d>`; the
-engine writes the GROUP BY.
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
 
 Measures:
 
@@ -11,17 +12,31 @@ Measures:
 |---|---|---|
 | `avg_import_parity_ratio` | `sum(landed_price_usd_per_quote_unit) / nullif(sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end), 0)` | Avg Import Parity Ratio |
 | `avg_landed_price_usd` | `sum(landed_price_usd_per_quote_unit) / nullif(count(landed_price_usd_per_quote_unit), 0)` | Avg Landed Price (USD per quote unit) |
-| `avg_spread_to_cheapest_ratio` | `sum(spread_to_cheapest_usd) / nullif(sum(cheapest_landed_usd), 0)` | Avg Spread to Cheapest Market (ratio) |
-| `avg_spread_to_cheapest_usd` | `sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)` | Avg Spread to Cheapest Market (USD) |
 | `benchmark_usd_total_where_landed` | `sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end)` | Benchmark USD Total, landed days (component) |
-| `cheapest_usd_total` | `sum(cheapest_landed_usd)` | Cheapest Landed Total (component) |
-| `days_as_cheapest_market` | `sum(case when is_cheapest_market then 1 else 0 end)` | Days as Cheapest Market |
 | `landed_usd_days` | `count(landed_price_usd_per_quote_unit)` | Days With a Comparable Landed Price |
 | `landed_usd_total` | `sum(landed_price_usd_per_quote_unit)` | Landed USD Total (component) |
+
+Dimensions: `commodity_id`, `is_duty_rate_confirmed`, `market_code`, `price_basis`
+Time dimensions: `price_date`
+
+## Cube `fct_market_spreads_daily_metrics` on `fct_market_spreads_daily`
+
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
+
+Measures:
+
+| measure | expression | meaning |
+|---|---|---|
+| `avg_spread_to_cheapest_ratio` | `sum(spread_to_cheapest_usd) / nullif(sum(cheapest_landed_usd), 0)` | Avg Spread to Cheapest Market (ratio) |
+| `avg_spread_to_cheapest_usd` | `sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)` | Avg Spread to Cheapest Market (USD) |
+| `cheapest_usd_total` | `sum(cheapest_landed_usd)` | Cheapest Landed Total (component) |
+| `days_as_cheapest_market` | `sum(case when is_cheapest_market then 1 else 0 end)` | Days as Cheapest Market |
 | `spread_days` | `count(spread_to_cheapest_usd)` | Days Compared |
 | `spread_usd_total` | `sum(spread_to_cheapest_usd)` | Spread Total (component) |
 
-Dimensions: `category`, `cheapest_market_code`, `commodity_id`, `commodity_name`, `country_code`, `currency_code`, `is_cheapest_market`, `is_duty_rate_confirmed`, `is_reporting`, `market_code`, `market_name`, `price_basis`, `quote_unit`, `segment`
+Dimensions: `cheapest_market_code`, `commodity_id`, `is_cheapest_market`, `market_code`
 Time dimensions: `price_date`
 
 ## Metric definitions

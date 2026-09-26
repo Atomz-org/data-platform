@@ -461,6 +461,15 @@ CORE: tuple[Feature, ...] = (
         made_by="pf bootstrap",
     ),
     Feature(
+        "project_tests",
+        "project unit tests",
+        "operate",
+        "the project's own Python tests — its connectors and Dagster wiring, offline",
+        ("tests/**/*.py",),
+        optional=True,
+        made_by="written with the code they test",
+    ),
+    Feature(
         "evals",
         "eval cases",
         "operate",

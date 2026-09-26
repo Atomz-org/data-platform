@@ -13,7 +13,7 @@ select metric_time, sum(benchmark_price_usd_total) as benchmark_price_usd_total,
 from ${metrics_avg_benchmark_price_usd} group by 1 order by 1
 ```
 
-<LineChart data={series} x=metric_time y=avg_benchmark_price_usd yFmt=num0/>
+<LineChart data={series} x=metric_time y=avg_benchmark_price_usd yFmt=usd/>
 
 ## By commodity id
 
@@ -22,5 +22,5 @@ select commodity_id, sum(benchmark_price_usd_total) / nullif(sum(benchmark_price
 from ${metrics_avg_benchmark_price_usd} where commodity_id is not null group by 1 order by 2 desc
 ```
 
-<BarChart data={by_dim} x=commodity_id y=avg_benchmark_price_usd swapXY=true xFmt=num0/>
+<BarChart data={by_dim} x=commodity_id y=avg_benchmark_price_usd swapXY=true xFmt=usd/>
 

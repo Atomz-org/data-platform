@@ -32,12 +32,14 @@ question ─► scope ─► context ─► metric? ─► plan ─► pf tool w
 4. **One read-only SELECT over MDL model names.** Model names as the workspace
    lists them, never `schema.table`. No joins the relationships do not declare.
    A price is never summed, a percentage never averaged; a metric's aggregate
-   is what the cube says. Prefer `wren cube query` for a measure-by-dimension
-   question.
-5. **Only the gate runs it.** `wren_query` (MCP) or
-   `uv run pf tool wren query <g> <p> "<sql>" --limit N`. Never
-   `execute_sql_query`, never `wren --sql`, never a warehouse connection of
-   your own. The gate refuses anything but a read, plans it against the
+   is what the cube says. For a measure-by-dimension question prefer the cube:
+   `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <c> --measures <m>
+   --dimensions <d> [--time-dimension date:month] [--filter dim:eq:value]`.
+   A cube is one base model: combine only its own measures and dimensions.
+5. **Only the gate runs it.** `wren_query` / `wren_cube` (MCP) or
+   `uv run pf tool wren query <g> <p> "<sql>" --limit N` / `pf tool wren cube`.
+   Never `execute_sql_query`, never `wren --sql` or `wren cube query`, never a
+   warehouse connection of your own. The gate refuses anything but a read, plans it against the
    LLM-facing manifest, `EXPLAIN`s it read-only, row-limits it and records the
    run. Its refusal is the answer to relay.
 6. **Three attempts, then escalate.** A statement the gate refuses comes back
@@ -64,7 +66,7 @@ question ─► scope ─► context ─► metric? ─► plan ─► pf tool w
 | context | `wren_context` / `pf tool wren context` — rules, recalled pairs, schema | `pf.tools.wren_context` |
 | metric | `list_metrics`, `query_metrics`; stop if a metric answers | `dbt-semantic: answer-with-metrics` |
 | plan | write the SELECT over model names; `pf tool wren plan` to see the expansion if unsure | you, then the engine |
-| run | `wren_query` / `pf tool wren query --limit N` | `pf.tools.wren_gate` |
+| run | `wren_cube` / `pf tool wren cube` for a cube; `wren_query` / `pf tool wren query --limit N` for SQL | `pf.tools.wren_gate` |
 | answer | number + model/cube + planned SQL + limit + run id; truncation stated | this skill |
 | store | on confirmation, `pf tool wren store` | `wren memory` |
 
@@ -72,6 +74,7 @@ question ─► scope ─► context ─► metric? ─► plan ─► pf tool w
 
 | Stage | Meaning | Do |
 |---|---|---|
+| `translate` | the cube question names a measure, dimension or operator the cube does not have | re-read the cube in the rules; operators are `eq`, `neq`, `in`, `gt`, `gte`, `lt`, `lte`, … |
 | `policy` | not one read-only SELECT | rewrite as a single SELECT; nothing that writes, attaches or configures |
 | `plan` | a name the LLM-facing manifest does not know | re-read the schema in the context; a withheld column has no name here |
 | `dry_run` | the plan does not compile on the warehouse | the model is not built — `pf seed <g> <p>` is the owner's to run; report it |

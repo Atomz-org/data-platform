@@ -1,0 +1,29 @@
+contract_code,mcx_commodity,commodity_id,contract_name,segment,is_flagship,lot_size,lot_unit,quote_size,quote_unit,quote_units_per_lot,mcx_unit,is_spec_verified
+GOLD,gold,gold,Gold,bullion,true,1,kg,10,g,100,GRMS,true
+GOLDM,gold,gold,Gold Mini,bullion,false,100,g,10,g,10,GRMS,true
+GOLDTEN,gold,gold,Gold Ten,bullion,false,10,g,10,g,1,GRMS,true
+GOLDGUINEA,gold,gold,Gold Guinea,bullion,false,8,g,8,g,1,GRMS,true
+GOLDPETAL,gold,gold,Gold Petal,bullion,false,1,g,1,g,1,GRMS,true
+SILVER,silver,silver,Silver,bullion,true,30,kg,1,kg,30,KGS,true
+SILVERM,silver,silver,Silver Mini,bullion,false,5,kg,1,kg,5,KGS,true
+SILVERMIC,silver,silver,Silver Micro,bullion,false,1,kg,1,kg,1,KGS,true
+SILVER100,silver,silver,Silver 100,bullion,false,100,g,10,g,10,GRMS,true
+CRUDEOIL,crude_oil,crude_oil_wti,Crude Oil,energy,true,100,barrel,1,barrel,100,BBL,true
+CRUDEOILM,crude_oil,crude_oil_wti,Crude Oil Mini,energy,false,10,barrel,1,barrel,10,BBL,true
+NATURALGAS,natural_gas,natural_gas,Natural Gas,energy,true,1250,mmbtu,1,mmbtu,1250,mmBtu,true
+NATGASMINI,natural_gas,natural_gas,Natural Gas Mini,energy,false,250,mmbtu,1,mmbtu,250,mmBtu,true
+ELECDMBL,electricity,,Electricity (Monthly),power,true,50,mwh,1,mwh,50,MWH,true
+COPPER,copper,copper,Copper,base_metal,true,2500,kg,1,kg,2500,KGS,true
+ALUMINIUM,aluminium,aluminium,Aluminium,base_metal,true,5,metric_ton,1,kg,5000,KGS,true
+ALUMINI,aluminium,aluminium,Aluminium Mini,base_metal,false,1,metric_ton,1,kg,1000,KGS,true
+ZINC,zinc,zinc,Zinc,base_metal,true,5,metric_ton,1,kg,5000,KGS,true
+ZINCMINI,zinc,zinc,Zinc Mini,base_metal,false,1,metric_ton,1,kg,1000,KGS,true
+LEAD,lead,lead,Lead,base_metal,true,5,metric_ton,1,kg,5000,KGS,true
+LEADMINI,lead,lead,Lead Mini,base_metal,false,1,metric_ton,1,kg,1000,KGS,true
+NICKEL,nickel,nickel,Nickel,base_metal,true,250,kg,1,kg,250,KGS,true
+STEELREBAR,steel_rebar,,Steel Rebar,ferrous,true,5,metric_ton,1,metric_ton,5,MT,false
+CARDAMOM,cardamom,,Cardamom,agri,true,100,kg,1,kg,100,KGS,true
+MENTHAOIL,mentha_oil,,Mentha Oil,agri,true,360,kg,1,kg,360,KGS,true
+COTTON,cotton,cotton,Cotton Candy,agri,true,48,bale,356,kg,22.92,BALES,false
+KAPAS,kapas,,Kapas,agri,true,4,metric_ton,20,kg,200,KGS,false
+COTTONOIL,cotton_oil,,Cotton Seed Oil,agri,true,5,metric_ton,10,kg,500,KGS,false

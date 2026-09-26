@@ -52,7 +52,7 @@ Read from `group.yaml` and each project's tracked `kg/graph.json`, so this is tr
 | `acme/acme-eu` | 3 | 37 | 6 | 8 | sources, models and metrics |
 | `acme/acme-rollup` | 0 | 30 | 0 | 0 | models only, nothing ingested yet |
 | `acme/acme-us` | 3 | 37 | 6 | 8 | sources, models and metrics |
-| `commodity/commodity-india` | 3 | 16 | 32 | 35 | sources, models and metrics |
+| `commodity/commodity-india` | 6 | 29 | 109 | 110 | sources, models and metrics |
 | `commodity/commodity-rollup` | 1 | 8 | 11 | 13 | sources, models and metrics |
 | `commodity/commodity-us` | 3 | 13 | 15 | 17 | sources, models and metrics |
 | `globex/globex-core` | 0 | 31 | 0 | 0 | models only, nothing ingested yet |

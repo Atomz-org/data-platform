@@ -934,8 +934,8 @@
   ],
   "cubes": [
     {
-      "name": "commodity_rollup_core",
-      "baseObject": "fct_market_spreads_daily",
+      "name": "fct_landed_prices_daily_metrics",
+      "baseObject": "fct_landed_prices_daily",
       "measures": [
         {
           "name": "avg_import_parity_ratio",
@@ -956,46 +956,10 @@
           }
         },
         {
-          "name": "avg_spread_to_cheapest_ratio",
-          "expression": "sum(spread_to_cheapest_usd) / nullif(sum(cheapest_landed_usd), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Spread to Cheapest Market (ratio)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_spread_to_cheapest_usd",
-          "expression": "sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Spread to Cheapest Market (USD)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
           "name": "benchmark_usd_total_where_landed",
           "expression": "sum(case when landed_price_usd_per_quote_unit is not null then benchmark_price_usd end)",
           "type": "DOUBLE",
           "description": "Benchmark USD Total, landed days (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "cheapest_usd_total",
-          "expression": "sum(cheapest_landed_usd)",
-          "type": "DOUBLE",
-          "description": "Cheapest Landed Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "days_as_cheapest_market",
-          "expression": "sum(case when is_cheapest_market then 1 else 0 end)",
-          "type": "DOUBLE",
-          "description": "Days as Cheapest Market",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -1014,6 +978,82 @@
           "expression": "sum(landed_price_usd_per_quote_unit)",
           "type": "DOUBLE",
           "description": "Landed USD Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_market_spreads_daily_metrics",
+      "baseObject": "fct_market_spreads_daily",
+      "measures": [
+        {
+          "name": "avg_spread_to_cheapest_ratio",
+          "expression": "sum(spread_to_cheapest_usd) / nullif(sum(cheapest_landed_usd), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Spread to Cheapest Market (ratio)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_spread_to_cheapest_usd",
+          "expression": "sum(spread_to_cheapest_usd) / nullif(count(spread_to_cheapest_usd), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Spread to Cheapest Market (USD)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "cheapest_usd_total",
+          "expression": "sum(cheapest_landed_usd)",
+          "type": "DOUBLE",
+          "description": "Cheapest Landed Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "days_as_cheapest_market",
+          "expression": "sum(case when is_cheapest_market then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "Days as Cheapest Market",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -1039,12 +1079,6 @@
       ],
       "dimensions": [
         {
-          "name": "category",
-          "expression": "category",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "cheapest_market_code",
           "expression": "cheapest_market_code",
           "type": "VARCHAR",
@@ -1057,68 +1091,14 @@
           "description": ""
         },
         {
-          "name": "commodity_name",
-          "expression": "commodity_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "country_code",
-          "expression": "country_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "currency_code",
-          "expression": "currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "is_cheapest_market",
           "expression": "is_cheapest_market",
           "type": "VARCHAR",
           "description": ""
         },
         {
-          "name": "is_duty_rate_confirmed",
-          "expression": "is_duty_rate_confirmed",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_reporting",
-          "expression": "is_reporting",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "market_code",
           "expression": "market_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "market_name",
-          "expression": "market_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "price_basis",
-          "expression": "price_basis",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_unit",
-          "expression": "quote_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "segment",
-          "expression": "segment",
           "type": "VARCHAR",
           "description": ""
         }

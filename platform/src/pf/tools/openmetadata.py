@@ -900,11 +900,17 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
     s = settings(ctx.config, ctx.group, ctx.project)
     asset_name = "catalog_sync"
     key = AssetKey([prefix, asset_name])
+    from pf.runtime.warehouse import Warehouse
+
+    # The sync rebuilds the graph and publishes tables from the warehouse, so it
+    # waits for the project's writer pool rather than meeting a load mid-write.
+    pool = Warehouse.for_project(project_dir, ctx.group, ctx.project).writer_pool
 
     @asset(
         name=asset_name,
         key_prefix=[prefix],
         group_name="catalog",
+        pool=pool,
         # Marts, not the whole dbt graph: the catalogue is about what people
         # read, and hanging it off staging would refresh it on every raw-column
         # rename. Empty deps for a project with no manifest yet, which is a

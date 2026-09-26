@@ -134,7 +134,7 @@ def _yaml(path: Path) -> dict:
 def empty_inventory() -> dict[str, set[str]]:
     return {"models": set(), "metrics": set(), "labels": set(), "sources": set(), "raw": set(), "seeds": set(),
             "seed_script": set(), "group_seeds": set(), "group_connectors": set(), "group_skills": set(),
-            "conformed": set(), "sisters": set()}
+            "conformed": set(), "sisters": set(), "group_classes": set()}
 
 
 CONFORMED_DECL = re.compile(r"^CONFORMED\s*=\s*[(\[](.*?)[)\]]", re.S | re.M)
@@ -146,7 +146,12 @@ def scan_group(group_dir: Path, project: str) -> dict[str, set[str]]:
     shared connectors, the group's own skills, and the paths the group's
     conformance test holds identical across sisters (read from its
     `CONFORMED = (...)` declaration, wherever the group keeps it)."""
-    inv = {k: set() for k in ("group_seeds", "group_connectors", "group_skills", "conformed", "sisters")}
+    inv = {k: set() for k in ("group_seeds", "group_connectors", "group_skills", "conformed", "sisters",
+                              "group_classes")}
+    # The family's classes: a concept the requirement calls new may already be
+    # here, landed by an earlier build. Re-planning it would redesign a class
+    # every sister already reads.
+    inv["group_classes"] = set(_dict(_yaml(group_dir / "ontology" / "extension.yaml").get("classes")))
     shared = group_dir / "shared"
     inv["group_seeds"] = {p.stem for p in (shared / "transform" / "seeds").rglob("*.csv")} \
         if (shared / "transform" / "seeds").is_dir() else set()
@@ -234,7 +239,7 @@ def check_secrets(node, path: str, rep: Report) -> None:
         rep.err(path, "contains what looks like a live credential — remove it and have it rotated")
 
 
-def check_requirement(spec: dict, rep: Report) -> None:
+def check_requirement(spec: dict, rep: Report, existing: dict[str, set[str]] | None = None) -> None:
     req = _dict(spec.get("requirement"))
     if not re.match(r"^REQ-[\w-]+$", str(req.get("id") or "")):
         rep.err("requirement.id", "must look like REQ-<page id or key>")
@@ -251,6 +256,9 @@ def check_requirement(spec: dict, rep: Report) -> None:
         name = c.get("name")
         if not name or not PASCAL.match(str(name)):
             rep.err(f"concepts[{name}]", "concept names are PascalCase ontology classes")
+        elif c.get("exists") is False and name in (existing or {}).get("group_classes", set()):
+            rep.warn(f"concepts[{name}]", "already a class in the group ontology — set exists: true; "
+                                          "there is nothing to design, only to reuse")
         elif c.get("exists") is False:
             tier = c.get("tier")
             if tier not in CONCEPT_TIERS:
@@ -634,7 +642,9 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
     for c in _list(spec.get("concepts")):
         c = _dict(c)
         if c.get("exists") is False and c.get("tier") in {"group", "project"}:
-            rep.plan.append({"layer": c["tier"], "name": f"ontology: {c.get('name')}", "action": "create"})
+            landed = str(c.get("name")) in existing.get("group_classes", set())
+            rep.plan.append({"layer": c["tier"], "name": f"ontology: {c.get('name')}",
+                             "action": "reuse" if landed else "create"})
     new_classes = {str(_dict(c).get("name")) for c in _list(spec.get("concepts")) if _dict(c).get("exists") is False}
     for g in _list(spec.get("group_changes")):
         g = _dict(g)
@@ -805,7 +815,7 @@ def validate(spec: dict, project_dir: Path | None = None) -> Report:
                               "(a new family is a decision, not a side effect)")
 
     check_secrets(spec, "", rep)
-    check_requirement(spec, rep)
+    check_requirement(spec, rep, existing)
     staged = check_sources(spec, rep)
     models = _dict(spec.get("models"))
     ints = {str(_dict(m).get("name")) for m in _list(models.get("intermediate"))}

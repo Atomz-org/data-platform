@@ -1,22 +1,37 @@
 # Metrics
 
-## Cube `acme_us_core` on `fct_payments`
+## Cube `dim_customers_metrics` on `dim_customers`
 
-Ask it with `wren cube query --cube <name> --measures <m> --dimensions <d>`; the
-engine writes the GROUP BY.
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
 
 Measures:
 
 | measure | expression | meaning |
 |---|---|---|
 | `active_customers` | `sum(case when is_active then 1 else 0 end)` | Active Customers |
+
+Dimensions: `country_code`, `customer_segment`
+Time dimensions: `created_at`
+
+## Cube `fct_payments_metrics` on `fct_payments`
+
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
+
+Measures:
+
+| measure | expression | meaning |
+|---|---|---|
 | `aov` | `sum(amount) / nullif(count(payment_id), 0)` | Average Order Value |
 | `gross_payment_volume` | `sum(amount)` | Gross Payment Volume |
 | `payment_count` | `count(payment_id)` | Payments |
 | `revenue` | `sum(amount)` | Revenue |
 
 Dimensions: `country_code`, `customer_segment`, `payment_status`, `plan_tier`
-Time dimensions: `created_at`, `paid_at`
+Time dimensions: `paid_at`
 
 ## Metric definitions
 

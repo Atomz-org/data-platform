@@ -59,7 +59,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 # Lineage
 
 * **Upstream:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Read by:** `report_metrics_attribution_days` (data-platform), `report_metrics_avg_fx_share_of_move` (data-platform), `report_metrics_benchmark_contribution_total` (data-platform), `report_metrics_duty_contribution_total` (data-platform), `report_metrics_fx_contribution_total` (data-platform), `report_metrics_fx_share_days` (data-platform), and 1 more
+* **Read by:** `report_buy_sell_signals` (data-platform), `report_metrics_attribution_days` (data-platform), `report_metrics_avg_fx_share_of_move` (data-platform), `report_metrics_benchmark_contribution_total` (data-platform), `report_metrics_duty_contribution_total` (data-platform), `report_metrics_fx_contribution_total` (data-platform), and 2 more
 
 # Governance
 

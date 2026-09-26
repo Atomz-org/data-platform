@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: mcx
+    schema: mcx
+    description: Raw data landed by dlt. Schema owned by the source.
+    tables:
+      - name: contract_master
+      - name: futures_bhavcopy
+      - name: options_bhavcopy

@@ -4,9 +4,9 @@
     "id": "otop.pf.commodity.commodity-india",
     "title": "Policy and evidence \u2014 commodity/commodity-india",
     "repository": "https://github.com/Atomz-org/data-platform",
-    "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+    "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
     "metadata": {
-      "created_at": "2026-09-20T18:08:12Z",
+      "created_at": "2026-09-25T13:56:37Z",
       "actor": "pf.projections.otop"
     }
   },
@@ -202,8 +202,8 @@
       "title": "pf check for money-requires-currency",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -396,8 +396,8 @@
       "title": "pf check for entity-requires-identity",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -588,8 +588,8 @@
       "title": "pf check for link-must-be-in-topology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -980,8 +980,8 @@
       "title": "kg/context_card.md for mart-declares-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T19:27:30Z",
-        "observed_at": "2026-09-20T19:27:30Z",
+        "created_at": "2026-09-25T17:24:56Z",
+        "observed_at": "2026-09-25T17:24:56Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "project_index",
@@ -1140,8 +1140,8 @@
       "title": "pf check for metric-owns-aggregation",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -1351,8 +1351,8 @@
       "title": "impact_reports for change-declares-blast-radius",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "blast_radius_history",
@@ -1367,7 +1367,7 @@
       "provenance": {
         "actor": "pf.projections.otop",
         "scope": "commodity/commodity-india",
-        "detail": "3 recorded"
+        "detail": "4 recorded"
       }
     },
     {
@@ -2059,8 +2059,8 @@
       "title": "pf tool elementary report for builds-record-observability",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observability_report_over_recorded_history",
@@ -2338,8 +2338,8 @@
       "title": "pf tool expectations run for quality-floor-derived-from-ontology",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "quality_floor_verdicts",
@@ -2522,8 +2522,8 @@
       "title": "pf gate for secrets-never-in-context",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -2647,8 +2647,8 @@
       "title": "pf gate for agent-authority-is-least-privilege",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -2773,8 +2773,8 @@
       "title": "pf check for tool-contribution-may-only-tighten",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -3008,8 +3008,8 @@
       "title": "pf provenance verify for agent-decisions-are-recorded",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3175,8 +3175,8 @@
       "title": "pf provenance verify for evidence-chain-is-tamper-evident",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3295,8 +3295,8 @@
       "title": "pf gate for sister-projects-are-isolated",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -3420,8 +3420,8 @@
       "title": "pf provenance verify for agent-authority-is-revocable",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3587,8 +3587,8 @@
       "title": "pf provenance verify for high-impact-actions-need-a-human",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3742,8 +3742,8 @@
       "title": "pf provenance verify for model-routing-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -3912,8 +3912,8 @@
       "title": "pf check for upstream-licences-are-reviewed",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "conformance_report",
@@ -4111,8 +4111,8 @@
       "title": "pytest platform/tests for dev-serving-wire-is-read-only",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "dev-serving_guardrail_verdicts",
@@ -4231,8 +4231,8 @@
       "title": "pytest platform/tests for dev-server-binds-localhost-only",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "dev-serving_guardrail_verdicts",
@@ -4346,8 +4346,8 @@
       "title": "pytest platform/tests for quack-token-never-leaves-the-machine",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "dev-serving_guardrail_verdicts",
@@ -4575,8 +4575,8 @@
       "title": "pf provenance verify for warehouse-custody-is-recorded",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "ledger_audit",
@@ -4635,8 +4635,8 @@
       "title": "pf air coverage for control-baseline-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "control_coverage_verdicts",
@@ -4660,8 +4660,8 @@
       "title": "governance/air-register.md for control-baseline-is-declared",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "per-entity_risk_register",
@@ -4722,8 +4722,8 @@
       "title": "dbt test for money-amount-bounded",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -4782,8 +4782,8 @@
       "title": "dbt source freshness for source-declares-freshness",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -4807,8 +4807,8 @@
       "title": "dbt test for source-declares-freshness",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -4869,8 +4869,8 @@
       "title": "pf impact-gate for anomaly-tests-do-not-gate-merge",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -4931,8 +4931,8 @@
       "title": "pf gate for entity-isolation-enforced",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -4991,8 +4991,8 @@
       "title": "pf gate for vendor-is-read-only",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "path_verdict",
@@ -5016,8 +5016,8 @@
       "title": "pf vendor drift for vendor-is-read-only",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -5076,8 +5076,8 @@
       "title": "pf bootstrap for agent-settings-schema-valid",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "observed_at": "2026-09-20T18:08:12Z",
+        "created_at": "2026-09-25T13:56:37Z",
+        "observed_at": "2026-09-25T13:56:37Z",
         "actor": "pf.projections.otop"
       },
       "evidence_type": "observation",
@@ -5108,7 +5108,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "money-without-currency",
@@ -5131,7 +5131,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "class-without-identity",
@@ -5154,7 +5154,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "illegal-edge",
@@ -5177,7 +5177,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/loops/registry.py",
         "language": "python",
         "symbol": "pii_audit",
@@ -5193,18 +5193,18 @@
       "title": "pf.kg.build:model-grain",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T11:09:25Z",
+        "created_at": "2026-09-22T21:05:18Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/kg/build.py",
         "language": "python",
         "symbol": "model-grain",
-        "digest": "git:9e2c5646d2c2aa45f528a88f91f056e6e4c9874b"
+        "digest": "git:ea44df0b398d4dc753e1fddae175e88b3a8e8bdd"
       },
       "extensions": {
         "exists": true
@@ -5223,7 +5223,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/ontology/validate.py",
         "language": "python",
         "symbol": "metric-shaped-column",
@@ -5246,7 +5246,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/hooks/pre_tool_use.py",
         "language": "python",
         "digest": "git:230bc9d9639eaa71c8c511affccb14881cdfc1f1"
@@ -5261,17 +5261,17 @@
       "title": "platform/hooks/pre_commit.sh",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-08-22T18:59:00Z",
+        "created_at": "2026-09-22T15:06:01Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "hook",
       "language": "bash",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/hooks/pre_commit.sh",
         "language": "bash",
-        "digest": "git:b0293da1e8ad9d25bc61b150649a0fab86473ad2"
+        "digest": "git:b2659d52ab6d514ef937c61916d5055c1c6a8218"
       },
       "extensions": {
         "exists": true
@@ -5283,18 +5283,18 @@
       "title": "pf.tools.recce:dagster_assets",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T20:26:49Z",
+        "created_at": "2026-09-20T21:07:58Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "dagster_assets",
-        "digest": "git:526583f318bac5a207f89bca926a7d46a2875c6d"
+        "digest": "git:f8766200b6710cf970d08c0dd9ec39387b78cee4"
       },
       "extensions": {
         "exists": true
@@ -5306,18 +5306,18 @@
       "title": "pf.tools.recce:register_commands",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T20:26:49Z",
+        "created_at": "2026-09-20T21:07:58Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "register_commands",
-        "digest": "git:526583f318bac5a207f89bca926a7d46a2875c6d"
+        "digest": "git:f8766200b6710cf970d08c0dd9ec39387b78cee4"
       },
       "extensions": {
         "exists": true
@@ -5336,7 +5336,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/ontology/model.py",
         "language": "python",
         "symbol": "Role.review_intent",
@@ -5352,18 +5352,18 @@
       "title": "pf.tools.recce:generate_config",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T20:26:49Z",
+        "created_at": "2026-09-20T21:07:58Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/recce.py",
         "language": "python",
         "symbol": "generate_config",
-        "digest": "git:526583f318bac5a207f89bca926a7d46a2875c6d"
+        "digest": "git:f8766200b6710cf970d08c0dd9ec39387b78cee4"
       },
       "extensions": {
         "exists": true
@@ -5382,7 +5382,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/elementary.py",
         "language": "python",
         "symbol": "bootstrap_project",
@@ -5405,7 +5405,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/elementary.py",
         "language": "python",
         "symbol": "ensure_package",
@@ -5428,7 +5428,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/expectations.py",
         "language": "python",
         "symbol": "write_tests",
@@ -5451,7 +5451,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/expectations.py",
         "language": "python",
         "symbol": "bootstrap_project",
@@ -5467,18 +5467,18 @@
       "title": "gate.yaml:denylist",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T21:52:10Z",
+        "created_at": "2026-09-24T14:27:55Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "configuration",
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "denylist",
-        "digest": "git:2f9bf368cd09991cfaac9b89774711879e30b5f2"
+        "digest": "git:2cc72bac3a8862f44df6d4b07dfa4cc81b9d5c20"
       },
       "extensions": {
         "exists": true
@@ -5490,18 +5490,18 @@
       "title": "gate.yaml:platform_denylist",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T21:52:10Z",
+        "created_at": "2026-09-24T14:27:55Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "configuration",
       "language": "yaml",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "gate.yaml",
         "language": "yaml",
         "symbol": "platform_denylist",
-        "digest": "git:2f9bf368cd09991cfaac9b89774711879e30b5f2"
+        "digest": "git:2cc72bac3a8862f44df6d4b07dfa4cc81b9d5c20"
       },
       "extensions": {
         "exists": true
@@ -5513,18 +5513,18 @@
       "title": "pf.loops.gate:check_path",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T17:57:26Z",
+        "created_at": "2026-09-24T14:27:55Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "loop",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/loops/gate.py",
         "language": "python",
         "symbol": "check_path",
-        "digest": "git:66888f77f76745c41960867562854e8eaed608a3"
+        "digest": "git:63438c9b5ead4fbca55b98f0d8ebf8fcedc5feab"
       },
       "extensions": {
         "exists": true
@@ -5543,7 +5543,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/tools/spec.py",
         "language": "python",
         "symbol": "Tool.gate_sections",
@@ -5566,7 +5566,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "decision",
@@ -5589,7 +5589,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/hooks/post_tool_use.py",
         "language": "python",
         "digest": "git:99dc8363fbb485907c66034f6c6fefdc51336650"
@@ -5611,7 +5611,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/chain.py",
         "language": "python",
         "symbol": "verify",
@@ -5634,7 +5634,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/anchor.py",
         "language": "python",
         "symbol": "stamp_rfc3161",
@@ -5650,18 +5650,18 @@
       "title": "pf.loops.gate:project_for",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T17:57:26Z",
+        "created_at": "2026-09-24T14:27:55Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "loop",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/loops/gate.py",
         "language": "python",
         "symbol": "project_for",
-        "digest": "git:66888f77f76745c41960867562854e8eaed608a3"
+        "digest": "git:63438c9b5ead4fbca55b98f0d8ebf8fcedc5feab"
       },
       "extensions": {
         "exists": true
@@ -5680,7 +5680,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "revoke",
@@ -5703,7 +5703,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "is_revoked",
@@ -5726,7 +5726,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/ledger.py",
         "language": "python",
         "symbol": "approve",
@@ -5749,7 +5749,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/provenance/audit.py",
         "language": "python",
         "symbol": "report",
@@ -5772,7 +5772,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/agents/base.py",
         "language": "python",
         "symbol": "AGENTS",
@@ -5795,7 +5795,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/vendor/model.py",
         "language": "python",
         "symbol": "load_registry",
@@ -5818,7 +5818,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/vendor/verify.py",
         "language": "python",
         "symbol": "verify",
@@ -5841,7 +5841,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/runtime/quack.py",
         "language": "python",
         "symbol": "serve_forever",
@@ -5864,7 +5864,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/runtime/quack.py",
         "language": "python",
         "symbol": "assert_read_only",
@@ -5880,14 +5880,14 @@
       "title": ".gitignore",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T19:33:31Z",
+        "created_at": "2026-09-25T17:25:07Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src//gitignore.py",
         "language": "python"
       },
@@ -5908,7 +5908,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/runtime/quack.py",
         "language": "python",
         "symbol": "_custody",
@@ -5931,7 +5931,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/air/coverage.py",
         "language": "python",
         "symbol": "assess",
@@ -5954,7 +5954,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/air/register.py",
         "language": "python",
         "symbol": "render_register",
@@ -5970,18 +5970,18 @@
       "title": "pf.capabilities:IMPACT_JOB",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-20T14:36:14Z",
+        "created_at": "2026-09-20T21:12:38Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/capabilities.py",
         "language": "python",
         "symbol": "IMPACT_JOB",
-        "digest": "git:793bda043630427a3635dacb0cb1b8e19a0babfa"
+        "digest": "git:f9b3e6dc394abe5fb508b782f6339de6ff29cba5"
       },
       "extensions": {
         "exists": true
@@ -5993,18 +5993,18 @@
       "title": "pf.scaffold.generator:PROJECT_SETTINGS",
       "lifecycle": "active",
       "metadata": {
-        "created_at": "2026-09-19T21:52:10Z",
+        "created_at": "2026-09-21T13:32:50Z",
         "actor": "pf.projections.otop"
       },
       "artifact_type": "check",
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/scaffold/generator.py",
         "language": "python",
         "symbol": "PROJECT_SETTINGS",
-        "digest": "git:33109177f2872b6047786e93c10393b8f30d5c80"
+        "digest": "git:a2f6fde40d3a40449467bb5e84c5dd2f675f296b"
       },
       "extensions": {
         "exists": true
@@ -6023,7 +6023,7 @@
       "language": "python",
       "locator": {
         "repository": "https://github.com/Atomz-org/data-platform",
-        "commit": "af52e0822b7602d6444e4ce914858df1a0475ae0",
+        "commit": "9466a2b1f67735e63872c2b155acf4e50293330e",
         "path": "platform/src/pf/scaffold/claude_settings.py",
         "language": "python",
         "symbol": "normalize",
@@ -6071,8 +6071,8 @@
       "to": "evidence.pf.money-requires-currency.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6111,8 +6111,8 @@
       "to": "evidence.pf.entity-requires-identity.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6151,8 +6151,8 @@
       "to": "evidence.pf.link-must-be-in-topology.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6241,8 +6241,8 @@
       "to": "evidence.pf.mart-declares-grain.kg-context-card-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T19:27:30Z",
-        "verified_at": "2026-09-20T19:27:30Z"
+        "created_at": "2026-09-25T17:24:56Z",
+        "verified_at": "2026-09-25T17:24:56Z"
       }
     },
     {
@@ -6281,8 +6281,8 @@
       "to": "evidence.pf.metric-owns-aggregation.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6331,8 +6331,8 @@
       "to": "evidence.pf.change-declares-blast-radius.impact-reports",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6491,8 +6491,8 @@
       "to": "evidence.pf.builds-record-observability.pf-tool-elementary-report",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6551,8 +6551,8 @@
       "to": "evidence.pf.quality-floor-derived-from-ontology.pf-tool-expectations-run",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6601,8 +6601,8 @@
       "to": "evidence.pf.secrets-never-in-context.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6661,8 +6661,8 @@
       "to": "evidence.pf.agent-authority-is-least-privilege.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6701,8 +6701,8 @@
       "to": "evidence.pf.tool-contribution-may-only-tighten.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6761,8 +6761,8 @@
       "to": "evidence.pf.agent-decisions-are-recorded.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6821,8 +6821,8 @@
       "to": "evidence.pf.evidence-chain-is-tamper-evident.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6871,8 +6871,8 @@
       "to": "evidence.pf.sister-projects-are-isolated.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6921,8 +6921,8 @@
       "to": "evidence.pf.agent-authority-is-revocable.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -6971,8 +6971,8 @@
       "to": "evidence.pf.high-impact-actions-need-a-human.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7011,8 +7011,8 @@
       "to": "evidence.pf.model-routing-is-declared.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7061,8 +7061,8 @@
       "to": "evidence.pf.upstream-licences-are-reviewed.pf-check",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7111,8 +7111,8 @@
       "to": "evidence.pf.dev-serving-wire-is-read-only.pytest-platform-tests",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7151,8 +7151,8 @@
       "to": "evidence.pf.dev-server-binds-localhost-only.pytest-platform-tests",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7211,8 +7211,8 @@
       "to": "evidence.pf.quack-token-never-leaves-the-machine.pytest-platform-tests",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7251,8 +7251,8 @@
       "to": "evidence.pf.warehouse-custody-is-recorded.pf-provenance-verify",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7301,8 +7301,8 @@
       "to": "evidence.pf.control-baseline-is-declared.pf-air-coverage",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7311,8 +7311,8 @@
       "to": "evidence.pf.control-baseline-is-declared.governance-air-register-md",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7341,8 +7341,8 @@
       "to": "evidence.pf.money-amount-bounded.dbt-test",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7371,8 +7371,8 @@
       "to": "evidence.pf.source-declares-freshness.dbt-source-freshness",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7381,8 +7381,8 @@
       "to": "evidence.pf.source-declares-freshness.dbt-test",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7421,8 +7421,8 @@
       "to": "evidence.pf.anomaly-tests-do-not-gate-merge.pf-impact-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7471,8 +7471,8 @@
       "to": "evidence.pf.entity-isolation-enforced.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7521,8 +7521,8 @@
       "to": "evidence.pf.vendor-is-read-only.pf-gate",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7531,8 +7531,8 @@
       "to": "evidence.pf.vendor-is-read-only.pf-vendor-drift",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     },
     {
@@ -7571,8 +7571,8 @@
       "to": "evidence.pf.agent-settings-schema-valid.pf-bootstrap",
       "type": "verified_by",
       "metadata": {
-        "created_at": "2026-09-20T18:08:12Z",
-        "verified_at": "2026-09-20T18:08:12Z"
+        "created_at": "2026-09-25T13:56:37Z",
+        "verified_at": "2026-09-25T13:56:37Z"
       }
     }
   ],

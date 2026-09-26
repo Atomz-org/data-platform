@@ -55,6 +55,33 @@ with the palette and every escape in one place.
   See the `evidence-bi` toolkit — this skill governs the *visual* choices only.
 - Re-divide ratios as `sum(num)/sum(den)`, never `avg(ratio)`.
 
+## Number formats — the standard
+A number that states the wrong unit is a wrong number, however right the digits.
+Three rules, each enforced by `pf report audit` and tested in
+`platform/tests/graph/test_evidence_formats.py`:
+
+1. **The metric declares its unit; pages inherit it.** On the MetricFlow metric:
+   `config: {meta: {unit: INR}}` (any ISO currency), `{unit: pct}`, `{unit: lots}`
+   (any non-money unit), or an explicit `{format: inr0k}`. `pf report build`
+   resolves one format per metric (`metric_format`) and stamps it into the
+   compiled query as `-- format: <code>`; every generated page uses it. Undeclared
+   metrics fall back to the name — a count word (volume, lots, sessions, days)
+   always wins over a money word, and a `₹ $ € £ ¥` in the label names the currency.
+2. **A count never wears a currency; a currency never wears another.** The audit
+   compares the *family* of the format a component uses with the metric's
+   declared one: `fmt=usd0` on lots, or on a rupee metric, is `fmt-unit` (error).
+   A currency or percent metric rendered with no `fmt` at all is `fmt-missing`
+   (error) — Evidence then prints the raw number.
+3. **A money total auto-scales.** In a `<BigValue>` a currency uses the bare code
+   (`inr`, `usd` — Evidence scales it to k/M/B/T with the column) or an explicit
+   k/m/b suffix, never fixed decimals (`fmt-unscaled`, warning):
+   `507,206,987,230,000` overflows the tile; `₹507.2T` does not. Fixed decimals
+   (`inr2`) are for a *price*, where scaling would hide the tick.
+
+Hand-written pages that show a metric under its own column name are held to the
+same rules. A page's own derived figure (`turnover / 1e7 as turnover_crore`) is
+its own business — name the unit in the column title (`Turnover ₹cr`).
+
 ## Validate, do not eyeball
 Colourblind safety is computable, so compute it. Hold a categorical palette to:
 adjacent-pair CVD ΔE ≥ 8 and normal-vision ΔE ≥ 15 (OKLab ×100), and text

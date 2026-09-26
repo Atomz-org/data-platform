@@ -39,15 +39,25 @@ models:
     staging:
       +materialized: view
       +schema: staging
+      # `mcx` tags reach Dagster as asset tags (dagster-dbt's default), so
+      # `tag:mcx` selects the whole MCX chain across the path-based groups.
+      mcx:
+        +tags: [mcx]
     intermediate:
       +materialized: view
       +schema: intermediate
+      mcx:
+        +tags: [mcx]
     marts:
       +materialized: table
       +schema: marts
+      mcx:
+        +tags: [mcx]
 
 seeds:
   commodity_india:
     +schema: reference
+    mcx_products:
+      +tags: [mcx]
   commodity_shared:
     +schema: reference

@@ -40,9 +40,10 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 # Lineage
 
 * **Upstream:** [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
-* **Downstream:** [rpt_mcx_contract_board](/tables/rpt_mcx_contract_board.md)
+* **Downstream:** [fct_mcx_commodity_daily](/tables/fct_mcx_commodity_daily.md), [rpt_mcx_contract_board](/tables/rpt_mcx_contract_board.md)
 * **Read by:** `commodity_price_board` (Commodity Research)
 
 # Governance
 
 * **Policy** `entity-requires-identity` (error) — A class with no identity property cannot participate in a derived join, so every BI and MDL projection of it is a guess.
+* **Decision** ADR-0006 — MCX's own bhavcopy lands as one dlt pipeline per commodity (accepted)

@@ -17,8 +17,10 @@ Declared by this family: [PriceObservation](../../../../okf/concepts/PriceObserv
 * [fct_commodity_trading_signals_daily](/tables/fct_commodity_trading_signals_daily.md)
 * [fct_landed_price_attribution_daily](/tables/fct_landed_price_attribution_daily.md)
 * [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md)
+* [fct_mcx_commodity_rollup_daily](/tables/fct_mcx_commodity_rollup_daily.md)
 * [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md)
 * [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md)
+* [rpt_mcx_commodity_board](/tables/rpt_mcx_commodity_board.md)
 * [rpt_mcx_contract_board](/tables/rpt_mcx_contract_board.md)
 
 # Properties

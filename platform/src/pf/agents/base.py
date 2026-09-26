@@ -100,6 +100,13 @@ AGENTS = {
                 "this step is transcription against a file it is shown in full, "
                 "checked by the gate, impact and Recce before anyone reads it.",
         effort="medium", cadence_minutes=None),
+    "wren_planner": AgentConfig(
+        "wren_planner", "claude-haiku-4-5",
+        purpose="Map one analytics question onto a catalogue it is shown in full: "
+                "pick a cube, its measures, dimensions, grain and filters, or one "
+                "SELECT. Mechanical — the plan is validated against the catalogue "
+                "and the gate runs it, so no judgement is bought here.",
+        thinking=False, cadence_minutes=None),
     "metric_answerer": AgentConfig(
         "metric_answerer", "claude-sonnet-5",
         purpose="Answer a business question using governed metrics only. Tool "

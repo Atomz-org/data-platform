@@ -17,10 +17,11 @@ The report is a subproject with its own runtime, its own generated/owned split a
 | `evidence.config.yaml` | the validated palette; never re-picked by eye |
 | `package.json`, `.gitignore`, `README.md` | the toolchain and the rules |
 | `../transform/models/_reporting__exposures.yml` | one exposure per page, so impact analysis reaches it |
+| `pages/ask.md`, `components/WrenChat.svelte` | Ask the data — conversational analytics over the Wren workspace (`pf tool wren api`) |
 
-Right now: 30 metric pages, 9 extracts, 34 exposures back into dbt.
+Right now: 101 metric pages, 17 extracts, 109 exposures back into dbt.
 
-**Yours:** `pages/buy-sell-signals.md`, `pages/landed-cost.md`, `pages/mcx-contracts.md`, `pages/price-board.md`. A page you write reads a compiled metric query; a figure with no metric is a metric pull request, not page SQL.
+**Yours:** `pages/buy-sell-signals.md`, `pages/landed-cost.md`, `pages/mcx-contracts.md`, `pages/price-board.md`, `pages/mcx/[commodity].md`, `pages/mcx/index.md`, `pages/mcx/metrics.md`. A page you write reads a compiled metric query; a figure with no metric is a metric pull request, not page SQL.
 
 ## The rules a session is under
 

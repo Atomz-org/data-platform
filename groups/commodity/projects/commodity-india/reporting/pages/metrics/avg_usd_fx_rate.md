@@ -13,7 +13,7 @@ select metric_time, sum(usd_fx_rate_total) as usd_fx_rate_total, sum(landed_pric
 from ${metrics_avg_usd_fx_rate} group by 1 order by 1
 ```
 
-<LineChart data={series} x=metric_time y=avg_usd_fx_rate yFmt=num0/>
+<LineChart data={series} x=metric_time y=avg_usd_fx_rate yFmt=usd/>
 
 ## By commodity id
 
@@ -22,5 +22,5 @@ select commodity_id, sum(usd_fx_rate_total) / nullif(sum(landed_price_days), 0) 
 from ${metrics_avg_usd_fx_rate} where commodity_id is not null group by 1 order by 2 desc
 ```
 
-<BarChart data={by_dim} x=commodity_id y=avg_usd_fx_rate swapXY=true xFmt=num0/>
+<BarChart data={by_dim} x=commodity_id y=avg_usd_fx_rate swapXY=true xFmt=usd/>
 

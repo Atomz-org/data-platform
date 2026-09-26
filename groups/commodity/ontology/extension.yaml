@@ -139,6 +139,72 @@ classes:
         datatype: timestamp
         role: valid_to
 
+  # Exchange-traded derivatives. Added with commodity-india's MCX bhavcopy, but
+  # nothing here is MCX's: a CME future is the same thing, which is why these
+  # live in the family's vocabulary rather than a project's. Not the platform's
+  # `Contract` — that is a negotiated agreement between parties; an exchange
+  # contract is a standardised instrument anyone can trade, so it is a Product.
+  ExchangeContract:
+    label: ExchangeContract
+    parent: Product
+    description: A standardised exchange-traded derivative on one commodity — a futures contract, or one expiry's chain of options — identified by exchange, instrument, contract code and expiry.
+    identity: contract_id
+    properties:
+      contract_id:
+        datatype: string
+        role: natural_key
+        required: true
+      contract_code:
+        datatype: string
+        role: free_text
+        required: true
+      instrument_type:
+        datatype: string
+        role: status_enum
+        required: true
+      expiry_date:
+        datatype: date
+        role: reference_date
+        required: true
+      commodity_id:
+        datatype: string
+        role: foreign_key
+      is_traded_today:
+        datatype: boolean
+        role: flag
+
+  ContractSession:
+    label: ContractSession
+    parent: Event
+    description: One exchange contract's trading day as the exchange settles it — open, high, low, close, the previous settlement, volume and open interest in lots, and turnover. Prices are per the contract's quote basis and never summed; volume and turnover are additive within a day.
+    identity: session_id
+    properties:
+      session_id:
+        datatype: string
+        role: natural_key
+        required: true
+      contract_id:
+        datatype: string
+        role: foreign_key
+        required: true
+      traded_at:
+        datatype: timestamp
+        role: event_time
+        required: true
+      close_price:
+        datatype: decimal
+        role: unit_price
+        required: true
+      volume_lots:
+        datatype: integer
+        role: quantity
+      open_interest_lots:
+        datatype: integer
+        role: quantity
+      turnover_lakhs:
+        datatype: decimal
+        role: money_amount
+
 roles:
   unit_price:
     datatype: decimal
@@ -187,5 +253,29 @@ relations:
     range: Market
     cardinality: MANY_TO_ONE
     description: A landed price is one market's price; the benchmark it derives from belongs to none.
+
+  - name: contract_session_of_exchange_contract
+    label: settles
+    inverse: is settled by
+    domain: ContractSession
+    range: ExchangeContract
+    cardinality: MANY_TO_ONE
+    description: Every trading day an exchange reports belongs to exactly one contract (for options, one expiry's chain).
+
+  - name: exchange_contract_on_commodity
+    label: is written on
+    inverse: underlies
+    domain: ExchangeContract
+    range: Commodity
+    cardinality: MANY_TO_ONE
+    description: A contract's underlying. Optional — an exchange lists contracts (electricity, cardamom) the family catalogue does not price.
+
+  - name: exchange_contract_listed_in_market
+    label: is listed in
+    inverse: lists
+    domain: ExchangeContract
+    range: Market
+    cardinality: MANY_TO_ONE
+    description: The market whose exchange lists the contract; its prices are in that market's currency.
 
 version: 1

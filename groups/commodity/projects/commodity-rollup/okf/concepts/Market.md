@@ -27,6 +27,7 @@ Declared by this family: [Market](../../../../okf/concepts/Market.md) in `groups
 # Relations
 
 * Customer located in Location — 
+* ExchangeContract is listed in Market — The market whose exchange lists the contract; its prices are in that market's currency.
 * PriceObservation is landed in Market — A landed price is one market's price; the benchmark it derives from belongs to none.
 
 # Governance

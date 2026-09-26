@@ -1,0 +1,126 @@
+version: 2
+
+models:
+  - name: stg_mcx__contract_master
+    description: >
+      Every contract MCX lists or has listed for the commodity — code, instrument, expiry — with whether it traded in the latest session. Cleaned 1:1 from `mcx.contract_master`; grain: one MCX futures contract or option expiry chain.
+    meta:
+      concept: ExchangeContract
+      grain: one MCX futures contract or option expiry chain
+      layer: staging
+    columns:
+      - name: contract_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+      - name: contract_code
+        meta: {role: free_text}
+      - name: instrument_type
+        meta: {role: status_enum}
+      - name: expiry_date
+        meta: {role: reference_date}
+      - name: is_traded_today
+        meta: {role: flag}
+
+  - name: stg_mcx__futures_bhavcopy
+    description: >
+      MCX futures bhavcopy: each contract's daily OHLC, settlement, volume in lots, traded quantity, turnover (₹ lakh) and open interest, as MCX states it — ₹ per the contract's quote basis (unconverted). Cleaned 1:1 from `mcx.futures_bhavcopy`; grain: one MCX futures contract per trading day.
+    meta:
+      concept: ContractSession
+      grain: one MCX futures contract per trading day
+      layer: staging
+    columns:
+      - name: session_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+      - name: contract_code
+        meta: {role: free_text}
+      - name: instrument_type
+        meta: {role: status_enum}
+      - name: traded_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: expiry_date
+        meta: {role: reference_date}
+      - name: open_price
+        meta: {role: unit_price}
+      - name: high_price
+        meta: {role: unit_price}
+      - name: low_price
+        meta: {role: unit_price}
+      - name: close_price
+        meta: {role: unit_price}
+      - name: previous_close_price
+        meta: {role: unit_price}
+      - name: volume_lots
+        meta: {role: quantity}
+      - name: traded_quantity
+        meta: {role: quantity}
+      - name: quantity_unit
+        meta: {role: unit_of_measure}
+      - name: open_interest_lots
+        meta: {role: quantity}
+      - name: turnover_lakhs
+        meta: {role: money_amount}
+        data_tests: [not_null]
+      - name: extracted_via
+        meta: {role: status_enum}
+      - name: contract_id
+        description: Foreign key to ExchangeContract.
+        meta: {role: foreign_key, links_to: ExchangeContract}
+
+  - name: stg_mcx__options_bhavcopy
+    description: >
+      MCX options-on-futures bhavcopy: each strike's daily premium OHLC, volume, turnover (₹ lakh) and open interest; `contract_id` names the expiry's chain. Cleaned 1:1 from `mcx.options_bhavcopy`; grain: one MCX option strike and type per contract expiry per trading day.
+    meta:
+      concept: ContractSession
+      grain: one MCX option strike and type per contract expiry per trading day
+      layer: staging
+    columns:
+      - name: session_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+      - name: contract_code
+        meta: {role: free_text}
+      - name: instrument_type
+        meta: {role: status_enum}
+      - name: traded_at
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: expiry_date
+        meta: {role: reference_date}
+      - name: open_price
+        meta: {role: unit_price}
+      - name: high_price
+        meta: {role: unit_price}
+      - name: low_price
+        meta: {role: unit_price}
+      - name: close_price
+        meta: {role: unit_price}
+      - name: previous_close_price
+        meta: {role: unit_price}
+      - name: volume_lots
+        meta: {role: quantity}
+      - name: traded_quantity
+        meta: {role: quantity}
+      - name: quantity_unit
+        meta: {role: unit_of_measure}
+      - name: open_interest_lots
+        meta: {role: quantity}
+      - name: turnover_lakhs
+        meta: {role: money_amount}
+        data_tests: [not_null]
+      - name: extracted_via
+        meta: {role: status_enum}
+      - name: strike_price
+        meta: {role: unit_price}
+      - name: option_type
+        meta: {role: status_enum}
+      - name: contract_id
+        description: Foreign key to ExchangeContract.
+        meta: {role: foreign_key, links_to: ExchangeContract}

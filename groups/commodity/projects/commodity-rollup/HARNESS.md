@@ -26,7 +26,7 @@ What sits between an agent and this project, in the order it meets it. Every lin
 - `ducklake` — this project's `.mcp.json`
 - `wren` — this project's `.mcp.json`
 
-The `pf` server exposes 28 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
+The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
 
 **By harness** — `docs/HARNESSES.md`'s rows, as they hold here. *Rule* means nothing checks; the commit gate is the backstop.
 

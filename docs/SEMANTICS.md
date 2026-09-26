@@ -77,7 +77,15 @@ platform's `Warehouse`, never a second connection), and a `wren-query` entry in
 the group's `loop-ledger.json` whichever way it went. The fourth attempt at a
 statement that failed three times is refused with "escalate". The
 `wren-analytics` toolkit is the procedure an agent follows on that road, and the
-`wren_context` / `wren_query` MCP tools are the road itself.
+`wren_context` / `wren_query` / `wren_cube` MCP tools are the road itself.
+
+Cubes are one per model that carries metrics (`<model>_metrics`), holding only
+that model's measures and dimensions: a single project-wide cube handed its
+base object measures from other facts, which planned and then failed to bind.
+A cube question (`wren_cube`, `pf tool wren cube`) is translated to one SELECT
+by `wren cube query --sql-only` and then takes the same gated road.
+`pf tool wren check` plans every cube with all its measures and, where a
+warehouse exists, binds the plan with `EXPLAIN`.
 
 Carried into MDL `properties` so nothing is lost in translation:
 `pf.role`, `pf.pii` (drives masking in BI, removal in the workspace),

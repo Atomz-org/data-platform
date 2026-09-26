@@ -424,13 +424,37 @@ def test_the_per_entity_example_is_valid_on_its_own() -> None:
     assert rep.errors == [] and rep.blocking == []
 
 
-@pytest.mark.skipif(not COMMODITY_INDIA.is_dir(), reason="the example's project is not in this checkout")
-def test_the_per_entity_example_plans_against_the_real_project() -> None:
+def _unbuilt_commodity(tmp_path: Path) -> Path:
+    """A commodity family as the MCX requirement found it: two classes, a
+    conformance test holding staging and intermediate identical, a group skill,
+    a sister, and a project whose seed script does not know the exchange yet.
+
+    Written here rather than read from the checkout: the real commodity-india
+    is the project the example was built into, so once that build lands the
+    live tree no longer shows what planning a fresh build looks like."""
+    group = tmp_path / "commodity"
+    (group / "ontology").mkdir(parents=True)
+    (group / "ontology" / "extension.yaml").write_text(
+        "classes:\n  Commodity: {identity: commodity_id}\n  Market: {identity: market_code}\n")
+    (group / "shared" / "python" / "tests").mkdir(parents=True)
+    (group / "shared" / "python" / "tests" / "test_conformed.py").write_text(
+        'CONFORMED = ("models/intermediate", "models/staging")\n')
+    (group / ".claude" / "skills" / "price-arithmetic").mkdir(parents=True)
+    (group / ".claude" / "skills" / "price-arithmetic" / "SKILL.md").write_text("---\nname: price-arithmetic\n---\n")
+    (group / "projects" / "commodity-us").mkdir(parents=True)
+    project = group / "projects" / "commodity-india"
+    (project / "src" / "commodity_india").mkdir(parents=True)
+    (project / "src" / "commodity_india" / "seed.py").write_text("SOURCES = ['futures_prices', 'fx_rates']\n")
+    (project / "transform" / "models" / "marts").mkdir(parents=True)
+    return project
+
+
+def test_the_per_entity_example_plans_a_fresh_build_across_tiers(tmp_path: Path) -> None:
     """The multi-entity build crosses tiers: two group-tier classes and a
     conformance exemption, planned once each, no recce baseline (nothing
     existing is diffable), and the family's own skills surfaced."""
     spec = _per_entity()
-    rep = validate_spec.validate(spec, COMMODITY_INDIA)
+    rep = validate_spec.validate(spec, _unbuilt_commodity(tmp_path))
     assert rep.errors == [], rep.errors
     layers = [(p["layer"], p["name"]) for p in rep.plan]
     assert ("group", "ontology: ExchangeContract") in layers
@@ -438,16 +462,34 @@ def test_the_per_entity_example_plans_against_the_real_project() -> None:
     assert ("group", "conformance_exemption: models/staging/mcx") in layers
     phases = validate_spec.phases(rep, spec)
     assert 3 not in phases and 10 in phases
-    assert rep.group_skills, "the group's own skills are listed for Phase 0"
+    assert rep.group_skills == ["price-arithmetic"], "the group's own skills are listed for Phase 0"
     assert any("seed.py does not name it" in w for w in rep.warnings)
 
 
-@pytest.mark.skipif(not COMMODITY_INDIA.is_dir(), reason="the example's project is not in this checkout")
-def test_a_new_source_under_a_conformed_path_is_warned_without_its_exemption() -> None:
+def test_a_new_source_under_a_conformed_path_is_warned_without_its_exemption(tmp_path: Path) -> None:
     spec = _per_entity()
     spec["group_changes"] = [g for g in spec["group_changes"] if g["kind"] != "conformance_exemption"]
-    warnings = validate_spec.validate(spec, COMMODITY_INDIA).warnings
+    warnings = validate_spec.validate(spec, _unbuilt_commodity(tmp_path)).warnings
     assert any("conformed across sisters" in w and "models/staging/mcx" in w for w in warnings), warnings
+
+
+@pytest.mark.skipif(not (COMMODITY_INDIA / "transform" / "models" / "staging" / "mcx").is_dir(),
+                    reason="the example's build has not landed in this checkout")
+def test_replanning_a_landed_build_reuses_it_rather_than_redoing_it() -> None:
+    """Run again against the project it was built into, the same spec must not
+    redesign what landed: the classes it added are in the group ontology now
+    (reuse, with a nudge to say `exists: true`), the sources it loaded are
+    reused, and nothing it declared is an error."""
+    spec = _per_entity()
+    rep = validate_spec.validate(spec, COMMODITY_INDIA)
+    assert rep.errors == [], rep.errors
+    action = {(p["layer"], p["name"]): p["action"] for p in rep.plan}
+    assert action[("group", "ontology: ExchangeContract")] == "reuse"
+    assert action[("group", "ontology: ContractSession")] == "reuse"
+    assert action[("raw", "mcx.futures_bhavcopy")] == "reuse"
+    assert action[("staging", "stg_mcx__futures_bhavcopy")] == "reuse"
+    assert any("already a class in the group ontology" in w for w in rep.warnings)
+    assert not any("not in the ontology" in w for w in rep.warnings)
 
 
 @pytest.mark.parametrize("mutate, expected", [

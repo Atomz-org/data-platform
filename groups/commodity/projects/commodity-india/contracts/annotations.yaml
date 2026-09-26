@@ -1,5 +1,56 @@
 version: 2
 resources:
+- resource: contract_master
+  concept: ExchangeContract
+  source: mcx
+  roles:
+    contract_id: natural_key
+    mcx_commodity: status_enum
+    contract_code: free_text
+    instrument_type: status_enum
+    expiry_date: reference_date
+    is_traded_today: flag
+  rename: {}
+  links: {}
+  description: "Every contract MCX lists or has listed for the commodity \u2014 code,\
+    \ instrument, expiry \u2014 with whether it traded in the latest session"
+  grain: one MCX futures contract or option expiry chain
+- resource: futures_bhavcopy
+  concept: ContractSession
+  source: mcx
+  roles:
+    bhavcopy_id: natural_key
+    mcx_commodity: status_enum
+    contract_code: free_text
+    instrument_type: status_enum
+    trade_date: event_time
+    expiry_date: reference_date
+    open: unit_price
+    high: unit_price
+    low: unit_price
+    close: unit_price
+    previous_close: unit_price
+    volume_lots: quantity
+    traded_quantity: quantity
+    quantity_unit: unit_of_measure
+    open_interest_lots: quantity
+    turnover_lakhs: money_amount
+    extracted_via: status_enum
+  rename:
+    bhavcopy_id: session_id
+    trade_date: traded_at
+    open: open_price
+    high: high_price
+    low: low_price
+    close: close_price
+    previous_close: previous_close_price
+  links:
+    contract_id: ExchangeContract
+  description: "MCX futures bhavcopy: each contract's daily OHLC, settlement, volume\
+    \ in lots, traded quantity, turnover (\u20B9 lakh) and open interest, as MCX states\
+    \ it \u2014 \u20B9 per the contract's quote basis (unconverted)"
+  grain: one MCX futures contract per trading day
+  currency: INR
 - resource: futures_prices
   concept: PriceObservation
   source: yahoo_finance
@@ -40,6 +91,44 @@ resources:
   links: {}
   description: Daily USD fixes from Yahoo Finance; rate = quote currency per 1 USD
   grain: one currency pair per day
+- resource: options_bhavcopy
+  concept: ContractSession
+  source: mcx
+  roles:
+    bhavcopy_id: natural_key
+    mcx_commodity: status_enum
+    contract_code: free_text
+    instrument_type: status_enum
+    trade_date: event_time
+    expiry_date: reference_date
+    open: unit_price
+    high: unit_price
+    low: unit_price
+    close: unit_price
+    previous_close: unit_price
+    volume_lots: quantity
+    traded_quantity: quantity
+    quantity_unit: unit_of_measure
+    open_interest_lots: quantity
+    turnover_lakhs: money_amount
+    extracted_via: status_enum
+    strike_price: unit_price
+    option_type: status_enum
+  rename:
+    bhavcopy_id: session_id
+    trade_date: traded_at
+    open: open_price
+    high: high_price
+    low: low_price
+    close: close_price
+    previous_close: previous_close_price
+  links:
+    contract_id: ExchangeContract
+  description: "MCX options-on-futures bhavcopy: each strike's daily premium OHLC,\
+    \ volume, turnover (\u20B9 lakh) and open interest; `contract_id` names the expiry's\
+    \ chain"
+  grain: one MCX option strike and type per contract expiry per trading day
+  currency: INR
 - resource: spot_prices
   concept: PriceObservation
   source: gold_api

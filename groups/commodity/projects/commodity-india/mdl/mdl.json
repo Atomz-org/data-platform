@@ -192,6 +192,181 @@
       }
     },
     {
+      "name": "dim_mcx_contracts",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "dim_mcx_contracts"
+      },
+      "columns": [
+        {
+          "name": "contract_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "reference_date"
+          }
+        },
+        {
+          "name": "contract_kind",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "is_open",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "flag"
+          }
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_flagship",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "instrument_type",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "exchange",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_traded_today",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "contract_id",
+      "properties": {
+        "description": "The MCX expiry calendar: every futures contract and option chain listed for the tracked codes, its commodity, lot and quote basis, days to expiry, and whether it traded in the latest session.",
+        "grain": "one MCX futures contract or option expiry chain",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
       "name": "fct_commodity_prices_daily",
       "tableReference": {
         "schema": "main_marts",
@@ -1130,6 +1305,1572 @@
       }
     },
     {
+      "name": "fct_mcx_commodity_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_mcx_commodity_daily"
+      },
+      "columns": [
+        {
+          "name": "continuous_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "trade_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "active_contract_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "flag"
+          }
+        },
+        {
+          "name": "close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "sma_200",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "atr_14",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "rsi_14",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "range_position_52w",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "realised_vol_20d",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "garman_klass_vol_30d",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction",
+            "description": "Garman\u2013Klass (1980) OHLC range volatility over 30 sessions, annualised on 252."
+          }
+        },
+        {
+          "name": "roll_yield_annualised",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction",
+            "description": "Near-into-next roll yield to a long, annualised; negative in contango."
+          }
+        },
+        {
+          "name": "is_contango",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "flag"
+          }
+        },
+        {
+          "name": "is_backwardation",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "flag"
+          }
+        },
+        {
+          "name": "ema_9_21_signal",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "volume_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "open_interest_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "stance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "trend_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "volatility_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "oi_buildup",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "curve_state",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_flagship",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "session_number",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "active_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_roll_day",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_units_per_lot",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_traded",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_liquid",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "previous_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "notional_per_lot_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "adj_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "log_return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cumulative_return",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_5d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_21d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_63d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_ytd",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sma_20",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sma_50",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_9",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_12",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_21",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_26",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_200",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_200_trend",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "bollinger_upper",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "bollinger_lower",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "bollinger_pct_b",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "bollinger_bandwidth",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_line_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_signal_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_histogram_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "atr_14_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_52w",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_52w",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "drawdown_from_52w_peak",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ma_crossover",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_crossover",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rsi_state",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "var_parkinson",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "var_garman_klass",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "var_rogers_satchell",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "close_vol_14d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_14d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "garman_klass_vol_14d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rogers_satchell_vol_14d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "close_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rogers_satchell_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "close_vol_90d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_90d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "garman_klass_vol_90d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rogers_satchell_vol_90d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_expiries",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "relative_volume_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_change_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_value_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "near_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "next_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "near_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "next_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "calendar_spread",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "annualised_carry",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rollover_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_parity_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "premium_to_landed_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "continuous_id",
+      "properties": {
+        "description": "The continuous most-active MCX series per contract code with every trading metric: returns (1d\u2013252d, YTD), SMA 20/50/200, EMA/MACD, RSI(14), ATR(14), Bollinger(20,2), 52-week range and drawdown, realised and Parkinson volatility, OI build-up across expiries, calendar spread, annualised carry, rollover, premium to landed import parity, and a legible stance. Indicators run on roll-free back-adjusted prices and are null until their window is full. Prices non-additive: aggregate within one contract_code.",
+        "grain": "one MCX contract code per trading day",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_mcx_commodity_rollup_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_mcx_commodity_rollup_daily"
+      },
+      "columns": [
+        {
+          "name": "commodity_day_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "trade_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "flagship_close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "var_garman_klass",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "description": "One session's Garman\u2013Klass variance (not annualised)."
+          }
+        },
+        {
+          "name": "turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "open_interest_value_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "volume_flagship_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "flagship_contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_liquid",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "log_return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sq_log_return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "var_parkinson",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "var_rogers_satchell",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_up_session",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rsi_14",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "garman_klass_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "roll_yield_annualised",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_contango_session",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_backwardation_session",
+          "type": "INTEGER",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "trend_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "volatility_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "stance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "premium_to_landed_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "codes_trading",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "mini_turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_oi_notional_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_oi_notional_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "option_premium_turnover_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "option_notional_turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "commodity_day_id",
+      "properties": {
+        "description": "One MCX commodity per session (gold, not its five codes): the flagship's price, return, per-session variances under four estimators, momentum, curve and parity, with turnover, open-interest value and notional-weighted option open interest summed across every code and expiry. The fact the per-commodity semantic model `mcx_commodities` reads.",
+        "grain": "one MCX commodity per trading day",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_mcx_futures_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_mcx_futures_daily"
+      },
+      "columns": [
+        {
+          "name": "session_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "contract_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "trade_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "expiry_date",
+          "type": "DATE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "reference_date"
+          }
+        },
+        {
+          "name": "open_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "high_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "low_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "volume_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "open_interest_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "quantity"
+          }
+        },
+        {
+          "name": "turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount",
+            "description": "Traded value in rupees (MCX states it in \u20b9 lakh; \u00d7 100,000). Additive within a day."
+          }
+        },
+        {
+          "name": "oi_buildup",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_flagship",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "expiry_rank",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "expiry_bucket",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_units_per_lot",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_traded",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "previous_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_change_lots",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "notional_per_lot_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_value_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "implied_quote_units_per_lot",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_spec_verified",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "volume_to_oi_ratio",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "session_id",
+      "properties": {
+        "description": "Every MCX futures contract's session \u2014 all expiries \u2014 with price change, open-interest change and build-up, notional per lot and volume/OI. The term-structure and expiry-by-expiry view.",
+        "grain": "one MCX futures contract per trading day",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
       "name": "fct_mcx_lot_equivalents_daily",
       "tableReference": {
         "schema": "main_marts",
@@ -1281,6 +3022,275 @@
       "properties": {
         "description": "The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot \u2014 GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks \u2014 not an MCX quote.",
         "grain": "one MCX contract per price date",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "fct_mcx_options_daily",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "fct_mcx_options_daily"
+      },
+      "columns": [
+        {
+          "name": "chain_day_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "contract_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "trade_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "put_call_ratio_oi",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "rate_fraction"
+          }
+        },
+        {
+          "name": "max_pain_strike",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "premium_turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "money_amount"
+          }
+        },
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "is_flagship",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "expiry_rank",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_latest",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "strikes_listed",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_open_interest_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_open_interest_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_volume_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_volume_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "notional_turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_call_ratio_volume",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "positioning",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_wall_strike",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_wall_strike",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "underlying_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "underlying_close_price",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "max_pain_distance_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_wall_distance_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_wall_distance_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "chain_day_id",
+      "properties": {
+        "description": "Each MCX option chain per session against its underlying future: put/call ratio by OI and volume, positioning, call and put OI walls, max pain and their distance from the underlying.",
+        "grain": "one MCX option chain per trading day",
         "layer": "marts",
         "pf.project": "commodity-india",
         "pf.group": "commodity"
@@ -1575,14 +3585,6 @@
           "properties": {}
         },
         {
-          "name": "usd_inr_rate",
-          "type": "DOUBLE",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
           "name": "effective_duty_rate",
           "type": "DECIMAL",
           "isCalculated": false,
@@ -1609,14 +3611,6 @@
         {
           "name": "is_duty_rate_confirmed",
           "type": "BOOLEAN",
-          "isCalculated": false,
-          "notNull": false,
-          "isHidden": false,
-          "properties": {}
-        },
-        {
-          "name": "landed_price_inr",
-          "type": "DECIMAL",
           "isCalculated": false,
           "notNull": false,
           "isHidden": false,
@@ -1669,6 +3663,675 @@
       "properties": {
         "description": "One row per tracked commodity: latest benchmark and move, 252-day range, landed price in this market's currency, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.",
         "grain": "one commodity",
+        "layer": "marts",
+        "pf.project": "commodity-india",
+        "pf.group": "commodity"
+      }
+    },
+    {
+      "name": "rpt_mcx_commodity_board",
+      "tableReference": {
+        "schema": "main_marts",
+        "table": "rpt_mcx_commodity_board"
+      },
+      "columns": [
+        {
+          "name": "contract_code",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": true,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "natural_key"
+          }
+        },
+        {
+          "name": "mcx_commodity",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "commodity_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "latest_trade_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "close_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "unit_price"
+          }
+        },
+        {
+          "name": "is_stale",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "flag"
+          }
+        },
+        {
+          "name": "stance",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "status_enum"
+          }
+        },
+        {
+          "name": "contract_name",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "segment",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_flagship",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_liquid",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sessions_behind_days",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "active_contract_id",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "foreign_key"
+          }
+        },
+        {
+          "name": "active_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "days_to_expiry",
+          "type": "BIGINT",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "quote_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_size",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "lot_unit",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "price_change",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_1d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_5d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_21d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_63d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_252d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "return_ytd",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "notional_per_lot_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "high_52w",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "low_52w",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "range_position_52w",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "drawdown_from_52w_peak",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sma_50",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "sma_200",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rsi_14",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rsi_state",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_histogram_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "macd_crossover",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "atr_14",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "atr_14_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "bollinger_pct_b",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "trend_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ma_crossover",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "cumulative_return",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_9",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_21",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_200",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_9_21_signal",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "ema_200_trend",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "realised_vol_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "close_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "parkinson_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "garman_klass_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rogers_satchell_vol_30d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "volatility_regime",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "volume_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "relative_volume_20d",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "turnover_inr",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_lots",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_change_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "open_interest_value_inr",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "oi_buildup",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "calendar_spread",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "annualised_carry",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "roll_yield_annualised",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_contango",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "is_backwardation",
+          "type": "BOOLEAN",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "curve_state",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "rollover_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "landed_parity_price",
+          "type": "DECIMAL",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "premium_to_landed_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "option_expiry_date",
+          "type": "TIMESTAMP",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {
+            "pf.role": "event_time"
+          }
+        },
+        {
+          "name": "put_call_ratio_oi",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_call_ratio_volume",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "option_positioning",
+          "type": "VARCHAR",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "max_pain_strike",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "max_pain_distance_pct",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "call_wall_strike",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        },
+        {
+          "name": "put_wall_strike",
+          "type": "DOUBLE",
+          "isCalculated": false,
+          "notNull": false,
+          "isHidden": false,
+          "properties": {}
+        }
+      ],
+      "primaryKey": "contract_code",
+      "properties": {
+        "description": "One row per MCX contract code: its latest session's price, returns, trend, momentum, volatility, positioning, curve, parity premium and stance, with the nearest option chain's put/call ratio and max pain. The table behind the MCX summary page and each commodity page's headline.",
+        "grain": "one MCX contract code",
         "layer": "marts",
         "pf.project": "commodity-india",
         "pf.group": "commodity"
@@ -1826,6 +4489,51 @@
   ],
   "relationships": [
     {
+      "name": "fct_mcx_commodity_daily_dim_mcx_contracts",
+      "models": [
+        "fct_mcx_commodity_daily",
+        "dim_mcx_contracts"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_commodity_daily.active_contract_id = dim_mcx_contracts.contract_id",
+      "properties": {
+        "pf.relation": "contract_session_of_exchange_contract",
+        "pf.label": "settles",
+        "pf.inverse": "is settled by",
+        "pf.description": "Every trading day an exchange reports belongs to exactly one contract (for options, one expiry's chain)."
+      }
+    },
+    {
+      "name": "fct_mcx_futures_daily_dim_mcx_contracts",
+      "models": [
+        "fct_mcx_futures_daily",
+        "dim_mcx_contracts"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_futures_daily.contract_id = dim_mcx_contracts.contract_id",
+      "properties": {
+        "pf.relation": "contract_session_of_exchange_contract",
+        "pf.label": "settles",
+        "pf.inverse": "is settled by",
+        "pf.description": "Every trading day an exchange reports belongs to exactly one contract (for options, one expiry's chain)."
+      }
+    },
+    {
+      "name": "fct_mcx_options_daily_dim_mcx_contracts",
+      "models": [
+        "fct_mcx_options_daily",
+        "dim_mcx_contracts"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_options_daily.contract_id = dim_mcx_contracts.contract_id",
+      "properties": {
+        "pf.relation": "contract_session_of_exchange_contract",
+        "pf.label": "settles",
+        "pf.inverse": "is settled by",
+        "pf.description": "Every trading day an exchange reports belongs to exactly one contract (for options, one expiry's chain)."
+      }
+    },
+    {
       "name": "fct_commodity_prices_daily_dim_commodities",
       "models": [
         "fct_commodity_prices_daily",
@@ -1886,6 +4594,36 @@
       }
     },
     {
+      "name": "fct_mcx_commodity_daily_dim_commodities",
+      "models": [
+        "fct_mcx_commodity_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_commodity_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
+      "name": "fct_mcx_commodity_rollup_daily_dim_commodities",
+      "models": [
+        "fct_mcx_commodity_rollup_daily",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "fct_mcx_commodity_rollup_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
       "name": "fct_mcx_lot_equivalents_daily_dim_commodities",
       "models": [
         "fct_mcx_lot_equivalents_daily",
@@ -1916,6 +4654,21 @@
       }
     },
     {
+      "name": "rpt_mcx_commodity_board_dim_commodities",
+      "models": [
+        "rpt_mcx_commodity_board",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "rpt_mcx_commodity_board.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "price_observation_of_commodity",
+        "pf.label": "prices",
+        "pf.inverse": "is priced by",
+        "pf.description": "Every benchmark price belongs to exactly one commodity."
+      }
+    },
+    {
       "name": "rpt_mcx_contract_board_dim_commodities",
       "models": [
         "rpt_mcx_contract_board",
@@ -1929,14 +4682,40 @@
         "pf.inverse": "is priced by",
         "pf.description": "Every benchmark price belongs to exactly one commodity."
       }
+    },
+    {
+      "name": "dim_mcx_contracts_dim_commodities",
+      "models": [
+        "dim_mcx_contracts",
+        "dim_commodities"
+      ],
+      "joinType": "MANY_TO_ONE",
+      "condition": "dim_mcx_contracts.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.relation": "exchange_contract_on_commodity",
+        "pf.label": "is written on",
+        "pf.inverse": "underlies",
+        "pf.description": "A contract's underlying. Optional \u2014 an exchange lists contracts (electricity, cardamom) the family catalogue does not price."
+      }
     }
   ],
   "views": [
     {
+      "name": "dim_mcx_contracts_view",
+      "statement": "select\n  dim_mcx_contracts.contract_id,\n  dim_mcx_contracts.contract_code,\n  dim_mcx_contracts.mcx_commodity,\n  dim_mcx_contracts.commodity_id,\n  dim_mcx_contracts.expiry_date,\n  dim_mcx_contracts.contract_kind,\n  dim_mcx_contracts.is_open,\n  dim_mcx_contracts.contract_name,\n  dim_mcx_contracts.segment,\n  dim_mcx_contracts.is_flagship,\n  dim_mcx_contracts.instrument_type,\n  dim_mcx_contracts.exchange,\n  dim_mcx_contracts.days_to_expiry,\n  dim_mcx_contracts.is_traded_today,\n  dim_mcx_contracts.lot_size,\n  dim_mcx_contracts.lot_unit,\n  dim_mcx_contracts.quote_size,\n  dim_mcx_contracts.quote_unit,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment as commodities_segment,\n  dim_commodities.exchange as commodities_exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom dim_mcx_contracts\n  left join dim_commodities on dim_mcx_contracts.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_mcx_[commodity]",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "The MCX expiry calendar: every futures contract and option chain listed for the tracked codes, its commodity, lot and quote basis, days to expiry, and whether it traded in the latest session.",
+        "pf.grain": "one MCX futures contract or option expiry chain"
+      }
+    },
+    {
       "name": "fct_commodity_prices_daily_view",
       "statement": "select\n  fct_commodity_prices_daily.price_id,\n  fct_commodity_prices_daily.commodity_id,\n  fct_commodity_prices_daily.price_date,\n  fct_commodity_prices_daily.close_price,\n  fct_commodity_prices_daily.high_price,\n  fct_commodity_prices_daily.low_price,\n  fct_commodity_prices_daily.currency_code,\n  fct_commodity_prices_daily.volume,\n  fct_commodity_prices_daily.price_change_pct,\n  fct_commodity_prices_daily.is_latest,\n  fct_commodity_prices_daily.price_basis,\n  fct_commodity_prices_daily.quote_unit,\n  fct_commodity_prices_daily.open_price,\n  fct_commodity_prices_daily.prev_close_price,\n  fct_commodity_prices_daily.price_change,\n  fct_commodity_prices_daily.moving_avg_20d,\n  fct_commodity_prices_daily.moving_avg_50d,\n  fct_commodity_prices_daily.high_252d,\n  fct_commodity_prices_daily.low_252d,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_commodity_prices_daily\n  left join dim_commodities on fct_commodity_prices_daily.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "commodity_price_board, report_index, report_landed_cost, report_metrics_avg_benchmark_price_usd, report_metrics_benchmark_price_days, report_metrics_benchmark_price_usd_total, report_metrics_contracts_traded, report_metrics_period_high_price_usd, report_metrics_period_low_price_usd",
+        "pf.exposures": "commodity_price_board, report_landed_cost, report_metrics_avg_benchmark_price_usd, report_metrics_benchmark_price_days, report_metrics_benchmark_price_usd_total, report_metrics_contracts_traded, report_metrics_period_high_price_usd, report_metrics_period_low_price_usd",
         "pf.exposure_types": "dashboard",
         "pf.owners": "Commodity Research, data-platform",
         "pf.description": "Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.",
@@ -1947,7 +4726,7 @@
       "name": "fct_commodity_trading_signals_daily_view",
       "statement": "select\n  fct_commodity_trading_signals_daily.price_id,\n  fct_commodity_trading_signals_daily.commodity_id,\n  fct_commodity_trading_signals_daily.price_date,\n  fct_commodity_trading_signals_daily.close_price,\n  fct_commodity_trading_signals_daily.pct_of_52w_range,\n  fct_commodity_trading_signals_daily.ma_gap_50d_pct,\n  fct_commodity_trading_signals_daily.ma_regime,\n  fct_commodity_trading_signals_daily.ma_crossover,\n  fct_commodity_trading_signals_daily.z_score_60d,\n  fct_commodity_trading_signals_daily.momentum_20d_pct,\n  fct_commodity_trading_signals_daily.realised_vol_20d,\n  fct_commodity_trading_signals_daily.volatility_regime,\n  fct_commodity_trading_signals_daily.stance,\n  fct_commodity_trading_signals_daily.is_latest,\n  fct_commodity_trading_signals_daily.price_basis,\n  fct_commodity_trading_signals_daily.quote_unit,\n  fct_commodity_trading_signals_daily.currency_code,\n  fct_commodity_trading_signals_daily.price_change_pct,\n  fct_commodity_trading_signals_daily.moving_avg_20d,\n  fct_commodity_trading_signals_daily.moving_avg_50d,\n  fct_commodity_trading_signals_daily.high_252d,\n  fct_commodity_trading_signals_daily.low_252d,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_commodity_trading_signals_daily\n  left join dim_commodities on fct_commodity_trading_signals_daily.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "report_metrics_avg_momentum_20d, report_metrics_avg_range_position, report_metrics_avg_realised_vol, report_metrics_momentum_20d_days, report_metrics_momentum_20d_total, report_metrics_range_position_days, report_metrics_range_position_total, report_metrics_realised_vol_days, report_metrics_realised_vol_total, report_metrics_signal_days",
+        "pf.exposures": "report_buy_sell_signals, report_index, report_metrics_avg_momentum_20d, report_metrics_avg_range_position, report_metrics_avg_realised_vol, report_metrics_momentum_20d_days, report_metrics_momentum_20d_total, report_metrics_range_position_days, report_metrics_range_position_total, report_metrics_realised_vol_days, report_metrics_realised_vol_total, report_metrics_signal_days",
         "pf.exposure_types": "dashboard",
         "pf.owners": "data-platform",
         "pf.description": "Timing signals on the USD benchmark \u2014 where a price sits in its own recent history, not what it costs. Every measure is unit-free, so unlike the price itself these are safe to compare across commodities.",
@@ -1969,7 +4748,7 @@
       "name": "fct_landed_price_attribution_daily_view",
       "statement": "select\n  fct_landed_price_attribution_daily.price_id,\n  fct_landed_price_attribution_daily.commodity_id,\n  fct_landed_price_attribution_daily.price_date,\n  fct_landed_price_attribution_daily.market_code,\n  fct_landed_price_attribution_daily.currency_code,\n  fct_landed_price_attribution_daily.landed_price_local,\n  fct_landed_price_attribution_daily.landed_change_20d_pct,\n  fct_landed_price_attribution_daily.benchmark_contribution_pct,\n  fct_landed_price_attribution_daily.fx_contribution_pct,\n  fct_landed_price_attribution_daily.duty_contribution_pct,\n  fct_landed_price_attribution_daily.fx_share_of_move,\n  fct_landed_price_attribution_daily.primary_driver,\n  fct_landed_price_attribution_daily.is_duty_rate_confirmed,\n  fct_landed_price_attribution_daily.is_latest,\n  fct_landed_price_attribution_daily.market_unit,\n  fct_landed_price_attribution_daily.is_import_prohibited,\n  fct_landed_price_attribution_daily.landed_price_local_20d_ago,\n  fct_landed_price_attribution_daily.benchmark_usd_per_market_unit,\n  fct_landed_price_attribution_daily.benchmark_20d_ago,\n  fct_landed_price_attribution_daily.usd_fx_rate,\n  fct_landed_price_attribution_daily.fx_20d_ago,\n  fct_landed_price_attribution_daily.effective_duty_rate,\n  fct_landed_price_attribution_daily.duty_rate_20d_ago,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit,\n  dim_commodities.market_code as commodities_market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited as commodities_is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_landed_price_attribution_daily\n  left join dim_commodities on fct_landed_price_attribution_daily.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "report_metrics_attribution_days, report_metrics_avg_fx_share_of_move, report_metrics_benchmark_contribution_total, report_metrics_duty_contribution_total, report_metrics_fx_contribution_total, report_metrics_fx_share_days, report_metrics_fx_share_total",
+        "pf.exposures": "report_buy_sell_signals, report_metrics_attribution_days, report_metrics_avg_fx_share_of_move, report_metrics_benchmark_contribution_total, report_metrics_duty_contribution_total, report_metrics_fx_contribution_total, report_metrics_fx_share_days, report_metrics_fx_share_total",
         "pf.exposure_types": "dashboard",
         "pf.owners": "data-platform",
         "pf.description": "Why the landed rupee price moved over 20 trading days, split into the benchmark, the rupee and duty. An Indian buyer decides on landed rupees, and a USD-only signal cannot tell a commodity move from a currency move \u2014 which is the difference between a buying decision and a treasury one.",
@@ -1980,11 +4759,44 @@
       "name": "fct_landed_prices_daily_view",
       "statement": "select\n  fct_landed_prices_daily.price_id,\n  fct_landed_prices_daily.market_code,\n  fct_landed_prices_daily.commodity_id,\n  fct_landed_prices_daily.price_date,\n  fct_landed_prices_daily.market_unit,\n  fct_landed_prices_daily.currency_code,\n  fct_landed_prices_daily.benchmark_price_usd,\n  fct_landed_prices_daily.usd_fx_rate,\n  fct_landed_prices_daily.tariff_id,\n  fct_landed_prices_daily.effective_duty_rate,\n  fct_landed_prices_daily.is_duty_rate_confirmed,\n  fct_landed_prices_daily.landed_price_local,\n  fct_landed_prices_daily.duty_local,\n  fct_landed_prices_daily.price_basis,\n  fct_landed_prices_daily.quote_unit,\n  fct_landed_prices_daily.benchmark_usd_per_market_unit,\n  fct_landed_prices_daily.fx_fixed_on,\n  fct_landed_prices_daily.duty_basis,\n  fct_landed_prices_daily.is_import_prohibited,\n  fct_landed_prices_daily.assessable_value_local,\n  fct_landed_prices_daily.landed_price_change_local,\n  fct_landed_prices_daily.landed_price_change_pct,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis as commodities_price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code as commodities_market_code,\n  dim_commodities.currency_code as commodities_currency_code,\n  dim_commodities.market_unit as commodities_market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited as commodities_is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_landed_prices_daily\n  left join dim_commodities on fct_landed_prices_daily.commodity_id = dim_commodities.commodity_id",
       "properties": {
-        "pf.exposures": "report_index, report_landed_cost, report_metrics_avg_duty_local, report_metrics_avg_landed_price_local, report_metrics_avg_usd_fx_rate, report_metrics_duty_local_total, report_metrics_landed_price_days, report_metrics_landed_price_local_total, report_metrics_usd_fx_rate_total",
+        "pf.exposures": "report_landed_cost, report_metrics_avg_duty_local, report_metrics_avg_landed_price_local, report_metrics_avg_usd_fx_rate, report_metrics_duty_local_total, report_metrics_landed_price_days, report_metrics_landed_price_local_total, report_metrics_usd_fx_rate_total",
         "pf.exposure_types": "dashboard",
         "pf.owners": "data-platform",
         "pf.description": "Import landed price per commodity per day in this market's currency per its market unit: benchmark \u00d7 USD/local \u00d7 (1 + customs duty). The benchmark stands in for CIF value \u2014 freight, insurance, landing charges and local taxes are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters. The same shape in every sister; `market_code` and `currency_code` say whose it is.",
         "pf.grain": "one commodity per price date"
+      }
+    },
+    {
+      "name": "fct_mcx_commodity_daily_view",
+      "statement": "select\n  fct_mcx_commodity_daily.continuous_id,\n  fct_mcx_commodity_daily.contract_code,\n  fct_mcx_commodity_daily.mcx_commodity,\n  fct_mcx_commodity_daily.commodity_id,\n  fct_mcx_commodity_daily.trade_date,\n  fct_mcx_commodity_daily.active_contract_id,\n  fct_mcx_commodity_daily.is_latest,\n  fct_mcx_commodity_daily.close_price,\n  fct_mcx_commodity_daily.sma_200,\n  fct_mcx_commodity_daily.atr_14,\n  fct_mcx_commodity_daily.rsi_14,\n  fct_mcx_commodity_daily.range_position_52w,\n  fct_mcx_commodity_daily.realised_vol_20d,\n  fct_mcx_commodity_daily.garman_klass_vol_30d,\n  fct_mcx_commodity_daily.roll_yield_annualised,\n  fct_mcx_commodity_daily.is_contango,\n  fct_mcx_commodity_daily.is_backwardation,\n  fct_mcx_commodity_daily.ema_9_21_signal,\n  fct_mcx_commodity_daily.turnover_inr,\n  fct_mcx_commodity_daily.volume_lots,\n  fct_mcx_commodity_daily.open_interest_lots,\n  fct_mcx_commodity_daily.stance,\n  fct_mcx_commodity_daily.trend_regime,\n  fct_mcx_commodity_daily.volatility_regime,\n  fct_mcx_commodity_daily.oi_buildup,\n  fct_mcx_commodity_daily.curve_state,\n  fct_mcx_commodity_daily.contract_name,\n  fct_mcx_commodity_daily.segment,\n  fct_mcx_commodity_daily.is_flagship,\n  fct_mcx_commodity_daily.session_number,\n  fct_mcx_commodity_daily.active_expiry_date,\n  fct_mcx_commodity_daily.days_to_expiry,\n  fct_mcx_commodity_daily.is_roll_day,\n  fct_mcx_commodity_daily.quote_size,\n  fct_mcx_commodity_daily.quote_unit,\n  fct_mcx_commodity_daily.lot_size,\n  fct_mcx_commodity_daily.lot_unit,\n  fct_mcx_commodity_daily.quote_units_per_lot,\n  fct_mcx_commodity_daily.is_traded,\n  fct_mcx_commodity_daily.is_liquid,\n  fct_mcx_commodity_daily.open_price,\n  fct_mcx_commodity_daily.high_price,\n  fct_mcx_commodity_daily.low_price,\n  fct_mcx_commodity_daily.previous_close_price,\n  fct_mcx_commodity_daily.price_change,\n  fct_mcx_commodity_daily.notional_per_lot_inr,\n  fct_mcx_commodity_daily.adj_close_price,\n  fct_mcx_commodity_daily.return_1d,\n  fct_mcx_commodity_daily.log_return_1d,\n  fct_mcx_commodity_daily.cumulative_return,\n  fct_mcx_commodity_daily.return_5d,\n  fct_mcx_commodity_daily.return_21d,\n  fct_mcx_commodity_daily.return_63d,\n  fct_mcx_commodity_daily.return_252d,\n  fct_mcx_commodity_daily.return_ytd,\n  fct_mcx_commodity_daily.sma_20,\n  fct_mcx_commodity_daily.sma_50,\n  fct_mcx_commodity_daily.ema_9,\n  fct_mcx_commodity_daily.ema_12,\n  fct_mcx_commodity_daily.ema_21,\n  fct_mcx_commodity_daily.ema_26,\n  fct_mcx_commodity_daily.ema_200,\n  fct_mcx_commodity_daily.ema_200_trend,\n  fct_mcx_commodity_daily.bollinger_upper,\n  fct_mcx_commodity_daily.bollinger_lower,\n  fct_mcx_commodity_daily.bollinger_pct_b,\n  fct_mcx_commodity_daily.bollinger_bandwidth,\n  fct_mcx_commodity_daily.macd_line_pct,\n  fct_mcx_commodity_daily.macd_signal_pct,\n  fct_mcx_commodity_daily.macd_histogram_pct,\n  fct_mcx_commodity_daily.atr_14_pct,\n  fct_mcx_commodity_daily.high_52w,\n  fct_mcx_commodity_daily.low_52w,\n  fct_mcx_commodity_daily.drawdown_from_52w_peak,\n  fct_mcx_commodity_daily.ma_crossover,\n  fct_mcx_commodity_daily.macd_crossover,\n  fct_mcx_commodity_daily.rsi_state,\n  fct_mcx_commodity_daily.parkinson_vol_20d,\n  fct_mcx_commodity_daily.var_parkinson,\n  fct_mcx_commodity_daily.var_garman_klass,\n  fct_mcx_commodity_daily.var_rogers_satchell,\n  fct_mcx_commodity_daily.close_vol_14d,\n  fct_mcx_commodity_daily.parkinson_vol_14d,\n  fct_mcx_commodity_daily.garman_klass_vol_14d,\n  fct_mcx_commodity_daily.rogers_satchell_vol_14d,\n  fct_mcx_commodity_daily.close_vol_30d,\n  fct_mcx_commodity_daily.parkinson_vol_30d,\n  fct_mcx_commodity_daily.rogers_satchell_vol_30d,\n  fct_mcx_commodity_daily.close_vol_90d,\n  fct_mcx_commodity_daily.parkinson_vol_90d,\n  fct_mcx_commodity_daily.garman_klass_vol_90d,\n  fct_mcx_commodity_daily.rogers_satchell_vol_90d,\n  fct_mcx_commodity_daily.open_expiries,\n  fct_mcx_commodity_daily.relative_volume_20d,\n  fct_mcx_commodity_daily.open_interest_change_lots,\n  fct_mcx_commodity_daily.open_interest_change_pct,\n  fct_mcx_commodity_daily.open_interest_value_inr,\n  fct_mcx_commodity_daily.near_expiry_date,\n  fct_mcx_commodity_daily.next_expiry_date,\n  fct_mcx_commodity_daily.near_close_price,\n  fct_mcx_commodity_daily.next_close_price,\n  fct_mcx_commodity_daily.calendar_spread,\n  fct_mcx_commodity_daily.annualised_carry,\n  fct_mcx_commodity_daily.rollover_pct,\n  fct_mcx_commodity_daily.landed_parity_price,\n  fct_mcx_commodity_daily.premium_to_landed_pct,\n  dim_mcx_contracts.contract_id,\n  dim_mcx_contracts.contract_code as mcx_contracts_contract_code,\n  dim_mcx_contracts.mcx_commodity as mcx_contracts_mcx_commodity,\n  dim_mcx_contracts.commodity_id as mcx_contracts_commodity_id,\n  dim_mcx_contracts.expiry_date,\n  dim_mcx_contracts.contract_kind,\n  dim_mcx_contracts.is_open,\n  dim_mcx_contracts.contract_name as mcx_contracts_contract_name,\n  dim_mcx_contracts.segment as mcx_contracts_segment,\n  dim_mcx_contracts.is_flagship as mcx_contracts_is_flagship,\n  dim_mcx_contracts.instrument_type,\n  dim_mcx_contracts.exchange,\n  dim_mcx_contracts.days_to_expiry as mcx_contracts_days_to_expiry,\n  dim_mcx_contracts.is_traded_today,\n  dim_mcx_contracts.lot_size as mcx_contracts_lot_size,\n  dim_mcx_contracts.lot_unit as mcx_contracts_lot_unit,\n  dim_mcx_contracts.quote_size as mcx_contracts_quote_size,\n  dim_mcx_contracts.quote_unit as mcx_contracts_quote_unit,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment as commodities_segment,\n  dim_commodities.exchange as commodities_exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_mcx_commodity_daily\n  left join dim_mcx_contracts on fct_mcx_commodity_daily.active_contract_id = dim_mcx_contracts.contract_id\n  left join dim_commodities on fct_mcx_commodity_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_mcx_[commodity], report_mcx_index, report_metrics_avg_mcx_daily_return, report_metrics_avg_mcx_garman_klass_vol_30d, report_metrics_avg_mcx_parkinson_vol_30d, report_metrics_avg_mcx_premium_to_landed, report_metrics_avg_mcx_realised_vol, report_metrics_avg_mcx_rogers_satchell_vol_30d, report_metrics_avg_mcx_roll_yield, report_metrics_avg_mcx_rsi, report_metrics_mcx_backwardation_days, report_metrics_mcx_contango_days, report_metrics_mcx_contango_share, report_metrics_mcx_gk_vol_30d_days, report_metrics_mcx_gk_vol_30d_total, report_metrics_mcx_parkinson_vol_30d_days, report_metrics_mcx_parkinson_vol_30d_total, report_metrics_mcx_premium_days, report_metrics_mcx_premium_total, report_metrics_mcx_realised_vol_days, report_metrics_mcx_realised_vol_total, report_metrics_mcx_return_total, report_metrics_mcx_roll_yield_days, report_metrics_mcx_roll_yield_total, report_metrics_mcx_rs_vol_30d_days, report_metrics_mcx_rs_vol_30d_total, report_metrics_mcx_rsi_days, report_metrics_mcx_rsi_total, report_metrics_mcx_session_days, report_metrics_mcx_turnover_inr, report_metrics_mcx_volume_lots",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "The continuous most-active MCX series per contract code with every trading metric: returns (1d\u2013252d, YTD), SMA 20/50/200, EMA/MACD, RSI(14), ATR(14), Bollinger(20,2), 52-week range and drawdown, realised and Parkinson volatility, OI build-up across expiries, calendar spread, annualised carry, rollover, premium to landed import parity, and a legible stance. Indicators run on roll-free back-adjusted prices and are null until their window is full. Prices non-additive: aggregate within one contract_code.",
+        "pf.grain": "one MCX contract code per trading day"
+      }
+    },
+    {
+      "name": "fct_mcx_commodity_rollup_daily_view",
+      "statement": "select\n  fct_mcx_commodity_rollup_daily.commodity_day_id,\n  fct_mcx_commodity_rollup_daily.mcx_commodity,\n  fct_mcx_commodity_rollup_daily.commodity_id,\n  fct_mcx_commodity_rollup_daily.trade_date,\n  fct_mcx_commodity_rollup_daily.flagship_close_price,\n  fct_mcx_commodity_rollup_daily.var_garman_klass,\n  fct_mcx_commodity_rollup_daily.turnover_inr,\n  fct_mcx_commodity_rollup_daily.open_interest_value_inr,\n  fct_mcx_commodity_rollup_daily.volume_flagship_lots,\n  fct_mcx_commodity_rollup_daily.segment,\n  fct_mcx_commodity_rollup_daily.is_latest,\n  fct_mcx_commodity_rollup_daily.flagship_contract_code,\n  fct_mcx_commodity_rollup_daily.is_liquid,\n  fct_mcx_commodity_rollup_daily.return_1d,\n  fct_mcx_commodity_rollup_daily.log_return_1d,\n  fct_mcx_commodity_rollup_daily.sq_log_return_1d,\n  fct_mcx_commodity_rollup_daily.var_parkinson,\n  fct_mcx_commodity_rollup_daily.var_rogers_satchell,\n  fct_mcx_commodity_rollup_daily.is_up_session,\n  fct_mcx_commodity_rollup_daily.rsi_14,\n  fct_mcx_commodity_rollup_daily.garman_klass_vol_30d,\n  fct_mcx_commodity_rollup_daily.roll_yield_annualised,\n  fct_mcx_commodity_rollup_daily.is_contango_session,\n  fct_mcx_commodity_rollup_daily.is_backwardation_session,\n  fct_mcx_commodity_rollup_daily.trend_regime,\n  fct_mcx_commodity_rollup_daily.volatility_regime,\n  fct_mcx_commodity_rollup_daily.stance,\n  fct_mcx_commodity_rollup_daily.premium_to_landed_pct,\n  fct_mcx_commodity_rollup_daily.codes_trading,\n  fct_mcx_commodity_rollup_daily.mini_turnover_inr,\n  fct_mcx_commodity_rollup_daily.put_oi_notional_inr,\n  fct_mcx_commodity_rollup_daily.call_oi_notional_inr,\n  fct_mcx_commodity_rollup_daily.option_premium_turnover_inr,\n  fct_mcx_commodity_rollup_daily.option_notional_turnover_inr,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment as commodities_segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom fct_mcx_commodity_rollup_daily\n  left join dim_commodities on fct_mcx_commodity_rollup_daily.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_mcx_metrics, report_metrics_mcx_commodity_avg_daily_return, report_metrics_mcx_commodity_avg_premium_to_landed, report_metrics_mcx_commodity_avg_roll_yield, report_metrics_mcx_commodity_avg_rsi, report_metrics_mcx_commodity_backwardation_sessions, report_metrics_mcx_commodity_backwardation_share, report_metrics_mcx_commodity_call_oi_notional_inr, report_metrics_mcx_commodity_close_var_days, report_metrics_mcx_commodity_close_var_total, report_metrics_mcx_commodity_close_variance, report_metrics_mcx_commodity_contango_sessions, report_metrics_mcx_commodity_contango_share, report_metrics_mcx_commodity_gk_var_days, report_metrics_mcx_commodity_gk_var_total, report_metrics_mcx_commodity_gk_variance, report_metrics_mcx_commodity_hit_rate, report_metrics_mcx_commodity_log_return, report_metrics_mcx_commodity_mini_turnover_inr, report_metrics_mcx_commodity_mini_turnover_share, report_metrics_mcx_commodity_oi_value_inr, report_metrics_mcx_commodity_option_notional_turnover_inr, report_metrics_mcx_commodity_option_premium_turnover_inr, report_metrics_mcx_commodity_parkinson_var_days, report_metrics_mcx_commodity_parkinson_var_total, report_metrics_mcx_commodity_parkinson_variance, report_metrics_mcx_commodity_premium_days, report_metrics_mcx_commodity_premium_total, report_metrics_mcx_commodity_put_call_ratio, report_metrics_mcx_commodity_put_oi_notional_inr, report_metrics_mcx_commodity_return_days, report_metrics_mcx_commodity_return_total, report_metrics_mcx_commodity_roll_yield_days, report_metrics_mcx_commodity_roll_yield_total, report_metrics_mcx_commodity_rs_var_days, report_metrics_mcx_commodity_rs_var_total, report_metrics_mcx_commodity_rs_variance, report_metrics_mcx_commodity_rsi_days, report_metrics_mcx_commodity_rsi_total, report_metrics_mcx_commodity_sessions, report_metrics_mcx_commodity_turnover_inr, report_metrics_mcx_commodity_up_sessions, report_metrics_mcx_commodity_volume_flagship_lots",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "One MCX commodity per session (gold, not its five codes): the flagship's price, return, per-session variances under four estimators, momentum, curve and parity, with turnover, open-interest value and notional-weighted option open interest summed across every code and expiry. The fact the per-commodity semantic model `mcx_commodities` reads.",
+        "pf.grain": "one MCX commodity per trading day"
+      }
+    },
+    {
+      "name": "fct_mcx_futures_daily_view",
+      "statement": "select\n  fct_mcx_futures_daily.session_id,\n  fct_mcx_futures_daily.contract_id,\n  fct_mcx_futures_daily.contract_code,\n  fct_mcx_futures_daily.mcx_commodity,\n  fct_mcx_futures_daily.commodity_id,\n  fct_mcx_futures_daily.trade_date,\n  fct_mcx_futures_daily.expiry_date,\n  fct_mcx_futures_daily.open_price,\n  fct_mcx_futures_daily.high_price,\n  fct_mcx_futures_daily.low_price,\n  fct_mcx_futures_daily.close_price,\n  fct_mcx_futures_daily.volume_lots,\n  fct_mcx_futures_daily.open_interest_lots,\n  fct_mcx_futures_daily.turnover_inr,\n  fct_mcx_futures_daily.oi_buildup,\n  fct_mcx_futures_daily.contract_name,\n  fct_mcx_futures_daily.segment,\n  fct_mcx_futures_daily.is_flagship,\n  fct_mcx_futures_daily.days_to_expiry,\n  fct_mcx_futures_daily.expiry_rank,\n  fct_mcx_futures_daily.expiry_bucket,\n  fct_mcx_futures_daily.quote_size,\n  fct_mcx_futures_daily.quote_unit,\n  fct_mcx_futures_daily.lot_size,\n  fct_mcx_futures_daily.lot_unit,\n  fct_mcx_futures_daily.quote_units_per_lot,\n  fct_mcx_futures_daily.is_traded,\n  fct_mcx_futures_daily.previous_close_price,\n  fct_mcx_futures_daily.price_change,\n  fct_mcx_futures_daily.price_change_pct,\n  fct_mcx_futures_daily.open_interest_change_lots,\n  fct_mcx_futures_daily.notional_per_lot_inr,\n  fct_mcx_futures_daily.open_interest_value_inr,\n  fct_mcx_futures_daily.implied_quote_units_per_lot,\n  fct_mcx_futures_daily.is_spec_verified,\n  fct_mcx_futures_daily.volume_to_oi_ratio,\n  dim_mcx_contracts.contract_id as mcx_contracts_contract_id,\n  dim_mcx_contracts.contract_code as mcx_contracts_contract_code,\n  dim_mcx_contracts.mcx_commodity as mcx_contracts_mcx_commodity,\n  dim_mcx_contracts.commodity_id as mcx_contracts_commodity_id,\n  dim_mcx_contracts.expiry_date as mcx_contracts_expiry_date,\n  dim_mcx_contracts.contract_kind,\n  dim_mcx_contracts.is_open,\n  dim_mcx_contracts.contract_name as mcx_contracts_contract_name,\n  dim_mcx_contracts.segment as mcx_contracts_segment,\n  dim_mcx_contracts.is_flagship as mcx_contracts_is_flagship,\n  dim_mcx_contracts.instrument_type,\n  dim_mcx_contracts.exchange,\n  dim_mcx_contracts.days_to_expiry as mcx_contracts_days_to_expiry,\n  dim_mcx_contracts.is_traded_today,\n  dim_mcx_contracts.lot_size as mcx_contracts_lot_size,\n  dim_mcx_contracts.lot_unit as mcx_contracts_lot_unit,\n  dim_mcx_contracts.quote_size as mcx_contracts_quote_size,\n  dim_mcx_contracts.quote_unit as mcx_contracts_quote_unit\nfrom fct_mcx_futures_daily\n  left join dim_mcx_contracts on fct_mcx_futures_daily.contract_id = dim_mcx_contracts.contract_id",
+      "properties": {
+        "pf.exposures": "report_mcx_[commodity]",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Every MCX futures contract's session \u2014 all expiries \u2014 with price change, open-interest change and build-up, notional per lot and volume/OI. The term-structure and expiry-by-expiry view.",
+        "pf.grain": "one MCX futures contract per trading day"
       }
     },
     {
@@ -1996,6 +4808,17 @@
         "pf.owners": "Commodity Research",
         "pf.description": "The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot \u2014 GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks \u2014 not an MCX quote.",
         "pf.grain": "one MCX contract per price date"
+      }
+    },
+    {
+      "name": "fct_mcx_options_daily_view",
+      "statement": "select\n  fct_mcx_options_daily.chain_day_id,\n  fct_mcx_options_daily.contract_id,\n  fct_mcx_options_daily.trade_date,\n  fct_mcx_options_daily.mcx_commodity,\n  fct_mcx_options_daily.put_call_ratio_oi,\n  fct_mcx_options_daily.max_pain_strike,\n  fct_mcx_options_daily.premium_turnover_inr,\n  fct_mcx_options_daily.contract_code,\n  fct_mcx_options_daily.commodity_id,\n  fct_mcx_options_daily.is_flagship,\n  fct_mcx_options_daily.expiry_date,\n  fct_mcx_options_daily.days_to_expiry,\n  fct_mcx_options_daily.expiry_rank,\n  fct_mcx_options_daily.is_latest,\n  fct_mcx_options_daily.strikes_listed,\n  fct_mcx_options_daily.call_open_interest_lots,\n  fct_mcx_options_daily.put_open_interest_lots,\n  fct_mcx_options_daily.call_volume_lots,\n  fct_mcx_options_daily.put_volume_lots,\n  fct_mcx_options_daily.notional_turnover_inr,\n  fct_mcx_options_daily.put_call_ratio_volume,\n  fct_mcx_options_daily.positioning,\n  fct_mcx_options_daily.call_wall_strike,\n  fct_mcx_options_daily.put_wall_strike,\n  fct_mcx_options_daily.underlying_expiry_date,\n  fct_mcx_options_daily.underlying_close_price,\n  fct_mcx_options_daily.max_pain_distance_pct,\n  fct_mcx_options_daily.call_wall_distance_pct,\n  fct_mcx_options_daily.put_wall_distance_pct,\n  dim_mcx_contracts.contract_id as mcx_contracts_contract_id,\n  dim_mcx_contracts.contract_code as mcx_contracts_contract_code,\n  dim_mcx_contracts.mcx_commodity as mcx_contracts_mcx_commodity,\n  dim_mcx_contracts.commodity_id as mcx_contracts_commodity_id,\n  dim_mcx_contracts.expiry_date as mcx_contracts_expiry_date,\n  dim_mcx_contracts.contract_kind,\n  dim_mcx_contracts.is_open,\n  dim_mcx_contracts.contract_name,\n  dim_mcx_contracts.segment,\n  dim_mcx_contracts.is_flagship as mcx_contracts_is_flagship,\n  dim_mcx_contracts.instrument_type,\n  dim_mcx_contracts.exchange,\n  dim_mcx_contracts.days_to_expiry as mcx_contracts_days_to_expiry,\n  dim_mcx_contracts.is_traded_today,\n  dim_mcx_contracts.lot_size,\n  dim_mcx_contracts.lot_unit,\n  dim_mcx_contracts.quote_size,\n  dim_mcx_contracts.quote_unit\nfrom fct_mcx_options_daily\n  left join dim_mcx_contracts on fct_mcx_options_daily.contract_id = dim_mcx_contracts.contract_id",
+      "properties": {
+        "pf.exposures": "report_mcx_[commodity]",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "Each MCX option chain per session against its underlying future: put/call ratio by OI and volume, positioning, call and put OI walls, max pain and their distance from the underlying.",
+        "pf.grain": "one MCX option chain per trading day"
       }
     },
     {
@@ -2011,13 +4834,24 @@
     },
     {
       "name": "rpt_commodity_price_board_view",
-      "statement": "select\n  rpt_commodity_price_board.commodity_id,\n  rpt_commodity_price_board.category,\n  rpt_commodity_price_board.market_code,\n  rpt_commodity_price_board.currency_code,\n  rpt_commodity_price_board.benchmark_price_usd,\n  rpt_commodity_price_board.usd_fx_rate,\n  rpt_commodity_price_board.landed_price_local,\n  rpt_commodity_price_board.is_stale,\n  rpt_commodity_price_board.commodity_name,\n  rpt_commodity_price_board.segment,\n  rpt_commodity_price_board.exchange,\n  rpt_commodity_price_board.price_basis,\n  rpt_commodity_price_board.quote_unit,\n  rpt_commodity_price_board.price_date,\n  rpt_commodity_price_board.price_change_pct,\n  rpt_commodity_price_board.high_252d,\n  rpt_commodity_price_board.low_252d,\n  rpt_commodity_price_board.market_unit,\n  rpt_commodity_price_board.usd_inr_rate,\n  rpt_commodity_price_board.effective_duty_rate,\n  rpt_commodity_price_board.duty_basis,\n  rpt_commodity_price_board.is_import_prohibited,\n  rpt_commodity_price_board.is_duty_rate_confirmed,\n  rpt_commodity_price_board.landed_price_inr,\n  rpt_commodity_price_board.landed_price_change_pct,\n  rpt_commodity_price_board.spot_price_usd,\n  rpt_commodity_price_board.spot_quoted_at,\n  rpt_commodity_price_board.futures_spot_basis_pct,\n  rpt_commodity_price_board.price_age_days\nfrom rpt_commodity_price_board",
+      "statement": "select\n  rpt_commodity_price_board.commodity_id,\n  rpt_commodity_price_board.category,\n  rpt_commodity_price_board.market_code,\n  rpt_commodity_price_board.currency_code,\n  rpt_commodity_price_board.benchmark_price_usd,\n  rpt_commodity_price_board.usd_fx_rate,\n  rpt_commodity_price_board.landed_price_local,\n  rpt_commodity_price_board.is_stale,\n  rpt_commodity_price_board.commodity_name,\n  rpt_commodity_price_board.segment,\n  rpt_commodity_price_board.exchange,\n  rpt_commodity_price_board.price_basis,\n  rpt_commodity_price_board.quote_unit,\n  rpt_commodity_price_board.price_date,\n  rpt_commodity_price_board.price_change_pct,\n  rpt_commodity_price_board.high_252d,\n  rpt_commodity_price_board.low_252d,\n  rpt_commodity_price_board.market_unit,\n  rpt_commodity_price_board.effective_duty_rate,\n  rpt_commodity_price_board.duty_basis,\n  rpt_commodity_price_board.is_import_prohibited,\n  rpt_commodity_price_board.is_duty_rate_confirmed,\n  rpt_commodity_price_board.landed_price_change_pct,\n  rpt_commodity_price_board.spot_price_usd,\n  rpt_commodity_price_board.spot_quoted_at,\n  rpt_commodity_price_board.futures_spot_basis_pct,\n  rpt_commodity_price_board.price_age_days\nfrom rpt_commodity_price_board",
       "properties": {
         "pf.exposures": "commodity_price_board, report_landed_cost, report_price_board",
         "pf.exposure_types": "dashboard",
         "pf.owners": "Commodity Research, data-platform",
         "pf.description": "One row per tracked commodity: latest benchmark and move, 252-day range, landed price in this market's currency, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.",
         "pf.grain": "one commodity"
+      }
+    },
+    {
+      "name": "rpt_mcx_commodity_board_view",
+      "statement": "select\n  rpt_mcx_commodity_board.contract_code,\n  rpt_mcx_commodity_board.mcx_commodity,\n  rpt_mcx_commodity_board.commodity_id,\n  rpt_mcx_commodity_board.latest_trade_date,\n  rpt_mcx_commodity_board.close_price,\n  rpt_mcx_commodity_board.is_stale,\n  rpt_mcx_commodity_board.stance,\n  rpt_mcx_commodity_board.contract_name,\n  rpt_mcx_commodity_board.segment,\n  rpt_mcx_commodity_board.is_flagship,\n  rpt_mcx_commodity_board.is_liquid,\n  rpt_mcx_commodity_board.sessions_behind_days,\n  rpt_mcx_commodity_board.active_contract_id,\n  rpt_mcx_commodity_board.active_expiry_date,\n  rpt_mcx_commodity_board.days_to_expiry,\n  rpt_mcx_commodity_board.quote_size,\n  rpt_mcx_commodity_board.quote_unit,\n  rpt_mcx_commodity_board.lot_size,\n  rpt_mcx_commodity_board.lot_unit,\n  rpt_mcx_commodity_board.price_change,\n  rpt_mcx_commodity_board.return_1d,\n  rpt_mcx_commodity_board.return_5d,\n  rpt_mcx_commodity_board.return_21d,\n  rpt_mcx_commodity_board.return_63d,\n  rpt_mcx_commodity_board.return_252d,\n  rpt_mcx_commodity_board.return_ytd,\n  rpt_mcx_commodity_board.notional_per_lot_inr,\n  rpt_mcx_commodity_board.high_52w,\n  rpt_mcx_commodity_board.low_52w,\n  rpt_mcx_commodity_board.range_position_52w,\n  rpt_mcx_commodity_board.drawdown_from_52w_peak,\n  rpt_mcx_commodity_board.sma_50,\n  rpt_mcx_commodity_board.sma_200,\n  rpt_mcx_commodity_board.rsi_14,\n  rpt_mcx_commodity_board.rsi_state,\n  rpt_mcx_commodity_board.macd_histogram_pct,\n  rpt_mcx_commodity_board.macd_crossover,\n  rpt_mcx_commodity_board.atr_14,\n  rpt_mcx_commodity_board.atr_14_pct,\n  rpt_mcx_commodity_board.bollinger_pct_b,\n  rpt_mcx_commodity_board.trend_regime,\n  rpt_mcx_commodity_board.ma_crossover,\n  rpt_mcx_commodity_board.cumulative_return,\n  rpt_mcx_commodity_board.ema_9,\n  rpt_mcx_commodity_board.ema_21,\n  rpt_mcx_commodity_board.ema_200,\n  rpt_mcx_commodity_board.ema_9_21_signal,\n  rpt_mcx_commodity_board.ema_200_trend,\n  rpt_mcx_commodity_board.realised_vol_20d,\n  rpt_mcx_commodity_board.parkinson_vol_20d,\n  rpt_mcx_commodity_board.close_vol_30d,\n  rpt_mcx_commodity_board.parkinson_vol_30d,\n  rpt_mcx_commodity_board.garman_klass_vol_30d,\n  rpt_mcx_commodity_board.rogers_satchell_vol_30d,\n  rpt_mcx_commodity_board.volatility_regime,\n  rpt_mcx_commodity_board.volume_lots,\n  rpt_mcx_commodity_board.relative_volume_20d,\n  rpt_mcx_commodity_board.turnover_inr,\n  rpt_mcx_commodity_board.open_interest_lots,\n  rpt_mcx_commodity_board.open_interest_change_pct,\n  rpt_mcx_commodity_board.open_interest_value_inr,\n  rpt_mcx_commodity_board.oi_buildup,\n  rpt_mcx_commodity_board.calendar_spread,\n  rpt_mcx_commodity_board.annualised_carry,\n  rpt_mcx_commodity_board.roll_yield_annualised,\n  rpt_mcx_commodity_board.is_contango,\n  rpt_mcx_commodity_board.is_backwardation,\n  rpt_mcx_commodity_board.curve_state,\n  rpt_mcx_commodity_board.rollover_pct,\n  rpt_mcx_commodity_board.landed_parity_price,\n  rpt_mcx_commodity_board.premium_to_landed_pct,\n  rpt_mcx_commodity_board.option_expiry_date,\n  rpt_mcx_commodity_board.put_call_ratio_oi,\n  rpt_mcx_commodity_board.put_call_ratio_volume,\n  rpt_mcx_commodity_board.option_positioning,\n  rpt_mcx_commodity_board.max_pain_strike,\n  rpt_mcx_commodity_board.max_pain_distance_pct,\n  rpt_mcx_commodity_board.call_wall_strike,\n  rpt_mcx_commodity_board.put_wall_strike,\n  dim_commodities.commodity_id as commodities_commodity_id,\n  dim_commodities.category,\n  dim_commodities.segment as commodities_segment,\n  dim_commodities.exchange,\n  dim_commodities.price_basis,\n  dim_commodities.quote_unit as commodities_quote_unit,\n  dim_commodities.market_code,\n  dim_commodities.currency_code,\n  dim_commodities.market_unit,\n  dim_commodities.current_duty_rate,\n  dim_commodities.is_import_prohibited,\n  dim_commodities.commodity_name,\n  dim_commodities.yahoo_symbol,\n  dim_commodities.spot_symbol,\n  dim_commodities.has_spot_feed,\n  dim_commodities.unit_dimension,\n  dim_commodities.current_tariff_id,\n  dim_commodities.current_duty_basis\nfrom rpt_mcx_commodity_board\n  left join dim_commodities on rpt_mcx_commodity_board.commodity_id = dim_commodities.commodity_id",
+      "properties": {
+        "pf.exposures": "report_mcx_[commodity], report_mcx_index",
+        "pf.exposure_types": "dashboard",
+        "pf.owners": "data-platform",
+        "pf.description": "One row per MCX contract code: its latest session's price, returns, trend, momentum, volatility, positioning, curve, parity premium and stance, with the nearest option chain's put/call ratio and max pain. The table behind the MCX summary page and each commodity page's headline.",
+        "pf.grain": "one MCX contract code"
       }
     },
     {
@@ -2034,18 +4868,9 @@
   ],
   "cubes": [
     {
-      "name": "commodity_india_core",
-      "baseObject": "fct_commodity_trading_signals_daily",
+      "name": "fct_commodity_prices_daily_metrics",
+      "baseObject": "fct_commodity_prices_daily",
       "measures": [
-        {
-          "name": "attribution_days",
-          "expression": "count(price_id)",
-          "type": "DOUBLE",
-          "description": "Attribution Days",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
         {
           "name": "avg_benchmark_price_usd",
           "expression": "sum(close_price) / nullif(count(close_price), 0)",
@@ -2053,78 +4878,6 @@
           "description": "Avg Benchmark Price (USD)",
           "properties": {
             "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_duty_local",
-          "expression": "sum(duty_local) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Customs Duty (market currency)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_fx_share_of_move",
-          "expression": "sum(fx_share_of_move) / nullif(count(fx_share_of_move), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Rupee Share of the Move",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_landed_price_local",
-          "expression": "sum(landed_price_local) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Landed Price (market currency)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_momentum_20d",
-          "expression": "sum(momentum_20d_pct) / nullif(count(momentum_20d_pct), 0)",
-          "type": "DOUBLE",
-          "description": "Avg 20-Day Momentum",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_range_position",
-          "expression": "sum(pct_of_52w_range) / nullif(count(pct_of_52w_range), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Position in 52-Week Range",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_realised_vol",
-          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Realised Volatility (annualised)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_usd_fx_rate",
-          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Applied FX Rate",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "benchmark_contribution_total",
-          "expression": "sum(benchmark_contribution_pct)",
-          "type": "DOUBLE",
-          "description": "Benchmark Contribution (component)",
-          "properties": {
-            "pf.metric_type": "simple"
           }
         },
         {
@@ -2155,66 +4908,76 @@
           }
         },
         {
-          "name": "duty_contribution_total",
-          "expression": "sum(duty_contribution_pct)",
+          "name": "period_high_price_usd",
+          "expression": "max(coalesce(high_price, close_price))",
           "type": "DOUBLE",
-          "description": "Duty Contribution (component)",
+          "description": "Period High (USD)",
           "properties": {
             "pf.metric_type": "simple"
           }
         },
         {
-          "name": "duty_local_total",
-          "expression": "sum(duty_local)",
+          "name": "period_low_price_usd",
+          "expression": "min(coalesce(low_price, close_price))",
           "type": "DOUBLE",
-          "description": "Customs Duty Total (component)",
+          "description": "Period Low (USD)",
           "properties": {
             "pf.metric_type": "simple"
           }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
         },
         {
-          "name": "fx_contribution_total",
-          "expression": "sum(fx_contribution_pct)",
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_commodity_trading_signals_daily_metrics",
+      "baseObject": "fct_commodity_trading_signals_daily",
+      "measures": [
+        {
+          "name": "avg_momentum_20d",
+          "expression": "sum(momentum_20d_pct) / nullif(count(momentum_20d_pct), 0)",
           "type": "DOUBLE",
-          "description": "FX Contribution (component)",
+          "description": "Avg 20-Day Momentum",
           "properties": {
-            "pf.metric_type": "simple"
+            "pf.metric_type": "ratio"
           }
         },
         {
-          "name": "fx_share_days",
-          "expression": "count(fx_share_of_move)",
+          "name": "avg_range_position",
+          "expression": "sum(pct_of_52w_range) / nullif(count(pct_of_52w_range), 0)",
           "type": "DOUBLE",
-          "description": "Days With an FX Share",
+          "description": "Avg Position in 52-Week Range",
           "properties": {
-            "pf.metric_type": "simple"
+            "pf.metric_type": "ratio"
           }
         },
         {
-          "name": "fx_share_total",
-          "expression": "sum(fx_share_of_move)",
+          "name": "avg_realised_vol",
+          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
           "type": "DOUBLE",
-          "description": "FX Share (component)",
+          "description": "Avg Realised Volatility (annualised)",
           "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "landed_price_days",
-          "expression": "count(landed_price_local)",
-          "type": "DOUBLE",
-          "description": "Days With a Landed Price",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "landed_price_local_total",
-          "expression": "sum(landed_price_local)",
-          "type": "DOUBLE",
-          "description": "Landed Price Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
+            "pf.metric_type": "ratio"
           }
         },
         {
@@ -2231,24 +4994,6 @@
           "expression": "sum(momentum_20d_pct)",
           "type": "DOUBLE",
           "description": "20-Day Momentum (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "period_high_price_usd",
-          "expression": "max(coalesce(high_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period High (USD)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "period_low_price_usd",
-          "expression": "min(coalesce(low_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period Low (USD)",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -2297,63 +5042,12 @@
           "properties": {
             "pf.metric_type": "simple"
           }
-        },
-        {
-          "name": "usd_fx_rate_total",
-          "expression": "sum(usd_fx_rate)",
-          "type": "DOUBLE",
-          "description": "Applied FX Rate Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
         }
       ],
       "dimensions": [
         {
-          "name": "category",
-          "expression": "category",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "commodity_id",
           "expression": "commodity_id",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "commodity_name",
-          "expression": "commodity_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "currency_code",
-          "expression": "currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "exchange",
-          "expression": "exchange",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_carried_forward",
-          "expression": "is_carried_forward",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_duty_rate_confirmed",
-          "expression": "is_duty_rate_confirmed",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_import_prohibited",
-          "expression": "is_import_prohibited",
           "type": "VARCHAR",
           "description": ""
         },
@@ -2370,44 +5064,8 @@
           "description": ""
         },
         {
-          "name": "market_code",
-          "expression": "market_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "market_unit",
-          "expression": "market_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "price_basis",
           "expression": "price_basis",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "primary_driver",
-          "expression": "primary_driver",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_currency_code",
-          "expression": "quote_currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_unit",
-          "expression": "quote_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "segment",
-          "expression": "segment",
           "type": "VARCHAR",
           "description": ""
         },
@@ -2430,10 +5088,1013 @@
           "expression": "price_date",
           "type": "TIMESTAMP",
           "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_landed_price_attribution_daily_metrics",
+      "baseObject": "fct_landed_price_attribution_daily",
+      "measures": [
+        {
+          "name": "attribution_days",
+          "expression": "count(price_id)",
+          "type": "DOUBLE",
+          "description": "Attribution Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
         },
         {
-          "name": "rate_date",
-          "expression": "rate_date",
+          "name": "avg_fx_share_of_move",
+          "expression": "sum(fx_share_of_move) / nullif(count(fx_share_of_move), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Rupee Share of the Move",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "benchmark_contribution_total",
+          "expression": "sum(benchmark_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Benchmark Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "duty_contribution_total",
+          "expression": "sum(duty_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Duty Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_contribution_total",
+          "expression": "sum(fx_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "FX Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_days",
+          "expression": "count(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "Days With an FX Share",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_total",
+          "expression": "sum(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "FX Share (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "currency_code",
+          "expression": "currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "primary_driver",
+          "expression": "primary_driver",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_landed_prices_daily_metrics",
+      "baseObject": "fct_landed_prices_daily",
+      "measures": [
+        {
+          "name": "avg_duty_local",
+          "expression": "sum(duty_local) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Customs Duty (market currency)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_landed_price_local",
+          "expression": "sum(landed_price_local) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Landed Price (market currency)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_usd_fx_rate",
+          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Applied FX Rate",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "duty_local_total",
+          "expression": "sum(duty_local)",
+          "type": "DOUBLE",
+          "description": "Customs Duty Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_days",
+          "expression": "count(landed_price_local)",
+          "type": "DOUBLE",
+          "description": "Days With a Landed Price",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_local_total",
+          "expression": "sum(landed_price_local)",
+          "type": "DOUBLE",
+          "description": "Landed Price Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "usd_fx_rate_total",
+          "expression": "sum(usd_fx_rate)",
+          "type": "DOUBLE",
+          "description": "Applied FX Rate Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "currency_code",
+          "expression": "currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_unit",
+          "expression": "market_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_mcx_commodity_daily_metrics",
+      "baseObject": "fct_mcx_commodity_daily",
+      "measures": [
+        {
+          "name": "avg_mcx_daily_return",
+          "expression": "sum(return_1d) / nullif(count(continuous_id), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Daily Return",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_garman_klass_vol_30d",
+          "expression": "sum(garman_klass_vol_30d) / nullif(count(garman_klass_vol_30d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Garman\u2013Klass Volatility, 30 sessions (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_parkinson_vol_30d",
+          "expression": "sum(parkinson_vol_30d) / nullif(count(parkinson_vol_30d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Parkinson Volatility, 30 sessions (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_premium_to_landed",
+          "expression": "sum(premium_to_landed_pct) / nullif(count(premium_to_landed_pct), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Premium to Landed Parity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_realised_vol",
+          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Realised Volatility (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_rogers_satchell_vol_30d",
+          "expression": "sum(rogers_satchell_vol_30d) / nullif(count(rogers_satchell_vol_30d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Rogers\u2013Satchell Volatility, 30 sessions (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_roll_yield",
+          "expression": "sum(roll_yield_annualised) / nullif(count(roll_yield_annualised), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Roll Yield (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_mcx_rsi",
+          "expression": "sum(rsi_14) / nullif(count(rsi_14), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX RSI(14)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_backwardation_days",
+          "expression": "sum(case when is_backwardation then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "MCX Sessions in Backwardation",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_contango_days",
+          "expression": "sum(case when is_contango then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "MCX Sessions in Contango",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_contango_share",
+          "expression": "sum(case when is_contango then 1 else 0 end) / nullif(count(continuous_id), 0)",
+          "type": "DOUBLE",
+          "description": "MCX Share of Sessions in Contango",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_gk_vol_30d_days",
+          "expression": "count(garman_klass_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Garman\u2013Klass Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_gk_vol_30d_total",
+          "expression": "sum(garman_klass_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Garman\u2013Klass Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_parkinson_vol_30d_days",
+          "expression": "count(parkinson_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Parkinson Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_parkinson_vol_30d_total",
+          "expression": "sum(parkinson_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Parkinson Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_premium_days",
+          "expression": "count(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Parity Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_premium_total",
+          "expression": "sum(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "MCX Premium to Landed Parity (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_realised_vol_days",
+          "expression": "count(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Volatility Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_realised_vol_total",
+          "expression": "sum(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "MCX Realised Volatility (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_return_total",
+          "expression": "sum(return_1d)",
+          "type": "DOUBLE",
+          "description": "MCX Summed Daily Return (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_roll_yield_days",
+          "expression": "count(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Roll Yield",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_roll_yield_total",
+          "expression": "sum(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "MCX Roll Yield (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rs_vol_30d_days",
+          "expression": "count(rogers_satchell_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Rogers\u2013Satchell Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rs_vol_30d_total",
+          "expression": "sum(rogers_satchell_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Rogers\u2013Satchell Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rsi_days",
+          "expression": "count(rsi_14)",
+          "type": "DOUBLE",
+          "description": "MCX Days With an RSI Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rsi_total",
+          "expression": "sum(rsi_14)",
+          "type": "DOUBLE",
+          "description": "MCX RSI (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_session_days",
+          "expression": "count(continuous_id)",
+          "type": "DOUBLE",
+          "description": "MCX Sessions",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_turnover_inr",
+          "expression": "sum(turnover_inr)",
+          "type": "DOUBLE",
+          "description": "MCX Futures Turnover (\u20b9)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_volume_lots",
+          "expression": "sum(volume_lots)",
+          "type": "DOUBLE",
+          "description": "MCX Futures Volume (lots)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "contract_code",
+          "expression": "contract_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "curve_state",
+          "expression": "curve_state",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "ema_9_21_signal",
+          "expression": "ema_9_21_signal",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_backwardation",
+          "expression": "is_backwardation",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_contango",
+          "expression": "is_contango",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_flagship",
+          "expression": "is_flagship",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "mcx_commodity",
+          "expression": "mcx_commodity",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "oi_buildup",
+          "expression": "oi_buildup",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "segment",
+          "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "stance",
+          "expression": "stance",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "trend_regime",
+          "expression": "trend_regime",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "volatility_regime",
+          "expression": "volatility_regime",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "trade_date",
+          "expression": "trade_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_mcx_commodity_rollup_daily_metrics",
+      "baseObject": "fct_mcx_commodity_rollup_daily",
+      "measures": [
+        {
+          "name": "mcx_commodity_avg_daily_return",
+          "expression": "sum(return_1d) / nullif(count(return_1d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Daily Return (flagship) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_avg_premium_to_landed",
+          "expression": "sum(premium_to_landed_pct) / nullif(count(premium_to_landed_pct), 0)",
+          "type": "DOUBLE",
+          "description": "Avg MCX Premium to Landed Parity \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_avg_roll_yield",
+          "expression": "sum(roll_yield_annualised) / nullif(count(roll_yield_annualised), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Roll Yield (annualised) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_avg_rsi",
+          "expression": "sum(rsi_14) / nullif(count(rsi_14), 0)",
+          "type": "DOUBLE",
+          "description": "Avg RSI(14) (flagship) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_backwardation_sessions",
+          "expression": "sum(is_backwardation_session)",
+          "type": "DOUBLE",
+          "description": "Sessions in Backwardation \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_backwardation_share",
+          "expression": "sum(is_backwardation_session) / nullif(count(commodity_day_id), 0)",
+          "type": "DOUBLE",
+          "description": "Share of Sessions in Backwardation \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_call_oi_notional_inr",
+          "expression": "sum(call_oi_notional_inr)",
+          "type": "DOUBLE",
+          "description": "Call Open Interest, Notional (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_close_var_days",
+          "expression": "count(sq_log_return_1d)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Close-to-Close Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_close_var_total",
+          "expression": "sum(252 * sq_log_return_1d)",
+          "type": "DOUBLE",
+          "description": "Close-to-Close Variance (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_close_variance",
+          "expression": "sum(252 * sq_log_return_1d) / nullif(count(sq_log_return_1d), 0)",
+          "type": "DOUBLE",
+          "description": "Realised Variance, Close-to-Close (annualised) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_contango_sessions",
+          "expression": "sum(is_contango_session)",
+          "type": "DOUBLE",
+          "description": "Sessions in Contango \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_contango_share",
+          "expression": "sum(is_contango_session) / nullif(count(commodity_day_id), 0)",
+          "type": "DOUBLE",
+          "description": "Share of Sessions in Contango \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_gk_var_days",
+          "expression": "count(var_garman_klass)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Garman\u2013Klass Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_gk_var_total",
+          "expression": "sum(252 * var_garman_klass)",
+          "type": "DOUBLE",
+          "description": "Garman\u2013Klass Variance (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_gk_variance",
+          "expression": "sum(252 * var_garman_klass) / nullif(count(var_garman_klass), 0)",
+          "type": "DOUBLE",
+          "description": "Garman\u2013Klass Variance (annualised) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_hit_rate",
+          "expression": "sum(is_up_session) / nullif(count(return_1d), 0)",
+          "type": "DOUBLE",
+          "description": "Hit Rate (share of up sessions) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_log_return",
+          "expression": "sum(log_return_1d)",
+          "type": "DOUBLE",
+          "description": "Period Log Return (flagship) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_mini_turnover_inr",
+          "expression": "sum(mini_turnover_inr)",
+          "type": "DOUBLE",
+          "description": "Mini-Contract Turnover (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_mini_turnover_share",
+          "expression": "sum(mini_turnover_inr) / nullif(sum(turnover_inr), 0)",
+          "type": "DOUBLE",
+          "description": "Mini-Contract Share of Turnover \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_oi_value_inr",
+          "expression": "sum(open_interest_value_inr)",
+          "type": "DOUBLE",
+          "description": "Open Interest Value (\u20b9) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_option_notional_turnover_inr",
+          "expression": "sum(option_notional_turnover_inr)",
+          "type": "DOUBLE",
+          "description": "Options Notional Turnover (\u20b9) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_option_premium_turnover_inr",
+          "expression": "sum(option_premium_turnover_inr)",
+          "type": "DOUBLE",
+          "description": "Options Premium Turnover (\u20b9) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_parkinson_var_days",
+          "expression": "count(var_parkinson)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Parkinson Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_parkinson_var_total",
+          "expression": "sum(252 * var_parkinson)",
+          "type": "DOUBLE",
+          "description": "Parkinson Variance (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_parkinson_variance",
+          "expression": "sum(252 * var_parkinson) / nullif(count(var_parkinson), 0)",
+          "type": "DOUBLE",
+          "description": "Parkinson Variance (annualised) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_premium_days",
+          "expression": "count(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Parity Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_premium_total",
+          "expression": "sum(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "Landed-Parity Premium (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_put_call_ratio",
+          "expression": "sum(put_oi_notional_inr) / nullif(sum(call_oi_notional_inr), 0)",
+          "type": "DOUBLE",
+          "description": "Put/Call Ratio (notional OI) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_put_oi_notional_inr",
+          "expression": "sum(put_oi_notional_inr)",
+          "type": "DOUBLE",
+          "description": "Put Open Interest, Notional (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_return_days",
+          "expression": "count(return_1d)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Return \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_return_total",
+          "expression": "sum(return_1d)",
+          "type": "DOUBLE",
+          "description": "Daily Return (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_roll_yield_days",
+          "expression": "count(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Roll Yield \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_roll_yield_total",
+          "expression": "sum(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "Roll Yield (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_rs_var_days",
+          "expression": "count(var_rogers_satchell)",
+          "type": "DOUBLE",
+          "description": "Sessions With a Rogers\u2013Satchell Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_rs_var_total",
+          "expression": "sum(252 * var_rogers_satchell)",
+          "type": "DOUBLE",
+          "description": "Rogers\u2013Satchell Variance (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_rs_variance",
+          "expression": "sum(252 * var_rogers_satchell) / nullif(count(var_rogers_satchell), 0)",
+          "type": "DOUBLE",
+          "description": "Rogers\u2013Satchell Variance (annualised) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_commodity_rsi_days",
+          "expression": "count(rsi_14)",
+          "type": "DOUBLE",
+          "description": "Sessions With an RSI Reading \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_rsi_total",
+          "expression": "sum(rsi_14)",
+          "type": "DOUBLE",
+          "description": "RSI (component) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_sessions",
+          "expression": "count(commodity_day_id)",
+          "type": "DOUBLE",
+          "description": "Sessions \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_turnover_inr",
+          "expression": "sum(turnover_inr)",
+          "type": "DOUBLE",
+          "description": "Futures Turnover (\u20b9) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_up_sessions",
+          "expression": "sum(is_up_session)",
+          "type": "DOUBLE",
+          "description": "Up Sessions \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_commodity_volume_flagship_lots",
+          "expression": "sum(volume_flagship_lots)",
+          "type": "DOUBLE",
+          "description": "Volume (flagship-lot equivalents) \u2014 per Commodity",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "flagship_contract_code",
+          "expression": "flagship_contract_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_liquid",
+          "expression": "is_liquid",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "mcx_commodity",
+          "expression": "mcx_commodity",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "segment",
+          "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "stance",
+          "expression": "stance",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "trend_regime",
+          "expression": "trend_regime",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "volatility_regime",
+          "expression": "volatility_regime",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "trade_date",
+          "expression": "trade_date",
           "type": "TIMESTAMP",
           "description": ""
         }

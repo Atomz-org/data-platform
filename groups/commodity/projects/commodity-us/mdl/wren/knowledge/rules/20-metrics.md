@@ -1,30 +1,45 @@
 # Metrics
 
-## Cube `commodity_us_core` on `fct_commodity_prices_daily`
+## Cube `fct_commodity_prices_daily_metrics` on `fct_commodity_prices_daily`
 
-Ask it with `wren cube query --cube <name> --measures <m> --dimensions <d>`; the
-engine writes the GROUP BY.
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
 
 Measures:
 
 | measure | expression | meaning |
 |---|---|---|
 | `avg_benchmark_price_usd` | `sum(close_price) / nullif(count(close_price), 0)` | Avg Benchmark Price (USD) |
-| `avg_duty_local` | `sum(duty_local) / nullif(count(landed_price_local), 0)` | Avg Customs Duty (market currency) |
-| `avg_landed_price_local` | `sum(landed_price_local) / nullif(count(landed_price_local), 0)` | Avg Landed Price (market currency) |
-| `avg_usd_fx_rate` | `sum(usd_fx_rate) / nullif(count(landed_price_local), 0)` | Avg Applied FX Rate |
 | `benchmark_price_days` | `count(close_price)` | Priced Days |
 | `benchmark_price_usd_total` | `sum(close_price)` | Benchmark Price Total (component) |
 | `contracts_traded` | `sum(volume)` | Contracts Traded |
+| `period_high_price_usd` | `max(coalesce(high_price, close_price))` | Period High (USD) |
+| `period_low_price_usd` | `min(coalesce(low_price, close_price))` | Period Low (USD) |
+
+Dimensions: `commodity_id`, `price_basis`
+Time dimensions: `price_date`
+
+## Cube `fct_landed_prices_daily_metrics` on `fct_landed_prices_daily`
+
+Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>
+--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this
+cube's own measures and dimensions go together.
+
+Measures:
+
+| measure | expression | meaning |
+|---|---|---|
+| `avg_duty_local` | `sum(duty_local) / nullif(count(landed_price_local), 0)` | Avg Customs Duty (market currency) |
+| `avg_landed_price_local` | `sum(landed_price_local) / nullif(count(landed_price_local), 0)` | Avg Landed Price (market currency) |
+| `avg_usd_fx_rate` | `sum(usd_fx_rate) / nullif(count(landed_price_local), 0)` | Avg Applied FX Rate |
 | `duty_local_total` | `sum(duty_local)` | Customs Duty Total (component) |
 | `landed_price_days` | `count(landed_price_local)` | Days With a Landed Price |
 | `landed_price_local_total` | `sum(landed_price_local)` | Landed Price Total (component) |
-| `period_high_price_usd` | `max(coalesce(high_price, close_price))` | Period High (USD) |
-| `period_low_price_usd` | `min(coalesce(low_price, close_price))` | Period Low (USD) |
 | `usd_fx_rate_total` | `sum(usd_fx_rate)` | Applied FX Rate Total (component) |
 
-Dimensions: `category`, `commodity_id`, `commodity_name`, `currency_code`, `exchange`, `is_carried_forward`, `is_duty_rate_confirmed`, `is_import_prohibited`, `market_code`, `market_unit`, `price_basis`, `quote_currency_code`, `quote_unit`, `segment`
-Time dimensions: `price_date`, `rate_date`
+Dimensions: `commodity_id`, `currency_code`, `is_duty_rate_confirmed`, `market_code`, `market_unit`, `price_basis`
+Time dimensions: `price_date`
 
 ## Metric definitions
 

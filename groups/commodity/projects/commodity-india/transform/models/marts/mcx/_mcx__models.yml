@@ -1,0 +1,288 @@
+version: 2
+# India's MCX marts: what the exchange itself settled, and the trading metrics
+# a desk reads off it. Market-local — nothing here is expected in a sister.
+# Prices are ₹ per each code's quote basis (unit_price, ADR-0002): group and
+# compare them within one contract code only.
+
+models:
+  - name: fct_mcx_futures_daily
+    description: >
+      Every MCX futures contract's session — all expiries — with price change,
+      open-interest change and build-up, notional per lot and volume/OI. The
+      term-structure and expiry-by-expiry view.
+    access: public
+    meta: {grain: one MCX futures contract per trading day, concept: ContractSession}
+    columns:
+      - name: session_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_id
+        meta: {role: foreign_key, links_to: ExchangeContract}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_mcx_contracts')
+                field: contract_id
+      - name: contract_code
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: trade_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: expiry_date
+        meta: {role: reference_date}
+      - name: open_price
+        meta: {role: unit_price}
+      - name: high_price
+        meta: {role: unit_price}
+      - name: low_price
+        meta: {role: unit_price}
+      - name: close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: volume_lots
+        meta: {role: quantity}
+      - name: open_interest_lots
+        meta: {role: quantity}
+      - name: turnover_inr
+        description: Traded value in rupees (MCX states it in ₹ lakh; × 100,000). Additive within a day.
+        meta: {role: money_amount}
+      - name: oi_buildup
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [long_buildup, short_buildup, short_covering, long_unwinding, neutral]
+
+  - name: fct_mcx_commodity_daily
+    description: >
+      The continuous most-active MCX series per contract code with every trading
+      metric: returns (1d–252d, YTD), SMA 20/50/200, EMA/MACD, RSI(14), ATR(14),
+      Bollinger(20,2), 52-week range and drawdown, realised and Parkinson
+      volatility, OI build-up across expiries, calendar spread, annualised carry,
+      rollover, premium to landed import parity, and a legible stance.
+      Indicators run on roll-free back-adjusted prices and are null until their
+      window is full. Prices non-additive: aggregate within one contract_code.
+    access: public
+    meta: {grain: one MCX contract code per trading day}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [contract_code, trade_date]
+    columns:
+      - name: continuous_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_code
+        meta: {role: status_enum}
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('mcx_products')
+                field: contract_code
+      - name: mcx_commodity
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: trade_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: active_contract_id
+        meta: {role: foreign_key, links_to: ExchangeContract}
+      - name: is_latest
+        meta: {role: flag}
+      - name: close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: sma_200
+        meta: {role: unit_price}
+      - name: atr_14
+        meta: {role: unit_price}
+      - name: rsi_14
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 100
+      - name: range_position_52w
+        meta: {role: rate_fraction}
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: realised_vol_20d
+        meta: {role: rate_fraction}
+      - name: garman_klass_vol_30d
+        description: Garman–Klass (1980) OHLC range volatility over 30 sessions, annualised on 252.
+        meta: {role: rate_fraction}
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 5
+      - name: roll_yield_annualised
+        description: Near-into-next roll yield to a long, annualised; negative in contango.
+        meta: {role: rate_fraction}
+      - name: is_contango
+        meta: {role: flag}
+      - name: is_backwardation
+        meta: {role: flag}
+      - name: ema_9_21_signal
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [bullish_cross, bearish_cross, above, below]
+      - name: turnover_inr
+        meta: {role: money_amount}
+      - name: volume_lots
+        meta: {role: quantity}
+      - name: open_interest_lots
+        meta: {role: quantity}
+      - name: stance
+        meta: {role: status_enum}
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [illiquid, no_reading, overextended_up, overextended_down, buy_the_dip,
+                         sell_the_rally, trend_long, trend_short, neutral]
+      - name: trend_regime
+        meta: {role: status_enum}
+      - name: volatility_regime
+        meta: {role: status_enum}
+      - name: oi_buildup
+        meta: {role: status_enum}
+      - name: curve_state
+        meta: {role: status_enum}
+
+  - name: fct_mcx_options_daily
+    description: >
+      Each MCX option chain per session against its underlying future: put/call
+      ratio by OI and volume, positioning, call and put OI walls, max pain and
+      their distance from the underlying.
+    access: public
+    meta: {grain: one MCX option chain per trading day}
+    columns:
+      - name: chain_day_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_id
+        meta: {role: foreign_key, links_to: ExchangeContract}
+      - name: trade_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+      - name: put_call_ratio_oi
+        meta: {role: rate_fraction}
+      - name: max_pain_strike
+        meta: {role: unit_price}
+      - name: premium_turnover_inr
+        meta: {role: money_amount}
+
+  - name: dim_mcx_contracts
+    description: >
+      The MCX expiry calendar: every futures contract and option chain listed for
+      the tracked codes, its commodity, lot and quote basis, days to expiry, and
+      whether it traded in the latest session.
+    access: public
+    meta: {grain: one MCX futures contract or option expiry chain, concept: ExchangeContract}
+    columns:
+      - name: contract_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: contract_code
+        meta: {role: status_enum}
+      - name: mcx_commodity
+        meta: {role: status_enum}
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: expiry_date
+        meta: {role: reference_date}
+        data_tests: [not_null]
+      - name: contract_kind
+        meta: {role: status_enum}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [future, option_chain]
+      - name: is_open
+        meta: {role: flag}
+
+  - name: rpt_mcx_commodity_board
+    description: >
+      One row per MCX contract code: its latest session's price, returns, trend,
+      momentum, volatility, positioning, curve, parity premium and stance, with
+      the nearest option chain's put/call ratio and max pain. The table behind
+      the MCX summary page and each commodity page's headline.
+    access: public
+    meta: {grain: one MCX contract code}
+    columns:
+      - name: contract_code
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: latest_trade_date
+        meta: {role: event_time}
+      - name: close_price
+        meta: {role: unit_price}
+      - name: is_stale
+        meta: {role: flag}
+      - name: stance
+        meta: {role: status_enum}
+
+  - name: fct_mcx_commodity_rollup_daily
+    description: >
+      One MCX commodity per session (gold, not its five codes): the flagship's
+      price, return, per-session variances under four estimators, momentum,
+      curve and parity, with turnover, open-interest value and notional-weighted
+      option open interest summed across every code and expiry. The fact the
+      per-commodity semantic model `mcx_commodities` reads.
+    access: public
+    meta: {grain: one MCX commodity per trading day}
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [mcx_commodity, trade_date]
+    columns:
+      - name: commodity_day_id
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        meta: {role: foreign_key, links_to: Commodity}
+      - name: trade_date
+        meta: {role: event_time}
+        data_tests: [not_null]
+      - name: flagship_close_price
+        meta: {role: unit_price}
+        data_tests: [not_null]
+      - name: var_garman_klass
+        description: One session's Garman–Klass variance (not annualised).
+      - name: turnover_inr
+        meta: {role: money_amount}
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: open_interest_value_inr
+        meta: {role: money_amount}
+      - name: volume_flagship_lots
+        meta: {role: quantity}

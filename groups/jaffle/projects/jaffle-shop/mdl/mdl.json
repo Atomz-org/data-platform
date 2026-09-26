@@ -3181,18 +3181,61 @@
   ],
   "cubes": [
     {
-      "name": "jaffle_shop_core",
-      "baseObject": "orders",
+      "name": "customers_metrics",
+      "baseObject": "customers",
       "measures": [
         {
-          "name": "drink_orders",
-          "expression": "sum(1)",
+          "name": "count_lifetime_orders",
+          "expression": "sum(customers.count_lifetime_orders)",
           "type": "DOUBLE",
-          "description": "Drink Orders",
+          "description": "Count Lifetime Orders",
           "properties": {
             "pf.metric_type": "simple"
           }
         },
+        {
+          "name": "lifetime_spend_pretax",
+          "expression": "sum(customers.lifetime_spend_pretax)",
+          "type": "DOUBLE",
+          "description": "LTV Pre-tax",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "customer_name",
+          "expression": "customer_name",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "customer_type",
+          "expression": "customer_type",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "first_ordered_at",
+          "expression": "first_ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        },
+        {
+          "name": "last_ordered_at",
+          "expression": "last_ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "order_items_metrics",
+      "baseObject": "order_items",
+      "measures": [
         {
           "name": "drink_revenue",
           "expression": "sum(case when is_drink_item then product_price else 0 end)",
@@ -3209,15 +3252,6 @@
           "description": "Drink Revenue %",
           "properties": {
             "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "food_orders",
-          "expression": "sum(1)",
-          "type": "DOUBLE",
-          "description": "Food Orders",
-          "properties": {
-            "pf.metric_type": "simple"
           }
         },
         {
@@ -3239,19 +3273,74 @@
           }
         },
         {
-          "name": "large_orders",
-          "expression": "sum(1)",
+          "name": "median_revenue",
+          "expression": "percentile_cont(0.5) within group (order by product_price)",
           "type": "DOUBLE",
-          "description": "Large Orders",
+          "description": "Median Revenue",
           "properties": {
             "pf.metric_type": "simple"
           }
         },
         {
-          "name": "median_revenue",
-          "expression": "percentile_cont(0.5) within group (order by product_price)",
+          "name": "revenue",
+          "expression": "sum(product_price)",
           "type": "DOUBLE",
-          "description": "Median Revenue",
+          "description": "Revenue",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "is_drink_item",
+          "expression": "is_drink_item",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_food_item",
+          "expression": "is_food_item",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "ordered_at",
+          "expression": "ordered_at",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "orders_metrics",
+      "baseObject": "orders",
+      "measures": [
+        {
+          "name": "drink_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Drink Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "food_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Food Orders",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "large_orders",
+          "expression": "sum(1)",
+          "type": "DOUBLE",
+          "description": "Large Orders",
           "properties": {
             "pf.metric_type": "simple"
           }
@@ -3282,48 +3371,12 @@
           "properties": {
             "pf.metric_type": "simple"
           }
-        },
-        {
-          "name": "orders",
-          "expression": "sum(1)",
-          "type": "DOUBLE",
-          "description": "Orders",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "revenue",
-          "expression": "sum(product_price)",
-          "type": "DOUBLE",
-          "description": "Revenue",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
         }
       ],
       "dimensions": [
         {
-          "name": "customer_name",
-          "expression": "customer_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "customer_order_number",
           "expression": "customer_order_number",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "customer_type",
-          "expression": "customer_type",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_drink_item",
-          "expression": "is_drink_item",
           "type": "VARCHAR",
           "description": ""
         },
@@ -3334,103 +3387,13 @@
           "description": ""
         },
         {
-          "name": "is_food_item",
-          "expression": "is_food_item",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "is_food_order",
           "expression": "is_food_order",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_perishable_supply",
-          "expression": "is_perishable_supply",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "location_name",
-          "expression": "location_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "order_total_dim",
-          "expression": "order_total_dim",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "product_description",
-          "expression": "product_description",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "product_id",
-          "expression": "product_id",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "product_name",
-          "expression": "product_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "product_price",
-          "expression": "product_price",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "product_type",
-          "expression": "product_type",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "supply_cost",
-          "expression": "supply_cost",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "supply_id",
-          "expression": "supply_id",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "supply_name",
-          "expression": "supply_name",
           "type": "VARCHAR",
           "description": ""
         }
       ],
       "timeDimensions": [
-        {
-          "name": "first_ordered_at",
-          "expression": "first_ordered_at",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
-        {
-          "name": "last_ordered_at",
-          "expression": "last_ordered_at",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
-        {
-          "name": "opened_date",
-          "expression": "opened_date",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
         {
           "name": "ordered_at",
           "expression": "ordered_at",

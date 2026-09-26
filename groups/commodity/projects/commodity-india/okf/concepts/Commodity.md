@@ -29,6 +29,7 @@ Declared by this family: [Commodity](../../../../okf/concepts/Commodity.md) in `
 
 # Relations
 
+* ExchangeContract is written on Commodity — A contract's underlying. Optional — an exchange lists contracts (electricity, cardamom) the family catalogue does not price.
 * ImportTariff is levied on Commodity — A tariff row applies to one commodity for one validity interval.
 * Order contains Product — Needs a line-item bridge in any physical model.
 * PriceObservation prices Commodity — Every benchmark price belongs to exactly one commodity.

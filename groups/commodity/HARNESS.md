@@ -32,7 +32,7 @@ The skills:
 
 | project | kind | module | prod | tool overrides | report | memory | harness |
 |---|---|---|---|---|---|---|---|
-| `commodity-india` | entity | `commodity_india` | `snowflake` | 0 | yes | 0 | [`projects/commodity-india/HARNESS.md`](projects/commodity-india/HARNESS.md) |
+| `commodity-india` | entity | `commodity_india` | `snowflake` | 0 | yes | 1 | [`projects/commodity-india/HARNESS.md`](projects/commodity-india/HARNESS.md) |
 | `commodity-rollup` | roll-up | `commodity_rollup` | `duckdb` | 0 | yes | 0 | [`projects/commodity-rollup/HARNESS.md`](projects/commodity-rollup/HARNESS.md) |
 | `commodity-us` | entity | `commodity_us` | `duckdb` | 0 | yes | 0 | [`projects/commodity-us/HARNESS.md`](projects/commodity-us/HARNESS.md) |
 

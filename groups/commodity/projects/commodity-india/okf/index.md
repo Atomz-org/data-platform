@@ -5,10 +5,10 @@ okf_x_group: commodity
 okf_x_project: commodity-india
 okf_x_platform_bundle: ../../../../../platform/okf/index.md
 okf_x_kg_graph: ../kg/graph.json
-okf_x_kg_models: 16
-okf_x_tables: 10
-okf_x_concepts: 2
-okf_x_metrics: 32
+okf_x_kg_models: 29
+okf_x_tables: 16
+okf_x_concepts: 4
+okf_x_metrics: 109
 ---
 
 # commodity/commodity-india
@@ -21,24 +21,32 @@ confidence `0.00` is one the platform does not hold yet; declare it in
 
 The concepts below are the platform's, shared by every sister: [Platform ontology](../../../../../platform/okf/index.md).
 
-Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 16 model(s); the 10 below are the ones the semantic layer projects to BI.
+Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): every page names the node it documents, and states the lineage, policies and decisions the graph holds for it. The graph reaches 29 model(s); the 16 below are the ones the semantic layer projects to BI.
 
 # Tables
 
 * [dim_commodities](/tables/dim_commodities.md) — `Commodity` - Every tracked commodity — the group catalog — with this market's facts beside it: the unit the local market quotes in and the duty in force today.
+* [dim_mcx_contracts](/tables/dim_mcx_contracts.md) — `ExchangeContract` - The MCX expiry calendar: every futures contract and option chain listed for the tracked codes, its commodity, lot and quote basis, days to expiry, and whether it traded in the latest session.
 * [fct_commodity_prices_daily](/tables/fct_commodity_prices_daily.md) — `PriceObservation` - Daily benchmark price per commodity in USD per quote unit, with day-on-day change, 20/50-day moving averages and a 252-trading-day range. Prices are non-additive: aggregate within one commodity only.
 * [fct_commodity_trading_signals_daily](/tables/fct_commodity_trading_signals_daily.md) — `PriceObservation` - Timing signals on the USD benchmark — where a price sits in its own recent history, not what it costs. Every measure is unit-free, so unlike the price itself these are safe to compare across commodities.
 * [fct_fx_rates_daily](/tables/fct_fx_rates_daily.md) - Daily USD fixes (quote currency per 1 USD) with day-on-day change; the tracker's FX ticker.
 * [fct_landed_price_attribution_daily](/tables/fct_landed_price_attribution_daily.md) — `PriceObservation` - Why the landed rupee price moved over 20 trading days, split into the benchmark, the rupee and duty. An Indian buyer decides on landed rupees, and a USD-only signal cannot tell a commodity move from a currency move — which is the difference between a buying decision and a treasury one.
 * [fct_landed_prices_daily](/tables/fct_landed_prices_daily.md) — `PriceObservation` - Import landed price per commodity per day in this market's currency per its market unit: benchmark × USD/local × (1 + customs duty). The benchmark stands in for CIF value — freight, insurance, landing charges and local taxes are excluded. History before a tariff's `confirmed_from` uses today's rate; filter on `is_duty_rate_confirmed` when that matters. The same shape in every sister; `market_code` and `currency_code` say whose it is.
+* [fct_mcx_commodity_daily](/tables/fct_mcx_commodity_daily.md) — `ContractSession` - The continuous most-active MCX series per contract code with every trading metric: returns (1d–252d, YTD), SMA 20/50/200, EMA/MACD, RSI(14), ATR(14), Bollinger(20,2), 52-week range and drawdown, realised and Parkinson volatility, OI build-up across expiries, calendar spread, annualised carry, rollover, premium to landed import parity, and a legible stance. Indicators run on roll-free back-adjusted prices and are null until their window is full. Prices non-additive: aggregate within one contract_code.
+* [fct_mcx_commodity_rollup_daily](/tables/fct_mcx_commodity_rollup_daily.md) — `PriceObservation` - One MCX commodity per session (gold, not its five codes): the flagship's price, return, per-session variances under four estimators, momentum, curve and parity, with turnover, open-interest value and notional-weighted option open interest summed across every code and expiry. The fact the per-commodity semantic model `mcx_commodities` reads.
+* [fct_mcx_futures_daily](/tables/fct_mcx_futures_daily.md) — `ContractSession` - Every MCX futures contract's session — all expiries — with price change, open-interest change and build-up, notional per lot and volume/OI. The term-structure and expiry-by-expiry view.
 * [fct_mcx_lot_equivalents_daily](/tables/fct_mcx_lot_equivalents_daily.md) — `PriceObservation` - The landed price of each MCX bullion and base-metal contract, per its quote basis and per lot — GOLDM per 10 g, ALUMINI and ZINCMINI per kg and per 1 MT lot. Computed from international benchmarks — not an MCX quote.
+* [fct_mcx_options_daily](/tables/fct_mcx_options_daily.md) — `ContractSession` - Each MCX option chain per session against its underlying future: put/call ratio by OI and volume, positioning, call and put OI walls, max pain and their distance from the underlying.
 * [fct_precious_metal_retail_prices_daily](/tables/fct_precious_metal_retail_prices_daily.md) — `PriceObservation` - Landed gold and silver in Indian retail conventions — per gram, 10 g and kg, by purity.
 * [rpt_commodity_price_board](/tables/rpt_commodity_price_board.md) — `Commodity` - One row per tracked commodity: latest benchmark and move, 252-day range, landed price in this market's currency, duty, precious-metal spot basis, and staleness. The table behind the commodity price board.
+* [rpt_mcx_commodity_board](/tables/rpt_mcx_commodity_board.md) — `PriceObservation` - One row per MCX contract code: its latest session's price, returns, trend, momentum, volatility, positioning, curve, parity premium and stance, with the nearest option chain's put/call ratio and max pain. The table behind the MCX summary page and each commodity page's headline.
 * [rpt_mcx_contract_board](/tables/rpt_mcx_contract_board.md) — `PriceObservation` - One row per tracked MCX contract: the latest landed equivalent per quote basis and per lot, and how old its benchmark is. ZINC and ZINCMINI carry the last indicative LME level and read stale until it is refreshed.
 
 # Concepts
 
 * [Commodity](/concepts/Commodity.md)
+* [ContractSession](/concepts/ContractSession.md)
+* [ExchangeContract](/concepts/ExchangeContract.md)
 * [PriceObservation](/concepts/PriceObservation.md)
 
 # Metrics
@@ -48,6 +56,14 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 * [avg_duty_local](/metrics/avg_duty_local.md) - Mean customs duty per market unit, in this market's currency. Group by commodity.
 * [avg_fx_share_of_move](/metrics/avg_fx_share_of_move.md) - Share of the 20-day landed move attributable to USD/INR rather than the benchmark or duty. High means the commodity call and the currency call have come apart, and timing the commodity will not recover the cost.
 * [avg_landed_price_local](/metrics/avg_landed_price_local.md) - Mean import landed price in this market's currency per its market unit (benchmark × USD/local × (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.
+* [avg_mcx_daily_return](/metrics/avg_mcx_daily_return.md) - Mean roll-free daily return of the most-active contract. Group by contract_code.
+* [avg_mcx_garman_klass_vol_30d](/metrics/avg_mcx_garman_klass_vol_30d.md) - Garman–Klass (1980) range estimator from open, high, low and close over 30 sessions, annualised on 252. About 7× as efficient as close-to-close; it understates risk that happens overnight. Group by contract_code.
+* [avg_mcx_parkinson_vol_30d](/metrics/avg_mcx_parkinson_vol_30d.md) - High–low range estimator over 30 sessions, annualised on 252. Group by contract_code.
+* [avg_mcx_premium_to_landed](/metrics/avg_mcx_premium_to_landed.md) - MCX settlement over the landed import-parity price of the same quote basis, minus one. Only codes the family prices. Group by contract_code.
+* [avg_mcx_realised_vol](/metrics/avg_mcx_realised_vol.md) - 20-session close-to-close dispersion annualised on 252 sessions. Group by contract_code.
+* [avg_mcx_rogers_satchell_vol_30d](/metrics/avg_mcx_rogers_satchell_vol_30d.md) - Drift-robust OHLC range estimator over 30 sessions, annualised on 252. Group by contract_code.
+* [avg_mcx_roll_yield](/metrics/avg_mcx_roll_yield.md) - What a long earns rolling the near month into the next, annualised — negative in contango, positive in backwardation. Group by contract_code.
+* [avg_mcx_rsi](/metrics/avg_mcx_rsi.md) - Wilder RSI on the roll-free continuous series. Group by contract_code.
 * [avg_momentum_20d](/metrics/avg_momentum_20d.md) - Mean 20-day rate of change. Group by commodity.
 * [avg_range_position](/metrics/avg_range_position.md) - 0 at the 52-week low, 1 at the high. Group by commodity — averaging this across commodities is a number about the basket, not about anything tradable.
 * [avg_realised_vol](/metrics/avg_realised_vol.md) - 20-day dispersion annualised on 252 trading days. Group by commodity.
@@ -65,6 +81,75 @@ Joined to this project's knowledge graph ([kg/graph.json](../kg/graph.json)): ev
 * [landed_price_days](/metrics/landed_price_days.md) - Days a landed price exists — never for commodities this market prohibits importing.
 * [landed_price_local_total](/metrics/landed_price_local_total.md) - Building block for avg_landed_price_local. A sum of prices means nothing on its own.
 * [landed_price_mom_change](/metrics/landed_price_mom_change.md) - Month-over-month change in the mean landed price; moves with both the benchmark and the currency.
+* [mcx_backwardation_days](/metrics/mcx_backwardation_days.md) - 
+* [mcx_commodity_avg_daily_return](/metrics/mcx_commodity_avg_daily_return.md) - 
+* [mcx_commodity_avg_premium_to_landed](/metrics/mcx_commodity_avg_premium_to_landed.md) - MCX settlement over benchmark × USD/INR × (1 + duty) for the same quote basis, minus one. Only commodities the family prices.
+* [mcx_commodity_avg_roll_yield](/metrics/mcx_commodity_avg_roll_yield.md) - What a long earned rolling the flagship's near month into the next, annualised. Negative in contango.
+* [mcx_commodity_avg_rsi](/metrics/mcx_commodity_avg_rsi.md) - 
+* [mcx_commodity_backwardation_sessions](/metrics/mcx_commodity_backwardation_sessions.md) - 
+* [mcx_commodity_backwardation_share](/metrics/mcx_commodity_backwardation_share.md) - 
+* [mcx_commodity_call_oi_notional_inr](/metrics/mcx_commodity_call_oi_notional_inr.md) - 
+* [mcx_commodity_close_var_days](/metrics/mcx_commodity_close_var_days.md) - 
+* [mcx_commodity_close_var_total](/metrics/mcx_commodity_close_var_total.md) - 
+* [mcx_commodity_close_variance](/metrics/mcx_commodity_close_variance.md) - Zero-mean realised variance of the flagship's daily log returns, × 252. Its square root is realised volatility over whatever window the query asks for.
+* [mcx_commodity_contango_sessions](/metrics/mcx_commodity_contango_sessions.md) - 
+* [mcx_commodity_contango_share](/metrics/mcx_commodity_contango_share.md) - 
+* [mcx_commodity_gk_var_days](/metrics/mcx_commodity_gk_var_days.md) - 
+* [mcx_commodity_gk_var_total](/metrics/mcx_commodity_gk_var_total.md) - 
+* [mcx_commodity_gk_variance](/metrics/mcx_commodity_gk_variance.md) - Garman–Klass (1980) OHLC variance per session, × 252. The most efficient of the four for a zero-drift market; blind to the overnight gap.
+* [mcx_commodity_gk_vol](/metrics/mcx_commodity_gk_vol.md) - 
+* [mcx_commodity_hit_rate](/metrics/mcx_commodity_hit_rate.md) - Sessions the flagship settled higher, over sessions with a return.
+* [mcx_commodity_log_return](/metrics/mcx_commodity_log_return.md) - Sum of the flagship's roll-free daily log returns — additive over time; exp(x) − 1 is the period return.
+* [mcx_commodity_mini_turnover_inr](/metrics/mcx_commodity_mini_turnover_inr.md) - 
+* [mcx_commodity_mini_turnover_share](/metrics/mcx_commodity_mini_turnover_share.md) - Turnover in the non-flagship codes (GOLDM, SILVERMIC, CRUDEOILM, ...) over all turnover — how retail the commodity's book is.
+* [mcx_commodity_oi_value_inr](/metrics/mcx_commodity_oi_value_inr.md) - Notional of open futures positions across every code and expiry, at the period's last session. A stock — never summed over days.
+* [mcx_commodity_option_notional_turnover_inr](/metrics/mcx_commodity_option_notional_turnover_inr.md) - What MCX reports as option `Value` — (strike + premium) × quantity. Premium is the smaller number traders pay; this is the exposure that changed hands.
+* [mcx_commodity_option_premium_turnover_inr](/metrics/mcx_commodity_option_premium_turnover_inr.md) - Premium actually paid across every option chain — MCX's notional `Value` less strike × quantity.
+* [mcx_commodity_parkinson_var_days](/metrics/mcx_commodity_parkinson_var_days.md) - 
+* [mcx_commodity_parkinson_var_total](/metrics/mcx_commodity_parkinson_var_total.md) - 
+* [mcx_commodity_parkinson_variance](/metrics/mcx_commodity_parkinson_variance.md) - High–low range variance, (ln H/L)² ÷ 4 ln 2 per session, × 252.
+* [mcx_commodity_parkinson_vol](/metrics/mcx_commodity_parkinson_vol.md) - 
+* [mcx_commodity_period_return](/metrics/mcx_commodity_period_return.md) - exp(Σ log return) − 1 over the query's window — compounding, not summing, daily returns.
+* [mcx_commodity_premium_days](/metrics/mcx_commodity_premium_days.md) - 
+* [mcx_commodity_premium_total](/metrics/mcx_commodity_premium_total.md) - 
+* [mcx_commodity_put_call_ratio](/metrics/mcx_commodity_put_call_ratio.md) - Put open interest over call, each weighted by its underlying's notional per lot so every code of the commodity counts at its size. Above ~1.3 put-heavy, below ~0.7 call-heavy.
+* [mcx_commodity_put_oi_notional_inr](/metrics/mcx_commodity_put_oi_notional_inr.md) - 
+* [mcx_commodity_realised_vol](/metrics/mcx_commodity_realised_vol.md) - 
+* [mcx_commodity_return_days](/metrics/mcx_commodity_return_days.md) - 
+* [mcx_commodity_return_total](/metrics/mcx_commodity_return_total.md) - 
+* [mcx_commodity_roll_yield_days](/metrics/mcx_commodity_roll_yield_days.md) - 
+* [mcx_commodity_roll_yield_total](/metrics/mcx_commodity_roll_yield_total.md) - 
+* [mcx_commodity_rs_var_days](/metrics/mcx_commodity_rs_var_days.md) - 
+* [mcx_commodity_rs_var_total](/metrics/mcx_commodity_rs_var_total.md) - 
+* [mcx_commodity_rs_variance](/metrics/mcx_commodity_rs_variance.md) - Rogers–Satchell (1991) drift-robust OHLC variance per session, × 252. Prefer it to Garman–Klass in a trending market.
+* [mcx_commodity_rs_vol](/metrics/mcx_commodity_rs_vol.md) - 
+* [mcx_commodity_rsi_days](/metrics/mcx_commodity_rsi_days.md) - 
+* [mcx_commodity_rsi_total](/metrics/mcx_commodity_rsi_total.md) - 
+* [mcx_commodity_sessions](/metrics/mcx_commodity_sessions.md) - Commodity-sessions on record; the denominator the per-session means divide by.
+* [mcx_commodity_turnover_inr](/metrics/mcx_commodity_turnover_inr.md) - Traded value of every code and expiry of the commodity, in rupees. Additive across commodities and days.
+* [mcx_commodity_turnover_mom](/metrics/mcx_commodity_turnover_mom.md) - 
+* [mcx_commodity_up_sessions](/metrics/mcx_commodity_up_sessions.md) - 
+* [mcx_commodity_volume_flagship_lots](/metrics/mcx_commodity_volume_flagship_lots.md) - Turnover restated in lots of the flagship contract, so GOLD, GOLDM and GOLDPETAL add up. Group by mcx_commodity — a gold lot is not a crude lot.
+* [mcx_contango_days](/metrics/mcx_contango_days.md) - 
+* [mcx_contango_share](/metrics/mcx_contango_share.md) - Contango sessions over all sessions. Group by contract_code.
+* [mcx_gk_vol_30d_days](/metrics/mcx_gk_vol_30d_days.md) - 
+* [mcx_gk_vol_30d_total](/metrics/mcx_gk_vol_30d_total.md) - 
+* [mcx_parkinson_vol_30d_days](/metrics/mcx_parkinson_vol_30d_days.md) - 
+* [mcx_parkinson_vol_30d_total](/metrics/mcx_parkinson_vol_30d_total.md) - 
+* [mcx_premium_days](/metrics/mcx_premium_days.md) - 
+* [mcx_premium_total](/metrics/mcx_premium_total.md) - 
+* [mcx_realised_vol_days](/metrics/mcx_realised_vol_days.md) - 
+* [mcx_realised_vol_total](/metrics/mcx_realised_vol_total.md) - 
+* [mcx_return_total](/metrics/mcx_return_total.md) - 
+* [mcx_roll_yield_days](/metrics/mcx_roll_yield_days.md) - 
+* [mcx_roll_yield_total](/metrics/mcx_roll_yield_total.md) - 
+* [mcx_rs_vol_30d_days](/metrics/mcx_rs_vol_30d_days.md) - 
+* [mcx_rs_vol_30d_total](/metrics/mcx_rs_vol_30d_total.md) - 
+* [mcx_rsi_days](/metrics/mcx_rsi_days.md) - 
+* [mcx_rsi_total](/metrics/mcx_rsi_total.md) - 
+* [mcx_session_days](/metrics/mcx_session_days.md) - Code-sessions on record. The denominator the means below divide by.
+* [mcx_turnover_inr](/metrics/mcx_turnover_inr.md) - Traded value across every expiry, in rupees. Additive across codes and days.
+* [mcx_volume_lots](/metrics/mcx_volume_lots.md) - Lots traded across every expiry. Additive within a code; a GOLD lot is not a GOLDPETAL lot, so compare across codes with turnover instead.
 * [momentum_20d_days](/metrics/momentum_20d_days.md) - 
 * [momentum_20d_total](/metrics/momentum_20d_total.md) - 
 * [period_high_price_usd](/metrics/period_high_price_usd.md) - Highest traded price in the period, USD per quote unit. Group by commodity.

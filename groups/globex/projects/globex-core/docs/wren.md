@@ -22,14 +22,18 @@ pf tool wren check globex globex-core           # is the committed workspace wha
 pf tool wren context globex globex-core "<q>"   # rules + remembered questions + schema, for one question
 pf tool wren plan globex globex-core "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query globex globex-core "<sql>"   # policy → plan → dry-run → execute → ledger
+pf tool wren cube globex globex-core --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api globex globex-core             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store globex globex-core --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor globex globex-core               # is the engine actually usable
 ```
 
 ## The road every question takes
 
-`pf tool wren query` (and the `wren_query` MCP tool) never runs what it is
-given. It checks the statement is one read-only `SELECT`, plans it through the
+`pf tool wren query` and `pf tool wren cube` (the `wren_query` and `wren_cube`
+MCP tools) never run what they are given. A cube question is first translated
+into one `SELECT` by the engine. The gate checks the statement is one read-only
+`SELECT`, plans it through the
 LLM-facing manifest, `EXPLAIN`s the plan on this project's warehouse read-only,
 executes it row-limited, and appends the outcome — refused or not — to
 `groups/globex/loop-ledger.json` as a `wren-query` run. A statement refused

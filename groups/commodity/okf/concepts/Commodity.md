@@ -21,6 +21,7 @@ okf_x_identity: commodity_id
 
 # Relations
 
+* [exchange_contract_on_commodity](/relations/exchange_contract_on_commodity.md) — ExchangeContract is written on Commodity
 * [import_tariff_on_commodity](/relations/import_tariff_on_commodity.md) — ImportTariff is levied on Commodity
 * [order_contains_product](/relations/order_contains_product.md) — Order contains Product
 * [price_observation_of_commodity](/relations/price_observation_of_commodity.md) — PriceObservation prices Commodity

@@ -15,12 +15,17 @@ do not read a sister's files from here.
 - `live_cattle` is prohibited (DGFT): a price, never a landed price.
 - Nine commodities have no free feed; their levels are the group's
   `indicative_prices` seed, refreshed by appending a newer `as_of_date`.
-- MCX contracts are landed equivalents per quote basis and lot, not MCX
-  quotes. Zinc stays on the LME indicative level (`ZNC=F` is untraded).
+- `fct_mcx_lot_equivalents_daily` is a landed equivalent, not an MCX quote;
+  MCX's own settlement is the `mcx` dataset and `marts/mcx/` (ADR-0006). Zinc's
+  landed level stays on LME indicative (`ZNC=F` is untraded).
+- MCX prices are ₹ per each code's quote basis (GOLD per 10 g, GOLDPETAL per
+  1 g): compare codes by return, never by price. One job per commodity in
+  `mcx_products`; pause in Dagster (`docs/mcx.md`).
 - Futures do not settle at weekends: a Monday freshness breach is the
   calendar, a midweek one is the feed.
 - dlt Core lands `yahoo_finance` and `gold_api` through the group's connectors
-  (`commodity_shared`); the catalog is a seed, not a source (ADR-0004).
+  (`commodity_shared`), and `mcx` through this project's `mcx_feed`; the
+  catalog is a seed, not a source (ADR-0004).
 
 ## The semantic stack
 | Ask | Command |

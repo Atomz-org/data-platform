@@ -536,11 +536,17 @@ name = "commodity-india"
 version = "0.1.0"
 source = { editable = "groups/commodity/projects/commodity-india" }
 dependencies = [
+    { name = "mcxlib" },
+    { name = "mcxpy" },
     { name = "pf" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pf", editable = "platform" }]
+requires-dist = [
+    { name = "mcxlib", specifier = ">=0.4" },
+    { name = "mcxpy", specifier = ">=0.0.3" },
+    { name = "pf", editable = "platform" },
+]
 
 [[package]]
 name = "commodity-rollup"
@@ -2342,6 +2348,32 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/30/d3/f9acc21dfc886e4f78e2add1a47db46ce16884346afde53f8a064c02c891/mcp-1.29.0.tar.gz", hash = "sha256:52d01f334de1868cc3bb2d6604931126a67631f99a6c5d3b82ba47290315ec36", size = 643148, upload-time = "2026-07-28T13:41:41.939Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/c8/248b201f6d753d69fd5d6506011abbb35a946d9142b2ae311a948fd0be3d/mcp-1.29.0-py3-none-any.whl", hash = "sha256:f5a075bb611f23d6f4d080c6a1699fa62772eebc562ba9e66b306ddde1c755f7", size = 223436, upload-time = "2026-07-28T13:41:40.337Z" },
+]
+
+[[package]]
+name = "mcxlib"
+version = "0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pandas" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/24/50/34ef53ab1abab867108c1c0e77972c4211fb580d8977d7df7dbb9c2221d3/mcxlib-0.4.tar.gz", hash = "sha256:54e33cc5a8735e8aca27e4da4ad61bb81a60f6b726cf0fd503ac635600552409", size = 15230, upload-time = "2026-05-01T10:21:53.433Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/21/91/8d2c6a1256fe3bb13ee887bbef9b71f15b9774577ac35f44e118ef09f6bb/mcxlib-0.4-py3-none-any.whl", hash = "sha256:48a1fa27c337115ad6737bc11fc3decb27a95566822b4b45c0f822c2f3027d1d", size = 13338, upload-time = "2026-05-01T10:21:52.125Z" },
+]
+
+[[package]]
+name = "mcxpy"
+version = "0.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pandas" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/d9/d46ec8570b9ad6a666ded876a39bdcbbd2883f43c58ef19d52ece552916c/mcxpy-0.0.3.tar.gz", hash = "sha256:b016369545c7cd0fbdcfabe2ec6bdb2a4d9a7292f50433a66983ca2ebfcaee14", size = 9507, upload-time = "2023-07-12T17:52:04.529Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f3/41/89390a4cd69533ee5191b89210498b0ce38ff539d2ecf256cf51b53d9fda/mcxpy-0.0.3-py3-none-any.whl", hash = "sha256:6eed15560e2c6bc476c05621ba1c0d3f90859bf3e1d8ed3b85272c84a6e221e0", size = 9653, upload-time = "2023-07-12T17:52:02.537Z" },
 ]
 
 [[package]]
