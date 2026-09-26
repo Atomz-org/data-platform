@@ -26,6 +26,7 @@ import json
 import os
 import re
 import sys
+import urllib.error
 import urllib.request
 from datetime import UTC, datetime
 from html.parser import HTMLParser
@@ -202,7 +203,23 @@ def page_id_from(ref: str) -> str:
     return m.group(1)
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect. urllib copies the Authorization header onto the
+    redirected request, so following one could hand the credential to another
+    host, or send it over plain HTTP. A moved page is an error to read, not to
+    follow."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001, PLR0913
+        raise urllib.error.HTTPError(req.full_url, code,
+                                     f"refusing redirect to {newurl} with credentials attached", headers, fp)
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
 def _get(url: str) -> dict:
+    if not url.startswith("https://"):
+        sys.exit(f"refusing to send credentials to a non-https URL: {url}")
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     if os.environ.get("CONFLUENCE_PAT"):
         req.add_header("Authorization", f"Bearer {os.environ['CONFLUENCE_PAT']}")
@@ -211,7 +228,7 @@ def _get(url: str) -> dict:
         if not (user and token):
             sys.exit("set CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN (or CONFLUENCE_PAT) in the environment")
         req.add_header("Authorization", "Basic " + base64.b64encode(f"{user}:{token}".encode()).decode())
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 — https base URL from the operator
+    with _OPENER.open(req, timeout=30) as resp:  # https only, redirects refused (above)
         return json.load(resp)
 
 

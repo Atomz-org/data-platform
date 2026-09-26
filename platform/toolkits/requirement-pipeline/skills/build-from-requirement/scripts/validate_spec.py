@@ -43,6 +43,16 @@ RULE_TESTS = {
 PORTABLE_DIALECTS = {"duckdb", "ansi", "dbt"}
 METRIC_TYPES = {"simple", "ratio", "derived", "cumulative", "conversion"}
 MART_PREFIX = {"fact": "fct_", "dimension": "dim_", "report": "rpt_"}
+ISO_CURRENCY = re.compile(r"^[A-Z]{3}$")
+#: What a metric's number is, so a report can format it. A currency is its ISO
+#: code; everything else is one of these. Without it the report guesses, and a
+#: volume ends up printed as dollars.
+UNITS = {"count", "percent", "ratio", "number", "duration"}
+#: Column-name words for a *level* — a balance, a stock, a position — which is
+#: counted once per period when summed over time.
+STOCK_WORDS = re.compile(
+    r"(balance|inventory|on_hand|outstanding|open_interest|headcount|stock_level|backlog|position|aum|exposure)",
+    re.I)
 SECRET_KEY = re.compile(r"(token|password|passwd|secret|api_?key|private_?key|credential)", re.I)
 SECRET_VALUE = re.compile(
     r"(Bearer\s+\S{8,}|sk_(live|test)_\w+|AKIA[0-9A-Z]{16}|xox[abp]-[\w-]+|ghp_\w{20,}|-----BEGIN)")
@@ -103,22 +113,58 @@ def _dict(value) -> dict:
 
 
 # ------------------------------------------------------------- the project ----
+def _yaml(path: Path) -> dict:
+    try:
+        return _dict(yaml.safe_load(path.read_text(encoding="utf-8")))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError):
+        return {}
+
+
+def empty_inventory() -> dict[str, set[str]]:
+    return {"models": set(), "metrics": set(), "labels": set(), "sources": set(), "raw": set(), "seeds": set()}
+
+
 def scan_project(project_dir: Path) -> dict[str, set[str]]:
-    """What exists already: dbt model names, metric names, landed sources."""
-    models_dir = project_dir / "transform" / "models"
-    models = {p.stem for p in models_dir.rglob("*.sql")} if models_dir.is_dir() else set()
-    metrics: set[str] = set()
-    for yml in models_dir.rglob("*.yml") if models_dir.is_dir() else []:
-        try:
-            doc = yaml.safe_load(yml.read_text(encoding="utf-8")) or {}
-        except yaml.YAMLError:
-            continue
-        for m in _list(_dict(doc).get("metrics")):
-            if isinstance(m, dict) and m.get("name"):
-                metrics.add(m["name"])
-    staging = models_dir / "staging"
-    sources = {p.name for p in staging.iterdir() if p.is_dir()} if staging.is_dir() else set()
-    return {"models": models, "metrics": metrics, "sources": sources}
+    """What exists already, each layer from its own evidence.
+
+    * ``raw`` — ``<source>.<resource>`` pairs the project lands: the exported dlt
+      annotations (``contracts/annotations.yaml``) and every dbt ``sources:``
+      declaration. Never inferred from staging, which can exist without them.
+    * ``models`` — dbt model files; ``seeds`` — seed files (a seed can be the
+      catalogue a per-entity schedule fans out over).
+    * ``metrics`` / ``labels`` — MetricFlow metric names and their labels; a
+      label must be unique across the whole semantic manifest.
+    """
+    inv = empty_inventory()
+    transform = project_dir / "transform"
+    models_dir = transform / "models"
+    if models_dir.is_dir():
+        inv["models"] = {p.stem for p in models_dir.rglob("*.sql")}
+        for yml in [*models_dir.rglob("*.yml"), *models_dir.rglob("*.yaml")]:
+            doc = _yaml(yml)
+            for m in _list(doc.get("metrics")):
+                m = _dict(m)
+                if m.get("name"):
+                    inv["metrics"].add(str(m["name"]))
+                if m.get("label"):
+                    inv["labels"].add(str(m["label"]).casefold())
+            for src in _list(doc.get("sources")):
+                src = _dict(src)
+                for t in _list(src.get("tables")):
+                    if src.get("name") and _dict(t).get("name"):
+                        inv["raw"].add(f"{src['name']}.{t['name']}")
+        staging = models_dir / "staging"
+        if staging.is_dir():
+            inv["sources"] = {p.name for p in staging.iterdir() if p.is_dir()}
+    seeds = transform / "seeds"
+    if seeds.is_dir():
+        inv["seeds"] = {p.stem for p in seeds.rglob("*.csv")}
+    for r in _list(_yaml(project_dir / "contracts" / "annotations.yaml").get("resources")):
+        r = _dict(r)
+        if r.get("source") and r.get("resource"):
+            inv["raw"].add(f"{r['source']}.{r['resource']}")
+    inv["sources"] |= {k.split(".", 1)[0] for k in inv["raw"]}
+    return inv
 
 
 # ------------------------------------------------------------------ checks ----
@@ -192,8 +238,12 @@ def check_sources(spec: dict, rep: Report) -> set[str]:
             keys = [c for c, role in roles.items() if role == "natural_key"]
             if len(keys) != 1:
                 rep.err(rw, f"exactly one natural_key role, found {len(keys)}")
-            if "money_amount" in roles.values() and "currency_code" not in roles.values():
-                rep.err(rw, "a money_amount needs a sibling currency_code")
+            currency = r.get("currency")
+            if currency is not None and not ISO_CURRENCY.match(str(currency)):
+                rep.err(rw, f"currency {currency!r} is not an ISO 4217 code")
+            if "money_amount" in roles.values() and "currency_code" not in roles.values() and not currency:
+                rep.err(rw, "a money_amount needs a sibling currency_code, or `currency: <ISO>` "
+                            "when every amount is in one currency")
             staged.add(f"stg_{name}__{rname}")
     return staged
 
@@ -236,6 +286,12 @@ def check_rules(spec: dict, rep: Report, defined: set[str]) -> set[str]:
 
 def check_models(spec: dict, rep: Report, known: set[str], rule_ids: set[str]) -> None:
     models = _dict(spec.get("models"))
+    seen: set[str] = set()
+    for m in [*_list(models.get("intermediate")), *_list(models.get("marts"))]:
+        name = str(_dict(m).get("name") or "")
+        if name and name in seen:
+            rep.err(f"models[{name}]", "defined twice — dbt refuses two models with one name")
+        seen.add(name)
     for m in _list(models.get("intermediate")):
         m = _dict(m)
         name = str(m.get("name") or "")
@@ -277,17 +333,46 @@ def _check_rule_refs(item: dict, where: str, rep: Report, rule_ids: set[str]) ->
             rep.err(where, f"rule {r!r} is not in business_rules")
 
 
-def check_metrics(spec: dict, rep: Report, marts: set[str], existing: set[str], rule_ids: set[str]) -> set[str]:
+def _money_columns(spec: dict) -> dict[str, set[str]]:
+    """{mart: its money_amount columns}, from the spec's mart columns."""
+    out: dict[str, set[str]] = {}
+    for m in _list(_dict(spec.get("models")).get("marts")):
+        m = _dict(m)
+        out[str(m.get("name"))] = {str(_dict(c).get("name")) for c in _list(m.get("columns"))
+                                   if _dict(c).get("role") == "money_amount"}
+    return out
+
+
+def check_metrics(spec: dict, rep: Report, marts: set[str], existing: dict[str, set[str]],
+                  rule_ids: set[str]) -> set[str]:
+    existing_names, existing_labels = existing["metrics"], existing["labels"]
     items = [_dict(m) for m in _list(spec.get("metrics"))]
     names = {str(m.get("name")) for m in items}
-    resolvable = names | existing
+    resolvable = names | existing_names
+    money = _money_columns(spec)
+    seen_names: set[str] = set()
+    seen_labels: set[str] = set()
     for m in items:
         name = str(m.get("name") or "")
         where = f"metrics[{name or '?'}]"
         if not SNAKE.match(name):
             rep.err(where, "name must be snake_case")
-        if not m.get("label"):
+        if name in seen_names:
+            rep.err(where, "defined twice")
+        seen_names.add(name)
+        label = str(m.get("label") or "")
+        if not label:
             rep.err(where, "label required — the business's own words")
+        elif label.casefold() in seen_labels or (label.casefold() in existing_labels and name not in existing_names):
+            rep.err(where, f"label {label!r} is already used — MetricFlow requires labels unique across "
+                           "the semantic manifest; qualify it (e.g. by grain)")
+        seen_labels.add(label.casefold())
+        unit = m.get("unit")
+        if not unit:
+            rep.err(where, f"unit required — an ISO currency code or one of {sorted(UNITS)}; "
+                           "the report formats the number from it")
+        elif unit not in UNITS and not ISO_CURRENCY.match(str(unit)):
+            rep.err(where, f"unit {unit!r} is neither an ISO currency code nor one of {sorted(UNITS)}")
         kind = m.get("type")
         if kind not in METRIC_TYPES:
             rep.err(where, f"type must be one of {sorted(METRIC_TYPES)}")
@@ -302,6 +387,14 @@ def check_metrics(spec: dict, rep: Report, marts: set[str], existing: set[str], 
             averaged_rate = re.search(r"(rate|ratio|pct|percent|share)", str(measure.get("expr")))
             if measure.get("agg") in {"average", "avg"} and averaged_rate:
                 rep.err(where, "averaging a rate — compose a ratio of its numerator and denominator")
+            expr = str(measure.get("expr") or "")
+            if (measure.get("agg") == "sum" and STOCK_WORDS.search(expr)
+                    and not _dict(measure.get("non_additive")).get("dimension")):
+                rep.warn(where, f"{expr!r} reads like a level (a balance, a position), not a flow — summed over "
+                                "time it is counted once per period; declare measure.non_additive "
+                                "{dimension: <time>, window: last} or confirm it is a flow")
+            if expr in money.get(str(m.get("mart")), set()) and unit and not ISO_CURRENCY.match(str(unit)):
+                rep.err(where, f"measures money column {expr!r} but unit is {unit!r} — use its currency code")
         elif kind == "ratio":
             for part in ("numerator", "denominator"):
                 if m.get(part) not in resolvable:
@@ -313,7 +406,7 @@ def check_metrics(spec: dict, rep: Report, marts: set[str], existing: set[str], 
                 if dep not in resolvable:
                     rep.err(where, f"depends on unknown metric {dep!r}")
         _check_rule_refs(m, where, rep, rule_ids)
-        if name in existing and m.get("action") != "modify":
+        if name in existing_names and m.get("action") != "modify":
             rep.warn(where, "already exists in the project — reuse it (drop it from the spec) or set action: modify")
     return names
 
@@ -331,6 +424,10 @@ def check_reports(spec: dict, rep: Report, metrics: set[str]) -> None:
         pages.add(page)
         if not r.get("question"):
             rep.err(where, "question required — one page answers one question")
+        per = r.get("per_entity")
+        if per is not None and not SNAKE.match(str(per)):
+            rep.err(where, "per_entity names the dimension a page is templated over (snake_case), "
+                           "e.g. `region` → reporting/pages/<page>/[region].md")
         if not _list(r.get("metrics")):
             rep.err(where, "a page with no metric restates business logic in SQL")
         for m in _list(r.get("metrics")):
@@ -360,6 +457,33 @@ def check_acceptance(spec: dict, rep: Report, metrics: set[str]) -> None:
             rep.err(where, "check must be {metric, grain, expect} | {test} | {manual}")
 
 
+def check_schedule(spec: dict, rep: Report, known: set[str]) -> None:
+    """`schedule.per_entity`: one job per entity (a customer, a market, a
+    store), each paused or resumed on its own. The entity list is a catalogue
+    the loader and dbt both read, so the two can never disagree."""
+    sched = _dict(spec.get("schedule"))
+    per = sched.get("per_entity")
+    if per is None:
+        return
+    per = _dict(per)
+    where = "schedule.per_entity"
+    if not SNAKE.match(str(per.get("by") or "")):
+        rep.err(where, "by: the entity column (snake_case) the jobs fan out over")
+    catalogue = str(per.get("catalogue") or "")
+    if not SNAKE.match(catalogue):
+        rep.err(where, "catalogue: the seed or model listing every entity — loader and dbt read the same list")
+    elif catalogue not in known:
+        rep.warn(where, f"catalogue {catalogue!r} is not a seed or model yet — it is created in Phase 4")
+    stagger = per.get("stagger")
+    if stagger is not None and not DURATION.match(str(stagger)):
+        rep.err(f"{where}.stagger", "use <n>m | <n>h")
+    if not (sched.get("cron") or sched.get("trigger")):
+        rep.err(where, "a per-entity job still needs schedule.cron or schedule.trigger")
+    for e in _list(per.get("start_paused")):
+        if not isinstance(e, str) or not e:
+            rep.err(f"{where}.start_paused", "entity keys, as strings")
+
+
 def check_questions(spec: dict, rep: Report) -> None:
     for q in _list(spec.get("open_questions")):
         q = _dict(q)
@@ -376,11 +500,14 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
     for s in _list(spec.get("sources")):
         s = _dict(s)
         for r in _list(s.get("resources")):
+            raw = f"{s.get('name')}.{_dict(r).get('name')}"
             stg = f"stg_{s.get('name')}__{_dict(r).get('name')}"
-            present = stg in existing["models"]
-            rep.plan.append({"layer": "raw", "name": f"{s.get('name')}.{_dict(r).get('name')}",
-                             "action": "reuse" if present else "create"})
-            rep.plan.append({"layer": "staging", "name": stg, "action": "reuse" if present else "create"})
+            # Each layer on its own evidence: a staging model without a landed
+            # resource behind it still needs the pipeline built.
+            rep.plan.append({"layer": "raw", "name": raw,
+                             "action": "reuse" if raw in existing.get("raw", set()) else "create"})
+            rep.plan.append({"layer": "staging", "name": stg,
+                             "action": "reuse" if stg in existing["models"] else "create"})
     models = _dict(spec.get("models"))
     for layer, key in (("intermediate", "intermediate"), ("marts", "marts")):
         for m in _list(models.get(key)):
@@ -393,6 +520,10 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
                          "action": m.get("action") or ("reuse" if present else "create")})
     for r in _list(spec.get("reports")):
         rep.plan.append({"layer": "reporting", "name": str(_dict(r).get("page")), "action": "create"})
+    per = _dict(_dict(spec.get("schedule")).get("per_entity"))
+    if per.get("by"):
+        rep.plan.append({"layer": "orchestration", "name": f"one job per {per['by']} ({per.get('catalogue')})",
+                         "action": "create"})
 
 
 def phases(rep: Report, spec: dict) -> list[int]:
@@ -403,6 +534,8 @@ def phases(rep: Report, spec: dict) -> list[int]:
     run |= touched & set(PHASES)
     schedule = _dict(spec.get("schedule"))
     if (schedule.get("cron") or schedule.get("trigger")) and touched & {"raw", "marts"}:
+        run.add("orchestration")
+    if "orchestration" in touched:
         run.add("orchestration")
     if not touched & {"raw", "staging", "intermediate", "marts", "metrics"}:
         run.discard("build")
@@ -462,8 +595,10 @@ def trace(spec: dict) -> str:
                      "transform/models/semantic/ | query_metrics | |")
     for p in _list(spec.get("reports")):
         p = _dict(p)
-        lines.append(f"| page `{p.get('page')}` | {p.get('question')} | reporting/pages/{p.get('page')}.md "
-                     "| pf report audit | |")
+        path = (f"reporting/pages/{p.get('page')}/[{p['per_entity']}].md" if p.get("per_entity")
+                else f"reporting/pages/{p.get('page')}.md")
+        lines.append(f"| page `{p.get('page')}` | {p.get('question')} | {path} "
+                     "| pf report audit, rendered and looked at | |")
     for a in _list(spec.get("acceptance")):
         a = _dict(a)
         lines.append(f"| {a.get('id')} | {a.get('statement')} | — | {json.dumps(a.get('check'))} | |")
@@ -476,7 +611,9 @@ def validate(spec: dict, project_dir: Path | None = None) -> Report:
     if not isinstance(spec, dict) or spec.get("spec_version") != 1:
         rep.err("spec_version", "must be 1")
         return rep
-    existing = scan_project(project_dir) if project_dir else {"models": set(), "metrics": set(), "sources": set()}
+    if project_dir:
+        project_dir = project_dir.resolve()
+    existing = scan_project(project_dir) if project_dir else empty_inventory()
     if project_dir:
         target = _dict(spec.get("target"))
         if project_dir.name != target.get("project") or project_dir.parent.parent.name != target.get("group"):
@@ -493,9 +630,10 @@ def validate(spec: dict, project_dir: Path | None = None) -> Report:
     known_models = staged | ints | marts | existing["models"]
     rule_ids = check_rules(spec, rep, known_models | metric_names | existing["metrics"])
     check_models(spec, rep, known_models, rule_ids)
-    metrics = check_metrics(spec, rep, marts | existing["models"], existing["metrics"], rule_ids) | existing["metrics"]
+    metrics = check_metrics(spec, rep, marts | existing["models"], existing, rule_ids) | existing["metrics"]
     check_reports(spec, rep, metrics)
     check_acceptance(spec, rep, metrics)
+    check_schedule(spec, rep, known_models | existing["seeds"])
     check_questions(spec, rep)
     build_plan(spec, existing, rep)
     return rep
@@ -509,7 +647,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--trace", action="store_true", help="print the trace.md skeleton and exit")
     args = ap.parse_args(argv)
 
-    spec = yaml.safe_load(args.spec.read_text(encoding="utf-8"))
+    try:
+        spec = yaml.safe_load(args.spec.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"✗ {args.spec}: {exc}")
+        return 1
     if args.trace:
         print(trace(spec), end="")
         return 0

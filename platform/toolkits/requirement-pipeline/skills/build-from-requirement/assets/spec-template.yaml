@@ -24,6 +24,7 @@ sources: []
 #    connection: {base_url: null, secret_ref: null}
 #    freshness: {warn_after: 24h, error_after: 48h}
 #    sample: null                   # a sample file the page attaches → read-file profiles it
+#    client: null                   # a client library the page names: a candidate, probed live in Phase 4
 #    resources:
 #      - name: <resource>
 #        endpoint: null             # or table: / glob:
@@ -33,7 +34,10 @@ sources: []
 #        concept: <Concept>
 #        grain: null
 #        roles: {id: natural_key}
+#        currency: null             # ISO code when every amount is in one currency and no currency column exists
 #        links: {}
+#        identities: []             # what each amount/quantity measures, proved on landed rows at Checkpoint 2
+#                                   #   e.g. "amount = unit_price × quantity" → a BR with a data_test
 #        from: null
 
 business_rules: []
@@ -62,8 +66,9 @@ metrics: []
 #    label: null
 #    description: null
 #    type: simple                   # simple | ratio | derived | cumulative | conversion
+#    unit: null                     # ISO currency code | count | percent | ratio | number | duration
 #    mart: null
-#    measure: {agg: sum, expr: null}
+#    measure: {agg: sum, expr: null}   # a level (balance, position): add non_additive: {dimension: <time>, window: last}
 #    filter: null
 #    time_dimension: null
 #    dimensions: []
@@ -73,8 +78,10 @@ metrics: []
 
 reports: []
 #  - {page: null, question: null, audience: null, metrics: [], grain: month, filters: []}
+#    per_entity: null               # a dimension → one templated page per entity, plus the summary page
 
 schedule: {cron: null, timezone: UTC, partitioning: none, backfill_from: null, sla: null}
+#  per_entity: {by: null, catalogue: null, stagger: 3m, start_paused: []}   # one pausable job per entity
 
 catalog: {domain: null, data_product: null, owners: [], tier: null, glossary_terms: [], pii: []}
 

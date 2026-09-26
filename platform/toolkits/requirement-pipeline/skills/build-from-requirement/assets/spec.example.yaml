@@ -85,15 +85,18 @@ models:
         - {name: currency_code, role: currency_code, description: Always USD.}
 
 metrics:
-  - {name: gross_revenue, label: Gross Revenue, description: Total of all non-test orders in USD., type: simple, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, time_dimension: placed_at, dimensions: [channel, status], owner: Finance Analytics, rules: [BR-1, BR-3], from: "§KPIs row 1"}
-  - {name: net_revenue, label: Net Revenue, description: Total of completed orders in USD., type: simple, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 2"}
-  - {name: completed_orders, label: Completed Orders, description: Count of completed orders., type: simple, mart: fct_orders, measure: {agg: count, expr: order_id}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 3"}
-  - {name: average_order_value, label: Average Order Value, description: Net revenue per completed order., type: ratio, numerator: net_revenue, denominator: completed_orders, owner: Finance Analytics, from: "§KPIs row 4"}
+  - {name: gross_revenue, label: Gross Revenue, description: Total of all non-test orders in USD., type: simple, unit: USD, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, time_dimension: placed_at, dimensions: [channel, status], owner: Finance Analytics, rules: [BR-1, BR-3], from: "§KPIs row 1"}
+  - {name: net_revenue, label: Net Revenue, description: Total of completed orders in USD., type: simple, unit: USD, mart: fct_orders, measure: {agg: sum, expr: amount_usd}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 2"}
+  - {name: completed_orders, label: Completed Orders, description: Count of completed orders., type: simple, unit: count, mart: fct_orders, measure: {agg: count, expr: order_id}, filter: "{{ Dimension('order__status') }} = 'completed'", time_dimension: placed_at, dimensions: [channel], owner: Finance Analytics, rules: [BR-2], from: "§KPIs row 3"}
+  - {name: average_order_value, label: Average Order Value, description: Net revenue per completed order., type: ratio, unit: USD, numerator: net_revenue, denominator: completed_orders, owner: Finance Analytics, from: "§KPIs row 4"}
 
 reports:
   - {page: online-revenue, question: "How is online revenue trending by channel?", audience: Finance leadership, metrics: [gross_revenue, net_revenue, average_order_value], grain: day, filters: [channel]}
 
 schedule: {cron: "0 5 * * *", timezone: UTC, partitioning: none, backfill_from: "2024-01-01", sla: "fct_orders fresh by 06:30 UTC"}
+# One job per entity, each paused or resumed on its own, is `per_entity` — e.g.
+#   per_entity: {by: store_id, catalogue: stores, stagger: 3m, start_paused: []}
+# This requirement names one store-agnostic feed, so it has none.
 
 catalog: {domain: Finance, data_product: Online Revenue, owners: [finance-analytics@example.com], tier: Tier2, glossary_terms: [Order, Net Revenue], pii: [email]}
 

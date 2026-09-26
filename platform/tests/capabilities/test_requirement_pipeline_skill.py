@@ -176,6 +176,19 @@ def _errors_after(mutate) -> list[str]:
     (lambda s: s.update(acceptance=[]), "at least one criterion"),
     (lambda s: s["sources"][0]["connection"].update(api_token="abc123"), "credential"),
     (lambda s: s["requirement"].update(summary="call with Bearer abcdefghijkl"), "live credential"),
+    (lambda s: s["metrics"][0].pop("unit"), "unit required"),
+    (lambda s: s["metrics"][2].update(unit="lots"), "unit 'lots'"),
+    (lambda s: s["metrics"][0].update(unit="count"), "measures money column 'amount_usd'"),
+    (lambda s: s["metrics"][1].update(label="gross revenue"), "already used"),
+    (lambda s: s["metrics"].append(dict(s["metrics"][2], label="Other")), "defined twice"),
+    (lambda s: s["models"]["marts"].append(dict(s["models"]["marts"][0])), "defined twice"),
+    (lambda s: s["sources"][0]["resources"][0].update(currency="dollars"), "not an ISO 4217 code"),
+    (lambda s: s["reports"][0].update(per_entity="Store Id"), "per_entity names the dimension"),
+    (lambda s: s["schedule"].update(per_entity={"by": "store_id"}), "catalogue: the seed or model"),
+    (lambda s: s["schedule"].update(cron=None, per_entity={"by": "store_id", "catalogue": "stores"}),
+     "still needs schedule.cron"),
+    (lambda s: s["schedule"].update(per_entity={"by": "store_id", "catalogue": "stores", "stagger": "soon"}),
+     "stagger"),
 ])
 def test_the_validator_refuses_what_the_reference_says_it_refuses(mutate, expected: str) -> None:
     errors = _errors_after(mutate)
@@ -193,6 +206,49 @@ def _warnings_after(mutate) -> list[str]:
     rep = validate_spec.validate(spec)
     assert rep.errors == [], rep.errors
     return rep.warnings
+
+
+def test_a_constant_currency_satisfies_the_money_rule_as_annotate_does() -> None:
+    """`pf.ontology.annotate(currency=...)` is how a single-currency source
+    declares its amounts, and `validate_annotations` accepts it — so must the
+    spec, or a correct spec is refused one phase early."""
+    def single_currency(s):
+        roles = s["sources"][0]["resources"][0]["roles"]
+        roles.pop("currency")
+        s["sources"][0]["resources"][0]["currency"] = "USD"
+    assert _errors_after(single_currency) == []
+
+
+def test_summing_a_level_over_time_is_warned() -> None:
+    def balance(s):
+        s["metrics"][0]["measure"]["expr"] = "account_balance"
+    assert any("non_additive" in w for w in _warnings_after(balance))
+    def declared(s):
+        balance(s)
+        s["metrics"][0]["measure"]["non_additive"] = {"dimension": "placed_at", "window": "last"}
+    assert not any("non_additive" in w for w in _warnings_after(declared))
+
+
+def test_a_label_an_existing_metric_already_uses_is_refused(tmp_path: Path) -> None:
+    project = tmp_path / "example" / "projects" / "example-retail"
+    (project / "transform" / "models" / "semantic").mkdir(parents=True)
+    (project / "transform" / "models" / "semantic" / "m.yml").write_text(
+        "metrics:\n  - {name: revenue_gross, label: Gross Revenue, type: simple}\n")
+    errors = validate_spec.validate(_example(), project).errors
+    assert any("label 'Gross Revenue' is already used" in e for e in errors), errors
+
+
+def test_a_per_entity_spec_plans_one_job_per_entity_and_templated_pages() -> None:
+    spec = copy.deepcopy(_example())
+    spec["schedule"]["per_entity"] = {"by": "channel", "catalogue": "channels", "stagger": "3m",
+                                      "start_paused": ["wholesale"]}
+    spec["reports"][0]["per_entity"] = "channel"
+    rep = validate_spec.validate(spec)
+    assert rep.errors == [], rep.errors
+    assert any("created in Phase 4" in w for w in rep.warnings)   # the catalogue does not exist yet
+    assert any(p["layer"] == "orchestration" for p in rep.plan)
+    assert 10 in validate_spec.phases(rep, spec)
+    assert "reporting/pages/online-revenue/[channel].md" in validate_spec.trace(spec)
 
 
 def test_an_anomaly_monitor_alone_is_warned_not_accepted_silently() -> None:
@@ -237,10 +293,23 @@ def test_an_unanswered_blocking_question_blocks() -> None:
     assert rep.errors == [] and len(rep.blocking) == 1
 
 
-def test_the_plan_reuses_what_a_project_already_has(tmp_path: Path) -> None:
+def _project_with_staging(tmp_path: Path) -> Path:
     project = tmp_path / "example" / "projects" / "example-retail"
     (project / "transform" / "models" / "staging" / "shop_api").mkdir(parents=True)
     (project / "transform" / "models" / "staging" / "shop_api" / "stg_shop_api__orders.sql").write_text("select 1")
+    return project
+
+
+@pytest.mark.parametrize("landed_by", ["annotations", "dbt_sources"])
+def test_the_plan_reuses_what_a_project_already_has(tmp_path: Path, landed_by: str) -> None:
+    project = _project_with_staging(tmp_path)
+    if landed_by == "annotations":
+        (project / "contracts").mkdir()
+        (project / "contracts" / "annotations.yaml").write_text(
+            "version: 2\nresources:\n  - {resource: orders, source: shop_api, concept: Order}\n")
+    else:
+        (project / "transform" / "models" / "staging" / "shop_api" / "_shop_api__sources.yml").write_text(
+            "version: 2\nsources:\n  - name: shop_api\n    tables:\n      - name: orders\n")
     (project / "transform" / "models" / "semantic").mkdir()
     (project / "transform" / "models" / "semantic" / "m.yml").write_text(
         "metrics:\n  - {name: gross_revenue, type: simple}\n")
@@ -254,6 +323,32 @@ def test_the_plan_reuses_what_a_project_already_has(tmp_path: Path) -> None:
     assert actions[("marts", "fct_orders")] == "create"
     phases = validate_spec.phases(rep, spec)
     assert 4 not in phases and 5 not in phases and 7 in phases
+
+
+def test_staging_alone_does_not_mean_the_source_has_landed(tmp_path: Path) -> None:
+    """Raw is planned from what the project lands, not from staging: a staging
+    model with no pipeline behind it still needs Phase 4."""
+    project = _project_with_staging(tmp_path)
+    rep = validate_spec.validate(_example(), project)
+    actions = {(p["layer"], p["name"]): p["action"] for p in rep.plan}
+    assert actions[("raw", "shop_api.orders")] == "create"
+    assert actions[("staging", "stg_shop_api__orders")] == "reuse"
+    assert 4 in validate_spec.phases(rep, _example())
+
+
+def test_a_relative_project_dir_is_resolved_before_the_target_check(tmp_path: Path, monkeypatch) -> None:
+    project = tmp_path / "example" / "projects" / "example-retail"
+    project.mkdir(parents=True)
+    monkeypatch.chdir(project)
+    errors = validate_spec.validate(_example(), Path()).errors
+    assert not any(e.startswith("target") for e in errors), errors
+
+
+def test_an_unreadable_spec_is_an_error_not_a_traceback(tmp_path: Path, capsys) -> None:
+    bad = tmp_path / "spec.yaml"
+    bad.write_text("spec_version: 1\nrequirement: [unclosed\n")
+    assert validate_spec.main([str(bad)]) == 1
+    assert "✗" in capsys.readouterr().out
 
 
 def test_the_spec_must_target_the_project_it_is_checked_against(tmp_path: Path) -> None:
@@ -290,3 +385,24 @@ def test_the_converter_keeps_the_structure_extraction_reads() -> None:
 ])
 def test_page_ids_are_read_from_every_url_shape(ref: str, pid: str) -> None:
     assert confluence_fetch.page_id_from(ref) == pid
+
+
+# ------------------------------------------------------------------- fetch ----
+def test_credentials_are_never_sent_over_plain_http() -> None:
+    with pytest.raises(SystemExit, match="non-https"):
+        confluence_fetch._get("http://wiki.example.com/rest/api/content/1")
+
+
+def test_a_redirect_is_refused_rather_than_followed_with_credentials() -> None:
+    """urllib copies Authorization onto a redirected request; the fetcher's
+    opener must refuse the redirect instead."""
+    import io
+    import urllib.error
+    import urllib.request
+
+    handler = next(h for h in confluence_fetch._OPENER.handlers
+                   if isinstance(h, urllib.request.HTTPRedirectHandler))
+    req = urllib.request.Request("https://x.atlassian.net/wiki/api/v2/pages/1",
+                                 headers={"Authorization": "Basic c2VjcmV0"})
+    with pytest.raises(urllib.error.HTTPError, match="refusing redirect"):
+        handler.redirect_request(req, io.BytesIO(), 302, "Found", {}, "http://evil.example.com/")
