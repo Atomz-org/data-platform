@@ -121,10 +121,116 @@ class MetricSpec:
     #: The measure behind a simple metric, so a ratio can re-render it with the
     #: metric's own filter.
     measure: dict[str, Any] = None
+    #: Evidence format code every page renders this metric with (`metric_format`).
+    fmt: str = "num0"
 
     def __post_init__(self) -> None:
         self.dimensions = self.dimensions or []
         self.measure = self.measure or {}
+
+
+# ---------------------------------------------------------------- formats ----
+#: Currencies Evidence formats natively (`builtInFormats.js`, `primaryCode`).
+#: The bare code auto-scales with the column's magnitude (₹507.2T, not
+#: 507,206,987,230,000), which is what a KPI tile needs; `<code>0` / `<code>2`
+#: fix the decimals for a price, where scaling would hide the tick.
+CURRENCY_FORMATS: frozenset[str] = frozenset({
+    "usd", "eur", "gbp", "jpy", "cny", "inr", "krw", "chf", "cad", "aud", "nzd",
+    "sgd", "hkd", "sek", "nok", "dkk", "pln", "brl", "mxn", "zar", "aed", "sar",
+    "try", "rub", "idr", "thb", "myr", "php", "vnd", "ils", "czk", "huf", "ron",
+    "clp", "cop", "pen", "ars", "egp", "ngn", "kes", "pkr", "bdt", "twd", "lkr",
+})
+_SYMBOLS = {"₹": "inr", "$": "usd", "€": "eur", "£": "gbp", "¥": "jpy"}
+#: A count is never money, whatever else its name says: `volume` was on the
+#: money list, and lots rendered as dollars.
+_COUNT_WORDS = ("volume", "lots", "sessions", "days", "count", "contracts",
+                "quantity", "units", "orders", "customers")
+_MONEY_WORDS = ("revenue", "amount", "value", "mrr", "arr", "aov", "turnover")
+_PERCENT_UNITS = ("pct", "percent", "%", "share", "rate")
+
+
+def format_family(fmt: str) -> str:
+    """`inr`, `inr0k`, `inr2`, `"₹"#,##0.0,,"M"` → `inr`; `pct1` → `pct`;
+    anything else → `num`."""
+    raw = str(fmt or "")
+    for symbol, code in _SYMBOLS.items():
+        if symbol in raw:                   # however the page quoted the code
+            return code
+    code = raw.strip().strip("'\"").lower()
+    head = re.match(r"[a-z]+", code)
+    word = head.group(0) if head else ""
+    if word in CURRENCY_FORMATS:
+        return word
+    return "pct" if word == "pct" else "num"
+
+
+def metric_format(name: str, label: str, meta: dict[str, Any] | None = None) -> str:
+    """The Evidence format a metric is rendered with, everywhere it appears.
+
+    Declared beats inferred:
+      1. `meta.format` — an Evidence format code, used as written;
+      2. `meta.unit` — an ISO currency (auto-scaling currency format), a percent
+         unit (`pct1`), or any other unit (lots, sessions, mwh): a plain number,
+         never a currency;
+      3. a currency symbol in the label (`Turnover (₹)`);
+      4. the name: a count word wins over a money word, and a money word with no
+         declared currency keeps the old `usd0` so projects that never declared
+         one render exactly as before.
+    """
+    meta = meta or {}
+    if meta.get("format"):
+        return str(meta["format"])
+    unit = str(meta.get("unit") or "").strip().lower()
+    if unit:
+        if unit in CURRENCY_FORMATS:
+            return unit
+        if unit in _PERCENT_UNITS:
+            return "pct1"
+        return "num0"
+    text = f"{name} {label}".lower()
+    if any(w in text for w in _COUNT_WORDS):
+        return "num0"
+    for symbol, code in _SYMBOLS.items():
+        if symbol in (label or ""):
+            return code
+    # An ISO code as a word of the name or label: `price_usd`, `Period High (USD)`.
+    # `try` and `cop` are left out: as words they mean "attempt" and "police".
+    words = set(re.findall(r"[a-z]+", text.replace("_", " ")))
+    code = next((w for w in sorted(words) if w in CURRENCY_FORMATS - {"try", "cop"}), None)
+    if code:
+        return code
+    if any(w in text for w in _MONEY_WORDS):
+        return "usd0"
+    return "num0"
+
+
+_SCALES = ((1e12, ",,,,", "T"), (1e9, ",,,", "B"), (1e6, ",,", "M"), (1e4, ",", "k"))
+
+
+def kpi_format(fmt: str, magnitude: float | None = None) -> str:
+    """The format a KPI tile uses: one number, sized to fit.
+
+    A tile shows a single total, often the largest on the page, and Evidence's
+    auto-scaling currency code does not scale inside a `<BigValue>` — the raw
+    `507,206,987,230,000` overflows it. Given the value's magnitude (measured
+    at build), money and plain numbers get an explicit Excel-style scale:
+    `₹485.09T`, `₹3,753.0B`, `399.4M`. Without one, a currency falls back to
+    its auto code. Percentages pass through.
+    """
+    family = format_family(fmt)
+    if family == "pct":
+        return fmt
+    if magnitude is None or magnitude != magnitude:            # None or NaN
+        return family if family in CURRENCY_FORMATS else fmt
+    symbol = next((s for s, c in _SYMBOLS.items() if c == family), None)
+    prefix = f'"{symbol}"' if symbol else (f'"{family.upper()} "' if family != "num" else "")
+    for floor, commas, suffix in _SCALES:
+        if abs(magnitude) >= floor:
+            decimals = "0.00" if suffix == "T" else "0.0"
+            return f"'{prefix}#,##{decimals}{commas}\"{suffix}\"'"
+    if family == "num":
+        return fmt
+    return f"'{prefix}#,##0'" if symbol else f"{family}0"
 
 
 # --------------------------------------------------------------- reading ----
@@ -172,14 +278,25 @@ def collect_metrics(project_dir: Path,
             sql = agg_sql(agg, expr, params)
             if sql is None:
                 continue
+            nad = (m.get("non_additive_dimension") or {}).get("name")
             measures[m["name"]] = {
                 "agg": agg, "expr": expr, "params": params, "sql": sql,
                 "model": table, "time": time_col, "dims": dims,
+                # A stock (open interest, a balance): additive across the
+                # categorical dimensions on one day, never across days.
+                "stock": bool(nad) and nad == time_col,
             }
 
     specs: list[MetricSpec] = []
     by_name: dict[str, MetricSpec] = {}
-    for m in sm.get("metrics") or []:
+    # Inputs before the metrics built on them. A ratio resolves its numerator
+    # and denominator from `by_name`, which only holds what came earlier — and
+    # the manifest's metric order is dbt's, not ours. Walking it as written
+    # compiled a ratio when its components happened to precede it and silently
+    # skipped it when an unrelated yml edit reshuffled them.
+    order = {"simple": 0, "ratio": 1}
+    for m in sorted(sm.get("metrics") or [],
+                    key=lambda m: order.get((m.get("type") or "simple").lower(), 2)):
         tp = m.get("type_params") or {}
         kind = (m.get("type") or "simple").lower()
         flt = translate_filter(_filter_text(m.get("filter")))
@@ -191,6 +308,8 @@ def collect_metrics(project_dir: Path,
                 skipped.append(m["name"])  # its measure has no SQL translation
                 continue
             rollup = ROLLUP.get(src["agg"], "none")
+            if rollup == "sum" and src.get("stock"):
+                rollup = "stock"
             spec = MetricSpec(name=m["name"], label=m.get("label") or m["name"],
                               kind="simple", model=src["model"],
                               expression=src["sql"], filter_sql=flt,
@@ -223,7 +342,7 @@ def collect_metrics(project_dir: Path,
             # Re-dividing summed components is right only when both components
             # are sums. Over a distinct count or an average it would sum the
             # unsummable, so such a ratio is read exactly as computed.
-            additive = num.rollup == "sum" and den.rollup == "sum"
+            additive = num.rollup in ("sum", "stock") and den.rollup in ("sum", "stock")
             spec = MetricSpec(name=m["name"], label=m.get("label") or m["name"],
                               kind="ratio", model=num.model,
                               expression=f"{num_sql} / nullif({den_sql}, 0)",
@@ -253,6 +372,8 @@ def collect_metrics(project_dir: Path,
                               numerator=base.numerator, denominator=base.denominator,
                               numerator_sql=base.numerator_sql,
                               denominator_sql=base.denominator_sql)
+        spec.fmt = metric_format(m["name"], m.get("label") or "",
+                                 (m.get("config") or {}).get("meta"))
         specs.append(spec)
         by_name[spec.name] = spec
     return specs
@@ -328,12 +449,19 @@ def _metric_sql(spec: MetricSpec, schema: str) -> str:
 
     head = [f"-- metric: {spec.name} ({spec.kind}) — generated by `pf report build`",
             f"-- {spec.description or spec.label}",
-            "-- Do not edit. Change the metric in transform/models/semantic/, then rerun."]
+            "-- Do not edit. Change the metric in transform/models/semantic/, then rerun.",
+            # Read by `report_audit` to check every page renders it this way.
+            f"-- format: {spec.fmt}"]
     if spec.rollup == "ratio":
         head += [
             "-- Ratio rule: re-divide at the display grain —",
             f"--   sum({spec.numerator}) / sum({spec.denominator})",
             f"-- NEVER avg({spec.name}). Components are carried for exactly that.",
+        ]
+    elif spec.rollup == "stock":
+        head += [
+            "-- A stock: sums across dimensions within one day, never across days.",
+            "-- Read it at a day (the latest, for a total) — never sum it over time.",
         ]
     elif spec.rollup == "none":
         head += [
@@ -354,20 +482,43 @@ def _metric_sql(spec: MetricSpec, schema: str) -> str:
 
 
 def _rollup_sql(spec: MetricSpec) -> str | None:
-    """How a page aggregates this metric's rows, or None if it must not."""
+    """How a page aggregates this metric's rows, or None if it must not.
+
+    A `stock` sums across dimensions within a day; every caller that spans
+    days reads it at the latest one (`_as_of_latest`)."""
     if spec.rollup == "ratio":
         return f"sum({spec.numerator}) / nullif(sum({spec.denominator}), 0)"
     if spec.rollup in ("sum", "max", "min"):
         return f"{spec.rollup}({spec.name})"
+    if spec.rollup == "stock":
+        return f"sum({spec.name})"
     return None
 
 
-def _index_page(project: str, specs: list[MetricSpec]) -> str:
+def _as_of_latest(spec: MetricSpec) -> str:
+    """The WHERE that pins a stock to its latest day — a total of open interest
+    over a year of sessions is 250 snapshots added together."""
+    if spec.rollup != "stock":
+        return ""
+    return (f" where metric_time = (select max(metric_time) "
+            f"from ${{metrics_{spec.name}}})")
+
+
+def _index_page(project: str, specs: list[MetricSpec],
+                magnitudes: dict[str, float] | None = None) -> str:
     """Standard page anatomy: title + context -> filter row -> KPI row ->
     primary trend -> breakdown -> detail. Never a wall of charts."""
-    simple = [s for s in specs if s.kind in ("simple", "ratio") and _rollup_sql(s)]
+    # A ratio's numerator and denominator exist to be re-divided, not read: a
+    # tile titled "Range Position (component)" is a sum nobody asked for. The
+    # headline row and the trend are drawn from metrics a person reads.
+    # A label ending "(component)" is the same statement made by the author.
+    components = {n for s in specs if s.kind == "ratio" for n in (s.numerator, s.denominator)}
+    components |= {s.name for s in specs if "(component)" in (s.label or "").lower()}
+    simple = [s for s in specs if s.kind in ("simple", "ratio") and _rollup_sql(s)
+              and s.name not in components]
     kpis = simple[:4]
-    trend = next((s for s in specs if s.kind == "simple" and _rollup_sql(s)), None)
+    trend = next((s for s in specs if s.kind == "simple" and _rollup_sql(s)
+                  and s.name not in components), None)
     # The breakdown reads the trend's own query, so the dimension must be one
     # that query carries — any other spec's dimension is a missing column.
     dim = trend.dimensions[0] if trend and trend.dimensions else None
@@ -409,7 +560,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
         lines += [
             f"```sql kpi_{s.name}",
             f"select {_rollup_sql(s)} as {s.name}",
-            f"from ${{metrics_{s.name}}}",
+            f"from ${{metrics_{s.name}}}{_as_of_latest(s)}",
             "```",
             "",
         ]
@@ -417,9 +568,9 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
     if kpis:
         lines += ["<Grid cols=" + str(min(len(kpis), 4)) + ">", ""]
         for s in kpis:
-            fmt = "usd0" if _is_money(s) else "num0"
             lines.append(f"<BigValue data={{kpi_{s.name}}} value={s.name} "
-                         f"title='{s.label}' fmt={fmt}/>")
+                         f"title='{s.label}' "
+                         f"fmt={kpi_format(s.fmt, (magnitudes or {}).get(s.name))}/>")
         lines += ["", "</Grid>", ""]
 
     if trend:
@@ -432,7 +583,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             "group by 1 order by 1",
             "```",
             (f"<LineChart data={{trend}} x=metric_time y={trend.name} "
-            f"yFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
+            f"yFmt={trend.fmt}/>"),
             "",
         ]
 
@@ -442,12 +593,12 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
             "",
             "```sql breakdown",
             f"select {dim}, {_rollup_sql(trend)} as {trend.name}",
-            f"from ${{metrics_{trend.name}}}",
-            f"where {dim} is not null",
+            f"from ${{metrics_{trend.name}}}{_as_of_latest(trend)}",
+            f"{'and' if _as_of_latest(trend) else 'where'} {dim} is not null",
             "group by 1 order by 2 desc",
             "```",
             (f"<BarChart data={{breakdown}} x={dim} y={trend.name} swapXY=true "
-            f"xFmt={'usd0' if _is_money(trend) else 'num0'}/>"),
+            f"xFmt={trend.fmt}/>"),
             "",
             "## Detail",
             "",
@@ -465,7 +616,7 @@ def _index_page(project: str, specs: list[MetricSpec]) -> str:
 
 
 def _metric_page(project: str, spec: MetricSpec) -> str:
-    fmt = "usd0" if _is_money(spec) else "num0"
+    fmt = spec.fmt
     dim = spec.dimensions[0] if spec.dimensions else None
     lines = [
         "---", f"title: {spec.label}",
@@ -515,7 +666,9 @@ def _metric_page(project: str, spec: MetricSpec) -> str:
             f"## By {dim.replace('_', ' ')}", "",
             "```sql by_dim",
             f"select {dim}, {rollup} as {spec.name}",
-            f"from ${{metrics_{spec.name}}} where {dim} is not null group by 1 order by 2 desc",
+            (f"from ${{metrics_{spec.name}}}{_as_of_latest(spec)} "
+             f"{'and' if _as_of_latest(spec) else 'where'} {dim} is not null "
+             f"group by 1 order by 2 desc"),
             "```",
             "",
             f"<BarChart data={{by_dim}} x={dim} y={spec.name} swapXY=true xFmt={fmt}/>",
@@ -559,11 +712,6 @@ def _fence_spacing(lines: list[str]) -> list[str]:
                 and lines[i + 1].lstrip().startswith("<"):
             out.append("")
     return out
-
-
-def _is_money(spec: MetricSpec) -> bool:
-    return any(t in spec.name.lower() or t in spec.label.lower()
-               for t in ("revenue", "amount", "value", "volume", "mrr", "arr", "aov"))
 
 
 def _config(project: str, warehouse: Path) -> str:
@@ -737,6 +885,38 @@ def _owner(root: Path) -> dict[str, str]:
     return fallback
 
 
+def _kpi_magnitudes(root: Path, group: str, project: str, specs: list[MetricSpec],
+                    mdl: dict[str, Any]) -> dict[str, float]:
+    """Each tile-able metric's headline value, computed the way its tile will
+    compute it, so the tile's format can be sized to it (`kpi_format`). Empty
+    without a warehouse — tiles then keep the auto code."""
+    from pf.runtime.warehouse import Warehouse
+
+    schemas = {m["name"]: m["tableReference"]["schema"] for m in mdl.get("models", [])}
+    wh = Warehouse.for_project(root, group, project)
+    if not wh.path.exists():
+        return {}
+    out: dict[str, float] = {}
+    try:
+        with wh.connect(read_only=True) as con:
+            for s in specs:
+                rollup = _rollup_sql(s)
+                if not rollup or s.model not in schemas:
+                    continue
+                q = f"({_metric_sql(s, schemas[s.model])})"
+                where = (f" where metric_time = (select max(metric_time) from {q})"
+                         if s.rollup == "stock" else "")
+                try:
+                    value = con.execute(f"select {rollup} from {q}{where}").fetchone()[0]
+                except Exception:  # noqa: BLE001 — a metric that cannot be measured keeps the auto code
+                    continue
+                if value is not None:
+                    out[s.name] = float(value)
+    except Exception:  # noqa: BLE001 — the report builds without a warehouse
+        return {}
+    return out
+
+
 def _row_counts(root: Path, group: str, project: str,
                 relations: list[tuple[str, str]]) -> dict[str, int] | None:
     """Row count per (schema, name) relation, or None when the warehouse
@@ -791,7 +971,9 @@ def build(project_dir: str | Path, group: str, project: str) -> dict[str, Any]:
                 f.unlink()
                 removed.append(f.stem)
 
-    (out / "pages" / "index.md").write_text(_index_page(project, specs), encoding="utf-8")
+    (out / "pages" / "index.md").write_text(
+        _index_page(project, specs, _kpi_magnitudes(root, group, project, specs, mdl)),
+        encoding="utf-8")
     (out / "evidence.config.yaml").write_text(_config(project, warehouse), encoding="utf-8")
     (out / "sources" / project.replace("-", "_") / "connection.yaml").write_text(
         _source_conn(project, warehouse), encoding="utf-8")

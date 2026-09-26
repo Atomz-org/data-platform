@@ -24,6 +24,14 @@ COMPONENT = re.compile(r"<\s*(BigValue|LineChart|BarChart|ScatterPlot|DataTable|
                        r"AreaChart|Histogram|Heatmap|Sankey)", re.I)
 SQL_BLOCK = re.compile(r"```sql\s+(\w+)")
 METRIC_REF = re.compile(r"\$\{metrics_(\w+)\}")
+#: `-- format: inr` — stamped into each compiled metric by `pf report build`.
+DECLARED_FORMAT = re.compile(r"^--\s*format:\s*(\S+)\s*$", re.M)
+#: One rendering component, whole tag. Nested components never occur inside a
+#: value-rendering tag, so a lazy match to the first `>` that closes it is safe
+#: once `{...}` expressions (which may hold `>`) are skipped.
+VALUE_TAG = re.compile(r"<\s*(BigValue|Value|LineChart|BarChart|AreaChart|ScatterPlot)"
+                       r"\b((?:\{[^}]*\}|[^>{])*)>", re.S)
+ATTR = re.compile(r"\b(value|y|x|fmt|yFmt|xFmt)\s*=\s*(\{[^}]*\}|'[^']*'|\"[^\"]*\"|[^\s/>]+)")
 
 
 @dataclass(frozen=True)
@@ -36,6 +44,57 @@ class Finding:
     def __str__(self) -> str:
         mark = {"error": "ERROR", "warning": "WARN ", "info": "INFO "}[self.severity]
         return f"{mark} [{self.rule}] {self.page}: {self.message}"
+
+
+def _declared_formats(queries: Path) -> dict[str, str]:
+    """metric name → the format its compiled query declares."""
+    out: dict[str, str] = {}
+    if queries.exists():
+        for f in queries.glob("*.sql"):
+            m = DECLARED_FORMAT.search(f.read_text(encoding="utf-8"))
+            if m:
+                out[f.stem] = m.group(1)
+    return out
+
+
+def format_findings(rel: str, text: str, declared: dict[str, str]) -> list[Finding]:
+    """Every component that renders a metric must use that metric's format family.
+
+    The number-format standard (viz-standards → Number formats): a count never
+    wears a currency, a currency never wears another currency, a money total
+    auto-scales rather than printing fifteen digits. Only the *family* is
+    compared — `inr` vs `inr0k` is the page's choice of scale, `usd0` on a
+    rupee metric or `$` on lots is a wrong number.
+    """
+    from pf.projections.evidence import format_family
+
+    out: list[Finding] = []
+    for tag, body in VALUE_TAG.findall(text):
+        attrs = {k: v.strip("'\"") for k, v in ATTR.findall(body)}
+        fmt = attrs.get("fmt") or attrs.get("yFmt") or attrs.get("xFmt")
+        for key in ("value", "y", "x"):
+            name = attrs.get(key, "")
+            if name.startswith("{") or name not in declared:
+                continue
+            want = format_family(declared[name])
+            if fmt is None:
+                if want != "num":
+                    out.append(Finding("error", "fmt-missing", rel,
+                                       f"<{tag}> renders `{name}` ({declared[name]}) with no "
+                                       f"format — Evidence prints the raw number"))
+                continue
+            got = format_family(fmt)
+            if got != want:
+                out.append(Finding("error", "fmt-unit", rel,
+                                   f"<{tag}> renders `{name}` as `{fmt}`; the metric is "
+                                   f"declared `{declared[name]}` — a {got} format on a "
+                                   f"{want} value states the wrong unit"))
+            elif want not in ("num", "pct") and re.fullmatch(r"[a-z]+[0-2]", fmt) \
+                    and tag == "BigValue":
+                out.append(Finding("warning", "fmt-unscaled", rel,
+                                   f"<BigValue> renders money `{name}` with fixed `{fmt}`; "
+                                   f"use `{want}` (auto-scaling) or a k/m/b suffix"))
+    return out
 
 
 def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
@@ -59,6 +118,7 @@ def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
         findings.append(Finding("error", "no-pages", "-", "no pages"))
 
     covered: set[str] = set()
+    declared = _declared_formats(root / "queries" / "metrics")
 
     for page in pages:
         rel = str(page.relative_to(root))
@@ -109,6 +169,8 @@ def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
             findings.append(Finding("warning", "no-context", rel,
                                     "no context sentence under the title — a reader "
                                     "cannot tell what is included or excluded"))
+
+        findings.extend(format_findings(rel, text, declared))
 
         named = SQL_BLOCK.findall(text)
         if len(named) != len(set(named)):
