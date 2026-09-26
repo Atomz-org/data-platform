@@ -10,7 +10,7 @@ addressed by its model name; the engine maps that name to the project's own ware
   A question that needs one has no answer here, and saying so is the answer.
 - Every query is planned through the MDL, dry-run, row-limited and recorded
   before it runs. Write one `SELECT` over model names exactly as listed.
-- A governed number is its metric: answer it from the cube `jaffle_shop_core` or from `query_metrics`, never by recomputing it in SQL.
+- A governed number is its metric: answer it from the cube `customers_metrics` or from `query_metrics`, never by recomputing it in SQL.
 - A price is a unit price and a percentage is already a ratio: neither is
   summed or averaged across rows. Money is additive within one currency.
 
