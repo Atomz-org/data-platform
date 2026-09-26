@@ -4868,8 +4868,232 @@
   ],
   "cubes": [
     {
-      "name": "commodity_india_core",
-      "baseObject": "fct_mcx_commodity_rollup_daily",
+      "name": "fct_commodity_prices_daily_metrics",
+      "baseObject": "fct_commodity_prices_daily",
+      "measures": [
+        {
+          "name": "avg_benchmark_price_usd",
+          "expression": "sum(close_price) / nullif(count(close_price), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Benchmark Price (USD)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "benchmark_price_days",
+          "expression": "count(close_price)",
+          "type": "DOUBLE",
+          "description": "Priced Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "benchmark_price_usd_total",
+          "expression": "sum(close_price)",
+          "type": "DOUBLE",
+          "description": "Benchmark Price Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "contracts_traded",
+          "expression": "sum(volume)",
+          "type": "DOUBLE",
+          "description": "Contracts Traded",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "period_high_price_usd",
+          "expression": "max(coalesce(high_price, close_price))",
+          "type": "DOUBLE",
+          "description": "Period High (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "period_low_price_usd",
+          "expression": "min(coalesce(low_price, close_price))",
+          "type": "DOUBLE",
+          "description": "Period Low (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_commodity_trading_signals_daily_metrics",
+      "baseObject": "fct_commodity_trading_signals_daily",
+      "measures": [
+        {
+          "name": "avg_momentum_20d",
+          "expression": "sum(momentum_20d_pct) / nullif(count(momentum_20d_pct), 0)",
+          "type": "DOUBLE",
+          "description": "Avg 20-Day Momentum",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_range_position",
+          "expression": "sum(pct_of_52w_range) / nullif(count(pct_of_52w_range), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Position in 52-Week Range",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_realised_vol",
+          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Realised Volatility (annualised)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "momentum_20d_days",
+          "expression": "count(momentum_20d_pct)",
+          "type": "DOUBLE",
+          "description": "Days With a Momentum Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "momentum_20d_total",
+          "expression": "sum(momentum_20d_pct)",
+          "type": "DOUBLE",
+          "description": "20-Day Momentum (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "range_position_days",
+          "expression": "count(pct_of_52w_range)",
+          "type": "DOUBLE",
+          "description": "Days With a Range Position",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "range_position_total",
+          "expression": "sum(pct_of_52w_range)",
+          "type": "DOUBLE",
+          "description": "Range Position (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "realised_vol_days",
+          "expression": "count(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "Days With a Volatility Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "realised_vol_total",
+          "expression": "sum(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "Realised Volatility (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "signal_days",
+          "expression": "count(price_id)",
+          "type": "DOUBLE",
+          "description": "Signal Days",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "ma_crossover",
+          "expression": "ma_crossover",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "ma_regime",
+          "expression": "ma_regime",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "stance",
+          "expression": "stance",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "volatility_regime",
+          "expression": "volatility_regime",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_landed_price_attribution_daily_metrics",
+      "baseObject": "fct_landed_price_attribution_daily",
       "measures": [
         {
           "name": "attribution_days",
@@ -4881,28 +5105,110 @@
           }
         },
         {
-          "name": "avg_benchmark_price_usd",
-          "expression": "sum(close_price) / nullif(count(close_price), 0)",
+          "name": "avg_fx_share_of_move",
+          "expression": "sum(fx_share_of_move) / nullif(count(fx_share_of_move), 0)",
           "type": "DOUBLE",
-          "description": "Avg Benchmark Price (USD)",
+          "description": "Avg Rupee Share of the Move",
           "properties": {
             "pf.metric_type": "ratio"
           }
         },
+        {
+          "name": "benchmark_contribution_total",
+          "expression": "sum(benchmark_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Benchmark Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "duty_contribution_total",
+          "expression": "sum(duty_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "Duty Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_contribution_total",
+          "expression": "sum(fx_contribution_pct)",
+          "type": "DOUBLE",
+          "description": "FX Contribution (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_days",
+          "expression": "count(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "Days With an FX Share",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "fx_share_total",
+          "expression": "sum(fx_share_of_move)",
+          "type": "DOUBLE",
+          "description": "FX Share (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "currency_code",
+          "expression": "currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "primary_driver",
+          "expression": "primary_driver",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_landed_prices_daily_metrics",
+      "baseObject": "fct_landed_prices_daily",
+      "measures": [
         {
           "name": "avg_duty_local",
           "expression": "sum(duty_local) / nullif(count(landed_price_local), 0)",
           "type": "DOUBLE",
           "description": "Avg Customs Duty (market currency)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_fx_share_of_move",
-          "expression": "sum(fx_share_of_move) / nullif(count(fx_share_of_move), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Rupee Share of the Move",
           "properties": {
             "pf.metric_type": "ratio"
           }
@@ -4916,6 +5222,103 @@
             "pf.metric_type": "ratio"
           }
         },
+        {
+          "name": "avg_usd_fx_rate",
+          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Applied FX Rate",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "duty_local_total",
+          "expression": "sum(duty_local)",
+          "type": "DOUBLE",
+          "description": "Customs Duty Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_days",
+          "expression": "count(landed_price_local)",
+          "type": "DOUBLE",
+          "description": "Days With a Landed Price",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "landed_price_local_total",
+          "expression": "sum(landed_price_local)",
+          "type": "DOUBLE",
+          "description": "Landed Price Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "usd_fx_rate_total",
+          "expression": "sum(usd_fx_rate)",
+          "type": "DOUBLE",
+          "description": "Applied FX Rate Total (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "currency_code",
+          "expression": "currency_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_duty_rate_confirmed",
+          "expression": "is_duty_rate_confirmed",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_code",
+          "expression": "market_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "market_unit",
+          "expression": "market_unit",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_mcx_commodity_daily_metrics",
+      "baseObject": "fct_mcx_commodity_daily",
+      "measures": [
         {
           "name": "avg_mcx_daily_return",
           "expression": "sum(return_1d) / nullif(count(continuous_id), 0)",
@@ -4989,141 +5392,6 @@
           }
         },
         {
-          "name": "avg_momentum_20d",
-          "expression": "sum(momentum_20d_pct) / nullif(count(momentum_20d_pct), 0)",
-          "type": "DOUBLE",
-          "description": "Avg 20-Day Momentum",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_range_position",
-          "expression": "sum(pct_of_52w_range) / nullif(count(pct_of_52w_range), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Position in 52-Week Range",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_realised_vol",
-          "expression": "sum(realised_vol_20d) / nullif(count(realised_vol_20d), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Realised Volatility (annualised)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_usd_fx_rate",
-          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Applied FX Rate",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "benchmark_contribution_total",
-          "expression": "sum(benchmark_contribution_pct)",
-          "type": "DOUBLE",
-          "description": "Benchmark Contribution (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "benchmark_price_days",
-          "expression": "count(close_price)",
-          "type": "DOUBLE",
-          "description": "Priced Days",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "benchmark_price_usd_total",
-          "expression": "sum(close_price)",
-          "type": "DOUBLE",
-          "description": "Benchmark Price Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "contracts_traded",
-          "expression": "sum(volume)",
-          "type": "DOUBLE",
-          "description": "Contracts Traded",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "duty_contribution_total",
-          "expression": "sum(duty_contribution_pct)",
-          "type": "DOUBLE",
-          "description": "Duty Contribution (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "duty_local_total",
-          "expression": "sum(duty_local)",
-          "type": "DOUBLE",
-          "description": "Customs Duty Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "fx_contribution_total",
-          "expression": "sum(fx_contribution_pct)",
-          "type": "DOUBLE",
-          "description": "FX Contribution (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "fx_share_days",
-          "expression": "count(fx_share_of_move)",
-          "type": "DOUBLE",
-          "description": "Days With an FX Share",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "fx_share_total",
-          "expression": "sum(fx_share_of_move)",
-          "type": "DOUBLE",
-          "description": "FX Share (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "landed_price_days",
-          "expression": "count(landed_price_local)",
-          "type": "DOUBLE",
-          "description": "Days With a Landed Price",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "landed_price_local_total",
-          "expression": "sum(landed_price_local)",
-          "type": "DOUBLE",
-          "description": "Landed Price Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
           "name": "mcx_backwardation_days",
           "expression": "sum(case when is_backwardation then 1 else 0 end)",
           "type": "DOUBLE",
@@ -5132,6 +5400,274 @@
             "pf.metric_type": "simple"
           }
         },
+        {
+          "name": "mcx_contango_days",
+          "expression": "sum(case when is_contango then 1 else 0 end)",
+          "type": "DOUBLE",
+          "description": "MCX Sessions in Contango",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_contango_share",
+          "expression": "sum(case when is_contango then 1 else 0 end) / nullif(count(continuous_id), 0)",
+          "type": "DOUBLE",
+          "description": "MCX Share of Sessions in Contango",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "mcx_gk_vol_30d_days",
+          "expression": "count(garman_klass_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Garman\u2013Klass Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_gk_vol_30d_total",
+          "expression": "sum(garman_klass_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Garman\u2013Klass Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_parkinson_vol_30d_days",
+          "expression": "count(parkinson_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Parkinson Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_parkinson_vol_30d_total",
+          "expression": "sum(parkinson_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Parkinson Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_premium_days",
+          "expression": "count(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Parity Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_premium_total",
+          "expression": "sum(premium_to_landed_pct)",
+          "type": "DOUBLE",
+          "description": "MCX Premium to Landed Parity (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_realised_vol_days",
+          "expression": "count(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Volatility Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_realised_vol_total",
+          "expression": "sum(realised_vol_20d)",
+          "type": "DOUBLE",
+          "description": "MCX Realised Volatility (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_return_total",
+          "expression": "sum(return_1d)",
+          "type": "DOUBLE",
+          "description": "MCX Summed Daily Return (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_roll_yield_days",
+          "expression": "count(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Roll Yield",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_roll_yield_total",
+          "expression": "sum(roll_yield_annualised)",
+          "type": "DOUBLE",
+          "description": "MCX Roll Yield (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rs_vol_30d_days",
+          "expression": "count(rogers_satchell_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Days With a Rogers\u2013Satchell Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rs_vol_30d_total",
+          "expression": "sum(rogers_satchell_vol_30d)",
+          "type": "DOUBLE",
+          "description": "MCX Rogers\u2013Satchell Vol 30d (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rsi_days",
+          "expression": "count(rsi_14)",
+          "type": "DOUBLE",
+          "description": "MCX Days With an RSI Reading",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_rsi_total",
+          "expression": "sum(rsi_14)",
+          "type": "DOUBLE",
+          "description": "MCX RSI (component)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_session_days",
+          "expression": "count(continuous_id)",
+          "type": "DOUBLE",
+          "description": "MCX Sessions",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_turnover_inr",
+          "expression": "sum(turnover_inr)",
+          "type": "DOUBLE",
+          "description": "MCX Futures Turnover (\u20b9)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "mcx_volume_lots",
+          "expression": "sum(volume_lots)",
+          "type": "DOUBLE",
+          "description": "MCX Futures Volume (lots)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "contract_code",
+          "expression": "contract_code",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "curve_state",
+          "expression": "curve_state",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "ema_9_21_signal",
+          "expression": "ema_9_21_signal",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_backwardation",
+          "expression": "is_backwardation",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_contango",
+          "expression": "is_contango",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "is_flagship",
+          "expression": "is_flagship",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "mcx_commodity",
+          "expression": "mcx_commodity",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "oi_buildup",
+          "expression": "oi_buildup",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "segment",
+          "expression": "segment",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "stance",
+          "expression": "stance",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "trend_regime",
+          "expression": "trend_regime",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "volatility_regime",
+          "expression": "volatility_regime",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "trade_date",
+          "expression": "trade_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_mcx_commodity_rollup_daily_metrics",
+      "baseObject": "fct_mcx_commodity_rollup_daily",
+      "measures": [
         {
           "name": "mcx_commodity_avg_daily_return",
           "expression": "sum(return_1d) / nullif(count(return_1d), 0)",
@@ -5509,366 +6045,12 @@
           "properties": {
             "pf.metric_type": "simple"
           }
-        },
-        {
-          "name": "mcx_contango_days",
-          "expression": "sum(case when is_contango then 1 else 0 end)",
-          "type": "DOUBLE",
-          "description": "MCX Sessions in Contango",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_contango_share",
-          "expression": "sum(case when is_contango then 1 else 0 end) / nullif(count(continuous_id), 0)",
-          "type": "DOUBLE",
-          "description": "MCX Share of Sessions in Contango",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "mcx_gk_vol_30d_days",
-          "expression": "count(garman_klass_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Garman\u2013Klass Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_gk_vol_30d_total",
-          "expression": "sum(garman_klass_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Garman\u2013Klass Vol 30d (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_parkinson_vol_30d_days",
-          "expression": "count(parkinson_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Parkinson Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_parkinson_vol_30d_total",
-          "expression": "sum(parkinson_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Parkinson Vol 30d (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_premium_days",
-          "expression": "count(premium_to_landed_pct)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Parity Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_premium_total",
-          "expression": "sum(premium_to_landed_pct)",
-          "type": "DOUBLE",
-          "description": "MCX Premium to Landed Parity (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_realised_vol_days",
-          "expression": "count(realised_vol_20d)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Volatility Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_realised_vol_total",
-          "expression": "sum(realised_vol_20d)",
-          "type": "DOUBLE",
-          "description": "MCX Realised Volatility (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_return_total",
-          "expression": "sum(return_1d)",
-          "type": "DOUBLE",
-          "description": "MCX Summed Daily Return (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_roll_yield_days",
-          "expression": "count(roll_yield_annualised)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Roll Yield",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_roll_yield_total",
-          "expression": "sum(roll_yield_annualised)",
-          "type": "DOUBLE",
-          "description": "MCX Roll Yield (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_rs_vol_30d_days",
-          "expression": "count(rogers_satchell_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Days With a Rogers\u2013Satchell Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_rs_vol_30d_total",
-          "expression": "sum(rogers_satchell_vol_30d)",
-          "type": "DOUBLE",
-          "description": "MCX Rogers\u2013Satchell Vol 30d (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_rsi_days",
-          "expression": "count(rsi_14)",
-          "type": "DOUBLE",
-          "description": "MCX Days With an RSI Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_rsi_total",
-          "expression": "sum(rsi_14)",
-          "type": "DOUBLE",
-          "description": "MCX RSI (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_session_days",
-          "expression": "count(continuous_id)",
-          "type": "DOUBLE",
-          "description": "MCX Sessions",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_turnover_inr",
-          "expression": "sum(turnover_inr)",
-          "type": "DOUBLE",
-          "description": "MCX Futures Turnover (\u20b9)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "mcx_volume_lots",
-          "expression": "sum(volume_lots)",
-          "type": "DOUBLE",
-          "description": "MCX Futures Volume (lots)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "momentum_20d_days",
-          "expression": "count(momentum_20d_pct)",
-          "type": "DOUBLE",
-          "description": "Days With a Momentum Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "momentum_20d_total",
-          "expression": "sum(momentum_20d_pct)",
-          "type": "DOUBLE",
-          "description": "20-Day Momentum (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "period_high_price_usd",
-          "expression": "max(coalesce(high_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period High (USD)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "period_low_price_usd",
-          "expression": "min(coalesce(low_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period Low (USD)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "range_position_days",
-          "expression": "count(pct_of_52w_range)",
-          "type": "DOUBLE",
-          "description": "Days With a Range Position",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "range_position_total",
-          "expression": "sum(pct_of_52w_range)",
-          "type": "DOUBLE",
-          "description": "Range Position (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "realised_vol_days",
-          "expression": "count(realised_vol_20d)",
-          "type": "DOUBLE",
-          "description": "Days With a Volatility Reading",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "realised_vol_total",
-          "expression": "sum(realised_vol_20d)",
-          "type": "DOUBLE",
-          "description": "Realised Volatility (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "signal_days",
-          "expression": "count(price_id)",
-          "type": "DOUBLE",
-          "description": "Signal Days",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "usd_fx_rate_total",
-          "expression": "sum(usd_fx_rate)",
-          "type": "DOUBLE",
-          "description": "Applied FX Rate Total (component)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
         }
       ],
       "dimensions": [
         {
-          "name": "category",
-          "expression": "category",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "commodity_id",
-          "expression": "commodity_id",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "commodity_name",
-          "expression": "commodity_name",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "contract_code",
-          "expression": "contract_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "currency_code",
-          "expression": "currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "curve_state",
-          "expression": "curve_state",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "ema_9_21_signal",
-          "expression": "ema_9_21_signal",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "exchange",
-          "expression": "exchange",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "flagship_contract_code",
           "expression": "flagship_contract_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_backwardation",
-          "expression": "is_backwardation",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_carried_forward",
-          "expression": "is_carried_forward",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_contango",
-          "expression": "is_contango",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_duty_rate_confirmed",
-          "expression": "is_duty_rate_confirmed",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_flagship",
-          "expression": "is_flagship",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_import_prohibited",
-          "expression": "is_import_prohibited",
           "type": "VARCHAR",
           "description": ""
         },
@@ -5879,62 +6061,8 @@
           "description": ""
         },
         {
-          "name": "ma_crossover",
-          "expression": "ma_crossover",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "ma_regime",
-          "expression": "ma_regime",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "market_code",
-          "expression": "market_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "market_unit",
-          "expression": "market_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "mcx_commodity",
           "expression": "mcx_commodity",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "oi_buildup",
-          "expression": "oi_buildup",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "price_basis",
-          "expression": "price_basis",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "primary_driver",
-          "expression": "primary_driver",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_currency_code",
-          "expression": "quote_currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_unit",
-          "expression": "quote_unit",
           "type": "VARCHAR",
           "description": ""
         },
@@ -5964,18 +6092,6 @@
         }
       ],
       "timeDimensions": [
-        {
-          "name": "price_date",
-          "expression": "price_date",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
-        {
-          "name": "rate_date",
-          "expression": "rate_date",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
         {
           "name": "trade_date",
           "expression": "trade_date",

@@ -10,19 +10,25 @@ addressed by its model name; the engine maps that name to the project's own ware
   A question that needs one has no answer here, and saying so is the answer.
 - Every query is planned through the MDL, dry-run, row-limited and recorded
   before it runs. Write one `SELECT` over model names exactly as listed.
-- A governed number is its metric: answer it from the cube `commodity_india_core` or from `query_metrics`, never by recomputing it in SQL.
+- A governed number is its metric: answer it from the cube `fct_commodity_prices_daily_metrics` or from `query_metrics`, never by recomputing it in SQL.
 - A price is a unit price and a percentage is already a ratio: neither is
   summed or averaged across rows. Money is additive within one currency.
 
 ## Models
 
 - `dim_commodities`
+- `dim_mcx_contracts`
 - `fct_commodity_prices_daily`
 - `fct_commodity_trading_signals_daily`
 - `fct_fx_rates_daily`
 - `fct_landed_price_attribution_daily`
 - `fct_landed_prices_daily`
+- `fct_mcx_commodity_daily`
+- `fct_mcx_commodity_rollup_daily`
+- `fct_mcx_futures_daily`
 - `fct_mcx_lot_equivalents_daily`
+- `fct_mcx_options_daily`
 - `fct_precious_metal_retail_prices_daily`
 - `rpt_commodity_price_board`
+- `rpt_mcx_commodity_board`
 - `rpt_mcx_contract_board`

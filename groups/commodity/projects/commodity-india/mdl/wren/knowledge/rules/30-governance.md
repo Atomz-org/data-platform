@@ -46,3 +46,4 @@
 | ADR-0003 | accepted | Mean prices are ratio metrics, not `average` measures |
 | ADR-0004 | accepted | dlt Core lands the raw stage; dbt stages it |
 | ADR-0005 | accepted | commodity-india is one market of many |
+| ADR-0006 | accepted | MCX's own bhavcopy lands as one dlt pipeline per commodity |
