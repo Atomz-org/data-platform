@@ -134,6 +134,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `build-assets` | `schedule` is set | → schedule, sensor or automation condition on the asset in `defs/`, with the writer pool on every write |
+| `build-assets` (asset factory) | `schedule.per_entity` is set | catalogue → one ingest asset, job and staggered schedule per entity. Each job is load → verify landed → downstream dbt → report, and contains only executable assets |
 | `dignified-python` | always | → code in the house idiom |
 | `duckdb-docs` | concurrency questions | → single-writer semantics. Never propose a shared warehouse file |
 
@@ -143,7 +144,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 |---|---|---|
 | `build-dashboard` | every `reports[]` page | question, audience, metrics, filters → a page on the standard anatomy |
 | `charts-and-diagrams` | every chart, and any mermaid in `trace.md` or the PR | → form first, then colour from the theme. Status colours reserved |
-| `dashboard-loop` | after the first draft | → score, critique, fix, repeated until two passes change nothing and `pf report audit` is clean |
+| `dashboard-loop` | after the first draft | → score, critique, fix, repeated until two passes change nothing and `pf report audit` is clean, and every page has been opened rendered |
 
 ## Phase 12 — Catalogue
 

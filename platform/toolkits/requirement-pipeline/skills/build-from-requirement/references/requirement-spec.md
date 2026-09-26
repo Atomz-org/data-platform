@@ -48,6 +48,11 @@ or `pf ontology`), `identity` (the natural key in business terms). Any
 - `sample`: optional path or URL of a sample file the page attaches. It routes
   Phase 2 to `read-file`, so roles come from a profile rather than column names.
   Never commit the sample itself.
+- `client`: optional name of a client library the page points at. It is a
+  candidate, not the contract: Phase 4 probes it against the live source
+  before anything is built on it, and falls back to the source's own API when
+  it no longer answers. Community wrappers of public sites break silently when
+  the site moves.
 - `resources[]`:
   - `name` and `endpoint` | `table` | `glob`.
   - `write_disposition`: `append` | `merge` | `replace`. `merge` requires
@@ -55,8 +60,15 @@ or `pf ontology`), `identity` (the natural key in business terms). Any
   - `incremental`: `cursor`, `initial_value`, `lag`.
   - `concept`, `grain`, `roles` {column: role}, `links` {column: Concept}.
     `roles` has exactly one `natural_key`, and every `money_amount` has a
-    `currency_code` sibling. These are the same rules `validate_annotations`
-    applies, caught one phase earlier.
+    `currency_code` sibling **or** the resource declares `currency: <ISO>`
+    (every amount in one currency, no column for it). These are the same
+    rules `validate_annotations` applies, caught one phase earlier.
+  - `identities`: optional list of what each amount or quantity measures,
+    in words a query can check (`"value = price × quantity × lot size"`). A
+    column's name says what the source calls it, not what it holds; a
+    "value" can be a notional where the page means a premium. Each identity is
+    proved on landed rows at Checkpoint 2 and kept as a `BR-n` with a
+    `data_test`.
 
 The generated staging model is `stg_<source>__<resource>`. Refer to it by that
 name in `inputs`.
@@ -100,9 +112,9 @@ is generated.
 
 ### `metrics[]` **(checked)**
 `name`, `label`, `description`, `type` (`simple` | `ratio` | `derived` |
-`cumulative` | `conversion`), `owner`, `rules`, and by type:
-- simple / cumulative: `mart`, `measure: {agg, expr}`, optional `filter`,
-  `time_dimension`, `dimensions`
+`cumulative` | `conversion`), `unit`, `owner`, `rules`, and by type:
+- simple / cumulative: `mart`, `measure: {agg, expr, non_additive}`, optional
+  `filter`, `time_dimension`, `dimensions`
 - ratio: `numerator`, `denominator` (metric names, defined here or existing)
 - derived: `expr`, `metrics` (names)
 
@@ -110,14 +122,44 @@ A `simple` measure whose `expr` divides is rejected. Make it a ratio.
 `agg: average` over a column the spec calls a rate is rejected for the same
 reason.
 
+- `unit` **(checked)**: an ISO currency code (`USD`, `EUR`, `INR`) or one of
+  `count`, `percent`, `ratio`, `number`, `duration`. It is how the report
+  formats the number, so it is required: without it a report guesses, and a
+  volume is printed as dollars. A metric over a mart's `money_amount` column
+  must carry a currency code.
+- `label` **(checked)**: unique across the spec *and* the project's existing
+  metrics, case-insensitively. MetricFlow refuses a manifest where two metrics
+  share a label, which bites when the same KPI exists at two grains; qualify
+  the label with the grain.
+- `measure.non_additive: {dimension, window: last | first}` for a level — a
+  balance, an inventory, an open position. Summed over days a level is counted
+  once per day. A `sum` over a column whose name reads like a level, without
+  it, is warned.
+
 ### `reports[]` **(checked)**
 `page` (slug), `question` (one per page), `audience`, `metrics` (names),
 `grain` (day, week, month), `filters`, `components` (optional hints). Every
 metric named must be defined or existing.
 
+`per_entity: <dimension>` makes the page a template: one page per entity
+(`reporting/pages/<page>/[<dimension>].md`) plus `<page>/index.md` summarising
+all of them. Use it when the page says "each X has its own report"; the
+entity list comes from the data, so a new entity gets a page without an edit.
+
 ### `schedule`
 `cron` or `trigger` (`on_source_update`), `timezone`, `partitioning`
 (`none` | `daily` | `monthly`), `backfill_from`, `sla` (`"<mart> fresh by HH:MM <tz>"`).
+
+`per_entity` **(checked)**, when the page asks for each entity (a store, a
+market, a customer) to be run, paused or resumed on its own:
+- `by`: the entity column.
+- `catalogue`: the seed or model listing every entity and its codes. The
+  loader and dbt read this one list, so what is fetched and what is modelled
+  can never disagree. Adding an entity is a row, not code.
+- `stagger`: offset between entities' schedules (`3m`), so N jobs do not
+  queue on one warehouse writer at the same minute.
+- `start_paused`: entities whose schedule is created stopped. After creation
+  the orchestrator owns the state; this list does not override it.
 
 ### `catalog`
 `domain`, `data_product`, `owners`, `tier` (`Tier1`–`Tier5`), `glossary_terms`,

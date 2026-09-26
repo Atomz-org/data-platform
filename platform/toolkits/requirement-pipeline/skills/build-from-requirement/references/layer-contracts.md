@@ -44,6 +44,34 @@ Which kind of test a rule needs is `choose-a-test`'s decision (table in
 Severity: key and referential tests are `error`. Anomaly monitors are `warn`
 (`elementary-observe`).
 
+## Raw (dlt) — what makes a load survive
+
+The source is the one layer the platform does not control. These hold for any
+source kind:
+
+- **Probe before you build.** Call the endpoint (or open the file, or query the
+  table) once and read the answer before writing a pipeline around it. A client
+  library the page names (`sources[].client`) is tried first and kept as a
+  fallback, but if it answers with an error page, an HTML body where JSON was
+  promised, or a 403, the source's own interface is the contract. Record which
+  route answered in a column (`extracted_via`), so a later change of route is
+  visible in the data.
+- **Resumable in committed batches.** A backfill of thousands of requests is
+  split into batches, each one load with its incremental state. A stopped run
+  loses one batch, never the backfill. Every batch must make progress: a batch
+  that plans the same work as the one before (an open item re-planned forever)
+  stops the load with an error instead of looping.
+- **Per-entity state when the job is per entity.** With `schedule.per_entity`,
+  each entity runs its own dlt pipeline (`<project>_<source>_<entity>`), so its
+  cursor and its failures are its own, into one shared dataset. One entity's
+  outage never blocks another's load.
+- **Identities before models.** For every amount and quantity, prove what it
+  measures on landed rows (`resources[].identities`) and keep the proof as a
+  test. A turnover that turns out to be a notional overstates activity by an
+  order of magnitude, and nothing downstream will notice.
+- **Space requests to a public site** and treat its terms of use as the owner's
+  decision, recorded in an ADR, not the pipeline's.
+
 ## Portability
 
 The project's warehouse (DuckDB in dev, the prod adapter from the scaffold) is
@@ -59,13 +87,47 @@ dialect-specific function needs a reason in the model description.
 - Schedules, sensors and automation conditions go in `src/<package>/defs/`.
   Prefer declarative automation (`AutomationCondition.eager()` on marts,
   `on_cron` on the ingest assets) over a job per requirement. Use a job only when the
-  spec names a run the business triggers.
+  spec names a run the business triggers, or `schedule.per_entity` asks for
+  one per entity.
+- **One job per entity** (`schedule.per_entity`) comes from an asset factory
+  over the catalogue: one ingest asset per entity, one job and one schedule per
+  entity, schedules staggered by `stagger`. Each job is the entity's whole
+  pipeline: its load, a step that verifies rows landed, the dbt models
+  downstream of the raw tables, and the report build. So a paused entity is
+  paused end to end, and a run is never "loaded but not modelled".
+- **Only executable assets go in a job.** A table declared as a non-executable
+  asset spec (an external asset standing in for a raw table) is dropped from a
+  job's selection. The job graph then shows the load feeding nothing. Make
+  that node an executable verification step (it reads what landed and fails on
+  zero rows) instead.
+- **Keep optional external steps out of scheduled jobs.** A step that needs a
+  server a developer may not run (a catalogue sync) belongs in its own job.
+  Otherwise every scheduled run fails locally for a reason unrelated to the
+  data.
+- A file of initial schedule states (`start_paused`) only sets the state a
+  schedule is *created* in. Once it exists, the orchestrator owns the state,
+  and pausing or resuming is an action there, not a file edit.
 - An SLA is a freshness check on the mart asset, and its failure notifies
   through the group's `notify.yaml`, not through a new channel.
 - Partitions only when the spec is period-scoped with a backfill. The
   partition key must match the dlt incremental window and the dbt incremental
   predicate. If they disagree, rows are silently skipped.
 - Every write takes `pool=warehouse.writer_pool`.
+
+## Reporting (Evidence)
+
+- Numbers are formatted from the metric's `unit`: a currency as its symbol, a
+  count without one, a percent as a percent. A tile showing a large amount is
+  scaled (thousands, millions, billions) by its magnitude, so it fits.
+  `pf report audit` is clean before hand-off.
+- A per-entity page is a template (`[<dimension>].md`) over the data's own
+  entity list, with an index page summarising all entities. Display labels are
+  computed in SQL, not in page expressions.
+- **Look at the rendered page.** A query error, an empty chart, or an
+  unformatted number is visible only when the page renders. Build it, open
+  each page (or screenshot it headlessly), and read it before calling Phase 11
+  done. A page reading a stale review baseline schema fails the same way:
+  rebuild the baseline rather than editing the page.
 
 ## Catalogue (OpenMetadata)
 
@@ -88,3 +150,13 @@ The project publishes. Nobody types into the UI.
 
 The catalogue points at production. Without a production target or a
 token, record the skipped steps in `trace.md` and carry on.
+
+Known traps, each cheap to check and expensive to discover:
+- On a fresh server, `publish` can fail the first time, because glossary terms
+  relate to terms not yet created. Run it a second time. If the second pass
+  fails, that is a real error.
+- Ingestion workflow files resolve relative artefact paths against the
+  ingestion tool's own working directory, not the project. Pass absolute paths
+  to `manifest.json` and `catalog.json`.
+- Verify by reading back, not by exit code: search the server for one mart,
+  open its lineage, and confirm owners, tier and glossary terms arrived.

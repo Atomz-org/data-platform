@@ -111,10 +111,18 @@ Record answers under `open_questions[].answer` with their source, then set
 
 For each resource marked `create`:
 
+- **Probe first.** One live call (or one file read, or one query) before any
+  pipeline code. A client library the page names (`sources[].client`) is a
+  candidate. If it errors, or returns HTML where it promised JSON, build on the
+  source's own interface and keep the library as a fallback
+  (`references/layer-contracts.md` §Raw).
 - `find-source`: verified source → OpenAPI → hand-rolled, stopping at the first
   tier that fits. Then the kind's skill: `create-rest-pipeline`,
   `create-sql-pipeline`, or `create-filesystem-pipeline` (after `read-file`).
   `write_disposition`, `primary_key` and cursor come from the spec.
+  A backfill loads in committed batches, and a batch that makes no progress
+  stops the load. With `schedule.per_entity`, each entity gets its own pipeline
+  (its own cursor) into one dataset, driven by the spec's catalogue.
 - `annotate-source` with the spec's `concept`, `grain`, `roles` and `links`.
   `validate_annotations` must pass.
 - `setup-data-quality`: at least `DEFAULT_CONTRACT`, and `STRICT_CONTRACT` for
@@ -131,6 +139,11 @@ For each resource marked `create`:
 
 Show the annotation table and rows per raw table. A wrong key, grain or
 currency costs one query here and a rebuild later.
+
+Prove each `resources[].identities` entry on the landed rows (one query each)
+and show the result. An amount that measures something other than the page
+means, such as a notional where the page means a premium, is caught here or
+not at all. Each proved identity becomes a `BR-n` with a `data_test`.
 
 ## Phase 5 — Staging (generated)
 
@@ -177,8 +190,11 @@ For each `models.marts[]`, follow `using-dbt`:
 - `agg_time_dimension` comes from `event_time`, and measures from
   `money_amount` / `quantity`.
 - `ratio` and `derived` compose existing metrics and never recompute them.
-- Add `meta: {requirement, owner}`, and a `saved_query` export for every
-  metric a report reads.
+- A level (a balance, a position) gets `non_additive_dimension` on its measure,
+  so a month is its last day, not the sum of its days.
+- Add `meta: {requirement, owner, unit}`: `unit` from the spec, which is how
+  every report formats the number. Labels stay unique across the manifest.
+- Add a `saved_query` export for every metric a report reads.
 - Afterwards, run agent `semantic-conformance`.
 
 ## Phase 9 — Build and prove it
@@ -206,6 +222,13 @@ uv run pf check                  # ontology conformance, blast radius
 freshness check, and every write takes `pool=warehouse.writer_pool`. Python
 follows `dignified-python`. Then run `uv run pf dagster-workspace`; the location must load.
 
+With `schedule.per_entity`, an asset factory over the catalogue makes one
+ingest asset, one job and one staggered schedule per entity. Each job runs the
+entity's whole pipeline: load → verify landed → downstream dbt → report. Open
+the job graph and confirm it has no node that feeds nothing. Launch one
+entity's job end to end, and pause and resume one schedule
+(`references/layer-contracts.md` §Orchestration).
+
 ## Phase 11 — Reporting (Evidence)
 
 `uv run pf report build <g> <p>`, then for each `reports[]` page:
@@ -215,6 +238,11 @@ follows `dignified-python`. Then run `uv run pf dagster-workspace`; the location
 - `charts-and-diagrams`: form first, colour from the theme.
 - `dashboard-loop`: score with `uv run pf report audit <g> <p>`, critique, fix,
   and stop when two passes change nothing. Then `npm run build` on Node 20.
+- Every number is formatted from its metric's `unit`. Large tiles are scaled
+  to fit.
+- `reports[].per_entity` → a templated page per entity plus a summary index.
+- **Open every page once rendered**, or screenshot it headlessly, and read it.
+  Query errors and unformatted numbers show only there.
 
 ## Phase 12 — Catalogue (OpenMetadata)
 
@@ -226,7 +254,8 @@ uv run pf tool openmetadata publish <g> <p>   # glossary, role tags, metrics
 ```
 
 `catalog` values reach OpenMetadata through dbt `meta`, never the UI
-(`references/layer-contracts.md` §Catalogue). If terms were added, run
+(`references/layer-contracts.md` §Catalogue, including the known traps). Verify
+by reading one mart back from the server: lineage, owner, tier, terms. If terms were added, run
 `uv run pf tool okf build` and `uv run pf tool okf check` (`design-ontology`
 §Publishing it). No server or token means a recorded skip, not a failure.
 
@@ -260,6 +289,7 @@ The validator's plan decides this. As a guide:
 | a changed business rule | 0–3, 6–9, 12–13 |
 | a new report over existing metrics | 0–2, 11–13 |
 | a new source feeding an existing mart | 0–7, 9, 12–13 |
+| each entity run, paused and resumed on its own | adds 10 (`schedule.per_entity`) |
 
 ## References
 
