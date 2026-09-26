@@ -74,7 +74,12 @@ STATUSES = ("active", "resolved")
 #: an index is to be read, and one that lists every lesson at length is the
 #: thing it was meant to replace. When this binds, the answer is a per-module
 #: rollup, not a bigger number.
-INDEX_BUDGET = 1600
+#:
+#: Raised 1600 → 2500 on 2026-09-26 (maintainer's call): twenty notes sat at
+#: 1598, so every pull request that recorded a lesson — which the skills ask
+#: for — failed the suite on `main`'s state rather than its own. The rollup
+#: is still the answer when this binds again; the room is for landing notes.
+INDEX_BUDGET = 2500
 
 README_TEXT = """\
 # Session memory
