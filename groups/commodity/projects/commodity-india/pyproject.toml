@@ -2,7 +2,9 @@
 name = "commodity_india"
 version = "0.1.0"
 requires-python = ">=3.11,<3.13"
-dependencies = ["pf"]
+# mcxlib / mcxpy: the MCX libraries the date-wise strategy tries first, and
+# mcxlib's browser header profile the direct client sends (ADR-0006).
+dependencies = ["pf", "mcxlib>=0.4", "mcxpy>=0.0.3"]
 
 [build-system]
 requires = ["hatchling"]

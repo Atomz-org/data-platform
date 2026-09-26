@@ -1,0 +1,265 @@
+version: 2
+# MCX's semantic layer, over the MCX marts. India-only, like `marts/india/`.
+#
+# Same arithmetic rules as the rest of this project: every measure is a sum or
+# count a ratio metric divides at query grain, never `average` (ADR-0003), and
+# `contract_code` is the first categorical dimension so a query groups per code.
+# Turnover and volume are additive across codes and days; an indicator is not,
+# and its mean is only meaningful inside one code.
+
+semantic_models:
+  - name: mcx_commodity_sessions
+    description: MCX continuous most-active series per contract code, one row per session.
+    model: ref('fct_mcx_commodity_daily')
+    defaults:
+      agg_time_dimension: trade_date
+    entities:
+      - {name: mcx_session, type: primary, expr: continuous_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: trade_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: contract_code, type: categorical}
+      - {name: mcx_commodity, type: categorical}
+      - {name: segment, type: categorical}
+      - {name: is_flagship, type: categorical}
+      - {name: stance, type: categorical}
+      - {name: trend_regime, type: categorical}
+      - {name: volatility_regime, type: categorical}
+      - {name: oi_buildup, type: categorical}
+      - {name: curve_state, type: categorical}
+      - {name: ema_9_21_signal, type: categorical}
+      - {name: is_contango, type: categorical}
+      - {name: is_backwardation, type: categorical}
+    measures:
+      - {name: mcx_turnover_inr_sum, agg: sum, expr: turnover_inr}
+      - {name: mcx_volume_lots_sum, agg: sum, expr: volume_lots}
+      - {name: mcx_session_count, agg: count, expr: continuous_id}
+      - {name: mcx_realised_vol_sum, agg: sum, expr: realised_vol_20d}
+      - {name: mcx_realised_vol_count, agg: count, expr: realised_vol_20d}
+      - {name: mcx_rsi_sum, agg: sum, expr: rsi_14}
+      - {name: mcx_rsi_count, agg: count, expr: rsi_14}
+      - {name: mcx_return_sum, agg: sum, expr: return_1d}
+      - {name: mcx_premium_sum, agg: sum, expr: premium_to_landed_pct}
+      - {name: mcx_gk_vol_30d_sum, agg: sum, expr: garman_klass_vol_30d}
+      - {name: mcx_gk_vol_30d_count, agg: count, expr: garman_klass_vol_30d}
+      - {name: mcx_parkinson_vol_30d_sum, agg: sum, expr: parkinson_vol_30d}
+      - {name: mcx_parkinson_vol_30d_count, agg: count, expr: parkinson_vol_30d}
+      - {name: mcx_rs_vol_30d_sum, agg: sum, expr: rogers_satchell_vol_30d}
+      - {name: mcx_rs_vol_30d_count, agg: count, expr: rogers_satchell_vol_30d}
+      - {name: mcx_roll_yield_sum, agg: sum, expr: roll_yield_annualised}
+      - {name: mcx_roll_yield_count, agg: count, expr: roll_yield_annualised}
+      - {name: mcx_contango_days, agg: sum, expr: "case when is_contango then 1 else 0 end"}
+      - {name: mcx_backwardation_days, agg: sum, expr: "case when is_backwardation then 1 else 0 end"}
+      - {name: mcx_premium_count, agg: count, expr: premium_to_landed_pct}
+
+metrics:
+  - name: mcx_turnover_inr
+    label: MCX Futures Turnover (₹)
+    config: {meta: {unit: INR}}
+    description: Traded value across every expiry, in rupees. Additive across codes and days.
+    type: simple
+    type_params: {measure: mcx_turnover_inr_sum}
+
+  - name: mcx_volume_lots
+    label: MCX Futures Volume (lots)
+    config: {meta: {unit: lots}}
+    description: Lots traded across every expiry. Additive within a code; a GOLD lot is not a GOLDPETAL lot, so compare across codes with turnover instead.
+    type: simple
+    type_params: {measure: mcx_volume_lots_sum}
+
+  - name: mcx_session_days
+    label: MCX Sessions
+    config: {meta: {unit: sessions}}
+    description: Code-sessions on record. The denominator the means below divide by.
+    type: simple
+    type_params: {measure: mcx_session_count}
+
+  - name: mcx_realised_vol_total
+    label: MCX Realised Volatility (component)
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: mcx_realised_vol_sum}
+
+  - name: mcx_realised_vol_days
+    label: MCX Days With a Volatility Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_realised_vol_count}
+
+  - name: avg_mcx_realised_vol
+    label: Avg MCX Realised Volatility (annualised)
+    config: {meta: {unit: pct}}
+    description: 20-session close-to-close dispersion annualised on 252 sessions. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_realised_vol_total
+      denominator: mcx_realised_vol_days
+
+  - name: mcx_rsi_total
+    label: MCX RSI (component)
+    config: {meta: {format: num0}}
+    type: simple
+    type_params: {measure: mcx_rsi_sum}
+
+  - name: mcx_rsi_days
+    label: MCX Days With an RSI Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_rsi_count}
+
+  - name: avg_mcx_rsi
+    label: Avg MCX RSI(14)
+    config: {meta: {format: num1}}
+    description: Wilder RSI on the roll-free continuous series. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_rsi_total
+      denominator: mcx_rsi_days
+
+  - name: mcx_return_total
+    label: MCX Summed Daily Return (component)
+    config: {meta: {format: num3}}
+    type: simple
+    type_params: {measure: mcx_return_sum}
+
+  - name: avg_mcx_daily_return
+    label: Avg MCX Daily Return
+    config: {meta: {format: pct2}}
+    description: Mean roll-free daily return of the most-active contract. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_return_total
+      denominator: mcx_session_days
+
+  - name: mcx_premium_total
+    label: MCX Premium to Landed Parity (component)
+    config: {meta: {format: num3}}
+    type: simple
+    type_params: {measure: mcx_premium_sum}
+
+  - name: mcx_premium_days
+    label: MCX Days With a Parity Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_premium_count}
+
+  - name: avg_mcx_premium_to_landed
+    label: Avg MCX Premium to Landed Parity
+    config: {meta: {format: pct2}}
+    description: MCX settlement over the landed import-parity price of the same quote basis, minus one. Only codes the family prices. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_premium_total
+      denominator: mcx_premium_days
+
+  - name: mcx_gk_vol_30d_total
+    label: MCX Garman–Klass Vol 30d (component)
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: mcx_gk_vol_30d_sum}
+
+  - name: mcx_gk_vol_30d_days
+    label: MCX Days With a Garman–Klass Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_gk_vol_30d_count}
+
+  - name: avg_mcx_garman_klass_vol_30d
+    label: Avg MCX Garman–Klass Volatility, 30 sessions (annualised)
+    config: {meta: {unit: pct}}
+    description: >
+      Garman–Klass (1980) range estimator from open, high, low and close over 30
+      sessions, annualised on 252. About 7× as efficient as close-to-close; it
+      understates risk that happens overnight. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_gk_vol_30d_total
+      denominator: mcx_gk_vol_30d_days
+
+  - name: mcx_parkinson_vol_30d_total
+    label: MCX Parkinson Vol 30d (component)
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: mcx_parkinson_vol_30d_sum}
+
+  - name: mcx_parkinson_vol_30d_days
+    label: MCX Days With a Parkinson Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_parkinson_vol_30d_count}
+
+  - name: avg_mcx_parkinson_vol_30d
+    label: Avg MCX Parkinson Volatility, 30 sessions (annualised)
+    config: {meta: {unit: pct}}
+    description: High–low range estimator over 30 sessions, annualised on 252. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_parkinson_vol_30d_total
+      denominator: mcx_parkinson_vol_30d_days
+
+  - name: mcx_rs_vol_30d_total
+    label: MCX Rogers–Satchell Vol 30d (component)
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: mcx_rs_vol_30d_sum}
+
+  - name: mcx_rs_vol_30d_days
+    label: MCX Days With a Rogers–Satchell Reading
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_rs_vol_30d_count}
+
+  - name: avg_mcx_rogers_satchell_vol_30d
+    label: Avg MCX Rogers–Satchell Volatility, 30 sessions (annualised)
+    config: {meta: {unit: pct}}
+    description: Drift-robust OHLC range estimator over 30 sessions, annualised on 252. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_rs_vol_30d_total
+      denominator: mcx_rs_vol_30d_days
+
+  - name: mcx_roll_yield_total
+    label: MCX Roll Yield (component)
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: mcx_roll_yield_sum}
+
+  - name: mcx_roll_yield_days
+    label: MCX Days With a Roll Yield
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_roll_yield_count}
+
+  - name: avg_mcx_roll_yield
+    label: Avg MCX Roll Yield (annualised)
+    config: {meta: {unit: pct}}
+    description: >
+      What a long earns rolling the near month into the next, annualised —
+      negative in contango, positive in backwardation. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_roll_yield_total
+      denominator: mcx_roll_yield_days
+
+  - name: mcx_contango_days
+    label: MCX Sessions in Contango
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_contango_days}
+
+  - name: mcx_backwardation_days
+    label: MCX Sessions in Backwardation
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: mcx_backwardation_days}
+
+  - name: mcx_contango_share
+    label: MCX Share of Sessions in Contango
+    config: {meta: {unit: pct}}
+    description: Contango sessions over all sessions. Group by contract_code.
+    type: ratio
+    type_params:
+      numerator: mcx_contango_days
+      denominator: mcx_session_days

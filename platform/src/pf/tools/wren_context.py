@@ -268,8 +268,9 @@ def rules(root: str | Path, group: str, project: str, manifest: dict[str, Any],
     lines = ["# Metrics", ""]
     for cube in cubes:
         lines += [f"## Cube `{cube.get('name')}` on `{cube.get('baseObject')}`", "",
-                  "Ask it with `wren cube query --cube <name> --measures <m> --dimensions <d>`; the",
-                  "engine writes the GROUP BY.", "", "Measures:", "",
+                  "Ask it with `wren_cube` (MCP) or `pf tool wren cube <g> <p> --cube <name> --measures <m>",
+                  "--dimensions <d>`: the engine writes the GROUP BY and the gate runs it. Only this",
+                  "cube's own measures and dimensions go together.", "", "Measures:", "",
                   *_table(["measure", "expression", "meaning"],
                           [[f"`{x.get('name')}`", f"`{x.get('expression')}`", x.get("description", "")]
                            for x in cube.get("measures") or []]),
@@ -417,7 +418,9 @@ def check(root: str | Path, group: str, project: str, project_dir: str | Path | 
           plan: bool = True) -> list[str]:
     """Is the committed workspace what the semantic layer projects? Tracked
     inputs only, so it answers the same on a bare runner. With the engine
-    present it also plans one query per model against the LLM-facing manifest."""
+    present it also plans one query per model and one per cube against the
+    LLM-facing manifest, and binds each cube's plan on the warehouse when there
+    is one (`cube_problems`)."""
     root = Path(root)
     d = Path(project_dir) if project_dir else root / "groups" / group / "projects" / project
     label = f"{group}/{project}"
@@ -454,10 +457,87 @@ def check(root: str | Path, group: str, project: str, project_dir: str | Path | 
             proc = run(ws, "dry-plan", "--sql", f'select * from "{m["name"]}" limit 1',
                        "--mdl", str(t), "--connection-file", str(conn))
             if proc.returncode:
-                tail = (proc.stderr or proc.stdout or "").strip().splitlines()
-                why = (tail[-1] if tail else "dry-plan failed")[:160]
-                problems.append(f"{label}: `{m['name']}` does not plan — {why}")
+                problems.append(f"{label}: `{m['name']}` does not plan — {_last_line(proc, 'dry-plan failed')}")
+        problems += [f"{label}: {p}" for p in cube_problems(d, group, project, t, conn)]
     return problems
+
+
+def _last_line(proc: subprocess.CompletedProcess, default: str) -> str:
+    tail = (proc.stderr or proc.stdout or "").strip().splitlines()
+    return (tail[-1] if tail else default)[:200]
+
+
+def cube_sql(ws: Path, target: Path, conn: Path, cube: str, measures: list[str],
+             dimensions: list[str] | None = None, time_dimension: str = "",
+             filters: list[str] | None = None, limit: int | None = None) -> tuple[bool, str]:
+    """A structured cube question as MDL-level SQL, or the engine's refusal.
+
+    `wren cube query --sql-only` translates the question — measures, dimensions,
+    a time grain, filters — into one SELECT over the cube's base model, without
+    running it. That SELECT then takes the same road as any other question.
+    """
+    args = ["cube", "query", "--cube", cube, "--measures", ",".join(measures),
+            "--mdl", str(target), "--connection-file", str(conn), "--sql-only"]
+    if dimensions:
+        args += ["--dimensions", ",".join(dimensions)]
+    if time_dimension:
+        args += ["--time-dimension", time_dimension]
+    for f in filters or []:
+        args += ["--filter", f]
+    if limit:
+        args += ["--limit", str(int(limit))]
+    proc = run(ws, *args)
+    sql = (proc.stdout or "").strip()
+    if proc.returncode or not sql:
+        return False, _last_line(proc, "cube query did not translate")
+    return True, sql
+
+
+def cube_problems(project_dir: Path, group: str, project: str, target: Path, conn: Path) -> list[str]:
+    """Every cube, asked for all its measures by its dimensions: does it plan,
+    and — where the warehouse exists — does the planned SQL bind?
+
+    Planning alone is not proof. Wren's planner passes a measure's bare column
+    through to the physical SQL, so `sum(duty_local)` on a cube whose base has
+    no `duty_local` plans cleanly and fails only when the warehouse binds it.
+    An `EXPLAIN` binds without reading a row; a bare runner has no warehouse
+    and skips that half.
+    """
+    from pf.tools import wren_gate
+
+    manifest = json.loads(target.read_text(encoding="utf-8"))
+    ws = target.parent.parent
+    warehouse = _warehouse(project_dir, group, project)
+    problems: list[str] = []
+    for cube in manifest.get("cubes") or []:
+        name = str(cube.get("name"))
+        measures = [str(m.get("name")) for m in cube.get("measures") or []]
+        if not measures:
+            continue
+        dims = [str(x.get("name")) for x in cube.get("dimensions") or []][:3]
+        ok, sql = cube_sql(ws, target, conn, name, measures, dims)
+        if not ok:
+            problems.append(f"cube `{name}` does not translate — {sql}")
+            continue
+        proc = run(ws, "dry-plan", "--sql", sql, "--mdl", str(target), "--connection-file", str(conn))
+        if proc.returncode:
+            problems.append(f"cube `{name}` does not plan — {_last_line(proc, 'dry-plan failed')}")
+            continue
+        if warehouse is not None:
+            err = wren_gate.dry_run(warehouse, (proc.stdout or "").strip())
+            if err:
+                problems.append(f"cube `{name}` does not bind on the warehouse — {err.splitlines()[0][:200]}")
+    return problems
+
+
+def _warehouse(project_dir: Path, group: str, project: str) -> Path | None:
+    try:
+        from pf.runtime.warehouse import Warehouse
+
+        path = Path(Warehouse.for_project(project_dir, group, project).path)
+    except Exception:  # noqa: BLE001 — no warehouse is a normal state on a runner
+        return None
+    return path if path.is_file() else None
 
 
 # ----------------------------------------------------------------- memory --

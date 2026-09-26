@@ -60,7 +60,7 @@ Instantiates [PriceObservation](/concepts/PriceObservation.md).
 # Lineage
 
 * **Upstream:** [fct_commodity_prices_daily](/tables/fct_commodity_prices_daily.md)
-* **Read by:** `report_metrics_avg_momentum_20d` (data-platform), `report_metrics_avg_range_position` (data-platform), `report_metrics_avg_realised_vol` (data-platform), `report_metrics_momentum_20d_days` (data-platform), `report_metrics_momentum_20d_total` (data-platform), `report_metrics_range_position_days` (data-platform), and 4 more
+* **Read by:** `report_buy_sell_signals` (data-platform), `report_index` (data-platform), `report_metrics_avg_momentum_20d` (data-platform), `report_metrics_avg_range_position` (data-platform), `report_metrics_avg_realised_vol` (data-platform), `report_metrics_momentum_20d_days` (data-platform), and 6 more
 
 # Governance
 

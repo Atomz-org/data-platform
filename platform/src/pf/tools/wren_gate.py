@@ -1,7 +1,7 @@
 """Every question through the semantic layer takes the same road, and the road
 is recorded.
 
-    policy ─► plan ─► dry-run ─► execute ─► ledger
+    [translate ─►] policy ─► plan ─► dry-run ─► execute ─► ledger
 
 * **policy** — one statement, a `SELECT`, nothing that writes, attaches or
   configures. Checked with sqlglot, by statement type rather than by keyword,
@@ -18,6 +18,11 @@ is recorded.
 * **execute** — read-only, row-limited, through the same `Warehouse` every other
   part of the platform reads through. A query never travels through a second
   set of credentials.
+* **translate** — a cube question (measures by dimensions, a time grain,
+  filters) arrives as a structure, not SQL: `wren cube query --sql-only`
+  turns it into one SELECT over the cube's base model, and that SELECT takes
+  the rest of the road like any other. A structure that does not translate is
+  refused and recorded here, keyed by the structure itself.
 * **ledger** — every outcome, including the refused ones, appended to the
   group's `loop-ledger.json` as a `wren-query` run. That is the file the circuit
   breaker reads, and it is what makes the loop rule enforceable: a statement
@@ -50,7 +55,7 @@ COMMENT = re.compile(r"--[^\n]*|/\*.*?\*/", re.S)
 @dataclass
 class Outcome:
     ok: bool
-    stage: str                 # policy | plan | dry_run | execute | done
+    stage: str                 # translate | policy | plan | dry_run | execute | done
     sql: str
     planned_sql: str = ""
     columns: list[str] = field(default_factory=list)
@@ -142,7 +147,8 @@ def record(root: Path, group: str, project: str, out: Outcome, started: datetime
     from pf.loops.runner import Ledger, LoopRun
 
     h = sql_hash(out.sql)
-    outcome = "ok" if out.ok else ("gate_blocked" if out.stage in {"policy", "plan", "dry_run"} else "error")
+    refused = out.stage in {"translate", "policy", "plan", "dry_run"}
+    outcome = "ok" if out.ok else ("gate_blocked" if refused else "error")
     run = LoopRun(
         run_id=str(uuid.uuid4())[:8], loop=LOOP, group=group, project=project,
         started_at=started.isoformat(), outcome=outcome,
@@ -206,3 +212,35 @@ def ask(project_dir: str | Path, group: str, project: str, sql: str,
         return finish()
     out.ok, out.stage = True, "done"
     return finish()
+
+
+def cube_spec(cube: str, measures: list[str], dimensions: list[str], time_dimension: str,
+              filters: list[str]) -> str:
+    """A cube question as one stable line: what the ledger keys a failed
+    translation by, so the fourth identical attempt is refused like SQL's."""
+    return (f"cube {cube} measures={','.join(measures)} dimensions={','.join(dimensions)} "
+            f"time={time_dimension} filters={';'.join(sorted(filters))}")
+
+
+def ask_cube(project_dir: str | Path, group: str, project: str, cube: str, measures: list[str],
+             dimensions: list[str], time_dimension: str = "", filters: list[str] | None = None,
+             limit: int = DEFAULT_LIMIT, root: str | Path | None = None) -> Outcome:
+    """A cube question, the whole road: translate, then `ask`. Never raises."""
+    from pf import obs
+    from pf.loops.runner import MAX_ATTEMPTS
+    from pf.tools import wren as wt
+
+    d = Path(project_dir)
+    root_path = Path(root) if root else obs.repo_root(d)
+    limit = max(1, min(int(limit or DEFAULT_LIMIT), MAX_LIMIT))
+    spec = cube_spec(cube, measures, dimensions, time_dimension, filters or [])
+    translated = wt.translate_cube(d, cube, measures, dimensions, time_dimension, filters or [], limit)
+    if translated.get("ok"):
+        return ask(d, group, project, str(translated["sql"]), limit=limit, root=root_path)
+    started = datetime.now(UTC)
+    out = Outcome(ok=False, stage="translate", sql=spec,
+                  attempt=attempts(root_path, group, project, sql_hash(spec)) + 1)
+    out.message = (f"this cube question has failed {MAX_ATTEMPTS} times here — escalate with the recorded reasons"
+                   if out.attempt > MAX_ATTEMPTS else str(translated.get("message") or "did not translate"))
+    out.run_id = record(root_path, group, project, out, started)
+    return out

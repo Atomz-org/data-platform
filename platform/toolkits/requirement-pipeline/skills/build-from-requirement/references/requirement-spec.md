@@ -42,6 +42,10 @@ or `pf semantic topology`), `identity` (the natural key in business terms).
 An `exists: false` item needs `tier` **(checked)**: `group` when any sister
 could use the word, `project` only when nobody else will; `platform` is refused
 (hand it back). It is designed and published in Phase 2, before any model.
+With `--project-dir` the validator reads the group's `ontology/extension.yaml`:
+a class already there (an earlier build landed it) is planned as `reuse`, with
+a warning to set `exists: true`, so re-running a spec never redesigns a class
+every sister already reads **(checked)**.
 
 ### `group_changes[]` **(checked)**
 Everything the build changes above its project: `kind` (`ontology` |

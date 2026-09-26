@@ -1380,7 +1380,7 @@
   ],
   "cubes": [
     {
-      "name": "commodity_us_core",
+      "name": "fct_commodity_prices_daily_metrics",
       "baseObject": "fct_commodity_prices_daily",
       "measures": [
         {
@@ -1388,33 +1388,6 @@
           "expression": "sum(close_price) / nullif(count(close_price), 0)",
           "type": "DOUBLE",
           "description": "Avg Benchmark Price (USD)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_duty_local",
-          "expression": "sum(duty_local) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Customs Duty (market currency)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_landed_price_local",
-          "expression": "sum(landed_price_local) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Landed Price (market currency)",
-          "properties": {
-            "pf.metric_type": "ratio"
-          }
-        },
-        {
-          "name": "avg_usd_fx_rate",
-          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
-          "type": "DOUBLE",
-          "description": "Avg Applied FX Rate",
           "properties": {
             "pf.metric_type": "ratio"
           }
@@ -1447,6 +1420,79 @@
           }
         },
         {
+          "name": "period_high_price_usd",
+          "expression": "max(coalesce(high_price, close_price))",
+          "type": "DOUBLE",
+          "description": "Period High (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        },
+        {
+          "name": "period_low_price_usd",
+          "expression": "min(coalesce(low_price, close_price))",
+          "type": "DOUBLE",
+          "description": "Period Low (USD)",
+          "properties": {
+            "pf.metric_type": "simple"
+          }
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "commodity_id",
+          "expression": "commodity_id",
+          "type": "VARCHAR",
+          "description": ""
+        },
+        {
+          "name": "price_basis",
+          "expression": "price_basis",
+          "type": "VARCHAR",
+          "description": ""
+        }
+      ],
+      "timeDimensions": [
+        {
+          "name": "price_date",
+          "expression": "price_date",
+          "type": "TIMESTAMP",
+          "description": ""
+        }
+      ]
+    },
+    {
+      "name": "fct_landed_prices_daily_metrics",
+      "baseObject": "fct_landed_prices_daily",
+      "measures": [
+        {
+          "name": "avg_duty_local",
+          "expression": "sum(duty_local) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Customs Duty (market currency)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_landed_price_local",
+          "expression": "sum(landed_price_local) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Landed Price (market currency)",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
+          "name": "avg_usd_fx_rate",
+          "expression": "sum(usd_fx_rate) / nullif(count(landed_price_local), 0)",
+          "type": "DOUBLE",
+          "description": "Avg Applied FX Rate",
+          "properties": {
+            "pf.metric_type": "ratio"
+          }
+        },
+        {
           "name": "duty_local_total",
           "expression": "sum(duty_local)",
           "type": "DOUBLE",
@@ -1474,24 +1520,6 @@
           }
         },
         {
-          "name": "period_high_price_usd",
-          "expression": "max(coalesce(high_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period High (USD)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
-          "name": "period_low_price_usd",
-          "expression": "min(coalesce(low_price, close_price))",
-          "type": "DOUBLE",
-          "description": "Period Low (USD)",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
           "name": "usd_fx_rate_total",
           "expression": "sum(usd_fx_rate)",
           "type": "DOUBLE",
@@ -1503,20 +1531,8 @@
       ],
       "dimensions": [
         {
-          "name": "category",
-          "expression": "category",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "commodity_id",
           "expression": "commodity_id",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "commodity_name",
-          "expression": "commodity_name",
           "type": "VARCHAR",
           "description": ""
         },
@@ -1527,26 +1543,8 @@
           "description": ""
         },
         {
-          "name": "exchange",
-          "expression": "exchange",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_carried_forward",
-          "expression": "is_carried_forward",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
           "name": "is_duty_rate_confirmed",
           "expression": "is_duty_rate_confirmed",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "is_import_prohibited",
-          "expression": "is_import_prohibited",
           "type": "VARCHAR",
           "description": ""
         },
@@ -1567,36 +1565,12 @@
           "expression": "price_basis",
           "type": "VARCHAR",
           "description": ""
-        },
-        {
-          "name": "quote_currency_code",
-          "expression": "quote_currency_code",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "quote_unit",
-          "expression": "quote_unit",
-          "type": "VARCHAR",
-          "description": ""
-        },
-        {
-          "name": "segment",
-          "expression": "segment",
-          "type": "VARCHAR",
-          "description": ""
         }
       ],
       "timeDimensions": [
         {
           "name": "price_date",
           "expression": "price_date",
-          "type": "TIMESTAMP",
-          "description": ""
-        },
-        {
-          "name": "rate_date",
-          "expression": "rate_date",
           "type": "TIMESTAMP",
           "description": ""
         }

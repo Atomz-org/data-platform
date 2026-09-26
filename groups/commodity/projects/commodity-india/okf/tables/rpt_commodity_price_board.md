@@ -31,7 +31,6 @@ okf_x_kg_node: model:rpt_commodity_price_board
 | `is_import_prohibited` | BOOLEAN |  | — | 0.00 |
 | `is_stale` | BOOLEAN |  | — | 0.00 |
 | `landed_price_change_pct` | DOUBLE |  | — | 0.00 |
-| `landed_price_inr` | DECIMAL |  | — | 0.00 |
 | `landed_price_local` | DECIMAL | unit_price | Price of one unit of measure. Non-additive — never summed across rows. Qualified by a sibling currency_code and a unit_of_measure. | 1.00 |
 | `low_252d` | DOUBLE |  | — | 0.00 |
 | `market_code` | VARCHAR | foreign_key | Reference to another concept instance. | 1.00 |
@@ -45,7 +44,6 @@ okf_x_kg_node: model:rpt_commodity_price_board
 | `spot_price_usd` | DOUBLE |  | — | 0.00 |
 | `spot_quoted_at` | TIMESTAMP | event_time | When the event occurred. Candidate agg time dimension. | 1.00 |
 | `usd_fx_rate` | DECIMAL | exchange_rate | Units of quote currency per one unit of base currency. | 1.00 |
-| `usd_inr_rate` | DOUBLE |  | — | 0.00 |
 
 # Concept
 

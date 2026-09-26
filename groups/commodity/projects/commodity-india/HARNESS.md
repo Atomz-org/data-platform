@@ -14,7 +14,7 @@ What sits between an agent and this project, in the order it meets it. Every lin
 | project rules | `CLAUDE.md` → `kg/context_card.md` | business rules the graph cannot encode; the always-on index |
 | group rules | `../../CLAUDE.md` → `../../kg/group_card.md` | the sister roster; never read a sister |
 | the protocol | `AGENTS.md` | you are its Session scope (§0); leave a note before you finish (§5) |
-| memory | `.memory/notes/` | 0 notes here, 1 note in the group — `pf memory show` |
+| memory | `.memory/notes/` | 1 note here, 1 note in the group — `pf memory show` |
 
 **Plugins** (`.claude/settings.json`, 17): `dagster-orchestrate`, `dbt-elementary`, `dbt-expectations`, `dbt-govern`, `dbt-modeling`, `dbt-semantic`, `dbt-snowflake`, `dbt-testing`, `dlt-explore`, `dlt-ingest`, `dlt-quality`, `duckdb-ops`, `evidence-bi`, `platform-init`, `power-tools`, `python-standards` from the platform marketplace; `commodity-group@commodity` from the group's.
 
@@ -25,7 +25,7 @@ What sits between an agent and this project, in the order it meets it. Every lin
 - `pf` — power-tools plugin · `pf mcp`, scoped to this project by `PF_PROJECT_DIR`
 - `wren` — this project's `.mcp.json`
 
-The `pf` server exposes 28 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
+The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
 
 **By harness** — `docs/HARNESSES.md`'s rows, as they hold here. *Rule* means nothing checks; the commit gate is the backstop.
 
@@ -150,17 +150,17 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 - **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
 - **Evals.** 2 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals commodity commodity-india` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align commodity commodity-india`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 5 ADRs in `decisions/`; 9 capability pages in `docs/`.
+- **Decisions.** 6 ADRs in `decisions/`; 10 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 
 | subproject | where | what wraps it |
 |---|---|---|
-| dlt pipeline | `src/commodity_india/` | 2 sources, each `@annotate`d against `contracts/annotations.yaml`; `sources/*.py` impact-gated; `.dlt/secrets.toml` unreadable and unwritable; `definitions.py` is the Dagster code location |
+| dlt pipeline | `src/commodity_india/` | 3 sources, each `@annotate`d against `contracts/annotations.yaml`; `sources/*.py` impact-gated; `.dlt/secrets.toml` unreadable and unwritable; `definitions.py` is the Dagster code location |
 | dbt project | `transform/` | targets dev `duckdb`, ci `duckdb`, prod `snowflake`, base `duckdb`; `target/` and `dbt_packages/` denied; bound to its manifest: `okf`, `openmetadata`, `recce`, `wren` |
 | semantic layer | `transform/models/semantic/` | MetricFlow metrics, projected to `mdl/mdl.json` (denied, carried) by `pf semantic mdl`; queried by `mf`, `pf ask` and the `query_metrics` MCP tool |
 | knowledge graph | `kg/` | `graph.json` tracked and `graph.duckdb` denied (`pf kg build`); `context_card.md` denied (`pf kg card`); `architecture.md` carried (`pf arch`); CI `kg-current` and `architecture` |
-| Evidence report | `reporting/` | its own [`HARNESS.md`](reporting/HARNESS.md); 34 exposures reach its pages |
+| Evidence report | `reporting/` | its own [`HARNESS.md`](reporting/HARNESS.md); 109 exposures reach its pages |
 | evals | `evals/cases/` | hand-written cases tracked; `generated/` ignored and denied |
 | governance | `governance/`, `air.yaml`, `decisions/` | the policy overlay and the AIR declaration are impact-gated; the register is denied; decisions are free to write |
 | memory | `.memory/notes/` | free to write; `pf memory add groups/commodity/projects/commodity-india …` |

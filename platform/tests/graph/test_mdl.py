@@ -233,36 +233,23 @@ def _exposure(name: str, models: list[str]) -> tuple[list, list]:
 
 
 def test_a_conformed_dimension_appears_once_in_the_cube(tmp_path: Path) -> None:
-    """A dimension is declared per semantic model, so `commodity_id` arrives from
-    every fact that has it. A cube is a flat namespace: duplicates make the
+    """A dimension is declared per semantic model, so `commodity_id` can arrive
+    twice for one model. A cube is a flat namespace: duplicates make the
     manifest invalid and every planner reading it picks an arbitrary winner."""
     pdir = _project(tmp_path, "commodity", EXTENSION)
+    dims = _dims([("commodity_id", "categorical"), ("commodity_id", "categorical"), ("price_basis", "categorical"),
+                  ("price_date", "time"), ("price_date", "time")])
     _write(
         pdir,
         [
             _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
-            _mart("fct_commodity_prices_daily", {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+            _mart("fct_commodity_prices_daily", {"price_id": KEY, "commodity_id": FK, "close_price": {"role": "unit_price"},
+                                                      "price_basis": {"role": "category"}, "price_date": {"role": "event_time"}},
+                  concept="PriceObservation"),
             (
-                [
-                    Node(
-                        id="metric:avg_price",
-                        kind="Metric",
-                        name="avg_price",
-                        layer="semantic",
-                        label="Avg Price",
-                        props={"type": "ratio"},
-                    ),
-                    *_dims(
-                        [
-                            ("commodity_id", "categorical"),
-                            ("commodity_id", "categorical"),
-                            ("price_basis", "categorical"),
-                            ("price_date", "time"),
-                            ("price_date", "time"),
-                        ]
-                    ),
-                ],
-                [],
+                [_metric("priced_days", "simple", agg="count", expr="close_price"), *dims],
+                [Edge(src="model:fct_commodity_prices_daily", dst="metric:priced_days", kind="measures"),
+                 *[Edge(src="model:fct_commodity_prices_daily", dst=d.id, kind="grouped_by") for d in dims]],
             ),
         ],
     )
@@ -347,16 +334,18 @@ def test_a_cube_measure_is_real_sql_or_it_is_not_emitted(tmp_path: Path) -> None
     """The placeholder was the metric name behind `--`, which parses as a comment.
 
     The whole cube then failed to analyse, and every query against its *base
-    object* — the busiest mart in the project — died with "Expected: an
-    expression, found: EOF". A missing measure costs one metric; an unparseable
-    one costs the mart.
+    object* died with "Expected: an expression, found: EOF". A missing measure
+    costs one metric; an unparseable one costs the mart.
     """
     pdir = _project(tmp_path, "commodity", EXTENSION)
+    fct = "model:fct_commodity_prices_daily"
     _write(
         pdir,
         [
             _mart("dim_commodities", {"commodity_id": KEY}, concept="Commodity"),
-            _mart("fct_commodity_prices_daily", {"price_id": KEY, "commodity_id": FK}, concept="PriceObservation"),
+            _mart("fct_commodity_prices_daily", {"price_id": KEY, "commodity_id": FK, "close_price": {"role": "unit_price"},
+                                                      "price_basis": {"role": "category"}, "price_date": {"role": "event_time"}},
+                  concept="PriceObservation"),
             (
                 [
                     _metric("price_total", "simple", agg="sum", expr="close_price"),
@@ -366,7 +355,8 @@ def test_a_cube_measure_is_real_sql_or_it_is_not_emitted(tmp_path: Path) -> None
                     _metric("price_mom", "derived"),
                     *_dims([("commodity_id", "categorical")]),
                 ],
-                [],
+                [Edge(src=fct, dst="metric:price_total", kind="measures"),
+                 Edge(src=fct, dst="metric:priced_days", kind="measures")],
             ),
         ],
     )
@@ -375,23 +365,22 @@ def test_a_cube_measure_is_real_sql_or_it_is_not_emitted(tmp_path: Path) -> None
     assert got == {
         "price_total": "sum(close_price)",
         "priced_days": "count(close_price)",
-        # A ratio re-divides; it never averages an average.
+        # A ratio re-divides; it never averages an average. Its home is where
+        # both sides live, even with no `measures` edge of its own.
         "avg_price": "sum(close_price) / nullif(count(close_price), 0)",
     }
     assert not any(m["expression"].lstrip().startswith("--") for m in cube["measures"])
 
 
 def test_a_cube_measure_reads_the_base_object_or_it_is_not_emitted(tmp_path: Path) -> None:
-    """Two ways a measure captured itself, both found by Wren's planner refusing
-    the whole cube ("circular dependency detected in measure expressions"), so
-    that no query in the project planned at all.
+    """Wren's planner refuses a whole cube whose measure captures itself
+    ("circular dependency detected in measure expressions"), so no query in the
+    project planned at all.
 
-    A measure named like a column of the base object shadows that column
-    inside the cube, so `sum(order_cost)` read the measure `order_cost`: the
-    column is qualified by the base object instead. A metric measured on
-    another model names a column the base object does not have, so the bare
-    name resolved to the same-named measure: it is left out, the same rule as
-    a measure that cannot be expressed.
+    A measure named like a column of the base object shadows that column, so
+    `sum(order_cost)` read the measure `order_cost`: the column is qualified by
+    the base object. And a metric measured on another model gets that model's
+    cube rather than naming a column this base does not have.
     """
     pdir = _project(tmp_path, "commodity", EXTENSION)
     _write(
@@ -413,12 +402,95 @@ def test_a_cube_measure_reads_the_base_object_or_it_is_not_emitted(tmp_path: Pat
             ),
         ],
     )
-    cube = build_manifest(pdir, "commodity", "commodity-x")["cubes"][0]
-    assert cube["baseObject"] == "fct_orders"
-    assert {m["name"]: m["expression"] for m in cube["measures"]} == {
+    cubes = {c["baseObject"]: c for c in build_manifest(pdir, "commodity", "commodity-x")["cubes"]}
+    assert set(cubes) == {"fct_orders", "dim_customers"}
+    assert cubes["fct_orders"]["name"] == "fct_orders_metrics"
+    assert {m["name"]: m["expression"] for m in cubes["fct_orders"]["measures"]} == {
         "order_cost": "sum(fct_orders.order_cost)",
         "orders": "count(order_id)",
     }
+    assert {m["name"]: m["expression"] for m in cubes["dim_customers"]["measures"]} == {
+        "lifetime_spend": "sum(dim_customers.lifetime_spend)",
+    }
+
+
+def test_a_measure_named_like_its_base_object_gives_way_to_the_qualified_ones(tmp_path: Path) -> None:
+    """The engine reads *any* identifier that names a measure as that measure,
+    a table qualifier included. With a count called `orders` on the model
+    `orders`, the shadowing fix `sum(orders.order_cost)` became
+    `sum((sum(1)).order_cost)`: it planned, and the warehouse refused a nested
+    aggregate. The base-named measure is left out when the others need the
+    qualifier, and kept when nothing does."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(
+        pdir,
+        [
+            _mart("orders", {"order_id": KEY, "order_cost": {"role": "money_amount"}}),
+            _mart("stores", {"store_id": KEY}),
+            (
+                [
+                    _metric("orders", "simple", agg="count", expr="order_id"),
+                    _metric("order_cost", "simple", agg="sum", expr="order_cost"),
+                    _metric("stores", "simple", agg="count", expr="store_id"),
+                ],
+                [
+                    Edge(src="model:orders", dst="metric:orders", kind="measures"),
+                    Edge(src="model:orders", dst="metric:order_cost", kind="measures"),
+                    Edge(src="model:stores", dst="metric:stores", kind="measures"),
+                ],
+            ),
+        ],
+    )
+    cubes = {c["baseObject"]: c for c in build_manifest(pdir, "commodity", "commodity-x")["cubes"]}
+    assert {m["name"]: m["expression"] for m in cubes["orders"]["measures"]} == {
+        "order_cost": "sum(orders.order_cost)",
+    }
+    # Nothing on `stores` needs a qualifier, so its base-named count stays.
+    assert [m["name"] for m in cubes["stores"]["measures"]] == ["stores"]
+
+
+def test_a_cube_holds_only_what_its_base_object_can_answer(tmp_path: Path) -> None:
+    """One project-wide cube on the busiest mart handed it measures and
+    dimensions from every other fact — `sum(duty_local)` on a table with no
+    `duty_local` — which plans against the wrong table or not at all. Each cube
+    holds its own model's metrics and dimensions; a measure that names a column
+    its base lacks, and a ratio whose sides live on two models, get no cube
+    (MetricFlow still answers them)."""
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    prices, landed = "model:fct_prices", "model:fct_landed"
+    region = _dims([("region", "categorical")])[0]
+    basis = Node(id="dim:basis", kind="Dimension", name="price_basis", layer="semantic", label="", props={"type": "categorical"})
+    _write(
+        pdir,
+        [
+            _mart("fct_prices", {"price_id": KEY, "close_price": {"role": "unit_price"}, "price_basis": {"role": "category"}}),
+            _mart("fct_landed", {"landed_id": KEY, "duty_local": {"role": "money_amount"}, "region": {"role": "category"}}),
+            (
+                [
+                    _metric("priced_days", "simple", agg="count", expr="close_price"),
+                    _metric("duty_total", "simple", agg="sum", expr="duty_local"),
+                    # Declared on the price fact, but reads the landed fact's column.
+                    _metric("misplaced", "simple", agg="sum", expr="duty_local"),
+                    _metric("duty_per_priced_day", "ratio", numerator="duty_total", denominator="priced_days"),
+                    region, basis,
+                ],
+                [
+                    Edge(src=prices, dst="metric:priced_days", kind="measures"),
+                    Edge(src=prices, dst="metric:misplaced", kind="measures"),
+                    Edge(src=landed, dst="metric:duty_total", kind="measures"),
+                    Edge(src=prices, dst=basis.id, kind="grouped_by"),
+                    Edge(src=landed, dst=region.id, kind="grouped_by"),
+                ],
+            ),
+        ],
+    )
+    cubes = {c["baseObject"]: c for c in build_manifest(pdir, "commodity", "commodity-x")["cubes"]}
+    assert {m["name"] for m in cubes["fct_prices"]["measures"]} == {"priced_days"}
+    assert {m["name"] for m in cubes["fct_landed"]["measures"]} == {"duty_total"}
+    assert [d["name"] for d in cubes["fct_prices"]["dimensions"]] == ["price_basis"]
+    assert [d["name"] for d in cubes["fct_landed"]["dimensions"]] == ["region"]
+    every = {m["name"] for c in cubes.values() for m in c["measures"]}
+    assert "misplaced" not in every and "duty_per_priced_day" not in every
 
 
 # ------------------------------------------------- the OKF projection --------

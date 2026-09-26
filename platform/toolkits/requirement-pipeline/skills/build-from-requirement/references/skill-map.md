@@ -133,7 +133,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | `triage-alerts` | an Elementary anomaly needs reading | → metric, expected range and actual value, quoted |
 | `pf loop run observability-triage` | after the build is green | → recurrence and classification of whatever fired, before a report trusts the marts |
 | `answer-with-metrics` | each metric-shaped `AC-n` | → the number, with its metric and filter named |
-| `ask-through-wren` (`wren-analytics`) | an `AC-n` shaped as rows, not a number ("which", "top N", "show me"), that no metric covers | → one SELECT over MDL model names through `pf tool wren query`: policy, plan, dry-run, execute, ledger. The answer carries the planned SQL and the run id; on confirmation `pf tool wren store` keeps the pair in `mdl/wren/knowledge/sql/` |
+| `ask-through-wren` (`wren-analytics`) | an `AC-n` shaped as rows, not a number ("which", "top N", "show me"), that no metric covers | → a cube question (`pf tool wren cube`: measures by dimensions over one model's cube) or one SELECT over MDL model names (`pf tool wren query`), both through policy, plan, dry-run, execute, ledger. The answer carries the planned SQL and the run id; on confirmation `pf tool wren store` keeps the pair in `mdl/wren/knowledge/sql/` |
 | `query` (`duckdb-ops`) | debugging a failing test's rows | → read-only, truncated evidence. Never used to prove an AC |
 
 ## Phase 10 — Orchestration

@@ -364,6 +364,28 @@ def wren_query(sql: str, limit: int = MAX_ROWS) -> str:
                              "columns": out.columns, "rows": out.rows}, default=str, indent=1))
 
 
+def wren_cube(cube: str, measures: str, dimensions: str = "", time_dimension: str = "",
+              filters: str = "", limit: int = MAX_ROWS) -> str:
+    """A measure-by-dimension question through the semantic layer, without
+    writing SQL: the cube (as `wren_context` lists it) turns measures,
+    dimensions, a time grain (`trade_date:month`) and filters
+    (`dim:op:value`, `;`-separated; op is eq, neq, in, gt, gte, lt, lte, …)
+    into one SELECT, which then takes the gated road — policy → plan →
+    dry-run → execute → ledger — like `wren_query`. The cube re-divides
+    ratios and never sums a price."""
+    from pf.tools import wren_gate
+
+    group, project, pdir = active_project()
+    split = lambda v, sep=",": [x.strip() for x in (v or "").split(sep) if x.strip()]  # noqa: E731
+    out = wren_gate.ask_cube(pdir, group, project, cube, split(measures), split(dimensions), time_dimension,
+                             split(filters, ";"), limit=min(int(limit or MAX_ROWS), MAX_ROWS),
+                             root=obs.repo_root(pdir))
+    if not out.ok:
+        return f"✗ {out.stage}: {out.message} (run {out.run_id}, attempt {out.attempt})"
+    return _clip(json.dumps({"run_id": out.run_id, "planned_sql": out.planned_sql,
+                             "columns": out.columns, "rows": out.rows}, default=str, indent=1))
+
+
 # ----------------------------------------------------------- agentic ------
 def ask_metric_question(question: str, direct: bool = False) -> str:
     """Answer a business question from governed metrics only — no SQL.
@@ -440,6 +462,7 @@ TOOLS = {
     "query_metrics": query_metrics,
     "wren_context": wren_context,
     "wren_query": wren_query,
+    "wren_cube": wren_cube,
     "kg_search": kg_search_tool,
     "kg_neighbors": kg_neighbors_tool,
     "kg_path": kg_path_tool,

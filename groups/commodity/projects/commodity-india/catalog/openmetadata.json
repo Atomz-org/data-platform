@@ -569,6 +569,11 @@
   ],
   "metrics": [
     {
+      "description": "attribution_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "attribution_days",
+      "name": "attribution_days"
+    },
+    {
       "description": "Mean daily settlement price, USD per quote unit. Group by commodity.",
       "displayName": "avg_benchmark_price_usd",
       "name": "avg_benchmark_price_usd"
@@ -579,14 +584,79 @@
       "name": "avg_duty_local"
     },
     {
+      "description": "Share of the 20-day landed move attributable to USD/INR rather than the benchmark or duty. High means the commodity call and the currency call have come apart, and timing the commodity will not recover the cost.",
+      "displayName": "avg_fx_share_of_move",
+      "name": "avg_fx_share_of_move"
+    },
+    {
       "description": "Mean import landed price in this market's currency per its market unit (benchmark \u00d7 USD/local \u00d7 (1 + duty)). Group by commodity; filter landed_price__is_duty_rate_confirmed to exclude history priced at a back-applied duty rate.",
       "displayName": "avg_landed_price_local",
       "name": "avg_landed_price_local"
     },
     {
+      "description": "Mean roll-free daily return of the most-active contract. Group by contract_code.",
+      "displayName": "avg_mcx_daily_return",
+      "name": "avg_mcx_daily_return"
+    },
+    {
+      "description": "Garman\u2013Klass (1980) range estimator from open, high, low and close over 30 sessions, annualised on 252. About 7\u00d7 as efficient as close-to-close; it understates risk that happens overnight. Group by contract_code.",
+      "displayName": "avg_mcx_garman_klass_vol_30d",
+      "name": "avg_mcx_garman_klass_vol_30d"
+    },
+    {
+      "description": "High\u2013low range estimator over 30 sessions, annualised on 252. Group by contract_code.",
+      "displayName": "avg_mcx_parkinson_vol_30d",
+      "name": "avg_mcx_parkinson_vol_30d"
+    },
+    {
+      "description": "MCX settlement over the landed import-parity price of the same quote basis, minus one. Only codes the family prices. Group by contract_code.",
+      "displayName": "avg_mcx_premium_to_landed",
+      "name": "avg_mcx_premium_to_landed"
+    },
+    {
+      "description": "20-session close-to-close dispersion annualised on 252 sessions. Group by contract_code.",
+      "displayName": "avg_mcx_realised_vol",
+      "name": "avg_mcx_realised_vol"
+    },
+    {
+      "description": "Drift-robust OHLC range estimator over 30 sessions, annualised on 252. Group by contract_code.",
+      "displayName": "avg_mcx_rogers_satchell_vol_30d",
+      "name": "avg_mcx_rogers_satchell_vol_30d"
+    },
+    {
+      "description": "What a long earns rolling the near month into the next, annualised \u2014 negative in contango, positive in backwardation. Group by contract_code.",
+      "displayName": "avg_mcx_roll_yield",
+      "name": "avg_mcx_roll_yield"
+    },
+    {
+      "description": "Wilder RSI on the roll-free continuous series. Group by contract_code.",
+      "displayName": "avg_mcx_rsi",
+      "name": "avg_mcx_rsi"
+    },
+    {
+      "description": "Mean 20-day rate of change. Group by commodity.",
+      "displayName": "avg_momentum_20d",
+      "name": "avg_momentum_20d"
+    },
+    {
+      "description": "0 at the 52-week low, 1 at the high. Group by commodity \u2014 averaging this across commodities is a number about the basket, not about anything tradable.",
+      "displayName": "avg_range_position",
+      "name": "avg_range_position"
+    },
+    {
+      "description": "20-day dispersion annualised on 252 trading days. Group by commodity.",
+      "displayName": "avg_realised_vol",
+      "name": "avg_realised_vol"
+    },
+    {
       "description": "Mean units of this market's currency per US dollar, as applied to landed prices; 1 for a USD market.",
       "displayName": "avg_usd_fx_rate",
       "name": "avg_usd_fx_rate"
+    },
+    {
+      "description": "benchmark_contribution_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "benchmark_contribution_total",
+      "name": "benchmark_contribution_total"
     },
     {
       "description": "Days with a benchmark price. Group by commodity to spot feed gaps.",
@@ -609,9 +679,29 @@
       "name": "contracts_traded"
     },
     {
+      "description": "duty_contribution_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "duty_contribution_total",
+      "name": "duty_contribution_total"
+    },
+    {
       "description": "Building block for avg_duty_local. A sum of per-unit duties means nothing on its own.",
       "displayName": "duty_local_total",
       "name": "duty_local_total"
+    },
+    {
+      "description": "Signed rupee contribution summed over days. Group by commodity.",
+      "displayName": "fx_contribution_total",
+      "name": "fx_contribution_total"
+    },
+    {
+      "description": "fx_share_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "fx_share_days",
+      "name": "fx_share_days"
+    },
+    {
+      "description": "fx_share_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "fx_share_total",
+      "name": "fx_share_total"
     },
     {
       "description": "Days a landed price exists \u2014 never for commodities this market prohibits importing.",
@@ -629,6 +719,356 @@
       "name": "landed_price_mom_change"
     },
     {
+      "description": "mcx_backwardation_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_backwardation_days",
+      "name": "mcx_backwardation_days"
+    },
+    {
+      "description": "mcx_commodity_avg_daily_return \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_avg_daily_return",
+      "name": "mcx_commodity_avg_daily_return"
+    },
+    {
+      "description": "MCX settlement over benchmark \u00d7 USD/INR \u00d7 (1 + duty) for the same quote basis, minus one. Only commodities the family prices.",
+      "displayName": "mcx_commodity_avg_premium_to_landed",
+      "name": "mcx_commodity_avg_premium_to_landed"
+    },
+    {
+      "description": "What a long earned rolling the flagship's near month into the next, annualised. Negative in contango.",
+      "displayName": "mcx_commodity_avg_roll_yield",
+      "name": "mcx_commodity_avg_roll_yield"
+    },
+    {
+      "description": "mcx_commodity_avg_rsi \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_avg_rsi",
+      "name": "mcx_commodity_avg_rsi"
+    },
+    {
+      "description": "mcx_commodity_backwardation_sessions \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_backwardation_sessions",
+      "name": "mcx_commodity_backwardation_sessions"
+    },
+    {
+      "description": "mcx_commodity_backwardation_share \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_backwardation_share",
+      "name": "mcx_commodity_backwardation_share"
+    },
+    {
+      "description": "mcx_commodity_call_oi_notional_inr \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_call_oi_notional_inr",
+      "name": "mcx_commodity_call_oi_notional_inr"
+    },
+    {
+      "description": "mcx_commodity_close_var_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_close_var_days",
+      "name": "mcx_commodity_close_var_days"
+    },
+    {
+      "description": "mcx_commodity_close_var_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_close_var_total",
+      "name": "mcx_commodity_close_var_total"
+    },
+    {
+      "description": "Zero-mean realised variance of the flagship's daily log returns, \u00d7 252. Its square root is realised volatility over whatever window the query asks for.",
+      "displayName": "mcx_commodity_close_variance",
+      "name": "mcx_commodity_close_variance"
+    },
+    {
+      "description": "mcx_commodity_contango_sessions \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_contango_sessions",
+      "name": "mcx_commodity_contango_sessions"
+    },
+    {
+      "description": "mcx_commodity_contango_share \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_contango_share",
+      "name": "mcx_commodity_contango_share"
+    },
+    {
+      "description": "mcx_commodity_gk_var_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_gk_var_days",
+      "name": "mcx_commodity_gk_var_days"
+    },
+    {
+      "description": "mcx_commodity_gk_var_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_gk_var_total",
+      "name": "mcx_commodity_gk_var_total"
+    },
+    {
+      "description": "Garman\u2013Klass (1980) OHLC variance per session, \u00d7 252. The most efficient of the four for a zero-drift market; blind to the overnight gap.",
+      "displayName": "mcx_commodity_gk_variance",
+      "name": "mcx_commodity_gk_variance"
+    },
+    {
+      "description": "mcx_commodity_gk_vol \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_gk_vol",
+      "name": "mcx_commodity_gk_vol"
+    },
+    {
+      "description": "Sessions the flagship settled higher, over sessions with a return.",
+      "displayName": "mcx_commodity_hit_rate",
+      "name": "mcx_commodity_hit_rate"
+    },
+    {
+      "description": "Sum of the flagship's roll-free daily log returns \u2014 additive over time; exp(x) \u2212 1 is the period return.",
+      "displayName": "mcx_commodity_log_return",
+      "name": "mcx_commodity_log_return"
+    },
+    {
+      "description": "mcx_commodity_mini_turnover_inr \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_mini_turnover_inr",
+      "name": "mcx_commodity_mini_turnover_inr"
+    },
+    {
+      "description": "Turnover in the non-flagship codes (GOLDM, SILVERMIC, CRUDEOILM, ...) over all turnover \u2014 how retail the commodity's book is.",
+      "displayName": "mcx_commodity_mini_turnover_share",
+      "name": "mcx_commodity_mini_turnover_share"
+    },
+    {
+      "description": "Notional of open futures positions across every code and expiry, at the period's last session. A stock \u2014 never summed over days.",
+      "displayName": "mcx_commodity_oi_value_inr",
+      "name": "mcx_commodity_oi_value_inr"
+    },
+    {
+      "description": "Premium traded across every option chain of the commodity.",
+      "displayName": "mcx_commodity_option_premium_turnover_inr",
+      "name": "mcx_commodity_option_premium_turnover_inr"
+    },
+    {
+      "description": "mcx_commodity_parkinson_var_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_parkinson_var_days",
+      "name": "mcx_commodity_parkinson_var_days"
+    },
+    {
+      "description": "mcx_commodity_parkinson_var_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_parkinson_var_total",
+      "name": "mcx_commodity_parkinson_var_total"
+    },
+    {
+      "description": "High\u2013low range variance, (ln H/L)\u00b2 \u00f7 4 ln 2 per session, \u00d7 252.",
+      "displayName": "mcx_commodity_parkinson_variance",
+      "name": "mcx_commodity_parkinson_variance"
+    },
+    {
+      "description": "mcx_commodity_parkinson_vol \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_parkinson_vol",
+      "name": "mcx_commodity_parkinson_vol"
+    },
+    {
+      "description": "exp(\u03a3 log return) \u2212 1 over the query's window \u2014 compounding, not summing, daily returns.",
+      "displayName": "mcx_commodity_period_return",
+      "name": "mcx_commodity_period_return"
+    },
+    {
+      "description": "mcx_commodity_premium_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_premium_days",
+      "name": "mcx_commodity_premium_days"
+    },
+    {
+      "description": "mcx_commodity_premium_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_premium_total",
+      "name": "mcx_commodity_premium_total"
+    },
+    {
+      "description": "Put open interest over call, each weighted by its underlying's notional per lot so every code of the commodity counts at its size. Above ~1.3 put-heavy, below ~0.7 call-heavy.",
+      "displayName": "mcx_commodity_put_call_ratio",
+      "name": "mcx_commodity_put_call_ratio"
+    },
+    {
+      "description": "mcx_commodity_put_oi_notional_inr \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_put_oi_notional_inr",
+      "name": "mcx_commodity_put_oi_notional_inr"
+    },
+    {
+      "description": "mcx_commodity_realised_vol \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_realised_vol",
+      "name": "mcx_commodity_realised_vol"
+    },
+    {
+      "description": "mcx_commodity_return_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_return_days",
+      "name": "mcx_commodity_return_days"
+    },
+    {
+      "description": "mcx_commodity_return_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_return_total",
+      "name": "mcx_commodity_return_total"
+    },
+    {
+      "description": "mcx_commodity_roll_yield_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_roll_yield_days",
+      "name": "mcx_commodity_roll_yield_days"
+    },
+    {
+      "description": "mcx_commodity_roll_yield_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_roll_yield_total",
+      "name": "mcx_commodity_roll_yield_total"
+    },
+    {
+      "description": "mcx_commodity_rs_var_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_rs_var_days",
+      "name": "mcx_commodity_rs_var_days"
+    },
+    {
+      "description": "mcx_commodity_rs_var_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_rs_var_total",
+      "name": "mcx_commodity_rs_var_total"
+    },
+    {
+      "description": "Rogers\u2013Satchell (1991) drift-robust OHLC variance per session, \u00d7 252. Prefer it to Garman\u2013Klass in a trending market.",
+      "displayName": "mcx_commodity_rs_variance",
+      "name": "mcx_commodity_rs_variance"
+    },
+    {
+      "description": "mcx_commodity_rs_vol \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_rs_vol",
+      "name": "mcx_commodity_rs_vol"
+    },
+    {
+      "description": "mcx_commodity_rsi_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_rsi_days",
+      "name": "mcx_commodity_rsi_days"
+    },
+    {
+      "description": "mcx_commodity_rsi_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_rsi_total",
+      "name": "mcx_commodity_rsi_total"
+    },
+    {
+      "description": "Commodity-sessions on record; the denominator the per-session means divide by.",
+      "displayName": "mcx_commodity_sessions",
+      "name": "mcx_commodity_sessions"
+    },
+    {
+      "description": "Traded value of every code and expiry of the commodity, in rupees. Additive across commodities and days.",
+      "displayName": "mcx_commodity_turnover_inr",
+      "name": "mcx_commodity_turnover_inr"
+    },
+    {
+      "description": "mcx_commodity_turnover_mom \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_turnover_mom",
+      "name": "mcx_commodity_turnover_mom"
+    },
+    {
+      "description": "mcx_commodity_up_sessions \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_commodity_up_sessions",
+      "name": "mcx_commodity_up_sessions"
+    },
+    {
+      "description": "Turnover restated in lots of the flagship contract, so GOLD, GOLDM and GOLDPETAL add up. Group by mcx_commodity \u2014 a gold lot is not a crude lot.",
+      "displayName": "mcx_commodity_volume_flagship_lots",
+      "name": "mcx_commodity_volume_flagship_lots"
+    },
+    {
+      "description": "mcx_contango_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_contango_days",
+      "name": "mcx_contango_days"
+    },
+    {
+      "description": "Contango sessions over all sessions. Group by contract_code.",
+      "displayName": "mcx_contango_share",
+      "name": "mcx_contango_share"
+    },
+    {
+      "description": "mcx_gk_vol_30d_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_gk_vol_30d_days",
+      "name": "mcx_gk_vol_30d_days"
+    },
+    {
+      "description": "mcx_gk_vol_30d_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_gk_vol_30d_total",
+      "name": "mcx_gk_vol_30d_total"
+    },
+    {
+      "description": "mcx_parkinson_vol_30d_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_parkinson_vol_30d_days",
+      "name": "mcx_parkinson_vol_30d_days"
+    },
+    {
+      "description": "mcx_parkinson_vol_30d_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_parkinson_vol_30d_total",
+      "name": "mcx_parkinson_vol_30d_total"
+    },
+    {
+      "description": "mcx_premium_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_premium_days",
+      "name": "mcx_premium_days"
+    },
+    {
+      "description": "mcx_premium_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_premium_total",
+      "name": "mcx_premium_total"
+    },
+    {
+      "description": "mcx_realised_vol_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_realised_vol_days",
+      "name": "mcx_realised_vol_days"
+    },
+    {
+      "description": "mcx_realised_vol_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_realised_vol_total",
+      "name": "mcx_realised_vol_total"
+    },
+    {
+      "description": "mcx_return_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_return_total",
+      "name": "mcx_return_total"
+    },
+    {
+      "description": "mcx_roll_yield_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_roll_yield_days",
+      "name": "mcx_roll_yield_days"
+    },
+    {
+      "description": "mcx_roll_yield_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_roll_yield_total",
+      "name": "mcx_roll_yield_total"
+    },
+    {
+      "description": "mcx_rs_vol_30d_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_rs_vol_30d_days",
+      "name": "mcx_rs_vol_30d_days"
+    },
+    {
+      "description": "mcx_rs_vol_30d_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_rs_vol_30d_total",
+      "name": "mcx_rs_vol_30d_total"
+    },
+    {
+      "description": "mcx_rsi_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_rsi_days",
+      "name": "mcx_rsi_days"
+    },
+    {
+      "description": "mcx_rsi_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "mcx_rsi_total",
+      "name": "mcx_rsi_total"
+    },
+    {
+      "description": "Code-sessions on record. The denominator the means below divide by.",
+      "displayName": "mcx_session_days",
+      "name": "mcx_session_days"
+    },
+    {
+      "description": "Traded value across every expiry, in rupees. Additive across codes and days.",
+      "displayName": "mcx_turnover_inr",
+      "name": "mcx_turnover_inr"
+    },
+    {
+      "description": "Lots traded across every expiry. Additive within a code; a GOLD lot is not a GOLDPETAL lot, so compare across codes with turnover instead.",
+      "displayName": "mcx_volume_lots",
+      "name": "mcx_volume_lots"
+    },
+    {
+      "description": "momentum_20d_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "momentum_20d_days",
+      "name": "momentum_20d_days"
+    },
+    {
+      "description": "momentum_20d_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "momentum_20d_total",
+      "name": "momentum_20d_total"
+    },
+    {
       "description": "Highest traded price in the period, USD per quote unit. Group by commodity.",
       "displayName": "period_high_price_usd",
       "name": "period_high_price_usd"
@@ -637,6 +1077,31 @@
       "description": "Lowest traded price in the period, USD per quote unit. Group by commodity.",
       "displayName": "period_low_price_usd",
       "name": "period_low_price_usd"
+    },
+    {
+      "description": "range_position_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "range_position_days",
+      "name": "range_position_days"
+    },
+    {
+      "description": "Sum of daily range positions. A component of avg_range_position, not a figure to read.",
+      "displayName": "range_position_total",
+      "name": "range_position_total"
+    },
+    {
+      "description": "realised_vol_days \u2014 defined in the platform's semantic layer.",
+      "displayName": "realised_vol_days",
+      "name": "realised_vol_days"
+    },
+    {
+      "description": "realised_vol_total \u2014 defined in the platform's semantic layer.",
+      "displayName": "realised_vol_total",
+      "name": "realised_vol_total"
+    },
+    {
+      "description": "Days with a signal reading. The denominator every mean below divides by.",
+      "displayName": "signal_days",
+      "name": "signal_days"
     },
     {
       "description": "Building block for avg_usd_fx_rate \u2014 the rate each landed price actually used.",

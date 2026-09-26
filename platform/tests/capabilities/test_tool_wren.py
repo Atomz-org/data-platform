@@ -338,6 +338,70 @@ def test_the_row_limit_is_capped(tmp_path: Path, monkeypatch) -> None:
     assert out.ok and len(out.rows) == 2
 
 
+def test_a_cube_question_is_translated_then_takes_the_same_road(tmp_path: Path, monkeypatch) -> None:
+    """A cube question arrives as a structure. Translated, it is a SELECT like
+    any other — planned, dry-run, executed, recorded — and never a second road."""
+    root, d = _drive(monkeypatch, tmp_path)
+    seen = {}
+
+    def fake_translate(_d, cube, measures, dimensions, time_dimension, filters, limit):
+        seen.update(cube=cube, measures=measures, filters=filters)
+        return {"ok": True, "sql": "select sum(amount) as revenue from fct_orders"}
+
+    monkeypatch.setattr(wren, "translate_cube", fake_translate)
+    out = gate.ask_cube(d, "g", "p", "fct_orders_metrics", ["revenue"], [], filters=["region:eq:EU"], root=root)
+    assert out.ok and out.stage == "done" and out.rows == [{"revenue": 15.0}]
+    assert seen == {"cube": "fct_orders_metrics", "measures": ["revenue"], "filters": ["region:eq:EU"]}
+    assert "main_marts.fct_orders" in out.planned_sql
+    assert [e["outcome"] for e in _ledger(root)] == ["ok"]
+
+
+def test_a_cube_question_that_does_not_translate_is_refused_recorded_and_escalated(tmp_path: Path,
+                                                                                    monkeypatch) -> None:
+    root, d = _drive(monkeypatch, tmp_path)
+    monkeypatch.setattr(wren, "translate_cube",
+                        lambda *_a, **_k: {"ok": False, "message": "unknown variant `equals`"})
+    for attempt in (1, 2, 3):
+        out = gate.ask_cube(d, "g", "p", "c", ["m"], ["d"], filters=["d:equals:x"], root=root)
+        assert (out.stage, out.attempt, out.ok) == ("translate", attempt, False) and "equals" in out.message
+    out = gate.ask_cube(d, "g", "p", "c", ["m"], ["d"], filters=["d:equals:x"], root=root)
+    assert out.attempt == 4 and "escalate" in out.message
+    entries = _ledger(root)
+    assert len(entries) == 4 and {e["outcome"] for e in entries} == {"gate_blocked"}
+    assert entries[0]["message"].startswith(f"sha256:{gate.sql_hash(gate.cube_spec('c', ['m'], ['d'], '', ['d:equals:x']))} ")
+
+
+def test_a_cube_that_plans_but_does_not_bind_is_a_finding(tmp_path: Path, monkeypatch) -> None:
+    """Wren's planner passes a measure's bare column through to the physical
+    SQL, so a measure reading another model's column plans cleanly and fails
+    only on the warehouse. The canary binds each cube's plan with `EXPLAIN`."""
+    wh = _warehouse(tmp_path)
+    ws = tmp_path / "ws"
+    (ws / "target").mkdir(parents=True)
+    target = ws / "target" / "mdl.json"
+    target.write_text(json.dumps({"cubes": [
+        {"name": "good", "baseObject": "fct_orders", "measures": [{"name": "revenue"}], "dimensions": []},
+        {"name": "bad", "baseObject": "fct_orders", "measures": [{"name": "duty"}], "dimensions": []},
+    ]}))
+    planned = {"good": "select sum(amount) from main_marts.fct_orders",
+               "bad": "select sum(duty_local) from main_marts.fct_orders"}
+    monkeypatch.setattr(wc, "cube_sql", lambda _ws, _t, _c, name, *_a, **_k: (True, name))
+    monkeypatch.setattr(wc, "run", lambda _ws, *args, **_k: SimpleNamespace(returncode=0, stdout=planned[args[2]],
+                                                                             stderr=""))
+    monkeypatch.setattr(wc, "_warehouse", lambda *_a: wh)
+    problems = wc.cube_problems(tmp_path, "g", "p", target, ws / "connection.json")
+    assert len(problems) == 1 and problems[0].startswith("cube `bad` does not bind")
+    monkeypatch.setattr(wc, "_warehouse", lambda *_a: None)
+    assert wc.cube_problems(tmp_path, "g", "p", target, ws / "connection.json") == [], "no warehouse, no bind"
+
+
+def test_the_rules_send_a_cube_question_through_the_gate(tmp_path: Path) -> None:
+    root, d = _project(tmp_path)
+    metrics = wc.build(root, "g", "p", d).tracked[f"{wc.RULES_REL}/20-metrics.md"]
+    assert "pf tool wren cube" in metrics and "wren_cube" in metrics
+    assert "wren cube query" not in metrics
+
+
 # ------------------------------------------------------------- declaration --
 def test_the_mcp_server_it_wires_is_transpile_only() -> None:
     server = wren.CAPABILITY.mcp["wren"]
@@ -366,14 +430,15 @@ def test_every_command_the_skill_names_is_registered() -> None:
     (group,) = app.registered_groups
     names = {c.name for c in group.typer_instance.registered_commands}
     assert names >= {"workspace", "check", "context", "rules", "recall", "store", "index",
-                     "plan", "query", "serve", "doctor", "mdl"}
+                     "plan", "query", "cube", "serve", "doctor", "mdl"}
 
 
 def test_the_mcp_tools_are_registered_and_row_limited() -> None:
     from pf.mcp import server
 
-    assert {"wren_context", "wren_query"} <= set(server.TOOLS)
+    assert {"wren_context", "wren_query", "wren_cube"} <= set(server.TOOLS)
     assert "row-limited" in server.wren_query.__doc__
+    assert "policy" in server.wren_cube.__doc__ and "ledger" in server.wren_cube.__doc__
 
 
 # ------------------------------------------------------------------ engine --
@@ -385,7 +450,8 @@ COMMODITY = REPO_ROOT / "groups" / "commodity" / "projects" / "commodity-india"
 def test_the_engine_plans_every_model_of_a_real_workspace(tmp_path: Path) -> None:
     """The planner canary `check` runs in CI where the engine exists, run here
     against one project's committed manifest — copied, so nothing of the project
-    is written."""
+    is written. Every cube is planned too, with all its measures; the copy has
+    no warehouse, so binding is `pf tool wren check`'s on a seeded machine."""
     root = tmp_path
     (root / "platform").mkdir()
     d = root / "groups" / "commodity" / "projects" / "commodity-india"
@@ -393,3 +459,16 @@ def test_the_engine_plans_every_model_of_a_real_workspace(tmp_path: Path) -> Non
     (d / "mdl" / "mdl.json").write_text((COMMODITY / "mdl" / "mdl.json").read_text())
     wc.refresh(root, "commodity", "commodity-india", d)
     assert wc.check(root, "commodity", "commodity-india", d, plan=True) == []
+
+
+def test_the_dagster_check_waits_for_the_writer_pool(tmp_path: Path) -> None:
+    """It opens the warehouse read-only to EXPLAIN every cube, which DuckDB
+    refuses while another process writes. On the pool, a rerun loading one
+    commodity cannot make another run's check report a lock as a broken cube."""
+    from pf.runtime.warehouse import Warehouse
+    from pf.tools.spec import ToolContext
+
+    root, d = _project(tmp_path)
+    ctx = ToolContext(root=root, group="g", project="p", project_dir=d, dbt_dir=d / "transform")
+    (a,) = wren.dagster_assets(ctx).assets
+    assert a.op.pool == Warehouse.for_project(d, "g", "p").writer_pool

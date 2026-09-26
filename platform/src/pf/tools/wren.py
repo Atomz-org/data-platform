@@ -177,12 +177,7 @@ def plan(project_dir: Path, sql: str) -> dict[str, Any]:
         return {"ok": False, "reason": "no_mdl",
                 "message": "no mdl/mdl.json — run `pf bootstrap`"}
     write_connection(d)
-    manifest = mdl_path(d)
-    if wc.exists(d):
-        if not wc.target_path(d).is_file():
-            root, g, p = _scope(d)
-            wc.refresh(root, g, p, d, hide_roles=wc.hide_roles_for(root, g, p))
-        manifest = wc.target_path(d)
+    manifest = _llm_target(d)
     try:
         if wc.exists(d):
             proc = wc.run(wc.workspace(d), "dry-plan", "--sql", sql, "--mdl", str(manifest),
@@ -197,6 +192,53 @@ def plan(project_dir: Path, sql: str) -> dict[str, Any]:
     return {"ok": proc.returncode == 0, "sql": out,
             "reason": "" if proc.returncode == 0 else "plan_failed",
             "message": (proc.stderr or out or "")[-1500:]}
+
+
+def _llm_target(d: Path) -> Path:
+    """The manifest an agent's question is planned against: the workspace's
+    LLM-facing target (regenerated when absent), or the full manifest where no
+    workspace was ever written."""
+    if wc.exists(d):
+        if not wc.target_path(d).is_file():
+            root, g, p = _scope(d)
+            wc.refresh(root, g, p, d, hide_roles=wc.hide_roles_for(root, g, p))
+        return wc.target_path(d)
+    return mdl_path(d)
+
+
+def translate_cube(project_dir: Path, cube: str, measures: list[str], dimensions: list[str] | None = None,
+                   time_dimension: str = "", filters: list[str] | None = None,
+                   limit: int | None = None) -> dict[str, Any]:
+    """A cube question — measures by dimensions, a time grain, filters — as one
+    MDL-level SELECT, without running it. The engine writes the GROUP BY and the
+    measure expressions, so a ratio is re-divided and a price never summed."""
+    d = Path(project_dir)
+    if not has_mdl(d):
+        return {"ok": False, "reason": "no_mdl", "message": "no mdl/mdl.json — run `pf bootstrap`"}
+    write_connection(d)
+    target = _llm_target(d)
+    try:
+        ok, out = wc.cube_sql(wc.workspace(d) if wc.exists(d) else d, target, connection_path(d), cube,
+                              measures, dimensions, time_dimension, filters, limit)
+    except FileNotFoundError:
+        return {"ok": False, "reason": "not_installed", "message": "wren is not on PATH — `uv sync --extra wren`"}
+    return {"ok": ok, "sql": out if ok else "", "reason": "" if ok else "translate_failed",
+            "message": "" if ok else out}
+
+
+def cube(project_dir: Path, cube_name: str, measures: list[str], dimensions: list[str] | None = None,
+         time_dimension: str = "", filters: list[str] | None = None, limit: int = 200) -> dict[str, Any]:
+    """A cube question on the gated road: translate → policy → plan → dry-run →
+    execute → ledger. The same outcome shape as `query`."""
+    from pf.tools import wren_gate
+
+    d = Path(project_dir)
+    root, group, project = _scope(d)
+    out = wren_gate.ask_cube(d, group, project, cube_name, measures, dimensions or [], time_dimension,
+                             filters or [], limit=limit, root=root)
+    return {"ok": out.ok, "rows": out.rows, "columns": out.columns, "sql": out.planned_sql,
+            "stage": out.stage, "reason": "" if out.ok else f"{out.stage}_failed",
+            "message": out.message, "run_id": out.run_id, "attempt": out.attempt}
 
 
 def query(project_dir: Path, sql: str, limit: int = 200) -> dict[str, Any]:
@@ -303,11 +345,13 @@ def bootstrap_project(root: Path, group: str, project: str,
 
 # ----------------------------------------------------------------- dagster --
 def dagster_assets(ctx: ToolContext) -> ToolContribution:
-    """An asset check that the emitted MDL is what Wren will actually accept.
+    """An asset that the emitted MDL is what Wren will actually accept.
 
     A conformance claim nobody executes is the thing this platform's vendor
     registry exists to prevent, so it is executed: the manifest is re-read and,
-    where the engine can plan, a query is planned against it.
+    where the engine can plan, a query is planned against it and the whole
+    workspace — every model, every cube — is checked against the warehouse the
+    run just built (`pf.tools.wren_context.check`).
     """
     from dagster import AssetKey, MetadataValue, asset
 
@@ -318,11 +362,20 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
         return ToolContribution()
 
     deps = [AssetKey([prefix, m["name"]]) for m in s["models"]]
+    from pf.runtime.warehouse import Warehouse
+
+    # The check opens the warehouse read-only to EXPLAIN every cube. DuckDB
+    # refuses that while another process writes, so the step queues on the
+    # project's writer pool like every other reader of a live file: a rerun of
+    # one commodity loading while another's check runs would otherwise report
+    # a lock as a broken cube.
+    pool = Warehouse.for_project(project_dir, getattr(ctx, "group", ""), ctx.project).writer_pool
 
     @asset(
         name="wren_semantic_layer",
         key_prefix=[prefix],
         group_name="semantic",
+        pool=pool,
         deps=deps,
         description="MDL manifest projected for Wren and any other MDL consumer.",
         compute_kind="wren",
@@ -351,6 +404,20 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
                 if Path(wh.path).is_file():
                     err = wren_gate.dry_run(Path(wh.path), r["sql"])
                     meta["dry_run"] = "pass" if err is None else f"fail — {err[:200]}"
+            if wc.exists(project_dir):
+                # After a build, the whole workspace: every model and every cube
+                # planned, each cube bound on the warehouse just written. A
+                # measure that reads a column its base lost fails here, on the
+                # run that lost it, not on the next question someone asks.
+                from pf import obs
+
+                root = obs.repo_root(project_dir)
+                problems = wc.check(root, getattr(ctx, "group", ""), ctx.project, project_dir, plan=True)
+                meta["cubes"] = len(json.loads(mdl_path(project_dir).read_text(encoding="utf-8")).get("cubes") or [])
+                meta["workspace_check"] = "pass" if not problems else MetadataValue.md(
+                    "\n".join(f"- {x}" for x in problems[:20]))
+                for x in problems:
+                    context.log.warning("wren workspace: %s", x)
         else:
             context.log.warning(
                 "Wren engine cannot plan MDL queries here (%s) — the manifest is "
@@ -386,14 +453,18 @@ pf tool wren check {{group}} {{project}}           # is the committed workspace 
 pf tool wren context {{group}} {{project}} "<q>"   # rules + remembered questions + schema, for one question
 pf tool wren plan {{group}} {{project}} "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query {{group}} {{project}} "<sql>"   # policy → plan → dry-run → execute → ledger
+pf tool wren cube {{group}} {{project}} --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api {{group}} {{project}}             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store {{group}} {{project}} --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor {{group}} {{project}}               # is the engine actually usable
 ```
 
 ## The road every question takes
 
-`pf tool wren query` (and the `wren_query` MCP tool) never runs what it is
-given. It checks the statement is one read-only `SELECT`, plans it through the
+`pf tool wren query` and `pf tool wren cube` (the `wren_query` and `wren_cube`
+MCP tools) never run what they are given. A cube question is first translated
+into one `SELECT` by the engine. The gate checks the statement is one read-only
+`SELECT`, plans it through the
 LLM-facing manifest, `EXPLAIN`s the plan on this project's warehouse read-only,
 executes it row-limited, and appends the outcome — refused or not — to
 `groups/{{group}}/loop-ledger.json` as a `wren-query` run. A statement refused
@@ -478,6 +549,28 @@ TOOL = Tool(
 
 
 # -------------------------------------------------------------------- cli --
+def _print_outcome(r: dict[str, Any], limit: int) -> None:
+    import typer
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    if not r["ok"]:
+        run = f"run {r['run_id']}, attempt {r['attempt']}"
+        console.print(f"[red]✗ {r['stage']}[/] {r['message']}  [dim]({run})[/]")
+        raise typer.Exit(1)
+    rows = r.get("rows") or []
+    if not rows:
+        console.print(f"[dim]no rows[/]  [dim](run {r['run_id']})[/]")
+        raise typer.Exit(0)
+    cols = r.get("columns") or list(rows[0].keys())
+    t = Table(*cols)
+    for row in rows[:limit]:
+        t.add_row(*[str(row.get(c, "")) for c in cols])
+    console.print(t)
+    console.print(f"[dim]{len(rows)} row(s) · run {r['run_id']}[/]")
+
+
 def register_commands(app: Any) -> None:
     import typer
     from rich.console import Console
@@ -631,20 +724,66 @@ def register_commands(app: Any) -> None:
     def cmd_query(group: str, project: str, sql: str,
                   limit: int = typer.Option(50)) -> None:
         """Policy → plan → dry-run → execute → ledger. Read-only, row-limited, recorded."""
-        r = query(_pdir(group, project), sql, limit=limit)
-        if not r["ok"]:
-            console.print(f"[red]✗ {r['stage']}[/] {r['message']}  [dim](run {r['run_id']}, attempt {r['attempt']})[/]")
-            raise typer.Exit(1)
-        rows = r.get("rows") or []
-        if not rows:
-            console.print(f"[dim]no rows[/]  [dim](run {r['run_id']})[/]")
+        _print_outcome(query(_pdir(group, project), sql, limit=limit), limit)
+
+    @wren_app.command("cube")
+    def cmd_cube(group: str, project: str,
+                 cube_name: str = typer.Option(..., "--cube", "-c", help="cube name, as `pf tool wren rules` lists it"),
+                 measures: str = typer.Option(..., help="comma-separated measure names"),
+                 dimensions: str = typer.Option("", help="comma-separated dimension names"),
+                 time_dimension: str = typer.Option("", help="name:granularity[:start,end], e.g. trade_date:month"),
+                 filters: list[str] = typer.Option(
+                     [], "--filter", help="dim:op[:value], repeatable; op is eq, neq, in, not_in, gt, gte, "
+                     "lt, lte, contains, starts_with, is_null, is_not_null"),
+                 limit: int = typer.Option(50),
+                 sql_only: bool = typer.Option(False, "--sql-only",
+                                               help="print the translated SQL; run nothing")) -> None:
+        """A measure-by-dimension question on the gated road: translate → policy →
+        plan → dry-run → execute → ledger. Read-only, row-limited, recorded."""
+        ms = [m.strip() for m in measures.split(",") if m.strip()]
+        ds = [x.strip() for x in dimensions.split(",") if x.strip()]
+        if sql_only:
+            r = translate_cube(_pdir(group, project), cube_name, ms, ds, time_dimension, filters, limit)
+            if not r["ok"]:
+                _fail(r)
+            console.print(r["sql"])
             raise typer.Exit(0)
-        cols = r.get("columns") or list(rows[0].keys())
-        t = Table(*cols)
-        for row in rows[:limit]:
-            t.add_row(*[str(row.get(c, "")) for c in cols])
-        console.print(t)
-        console.print(f"[dim]{len(rows)} row(s) · run {r['run_id']}[/]")
+        r = cube(_pdir(group, project), cube_name, ms, ds, time_dimension, filters, limit=limit)
+        _print_outcome(r, limit)
+
+    @wren_app.command("api")
+    def cmd_api(group: str = typer.Argument(None, help="serve one group's projects (with PROJECT: one project)"),
+                project: str = typer.Argument(None),
+                all_: bool = typer.Option(False, "--all", help="every project with a Wren workspace"),
+                port: int = typer.Option(8766, help="127.0.0.1 only; every project's Ask page calls it"),
+                planner: str = typer.Option("auto", help="auto | rules — auto uses the Anthropic API, "
+                                                         "then the `claude` CLI, then rules")) -> None:
+        """Conversational analytics: the HTTP API behind each project's Evidence
+        `Ask the data` page. One process can serve one project, a group or
+        every project; each lives under /api/p/<group>/<project>/ and answers
+        only for itself. Every question is planned, validated against that
+        project's workspace and run on its gated road."""
+        import os
+
+        from pf.tools import wren_api
+
+        if planner == "rules":
+            os.environ["PF_WREN_PLANNER"] = "rules"
+        if not (all_ or group):
+            console.print("[red]✗[/] name a project (`pf tool wren api <g> <p>`), a group, or pass --all")
+            raise typer.Exit(2)
+        served = wren_api.discover(_root(), None if all_ else group, None if all_ else project)
+        if not served:
+            console.print("[red]✗[/] no project with a Wren workspace matches — `pf tool wren workspace --all`")
+            raise typer.Exit(1)
+        for s in served:
+            st = wren_api.status(s)
+            mark = "[green]✓[/]" if st["ready"] else "[yellow]![/]"
+            detail = (f"{st.get('cubes', 0)} cube(s), {st.get('measures', 0)} measure(s)" if st["ready"]
+                      else f"{st['reason']} — {st['fix']}")
+            console.print(f"{mark} {s.key}: {detail}  [dim]/api/p/{s.key}[/]")
+        console.print(f"  planners {' → '.join(wren_api.planners_available())} · http://127.0.0.1:{port}/api/projects")
+        wren_api.serve(served, port=port)
 
     @wren_app.command("serve")
     def cmd_serve(group: str, project: str,
