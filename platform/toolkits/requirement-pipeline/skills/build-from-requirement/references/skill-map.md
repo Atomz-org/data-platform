@@ -24,7 +24,8 @@ Three kinds of helper appear below:
 |---|---|---|
 | `read-memories` | always, first | `target` → earlier lessons and ADRs for this project |
 | `design-architecture` | the project exists | → `kg/architecture.md`: what the project has and what is missing, instead of a file walk |
-| `scaffold-project` | the project does not exist | `target` → a governed, bootstrapped project. Stop after it |
+| `scaffold-project` | `target.create` | `target` → `pf new-group` (only with `target.new_group`), `pf new-project --plan`, ★, `pf new-project`; exit on `pf check` 0 errors, then continue at Phase 1 |
+| the group's own skills | always: listed by the validator from `groups/<g>/.claude/skills/` | → the family's conventions for adding an entity, comparing values, triaging a feed. They win where they overlap a generic route |
 | `onboard-project` | the requirement targets an external dbt repo not yet on the platform | repo URL → an adopted project. Then resume here |
 | `quality-stack` | `pf tool doctor` shows recce, expectations or elementary unready | → the stack declared and verified |
 
@@ -36,7 +37,7 @@ requirement". When a Confluence page exists, this skill governs instead.
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `answer-with-metrics` | always | each `metrics[]` name and meaning → `list_metrics` / `get_dimensions`. An existing metric is **reused**, and a near miss is a gap reported by name |
-| `design-ontology` | a `concepts[]` item has `exists: false` | business noun → class, identity, roles and relations in the right tier |
+| `design-ontology` | a `concepts[]` item has `exists: false`, or `group_changes` has an `ontology` entry | business noun → class, identity, roles and relations in the declared tier, then **published before Phase 4**: `pf check`, `pf semantic topology`, `pf kg build`, `pf semantic mdl`, `pf tool okf build --group` (and `--all` for sisters), `pf harness <g>` |
 | `steward-ontology` | data already landed and `pf semantic scan` proposed terms | proposal → approved or remapped axioms. Never approve your own proposal unread |
 | `read-file` | the page attaches or links a sample file | sample → column names, types, null rates, key/time/money candidates for `roles` |
 | `explore-data` | the source has already landed | raw table → profile for `grain` and `roles`. Profiling only, never a published number |
@@ -49,17 +50,18 @@ requirement". When a Confluence page exists, this skill governs instead.
 | `recce-review` step 2 | any artefact is `modify` | → `pf tool recce baseline <g> <p>` captured **now**, from the last green build. A baseline taken after the change diffs the change against itself |
 | `/blast-radius` · `impact_analysis` | any artefact is `modify` | node → downstream models, metrics, exposure owners |
 | `choose-a-test` "before adding any" | a rule adds a test to a hub model | → the dependency count that justifies its runtime |
+| `pf tool doctor` | before the baseline | → recce ready. The baseline builds `--target base`; re-parse the default target before the next `pf kg build` |
 
 ## Phase 4 — Raw layer (dlt)
 
 | Helper | Use when | From the spec → back |
 |---|---|---|
-| `find-source` | always for a new source: verified source → OpenAPI → hand-rolled | `sources[].kind`, `connection` → the tier to use |
+| `find-source` | always for a new source: platform registry → the group's shared connectors → verified source → OpenAPI → hand-rolled | `sources[].kind`, `connection`, `client` → the tier to use. A new reusable connector for the registry is handed back as a platform change |
 | `create-rest-pipeline` | `kind: rest_api` | resources, paginator, incremental, `write_disposition` → a module in `sources/` |
 | `create-sql-pipeline` | `kind: sql_database` | tables listed explicitly, cursor, reflection level → a module |
 | `create-filesystem-pipeline` | `kind: filesystem` | glob, reader, `modification_date` incremental → a module (after `read-file`) |
 | `annotate-source` | every resource | `concept`, `grain`, `roles`, `links` → `@annotate`. `validate_annotations` must pass |
-| `setup-data-quality` | every resource | → `DEFAULT_CONTRACT`, or `STRICT_CONTRACT` for a source of record. Monitors are generated from roles, never hand-written |
+| `setup-data-quality` | every resource | → `DEFAULT_CONTRACT` first; `STRICT_CONTRACT` for a source of record once a load shows the schema stable. Monitors are generated from roles, never hand-written. The source is registered in `src/<pkg>/seed.py`, or `pf seed` loads nothing |
 | `steward-ontology` | after the first load | `pf semantic scan … --source <n>` → reviewed proposal |
 | `debug-pipeline` | a load failed or left a table empty | → a classification first (feed down, shape changed, contract too strict, cursor wrong), then the fix |
 | `optimize-performance` | `schedule.sla` or volume is at risk | → measured bottleneck, then the lever. Never above the writer pool |
@@ -71,7 +73,8 @@ requirement". When a Confluence page exists, this skill governs instead.
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `using-dbt` (staging section) | always | → `pf gen-staging`. Cleaning comes from roles and names from the annotation's `rename` map. Never hand-written |
-| `quality-stack` loop steps 2–3, 5 | after staging builds | → the expectations floor derived from roles (`pf tool expectations config`), then run (`pf tool expectations run`) |
+| `annotate-source` | a rule at `layer: staging` | → a role or rename in the annotation, then `pf gen-staging --overwrite` |
+| `add-anomaly-tests` (`elementary-observe`) | `sources[].freshness` | → a source freshness monitor; `pf tool elementary run` the first time, build twice before trusting it |
 
 ## Phase 6 — Intermediate
 
@@ -103,11 +106,13 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 
 | Helper | Use when | From the spec → back |
 |---|---|---|
-| `using-dbt` | every `models.marts[]` | → grain in `meta.grain`. No metric policy columns (a mart has no `revenue`) |
-| `contracts-and-access` | every mart | → `access: public` and an enforced contract; `private` stays on staging and intermediate |
+| `using-dbt` | every `models.marts[]` | → grain in `meta.grain`, `meta.role` on every column. No metric policy columns (a mart has no `revenue`) |
+| `run-commands` | after each model | → `dbt_build` with `+<model>`, so reviewers query something real |
+| `quality-stack` loop | after the marts build and `pf kg build` | → `pf tool expectations config`, `pf tool expectations run --strict`, `pf tool recce config`: the floor and the recce checks, derived from mart column roles |
+| `contracts-and-access` | every mart | → an enforced contract; `access: public` only when read outside the group (`consumed_outside_group`), otherwise `protected`; `private` stays on staging and intermediate |
 | `add-tests` | every mart | → grain uniqueness and `relationships` to dimensions |
 | `add-expectations` | columns with money, time or percentage roles | → role-derived shape tests plus a row-count floor |
-| `add-anomaly-tests` (`elementary-observe`) | the spec names a volume, freshness or share expectation | → `severity: warn` monitors with `timestamp_column` set from the `event_time` role, never on `pii_*` values |
+| `add-anomaly-tests` (`elementary-observe`) | `models.marts[].monitors` names a volume or share movement | → `severity: warn` monitors with `timestamp_column` set from the `event_time` role, never on `pii_*` values. Freshness is the source's (Phase 5) |
 | agent `sql-reviewer` | after each mart is written | → grain verified by query, not assumed |
 
 ## Phase 8 — Metrics
@@ -115,7 +120,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `build-semantic-layer` | every `metrics[]` not reused | → semantic model, metric, and `saved_query` export for report metrics |
-| `answer-with-metrics` | after `pf seed` | → each new metric queried once through `query_metrics`, with its filter stated |
+| `answer-with-metrics` | after the semantic models build and `pf kg build` | → each new metric queried once through `query_metrics`, with its filter stated |
 | agent `semantic-conformance` | after the semantic layer changes | → the ontology → annotation → model → metric chain still holds |
 
 ## Phase 9 — Build and prove
@@ -126,6 +131,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | `troubleshoot-runs` | a run or test failed | → a classification (`upstream_data` / `model_logic` / `stale_source` / `test_too_strict`) before the fix |
 | `triage-observability` | a monitor or test fired, or before trusting a mart for a report | → recurrence from `main_elementary`, then a classification |
 | `triage-alerts` | an Elementary anomaly needs reading | → metric, expected range and actual value, quoted |
+| `pf loop run observability-triage` | after the build is green | → recurrence and classification of whatever fired, before a report trusts the marts |
 | `answer-with-metrics` | each metric-shaped `AC-n` | → the number, with its metric and filter named |
 | `query` (`duckdb-ops`) | debugging a failing test's rows | → read-only, truncated evidence. Never used to prove an AC |
 
@@ -134,7 +140,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `build-assets` | `schedule` is set | → schedule, sensor or automation condition on the asset in `defs/`, with the writer pool on every write |
-| `build-assets` (asset factory) | `schedule.per_entity` is set | catalogue → one ingest asset, job and staggered schedule per entity. Each job is load → verify landed → downstream dbt → report, and contains only executable assets |
+| `build-assets` (asset factory) | `schedule.per_entity` is set | catalogue → one ingest asset, job and staggered schedule per entity; the factory's source module excluded from discovery (`source_modules=`). Each job is load → verify landed → downstream dbt → report, and contains only executable assets. Proof: `pf dagster-workspace`, then `dagster definitions validate` |
 | `dignified-python` | always | → code in the house idiom |
 | `duckdb-docs` | concurrency questions | → single-writer semantics. Never propose a shared warehouse file |
 
@@ -151,7 +157,7 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | Helper | Use when | From the spec → back |
 |---|---|---|
 | `pf tool openmetadata …` | `catalog` is set | → payload verified, then ingest and publish (`layer-contracts.md` §Catalogue) |
-| `design-ontology` "Publishing it" | new terms were added | → `pf tool okf build`, `pf tool okf check`, `pf semantic mdl`: the term reaches every bundle |
+| `design-ontology` "Publishing it" | always, after the final graph | → `pf semantic mdl <g> <p>`, `pf tool okf build <g> <p> --group`, `pf tool okf check <g> <p>`, `pf air coverage` |
 
 ## Phase 13 — Close
 
@@ -161,7 +167,9 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | agent `impact-verifier` | any artefact was `modify` | → consumers classified by reading their SQL, not trusting the edge list |
 | agent `secrets-auditor` · `/security-audit` | before the first push | → no credential or PII in tracked files or review artefacts |
 | `/performance-audit` | the SLA is tight | → measured timings per stage |
-| `/ship` | per commit | → gate, conformance, blast radius, diff, one commit (at most 12 files) |
+| `design-architecture` | after the content is staged | → `pf arch <g> <p>`; it counts the git index, so stage first |
+| `scripts/plan_commits.py` | before any commit | `git status --porcelain -uall` → slices in pipeline order, ≤ 12 files with their harness maps, never-shipped paths refused (`group-and-delivery.md` §5) |
+| `/ship` | per slice, run by the user | → gate, conformance, blast radius, diff, one commit. Per slice: `git add`, `pf harness <g> <p>`, `git add` the maps, commit; then `pf gate --commits origin/main..HEAD` |
 | `pf memory add` | a lesson the next agent would pay for again | → a note in the narrowest module |
 
 ## Out of scope: stop and hand back
@@ -173,3 +181,6 @@ An anomaly monitor is statistical, so it never proves a business rule on its own
 | numbers across sister companies | cross-entity reads happen only in `_rollup` | `attach-db` in the roll-up project |
 | a control-plane screen | platform UI, not a data product | `forge-ui` |
 | a new dbt macro for a foreign dialect | a platform toolkit change with its own probe tests | `port-snowflake-sql` "Adding a macro" |
+| a connector for the platform registry | `platform/toolkits/dlt-ingest/registry/` serves every group | `find-source`, as a platform pull request |
+| a new directory kind in a project | the architecture map must claim it (`pf.architecture.FEATURES`) | `design-architecture`, as a platform pull request |
+| a class every group could use | platform ontology, not the group's | `design-ontology`, promoted by a human |

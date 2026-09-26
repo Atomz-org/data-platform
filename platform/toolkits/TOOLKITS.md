@@ -128,6 +128,8 @@ Precedence between toolkits is in `ROUTING.md`.
   - Reuse before build: `answer-with-metrics` and the graph first. `validate_spec.py --project-dir` marks each artefact create / reuse / modify, and only the phases that touch one run.
   - Any `modify` captures a recce baseline before the change and diffs it at hand-off. Read-only review agents (`sql-reviewer`, `semantic-conformance`, `impact-verifier`, `secrets-auditor`) check each layer.
   - Stop at the three checkpoints (spec, landed data, hand-off). A blocking open question ends an autonomous run with a report.
+  - Builds inside a group: scaffolds the project when `target.create` asks (`scaffold-project`), reads the family first (group skills, shared connectors and seeds, conformed paths), and changes the group tier only through a planned `group_changes` entry with its reason — sisters' files move only through their generators.
+  - Delivers what the gate accepts: `scripts/plan_commits.py` slices the build in pipeline order at ≤ 12 files with room for the harness maps each slice regenerates, and `references/group-and-delivery.md` is the regeneration order and CI checklist.
 
 ## viz-standards — Any chart or diagram — an Evidence page, mermaid in a PR comment or doc, a plot in a notebook.
   `charts-and-diagrams`

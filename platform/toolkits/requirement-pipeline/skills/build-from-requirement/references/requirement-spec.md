@@ -27,14 +27,29 @@ marked **(checked)** below.
 `page_id`, `version`, `url`), `owner` (`name`, `email`), `links` (Jira keys),
 `out_of_scope`, `status` (`draft` → `confirmed` after Checkpoint 1).
 
-### `target`
+### `target` **(checked)**
 `group`, `project`. When `--project-dir` is given, the validator checks it is
-that project.
+that project, and that it exists — unless:
+- `create: true` — the project is scaffolded in Phase 0 (`scaffold-project`);
+  refused if it already exists.
+- `new_group: true` — the group is created too (`pf new-group`); without it a
+  missing group is an error, because a new family is a decision.
+- `adopt_repo: <url>` — an external dbt repo is adopted first (`onboard-project`).
 
 ### `concepts`
 `name` (PascalCase ontology class), `exists` (true when found via `kg_search`
-or `pf ontology`), `identity` (the natural key in business terms). Any
-`exists: false` item routes to `design-ontology` before Phase 4.
+or `pf semantic topology`), `identity` (the natural key in business terms).
+An `exists: false` item needs `tier` **(checked)**: `group` when any sister
+could use the word, `project` only when nobody else will; `platform` is refused
+(hand it back). It is designed and published in Phase 2, before any model.
+
+### `group_changes[]` **(checked)**
+Everything the build changes above its project: `kind` (`ontology` |
+`shared_connector` | `shared_seed` | `shared_macro` | `conformance_exemption` |
+`conformed_model` | `tools`), `name`, `why`. Every sister inherits it, so each
+is planned, justified and shown at Checkpoint 1. The validator warns when a
+new staging source or intermediate model falls under a path the group's
+conformance test holds identical and no exemption is declared.
 
 ### `sources[]` **(checked)**
 - `name`: the dlt source and raw dataset name, snake_case.
@@ -108,7 +123,12 @@ is generated.
 (existing or planned models), `rules` (`BR-n` ids), `materialized`
 (optional), and for marts `kind` (`fact` | `dimension` | `report`) and `columns[]`
 (`name`, `role`, `description`, `tests`). Naming is checked: `int_<x>__<y>`,
-`fct_` / `dim_` / `rpt_`.
+`fct_` / `dim_` / `rpt_`. Marts also take `access` (`protected` by default;
+`public` needs `consumed_outside_group: <who>`) and `monitors` (a volume or
+share movement the page names, which routes to `add-anomaly-tests`). A mart
+with no column roles is warned: recce and the expectations floor derive from them.
+A measure over a `unit_price` or `percentage` column is refused for `sum` and
+`average`: make a ratio of additive parts.
 
 ### `metrics[]` **(checked)**
 `name`, `label`, `description`, `type` (`simple` | `ratio` | `derived` |

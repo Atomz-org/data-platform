@@ -8,9 +8,15 @@ the mechanics. This page is the checklist that one requirement is judged against
 | raw | dlt dataset named after the source | data as the source sent it, plus `_dlt_*` load columns | renames, filters, joins | `create-*-pipeline`, `annotate-source` |
 | staging | `transform/models/staging/<source>/stg_<source>__<resource>.sql` | 1:1 with a raw table: casts, renames, units, PII masking, all generated from roles | joins, business filters, aggregation | `pf gen-staging` |
 | intermediate | `transform/models/intermediate/int_<entity>__<verb>.sql` | business rules, dedup, joins, fan-out control, currency conversion | final grain for consumers, BI naming | `using-dbt`, `add-unit-test` |
-| marts | `transform/models/marts/<area>/{fct,dim,rpt}_*.sql` | one declared grain, conformed keys, contract, public access | metric-level filters that would hide rows other metrics need | `contracts-and-access`, `add-tests` |
+| marts | `transform/models/marts/<area>/{fct,dim,rpt}_*.sql` | one declared grain, conformed keys, enforced contract, `meta.role` on every column; `public` only when read outside the group | metric-level filters that would hide rows other metrics need | `contracts-and-access`, `add-tests` |
 | semantic | `transform/models/semantic/{sem,metrics}_*.yml` | entities, dimensions, measures, metrics, saved queries | SQL recomputing another metric | `build-semantic-layer` |
-| report | `reporting/pages/*.md` | layout, filters and components over `queries/metrics/` | arithmetic on metrics beyond re-dividing ratio components | `build-dashboard` |
+| report | `reporting/pages/<topic>/*.md` (hand-written); `pages/metrics/`, `pages/index.md` are generated | layout, filters and components over `queries/metrics/` | arithmetic on metrics beyond re-dividing ratio components | `build-dashboard` |
+
+In a group with a conformance test, the paths it names (commonly
+`models/staging`, `models/intermediate`, `models/semantic`) are identical in
+every sister. A model there changes everywhere or not at all; an entity's own
+models live outside them (for example `marts/<area>/`), and a source only one
+entity has gets a `conformance_exemption` (`group-and-delivery.md` §3).
 
 ## Naming
 
@@ -37,12 +43,13 @@ Which kind of test a rule needs is `choose-a-test`'s decision (table in
 | source | freshness (from the spec), `not_null` on the key |
 | staging | generated from roles: `unique` + `not_null` on `natural_key`, `accepted_values` on `status_enum` |
 | intermediate | one test per `BR-n` implemented here; unit test for any window, CASE ladder, dedup or incremental predicate |
-| marts | grain uniqueness (`dbt_utils.unique_combination_of_columns` or `unique`), `relationships` to each dim, enforced contract; expectations generated from roles (`quality-stack`) |
+| marts | grain uniqueness (`dbt_utils.unique_combination_of_columns` or `unique`), `relationships` to each dim, enforced contract; the expectations floor and recce checks derived from column roles (`pf tool expectations config`, `pf tool recce config`) |
 | semantic | each metric queried once in Phase 9, and each AC executed |
 | report | `pf report audit` and `npm run build` pass |
 
 Severity: key and referential tests are `error`. Anomaly monitors are `warn`
-(`elementary-observe`).
+(`elementary-observe`). Freshness is monitored on the **source**; a mart gets a
+volume or share monitor only when the spec names that movement.
 
 ## Raw (dlt) — what makes a load survive
 
@@ -62,9 +69,12 @@ source kind:
   that plans the same work as the one before (an open item re-planned forever)
   stops the load with an error instead of looping.
 - **Per-entity state when the job is per entity.** With `schedule.per_entity`,
-  each entity runs its own dlt pipeline (`<project>_<source>_<entity>`), so its
+  each entity runs its own dlt pipeline — `run_source(..., source_name=f"{source}_{entity}",
+  dataset=source)`, so `pipeline_name` is `<project>_<source>_<entity>` — its
   cursor and its failures are its own, into one shared dataset. One entity's
-  outage never blocks another's load.
+  outage never blocks another's load; `debug-pipeline` commands take that name.
+- **Registered where the loader looks.** `pf seed` runs `src/<pkg>/seed.py`
+  and nothing else; a source it does not name is never loaded outside Dagster.
 - **Identities before models.** For every amount and quantity, prove what it
   measures on landed rows (`resources[].identities`) and keep the proof as a
   test. A turnover that turns out to be a notional overstates activity by an
@@ -91,7 +101,10 @@ dialect-specific function needs a reason in the model description.
   one per entity.
 - **One job per entity** (`schedule.per_entity`) comes from an asset factory
   over the catalogue: one ingest asset per entity, one job and one schedule per
-  entity, schedules staggered by `stagger`. Each job is the entity's whole
+  entity, schedules staggered by `stagger`. The factory's source module is
+  excluded from discovery (`build_definitions(..., source_modules=[<the others>])`)
+  and its definitions merged in (`Definitions.merge`), never a second
+  `Definitions`. Each job is the entity's whole
   pipeline: its load, a step that verifies rows landed, the dbt models
   downstream of the raw tables, and the report build. So a paused entity is
   paused end to end, and a run is never "loaded but not modelled".
@@ -116,6 +129,9 @@ dialect-specific function needs a reason in the model description.
 
 ## Reporting (Evidence)
 
+- `pf report build` regenerates `pages/index.md`, `pages/metrics/`, the
+  source queries and the exposures on every run — hand-written pages go in a
+  topic folder, and the graph and MDL are rebuilt afterwards (exposures moved).
 - Numbers are formatted from the metric's `unit`: a currency as its symbol, a
   count without one, a percent as a percent. A tile showing a large amount is
   scaled (thousands, millions, billions) by its magnitude, so it fits.
