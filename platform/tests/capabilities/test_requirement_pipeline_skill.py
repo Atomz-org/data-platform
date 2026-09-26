@@ -571,3 +571,18 @@ def test_every_slice_leaves_room_for_its_harness_maps() -> None:
 def test_porcelain_input_keeps_renames_and_drops_deletions() -> None:
     lines = [" M a/b.sql", "?? c/d.md", "R  old.sql -> new.sql", " D gone.sql", "D  gone2.sql"]
     assert plan_commits._porcelain(lines) == ["a/b.sql", "c/d.md", "new.sql"]
+
+
+def test_a_row_shaped_criterion_is_proved_through_wren() -> None:
+    """An acceptance criterion that asks for rows rather than a number has no
+    metric to prove it, and the alternative — raw SQL against the warehouse —
+    is exactly what `query` is forbidden from doing. Phase 9 routes it through
+    the gated road, and Phase 12 checks the workspace `pf semantic mdl` just
+    rewrote, so both places that print the routing agree."""
+    assert "ask-through-wren" in validate_spec.SKILLS[9]
+    assert "ask-through-wren" in validate_spec.SKILLS[12]
+    text = SKILL_MAP.read_text(encoding="utf-8")
+    phase9 = text.split("## Phase 9")[1].split("## Phase 10")[0]
+    phase12 = text.split("## Phase 12")[1].split("## Phase 13")[0]
+    assert "`ask-through-wren`" in phase9 and "pf tool wren query" in phase9
+    assert "`ask-through-wren`" in phase12 and "pf tool wren check" in phase12

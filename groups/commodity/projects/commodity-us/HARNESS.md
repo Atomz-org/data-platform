@@ -24,14 +24,15 @@ What sits between an agent and this project, in the order it meets it. Every lin
 
 - `pf` — power-tools plugin · `pf mcp`, scoped to this project by `PF_PROJECT_DIR`
 - `ducklake` — this project's `.mcp.json`
+- `wren` — this project's `.mcp.json`
 
-The `pf` server exposes 26 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
+The `pf` server exposes 28 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
 
 **By harness** — `docs/HARNESSES.md`'s rows, as they hold here. *Rule* means nothing checks; the commit gate is the backstop.
 
 | harness | entry point | graph | pre-tool gate |
 |---|---|---|---|
-| **Claude Code** | `CLAUDE.md` + this project's hooks | `.mcp.json` + power-tools plugin + this project's `ducklake` | hook — `pre_tool_use.py` on every Edit/Write |
+| **Claude Code** | `CLAUDE.md` + this project's hooks | `.mcp.json` + power-tools plugin + this project's `ducklake`, `wren` | hook — `pre_tool_use.py` on every Edit/Write |
 | **Codex CLI** | `AGENTS.md`, natively | `.codex/config.toml` | none — commit gate only |
 | **Cursor** | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact |
 | **Copilot — VS Code chat** | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only |
@@ -40,7 +41,7 @@ The `pf` server exposes 26 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | **OpenCode** | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only |
 | **Prompt-only (Continue, Ollama, mlx)** | paste `AGENTS.md` | none | none |
 
-This project's own `.mcp.json` adds `ducklake` for Claude Code only; the other harnesses' configs are rendered from the root `.mcp.json`.
+This project's own `.mcp.json` adds `ducklake`, `wren` for Claude Code only; the other harnesses' configs are rendered from the root `.mcp.json`.
 
 ## 2. Reading and writing
 
@@ -170,7 +171,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 - `okf` — Open Knowledge Format: the semantic layer as portable, validated context for agents. (from the group; denies 7; a Dagster asset; a dev server on port 8010/docs)
 - `openmetadata` — Catalogue: publish the ontology, dbt lineage and review findings. (from the group; denies 3; a Dagster asset; a dev server on port 8585/)
 - `recce` — dbt PR review — diff a change against a captured baseline. (from the group; denies 3; impact-gates 1; CI `recce`; a Dagster asset; a dev server on port 8000/)
-- `wren` — MDL semantic layer — project it, inspect it, query through it. (from the group; denies 2; a Dagster asset)
+- `wren` — MDL semantic layer — project it, inspect it, ask questions through it. (from the group; denies 5; a Dagster asset)
 
 **Capabilities present:** `air`, `ducklake`, `evidence`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `wren`.
 

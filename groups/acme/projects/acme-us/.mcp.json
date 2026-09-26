@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "wren": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--no-sync",
+        "wren",
+        "serve",
+        "mcp",
+        "--project",
+        "mdl/wren",
+        "--no-connect",
+        "--quiet"
+      ]
+    }
+  }
+}

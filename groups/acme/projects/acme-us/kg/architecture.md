@@ -119,13 +119,14 @@ flowchart TB
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
+| Wren workspace | ✓ 3 | `mdl/wren` | the semantic layer as an LLM may read it: restricted columns withheld, rules and remembered questions beside it |
 | **governance** | | | |
 | project policy | ✓ 32 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
 | harness map | ✓ | `HARNESS.md` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
-| MCP servers | — | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten — `pf capability-add` |
+| MCP servers | ✓ | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten |
 | decision records | ✓ 2 | `decisions/ADR-0001-platform-macros-on-macro-paths.md` | why this project is shaped the way it is, where code cannot say so |
 | requirements | — | `requirements/**/*.md` | the business requirements it was built from: page snapshot, validated spec, trace — `/build-from-requirement` |
 | **delivery** | | | |

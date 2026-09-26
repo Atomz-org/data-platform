@@ -120,10 +120,10 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <dl class="facts">
 <div class="fact"><dt>Groups</dt><dd>5</dd></div>
 <div class="fact"><dt>Projects</dt><dd>11</dd></div>
-<div class="fact"><dt>Toolkits</dt><dd>25</dd></div>
+<div class="fact"><dt>Toolkits</dt><dd>26</dd></div>
 <div class="fact"><dt>Pinned upstreams</dt><dd>26</dd></div>
 <div class="fact"><dt>pf commands</dt><dd>31</dd></div>
-<div class="fact"><dt>Tests</dt><dd>1136</dd></div>
+<div class="fact"><dt>Tests</dt><dd>1169</dd></div>
 </dl>
 <section id="model">
 <div class="sect-head">
@@ -145,7 +145,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <tr><td>Project</td><td><code>groups/&lt;group&gt;/projects/&lt;project&gt;/</code></td><td>This is the work.</td></tr>
 </tbody></table></div>
 <ul class="prose">
-<li><strong>Platform</strong> holds the engines: the <code>pf</code> command line, the runtime factories for dlt, dbt and Dagster, the platform ontology, the knowledge-graph code, the MCP server an agent calls, and 25 skill toolkits. Everything starts at <code>platform/src/pf/cli.py</code>.</li>
+<li><strong>Platform</strong> holds the engines: the <code>pf</code> command line, the runtime factories for dlt, dbt and Dagster, the platform ontology, the knowledge-graph code, the MCP server an agent calls, and 26 skill toolkits. Everything starts at <code>platform/src/pf/cli.py</code>.</li>
 <li><strong>Group</strong> is a family of sister companies that mean the same thing by the same words. It holds the ontology instance and extension, a shared dbt package of seeds and macros, optional shared Python connectors, and the family&#x27;s decisions on tools, loops, AI controls and notifications.</li>
 <li><strong>Project</strong> is one legal entity. It owns one DuckDB warehouse file, its dlt sources, its dbt models, its metrics, its dashboards and a generated knowledge graph.</li>
 </ul>
@@ -506,7 +506,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <tr><td><code>docs/VENDOR-CARD.md</code></td><td>Vendored upstreams — index</td></tr>
 <tr><td><code>docs/VENDOR.md</code></td><td>Vendored upstreams</td></tr>
 </tbody></table></div>
-<p class="prose">Toolkits are skills every project loads and none copies: <code>dagster-orchestrate</code>, <code>dbt-elementary</code>, <code>dbt-expectations</code>, <code>dbt-govern</code>, <code>dbt-migrate</code>, <code>dbt-modeling</code>, <code>dbt-semantic</code>, <code>dbt-snowflake</code>, <code>dbt-testing</code>, <code>dlt-explore</code>, <code>dlt-ingest</code>, <code>dlt-performance</code>, <code>dlt-quality</code>, <code>duckdb-ops</code>, <code>elementary-observe</code>, <code>evidence-bi</code>, <code>forge-ui</code>, <code>ontology-design</code>, <code>platform-init</code>, <code>power-tools</code>, <code>project-onboarding</code>, <code>python-standards</code>, <code>recce-review</code>, <code>requirement-pipeline</code>, <code>viz-standards</code>. <code>platform/toolkits/ROUTING.md</code> says which wins when they overlap.</p>
+<p class="prose">Toolkits are skills every project loads and none copies: <code>dagster-orchestrate</code>, <code>dbt-elementary</code>, <code>dbt-expectations</code>, <code>dbt-govern</code>, <code>dbt-migrate</code>, <code>dbt-modeling</code>, <code>dbt-semantic</code>, <code>dbt-snowflake</code>, <code>dbt-testing</code>, <code>dlt-explore</code>, <code>dlt-ingest</code>, <code>dlt-performance</code>, <code>dlt-quality</code>, <code>duckdb-ops</code>, <code>elementary-observe</code>, <code>evidence-bi</code>, <code>forge-ui</code>, <code>ontology-design</code>, <code>platform-init</code>, <code>power-tools</code>, <code>project-onboarding</code>, <code>python-standards</code>, <code>recce-review</code>, <code>requirement-pipeline</code>, <code>viz-standards</code>, <code>wren-analytics</code>. <code>platform/toolkits/ROUTING.md</code> says which wins when they overlap.</p>
 </section>
 <section id="true">
 <div class="sect-head">

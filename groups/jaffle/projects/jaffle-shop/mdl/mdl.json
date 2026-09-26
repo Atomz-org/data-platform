@@ -3185,15 +3185,6 @@
       "baseObject": "orders",
       "measures": [
         {
-          "name": "count_lifetime_orders",
-          "expression": "sum(count_lifetime_orders)",
-          "type": "DOUBLE",
-          "description": "Count Lifetime Orders",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
           "name": "drink_orders",
           "expression": "sum(1)",
           "type": "DOUBLE",
@@ -3257,15 +3248,6 @@
           }
         },
         {
-          "name": "lifetime_spend_pretax",
-          "expression": "sum(lifetime_spend_pretax)",
-          "type": "DOUBLE",
-          "description": "LTV Pre-tax",
-          "properties": {
-            "pf.metric_type": "simple"
-          }
-        },
-        {
           "name": "median_revenue",
           "expression": "percentile_cont(0.5) within group (order by product_price)",
           "type": "DOUBLE",
@@ -3285,7 +3267,7 @@
         },
         {
           "name": "order_cost",
-          "expression": "sum(order_cost)",
+          "expression": "sum(orders.order_cost)",
           "type": "DOUBLE",
           "description": "Order Cost",
           "properties": {
@@ -3294,7 +3276,7 @@
         },
         {
           "name": "order_total",
-          "expression": "sum(order_total)",
+          "expression": "sum(orders.order_total)",
           "type": "DOUBLE",
           "description": "Order Total",
           "properties": {

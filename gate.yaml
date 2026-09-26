@@ -143,6 +143,11 @@ denylist_except:
   # checkout. It was what made the file safe to commit; it is what makes it safe
   # to publish.
   - "**/mdl/mdl.json"
+  #   mdl/wren/wren_project.yml  names the Wren workspace beside that contract,
+  #                       generated from it by `pf tool wren workspace` and
+  #                       checked by `pf tool wren check`; a reviewer reads it
+  #                       to know which manifest an agent was pointed at.
+  - "**/mdl/wren/wren_project.yml"
 
   # Dagster's first-run marker. Already tracked, no secret in it, and leaving it
   # denied made `pf check` report drift forever over a file nobody edits.

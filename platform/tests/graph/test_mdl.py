@@ -381,6 +381,46 @@ def test_a_cube_measure_is_real_sql_or_it_is_not_emitted(tmp_path: Path) -> None
     assert not any(m["expression"].lstrip().startswith("--") for m in cube["measures"])
 
 
+def test_a_cube_measure_reads_the_base_object_or_it_is_not_emitted(tmp_path: Path) -> None:
+    """Two ways a measure captured itself, both found by Wren's planner refusing
+    the whole cube ("circular dependency detected in measure expressions"), so
+    that no query in the project planned at all.
+
+    A measure named like a column of the base object shadows that column
+    inside the cube, so `sum(order_cost)` read the measure `order_cost`: the
+    column is qualified by the base object instead. A metric measured on
+    another model names a column the base object does not have, so the bare
+    name resolved to the same-named measure: it is left out, the same rule as
+    a measure that cannot be expressed.
+    """
+    pdir = _project(tmp_path, "commodity", EXTENSION)
+    _write(
+        pdir,
+        [
+            _mart("fct_orders", {"order_id": KEY, "order_cost": {"role": "money_amount"}}),
+            _mart("dim_customers", {"customer_id": KEY, "lifetime_spend": {"role": "money_amount"}}),
+            (
+                [
+                    _metric("order_cost", "simple", agg="sum", expr="order_cost"),
+                    _metric("orders", "simple", agg="count", expr="order_id"),
+                    _metric("lifetime_spend", "simple", agg="sum", expr="lifetime_spend"),
+                ],
+                [
+                    Edge(src="model:fct_orders", dst="metric:order_cost", kind="measures"),
+                    Edge(src="model:fct_orders", dst="metric:orders", kind="measures"),
+                    Edge(src="model:dim_customers", dst="metric:lifetime_spend", kind="measures"),
+                ],
+            ),
+        ],
+    )
+    cube = build_manifest(pdir, "commodity", "commodity-x")["cubes"][0]
+    assert cube["baseObject"] == "fct_orders"
+    assert {m["name"]: m["expression"] for m in cube["measures"]} == {
+        "order_cost": "sum(fct_orders.order_cost)",
+        "orders": "count(order_id)",
+    }
+
+
 # ------------------------------------------------- the OKF projection --------
 #
 # `pf.projections.okf` renders the semantic layer as an Open Knowledge Format

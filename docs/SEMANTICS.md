@@ -53,16 +53,35 @@ Relation.range = Customer,  Customer.identity = customer_id
 Cardinality comes from the relation and is inverted when the foreign key sits on
 the range side — the FK is always on the many side.
 
-## Room left for WrenAI
+## WrenAI, adopted
 
 `pf semantic mdl` emits a manifest validated against
-`core/wren-mdl/mdl.schema.json` from Canner/WrenAI. To adopt Wren, point it at
-`groups/<g>/projects/<p>/mdl/mdl.json`; no modelling work is repeated, because
-the manifest is generated from the same graph the agents already query.
+`core/wren-mdl/mdl.schema.json` from Canner/WrenAI, and `pf.tools.wren` points
+current WrenAI — a CLI over MDL, no web UI — at it. Beside each manifest the tool
+generates the workspace Wren's CLI reads, `mdl/wren/`, from the same tracked
+inputs (the manifest, the ontology, the graph): `wren_project.yml`, the
+LLM-facing `target/mdl.json` with every column classified as personal data
+*removed* (and every relationship, cube measure and view that read it), the
+rules an agent is handed under `knowledge/rules/`, and the questions it has
+answered before under `knowledge/sql/`. `pf tool wren check --all` holds the
+tracked half current in CI, the way `pf semantic mdl --check --all` holds the
+manifest.
+
+Every `wren` process runs inside that workspace with Wren's home pointed at
+it, so one project's memory is never another's. Every question takes one road,
+`pf.tools.wren_gate`: policy (one read-only SELECT, judged by statement type),
+plan (`wren dry-plan` against the LLM-facing manifest), dry-run (`EXPLAIN` on
+the project's warehouse, read-only — Wren's own dry-run cannot see dbt's
+schemas through its DuckDB file scanner), execute (row-limited, through the
+platform's `Warehouse`, never a second connection), and a `wren-query` entry in
+the group's `loop-ledger.json` whichever way it went. The fourth attempt at a
+statement that failed three times is refused with "escalate". The
+`wren-analytics` toolkit is the procedure an agent follows on that road, and the
+`wren_context` / `wren_query` MCP tools are the road itself.
 
 Carried into MDL `properties` so nothing is lost in translation:
-`pf.role`, `pf.pii` (drives masking), `pf.relation`, `pf.also_realises`,
-`grain`, `layer`.
+`pf.role`, `pf.pii` (drives masking in BI, removal in the workspace),
+`pf.relation`, `pf.also_realises`, `grain`, `layer`.
 
 ## Undocumented columns
 

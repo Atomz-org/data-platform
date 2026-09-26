@@ -67,7 +67,7 @@ confidently stale.
 | 1 | `pf gen-staging <g> <p>` (`--overwrite` after an annotation change) | staging models and sources yml | `contracts/annotations.yaml` |
 | 2 | `pf seed <g> <p>` | warehouse (runs `src/<pkg>/seed.py`), then graph and card | the source registered in `seed.py` |
 | 3 | `pf kg build <g> <p>` | `kg/graph.json` | a default-target manifest (re-parse after a recce baseline) |
-| 4 | `pf semantic mdl <g> <p>` | `mdl/mdl.json` | 3 |
+| 4 | `pf semantic mdl <g> <p>` | `mdl/mdl.json`, and the Wren workspace's tracked half (`mdl/wren/wren_project.yml`, `mdl/wren/knowledge/rules/`) | 3 |
 | 5 | `pf report build <g> <p>` | metric pages, `pages/index.md`, sources, exposures | 4, and a seeded warehouse |
 | 6 | `pf kg build`, `pf semantic mdl` again | graph and MDL with the new exposures | 5 |
 | 7 | `pf tool openmetadata payload <g> <p>` | `catalog/openmetadata.json` | 6 |
@@ -118,7 +118,7 @@ again (`pf gate --commits origin/main..HEAD`).
 | gates | `uv run pf check`, `uv run pf tokens`, `uv run pf group verify` | ontology conformance, token budgets |
 | per project | `uv run pf kg build <g> <p>` then `uv run pf arch <g> <p> --check`; `uv run pf air gate <g> <p>` | the map, committed controls |
 | generated context | `uv run pf context check`, `pf memory check`, `pf test check`, `pf arch check`, `pf guide check`, `pf harness check` | stale generated files |
-| semantic and OKF | `uv run pf semantic mdl --check --all`, `uv run pf tool okf check --all` | MDL and bundles current |
+| semantic and OKF | `uv run pf semantic mdl --check --all`, `uv run pf tool okf check --all`, `uv run pf tool wren check --all` | MDL, bundles and Wren workspaces current |
 | commits | `uv run pf gate --commits origin/main..HEAD` | 12-file cap per commit |
 | PR report | `uv run pf pr report --base origin/main` | verdict `review`, never `block` |
 

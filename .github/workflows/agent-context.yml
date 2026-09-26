@@ -161,6 +161,13 @@ jobs:
       - name: MDL manifests are current with their graphs
         run: uv run pf semantic mdl --check --all
 
+      # The Wren workspace beside each manifest — the manifest an agent may
+      # read, and the rules it is handed — rebuilt from the same tracked inputs
+      # and compared the same way. The planner canary runs only where the
+      # engine is installed, which a bare runner is not.
+      - name: Wren workspaces are current with their manifests
+        run: uv run pf tool wren check --all
+
       # What a table and a column *mean*, as every agent and catalogue reads
       # it — and the graph it is joined to. Built from tracked inputs only
       # (`mdl/mdl.json`, `kg/graph.json`), so this compares the same way on a

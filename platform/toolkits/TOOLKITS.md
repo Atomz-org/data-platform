@@ -138,3 +138,11 @@ Precedence between toolkits is in `ROUTING.md`.
   - Mermaid on GitHub renders on both a light and a dark page and does not recolour an explicit fill: pale fill, saturated stroke, near-black ink.
   - Escape every interpolated string and never derive a node id from data — a bad label fails loudly, a duplicate id silently merges two boxes.
   - Colourblind safety is computable, so compute it rather than eyeballing it.
+
+## wren-analytics — A data question no governed metric covers, answered through the project's WrenAI MDL workspace.
+  `ask-through-wren`
+  - One project per question: the workspace under `mdl/wren/`, its ledger and its warehouse. Nothing of another project is visible; a cross-sister question is the roll-up's.
+  - A governed KPI is its metric (`answer-with-metrics`) first. Read the context (rules, remembered answers, schema) before planning anything.
+  - One read-only SELECT over MDL model names, run only through the gate: policy → plan → dry-run → execute → ledger. Never raw SQL, never `wren --sql`, never a second connection.
+  - Three attempts per statement, counted by the ledger; the fourth escalates. Personal data is absent from the workspace by design — say so.
+  - A validated answer is stored as a tracked NL→SQL pair (`pf tool wren store`) and reviewed like code.

@@ -34,6 +34,7 @@ relationship without a word.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -250,6 +251,14 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
         if metrics:
             base = _busiest_model(g, metrics, by_name)
             by_metric = {mt.name: mt for mt in metrics}
+            base_columns = {c.name for c in cols_of.get(base or "", [])}
+            # A measure named like a column of the base object shadows that
+            # column inside the cube: `sum(order_cost)` in a measure called
+            # `order_cost` reads the measure, not the column, and the engine
+            # reports a circular dependency. Qualifying the column by the base
+            # object (`sum(orders.order_cost)`) is what the engine resolves
+            # correctly, and it keeps the governed name on the measure.
+            shadowed = {name for name in by_metric if name in base_columns}
             measures = []
             for mt in metrics:
                 expression = _measure_expression(mt, by_metric)
@@ -260,6 +269,18 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
                     # query against its *base object* died with "Expected: an
                     # expression, found: EOF". A missing measure costs one metric;
                     # an unparseable one costs the busiest mart in the project.
+                    continue
+                for name in shadowed:
+                    expression = re.sub(rf"(?<![\w.]){re.escape(name)}\b", f"{base}.{name}", expression)
+                if _refers_to_a_measure(expression, base_columns, by_metric):
+                    # A cube has one base object, and a metric measured on
+                    # another model names a column that object does not have.
+                    # Wren resolves that name to the same-named *measure* and
+                    # reports a circular dependency — for the whole cube, so
+                    # every query in the project failed to plan. The canary in
+                    # `pf tool wren check` found it; a measure that cannot be
+                    # read from the base object is left out rather than
+                    # approximated, the same rule as an unexpressible one.
                     continue
                 measures.append({
                     "name": mt.name,
@@ -311,6 +332,22 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
     if enum_definitions:
         manifest["enumDefinitions"] = enum_definitions
     return manifest
+
+
+#: A bare identifier: not the qualifier before a dot, not the name after one.
+_IDENT = re.compile(r"(?<![\w.])[a-z_][a-z0-9_]*\b(?!\.)")
+
+
+def _refers_to_a_measure(expression: str, base_columns: set[str], by_metric: dict[str, Node]) -> bool:
+    """Does this measure's SQL name a metric rather than a column of the base object?
+
+    Inside a cube a bare identifier is resolved against the cube's own measures
+    before the base object's columns, so `sum(lifetime_spend)` on a cube based on
+    `orders` — where `lifetime_spend` is a column of `customers` and also a
+    measure here — is the measure reading itself. Only a name that is *not* a
+    base column can be captured that way, which is what this asks.
+    """
+    return any(name in by_metric and name not in base_columns for name in _IDENT.findall(expression.lower()))
 
 
 def _measure_expression(metric: Node, by_metric: dict[str, Node]) -> str | None:
