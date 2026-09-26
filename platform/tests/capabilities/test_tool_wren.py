@@ -459,3 +459,16 @@ def test_the_engine_plans_every_model_of_a_real_workspace(tmp_path: Path) -> Non
     (d / "mdl" / "mdl.json").write_text((COMMODITY / "mdl" / "mdl.json").read_text())
     wc.refresh(root, "commodity", "commodity-india", d)
     assert wc.check(root, "commodity", "commodity-india", d, plan=True) == []
+
+
+def test_the_dagster_check_waits_for_the_writer_pool(tmp_path: Path) -> None:
+    """It opens the warehouse read-only to EXPLAIN every cube, which DuckDB
+    refuses while another process writes. On the pool, a rerun loading one
+    commodity cannot make another run's check report a lock as a broken cube."""
+    from pf.runtime.warehouse import Warehouse
+    from pf.tools.spec import ToolContext
+
+    root, d = _project(tmp_path)
+    ctx = ToolContext(root=root, group="g", project="p", project_dir=d, dbt_dir=d / "transform")
+    (a,) = wren.dagster_assets(ctx).assets
+    assert a.op.pool == Warehouse.for_project(d, "g", "p").writer_pool

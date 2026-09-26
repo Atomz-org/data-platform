@@ -362,11 +362,20 @@ def dagster_assets(ctx: ToolContext) -> ToolContribution:
         return ToolContribution()
 
     deps = [AssetKey([prefix, m["name"]]) for m in s["models"]]
+    from pf.runtime.warehouse import Warehouse
+
+    # The check opens the warehouse read-only to EXPLAIN every cube. DuckDB
+    # refuses that while another process writes, so the step queues on the
+    # project's writer pool like every other reader of a live file: a rerun of
+    # one commodity loading while another's check runs would otherwise report
+    # a lock as a broken cube.
+    pool = Warehouse.for_project(project_dir, getattr(ctx, "group", ""), ctx.project).writer_pool
 
     @asset(
         name="wren_semantic_layer",
         key_prefix=[prefix],
         group_name="semantic",
+        pool=pool,
         deps=deps,
         description="MDL manifest projected for Wren and any other MDL consumer.",
         compute_kind="wren",
@@ -445,6 +454,7 @@ pf tool wren context {{group}} {{project}} "<q>"   # rules + remembered question
 pf tool wren plan {{group}} {{project}} "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query {{group}} {{project}} "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube {{group}} {{project}} --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api {{group}} {{project}}             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store {{group}} {{project}} --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor {{group}} {{project}}               # is the engine actually usable
 ```
@@ -740,6 +750,40 @@ def register_commands(app: Any) -> None:
             raise typer.Exit(0)
         r = cube(_pdir(group, project), cube_name, ms, ds, time_dimension, filters, limit=limit)
         _print_outcome(r, limit)
+
+    @wren_app.command("api")
+    def cmd_api(group: str = typer.Argument(None, help="serve one group's projects (with PROJECT: one project)"),
+                project: str = typer.Argument(None),
+                all_: bool = typer.Option(False, "--all", help="every project with a Wren workspace"),
+                port: int = typer.Option(8766, help="127.0.0.1 only; every project's Ask page calls it"),
+                planner: str = typer.Option("auto", help="auto | rules — auto uses the Anthropic API, "
+                                                         "then the `claude` CLI, then rules")) -> None:
+        """Conversational analytics: the HTTP API behind each project's Evidence
+        `Ask the data` page. One process can serve one project, a group or
+        every project; each lives under /api/p/<group>/<project>/ and answers
+        only for itself. Every question is planned, validated against that
+        project's workspace and run on its gated road."""
+        import os
+
+        from pf.tools import wren_api
+
+        if planner == "rules":
+            os.environ["PF_WREN_PLANNER"] = "rules"
+        if not (all_ or group):
+            console.print("[red]✗[/] name a project (`pf tool wren api <g> <p>`), a group, or pass --all")
+            raise typer.Exit(2)
+        served = wren_api.discover(_root(), None if all_ else group, None if all_ else project)
+        if not served:
+            console.print("[red]✗[/] no project with a Wren workspace matches — `pf tool wren workspace --all`")
+            raise typer.Exit(1)
+        for s in served:
+            st = wren_api.status(s)
+            mark = "[green]✓[/]" if st["ready"] else "[yellow]![/]"
+            detail = (f"{st.get('cubes', 0)} cube(s), {st.get('measures', 0)} measure(s)" if st["ready"]
+                      else f"{st['reason']} — {st['fix']}")
+            console.print(f"{mark} {s.key}: {detail}  [dim]/api/p/{s.key}[/]")
+        console.print(f"  planners {' → '.join(wren_api.planners_available())} · http://127.0.0.1:{port}/api/projects")
+        wren_api.serve(served, port=port)
 
     @wren_app.command("serve")
     def cmd_serve(group: str, project: str,
