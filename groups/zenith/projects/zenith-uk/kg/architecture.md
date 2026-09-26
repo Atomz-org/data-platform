@@ -123,6 +123,7 @@ flowchart TB
 | harness map | ✓ | `HARNESS.md` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
 | MCP servers | — | `.mcp.json` | the servers a capability wires into the agent's session; merged, never overwritten — `pf capability-add` |
 | decision records | ✓ | `decisions/README.md` | why this project is shaped the way it is, where code cannot say so |
+| requirements | — | `requirements/**/*.md` | the business requirements it was built from: page snapshot, validated spec, trace — `/build-from-requirement` |
 | **delivery** | | | |
 | exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
