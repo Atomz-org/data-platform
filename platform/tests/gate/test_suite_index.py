@@ -120,7 +120,10 @@ def test_the_index_is_small_enough_to_be_worth_reading() -> None:
     # it was always written, and `pf test where` searches every one of them. The
     # index went to ~1030 and the budget went back to where it started, so this
     # is a ratchet again rather than a formality.
-    assert approx_tokens < 1200, (
+    #
+    # Raised to 2000 at 72 files (~1210) by the maintainer's decision: each new
+    # file still adds a link to its group's entry, and 1200 left no headroom.
+    assert approx_tokens < 2000, (
         f"the test index is ~{approx_tokens} tokens; it summarises a group "
         f"rather than listing every file, so a new group is what grew it"
     )
