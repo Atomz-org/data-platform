@@ -11,7 +11,7 @@ select metric_time, min(period_low_price_usd) as period_low_price_usd
 from ${metrics_period_low_price_usd} group by 1 order by 1
 ```
 
-<LineChart data={series} x=metric_time y=period_low_price_usd yFmt=num0/>
+<LineChart data={series} x=metric_time y=period_low_price_usd yFmt=usd/>
 
 ## By commodity id
 
@@ -20,5 +20,5 @@ select commodity_id, min(period_low_price_usd) as period_low_price_usd
 from ${metrics_period_low_price_usd} where commodity_id is not null group by 1 order by 2 desc
 ```
 
-<BarChart data={by_dim} x=commodity_id y=period_low_price_usd swapXY=true xFmt=num0/>
+<BarChart data={by_dim} x=commodity_id y=period_low_price_usd swapXY=true xFmt=usd/>
 
