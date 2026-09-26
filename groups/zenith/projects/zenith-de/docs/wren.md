@@ -23,6 +23,7 @@ pf tool wren context zenith zenith-de "<q>"   # rules + remembered questions + s
 pf tool wren plan zenith zenith-de "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query zenith zenith-de "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube zenith zenith-de --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api zenith zenith-de             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store zenith zenith-de --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor zenith zenith-de               # is the engine actually usable
 ```
