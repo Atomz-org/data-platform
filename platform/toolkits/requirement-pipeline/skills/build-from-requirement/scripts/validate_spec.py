@@ -30,6 +30,13 @@ DURATION = re.compile(r"^\d+[mhd]$")
 KINDS = {"rest_api", "sql_database", "filesystem"}
 DISPOSITIONS = {"append", "merge", "replace"}
 RULE_LAYERS = {"staging", "intermediate", "mart", "metric"}
+CONCEPT_TIERS = {"platform", "group", "project"}
+#: What a requirement may change above its project. Each is a group-tier edit
+#: every sister inherits, so each is planned, justified and checkpointed.
+GROUP_CHANGE_KINDS = {"ontology", "shared_connector", "shared_seed", "shared_macro",
+                      "conformance_exemption", "conformed_model", "tools"}
+#: Roles whose values are levels per unit — summing them is meaningless.
+NON_SUMMABLE_ROLES = {"unit_price", "percentage"}
 #: `choose-a-test`'s vocabulary, cheapest first, plus the two non-test proofs.
 RULE_TESTS = {
     "data_test": "add-tests",
@@ -68,20 +75,22 @@ PHASES = {
 #: routing as references/skill-map.md, printed with the plan so the agent sees
 #: who owns each step. Raw is resolved per source kind in `skills_for`.
 SKILLS: dict[int, list[str]] = {
-    0: ["read-memories", "design-architecture", "scaffold-project", "quality-stack"],
+    0: ["read-memories", "design-architecture", "quality-stack"],
     1: [],
     2: ["answer-with-metrics", "design-ontology", "steward-ontology", "choose-a-test"],
-    3: ["recce-review", "blast-radius"],
+    3: ["recce-review", "blast-radius", "choose-a-test"],
     4: ["find-source", "annotate-source", "setup-data-quality", "debug-pipeline", "steward-ontology"],
-    5: ["using-dbt", "quality-stack"],
-    6: ["using-dbt", "choose-a-test", "sql-reviewer"],
-    7: ["using-dbt", "contracts-and-access", "add-tests", "add-expectations", "sql-reviewer"],
-    8: ["build-semantic-layer", "answer-with-metrics", "semantic-conformance"],
-    9: ["run-commands", "troubleshoot-runs", "triage-observability", "answer-with-metrics"],
+    5: ["using-dbt"],
+    6: ["using-dbt", "run-commands", "choose-a-test", "add-unit-test", "sql-reviewer"],
+    7: ["using-dbt", "run-commands", "contracts-and-access", "add-tests", "add-expectations",
+        "quality-stack", "sql-reviewer"],
+    8: ["build-semantic-layer", "semantic-conformance", "answer-with-metrics"],
+    9: ["run-commands", "troubleshoot-runs", "triage-observability", "triage-alerts", "answer-with-metrics"],
     10: ["build-assets", "dignified-python"],
     11: ["build-dashboard", "charts-and-diagrams", "dashboard-loop"],
     12: ["design-ontology"],
-    13: ["recce-review", "impact-verifier", "secrets-auditor", "ship"],
+    13: ["design-architecture", "charts-and-diagrams", "recce-review", "impact-verifier",
+         "secrets-auditor", "ship"],
 }
 KIND_SKILL = {
     "rest_api": "create-rest-pipeline",
@@ -96,6 +105,7 @@ class Report:
         self.warnings: list[str] = []
         self.blocking: list[str] = []
         self.plan: list[dict] = []
+        self.group_skills: list[str] = []
 
     def err(self, where: str, msg: str) -> None:
         self.errors.append(f"{where}: {msg}")
@@ -121,7 +131,40 @@ def _yaml(path: Path) -> dict:
 
 
 def empty_inventory() -> dict[str, set[str]]:
-    return {"models": set(), "metrics": set(), "labels": set(), "sources": set(), "raw": set(), "seeds": set()}
+    return {"models": set(), "metrics": set(), "labels": set(), "sources": set(), "raw": set(), "seeds": set(),
+            "seed_script": set(), "group_seeds": set(), "group_connectors": set(), "group_skills": set(),
+            "conformed": set(), "sisters": set()}
+
+
+CONFORMED_DECL = re.compile(r"^CONFORMED\s*=\s*[(\[](.*?)[)\]]", re.S | re.M)
+
+
+def scan_group(group_dir: Path, project: str) -> dict[str, set[str]]:
+    """What the family already provides, so the build reuses it rather than
+    writing a sister-local copy: shared seeds (a ready-made entity catalogue),
+    shared connectors, the group's own skills, and the paths the group's
+    conformance test holds identical across sisters (read from its
+    `CONFORMED = (...)` declaration, wherever the group keeps it)."""
+    inv = {k: set() for k in ("group_seeds", "group_connectors", "group_skills", "conformed", "sisters")}
+    shared = group_dir / "shared"
+    inv["group_seeds"] = {p.stem for p in (shared / "transform" / "seeds").rglob("*.csv")} \
+        if (shared / "transform" / "seeds").is_dir() else set()
+    src = shared / "python" / "src"
+    if src.is_dir():
+        inv["group_connectors"] = {p.stem for p in src.rglob("*.py") if not p.name.startswith("_")}
+    skills = group_dir / ".claude" / "skills"
+    if skills.is_dir():
+        inv["group_skills"] = {p.name for p in skills.iterdir() if (p / "SKILL.md").is_file()}
+    tests = shared / "python" / "tests"
+    for t in sorted(tests.rglob("*.py")) if tests.is_dir() else []:
+        m = CONFORMED_DECL.search(t.read_text(encoding="utf-8", errors="replace"))
+        if m:
+            inv["conformed"] |= set(re.findall(r"[\"']([^\"']+)[\"']", m.group(1)))
+    projects = group_dir / "projects"
+    if projects.is_dir():
+        inv["sisters"] = {p.name for p in projects.iterdir()
+                          if p.is_dir() and p.name != project and not p.name.startswith(".")}
+    return inv
 
 
 def scan_project(project_dir: Path) -> dict[str, set[str]]:
@@ -164,6 +207,14 @@ def scan_project(project_dir: Path) -> dict[str, set[str]]:
         if r.get("source") and r.get("resource"):
             inv["raw"].add(f"{r['source']}.{r['resource']}")
     inv["sources"] |= {k.split(".", 1)[0] for k in inv["raw"]}
+    # `pf seed` loads only what src/<pkg>/seed.py names; record its words so a
+    # new source it does not mention is caught before "pf seed loaded nothing".
+    seed = project_dir / "src" / project_dir.name.replace("-", "_") / "seed.py"
+    if seed.is_file():
+        inv["seed_script"] = set(re.findall(r"\w+", seed.read_text(encoding="utf-8", errors="replace")))
+        inv["seed_script"].add("<present>")
+    for k, v in scan_group(project_dir.parent.parent, project_dir.name).items():
+        inv[k] = v
     return inv
 
 
@@ -195,11 +246,30 @@ def check_requirement(spec: dict, rep: Report) -> None:
         if not target.get(k):
             rep.err(f"target.{k}", "required — the build happens in exactly one project")
     for c in _list(spec.get("concepts")):
-        name = _dict(c).get("name")
+        c = _dict(c)
+        name = c.get("name")
         if not name or not PASCAL.match(str(name)):
             rep.err(f"concepts[{name}]", "concept names are PascalCase ontology classes")
         elif c.get("exists") is False:
-            rep.warn(f"concepts[{name}]", "not in the ontology — design-ontology runs before any model")
+            tier = c.get("tier")
+            if tier not in CONCEPT_TIERS:
+                rep.err(f"concepts[{name}]", f"a new concept needs tier: {sorted(CONCEPT_TIERS)} — group when "
+                                             "any sister could use the word (design-ontology §tiers)")
+            elif tier == "platform":
+                rep.err(f"concepts[{name}]", "a platform-tier class is a platform change — hand it back, "
+                                             "or place it in the group tier")
+            else:
+                rep.warn(f"concepts[{name}]", f"not in the ontology — design-ontology adds it at the {tier} "
+                                              "tier and publishes it before any model (Phase 2)")
+    for i, g in enumerate(_list(spec.get("group_changes"))):
+        g = _dict(g)
+        where = f"group_changes[{g.get('name') or i}]"
+        if g.get("kind") not in GROUP_CHANGE_KINDS:
+            rep.err(where, f"kind must be one of {sorted(GROUP_CHANGE_KINDS)}")
+        if not g.get("name"):
+            rep.err(where, "name required — the class, connector, seed, macro or path it changes")
+        if not g.get("why"):
+            rep.err(where, "why required — every sister inherits a group change, so it carries its reason")
 
 
 def check_sources(spec: dict, rep: Report) -> set[str]:
@@ -230,6 +300,10 @@ def check_sources(spec: dict, rep: Report) -> set[str]:
                 rep.err(rw, f"write_disposition must be one of {sorted(DISPOSITIONS)}")
             if disp == "merge" and not r.get("primary_key"):
                 rep.err(rw, "merge needs primary_key")
+            if disp in {"append", "merge"} and s.get("kind") in {"rest_api", "sql_database"} \
+                    and not _dict(r.get("incremental")).get("cursor"):
+                rep.warn(rw, f"{disp} with no incremental cursor re-reads the whole history every run — "
+                             "set incremental.cursor, or say why a full read is intended")
             if not r.get("concept"):
                 rep.err(rw, "concept required — annotate-source cannot run without it")
             if not r.get("grain"):
@@ -292,6 +366,16 @@ def check_models(spec: dict, rep: Report, known: set[str], rule_ids: set[str]) -
         if name and name in seen:
             rep.err(f"models[{name}]", "defined twice — dbt refuses two models with one name")
         seen.add(name)
+    for m in _list(models.get("marts")):
+        m = _dict(m)
+        where = f"models.marts[{m.get('name') or '?'}]"
+        cols = [_dict(c) for c in _list(m.get("columns"))]
+        if not any(c.get("role") for c in cols):
+            rep.warn(where, "no column roles — recce's value checks and the expectations floor are derived "
+                            "from mart column meta.role; without them neither covers this mart")
+        if m.get("access") == "public" and not m.get("consumed_outside_group"):
+            rep.warn(where, "access: public is for marts read outside the group (contracts-and-access); "
+                            "keep it protected unless consumed_outside_group says who reads it")
     for m in _list(models.get("intermediate")):
         m = _dict(m)
         name = str(m.get("name") or "")
@@ -341,6 +425,13 @@ def _money_columns(spec: dict) -> dict[str, set[str]]:
         out[str(m.get("name"))] = {str(_dict(c).get("name")) for c in _list(m.get("columns"))
                                    if _dict(c).get("role") == "money_amount"}
     return out
+
+
+def _column_roles(spec: dict) -> dict[str, dict[str, str]]:
+    """{mart: {column: role}}, from the spec's mart columns."""
+    return {str(_dict(m).get("name")): {str(_dict(c).get("name")): str(_dict(c).get("role"))
+                                        for c in _list(_dict(m).get("columns"))}
+            for m in _list(_dict(spec.get("models")).get("marts"))}
 
 
 def check_metrics(spec: dict, rep: Report, marts: set[str], existing: dict[str, set[str]],
@@ -395,6 +486,10 @@ def check_metrics(spec: dict, rep: Report, marts: set[str], existing: dict[str, 
                                 "{dimension: <time>, window: last} or confirm it is a flow")
             if expr in money.get(str(m.get("mart")), set()) and unit and not ISO_CURRENCY.match(str(unit)):
                 rep.err(where, f"measures money column {expr!r} but unit is {unit!r} — use its currency code")
+            role = _column_roles(spec).get(str(m.get("mart")), {}).get(expr)
+            if role in NON_SUMMABLE_ROLES and measure.get("agg") in {"sum", "average", "avg"}:
+                rep.err(where, f"{expr!r} is a {role}: a sum is meaningless and an average weights every row "
+                               "alike — make a ratio of an additive numerator and denominator")
         elif kind == "ratio":
             for part in ("numerator", "denominator"):
                 if m.get(part) not in resolvable:
@@ -484,6 +579,40 @@ def check_schedule(spec: dict, rep: Report, known: set[str]) -> None:
             rep.err(f"{where}.start_paused", "entity keys, as strings")
 
 
+def check_group(spec: dict, rep: Report, existing: dict[str, set[str]]) -> None:
+    """What the family constrains: paths every sister must keep identical, the
+    seed script `pf seed` runs, connectors the group already ships."""
+    changes = {(_dict(g).get("kind"), str(_dict(g).get("name"))) for g in _list(spec.get("group_changes"))}
+    exempt = {n for k, n in changes if k in {"conformance_exemption", "conformed_model"}}
+    conformed = existing["conformed"]
+    if conformed and existing["sisters"]:
+        planned = []
+        for src in (_dict(x) for x in _list(spec.get("sources"))):
+            resources = {f"{src.get('name')}.{_dict(r).get('name')}" for r in _list(src.get("resources"))}
+            if resources - existing["raw"]:
+                planned.append((f"models/staging/{src.get('name')}", f"sources[{src.get('name')}]"))
+        planned += [("models/intermediate", f"models.intermediate[{_dict(m).get('name')}]")
+                    for m in _list(_dict(spec.get("models")).get("intermediate"))
+                    if str(_dict(m).get("name")) not in existing["models"]]
+        for path, where in planned:
+            hit = next((c for c in sorted(conformed) if path == c or path.startswith(c.rstrip("/") + "/")), None)
+            if hit and not any(path.startswith(e) or e.startswith(path) or e == hit for e in exempt):
+                rep.warn(where, f"{path} is conformed across sisters ({hit}) — the group test holds it identical "
+                                "in every sister. Change every sister (a group skill), place the model outside "
+                                "the conformed paths, or declare group_changes: conformance_exemption")
+    if "<present>" in existing["seed_script"]:
+        for s in _list(spec.get("sources")):
+            name = str(_dict(s).get("name") or "")
+            if name and name not in existing["seed_script"]:
+                rep.warn(f"sources[{name}]", "src/<pkg>/seed.py does not name it — `pf seed` runs only that "
+                                             "script, so register the source there (run_source with its contract)")
+    for s in _list(spec.get("sources")):
+        name = str(_dict(s).get("name") or "")
+        if name in existing["group_connectors"]:
+            rep.warn(f"sources[{name}]", "the group already ships a connector by this name — declare it in the "
+                                         "project and reuse it (find-source tier 1), never a sister-local copy")
+
+
 def check_questions(spec: dict, rep: Report) -> None:
     for q in _list(spec.get("open_questions")):
         q = _dict(q)
@@ -497,6 +626,21 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
         action = (item or {}).get("action") or ("modify" if present else "create")
         rep.plan.append({"layer": layer, "name": name, "action": action})
 
+    target = _dict(spec.get("target"))
+    if target.get("create"):
+        rep.plan.append({"layer": "project", "name": f"{target.get('group')}/{target.get('project')}",
+                         "action": "create"})
+    for c in _list(spec.get("concepts")):
+        c = _dict(c)
+        if c.get("exists") is False and c.get("tier") in {"group", "project"}:
+            rep.plan.append({"layer": c["tier"], "name": f"ontology: {c.get('name')}", "action": "create"})
+    new_classes = {str(_dict(c).get("name")) for c in _list(spec.get("concepts")) if _dict(c).get("exists") is False}
+    for g in _list(spec.get("group_changes")):
+        g = _dict(g)
+        if g.get("kind") == "ontology" and str(g.get("name")) in new_classes:
+            continue      # planned once, as the concept it creates
+        rep.plan.append({"layer": "group", "name": f"{g.get('kind')}: {g.get('name')}", "action": "modify"})
+
     for s in _list(spec.get("sources")):
         s = _dict(s)
         for r in _list(s.get("resources")):
@@ -505,7 +649,7 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
             # Each layer on its own evidence: a staging model without a landed
             # resource behind it still needs the pipeline built.
             rep.plan.append({"layer": "raw", "name": raw,
-                             "action": "reuse" if raw in existing.get("raw", set()) else "create"})
+                             "action": "reuse" if raw in existing["raw"] else "create"})
             rep.plan.append({"layer": "staging", "name": stg,
                              "action": "reuse" if stg in existing["models"] else "create"})
     models = _dict(spec.get("models"))
@@ -526,10 +670,21 @@ def build_plan(spec: dict, existing: dict[str, set[str]], rep: Report) -> None:
                          "action": "create"})
 
 
+#: Layers whose `modify` changes data a baseline can diff. A group-tier edit is
+#: reviewed at Checkpoint 1 and by the group's tests, not by recce.
+DIFFABLE = {"raw", "staging", "intermediate", "marts", "metrics", "reporting"}
+
+
+def modifies_data(rep: Report) -> bool:
+    return any(p["action"] == "modify" and p["layer"] in DIFFABLE for p in rep.plan)
+
+
 def phases(rep: Report, spec: dict) -> list[int]:
     touched = {p["layer"] for p in rep.plan if p["action"] in {"create", "modify"}}
+    if touched & {"group", "project"}:
+        touched.add("spec")        # design-ontology publishes group terms in Phase 2
     run = {"scope", "intake", "spec", "build", "catalogue", "close"}
-    if any(p["action"] == "modify" for p in rep.plan):
+    if modifies_data(rep):
         run.add("impact")
     run |= touched & set(PHASES)
     schedule = _dict(spec.get("schedule"))
@@ -567,15 +722,29 @@ def skills_for(phase: int, spec: dict, modifying: bool = False) -> list[str]:
         if _dict(spec.get("schedule")).get("sla"):
             add("optimize-performance")
         add("dignified-python")
-    if phase in (6, 7):
-        layer = "intermediate" if phase == 6 else "mart"
+    target = _dict(spec.get("target"))
+    if phase == 0:
+        if target.get("create"):
+            add("scaffold-project")
+        if target.get("adopt_repo"):
+            add("onboard-project")
+    if phase == 2 and _list(spec.get("group_changes")):
+        add("design-ontology")
+    if phase in (5, 6, 7, 8):
+        layer = {5: "staging", 6: "intermediate", 7: "mart", 8: "metric"}[phase]
         for r in rules:
             if r.get("layer") == layer:
                 add(RULE_TESTS.get(_dict(r.get("test")).get("type"), ""))
+        if phase == 5 and any(r.get("layer") == "staging" for r in rules):
+            add("annotate-source")   # staging is generated: its rules are annotation roles
         if phase == 6 and any(_dict(r.get("reference_sql")) for r in rules):
             add("port-snowflake-sql")
-        if phase == 7 and any(_dict(s.get("freshness")) for s in sources):
-            add("add-anomaly-tests")
+    # Freshness belongs on the source (a freshness monitor), never on the mart;
+    # a mart gets monitors only when the spec names a volume or share movement.
+    if phase == 5 and any(_dict(s.get("freshness")) for s in sources):
+        add("add-anomaly-tests")
+    if phase == 7 and any(_list(_dict(m).get("monitors")) for m in _list(_dict(spec.get("models")).get("marts"))):
+        add("add-anomaly-tests")
     return [n for n in out if n]
 
 
@@ -611,14 +780,28 @@ def validate(spec: dict, project_dir: Path | None = None) -> Report:
     if not isinstance(spec, dict) or spec.get("spec_version") != 1:
         rep.err("spec_version", "must be 1")
         return rep
+    target = _dict(spec.get("target"))
     if project_dir:
         project_dir = project_dir.resolve()
-    existing = scan_project(project_dir) if project_dir else empty_inventory()
-    if project_dir:
-        target = _dict(spec.get("target"))
-        if project_dir.name != target.get("project") or project_dir.parent.parent.name != target.get("group"):
-            rep.err("target", f"spec targets {target.get('group')}/{target.get('project')}, "
-                              f"not {project_dir.parent.parent.name}/{project_dir.name}")
+        if project_dir.is_dir() and target.get("create"):
+            rep.err("target.create", f"{project_dir.name} already exists — drop create and build into it")
+        elif not project_dir.is_dir() and not target.get("create"):
+            rep.err("target", f"{project_dir} does not exist — set target.create: true to scaffold it "
+                              "(scaffold-project), or point at the project")
+    existing = scan_project(project_dir) if project_dir and project_dir.is_dir() else empty_inventory()
+    if project_dir and not project_dir.is_dir() and project_dir.parent.parent.is_dir():
+        existing.update(scan_group(project_dir.parent.parent, project_dir.name))
+    if project_dir and (project_dir.name != target.get("project")
+                        or project_dir.parent.parent.name != target.get("group")):
+        rep.err("target", f"spec targets {target.get('group')}/{target.get('project')}, "
+                          f"not {project_dir.parent.parent.name}/{project_dir.name}")
+    if project_dir and target.get("create") and not project_dir.parent.parent.is_dir():
+        if target.get("new_group"):
+            rep.warn("target.new_group", "the group does not exist — scaffold-project runs `pf new-group` first, "
+                                         "and the group tier (ontology, tools, notify) is part of this build")
+        else:
+            rep.err("target", f"group {target.get('group')!r} does not exist — set target.new_group: true "
+                              "(a new family is a decision, not a side effect)")
 
     check_secrets(spec, "", rep)
     check_requirement(spec, rep)
@@ -633,8 +816,10 @@ def validate(spec: dict, project_dir: Path | None = None) -> Report:
     metrics = check_metrics(spec, rep, marts | existing["models"], existing, rule_ids) | existing["metrics"]
     check_reports(spec, rep, metrics)
     check_acceptance(spec, rep, metrics)
-    check_schedule(spec, rep, known_models | existing["seeds"])
+    check_schedule(spec, rep, known_models | existing["seeds"] | existing["group_seeds"])
+    check_group(spec, rep, existing)
     check_questions(spec, rep)
+    rep.group_skills = sorted(existing["group_skills"])
     build_plan(spec, existing, rep)
     return rep
 
@@ -657,13 +842,14 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     rep = validate(spec, args.project_dir)
     run = phases(rep, spec) if not rep.errors else []
-    modifying = any(p["action"] == "modify" for p in rep.plan)
+    modifying = modifies_data(rep)
     routing = {p: skills_for(p, spec, modifying) for p in run}
     code = 1 if rep.errors else 2 if rep.blocking else 0
 
     if args.json:
         print(json.dumps({"errors": rep.errors, "warnings": rep.warnings, "blocking": rep.blocking,
-                          "plan": rep.plan, "phases": run, "routing": routing, "exit": code}, indent=2))
+                          "plan": rep.plan, "phases": run, "routing": routing,
+                          "group_skills": rep.group_skills, "exit": code}, indent=2))
         return code
 
     for e in rep.errors:
@@ -680,6 +866,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"phases[{len(run)}]{{phase,skills}}:")
         for p in run:
             print(f"  {p},{' '.join(routing[p]) or '-'}")
+    if rep.group_skills:
+        print(f"group skills (read before building; they own the family's conventions): {' '.join(rep.group_skills)}")
     print({0: "✓ valid", 1: f"✗ {len(rep.errors)} error(s)", 2: "✓ valid — blocked on open questions"}[code])
     return code
 

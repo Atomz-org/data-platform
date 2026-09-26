@@ -14,9 +14,16 @@ requirement:
   out_of_scope: []
 
 target: {group: null, project: null}
+#  create: true                    # scaffold the project (Phase 0); new_group: true to create the group too
+#  adopt_repo: null                 # an external dbt repo to adopt first (onboard-project)
 
 concepts: []
 #  - {name: Order, exists: true, identity: "order number", from: "§Definitions"}
+#  - {name: NewThing, exists: false, tier: group, identity: null, from: null}   # tier: group | project
+
+group_changes: []
+#  - {kind: ontology, name: NewThing, why: "any sister could use the word"}
+#    kinds: ontology | shared_connector | shared_seed | shared_macro | conformance_exemption | conformed_model | tools
 
 sources: []
 #  - name: <source>
@@ -59,7 +66,9 @@ models:
   #    concept: null
   #    inputs: []
   #    rules: []
-  #    columns: [{name: null, role: null, description: null}]
+  #    columns: [{name: null, role: null, description: null}]   # a role on every column
+  #    access: protected            # public only with consumed_outside_group: <who>
+  #    monitors: []                 # volume / share movements the page names → add-anomaly-tests
 
 metrics: []
 #  - name: null

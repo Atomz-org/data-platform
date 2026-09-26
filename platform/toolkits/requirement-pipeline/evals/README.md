@@ -24,6 +24,20 @@ What proves this skill is `platform/tests/capabilities/test_requirement_pipeline
   untested rules, inline credentials, no acceptance criteria), and plans
   `reuse` for what a project already has
 - the Confluence converter keeps tables, code macros, panels and nested lists
+- the build lands in the right tier: a new concept declares its tier, a group
+  change carries its reason, a new project is scaffolded only when
+  `target.create` asks and a new group only when `target.new_group` does
+- the family is read before building: shared connectors and seeds count as
+  reuse, a source `seed.py` does not name is flagged, and a staging source or
+  model under a path the group's conformance test holds identical is warned
+  unless its exemption is declared — proven against the real commodity project
+  with `assets/spec.per-entity.example.yaml`
+- what owning skills require is enforced: freshness monitored on the source,
+  column roles on marts, `public` only for marts read outside the group, no
+  sum of a price or percentage, an incremental cursor on append and merge
+- delivery: `scripts/plan_commits.py` slices a build in pipeline order at ≤ 12
+  files with room for each slice's harness maps, refuses paths that never ship,
+  and reproduces the order a 270-file build needed to pass the gate
 
 If extraction is ever routed through a model, for example a `requirement_extractor`
 agent that drafts `spec.yaml` from a snapshot, its cases belong here. Grade them

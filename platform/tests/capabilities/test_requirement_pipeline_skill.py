@@ -34,6 +34,9 @@ def _load(name: str):
 
 validate_spec = _load("validate_spec")
 confluence_fetch = _load("confluence_fetch")
+plan_commits = _load("plan_commits")
+PER_ENTITY = SKILL_DIR / "assets" / "spec.per-entity.example.yaml"
+COMMODITY_INDIA = REPO_ROOT / "groups" / "commodity" / "projects" / "commodity-india"
 
 
 def _text() -> str:
@@ -272,7 +275,10 @@ def test_routing_follows_what_the_spec_contains() -> None:
     assert "create-rest-pipeline" in validate_spec.skills_for(4, spec)
     assert "secrets-auditor" in validate_spec.skills_for(4, spec)          # it has a secret_ref
     assert {"add-tests", "add-unit-test"} <= set(validate_spec.skills_for(6, spec))  # BR-1, BR-3
-    assert "add-anomaly-tests" in validate_spec.skills_for(7, spec)         # the source has freshness
+    assert "add-anomaly-tests" in validate_spec.skills_for(5, spec)         # freshness is the source's
+    assert "add-anomaly-tests" not in validate_spec.skills_for(7, spec)     # …never the mart's
+    spec["models"]["marts"][0]["monitors"] = ["daily order volume"]
+    assert "add-anomaly-tests" in validate_spec.skills_for(7, spec)
     spec["sources"][0]["kind"] = "filesystem"
     assert {"create-filesystem-pipeline", "read-file"} <= set(validate_spec.skills_for(4, spec))
     assert "create-rest-pipeline" not in validate_spec.skills_for(4, spec)
@@ -406,3 +412,162 @@ def test_a_redirect_is_refused_rather_than_followed_with_credentials() -> None:
                                  headers={"Authorization": "Basic c2VjcmV0"})
     with pytest.raises(urllib.error.HTTPError, match="refusing redirect"):
         handler.redirect_request(req, io.BytesIO(), 302, "Found", {}, "http://evil.example.com/")
+
+
+# ------------------------------------------------------ the group and tiers ----
+def _per_entity() -> dict:
+    return yaml.safe_load(PER_ENTITY.read_text(encoding="utf-8"))
+
+
+def test_the_per_entity_example_is_valid_on_its_own() -> None:
+    rep = validate_spec.validate(_per_entity())
+    assert rep.errors == [] and rep.blocking == []
+
+
+@pytest.mark.skipif(not COMMODITY_INDIA.is_dir(), reason="the example's project is not in this checkout")
+def test_the_per_entity_example_plans_against_the_real_project() -> None:
+    """The multi-entity build crosses tiers: two group-tier classes and a
+    conformance exemption, planned once each, no recce baseline (nothing
+    existing is diffable), and the family's own skills surfaced."""
+    spec = _per_entity()
+    rep = validate_spec.validate(spec, COMMODITY_INDIA)
+    assert rep.errors == [], rep.errors
+    layers = [(p["layer"], p["name"]) for p in rep.plan]
+    assert ("group", "ontology: ExchangeContract") in layers
+    assert layers.count(("group", "ontology: ExchangeContract")) == 1
+    assert ("group", "conformance_exemption: models/staging/mcx") in layers
+    phases = validate_spec.phases(rep, spec)
+    assert 3 not in phases and 10 in phases
+    assert rep.group_skills, "the group's own skills are listed for Phase 0"
+    assert any("seed.py does not name it" in w for w in rep.warnings)
+
+
+@pytest.mark.skipif(not COMMODITY_INDIA.is_dir(), reason="the example's project is not in this checkout")
+def test_a_new_source_under_a_conformed_path_is_warned_without_its_exemption() -> None:
+    spec = _per_entity()
+    spec["group_changes"] = [g for g in spec["group_changes"] if g["kind"] != "conformance_exemption"]
+    warnings = validate_spec.validate(spec, COMMODITY_INDIA).warnings
+    assert any("conformed across sisters" in w and "models/staging/mcx" in w for w in warnings), warnings
+
+
+@pytest.mark.parametrize("mutate, expected", [
+    (lambda s: s["concepts"][2].pop("tier"), "a new concept needs tier"),
+    (lambda s: s["concepts"][2].update(tier="platform"), "platform-tier class is a platform change"),
+    (lambda s: s["group_changes"][0].pop("why"), "why required"),
+    (lambda s: s["group_changes"][0].update(kind="rewrite"), "kind must be one of"),
+    (lambda s: s["metrics"][0]["measure"].update(expr="flagship_close_price"), "is a unit_price"),
+])
+def test_the_group_tier_is_changed_only_on_purpose(mutate, expected: str) -> None:
+    spec = _per_entity()
+    mutate(spec)
+    errors = validate_spec.validate(spec).errors
+    assert any(expected in e for e in errors), errors
+
+
+def test_a_new_project_is_scaffolded_only_when_asked(tmp_path: Path) -> None:
+    group = tmp_path / "example"
+    (group / "projects").mkdir(parents=True)
+    missing = group / "projects" / "example-retail"
+    assert any("does not exist" in e for e in validate_spec.validate(_example(), missing).errors)
+
+    spec = _example()
+    spec["target"]["create"] = True
+    rep = validate_spec.validate(spec, missing)
+    assert rep.errors == [], rep.errors
+    assert {"layer": "project", "name": "example/example-retail", "action": "create"} in rep.plan
+    assert "scaffold-project" in validate_spec.skills_for(0, spec)
+
+    missing.mkdir()
+    assert any("already exists" in e for e in validate_spec.validate(spec, missing).errors)
+
+
+def test_a_new_group_is_a_decision_not_a_side_effect(tmp_path: Path) -> None:
+    project = tmp_path / "example" / "projects" / "example-retail"
+    spec = _example()
+    spec["target"]["create"] = True
+    assert any("does not exist" in e and "new_group" in e for e in validate_spec.validate(spec, project).errors)
+    spec["target"]["new_group"] = True
+    rep = validate_spec.validate(spec, project)
+    assert rep.errors == [] and any("pf new-group" in w for w in rep.warnings)
+
+
+def test_the_family_is_read_for_reuse_and_registration(tmp_path: Path) -> None:
+    group = tmp_path / "example"
+    project = group / "projects" / "example-retail"
+    (project / "src" / "example_retail").mkdir(parents=True)
+    (project / "src" / "example_retail" / "seed.py").write_text("run_source(wh, other_feed)\n")
+    (group / "shared" / "python" / "src" / "example_shared").mkdir(parents=True)
+    (group / "shared" / "python" / "src" / "example_shared" / "shop_api.py").write_text("")
+    (group / "shared" / "transform" / "seeds").mkdir(parents=True)
+    (group / "shared" / "transform" / "seeds" / "channels.csv").write_text("channel\n")
+    spec = _example()
+    spec["schedule"]["per_entity"] = {"by": "channel", "catalogue": "channels"}
+    warnings = validate_spec.validate(spec, project).warnings
+    assert any("group already ships a connector" in w for w in warnings), warnings
+    assert any("seed.py does not name it" in w for w in warnings), warnings
+    assert not any("catalogue 'channels'" in w for w in warnings), "a shared seed is a catalogue already"
+
+
+@pytest.mark.parametrize("mutate, expected", [
+    (lambda s: s["models"]["marts"][0].update(access="public"), "access: public is for marts read outside"),
+    (lambda s: s["models"]["marts"][0].pop("columns"), "no column roles"),
+    (lambda s: s["sources"][0]["resources"][0].pop("incremental"), "no incremental cursor"),
+])
+def test_what_the_owning_skills_require_is_warned(mutate, expected: str) -> None:
+    assert any(expected in w for w in _warnings_after(mutate))
+
+
+def test_a_group_change_alone_does_not_ask_for_a_data_baseline() -> None:
+    spec = _per_entity()
+    rep = validate_spec.validate(spec)
+    assert not validate_spec.modifies_data(rep)
+    assert "recce-review" not in validate_spec.skills_for(13, spec, validate_spec.modifies_data(rep))
+
+
+# ----------------------------------------------------------------- delivery ----
+BUILD = [
+    "groups/g/projects/p/okf/metrics/m1.md",
+    "groups/g/projects/p/transform/models/marts/area/fct_x.sql",
+    "groups/g/projects/p/src/p/sources/feed.py",
+    "groups/g/projects/p/tests/test_feed.py",
+    "groups/g/projects/p/transform/models/staging/feed/stg_feed__rows.sql",
+    "groups/g/projects/p/transform/models/intermediate/feed/int_feed__rolled.sql",
+    "groups/g/projects/p/transform/models/marts/area/_area__semantic.yml",
+    "groups/g/projects/p/src/p/defs/feed.py",
+    "groups/g/projects/p/reporting/pages/feed/index.md",
+    "groups/g/projects/p/reporting/pages/metrics/m1.md",
+    "groups/g/projects/p/kg/graph.json",
+    "groups/g/ontology/extension.yaml",
+    "groups/g/projects/sister/okf/concepts/Thing.md",
+    "groups/g/projects/p/HARNESS.md",
+    "vendor/upstream",
+    "groups/g/projects/p/data/p.duckdb",
+    "uv.lock",
+]
+
+
+def test_commits_are_planned_in_pipeline_order() -> None:
+    out = plan_commits.plan(BUILD, "g", "p")
+    order = [s["title"] for s in out["slices"]]
+    assert order == ["group tier", "sister bundles (generated)", "ingestion", "staging (generated)",
+                     "intermediate", "marts and tests", "semantic layer", "orchestration and docs",
+                     "hand-written pages", "generated metric pages", "OKF bundle", "graph, MDL, catalogue"]
+    assert out["maps"] == ["groups/g/projects/p/HARNESS.md"], "maps are regenerated per slice, never planned"
+    assert set(out["refused"]) == {"vendor/upstream", "groups/g/projects/p/data/p.duckdb"}
+    assert "uv.lock" in next(s for s in out["slices"] if s["title"] == "ingestion")["files"]
+
+
+def test_every_slice_leaves_room_for_its_harness_maps() -> None:
+    pages = [f"groups/g/projects/p/reporting/pages/metrics/m{i}.md" for i in range(40)]
+    group = [f"groups/g/okf/concepts/C{i}.md" for i in range(20)]
+    out = plan_commits.plan(pages + group, "g", "p")
+    for s in out["slices"]:
+        room = 3 if s["title"].startswith("group tier") else 1
+        assert len(s["files"]) + room <= plan_commits.MAX_FILES, s
+    assert out["slices"][0]["harness"] == "pf harness g"
+    assert out["slices"][-1]["harness"] == "pf harness g p"
+
+
+def test_porcelain_input_keeps_renames_and_drops_deletions() -> None:
+    lines = [" M a/b.sql", "?? c/d.md", "R  old.sql -> new.sql", " D gone.sql", "D  gone2.sql"]
+    assert plan_commits._porcelain(lines) == ["a/b.sql", "c/d.md", "new.sql"]

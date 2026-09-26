@@ -1,0 +1,149 @@
+# A filled spec for a multi-entity requirement: an exchange's daily settlement
+# file for every commodity it lists, one pausable job per commodity, a report
+# per commodity. It is the shape of a build that crosses tiers — two new
+# group-tier classes, a conformance exemption for a source only one sister has —
+# and the fixture the validator's tests run against the real project it names.
+# Modelled on the commodity group's MCX bhavcopy build; nothing here is secret.
+spec_version: 1
+
+requirement:
+  id: REQ-MCX-001
+  title: MCX settlement prices and trading metrics, per commodity
+  summary: The desk trades against what MCX settled. Land the daily bhavcopy for every MCX commodity (futures and options), compute the trading metrics a commodity desk reads, report each commodity on its own page with a summary of all, and run each commodity as its own job that can be paused at any time.
+  status: confirmed
+  source: {system: confluence, page_id: "900101", version: 3, url: "https://example.atlassian.net/wiki/spaces/DESK/pages/900101"}
+  owner: {name: Commodities Desk, email: desk@example.com}
+  links: [DESK-42]
+  out_of_scope: [intraday ticks, order placement]
+
+target: {group: commodity, project: commodity-india}
+
+concepts:
+  - {name: Commodity, exists: true, identity: commodity id, from: "§Scope"}
+  - {name: Market, exists: true, identity: market code, from: "§Scope"}
+  - {name: ExchangeContract, exists: false, tier: group, identity: "exchange + instrument + code + expiry", from: "§Definitions row 1"}
+  - {name: ContractSession, exists: false, tier: group, identity: "contract + trade date", from: "§Definitions row 2"}
+
+group_changes:
+  - {kind: ontology, name: ExchangeContract, why: "A futures contract is the same thing on every exchange; a CME sister uses the same word."}
+  - {kind: ontology, name: ContractSession, why: "One contract's settled day, exchange-neutral."}
+  - {kind: conformance_exemption, name: models/staging/mcx, why: "MCX is India's exchange; no sister lands it, so its staging cannot be identical across sisters."}
+  - {kind: conformance_exemption, name: models/intermediate/mcx, why: "Same source, same reason."}
+
+sources:
+  - name: mcx
+    kind: rest_api
+    client: mcxlib
+    connection: {base_url: "https://www.mcxindia.com/market-data/bhavcopy"}
+    freshness: {warn_after: 2d, error_after: 4d}
+    resources:
+      - name: futures_bhavcopy
+        endpoint: GetCommoditywiseBhavCopy
+        write_disposition: merge
+        primary_key: [bhavcopy_id]
+        incremental: {cursor: trade_date, initial_value: "2021-01-01", lag: 5d}
+        concept: ContractSession
+        grain: one futures contract per trading day
+        currency: INR
+        roles:
+          bhavcopy_id: natural_key
+          contract_code: foreign_key
+          trade_date: event_time
+          expiry_date: reference_date
+          close_price: unit_price
+          volume_lots: quantity
+          open_interest_lots: quantity
+          turnover_lakhs: money_amount
+        links: {contract_code: ExchangeContract}
+        identities:
+          - "turnover ≈ close price × lots × quote units per lot, per contract code"
+          - "low ≤ open, close ≤ high"
+        from: "§Data sources row 1"
+      - name: options_bhavcopy
+        endpoint: GetCommoditywiseBhavCopy
+        write_disposition: merge
+        primary_key: [bhavcopy_id]
+        incremental: {cursor: trade_date, initial_value: "2021-01-01", lag: 5d}
+        concept: ContractSession
+        grain: one option strike and type per trading day
+        currency: INR
+        roles:
+          bhavcopy_id: natural_key
+          contract_code: foreign_key
+          trade_date: event_time
+          strike_price: unit_price
+          volume_lots: quantity
+          turnover_lakhs: money_amount
+        identities:
+          - "turnover is notional: (strike + premium) × quantity, so premium = turnover − strike × lots × quote units"
+        from: "§Data sources row 2"
+
+business_rules:
+  - id: BR-1
+    statement: Indicators run on the most-active contract, prices ratio back-adjusted at each roll, so a roll is never a price move.
+    layer: intermediate
+    implemented_in: [int_mcx__continuous_daily]
+    test: {type: unit_test}
+    from: "§Metrics 1"
+  - id: BR-2
+    statement: Option activity is the premium paid, not the notional the exchange reports.
+    layer: intermediate
+    implemented_in: [int_mcx__options_chain_daily]
+    test: {type: data_test, name: expression, expression: "premium_turnover_inr >= 0 and premium_turnover_inr < notional_turnover_inr"}
+    from: "§Metrics 4"
+  - id: BR-3
+    statement: A commodity's price is its flagship contract's; activity is summed across every code in rupees.
+    layer: mart
+    implemented_in: [fct_mcx_commodity_rollup_daily]
+    test: {type: unit_test}
+    from: "§Metrics 2"
+
+models:
+  intermediate:
+    - {name: int_mcx__continuous_daily, description: Roll-free continuous series per code., inputs: [stg_mcx__futures_bhavcopy], rules: [BR-1], from: "§Metrics 1"}
+    - {name: int_mcx__options_chain_daily, description: One option chain per day with PCR, OI walls and max pain., inputs: [stg_mcx__options_bhavcopy], rules: [BR-2], from: "§Metrics 4"}
+  marts:
+    - name: fct_mcx_commodity_rollup_daily
+      kind: fact
+      grain: one commodity per trading day
+      concept: ContractSession
+      inputs: [int_mcx__continuous_daily, int_mcx__options_chain_daily]
+      rules: [BR-3]
+      access: protected
+      columns:
+        - {name: commodity_day_id, role: natural_key, description: Commodity and day.}
+        - {name: mcx_commodity, role: foreign_key, description: The commodity.}
+        - {name: trade_date, role: event_time, description: Session date.}
+        - {name: flagship_close_price, role: unit_price, description: Flagship contract close.}
+        - {name: log_return_1d, role: measure, description: Flagship log return.}
+        - {name: turnover_inr, role: money_amount, description: Turnover across every code.}
+        - {name: open_interest_value_inr, role: money_amount, description: Open interest valued at close.}
+        - {name: currency_code, role: currency_code, description: Always INR.}
+
+metrics:
+  - {name: mcx_commodity_turnover_inr, label: MCX Turnover — per Commodity, description: Futures turnover across every code., type: simple, unit: INR, mart: fct_mcx_commodity_rollup_daily, measure: {agg: sum, expr: turnover_inr}, time_dimension: trade_date, dimensions: [mcx_commodity], owner: Commodities Desk, rules: [BR-3], from: "§KPIs row 1"}
+  - {name: mcx_commodity_oi_value_inr, label: MCX Open Interest Value — per Commodity, description: Open interest at the period's last session., type: simple, unit: INR, mart: fct_mcx_commodity_rollup_daily, measure: {agg: sum, expr: open_interest_value_inr, non_additive: {dimension: trade_date, window: last}}, time_dimension: trade_date, dimensions: [mcx_commodity], owner: Commodities Desk, from: "§KPIs row 2"}
+  - {name: mcx_commodity_log_return, label: MCX Log Return — per Commodity, description: Sum of daily log returns., type: simple, unit: ratio, mart: fct_mcx_commodity_rollup_daily, measure: {agg: sum, expr: log_return_1d}, time_dimension: trade_date, dimensions: [mcx_commodity], owner: Commodities Desk, from: "§KPIs row 3"}
+  - {name: mcx_commodity_sessions, label: MCX Sessions — per Commodity, description: Trading sessions., type: simple, unit: count, mart: fct_mcx_commodity_rollup_daily, measure: {agg: count, expr: commodity_day_id}, time_dimension: trade_date, dimensions: [mcx_commodity], owner: Commodities Desk, from: "§KPIs row 3"}
+  - {name: mcx_commodity_avg_daily_return, label: MCX Average Daily Return — per Commodity, description: Log return per session., type: ratio, unit: percent, numerator: mcx_commodity_log_return, denominator: mcx_commodity_sessions, owner: Commodities Desk, from: "§KPIs row 3"}
+
+reports:
+  - {page: mcx, question: "How is each MCX commodity trading, and which deserve attention today?", audience: Commodities desk, metrics: [mcx_commodity_turnover_inr, mcx_commodity_oi_value_inr, mcx_commodity_avg_daily_return], grain: day, filters: [mcx_commodity], per_entity: mcx_commodity}
+
+schedule:
+  cron: "0 6 * * 2-6"
+  timezone: Asia/Kolkata
+  partitioning: none
+  backfill_from: "2021-01-01"
+  sla: "fct_mcx_commodity_rollup_daily fresh by 08:00 Asia/Kolkata"
+  per_entity: {by: mcx_commodity, catalogue: mcx_products, stagger: 3m, start_paused: [cotton, kapas]}
+
+catalog: {domain: Commodities, data_product: MCX Trading Analytics, owners: [desk@example.com], tier: Tier1, glossary_terms: [ExchangeContract, Roll Yield], pii: []}
+
+acceptance:
+  - {id: AC-1, statement: Every listed commodity has landed sessions., check: {test: assert_mcx_every_commodity_is_loaded}}
+  - {id: AC-2, statement: Option premium is below notional on every chain-day., check: {test: assert_mcx_option_premium_is_below_notional}}
+  - {id: AC-3, statement: Gold's average daily return over 2025 lies within ±1%., check: {metric: mcx_commodity_avg_daily_return, grain: year, where: "mcx_commodity = 'gold'", expect: {between: [-0.01, 0.01]}}}
+
+open_questions:
+  - {id: Q-1, question: "Do MCX's terms of use allow automated daily reads of the bhavcopy page?", blocking: true, ask: Commodities Desk, answer: "Yes for a spaced daily read; recorded in an ADR.", answer_from: "desk sign-off, page v3 comment"}
