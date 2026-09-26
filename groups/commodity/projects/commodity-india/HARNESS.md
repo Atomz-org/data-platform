@@ -150,7 +150,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 - **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
 - **Evals.** 2 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals commodity commodity-india` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align commodity commodity-india`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 6 ADRs in `decisions/`; 9 capability pages in `docs/`.
+- **Decisions.** 6 ADRs in `decisions/`; 10 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 

@@ -1,0 +1,48 @@
+# MCX jobs: one Dagster job and one schedule per commodity (defs/mcx.py).
+#
+# The commodities themselves are the `mcx_products` seed — a commodity there
+# and absent here runs on `defaults`. A name here that is not in the seed is an
+# error at load, not a silently ignored typo.
+#
+# `schedule` is the state a schedule is *created* in. After that, Dagster owns
+# it: pause or resume any commodity at any time, ad hoc, and Dagster remembers —
+#
+#   UI:   Automation → mcx_<commodity>_daily → toggle
+#   CLI:  dagster schedule stop  mcx_gold_daily -w platform/workspace.yaml -l commodity__commodity-india
+#         dagster schedule start mcx_gold_daily -w platform/workspace.yaml -l commodity__commodity-india
+#   now:  dagster job launch -j mcx_gold_ingest -w platform/workspace.yaml -l commodity__commodity-india
+#         (the job is the whole pipeline: dlt → dbt → Evidence)
+#
+# Stopping a *running* job (Runs → Terminate) is safe: loads commit in batches,
+# and the next run of that commodity resumes from its last committed batch.
+# `docs/mcx.md` is the runbook.
+version: 1
+
+defaults:
+  # 06:00 IST, Tuesday to Saturday: MCX's evening session closes 23:30/23:55
+  # IST and the bhavcopy is published after it, so each run collects the
+  # previous weekday's settlement. Saturday picks up Friday. This is the first
+  # commodity's slot; each later one starts 3 minutes after the one before
+  # (defs/mcx.py `staggered`), in `mcx_products` seed order.
+  cron: "0 6 * * 2-6"
+  schedule: running
+
+commodities:
+  gold: {}
+  silver: {}
+  crude_oil: {}
+  natural_gas: {}
+  copper: {}
+  aluminium: {}
+  zinc: {}
+  lead: {}
+  nickel: {}
+  electricity: {}
+  cardamom: {}
+  mentha_oil: {}
+  # Listed but untraded in September 2026 — no session to collect. Resume
+  # when MCX volume returns; the history backfills on the first run.
+  cotton: {schedule: stopped}
+  kapas: {schedule: stopped}
+  cotton_oil: {schedule: stopped}
+  steel_rebar: {schedule: stopped}

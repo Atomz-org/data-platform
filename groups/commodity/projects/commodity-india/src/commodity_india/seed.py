@@ -5,7 +5,7 @@ differs between markets is data, not the way it is loaded.
 
 `pf seed commodity commodity-india` runs this. It is deliberately a plain script
 so it works without a Dagster daemon. It needs network access: every price is
-live from Yahoo Finance and gold-api.com.
+live from Yahoo Finance, gold-api.com and MCX.
 """
 
 from __future__ import annotations
@@ -33,7 +33,8 @@ PROJECT = "commodity-india"
 
 def main() -> int:
     wh = Warehouse.for_project(PROJECT_DIR, GROUP, PROJECT)
-    from commodity_india.sources import gold_api, yahoo_finance
+    from commodity_india import mcx_feed
+    from commodity_india.sources import gold_api, mcx, yahoo_finance
 
     # The raw stage: one dlt dataset per source, which dbt's staging reads. The
     # catalog is not a source — it is the group's `commodities` seed, built by
@@ -64,6 +65,25 @@ def main() -> int:
         if required and empty:
             print(f"  {name}: nothing landed in {', '.join(empty)} — not building marts over it")
             return 1
+
+    # MCX: one pipeline per commodity (sources/mcx.py), the same code the
+    # per-commodity Dagster jobs run. A source of record — its marts have no
+    # other input — so a commodity that lands nothing fails the seed.
+    for commodity in mcx_feed.commodities():
+        t0 = time.time()
+        try:
+            info = mcx.load_commodity(wh, commodity)
+        except Exception as exc:  # noqa: BLE001 — recorded, then re-raised
+            obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt",
+                                    name=mcx.pipeline_name(commodity), status="error",
+                                    duration_ms=int((time.time() - t0) * 1000),
+                                    message=str(exc)[:500])
+            raise
+        obs.record_pipeline_run(group=GROUP, project=PROJECT, kind="dlt",
+                                name=mcx.pipeline_name(commodity), status="ok",
+                                duration_ms=int((time.time() - t0) * 1000),
+                                message=f"batches={info['batches']} loads={len(info['load_ids'])}")
+        print(f"  dlt → {wh.path.name} dataset=mcx {commodity} ({info['batches']} batch(es))")
 
     ann_path = export_project_annotations(PROJECT_DIR)
     anns = load_annotations(ann_path)
