@@ -23,6 +23,7 @@ pf tool wren context jaffle jaffle-shop "<q>"   # rules + remembered questions +
 pf tool wren plan jaffle jaffle-shop "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query jaffle jaffle-shop "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube jaffle jaffle-shop --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api jaffle jaffle-shop             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store jaffle jaffle-shop --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor jaffle jaffle-shop               # is the engine actually usable
 ```
