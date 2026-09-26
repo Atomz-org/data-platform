@@ -20,7 +20,7 @@ The report is a subproject with its own runtime, its own generated/owned split a
 
 Right now: 30 metric pages, 9 extracts, 109 exposures back into dbt.
 
-**Yours:** `pages/buy-sell-signals.md`, `pages/landed-cost.md`, `pages/mcx-contracts.md`, `pages/price-board.md`. A page you write reads a compiled metric query; a figure with no metric is a metric pull request, not page SQL.
+**Yours:** `pages/buy-sell-signals.md`, `pages/landed-cost.md`, `pages/mcx-contracts.md`, `pages/price-board.md`, `pages/mcx/[commodity].md`, `pages/mcx/index.md`, `pages/mcx/metrics.md`. A page you write reads a compiled metric query; a figure with no metric is a metric pull request, not page SQL.
 
 ## The rules a session is under
 
