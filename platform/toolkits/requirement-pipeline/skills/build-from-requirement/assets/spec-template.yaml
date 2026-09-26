@@ -1,0 +1,101 @@
+# Requirement spec — copy to groups/<g>/projects/<p>/requirements/<REQ>/spec.yaml
+# Field rules: references/requirement-spec.md. Every filled leaf gets a `from:`
+# naming where on the Confluence page it came from; unknown → null + open question.
+spec_version: 1
+
+requirement:
+  id: REQ-<page_id>
+  title: null
+  summary: null
+  status: draft                     # draft → confirmed at Checkpoint 1
+  source: {system: confluence, page_id: null, version: null, url: null}
+  owner: {name: null, email: null}
+  links: []                         # Jira keys
+  out_of_scope: []
+
+target: {group: null, project: null}
+#  create: true                    # scaffold the project (Phase 0); new_group: true to create the group too
+#  adopt_repo: null                 # an external dbt repo to adopt first (onboard-project)
+
+concepts: []
+#  - {name: Order, exists: true, identity: "order number", from: "§Definitions"}
+#  - {name: NewThing, exists: false, tier: group, identity: null, from: null}   # tier: group | project
+
+group_changes: []
+#  - {kind: ontology, name: NewThing, why: "any sister could use the word"}
+#    kinds: ontology | shared_connector | shared_seed | shared_macro | conformance_exemption | conformed_model | tools
+
+sources: []
+#  - name: <source>
+#    kind: rest_api | sql_database | filesystem
+#    connection: {base_url: null, secret_ref: null}
+#    freshness: {warn_after: 24h, error_after: 48h}
+#    sample: null                   # a sample file the page attaches → read-file profiles it
+#    client: null                   # a client library the page names: a candidate, probed live in Phase 4
+#    resources:
+#      - name: <resource>
+#        endpoint: null             # or table: / glob:
+#        write_disposition: merge   # append | merge | replace
+#        primary_key: [id]
+#        incremental: {cursor: updated_at, initial_value: null, lag: 1h}
+#        concept: <Concept>
+#        grain: null
+#        roles: {id: natural_key}
+#        currency: null             # ISO code when every amount is in one currency and no currency column exists
+#        links: {}
+#        identities: []             # what each amount/quantity measures, proved on landed rows at Checkpoint 2
+#                                   #   e.g. "amount = unit_price × quantity" → a BR with a data_test
+#        from: null
+
+business_rules: []
+#  - id: BR-1
+#    statement: null
+#    layer: intermediate            # staging | intermediate | mart | metric
+#    implemented_in: []
+#    test: {type: unit_test}        # choose-a-test: data_test | expectation | unit_test | contract | metric_filter | anomaly_monitor
+#    reference_sql: null            # {dialect: snowflake, sql: "...", from: "§Logic"} — evidence of intent, not code
+#    from: null
+
+models:
+  intermediate: []
+  #  - {name: int_<entity>__<verb>, description: null, inputs: [], rules: [], from: null}
+  marts: []
+  #  - name: fct_<events>
+  #    kind: fact                   # fact | dimension | report
+  #    grain: null
+  #    concept: null
+  #    inputs: []
+  #    rules: []
+  #    columns: [{name: null, role: null, description: null}]   # a role on every column
+  #    access: protected            # public only with consumed_outside_group: <who>
+  #    monitors: []                 # volume / share movements the page names → add-anomaly-tests
+
+metrics: []
+#  - name: null
+#    label: null
+#    description: null
+#    type: simple                   # simple | ratio | derived | cumulative | conversion
+#    unit: null                     # ISO currency code | count | percent | ratio | number | duration
+#    mart: null
+#    measure: {agg: sum, expr: null}   # a level (balance, position): add non_additive: {dimension: <time>, window: last}
+#    filter: null
+#    time_dimension: null
+#    dimensions: []
+#    owner: null
+#    rules: []
+#    from: null
+
+reports: []
+#  - {page: null, question: null, audience: null, metrics: [], grain: month, filters: []}
+#    per_entity: null               # a dimension → one templated page per entity, plus the summary page
+
+schedule: {cron: null, timezone: UTC, partitioning: none, backfill_from: null, sla: null}
+#  per_entity: {by: null, catalogue: null, stagger: 3m, start_paused: []}   # one pausable job per entity
+
+catalog: {domain: null, data_product: null, owners: [], tier: null, glossary_terms: [], pii: []}
+
+acceptance: []
+#  - {id: AC-1, statement: null, check: {metric: null, grain: month, expect: {between: [0, 1]}}}
+
+open_questions: []
+#  - {id: Q-1, question: null, blocking: true, ask: null, answer: null, answer_from: null}

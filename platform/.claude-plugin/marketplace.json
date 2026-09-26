@@ -124,6 +124,11 @@
       "name": "viz-standards",
       "source": "./toolkits/viz-standards",
       "description": "Chart and diagram conventions: form, colour, mermaid"
+    },
+    {
+      "name": "requirement-pipeline",
+      "source": "./toolkits/requirement-pipeline",
+      "description": "A Confluence requirement, built end to end: dlt raw, dbt layers, metrics, Evidence, Dagster, OpenMetadata"
     }
   ]
 }
