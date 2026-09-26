@@ -23,6 +23,7 @@ pf tool wren context commodity commodity-rollup "<q>"   # rules + remembered que
 pf tool wren plan commodity commodity-rollup "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query commodity commodity-rollup "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube commodity commodity-rollup --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api commodity commodity-rollup             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store commodity commodity-rollup --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor commodity commodity-rollup               # is the engine actually usable
 ```

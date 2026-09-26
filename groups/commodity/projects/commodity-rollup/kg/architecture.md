@@ -30,7 +30,7 @@ flowchart LR
     subgraph LD["delivery"]
         direction TB
         D1["exposures<br/>13"]:::exposure
-        D2["Evidence pages<br/>13"]:::exposure
+        D2["Evidence pages<br/>14"]:::exposure
     end
     I1 --> I2 --> I3 --> T1 --> T2
     T2 --> S1 --> D1 --> D2
@@ -134,7 +134,7 @@ flowchart TB
 | requirements | — | `requirements/**/*.md` | the business requirements it was built from: page snapshot, validated spec, trace — `/build-from-requirement` |
 | **delivery** | | | |
 | exposures | ✓ 13 | `transform/models/_reporting__exposures.yml` | who reads the output — impact analysis stops at the mart without them |
-| Evidence BI | ✓ | `reporting/pages/index.md` | dashboards as a projection of the metrics, never restating logic |
+| Evidence BI | ✓ | `reporting/pages/ask.md` | dashboards as a projection of the metrics, never restating logic |
 | capability docs | ✓ 9 | `docs/air.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
