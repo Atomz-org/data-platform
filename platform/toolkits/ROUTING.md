@@ -9,15 +9,18 @@ governed metric question with ad-hoc SQL.
 2. **Business metric** ("revenue", "churn", "MRR last quarter") →
    `query_metrics` (MetricFlow). If no metric fits, say which definition is
    missing — do not silently fall back to SQL.
-3. **Exploratory / ad-hoc** (profiling, one-off counts, debugging a load)
+3. **A question over the marts no metric covers** ("which", "top N", "show
+   rows") → `wren-analytics: ask-through-wren`: planned through the MDL,
+   gated, recorded. One project only.
+4. **Exploratory / ad-hoc** (profiling, one-off counts, debugging a load)
    → `execute_sql_query` / `preview_table`, read-only. Never query `staging`
    when a mart covers the same grain.
-4. **Cross-sister** → the `_rollup` project only, via ATTACH READ_ONLY. Never
+5. **Cross-sister** → the `_rollup` project only, via ATTACH READ_ONLY. Never
    read a sister project's files.
-5. **Data does not exist yet** → `dlt-ingest`.
-6. **A whole requirement** (a Confluence page describing a KPI, report or data
-   product to build) → `requirement-pipeline: build-from-requirement`. It
-   routes each layer back to the toolkits above. Do not start at step 5.
+6. **Data does not exist yet** → `dlt-ingest`.
+7. **A whole requirement** (a Confluence page: a KPI, report or data product
+   to build) → `requirement-pipeline: build-from-requirement`. It routes each
+   layer back to the toolkits above. Do not start at step 6.
 
 Raw SQL that recomputes a defined metric is a bug, not a shortcut.
 

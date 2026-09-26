@@ -129,6 +129,11 @@
       "name": "requirement-pipeline",
       "source": "./toolkits/requirement-pipeline",
       "description": "A Confluence requirement, built end to end: dlt raw, dbt layers, metrics, Evidence, Dagster, OpenMetadata"
+    },
+    {
+      "name": "wren-analytics",
+      "source": "./toolkits/wren-analytics",
+      "description": "A data question answered through the project's semantic layer, gated and recorded"
     }
   ]
 }
