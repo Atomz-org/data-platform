@@ -150,13 +150,13 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 - **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
 - **Evals.** 2 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals commodity commodity-india` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align commodity commodity-india`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 5 ADRs in `decisions/`; 9 capability pages in `docs/`.
+- **Decisions.** 6 ADRs in `decisions/`; 9 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 
 | subproject | where | what wraps it |
 |---|---|---|
-| dlt pipeline | `src/commodity_india/` | 2 sources, each `@annotate`d against `contracts/annotations.yaml`; `sources/*.py` impact-gated; `.dlt/secrets.toml` unreadable and unwritable; `definitions.py` is the Dagster code location |
+| dlt pipeline | `src/commodity_india/` | 3 sources, each `@annotate`d against `contracts/annotations.yaml`; `sources/*.py` impact-gated; `.dlt/secrets.toml` unreadable and unwritable; `definitions.py` is the Dagster code location |
 | dbt project | `transform/` | targets dev `duckdb`, ci `duckdb`, prod `snowflake`, base `duckdb`; `target/` and `dbt_packages/` denied; bound to its manifest: `okf`, `openmetadata`, `recce`, `wren` |
 | semantic layer | `transform/models/semantic/` | MetricFlow metrics, projected to `mdl/mdl.json` (denied, carried) by `pf semantic mdl`; queried by `mf`, `pf ask` and the `query_metrics` MCP tool |
 | knowledge graph | `kg/` | `graph.json` tracked and `graph.duckdb` denied (`pf kg build`); `context_card.md` denied (`pf kg card`); `architecture.md` carried (`pf arch`); CI `kg-current` and `architecture` |

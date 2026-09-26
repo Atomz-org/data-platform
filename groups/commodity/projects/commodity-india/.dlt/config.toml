@@ -10,3 +10,26 @@ disable_compression = false
 # Env override: SOURCES__YAHOO_FINANCE__HISTORY_RANGE
 [sources.yahoo_finance]
 history_range = "5y"
+
+# MCX bhavcopy (sources/mcx.py). One dlt pipeline per commodity, all landing in
+# the `mcx` dataset. Env override: SOURCES__MCX__<KEY>.
+[sources.mcx]
+# First trading day a contract is fetched from on its first load. Contracts that
+# expired before it are never requested. Moving it earlier backfills only the
+# contracts not yet stored; moving it later does not delete anything.
+history_start = "2021-01-01"
+# Days of options chains kept. A chain is hundreds of strikes a day; the
+# put/call ratio, max pain and OI walls are read from the expiries still trading.
+options_history_days = 45
+# Each active contract is refetched from its last stored day minus this, so a
+# revised settlement lands and a missed day heals.
+refetch_days = 5
+# Contracts per committed batch. A stopped backfill loses at most one batch.
+max_contracts_per_batch = 40
+# Seconds between requests. MCX is a public website, not a rated API.
+pause_seconds = 0.25
+# contract: GetCommoditywiseBhavCopy per contract (default, works today).
+# datewise: one bhavcopy per day via mcxlib → mcxpy → direct, first that answers.
+strategy = "contract"
+datewise_backends = ["mcxlib", "mcxpy", "direct"]
+datewise_max_days = 30

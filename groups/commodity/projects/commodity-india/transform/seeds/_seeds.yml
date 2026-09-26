@@ -150,3 +150,66 @@ seeds:
               arguments:
                 to: ref('units_of_measure')
                 field: unit_code
+
+  - name: mcx_products
+    description: >
+      Every MCX contract code this project loads, grouped into the commodity its
+      per-commodity job is named for (GOLD, GOLDM, GOLDTEN, GOLDGUINEA, GOLDPETAL
+      are all `gold`). `quote_units_per_lot` is how many quote bases one lot holds
+      — notional per lot is the close times it. Specifications were derived from
+      MCX's own bhavcopy (quantity ÷ lots, turnover ÷ quantity) in September 2026;
+      `is_spec_verified = false` marks codes that did not trade that week and
+      carry published specifications instead. `assert_mcx_quote_basis_matches_turnover`
+      re-derives the basis from every liquid session. `sources/mcx.py` reads this
+      file too, so the codes a job fetches are the codes dbt models.
+    meta:
+      concept: ExchangeContract
+      grain: one MCX contract code
+    config:
+      column_types:
+        contract_code: varchar
+        commodity_id: varchar
+        is_flagship: boolean
+        lot_size: double
+        quote_size: double
+        quote_units_per_lot: double
+        is_spec_verified: boolean
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "quote_units_per_lot > 0 and lot_size > 0 and quote_size > 0"
+    columns:
+      - name: contract_code
+        description: MCX trading symbol, as the bhavcopy prints it (trimmed).
+        meta: {role: natural_key}
+        data_tests: [unique, not_null]
+      - name: mcx_commodity
+        description: The commodity a code belongs to — one Dagster job and one report page each.
+        meta: {role: status_enum}
+        data_tests: [not_null]
+      - name: commodity_id
+        description: The group catalogue's commodity, where MCX trades one the family prices. Null for electricity, cardamom, mentha oil, kapas, cotton seed oil and steel rebar.
+        meta: {role: foreign_key, links_to: Commodity}
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('commodities')
+                field: commodity_id
+      - name: is_flagship
+        description: The code a commodity's headline reads — the benchmark-size contract, not a mini.
+        meta: {role: flag}
+      - name: quote_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [g, kg, metric_ton, barrel, mmbtu, mwh]
+      - name: lot_unit
+        meta: {role: unit_of_measure}
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [g, kg, metric_ton, barrel, mmbtu, mwh, bale]
+      - name: mcx_unit
+        description: The unit string MCX prints beside traded quantity (GRMS, KGS, BBL, mmBtu, MWH, BALES, MT).
+        meta: {role: unit_of_measure}
