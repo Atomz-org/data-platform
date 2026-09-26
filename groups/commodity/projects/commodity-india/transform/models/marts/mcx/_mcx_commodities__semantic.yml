@@ -1,0 +1,436 @@
+version: 2
+# Per-commodity MCX semantic layer: one semantic model over
+# `fct_mcx_commodity_rollup_daily` (one row per commodity per session), so every
+# metric below is read *per commodity* — gold, not GOLD + GOLDM + GOLDPETAL.
+#
+# Arithmetic rules, as in the rest of this project (ADR-0003):
+#   * measures are sums and counts only; a mean is a ratio metric that re-divides
+#     its components at query grain, never `average`;
+#   * `mcx_commodity` is the first categorical dimension, which is what the
+#     Evidence compiler groups every metric by;
+#   * volatility is published as annualised *variance* (Σ 252·σ²ᵢ ÷ n), because
+#     variance re-aggregates over any window and volatility does not. The √ is
+#     the derived metrics at the end (MetricFlow computes them; `pf report
+#     build` carries the variance and the page takes the root);
+#   * open interest is a stock: its measures are non-additive over time — the
+#     last session of a period, never the sum of its days.
+
+semantic_models:
+  - name: mcx_commodities
+    description: One MCX commodity per session — flagship price and risk, activity and positioning across every code and expiry.
+    model: ref('fct_mcx_commodity_rollup_daily')
+    defaults:
+      agg_time_dimension: trade_date
+    entities:
+      - {name: mcx_commodity_day, type: primary, expr: commodity_day_id}
+      - {name: commodity, type: foreign, expr: commodity_id}
+    dimensions:
+      - name: trade_date
+        type: time
+        type_params: {time_granularity: day}
+      - {name: mcx_commodity, type: categorical}
+      - {name: segment, type: categorical}
+      - {name: flagship_contract_code, type: categorical}
+      - {name: stance, type: categorical}
+      - {name: trend_regime, type: categorical}
+      - {name: volatility_regime, type: categorical}
+      - {name: is_liquid, type: categorical}
+    measures:
+      # Activity — additive across commodities and days.
+      - {name: cmdty_turnover_sum, agg: sum, expr: turnover_inr}
+      - {name: cmdty_mini_turnover_sum, agg: sum, expr: mini_turnover_inr}
+      - {name: cmdty_volume_flagship_lots_sum, agg: sum, expr: volume_flagship_lots}
+      - {name: cmdty_option_premium_turnover_sum, agg: sum, expr: option_premium_turnover_inr}
+      - {name: cmdty_option_notional_turnover_sum, agg: sum, expr: option_notional_turnover_inr}
+      - {name: cmdty_session_count, agg: count, expr: commodity_day_id}
+      # Positioning — stocks: additive across commodities, not across days.
+      - name: cmdty_oi_value_sum
+        agg: sum
+        expr: open_interest_value_inr
+        non_additive_dimension: {name: trade_date, window_choice: max}
+      - name: cmdty_put_oi_notional_sum
+        agg: sum
+        expr: put_oi_notional_inr
+        non_additive_dimension: {name: trade_date, window_choice: max}
+      - name: cmdty_call_oi_notional_sum
+        agg: sum
+        expr: call_oi_notional_inr
+        non_additive_dimension: {name: trade_date, window_choice: max}
+      # Return — log returns add over time; up sessions count.
+      - {name: cmdty_log_return_sum, agg: sum, expr: log_return_1d}
+      - {name: cmdty_return_sum, agg: sum, expr: return_1d}
+      - {name: cmdty_return_count, agg: count, expr: return_1d}
+      - {name: cmdty_up_session_sum, agg: sum, expr: is_up_session}
+      # Variance, annualised per session, with the count of sessions it exists on.
+      - {name: cmdty_close_var_sum, agg: sum, expr: "252 * sq_log_return_1d"}
+      - {name: cmdty_close_var_count, agg: count, expr: sq_log_return_1d}
+      - {name: cmdty_parkinson_var_sum, agg: sum, expr: "252 * var_parkinson"}
+      - {name: cmdty_parkinson_var_count, agg: count, expr: var_parkinson}
+      - {name: cmdty_gk_var_sum, agg: sum, expr: "252 * var_garman_klass"}
+      - {name: cmdty_gk_var_count, agg: count, expr: var_garman_klass}
+      - {name: cmdty_rs_var_sum, agg: sum, expr: "252 * var_rogers_satchell"}
+      - {name: cmdty_rs_var_count, agg: count, expr: var_rogers_satchell}
+      # Momentum, curve, parity — per-session readings to be averaged as ratios.
+      - {name: cmdty_rsi_sum, agg: sum, expr: rsi_14}
+      - {name: cmdty_rsi_count, agg: count, expr: rsi_14}
+      - {name: cmdty_roll_yield_sum, agg: sum, expr: roll_yield_annualised}
+      - {name: cmdty_roll_yield_count, agg: count, expr: roll_yield_annualised}
+      - {name: cmdty_contango_session_sum, agg: sum, expr: is_contango_session}
+      - {name: cmdty_backwardation_session_sum, agg: sum, expr: is_backwardation_session}
+      - {name: cmdty_premium_sum, agg: sum, expr: premium_to_landed_pct}
+      - {name: cmdty_premium_count, agg: count, expr: premium_to_landed_pct}
+
+metrics:
+  # ---------------------------------------------------------------- activity --
+  - name: mcx_commodity_turnover_inr
+    label: Futures Turnover (₹) — per Commodity
+    config: {meta: {unit: INR}}
+    description: Traded value of every code and expiry of the commodity, in rupees. Additive across commodities and days.
+    type: simple
+    type_params: {measure: cmdty_turnover_sum}
+
+  - name: mcx_commodity_volume_flagship_lots
+    label: Volume (flagship-lot equivalents) — per Commodity
+    config: {meta: {unit: lots}}
+    description: Turnover restated in lots of the flagship contract, so GOLD, GOLDM and GOLDPETAL add up. Group by mcx_commodity — a gold lot is not a crude lot.
+    type: simple
+    type_params: {measure: cmdty_volume_flagship_lots_sum}
+
+  - name: mcx_commodity_option_premium_turnover_inr
+    label: Options Premium Turnover (₹) — per Commodity
+    config: {meta: {unit: INR}}
+    description: Premium actually paid across every option chain — MCX's notional `Value` less strike × quantity.
+    type: simple
+    type_params: {measure: cmdty_option_premium_turnover_sum}
+
+  - name: mcx_commodity_option_notional_turnover_inr
+    label: Options Notional Turnover (₹) — per Commodity
+    config: {meta: {unit: INR}}
+    description: What MCX reports as option `Value` — (strike + premium) × quantity. Premium is the smaller number traders pay; this is the exposure that changed hands.
+    type: simple
+    type_params: {measure: cmdty_option_notional_turnover_sum}
+
+  - name: mcx_commodity_sessions
+    label: Sessions — per Commodity
+    config: {meta: {unit: sessions}}
+    description: Commodity-sessions on record; the denominator the per-session means divide by.
+    type: simple
+    type_params: {measure: cmdty_session_count}
+
+  - name: mcx_commodity_mini_turnover_inr
+    label: Mini-Contract Turnover (component) — per Commodity
+    config: {meta: {unit: INR}}
+    type: simple
+    type_params: {measure: cmdty_mini_turnover_sum}
+
+  - name: mcx_commodity_mini_turnover_share
+    label: Mini-Contract Share of Turnover — per Commodity
+    config: {meta: {unit: pct}}
+    description: Turnover in the non-flagship codes (GOLDM, SILVERMIC, CRUDEOILM, ...) over all turnover — how retail the commodity's book is.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_mini_turnover_inr
+      denominator: mcx_commodity_turnover_inr
+
+  # ------------------------------------------------------------- positioning --
+  - name: mcx_commodity_oi_value_inr
+    label: Open Interest Value (₹) — per Commodity
+    config: {meta: {unit: INR}}
+    description: Notional of open futures positions across every code and expiry, at the period's last session. A stock — never summed over days.
+    type: simple
+    type_params: {measure: cmdty_oi_value_sum}
+
+  - name: mcx_commodity_put_oi_notional_inr
+    label: Put Open Interest, Notional (component) — per Commodity
+    config: {meta: {unit: INR}}
+    type: simple
+    type_params: {measure: cmdty_put_oi_notional_sum}
+
+  - name: mcx_commodity_call_oi_notional_inr
+    label: Call Open Interest, Notional (component) — per Commodity
+    config: {meta: {unit: INR}}
+    type: simple
+    type_params: {measure: cmdty_call_oi_notional_sum}
+
+  - name: mcx_commodity_put_call_ratio
+    label: Put/Call Ratio (notional OI) — per Commodity
+    config: {meta: {format: num2}}
+    description: Put open interest over call, each weighted by its underlying's notional per lot so every code of the commodity counts at its size. Above ~1.3 put-heavy, below ~0.7 call-heavy.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_put_oi_notional_inr
+      denominator: mcx_commodity_call_oi_notional_inr
+
+  # ------------------------------------------------------------------ return --
+  - name: mcx_commodity_log_return
+    label: Period Log Return (flagship) — per Commodity
+    config: {meta: {format: num3}}
+    description: Sum of the flagship's roll-free daily log returns — additive over time; exp(x) − 1 is the period return.
+    type: simple
+    type_params: {measure: cmdty_log_return_sum}
+
+  - name: mcx_commodity_return_total
+    label: Daily Return (component) — per Commodity
+    config: {meta: {format: num3}}
+    type: simple
+    type_params: {measure: cmdty_return_sum}
+
+  - name: mcx_commodity_return_days
+    label: Sessions With a Return — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_return_count}
+
+  - name: mcx_commodity_avg_daily_return
+    label: Avg Daily Return (flagship) — per Commodity
+    config: {meta: {format: pct2}}
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_return_total
+      denominator: mcx_commodity_return_days
+
+  - name: mcx_commodity_up_sessions
+    label: Up Sessions — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_up_session_sum}
+
+  - name: mcx_commodity_hit_rate
+    label: Hit Rate (share of up sessions) — per Commodity
+    config: {meta: {unit: pct}}
+    description: Sessions the flagship settled higher, over sessions with a return.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_up_sessions
+      denominator: mcx_commodity_return_days
+
+  # -------------------------------------------------------------------- risk --
+  - name: mcx_commodity_close_var_total
+    label: Close-to-Close Variance (component) — per Commodity
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: cmdty_close_var_sum}
+
+  - name: mcx_commodity_close_var_days
+    label: Sessions With a Close-to-Close Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_close_var_count}
+
+  - name: mcx_commodity_close_variance
+    label: Realised Variance, Close-to-Close (annualised) — per Commodity
+    config: {meta: {format: num3}}
+    description: Zero-mean realised variance of the flagship's daily log returns, × 252. Its square root is realised volatility over whatever window the query asks for.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_close_var_total
+      denominator: mcx_commodity_close_var_days
+
+  - name: mcx_commodity_parkinson_var_total
+    label: Parkinson Variance (component) — per Commodity
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: cmdty_parkinson_var_sum}
+
+  - name: mcx_commodity_parkinson_var_days
+    label: Sessions With a Parkinson Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_parkinson_var_count}
+
+  - name: mcx_commodity_parkinson_variance
+    label: Parkinson Variance (annualised) — per Commodity
+    config: {meta: {format: num3}}
+    description: High–low range variance, (ln H/L)² ÷ 4 ln 2 per session, × 252.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_parkinson_var_total
+      denominator: mcx_commodity_parkinson_var_days
+
+  - name: mcx_commodity_gk_var_total
+    label: Garman–Klass Variance (component) — per Commodity
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: cmdty_gk_var_sum}
+
+  - name: mcx_commodity_gk_var_days
+    label: Sessions With a Garman–Klass Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_gk_var_count}
+
+  - name: mcx_commodity_gk_variance
+    label: Garman–Klass Variance (annualised) — per Commodity
+    config: {meta: {format: num3}}
+    description: Garman–Klass (1980) OHLC variance per session, × 252. The most efficient of the four for a zero-drift market; blind to the overnight gap.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_gk_var_total
+      denominator: mcx_commodity_gk_var_days
+
+  - name: mcx_commodity_rs_var_total
+    label: Rogers–Satchell Variance (component) — per Commodity
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: cmdty_rs_var_sum}
+
+  - name: mcx_commodity_rs_var_days
+    label: Sessions With a Rogers–Satchell Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_rs_var_count}
+
+  - name: mcx_commodity_rs_variance
+    label: Rogers–Satchell Variance (annualised) — per Commodity
+    config: {meta: {format: num3}}
+    description: Rogers–Satchell (1991) drift-robust OHLC variance per session, × 252. Prefer it to Garman–Klass in a trending market.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_rs_var_total
+      denominator: mcx_commodity_rs_var_days
+
+  # --------------------------------------------------- momentum, curve, parity --
+  - name: mcx_commodity_rsi_total
+    label: RSI (component) — per Commodity
+    config: {meta: {format: num0}}
+    type: simple
+    type_params: {measure: cmdty_rsi_sum}
+
+  - name: mcx_commodity_rsi_days
+    label: Sessions With an RSI Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_rsi_count}
+
+  - name: mcx_commodity_avg_rsi
+    label: Avg RSI(14) (flagship) — per Commodity
+    config: {meta: {format: num1}}
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_rsi_total
+      denominator: mcx_commodity_rsi_days
+
+  - name: mcx_commodity_roll_yield_total
+    label: Roll Yield (component) — per Commodity
+    config: {meta: {format: num2}}
+    type: simple
+    type_params: {measure: cmdty_roll_yield_sum}
+
+  - name: mcx_commodity_roll_yield_days
+    label: Sessions With a Roll Yield — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_roll_yield_count}
+
+  - name: mcx_commodity_avg_roll_yield
+    label: Avg Roll Yield (annualised) — per Commodity
+    config: {meta: {unit: pct}}
+    description: What a long earned rolling the flagship's near month into the next, annualised. Negative in contango.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_roll_yield_total
+      denominator: mcx_commodity_roll_yield_days
+
+  - name: mcx_commodity_contango_sessions
+    label: Sessions in Contango — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_contango_session_sum}
+
+  - name: mcx_commodity_backwardation_sessions
+    label: Sessions in Backwardation — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_backwardation_session_sum}
+
+  - name: mcx_commodity_contango_share
+    label: Share of Sessions in Contango — per Commodity
+    config: {meta: {unit: pct}}
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_contango_sessions
+      denominator: mcx_commodity_sessions
+
+  - name: mcx_commodity_backwardation_share
+    label: Share of Sessions in Backwardation — per Commodity
+    config: {meta: {unit: pct}}
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_backwardation_sessions
+      denominator: mcx_commodity_sessions
+
+  - name: mcx_commodity_premium_total
+    label: Landed-Parity Premium (component) — per Commodity
+    config: {meta: {format: num3}}
+    type: simple
+    type_params: {measure: cmdty_premium_sum}
+
+  - name: mcx_commodity_premium_days
+    label: Sessions With a Parity Reading — per Commodity
+    config: {meta: {unit: sessions}}
+    type: simple
+    type_params: {measure: cmdty_premium_count}
+
+  - name: mcx_commodity_avg_premium_to_landed
+    label: Avg MCX Premium to Landed Parity — per Commodity
+    config: {meta: {format: pct2}}
+    description: MCX settlement over benchmark × USD/INR × (1 + duty) for the same quote basis, minus one. Only commodities the family prices.
+    type: ratio
+    type_params:
+      numerator: mcx_commodity_premium_total
+      denominator: mcx_commodity_premium_days
+
+  # ------------------------------------------- derived (MetricFlow, not report) --
+  # Computed by MetricFlow at query grain (`mf query`, the WrenAI/MDL projection).
+  # `pf report build` does not render expression-derived metrics; the report
+  # carries the variance above and takes the square root on the page.
+  - name: mcx_commodity_realised_vol
+    label: Realised Volatility, Close-to-Close (annualised) — per Commodity
+    config: {meta: {unit: pct}}
+    type: derived
+    type_params:
+      expr: sqrt(mcx_commodity_close_variance)
+      metrics: [{name: mcx_commodity_close_variance}]
+
+  - name: mcx_commodity_gk_vol
+    label: Garman–Klass Volatility (annualised) — per Commodity
+    config: {meta: {unit: pct}}
+    type: derived
+    type_params:
+      expr: sqrt(mcx_commodity_gk_variance)
+      metrics: [{name: mcx_commodity_gk_variance}]
+
+  - name: mcx_commodity_parkinson_vol
+    label: Parkinson Volatility (annualised) — per Commodity
+    config: {meta: {unit: pct}}
+    type: derived
+    type_params:
+      expr: sqrt(mcx_commodity_parkinson_variance)
+      metrics: [{name: mcx_commodity_parkinson_variance}]
+
+  - name: mcx_commodity_rs_vol
+    label: Rogers–Satchell Volatility (annualised) — per Commodity
+    config: {meta: {unit: pct}}
+    type: derived
+    type_params:
+      expr: sqrt(mcx_commodity_rs_variance)
+      metrics: [{name: mcx_commodity_rs_variance}]
+
+  - name: mcx_commodity_period_return
+    label: Period Return (flagship) — per Commodity
+    config: {meta: {unit: pct}}
+    description: exp(Σ log return) − 1 over the query's window — compounding, not summing, daily returns.
+    type: derived
+    type_params:
+      expr: exp(mcx_commodity_log_return) - 1
+      metrics: [{name: mcx_commodity_log_return}]
+
+  - name: mcx_commodity_turnover_mom
+    label: Turnover, Month-on-Month Change — per Commodity
+    config: {meta: {unit: pct}}
+    type: derived
+    type_params:
+      expr: (mcx_commodity_turnover_inr - turnover_prev_month) / nullif(turnover_prev_month, 0)
+      metrics:
+        - {name: mcx_commodity_turnover_inr}
+        - {name: mcx_commodity_turnover_inr, offset_window: 1 month, alias: turnover_prev_month}
