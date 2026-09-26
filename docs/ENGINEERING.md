@@ -21,7 +21,7 @@ and enforced: `pf tokens` fails when a card or a CLAUDE.md is over.
 | Tier | What | Written by | Regenerate or check | Budget |
 |---|---|---|---|---|
 | platform | `CLAUDE.md`, the router | hand | read every session; keep it short | always on |
-| platform | `platform/toolkits/ROUTING.md` | hand | `pf tokens` | 400 |
+| platform | `platform/toolkits/ROUTING.md` | hand | `pf tokens` | 500 |
 | platform | `docs/VENDOR-CARD.md`, `docs/VENDOR.md` | generated from `platform/src/pf/vendor/registry.yaml` | `pf bootstrap` (vendor docs step) | 800 |
 | platform | toolkit skills, `platform/toolkits/<name>/skills/` | hand | `pf loop audit` (plugin marketplace resolves) | on demand |
 | group | `groups/commodity/CLAUDE.md` | hand | `pf tokens` | 400 |

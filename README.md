@@ -133,7 +133,7 @@ Constant regardless of how many groups, sisters or skills exist:
 | Project context card | 1500 | ~393 |
 | Project CLAUDE.md | 600 | ~149 |
 | Group card | 400 | ~136 |
-| ROUTING.md | 400 | ~320 |
+| ROUTING.md | 500 | ~399 |
 | **Session preamble** | | **~1000** |
 
 `pf tokens` records these to the tracking DB and fails when one goes over.
