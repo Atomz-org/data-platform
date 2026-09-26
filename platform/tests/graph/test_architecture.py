@@ -257,6 +257,22 @@ def test_an_absent_feature_is_reported_rather_than_omitted(tmp_path: Path) -> No
     assert "pf evals-gen" in out
 
 
+def test_a_requirement_the_project_was_built_from_is_claimed(tmp_path: Path) -> None:
+    """`build-from-requirement` writes `requirements/<REQ>/` (the page snapshot,
+    the spec, the trace) into the project it builds. Unclaimed, that directory
+    fails `pf arch --check` on the first project the skill touches."""
+    root = _bare(tmp_path)
+    req = root / "groups" / "demo" / "projects" / "demo-us" / "requirements" / "REQ-1"
+    req.mkdir(parents=True)
+    for name in ("source.md", "spec.yaml", "trace.md"):
+        (req / name).write_text("x\n")
+
+    a = arch.gather(root, "demo", "demo-us")
+
+    assert not a.unmapped, a.unmapped
+    assert "requirements" not in {g.feature.key for g in a.gaps}
+
+
 def test_every_feature_declares_where_it_comes_from() -> None:
     for f in arch.features():
         assert f.made_by, f"{f.key}: an absent row has to name its fix"

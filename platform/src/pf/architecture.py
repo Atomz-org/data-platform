@@ -382,6 +382,15 @@ CORE: tuple[Feature, ...] = (
         optional=True,
         made_by="written by hand",
     ),
+    Feature(
+        "requirements",
+        "requirements",
+        "governance",
+        "the business requirements it was built from: page snapshot, validated spec, trace",
+        ("requirements/**/*.md", "requirements/**/*.yaml"),
+        optional=True,
+        made_by="/build-from-requirement",
+    ),
     # ----------------------------------------------------------- delivery --
     Feature(
         "exposures",
