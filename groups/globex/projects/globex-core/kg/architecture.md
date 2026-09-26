@@ -115,6 +115,7 @@ flowchart TB
 | project atlas | ✓ | `atlas.yaml` | a picture of this project's own graph, refreshed around its dbt runs |
 | MDL manifest | ✓ | `mdl/mdl.json` | the semantic contract an external consumer reads (WrenAI, BI) |
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
+| Wren workspace | — | `mdl/wren/**` | the semantic layer as an LLM may read it: restricted columns withheld, rules and remembered questions beside it — `pf tool wren workspace` |
 | **governance** | | | |
 | project policy | ✓ 32 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
