@@ -246,66 +246,76 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
                     rel.inverse_cardinality if reverse else rel.cardinality, rel_node)
 
         # -- cubes, from the semantic layer ----------------------------------
+        # One cube per model that carries metrics, holding only what that
+        # model can answer. A cube has one base object, and the engine reads
+        # every bare name in a measure against it: a single project-wide cube
+        # based on the busiest mart hands it `sum(duty_local)` for a column
+        # that lives on another fact, which plans against the wrong table or
+        # not at all. So each metric goes to its home model (the model that
+        # `measures` it; a ratio's home is its numerator's and denominator's,
+        # when they agree), each dimension to the models it is declared on,
+        # and a measure that names anything the base does not have is left
+        # out rather than approximated.
         metrics = g.nodes("Metric")
-        dims = g.nodes("Dimension")
         if metrics:
-            base = _busiest_model(g, metrics, by_name)
             by_metric = {mt.name: mt for mt in metrics}
-            base_columns = {c.name for c in cols_of.get(base or "", [])}
-            # A measure named like a column of the base object shadows that
-            # column inside the cube: `sum(order_cost)` in a measure called
-            # `order_cost` reads the measure, not the column, and the engine
-            # reports a circular dependency. Qualifying the column by the base
-            # object (`sum(orders.order_cost)`) is what the engine resolves
-            # correctly, and it keeps the governed name on the measure.
-            shadowed = {name for name in by_metric if name in base_columns}
-            measures = []
-            for mt in metrics:
-                expression = _measure_expression(mt, by_metric)
-                if expression is None:
-                    # A cube measure is a SQL aggregate or it is nothing. The
-                    # previous placeholder — the metric name behind `--` — parses
-                    # as a comment, so the whole cube failed to analyse and every
-                    # query against its *base object* died with "Expected: an
-                    # expression, found: EOF". A missing measure costs one metric;
-                    # an unparseable one costs the busiest mart in the project.
+            home = _metric_homes(g, metrics, by_name)
+            dims_of = _dimensions_by_model(g, by_name)
+            for base in sorted({h for h in home.values() if h}):
+                base_columns = {c.name for c in cols_of.get(base, [])}
+                # A measure named like a column of the base object shadows that
+                # column inside the cube: `sum(order_cost)` in a measure called
+                # `order_cost` reads the measure, not the column, and the engine
+                # reports a circular dependency. Qualifying the column by the base
+                # object (`sum(orders.order_cost)`) is what the engine resolves
+                # correctly, and it keeps the governed name on the measure.
+                shadowed = {name for name in by_metric if name in base_columns}
+                candidates: list[tuple[Node, str]] = []
+                for mt in sorted((m for m in metrics if home.get(m.name) == base), key=lambda m: m.name):
+                    expression = _measure_expression(mt, by_metric)
+                    if expression is None:
+                        # A cube measure is a SQL aggregate or it is nothing. A
+                        # placeholder parses as a comment and the whole cube fails
+                        # to analyse; a missing measure costs one metric.
+                        continue
+                    if _reads_only(expression, base_columns):
+                        candidates.append((mt, expression))
+                # The engine substitutes a measure for *any* identifier that
+                # names one — a table qualifier included. So when a measure is
+                # named like the base object itself (`orders` on `orders`), the
+                # qualification above turns `sum(orders.order_cost)` into
+                # `sum((sum(1)).order_cost)`: it plans, and the warehouse refuses
+                # a nested aggregate. The base-named measure is the one left out,
+                # since it is what makes the others inexpressible.
+                names = {mt.name for mt, _ in candidates}
+                needs_qualifier = any(_bare_names(e) & shadowed for _, e in candidates)
+                if base in names and needs_qualifier:
+                    candidates = [(mt, e) for mt, e in candidates if mt.name != base]
+                    names.discard(base)
+                measures = []
+                for mt, expression in candidates:
+                    for name in shadowed:
+                        expression = re.sub(rf"(?<![\w.]){re.escape(name)}\b", f"{base}.{name}", expression)
+                    if _names_a_measure(expression, names):
+                        continue
+                    measures.append({
+                        "name": mt.name,
+                        "expression": expression,
+                        "type": "DOUBLE",
+                        "description": mt.label or mt.props.get("description", ""),
+                        "properties": {"pf.metric_type": mt.props.get("type", "simple")},
+                    })
+                if not measures:
                     continue
-                for name in shadowed:
-                    expression = re.sub(rf"(?<![\w.]){re.escape(name)}\b", f"{base}.{name}", expression)
-                if _refers_to_a_measure(expression, base_columns, by_metric):
-                    # A cube has one base object, and a metric measured on
-                    # another model names a column that object does not have.
-                    # Wren resolves that name to the same-named *measure* and
-                    # reports a circular dependency — for the whole cube, so
-                    # every query in the project failed to plan. The canary in
-                    # `pf tool wren check` found it; a measure that cannot be
-                    # read from the base object is left out rather than
-                    # approximated, the same rule as an unexpressible one.
-                    continue
-                measures.append({
-                    "name": mt.name,
-                    "expression": expression,
-                    "type": "DOUBLE",
-                    "description": mt.label or mt.props.get("description", ""),
-                    "properties": {"pf.metric_type": mt.props.get("type", "simple")},
-                })
-            # A dimension is declared once per semantic model, so a conformed
-            # one arrives several times over — `commodity_id` on both the price
-            # fact and the landed-price fact, `price_basis` on three. A cube is
-            # a flat namespace: duplicate entries make the manifest invalid and
-            # every planner that reads it picks an arbitrary winner. Fold them,
-            # keeping the first description that is not empty.
-            cube_dims = _dedupe_dims(
-                [d for d in dims if d.props.get("type") != "time"], "VARCHAR")
-            time_dims = _dedupe_dims(
-                [d for d in dims if d.props.get("type") == "time"], "TIMESTAMP")
-            if base:
+                # A dimension is declared once per semantic model; on this
+                # cube only the ones its base declares and actually has.
+                own = [d for d in dims_of.get(base, []) if d.name in base_columns]
                 cubes.append({
-                    "name": f"{project.replace('-', '_')}_core",
+                    "name": f"{base}_metrics",
                     "baseObject": base,
                     "measures": measures,
-                    "dimensions": cube_dims,
-                    "timeDimensions": time_dims,
+                    "dimensions": _dedupe_dims([d for d in own if d.props.get("type") != "time"], "VARCHAR"),
+                    "timeDimensions": _dedupe_dims([d for d in own if d.props.get("type") == "time"], "TIMESTAMP"),
                 })
 
         # -- enums, from status_enum columns ---------------------------------
@@ -334,20 +344,75 @@ def build_manifest(project_dir: str | Path, group: str, project: str,
     return manifest
 
 
-#: A bare identifier: not the qualifier before a dot, not the name after one.
-_IDENT = re.compile(r"(?<![\w.])[a-z_][a-z0-9_]*\b(?!\.)")
+#: A bare identifier: not the qualifier before a dot, not the name after one,
+#: not a function being called.
+_IDENT = re.compile(r"(?<![\w.])[a-z_][a-z0-9_]*\b(?!\s*[.(])")
+#: SQL words `agg_sql` can emit around a column. Anything else bare is a name
+#: the base object has to have.
+_SQL_WORDS = frozenset({
+    "distinct", "case", "when", "then", "else", "end", "and", "or", "not", "null", "is", "in",
+    "as", "true", "false", "between", "like", "within", "group", "order", "by", "asc", "desc",
+    "filter", "where", "cast", "interval",
+})
 
 
-def _refers_to_a_measure(expression: str, base_columns: set[str], by_metric: dict[str, Node]) -> bool:
-    """Does this measure's SQL name a metric rather than a column of the base object?
+def _reads_only(expression: str, base_columns: set[str]) -> bool:
+    """Does every name this measure reads exist on the cube's base object?
 
-    Inside a cube a bare identifier is resolved against the cube's own measures
-    before the base object's columns, so `sum(lifetime_spend)` on a cube based on
-    `orders` — where `lifetime_spend` is a column of `customers` and also a
-    measure here — is the measure reading itself. Only a name that is *not* a
-    base column can be captured that way, which is what this asks.
+    Inside a cube a bare identifier resolves against the cube's own measures
+    first and the base object's columns second, so a name the base lacks is at
+    best an error and at worst the measure reading itself (Wren's "circular
+    dependency"). String literals are not names.
     """
-    return any(name in by_metric and name not in base_columns for name in _IDENT.findall(expression.lower()))
+    text = re.sub(r"'(?:[^']|'')*'", "''", expression.lower())
+    return all(name in base_columns or name in _SQL_WORDS for name in _IDENT.findall(text))
+
+
+def _bare_names(expression: str) -> set[str]:
+    """The column names a measure reads unqualified (string literals aside)."""
+    text = re.sub(r"'(?:[^']|'')*'", "''", expression.lower())
+    return set(_IDENT.findall(text)) - _SQL_WORDS
+
+
+#: Any identifier the engine could read as a measure: a bare name or a
+#: qualifier, but not the column after a dot and not a function being called.
+_ANY_NAME = re.compile(r"(?<![\w.])[a-z_][a-z0-9_]*\b(?!\s*\()")
+
+
+def _names_a_measure(expression: str, measures: set[str]) -> bool:
+    """Does this measure, as emitted, contain a name the cube resolves to a
+    measure — itself included, which is Wren's "circular dependency"?"""
+    text = re.sub(r"'(?:[^']|'')*'", "''", expression.lower())
+    return bool(set(_ANY_NAME.findall(text)) & measures)
+
+
+def _metric_homes(g, metrics: list[Node], by_name: dict[str, Node]) -> dict[str, str | None]:
+    """The exposed model each metric is measured on, or None when it has none.
+
+    A simple metric's home is the model with a `measures` edge to it. A ratio
+    lives where both its sides live; a ratio across two models has no single
+    base object and so no cube (MetricFlow still answers it).
+    """
+    home: dict[str, str | None] = {}
+    for mt in metrics:
+        sources = (g.node(e.src) for e in g.in_edges(mt.id) if e.kind == "measures")
+        owners = sorted({n.name for n in sources if n and n.kind == "Model" and n.name in by_name})
+        home[mt.name] = owners[0] if len(owners) == 1 else None
+    for mt in metrics:
+        if home.get(mt.name) is None and (mt.props.get("type") or "").lower() == "ratio":
+            num = home.get(mt.props.get("numerator") or "")
+            den = home.get(mt.props.get("denominator") or "")
+            home[mt.name] = num if num and num == den else None
+    return home
+
+
+def _dimensions_by_model(g, by_name: dict[str, Node]) -> dict[str, list[Node]]:
+    """Each exposed model's declared dimensions, from its `grouped_by` edges."""
+    out: dict[str, list[Node]] = {}
+    for name, m in by_name.items():
+        out[name] = sorted((n for n in (g.node(e.dst) for e in g.out_edges(m.id))
+                            if n and n.kind == "Dimension"), key=lambda d: d.name)
+    return out
 
 
 def _measure_expression(metric: Node, by_metric: dict[str, Node]) -> str | None:
@@ -640,18 +705,6 @@ def _projected_fk(columns: list[Node], raw_col: str) -> str | None:
     if not raw_col.endswith("_id") and f"{raw_col}_id" in names:
         return f"{raw_col}_id"
     return next((n for n in sorted(names) if n.endswith("_id") and raw_col.split("_")[0] in n), None)
-
-
-def _busiest_model(g, metrics: list[Node], by_name: dict[str, Node]) -> str | None:
-    counts: dict[str, int] = {}
-    for mt in metrics:
-        for e in g.in_edges(mt.id):
-            n = g.node(e.src)
-            if n and n.kind == "Model" and n.name in by_name:
-                counts[n.name] = counts.get(n.name, 0) + 1
-    if counts:
-        return max(counts, key=counts.get)
-    return next(iter(by_name), None)
 
 
 # ------------------------------------------------------------------ check ---
