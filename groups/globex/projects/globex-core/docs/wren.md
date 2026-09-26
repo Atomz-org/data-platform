@@ -23,6 +23,7 @@ pf tool wren context globex globex-core "<q>"   # rules + remembered questions +
 pf tool wren plan globex globex-core "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query globex globex-core "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube globex globex-core --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api globex globex-core             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store globex globex-core --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor globex globex-core               # is the engine actually usable
 ```
