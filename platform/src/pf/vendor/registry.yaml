@@ -1159,10 +1159,13 @@ upstreams:
       inside our own CI on our own code, which is ordinary internal use and well
       inside scope. Two limits to hold: this platform must not expose the scanner
       as a compliance-scanning feature to its own tenants (that is the managed
-      service the licence excludes), and the action's code stays vendored
-      unmodified. Note this is a *stricter* licence than the platform's other
-      upstreams — confirm with counsel before offering governance scanning as a
-      product surface.
+      service the licence excludes), and any change to the action is made in our
+      fork, reviewed there, and pinned here — never edited under `vendor/`. The
+      licence permits modification; it forbids offering the software as a
+      hosted service and circumventing licence keys, and the one change so far
+      does neither (see `adopted`, `.asqav.json`). Note this is a *stricter*
+      licence than the platform's other upstreams — confirm with counsel before
+      offering governance scanning as a product surface.
     role: reference
     why: >
       It is a second opinion with a different failure mode. `pf provenance` is
@@ -1184,6 +1187,18 @@ upstreams:
       — that is the check, not the mirror owner's word. The fork exists because
       the mirror is no more permanent than the upstream was, and an unreachable
       pin costs the scan silently.
+
+      The fork now carries one change of ours: a repository config
+      (Atomz-org/asqav-compliance#1, pinned at `db3e464`). The scanner decides a
+      category by matching identifiers, so it scored our audit trail — every
+      agent LLM call written through `trace.get()` / `tr.intent(...)` into the
+      hash-chained ledger — as missing, and scored test files that stub the SDK
+      as agent code. `.asqav.json` at the repository root now declares how we
+      spell the control and which paths are not agent code. The change is
+      additive by construction: the built-in patterns always apply, a config
+      cannot switch a check off, and the report says when one applied. Merge
+      that fork PR with a merge commit, never a squash: the pin must stay in
+      the fork's `main` history, or it survives only while the branch does.
     adopted:
       - upstream: src/scanner.ts
         kind: shape
@@ -1207,6 +1222,19 @@ upstreams:
           every other upstream here. Its inputs and outputs are the contract that
           workflow depends on; upstream renaming `score` or `gaps` breaks the
           job summary.
+      - upstream: "src/scanner.ts: loadConfig / parseConfig (our fork, Atomz-org/asqav-compliance#1)"
+        kind: data
+        ours: [.asqav.json]
+        note: >
+          The repository's vocabulary for the scan: three audit-trail patterns,
+          each a call that writes to the record (`trace.get|start|decision(`,
+          `tr.intent|request|response|decision|execution(`,
+          `provenance.action(`), never a word a comment could carry; and four
+          exclusions (tests, test files, conftest, `vendor/`). It claims nothing
+          for human oversight: `pf/agents/base.py` still reports that gap,
+          because the scanner reads one file and the oversight lives in the gate
+          and the promotion flow around it. Adding a pattern here is a claim
+          about the code, reviewed like the code.
     declined:
       - what: the `asqav` runtime SDK (asqav / @asqav/sdk)
         why: >
