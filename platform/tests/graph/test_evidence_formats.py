@@ -257,3 +257,36 @@ def test_a_stock_is_read_at_its_latest_day_not_summed_over_time(tmp_path: Path) 
     by_dim = _metric_page("demo", specs["oi_value"]).split("```sql by_dim", 1)[1].split("```", 1)[0]
     rows = dict(con.execute(by_dim.replace("${metrics_oi_value}", compiled)).fetchall())
     assert rows == {"gold": 120.0, "silver": 30.0}        # not 220 for gold
+
+
+# ------------------------------------------------------- the rendered build ----
+def _page(build: Path, rel: str, body: str) -> None:
+    p = build / rel / "index.html"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(f"<html><head><script>var x = NaN; var y = 0.123456789;</script></head><body>{body}</body></html>")
+
+
+def test_a_rendered_page_with_an_unformatted_value_is_an_error(tmp_path: Path) -> None:
+    """The source-level rules read what a page declares; this reads what the
+    build produced from today's data. A NaN, a ratio with its binary tail or a
+    value in scientific notation reached a reader: the build that made it fails."""
+    from pf.projections.report_audit import rendered_findings
+
+    build = tmp_path / "build"
+    _page(build, "mcx/gold", "<p>₹1,53,277</p><p>0.26%</p><p>2026-09-25</p><p>v1.13.3</p><p>153,277.00</p>")
+    _page(build, "mcx/silver", "<p>NaN</p><p>0.2365140415</p><p>9.3e-05</p>")
+    found = rendered_findings(build)
+    assert [f.page for f in found] == ["build/mcx/silver"]
+    assert found[0].rule == "fmt-rendered" and found[0].severity == "error"
+    assert "NaN" in found[0].message and "0.2365140415" in found[0].message and "9.3e-05" in found[0].message
+
+
+def test_the_audit_reads_the_build_when_there_is_one(tmp_path: Path) -> None:
+    from pf.projections.report_audit import audit
+
+    reporting = tmp_path / "reporting"
+    (reporting / "pages").mkdir(parents=True)
+    (reporting / "pages" / "index.md").write_text("---\ntitle: x\n---\n")
+    _page(reporting / "build", "", "<p>undefined</p>")
+    _, findings = audit(tmp_path)
+    assert any(f.rule == "fmt-rendered" for f in findings)

@@ -32,6 +32,14 @@ DECLARED_FORMAT = re.compile(r"^--\s*format:\s*(\S+)\s*$", re.M)
 VALUE_TAG = re.compile(r"<\s*(BigValue|Value|LineChart|BarChart|AreaChart|ScatterPlot)"
                        r"\b((?:\{[^}]*\}|[^>{])*)>", re.S)
 ATTR = re.compile(r"\b(value|y|x|fmt|yFmt|xFmt)\s*=\s*(\{[^}]*\}|'[^']*'|\"[^\"]*\"|[^\s/>]+)")
+#: What a reader must never see in a built page: a value the page failed to
+#: compute, or one that reached the page without its format — a float with its
+#: full binary tail, or scientific notation. Evidence pre-renders every value
+#: into the static HTML, so this reads the build, not a browser.
+UNFORMATTED = re.compile(r"\bNaN\b|\bundefined\b|\bInfinity\b|\[object Object\]"
+                         r"|(?<![\d.,])-?\d+\.\d{5,}\b|(?<![\w.])\d(?:\.\d+)?e[-+]\d+\b")
+_SCRIPT = re.compile(r"<script\b.*?</script>|<style\b.*?</style>", re.S | re.I)
+_TAG = re.compile(r"<[^>]+>")
 
 
 @dataclass(frozen=True)
@@ -94,6 +102,24 @@ def format_findings(rel: str, text: str, declared: dict[str, str]) -> list[Findi
                 out.append(Finding("warning", "fmt-unscaled", rel,
                                    f"<BigValue> renders money `{name}` with fixed `{fmt}`; "
                                    f"use `{want}` (auto-scaling) or a k/m/b suffix"))
+    return out
+
+
+def rendered_findings(build_dir: Path) -> list[Finding]:
+    """`fmt-rendered`: every built page's visible text, checked for a value that
+    arrived unformatted or not at all. The declared-format rules read the page
+    source; this reads what the build actually produced from today's data, so a
+    new NaN, an unrounded ratio or a `1.2e-05` fails the build that made it."""
+    import html
+
+    out: list[Finding] = []
+    for page in sorted(Path(build_dir).rglob("index.html")):
+        text = html.unescape(_TAG.sub("\n", _SCRIPT.sub(" ", page.read_text(encoding="utf-8", errors="replace"))))
+        bad = sorted({m.group(0) for line in text.splitlines() for m in UNFORMATTED.finditer(line)})
+        if bad:
+            rel = str(page.parent.relative_to(build_dir)) or "/"
+            out.append(Finding("error", "fmt-rendered", f"build/{rel}",
+                               f"renders unformatted or missing values: {bad[:5]}"))
     return out
 
 
@@ -177,6 +203,9 @@ def audit(project_dir: str | Path) -> tuple[int, list[Finding]]:
             findings.append(Finding("error", "duplicate-query-name", rel,
                                     "two sql blocks share a name; the later silently "
                                     "shadows the earlier"))
+
+    if (root / "build").is_dir():
+        findings.extend(rendered_findings(root / "build"))
 
     for orphan in sorted(metrics - covered):
         findings.append(Finding("info", "metric-unused", "-",
