@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import REPO_ROOT
 from pf.projections.evidence import (
     _index_page,
     _metric_sql,
@@ -86,7 +87,7 @@ def test_a_tile_is_sized_to_its_number(fmt, magnitude, rendered) -> None:
 
     code = kpi_format(fmt, magnitude).strip("'")
     assert format_family(code) == format_family(fmt)          # the unit never changes
-    root = Path(__file__).resolve().parents[3]
+    root = REPO_ROOT
     ssf = next(root.glob("groups/*/projects/*/reporting/node_modules/ssf"), None)
     if not (shutil.which("node") and ssf):
         pytest.skip("node, or any project's Evidence install (ssf), is missing")
