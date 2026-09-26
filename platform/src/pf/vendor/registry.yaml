@@ -1189,7 +1189,7 @@ upstreams:
       pin costs the scan silently.
 
       The fork now carries one change of ours: a repository config
-      (Atomz-org/asqav-compliance#1, pinned at `f33f9f1`). The scanner decides a
+      (Atomz-org/asqav-compliance#1, pinned at `03d05d6`). The scanner decides a
       category by matching identifiers, so it scored our audit trail — every
       agent LLM call written through `trace.get()` / `tr.intent(...)` into the
       hash-chained ledger — as missing, and scored test files that stub the SDK
@@ -1199,7 +1199,9 @@ upstreams:
       cannot switch a check off, and the report says when one applied. A
       repository pattern that could backtrack catastrophically (nested or
       alternating repeats, backreferences, over 200 characters) is refused
-      before it runs, since a regex in JavaScript has no timeout. Merge
+      before it runs, since a regex in JavaScript has no timeout, and a config
+      path that resolves outside the workspace, through `..` or a symlink, is
+      refused and the scan runs with defaults. Merge
       that fork PR with a merge commit, never a squash: the pin must stay in
       the fork's `main` history, or it survives only while the branch does.
     adopted:
