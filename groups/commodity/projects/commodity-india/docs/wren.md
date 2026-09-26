@@ -23,6 +23,7 @@ pf tool wren context commodity commodity-india "<q>"   # rules + remembered ques
 pf tool wren plan commodity commodity-india "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query commodity commodity-india "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube commodity commodity-india --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api commodity commodity-india             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store commodity commodity-india --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor commodity commodity-india               # is the engine actually usable
 ```

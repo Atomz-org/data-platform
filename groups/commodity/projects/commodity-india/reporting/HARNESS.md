@@ -17,6 +17,7 @@ The report is a subproject with its own runtime, its own generated/owned split a
 | `evidence.config.yaml` | the validated palette; never re-picked by eye |
 | `package.json`, `.gitignore`, `README.md` | the toolchain and the rules |
 | `../transform/models/_reporting__exposures.yml` | one exposure per page, so impact analysis reaches it |
+| `pages/ask.md`, `components/WrenChat.svelte` | Ask the data — conversational analytics over the Wren workspace (`pf tool wren api`) |
 
 Right now: 101 metric pages, 17 extracts, 109 exposures back into dbt.
 
