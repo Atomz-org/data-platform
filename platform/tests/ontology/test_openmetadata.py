@@ -245,3 +245,15 @@ def test_the_tool_declares_offline_and_a_non_embeddable_surface() -> None:
     assert TOOL.offline is True
     assert TOOL.default_enabled is True
     assert TOOL.surface is not None and TOOL.surface.embeddable is False
+
+
+def test_the_catalogue_sync_waits_for_the_writer_pool(tmp_path) -> None:
+    """The sync rebuilds the graph and publishes tables from the warehouse:
+    it queues behind a load instead of meeting it mid-write."""
+    from pf.runtime.warehouse import Warehouse
+    from pf.tools import openmetadata
+    from pf.tools.spec import ToolContext
+
+    ctx = ToolContext(root=tmp_path, group="g", project="p", project_dir=tmp_path, dbt_dir=tmp_path / "transform")
+    (a,) = openmetadata.dagster_assets(ctx).assets
+    assert a.op.pool == Warehouse.for_project(tmp_path, "g", "p").writer_pool
