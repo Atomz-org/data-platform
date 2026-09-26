@@ -28,5 +28,12 @@ Traps met while adopting it:
 - `wren memory store` writes front matter with `nl`, `sql`, `source`, `tags`;
   a hand-written pair with other keys is not recalled.
 - The manifest's metrics are `cubes`, not `metrics` — count the right key.
+- A cube has one base object: one cube per model with metrics, never one per
+  project. `dry-plan` passes an unknown column straight through, so a measure
+  reading another model's column *plans* and fails only on `EXPLAIN` — the
+  check binds every cube where a warehouse exists.
+- The engine substitutes a measure for any identifier naming one, a table
+  qualifier included: a measure `orders` on model `orders` turns
+  `sum(orders.x)` into `sum((sum(1)).x)`. The base-named measure gives way.
 - Every gated question appends to the group's tracked `loop-ledger.json`, like
   every other loop run. Smoke tests dirty it; revert before committing.
