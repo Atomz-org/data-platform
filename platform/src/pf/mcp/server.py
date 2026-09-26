@@ -329,6 +329,41 @@ def toolkit_info(name: str) -> str:
     return f"# {name}\nskills: {', '.join(skills)}\n\n{_clip(rules, 3000)}"
 
 
+# --------------------------------------------------------------- wren ------
+def wren_context(question: str, limit: int = 3) -> str:
+    """What to read before planning one question through the semantic layer:
+    the project's rules, the questions already answered that resemble it, and
+    the schema an agent may use. Scoped to the active project — nothing of any
+    other project is visible, and columns classified as personal data are
+    absent by design."""
+    from pf.tools import wren_context as wc
+
+    group, project, pdir = active_project()
+    if not wc.exists(pdir):
+        return f"no Wren workspace — run `pf tool wren workspace {group} {project}`"
+    ctx = wc.context(pdir, question, limit)
+    pairs = "\n".join(f"- {p.get('nl_query')}\n  {p.get('sql_query')}" for p in ctx["pairs"]) or "- none yet"
+    return _clip(f"# Rules\n{ctx['rules'].rstrip()}\n\n# Answered before\n{pairs}\n\n"
+                 f"# Schema\n{ctx['schema'].rstrip()}")
+
+
+def wren_query(sql: str, limit: int = MAX_ROWS) -> str:
+    """Answer a question through the semantic layer: one read-only SELECT over
+    MDL model names → policy → plan → dry-run → execute, row-limited, and every
+    outcome recorded in the group's ledger as a `wren-query` run. A governed
+    KPI is `query_metrics`' to answer, not this tool's. A statement refused
+    three times is refused with "escalate"; report the recorded reasons."""
+    from pf.tools import wren_gate
+
+    group, project, pdir = active_project()
+    out = wren_gate.ask(pdir, group, project, sql, limit=min(int(limit or MAX_ROWS), MAX_ROWS),
+                        root=obs.repo_root(pdir))
+    if not out.ok:
+        return f"✗ {out.stage}: {out.message} (run {out.run_id}, attempt {out.attempt})"
+    return _clip(json.dumps({"run_id": out.run_id, "planned_sql": out.planned_sql,
+                             "columns": out.columns, "rows": out.rows}, default=str, indent=1))
+
+
 # ----------------------------------------------------------- agentic ------
 def ask_metric_question(question: str, direct: bool = False) -> str:
     """Answer a business question from governed metrics only — no SQL.
@@ -403,6 +438,8 @@ TOOLS = {
     "list_metrics": list_metrics,
     "get_dimensions": get_dimensions,
     "query_metrics": query_metrics,
+    "wren_context": wren_context,
+    "wren_query": wren_query,
     "kg_search": kg_search_tool,
     "kg_neighbors": kg_neighbors_tool,
     "kg_path": kg_path_tool,

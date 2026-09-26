@@ -25,6 +25,9 @@ denylist:
 - '**/okf/metrics/**'
 - '**/okf/roles/**'
 - '**/okf/relations/**'
+- '**/mdl/wren/wren_project.yml'
+- '**/mdl/wren/target/**'
+- '**/mdl/wren/.wren/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'

@@ -194,3 +194,9 @@ graphify-out/
 # hand-edits, and `pf check` refuses to let git track what the gate calls
 # generated. Rebuild with `pf air register <group> <project>`.
 **/governance/air-register.md
+
+# Wren's derived memory index, one per project workspace (`mdl/wren/.wren/`).
+# `mdl/wren/knowledge/sql/*.md` is the source of truth and is tracked; the index
+# is rebuilt from it by `pf tool wren index`. The LLM-facing manifest beside it
+# lives under `target/`, which is already ignored.
+**/.wren/

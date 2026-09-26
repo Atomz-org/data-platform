@@ -3250,6 +3250,13 @@ def cmd_mdl(
         path = export_mdl(d, g, p, out or None)
         payload = json.loads(path.read_text(encoding="utf-8"))
         console.print(f"[green]✓[/] {path}")
+        if not out:
+            # The Wren workspace is a projection of this manifest; a manifest
+            # that moved without it fails `pf tool wren check`.
+            from pf.tools import wren_context
+
+            wren_context.refresh(root(), g, p, d, manifest=payload,
+                                 hide_roles=wren_context.hide_roles_for(root(), g, p))
         console.print(
             f"  models={len(payload['models'])} relationships={len(payload['relationships'])} "
             f"cubes={len(payload['cubes'])}"

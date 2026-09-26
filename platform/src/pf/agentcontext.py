@@ -249,11 +249,25 @@ def refresh(root: str | Path, *, dry_run: bool = False, notes: list[str] | None 
         import json
 
         from pf.projections import mdl
+        from pf.tools import wren_context
 
         for g, p, d in targets:
             if (d / "kg" / "graph.json").is_file():
                 built = mdl.build_manifest(d, g, p, tracked=True)
                 write(d / "mdl" / "mdl.json", json.dumps(built, indent=2) + "\n")
+                # The Wren workspace beside it: the same tracked inputs, so the
+                # same check — `pf tool wren check --all` — cannot call what a
+                # refresh wrote stale. The tracked half only; the LLM-facing
+                # manifest under `target/` is derived at bootstrap and on use.
+                ws = wren_context.build(root, g, p, d, manifest=built,
+                                        hide_roles=wren_context.hide_roles_for(root, g, p))
+                for rel, text in ws.tracked.items():
+                    write(wren_context.workspace(d) / rel, text)
+                wanted = {rel.split("/")[-1] for rel in ws.tracked if rel.startswith(wren_context.RULES_REL + "/")}
+                rules_dir = wren_context.workspace(d) / wren_context.RULES_REL
+                for stale in sorted(rules_dir.glob("*.md")) if rules_dir.is_dir() else []:
+                    if wren_context.GENERATED.match(stale.name) and stale.name not in wanted:
+                        remove(stale)
 
     # The OKF bundles, every tier `pf tool okf check --all` judges: the
     # platform's, each group that has projects, each project. A page the layer
