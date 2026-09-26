@@ -23,6 +23,7 @@ pf tool wren context acme acme-us "<q>"   # rules + remembered questions + schem
 pf tool wren plan acme acme-us "<sql>"    # expand SQL through the MDL, no warehouse
 pf tool wren query acme acme-us "<sql>"   # policy → plan → dry-run → execute → ledger
 pf tool wren cube acme acme-us --cube <c> --measures <m> --dimensions <d>   # a cube question, same road
+pf tool wren api acme acme-us             # the API behind the Evidence "Ask the data" page (or --all)
 pf tool wren store acme acme-us --nl "<q>" --sql "<sql>"   # remember a validated answer
 pf tool doctor acme acme-us               # is the engine actually usable
 ```
