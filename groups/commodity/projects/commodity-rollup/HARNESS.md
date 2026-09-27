@@ -40,7 +40,7 @@ The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | **Gemini CLI** | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused |
 | **OpenCode** | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | hook — plugin |
 | **Junie CLI** | `AGENTS.md` | none — `pf mcp` by hand | hook — via `bin/agent-here junie` only |
-| **Prompt-only (Continue, Ollama, mlx)** | paste `AGENTS.md` | none | none |
+| **Jules; prompt-only tools (Continue, a bare model)** | `AGENTS.md` / paste `AGENTS.md` | none | none — no hook exists |
 
 This project's own `.mcp.json` adds `ducklake`, `wren` for Claude Code only; the other harnesses' configs are rendered from the root `.mcp.json`.
 
