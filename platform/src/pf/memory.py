@@ -222,6 +222,8 @@ def detect_agent() -> str:
         return "gemini-cli"
     if env.get("CODEX_THREAD_ID") or env.get("CODEX_SANDBOX"):
         return "codex"
+    if env.get("COPILOT_AGENT_PROMPT"):
+        return "copilot-agent"
     if env.get("GITHUB_ACTIONS"):
         actor = env.get("GITHUB_ACTOR", "").strip()
         return f"actions:{actor}" if actor else "actions"

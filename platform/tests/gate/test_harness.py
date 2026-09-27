@@ -142,6 +142,10 @@ def test_every_structured_target_parses_in_its_own_format(tmp_path: Path) -> Non
     assert set(codex_hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
     assert "apply_patch" in codex_hooks["PreToolUse"][0]["matcher"]
 
+    copilot_hooks = json.loads(r[".github/hooks/pf.json"])
+    assert copilot_hooks["version"] == 1
+    assert all(h[0]["command"] == h[0]["bash"] for h in copilot_hooks["hooks"].values())
+
     gemini_hooks = json.loads(r[".gemini/settings.json"])["hooks"]
     assert set(gemini_hooks) == {"BeforeTool", "AfterTool", "SessionStart", "AfterAgent"}
     assert all("$GEMINI_PROJECT_DIR" in ev[0]["hooks"][0]["command"] for ev in gemini_hooks.values())

@@ -23,8 +23,8 @@ provenance.
 | Claude Code | `CLAUDE.md` + hooks | `.mcp.json` + power-tools plugin | hook — `pre_tool_use.py` on every Edit/Write | pre-commit | hooks write stages 01–03 | injected on turn one | `session_start.sh` | plugins — every toolkit | power-tools plugin |
 | Codex CLI | `AGENTS.md`, natively | `.codex/config.toml` | hook — trusted project only | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.codex/agents/` |
 | Cursor | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
-| Copilot — VS Code chat | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
-| Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | none — `pf gate` in `AGENTS.md` §4 | pre-commit, if installed in the runner | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
+| Copilot — CLI and VS Code | `.github/copilot-instructions.md` | `.vscode/mcp.json` | hook (VS Code: Preview) | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
+| Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only | pre-commit, if installed in the runner | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
 | OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Prompt-only (Continue, Ollama, mlx) | paste `AGENTS.md` | none | none | pre-commit | none | rule | rule | none | none |
@@ -42,7 +42,8 @@ server), rendered into each harness's format. Change the source; regenerate.
 | Cursor | `.cursor/mcp.json` | `pf context refresh` |
 | Cursor | `.cursor/hooks.json` | `pf context refresh` |
 | Cursor | `.cursor/rules/data-platform.mdc` | `pf context refresh` |
-| Copilot (VS Code) | `.vscode/mcp.json` | `pf context refresh` |
+| Copilot (CLI, VS Code, coding agent) | `.vscode/mcp.json` | `pf context refresh` |
+| Copilot (CLI, VS Code, coding agent) | `.github/hooks/pf.json` | `pf context refresh` |
 | Gemini CLI | `.gemini/settings.json` | `pf context refresh` |
 | OpenCode | `.opencode/opencode.json` | `pf context refresh` |
 
@@ -54,7 +55,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude|codex|gemini [args]
+bin/agent-here claude|codex|copilot|gemini [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -77,6 +78,9 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 **Cursor** — `beforeShellExecution` can block and `afterFileEdit` cannot, so
   `platform/hooks/cursor_hook.py` blocks `--no-verify` before it runs and reports
   `gate.yaml`'s verdict on an edit after the edit has happened.
+- **Copilot coding agent** reads `.github/hooks/` from the default branch: a
+  hook change reaches it after the merge, not on the branch that makes it.
+- **Copilot in VS Code** runs hooks as a Preview feature (`chat.useHooks`).
 - **Gemini CLI** cannot ask a person from a hook, so an `ask` rule (`git push`)
   is refused there with a note to have the person run it.
 
