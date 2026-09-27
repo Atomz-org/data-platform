@@ -25,7 +25,7 @@ provenance.
 | Cursor | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Copilot — VS Code chat | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | none — `pf gate` in `AGENTS.md` §4 | pre-commit, if installed in the runner | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
-| Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
+| Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
 | OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Prompt-only (Continue, Ollama, mlx) | paste `AGENTS.md` | none | none | pre-commit | none | rule | rule | none | none |
 
@@ -54,7 +54,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude|codex [args]
+bin/agent-here claude|codex|gemini [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -77,6 +77,8 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 **Cursor** — `beforeShellExecution` can block and `afterFileEdit` cannot, so
   `platform/hooks/cursor_hook.py` blocks `--no-verify` before it runs and reports
   `gate.yaml`'s verdict on an edit after the edit has happened.
+- **Gemini CLI** cannot ask a person from a hook, so an `ask` rule (`git push`)
+  is refused there with a note to have the person run it.
 
 Claiming more than this would leave a tool believing it is gated when it is
 not, which is the one outcome worse than an ungated tool that knows it.

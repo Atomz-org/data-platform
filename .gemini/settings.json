@@ -29,5 +29,57 @@
         "PF_PROJECT_DIR": "."
       }
     }
+  },
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "write_file|replace|run_shell_command|read_file|read_many_files",
+        "hooks": [
+          {
+            "name": "pf-gate",
+            "type": "command",
+            "command": "uv run --quiet --project \"$GEMINI_PROJECT_DIR\" python \"$GEMINI_PROJECT_DIR\"/platform/hooks/agent_hook.py gemini pre",
+            "timeout": 60000
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "write_file|replace|run_shell_command",
+        "hooks": [
+          {
+            "name": "pf-provenance",
+            "type": "command",
+            "command": "uv run --quiet --project \"$GEMINI_PROJECT_DIR\" python \"$GEMINI_PROJECT_DIR\"/platform/hooks/agent_hook.py gemini post",
+            "timeout": 60000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "name": "pf-context",
+            "type": "command",
+            "command": "uv run --quiet --project \"$GEMINI_PROJECT_DIR\" python \"$GEMINI_PROJECT_DIR\"/platform/hooks/agent_hook.py gemini session",
+            "timeout": 60000
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "name": "pf-capture",
+            "type": "command",
+            "command": "uv run --quiet --project \"$GEMINI_PROJECT_DIR\" python \"$GEMINI_PROJECT_DIR\"/platform/hooks/agent_hook.py gemini stop",
+            "timeout": 60000
+          }
+        ]
+      }
+    ]
   }
 }

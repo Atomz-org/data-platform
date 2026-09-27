@@ -74,6 +74,11 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"tool_name": "Bash", "tool_input": {"command": t}, "cwd": str(root), "session_id": "s"}
     ),
+    "gemini": lambda tool, root, t: (
+        {"tool_name": "write_file", "tool_input": {"file_path": str(root / t), "content": "x"}, "cwd": str(root)}
+        if tool == "edit"
+        else {"tool_name": "run_shell_command", "tool_input": {"command": t}, "cwd": str(root)}
+    ),
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
@@ -161,6 +166,14 @@ def test_codex_shell_scripts_are_read_as_scripts(repo: Path) -> None:
     """An argv of `["bash", "-lc", "..."]` is one script: the guard must see its words."""
     p = {"tool_name": "Bash", "tool_input": {"command": ["bash", "-lc", "git commit -n -m x"]}, "cwd": str(repo)}
     assert denied(run("codex", "pre", json.dumps(p)))
+
+
+def test_gemini_reads_are_permission_checked(repo: Path) -> None:
+    """A project session may not read a sister's source — through read_file either."""
+    cwd = repo / "groups" / "acme" / "projects" / "acme-eu"
+    sister = repo / "groups" / "acme" / "projects" / "acme-us" / "src" / "x.py"
+    p = {"tool_name": "read_file", "tool_input": {"file_path": str(sister)}, "cwd": str(cwd)}
+    assert denied(run("gemini", "pre", json.dumps(p)))
 
 
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
