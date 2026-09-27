@@ -1,0 +1,98 @@
+# Nightly issue hygiene for review findings — 01:00 Europe/Oslo, every day.
+#
+# `bot-findings.yml` files each review finding as an issue as it is raised.
+# This sweeps every open finding once a night:
+#
+#   duplicates   the same defect filed twice (two bots, an inline comment and
+#                its review-body restatement, a raced run) is closed as a
+#                duplicate of the oldest, when the finding text agrees; a
+#                borderline pair is labelled `possible-duplicate` for a person.
+#                `not-duplicate` on either issue keeps a pair apart for good.
+#
+#   the sidebar  read from the labels, which are the source: Type (Bug/Task),
+#                the org fields Priority (Urgent/High/Medium/Low) and Effort,
+#                Relationships (the category epic as parent), Assignees (the
+#                author of the PR it was raised on), and Projects (the board).
+#
+# `.github/scripts/issue_hygiene.py` says what each rule is and why.
+#
+# ## Why two crons
+#
+# GitHub's cron is UTC and has no timezone. 01:00 in Oslo is 23:00 UTC in
+# summer and 00:00 UTC in winter, so both are scheduled and the first step lets
+# through only the one that is 01:00 in `HYGIENE_TZ` today. One run a night,
+# across both daylight-saving changes, with nothing to edit twice a year.
+#
+# ## Tokens
+#
+# GITHUB_TOKEN covers issues, labels, comments and sub-issues. Two parts are
+# organisation objects it may be refused on:
+#   ISSUE_FIELDS_TOKEN   the org issue fields (Priority, Effort) and issue types
+#   PROJECTS_TOKEN       the findings board (Projects) — already used by
+#                        bot-findings.yml; without it the board is skipped
+# A missing token is a warning in the run summary, never a failed run.
+name: issue hygiene
+
+on:
+  schedule:
+    - cron: "0 23 * * *"   # 01:00 CEST
+    - cron: "0 0 * * *"    # 01:00 CET
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print every change instead of making it"
+        type: boolean
+        default: true
+
+# One sweep at a time; a manual run waits for the nightly one rather than
+# racing it over the same issues.
+concurrency:
+  group: issue-hygiene
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    env:
+      HYGIENE_TZ: ${{ vars.HYGIENE_TZ || 'Europe/Oslo' }}
+      HYGIENE_HOUR: ${{ vars.HYGIENE_HOUR || '1' }}
+    steps:
+      - name: Is it 01:00 in ${{ env.HYGIENE_TZ }}?
+        id: when
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          hour=$(TZ="$HYGIENE_TZ" date +%-H)
+          echo "local hour in $HYGIENE_TZ: $hour"
+          if [ "$hour" = "$HYGIENE_HOUR" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Not ${HYGIENE_HOUR}:00 in $HYGIENE_TZ — the other cron is tonight's run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.when.outputs.run == 'true'
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts
+
+      - name: Merge duplicates and fill the sidebar
+        if: steps.when.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_FIELDS_TOKEN: ${{ secrets.ISSUE_FIELDS_TOKEN }}
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
+          PROJECT_OWNER: ${{ vars.FINDINGS_PROJECT_OWNER || 'Atomz-org' }}
+          PROJECT_NUMBER: ${{ vars.FINDINGS_PROJECT_NUMBER || '4' }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          HYGIENE_ASSIGN_PR_AUTHOR: ${{ vars.HYGIENE_ASSIGN_PR_AUTHOR || '1' }}
+          # A scheduled run acts; a manual one previews unless told otherwise.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+        run: python3 .github/scripts/issue_hygiene.py
