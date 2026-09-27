@@ -9,8 +9,8 @@ and everything after it is written per scope, never per vendor.
 `CLAUDE.md` is the router — what the directories are, what is shared, what is
 read-only, what is recorded — held under a hard 700-token budget so every
 session can afford it. **Read it first**, then this file. Nothing here
-contradicts it; this adds what a tool without Claude Code's hooks and MCP
-server has to do by hand.
+contradicts it; this adds what every tool — Claude Code or not — follows,
+and says where a hook enforces it for you and where only you can.
 
 | How you got here | Your entry point | Reaches this file |
 |---|---|---|
@@ -19,7 +19,7 @@ server has to do by hand.
 | Copilot in VS Code — chat, inline | `.github/copilot-instructions.md` | it points here; `chat.useAgentsMdFile: true` reads it directly |
 | Gemini CLI, Gemini Code Assist | `GEMINI.md` | imports this file |
 | Continue.dev, Ollama, mlx, anything that only takes a system prompt | the operator's prompt | paste this file, or one rule: *follow `AGENTS.md`* |
-| Any of the above, for the graph and the gate | `docs/HARNESSES.md` — the generated per-harness configs (`.codex/`, `.cursor/`, `.gemini/`, `.vscode/mcp.json`, `.opencode/`), and what each one actually enforces | it points here |
+| Any of the above, for the graph, the gate, skills and subagents | `docs/HARNESSES.md` — the generated per-harness configs (one module each under `platform/src/pf/harnesses/`), the skills in `.agents/skills/`, and what each one actually enforces | it points here |
 
 ## 0. Which scope you are in
 
@@ -99,8 +99,10 @@ so a sister's code is not reachable from it at all.
 `vendor/` is read-only always; bumping or adding a pin is a human decision.
 `provenance/**` is the record of what agents did — denied to every agent.
 `gate.yaml` is the machine-readable version of this table and the pre-commit
-hook enforces it. Only Claude Code has a hook that checks paths before an edit
-lands; every other tool **runs the gate itself before committing**:
+hook enforces it. A tool whose hooks call `platform/hooks/agent_hook.py` — Claude
+Code, and every harness `docs/HARNESSES.md` marks *hook* — has the same gate check
+paths before an edit lands. A tool with no hook, or a hook its harness did not
+load, **runs the gate itself before committing**:
 
 ```bash
 uv run pf gate --paths "$(git diff --cached --name-only | tr '\n' ',')"
@@ -229,8 +231,10 @@ the narrowest scope the lesson is true of. Commit the note and the regenerated
 
 The note records **who** wrote it, and will not be written without: `--agent
 <name>` if you say, otherwise detected from your environment — `PF_AGENT`,
-else Claude Code's `CLAUDECODE`, Gemini CLI's `GEMINI_CLI`, GitHub Actions'
-actor, else a person at a keyboard as `human`. A tool the detector does not
+else the mark each harness leaves on the shells it spawns (`pf.memory.detect_agent`
+lists them — Claude Code's `CLAUDECODE`, Gemini CLI's `GEMINI_CLI`, …), else GitHub
+Actions' actor, else a person at a keyboard as `human`. `bin/agent-here` sets
+`PF_AGENT` for a tool that leaves no mark. A tool the detector does not
 know exports `PF_AGENT=<name>` once and nothing else changes. The index shows
 it as a column; `pf memory show --toon` prints
 `notes[N]{module,name,type,status,agent,description}`, which is the form the

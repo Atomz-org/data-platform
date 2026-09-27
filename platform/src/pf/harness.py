@@ -11,26 +11,36 @@ all reach it. What was not agnostic was everything a rule cannot do:
                    asking the graph — and "ask the graph before reading files"
                    becomes a rule it cannot follow.
 
-    the gate       `gate.yaml` fires through Claude Code's PreToolUse hook and
-                   nowhere else. Every other tool's instructions say "run the
-                   gate yourself before committing" — a rule an agent must
-                   remember is not enforcement.
+    the gate       `gate.yaml` fired through Claude Code's PreToolUse hook and
+                   nowhere else. A rule an agent must remember is not
+                   enforcement. `pf.agenthook` is now the gate, the permission
+                   lists, provenance, the formatter and the turn-one context,
+                   written once; `platform/hooks/agent_hook.py <harness> <event>`
+                   reaches it from any harness whose hooks are wired to it.
 
 This module treats the per-harness config layer the way the platform treats
 every derived artefact: **generated from one source, committed for review,
 and checked for drift by `pf context check`.** The sources are what they were —
-`.mcp.json` for the servers, `gate.yaml` for what is blocked, `AGENTS.md` for
-the rules — and the targets are rendered from them, never hand-edited.
+`.mcp.json` for the servers, `.claude/settings.json` for the permission lists,
+`gate.yaml` for what is blocked, `AGENTS.md` for the rules — and the targets are
+rendered from them, never hand-edited.
+
+## One module per harness
+
+What each harness needs is declared in `pf.harnesses.<name>`: its configs, its
+scorecard row, and — once its hooks call the core — its dialect. This module
+holds only what they share: the server list and its placeholder rewriting, the
+hook command, the scorecard, and `targets` / `check` / `write_all` over the
+registry. Adding a harness never edits this file.
 
 ## What each harness gets, honestly
 
-Enforcement exists where a hook exists. Cursor has shell and post-edit hooks,
-so it gets the `--no-verify` guard and an after-the-fact gate verdict. Codex,
-Gemini, Copilot and OpenCode have no tool hooks; for them the **commit gate**
-(`platform/hooks/pre_commit.sh`, installed by `pf install-hook`) is the
-backstop, and the scorecard in `docs/HARNESSES.md` says so in as many words.
-A scorecard that claimed parity would be the worst outcome: a tool believing
-it is gated when it is not.
+Enforcement exists where a hook calls the core, and the scorecard in
+`docs/HARNESSES.md` says, per cell, what is a hook and what is only a rule.
+Where a harness only half honours its config, its module says that too, and
+the scorecard prints it. A scorecard that claimed more than the configs
+deliver would be the worst outcome: a tool believing it is gated when it is
+not.
 
 ## Where this came from
 
@@ -61,21 +71,50 @@ SOURCES: tuple[str, ...] = (
     "platform/toolkits/power-tools/.mcp.json",
 )
 
-#: Every file this module owns, relative to the repo root. `pf context refresh`
-#: writes them; `pf context check` fails when one is missing or differs.
-TARGETS: tuple[str, ...] = (
-    ".codex/config.toml",
-    ".cursor/mcp.json",
-    ".cursor/hooks.json",
-    ".cursor/rules/data-platform.mdc",
-    ".gemini/settings.json",
-    ".vscode/mcp.json",
-    ".opencode/opencode.json",
-    "docs/HARNESSES.md",
-)
+SCORECARD = "docs/HARNESSES.md"
 
-#: The Cursor adapter. One script, two events; see `platform/hooks/cursor_hook.py`.
-CURSOR_HOOK = "platform/hooks/cursor_hook.py"
+#: The one hook entry point; every harness's config calls it with its own name.
+AGENT_HOOK = "platform/hooks/agent_hook.py"
+
+#: The repo root, from wherever the harness runs a hook. Several harnesses
+#: export no project variable, and a session may be started inside a project;
+#: git answers from any depth, and in a worktree it names the worktree.
+ROOT_EXPR = '"$(git rev-parse --show-toplevel)"'
+
+
+def hook_command(harness: str, event: str, root: str = ROOT_EXPR) -> str:
+    return f"uv run --quiet --project {root} python {root}/{AGENT_HOOK} {harness} {event}"
+
+
+def claude_style_hooks(harness: str, tools: str, *, post: bool = True) -> dict[str, Any]:
+    """The `{"hooks": {Event: [{matcher, hooks: [...]}]}}` shape Claude Code
+    introduced and Codex and Junie read as-is."""
+
+    def one(event: str, matcher: str | None = None) -> list[dict[str, Any]]:
+        e: dict[str, Any] = {"hooks": [{"type": "command", "command": hook_command(harness, event), "timeout": 60}]}
+        return [{"matcher": matcher, **e}] if matcher else [e]
+
+    hooks: dict[str, Any] = {"SessionStart": one("session"), "PreToolUse": one("pre", tools)}
+    if post:
+        hooks["PostToolUse"] = one("post", tools)
+    hooks["Stop"] = one("stop")
+    return {"hooks": hooks}
+
+
+def ask_prefixes(root: str | Path) -> list[str]:
+    """`Bash(<prefix>:*)` entries of the root settings' `ask` list — what a
+    harness that prompts a person itself is given to prompt for."""
+    p = Path(root) / ".claude" / "settings.json"
+    try:
+        perms = (json.loads(p.read_text(encoding="utf-8")) or {}).get("permissions") or {}
+    except (OSError, json.JSONDecodeError):
+        return []
+    out = []
+    for spec in perms.get("ask") or []:
+        spec = str(spec)
+        if spec.startswith("Bash(") and spec.endswith(")"):
+            out.append(spec[5:-1].removesuffix(":*").strip())
+    return out
 
 
 # ---------------------------------------------------------------- servers --
@@ -132,55 +171,15 @@ def servers(root: str | Path) -> list[Server]:
     return [found[n] for n in sorted(found)]
 
 
-# --------------------------------------------------------------- renderers --
-def _json(obj: Any) -> str:
+def json_text(obj: Any) -> str:
     return json.dumps(obj, indent=2, sort_keys=False) + "\n"
 
 
-def _toml_str(s: str) -> str:
+def toml_str(s: str) -> str:
     return json.dumps(s)  # a JSON string literal is a valid TOML basic string
 
 
-def render_codex(svs: list[Server]) -> str:
-    """`.codex/config.toml`: the servers, the protocol, and a sandbox that can write.
-
-    Only our servers. The reference config this shape comes from lists six
-    third-party `npx` servers; a data platform's MCP surface is its graph and
-    its warehouse tools, and every extra server is context every session pays
-    for. `persistent_instructions` is additive to `AGENTS.md`, which Codex reads
-    natively — it is the one line that survives a Codex update.
-    """
-    lines = [
-        "#:schema https://developers.openai.com/codex/config-schema.json",
-        "# GENERATED by `pf context refresh` from .mcp.json — do not hand-edit.",
-        "# Codex has no tool hooks: gate.yaml is enforced at commit by",
-        "# platform/hooks/pre_commit.sh (`pf install-hook`), and by you before that",
-        "# with `uv run pf gate --paths <files>`. See docs/HARNESSES.md.",
-        "",
-        'approval_policy = "on-request"',
-        'sandbox_mode = "workspace-write"',
-        "",
-        "persistent_instructions = "
-        + _toml_str(
-            "Follow AGENTS.md. Section 0 names your scope (Session). Ask the graph "
-            "before reading files (kg_search, impact_analysis). Run `uv run pf gate "
-            "--paths <files>` before committing; never pass --no-verify."
-        ),
-        "",
-    ]
-    for s in svs:
-        s = s.with_project(None)
-        lines.append(f"[mcp_servers.{s.name}]")
-        lines.append(f"command = {_toml_str(s.command)}")
-        lines.append("args = [" + ", ".join(_toml_str(a) for a in s.args) + "]")
-        if s.env:
-            lines.append("env = { " + ", ".join(f"{k} = {_toml_str(v)}" for k, v in s.env) + " }")
-        lines.append("startup_timeout_sec = 30")
-        lines.append("")
-    return "\n".join(lines)
-
-
-def _claude_shape(svs: list[Server], token: str | None) -> dict[str, Any]:
+def claude_shape(svs: list[Server], token: str | None) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for s in svs:
         s = s.with_project(token)
@@ -189,104 +188,6 @@ def _claude_shape(svs: list[Server], token: str | None) -> dict[str, Any]:
             spec["env"] = dict(s.env)
         out[s.name] = spec
     return out
-
-
-def render_cursor_mcp(svs: list[Server]) -> str:
-    """`.cursor/mcp.json`: Claude's shape, `${workspaceFolder}` for the root."""
-    return _json({"mcpServers": _claude_shape(svs, "${workspaceFolder}")})
-
-
-def render_gemini(svs: list[Server]) -> str:
-    """`.gemini/settings.json`: Claude's shape; Gemini runs servers from the project."""
-    return _json({"mcpServers": _claude_shape(svs, None)})
-
-
-def render_vscode(svs: list[Server]) -> str:
-    """`.vscode/mcp.json`: VS Code's `servers:` with an explicit transport, for
-    Copilot in agent mode."""
-    out: dict[str, Any] = {}
-    for s in svs:
-        s = s.with_project("${workspaceFolder}")
-        spec: dict[str, Any] = {"type": "stdio", "command": s.command, "args": list(s.args)}
-        if s.env:
-            spec["env"] = dict(s.env)
-        out[s.name] = spec
-    return _json({"servers": out})
-
-
-def render_opencode(svs: list[Server]) -> str:
-    """`.opencode/opencode.json`: the protocol as its instruction, our servers
-    as local MCP. Nothing else — OpenCode's plugin and agent lists are its
-    own affair and an empty list here is a list nobody has to reconcile."""
-    mcp: dict[str, Any] = {}
-    for s in svs:
-        s = s.with_project(None)
-        spec: dict[str, Any] = {"type": "local", "command": [s.command, *s.args], "enabled": True}
-        if s.env:
-            spec["environment"] = dict(s.env)
-        mcp[s.name] = spec
-    return _json(
-        {
-            "$schema": "https://opencode.ai/config.json",
-            "instructions": ["AGENTS.md"],
-            "mcp": mcp,
-        }
-    )
-
-
-def render_cursor_hooks() -> str:
-    """`.cursor/hooks.json`: two events, one adapter, our gate.
-
-    `beforeShellExecution` can block, so the `--no-verify` guard lives there:
-    a commit that skips the pre-commit hook skips the only gate Cursor has.
-    `afterFileEdit` cannot block — Cursor has no pre-edit event — so the gate
-    runs after the fact and reports; the commit gate still refuses the file.
-    """
-    return _json(
-        {
-            "version": 1,
-            "hooks": {
-                "beforeShellExecution": [
-                    {
-                        "command": f"uv run python {CURSOR_HOOK} shell",
-                        "description": "gate.yaml cannot be bypassed: block --no-verify",
-                    }
-                ],
-                "afterFileEdit": [
-                    {
-                        "command": f"uv run python {CURSOR_HOOK} edit",
-                        "description": "gate.yaml verdict for the edited file (advisory — Cursor has no pre-edit hook)",
-                    }
-                ],
-            },
-        }
-    )
-
-
-def render_cursor_rule() -> str:
-    """`.cursor/rules/data-platform.mdc`: a pointer, always applied. The rules
-    are in `AGENTS.md`; this only says where, and which scope Cursor is in."""
-    return (
-        "---\n"
-        'description: "Data platform protocol: where the rules are and which scope you are in"\n'
-        "alwaysApply: true\n"
-        "---\n"
-        "# Data platform — read these, in order\n"
-        "\n"
-        "1. `CLAUDE.md` — the router: the directories, what is shared, what is read-only.\n"
-        "2. `AGENTS.md` — the protocol. §0 names your scope; the rest is per scope.\n"
-        "3. `.memory/MEMORY.md` — what earlier agents learned. `uv run pf memory show` from\n"
-        "   where you are working prints the notes that apply there.\n"
-        "\n"
-        "You are the **Session** scope: a person is in the loop and you have a shell.\n"
-        "Ask the graph before reading files — `kg_search`, `kg_neighbors`, `impact_analysis`\n"
-        "are MCP tools from `.cursor/mcp.json`. Stay inside one project; never read a sister.\n"
-        "\n"
-        "Enforcement here is narrower than in Claude Code, and `docs/HARNESSES.md` says how:\n"
-        "the shell hook blocks `--no-verify`; edits are judged after the fact and again at\n"
-        "commit by `gate.yaml`. Run `uv run pf gate --paths <files>` before you commit.\n"
-        "Leave a note before you finish (`AGENTS.md` §5).\n"
-    )
 
 
 # --------------------------------------------------------------- scorecard --
@@ -300,115 +201,97 @@ class Harness:
     provenance: str
     memory: str
     session_context: str
+    skills: str = "none"
+    agents: str = "none"
+    #: The generated file whose presence makes `pre_tool_gate` true, and the
+    #: harness name it must pass `agent_hook.py` on its pre-tool event. The
+    #: tests hold every row that says *hook* to this.
+    hook_config: str = ""
+    hook_name: str = ""
 
 
-#: What is *true* for each tool, not what would be nice. "rule" means the
-#: protocol asks for it and nothing enforces it; that word is the point.
-HARNESSES: tuple[Harness, ...] = (
-    Harness(
-        "Claude Code",
-        "`CLAUDE.md` + hooks",
-        "`.mcp.json` + power-tools plugin",
-        "hook — `pre_tool_use.py` on every Edit/Write",
-        "pre-commit",
-        "hooks write stages 01–03",
-        "injected on turn one",
-        "`session_start.sh`",
-    ),
-    Harness(
-        "Codex CLI",
-        "`AGENTS.md`, natively",
-        "`.codex/config.toml`",
-        "none — commit gate only",
-        "pre-commit",
-        "none",
-        "rule — `pf memory show`",
-        "rule — `AGENTS.md` §1",
-    ),
-    Harness(
-        "Cursor",
-        "`AGENTS.md` + `.cursor/rules/`",
-        "`.cursor/mcp.json`",
-        "partial — shell: `--no-verify` blocked; edits: verdict after the fact",
-        "pre-commit",
-        "none",
-        "rule",
-        "rule",
-    ),
-    Harness(
-        "Copilot — VS Code chat",
-        "`.github/copilot-instructions.md`",
-        "`.vscode/mcp.json`",
-        "none — commit gate only",
-        "pre-commit",
-        "none",
-        "rule",
-        "rule",
-    ),
-    Harness(
-        "Copilot — coding agent",
-        "`.github/copilot-instructions.md` + `copilot-setup-steps.yml`",
-        "repository settings, not a file",
-        "none — `pf gate` in `AGENTS.md` §4",
-        "pre-commit, if installed in the runner",
-        "none",
-        "rule",
-        "rule",
-    ),
-    Harness(
-        "Gemini CLI",
-        "`GEMINI.md`",
-        "`.gemini/settings.json`",
-        "none — commit gate only",
-        "pre-commit",
-        "none",
-        "rule",
-        "rule",
-    ),
-    Harness(
-        "OpenCode",
-        "`AGENTS.md` via `opencode.json`",
-        "`.opencode/opencode.json`",
-        "none — commit gate only",
-        "pre-commit",
-        "none",
-        "rule",
-        "rule",
-    ),
-    Harness(
-        "Prompt-only (Continue, Ollama, mlx)",
-        "paste `AGENTS.md`",
-        "none",
-        "none",
-        "pre-commit",
-        "none",
-        "rule",
-        "rule",
-    ),
+#: The column every harness that reads `.agents/skills/` shares.
+SKILLS_CELL = "`.agents/skills/` — toolkits, commands; a group's under the group"
+
+CLAUDE_ROW = Harness(
+    "Claude Code",
+    "`CLAUDE.md` + hooks",
+    "`.mcp.json` + power-tools plugin",
+    "hook — `pre_tool_use.py` on every Edit/Write",
+    "pre-commit",
+    "hooks write stages 01–03",
+    "injected on turn one",
+    "`session_start.sh`",
+    "plugins — every toolkit",
+    "power-tools plugin",
 )
+
+PROMPT_ONLY_ROW = Harness(
+    "Prompt-only (Continue, Ollama, mlx)",
+    "paste `AGENTS.md`",
+    "none",
+    "none",
+    "pre-commit",
+    "none",
+    "rule",
+    "rule",
+)
+
+
+def harnesses() -> tuple[Harness, ...]:
+    """What is *true* for each tool, not what would be nice. "rule" means the
+    protocol asks for it and nothing enforces it; that word is the point."""
+    from pf.harnesses import specs
+
+    return (CLAUDE_ROW, *(r for s in specs() for r in s.rows), PROMPT_ONLY_ROW)
+
+
+def __getattr__(name: str) -> Any:
+    """`HARNESSES` and `TARGETS`, computed: a harness is added by adding a
+    module to `pf.harnesses`, never by editing a list here."""
+    if name == "HARNESSES":
+        return harnesses()
+    if name == "TARGETS":
+        # The fixed files — what a render from no sources at all still writes.
+        return tuple(targets(Path("/nonexistent-pf-root")))
+    raise AttributeError(name)
 
 
 def render_scorecard() -> str:
     """`docs/HARNESSES.md`: per harness, what is enforced and what is asked."""
+    from pf.harnesses import Ctx, specs
+
     lines = [
         "# Harnesses — what each agent tool actually gets",
         "",
-        "GENERATED by `pf context refresh` from `platform/src/pf/harness.py`. Do not",
-        "hand-edit; `pf context check` fails when this file and the code disagree.",
+        "GENERATED by `pf context refresh` from `platform/src/pf/harness.py` and",
+        "`platform/src/pf/harnesses/`. Do not hand-edit; `pf context check` fails when",
+        "this file and the code disagree.",
         "",
         "The rules are written once, per execution scope, in `AGENTS.md`, and every",
-        "tool reaches them. What differs by tool is **enforcement**: a hook can stop an",
-        "action; a rule can only ask. This table says which is which. Where it says",
-        "*rule*, nothing checks — and the commit gate (`platform/hooks/pre_commit.sh`,",
+        "tool reaches them. The **enforcement** is written once too: `pf.agenthook` is the",
+        "gate, the permission lists, provenance, the formatter and the turn-one context,",
+        "and `platform/hooks/agent_hook.py <harness> <event>` reaches it from each tool's",
+        "own hook system, where that tool's config wires it. A hook can stop an action;",
+        "a rule can only ask. This table says which is which. Where it says *rule*,",
+        "nothing checks — and the commit gate (`platform/hooks/pre_commit.sh`,",
         "`pf install-hook`) is the backstop every tool shares.",
         "",
-        "| Harness | Entry point | Graph (MCP) | Pre-tool gate | Commit gate | Provenance | Memory | Session context |",
-        "|---|---|---|---|---|---|---|---|",
+        "Every *hook* cell outside Claude Code is the same check: `gate.yaml`, then the",
+        "`deny`/`ask` lists of `.claude/settings.json` (and the project's, in a project",
+        "session) — which Claude Code applies itself and no other tool reads — then",
+        "provenance.",
+        "",
+        (
+            "| Harness | Entry point | Graph (MCP) | Pre-tool gate | Commit gate | Provenance | Memory "
+            "| Session context | Skills | Subagents |"
+        ),
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
-    for h in HARNESSES:
+    for h in harnesses():
         lines.append(
             f"| {h.name} | {h.entry} | {h.graph} | {h.pre_tool_gate} | {h.commit_gate} "
-            f"| {h.provenance} | {h.memory} | {h.session_context} |"
+            f"| {h.provenance} | {h.memory} | {h.session_context} | {h.skills} | {h.agents} |"
         )
     lines += [
         "",
@@ -420,64 +303,71 @@ def render_scorecard() -> str:
         "| Harness | File | Regenerate with |",
         "|---|---|---|",
     ]
-    for t in TARGETS:
-        if t == "docs/HARNESSES.md":
-            continue
-        lines.append(f"| {_owner(t)} | `{t}` | `pf context refresh` |")
+    empty = Ctx(Path("/nonexistent-pf-root"), [], [])
+    for s in specs():
+        for rel in s.render(empty):
+            lines.append(f"| {s.owner} | `{rel}` | `pf context refresh` |")
     lines += [
+        "",
+        "Plus, from the toolkits (`pf.harness_assets`): every skill linked into",
+        "`.agents/skills/` — the one directory every harness above discovers — the",
+        "power-tools commands as skills beside them, and the power-tools subagents in",
+        "the format of each harness that declares one.",
+        "",
+    ]
+    launch = [s.launch for s in specs() if s.launch]
+    lines += [
+        "## Start a session",
+        "",
+        "```bash",
+        f"bin/agent-here {'|'.join(['claude', *launch])} [args]",
+        "```",
+        "",
+        "Each harness finds its generated config from the checkout on its own; the",
+        "launcher adds only what must be decided before the process starts — scratch",
+        "files in `.tmp/`, `PF_AGENT` for memory notes, a warning when the commit gate",
+        "is missing.",
         "",
         "## Verify",
         "",
         "```bash",
         "uv run pf context check              # every config above is current",
         "ls .git/hooks/pre-commit             # the commit gate is installed (pf install-hook)",
-        "uv run pf gate --paths <file,...>    # the gate, by hand, from any tool",
+        "uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same verdicts",
         "```",
         "",
-        "## Why Cursor is 'partial' and the others are 'none'",
-        "",
-        "Cursor exposes `beforeShellExecution` (can block) and `afterFileEdit` (cannot).",
-        "So `platform/hooks/cursor_hook.py` blocks `--no-verify` before it runs — the",
-        "commit gate is the only gate Cursor has, and that flag skips it — and reports",
-        "`gate.yaml`'s verdict on an edit after the edit has happened. Codex, Gemini,",
-        "Copilot and OpenCode expose no tool hooks at all. Claiming more than this",
-        "would leave a tool believing it is gated when it is not, which is the one",
-        "outcome worse than an ungated tool that knows it.",
+    ]
+    caveats = [line for s in specs() for line in s.caveats]
+    if caveats:
+        lines += ["## Where a harness only half honours its config", "", *caveats, ""]
+    lines += [
+        "Claiming more than this would leave a tool believing it is gated when it is",
+        "not, which is the one outcome worse than an ungated tool that knows it.",
         "",
     ]
     return "\n".join(lines)
 
 
-def _owner(target: str) -> str:
-    return {
-        ".codex/config.toml": "Codex CLI",
-        ".cursor/mcp.json": "Cursor",
-        ".cursor/hooks.json": "Cursor",
-        ".cursor/rules/data-platform.mdc": "Cursor",
-        ".gemini/settings.json": "Gemini CLI",
-        ".vscode/mcp.json": "Copilot (VS Code)",
-        ".opencode/opencode.json": "OpenCode",
-    }.get(target, "—")
-
-
 # ------------------------------------------------------------------ targets --
 def targets(root: str | Path) -> dict[str, str]:
     """Every generated file and its content, from the sources as they stand."""
-    svs = servers(root)
-    return {
-        ".codex/config.toml": render_codex(svs),
-        ".cursor/mcp.json": render_cursor_mcp(svs),
-        ".cursor/hooks.json": render_cursor_hooks(),
-        ".cursor/rules/data-platform.mdc": render_cursor_rule(),
-        ".gemini/settings.json": render_gemini(svs),
-        ".vscode/mcp.json": render_vscode(svs),
-        ".opencode/opencode.json": render_opencode(svs),
-        "docs/HARNESSES.md": render_scorecard(),
-    }
+    from pf import harness_assets
+    from pf.harnesses import Ctx, specs
+
+    root = Path(root)
+    ctx = Ctx(root, servers(root), ask_prefixes(root))
+    out: dict[str, str] = {}
+    for s in specs():
+        out.update(s.render(ctx))
+    out[SCORECARD] = render_scorecard()
+    out.update(harness_assets.targets(root))
+    return out
 
 
 def check(root: str | Path) -> list[str]:
     """One line per config that is missing or differs from what the sources say."""
+    from pf import harness_assets
+
     root = Path(root)
     problems: list[str] = []
     for rel, content in targets(root).items():
@@ -485,12 +375,15 @@ def check(root: str | Path) -> list[str]:
         if not p.is_file():
             problems.append(f"{rel} is missing — that harness has no graph or no gate; run `pf context refresh`")
         elif p.read_text(encoding="utf-8") != content:
-            problems.append(f"{rel} is stale against .mcp.json — run `pf context refresh`")
+            problems.append(f"{rel} is stale against its source — run `pf context refresh`")
+    problems.extend(harness_assets.check_links(root))
     return problems
 
 
 def write_all(root: str | Path) -> list[Path]:
-    """Write every target that differs. Returns what changed."""
+    """Write every target that differs, and every skill link. Returns what changed."""
+    from pf import harness_assets
+
     root = Path(root)
     changed: list[Path] = []
     for rel, content in targets(root).items():
@@ -500,4 +393,5 @@ def write_all(root: str | Path) -> list[Path]:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
         changed.append(p)
+    changed.extend(harness_assets.write_links(root))
     return changed

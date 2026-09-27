@@ -48,7 +48,7 @@ if [[ "$rel" == groups/*/projects/* ]]; then
 else
   echo "- scope: platform/root — shared infra. Changes here affect every project."
 fi
-# The protocol is per execution scope, not per tool; a Claude session is the
+# The protocol is per execution scope, not per tool; a session in any harness is the
 # Session scope. One line, so the always-on cost is one line.
 echo "- protocol: AGENTS.md — you are its Session scope (§0); leave a note before you finish (§5)"
 

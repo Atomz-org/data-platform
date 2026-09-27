@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+# Start any supported agent harness on this checkout, on the same footing.
+#
+#     sh bin/agent-here <harness> [args...]
+#
+#     harness   claude — and each harness whose hooks are wired (docs/HARNESSES.md)
+#
+# Every harness already finds its generated hooks, MCP servers, skills and
+# subagents from the checkout (docs/HARNESSES.md); none of that depends on this
+# script. What a launcher adds is what has to be decided *before* the process
+# starts:
+#
+#   - scratch files stay in `.tmp/` (TMPDIR), the rule Claude's settings inject;
+#   - memory notes are attributed (`PF_AGENT`), because not every harness
+#     leaves a mark of its own in the shells it spawns;
+#   - a missing commit gate is said out loud, since it is the backstop for all.
+#
+# Not named after any harness, deliberately: on PATH, a launcher that shadows
+# the binary it execs is a fork bomb.
+set -eu
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(git -C "$here" rev-parse --show-toplevel)
+
+tool=${1:-}
+[ -n "$tool" ] || { sed -n '3,10p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
+shift
+
+mkdir -p "$root/.tmp"
+TMPDIR="$root/.tmp"
+export TMPDIR
+PF_AGENT=${PF_AGENT:-$tool}
+export PF_AGENT
+
+if [ -d "$root/.git" ] && [ ! -e "$root/.git/hooks/pre-commit" ]; then
+  echo "agent-here: no commit gate (.git/hooks/pre-commit). Install it: uv run pf install-hook" >&2
+fi
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "agent-here: '$1' is not on PATH" >&2; exit 127; }; }
+
+case "$tool" in
+  claude)
+    exec sh "$here/claude-here" "$@" ;;
+  *)
+    echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
+    exit 64 ;;
+esac

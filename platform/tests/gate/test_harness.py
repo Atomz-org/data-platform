@@ -6,9 +6,12 @@ format, and the hooks a tool needs to be stopped — and the one property the
 whole layer stands on:
 
   the scorecard is honest     a tool that reads "gated" and is not is worse
-                                than one that knows it is not. No harness but
-                                Claude Code claims a pre-tool hook; Cursor is
-                                "partial" and says which half.
+                                than one that knows it is not. A row claims a
+                                pre-tool hook only if the config it names is
+                                rendered and calls the gate for that harness.
+
+  one module per harness      adding one never edits `pf.harness`; the
+                                registry finds it, and every list follows.
 
   one source                  every config lists the servers `.mcp.json` lists,
                                 including the `pf` server the plugin file
@@ -131,7 +134,9 @@ def test_every_structured_target_parses_in_its_own_format(tmp_path: Path) -> Non
 
     hooks = json.loads(r[".cursor/hooks.json"])["hooks"]
     assert set(hooks) == {"beforeShellExecution", "afterFileEdit"}
-    assert all(harness.CURSOR_HOOK in h["command"] for ev in hooks.values() for h in ev)
+    from pf.harnesses.cursor import CURSOR_HOOK
+
+    assert all(CURSOR_HOOK in h["command"] for ev in hooks.values() for h in ev)
 
 
 def test_rendering_is_deterministic_and_check_names_each_drift(tmp_path: Path) -> None:
@@ -176,20 +181,47 @@ def test_a_server_added_to_the_source_reaches_every_config(tmp_path: Path) -> No
 
 
 # ----------------------------------------------------------------- honesty --
-def test_no_harness_but_claude_claims_a_pre_tool_hook() -> None:
+def test_a_row_claims_a_hook_only_where_a_config_wires_it(tmp_path: Path) -> None:
     """The scorecard's one invariant. A tool that reads 'gated' and is not has
-    been lied to by the file meant to prevent exactly that."""
+    been lied to by the file meant to prevent exactly that — so every row that
+    says `hook` names a rendered config, and that config calls the gate with
+    that harness's name on its pre-tool event."""
+    rendered = targets(_tree(tmp_path))
     for h in HARNESSES:
+        assert "pre-commit" in h.commit_gate, f"{h.name}: the commit gate is the shared backstop"
         if h.name == "Claude Code":
             assert h.pre_tool_gate.startswith("hook")
-            assert h.provenance.startswith("hooks")
-        elif h.name == "Cursor":
-            assert h.pre_tool_gate.startswith("partial"), "Cursor has half a hook and must say so"
-            assert h.provenance == "none"
-        else:
-            assert h.pre_tool_gate.startswith("none"), f"{h.name} has no tool hooks"
-            assert h.provenance == "none", f"{h.name} writes no provenance"
-        assert "pre-commit" in h.commit_gate, f"{h.name}: the commit gate is the shared backstop"
+            continue
+        if h.pre_tool_gate.startswith("hook"):
+            assert h.hook_config in rendered, f"{h.name} claims a hook from an unrendered {h.hook_config!r}"
+            cfg = rendered[h.hook_config]
+            as_command = f"agent_hook.py {h.hook_name} pre" in cfg
+            # OpenCode's plugin passes argv: the script, the harness, the event.
+            as_plugin = "agent_hook.py`" in cfg and f'"{h.hook_name}", event' in cfg and 'hook("pre"' in cfg
+            assert as_command or as_plugin, h.name
+        elif h.pre_tool_gate.startswith(("none", "partial")):
+            assert h.provenance == "none", f"{h.name}: no hook, so no provenance"
+
+
+def test_every_adapter_has_a_row_and_every_hook_row_an_adapter() -> None:
+    from pf.harness_adapters import ADAPTERS
+
+    wired = {h.hook_name for h in HARNESSES if h.hook_name}
+    assert wired == set(ADAPTERS) - {"claude"}, "an adapter nobody's config calls is dead code; a row without one lies"
+
+
+def test_the_registry_is_the_only_list(tmp_path: Path) -> None:
+    """Every module's files are targets, every module's rows are on the card."""
+    from pf.harnesses import Ctx, specs
+
+    t = targets(_tree(tmp_path))
+    card = harness.render_scorecard()
+    for s in specs():
+        assert s.rows, s.key
+        for r in s.rows:
+            assert f"| {r.name} |" in card, r.name
+        for rel in s.render(Ctx(tmp_path, [], [])):
+            assert rel in t, rel
 
 
 def test_the_scorecard_says_rule_where_nothing_enforces() -> None:

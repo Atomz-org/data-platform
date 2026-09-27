@@ -24,16 +24,19 @@ field() { printf '%s' "$payload" | jq -r "$1 // empty" 2>/dev/null; }
 
 cwd="$(field '.cwd')"
 where="$(basename "${cwd:-$PWD}")"
+# Which agent tool is calling. `pf.agenthook` names it for every harness but
+# Claude Code, whose plugin calls this directly.
+tool="${PF_HARNESS_LABEL:-Claude Code}"
 
 case "$kind" in
   permission)
-    title="Claude Code · needs you"
+    title="${tool} · needs you"
     body="$(field '.message')"
     body="${body:-Waiting for approval in ${where}}"
     spoken="I need your confirmation"
     ;;
   *)
-    title="Claude Code · done"
+    title="${tool} · done"
     last="$(field '.last_assistant_message')"
     # One line, trimmed. The notification is a summons, not a transcript.
     body="$(printf '%s' "${last:-Task finished}" | tr '\n' ' ' | cut -c1-140)"

@@ -26,6 +26,8 @@ mcp:                ; @uv run pf mcp
 # .claude/settings.json — docs/CLAUDE-CODE.md says why.
 claude *args:       ; @sh bin/claude-here {{args}}
 plugins:            ; @claude plugin validate platform/.claude-plugin/marketplace.json
+# The same footing for any harness whose hooks are wired — docs/HARNESSES.md.
+agent tool *args:   ; @sh bin/agent-here {{tool}} {{args}}
 
 # tools
 tools g p:          ; @uv run pf tool list {{g}} {{p}}

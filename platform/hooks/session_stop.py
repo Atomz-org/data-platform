@@ -34,6 +34,18 @@ def repo_root(start: Path) -> Path:
     return start
 
 
+def _not_claude(payload: dict) -> bool:
+    """Cursor's CLI and Copilot also run `.claude/settings.json` hooks. Their own
+    configs already reach `agent_hook.py`; this script manages Claude Code's
+    session folders and must not build one for another tool's session id."""
+    import os
+
+    if os.environ.get("CURSOR_VERSION") or os.environ.get("CURSOR_PROJECT_DIR"):
+        return True
+    t = str(payload.get("transcript_path") or "")
+    return bool(t) and "/projects/" not in t.replace("\\", "/")
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -41,6 +53,9 @@ def main() -> int:
         payload = {}
     if not isinstance(payload, dict):
         payload = {}
+
+    if _not_claude(payload):
+        return 0
 
     root = repo_root(Path(payload.get("cwd") or Path.cwd()))
     sys.path.insert(0, str(root / "platform" / "src"))
