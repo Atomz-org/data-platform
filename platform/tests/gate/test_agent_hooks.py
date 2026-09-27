@@ -254,6 +254,27 @@ def test_junie_is_gated_but_writes_no_provenance(repo: Path, monkeypatch: pytest
     assert run("junie", "pre", json.dumps(SAMPLES["junie"]("edit", repo, "platform/ok.py")))[2] == 0
 
 
+def test_a_local_model_is_a_provider_for_a_hooked_harness(repo: Path) -> None:
+    """Qwen has no hooks; OpenCode does. The providers ride in OpenCode's
+    config and select nothing, so the gate is OpenCode's whatever it drives."""
+    from pf import harness
+    from pf.harnesses import local
+
+    oc = json.loads(harness.targets(repo)[".opencode/opencode.json"])
+    assert oc["provider"]["mlx"]["options"]["baseURL"] == local.MLX_URL
+    assert local.MLX_MODEL in oc["provider"]["mlx"]["models"]
+    assert "model" not in oc, "listing a provider must not change the person's default model"
+
+
+def test_the_launcher_knows_every_local_route() -> None:
+    """The model ids the launcher defaults to are the ones OpenCode's config lists."""
+    from pf.harnesses import local
+
+    text = (REPO_ROOT / "bin" / "agent-here").read_text(encoding="utf-8")
+    assert local.MLX_MODEL in text and local.OLLAMA_MODEL in text
+    assert "codex --oss" in text and "opencode -m" in text
+
+
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     from pf.memory import detect_agent
 

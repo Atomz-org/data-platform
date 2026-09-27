@@ -28,7 +28,8 @@ provenance.
 | Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
 | OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | hook — plugin | pre-commit | hooks write stages 01–03 | injected into the system prompt | plugin | `.agents/skills/` — toolkits, commands; a group's under the group | `.opencode/agents/` |
 | Junie CLI | `AGENTS.md` | none — `pf mcp` by hand | hook — via `bin/agent-here junie` only | pre-commit | none — no post-tool event | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | none |
-| Prompt-only (Continue, Ollama, mlx) | paste `AGENTS.md` | none | none | pre-commit | none | rule | rule | none | none |
+| Local model — Qwen on mlx or Ollama | `bin/agent-here opencode --local` (mlx) · `bin/agent-here codex --local` (Ollama) | as its harness | as its harness | pre-commit | as its harness | as its harness | as its harness | as its harness | as its harness |
+| Jules; prompt-only tools (Continue, a bare model) | `AGENTS.md` / paste `AGENTS.md` | none | none — no hook exists | pre-commit; CI on the pull request | none | rule | rule | none | none |
 
 ## The generated configs
 
@@ -59,6 +60,9 @@ the format of each harness that declares one.
 
 ```bash
 bin/agent-here claude|codex|cursor|copilot|gemini|opencode|junie [args]
+bin/agent-here opencode --local      # Qwen on mlx_lm.server, :8080
+PF_LOCAL_PROVIDER=ollama bin/agent-here opencode --local   # Qwen on Ollama
+bin/agent-here codex --local         # Qwen on Ollama, via codex --oss
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -88,6 +92,11 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 - **Junie** ignores project hooks unless started with `--config-location`, which
   is what `bin/agent-here junie` passes. It has no post-tool event, so it writes
   no provenance: an INTENT nothing closes would be a dangling action.
+- **A local model** is gated by the harness driving it. mlx_lm.server speaks
+  Chat Completions only, so it goes through OpenCode; Codex speaks the Responses
+  API only, so its local route is Ollama. Another model id means editing
+  `pf.harnesses.local` and `pf context refresh` — OpenCode rejects a model its
+  config does not list.
 
 Claiming more than this would leave a tool believing it is gated when it is
 not, which is the one outcome worse than an ungated tool that knows it.
