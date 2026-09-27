@@ -1,9 +1,13 @@
 #!/usr/bin/env sh
 # Start any supported agent harness on this checkout, on the same footing.
 #
-#     sh bin/agent-here <harness> [args...]
+#     sh bin/agent-here <harness> [--local] [args...]
 #
 #     harness   claude — and each harness whose hooks are wired (docs/HARNESSES.md)
+#     --local   a local Qwen instead of the vendor's model:
+#                 opencode  mlx_lm.server on :8080 (PF_LOCAL_PROVIDER=ollama: :11434)
+#                 codex     Ollama via `codex --oss`
+#               PF_LOCAL_MODEL overrides the model id.
 #
 # Every harness already finds its generated hooks, MCP servers, skills and
 # subagents from the checkout (docs/HARNESSES.md); none of that depends on this
@@ -27,6 +31,8 @@ root=$(git -C "$here" rev-parse --show-toplevel)
 tool=${1:-}
 [ -n "$tool" ] || { sed -n '3,10p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 64; }
 shift
+local_model=0
+if [ "${1:-}" = "--local" ]; then local_model=1; shift; fi
 
 mkdir -p "$root/.tmp"
 TMPDIR="$root/.tmp"
@@ -44,7 +50,13 @@ case "$tool" in
   claude)
     exec sh "$here/claude-here" "$@" ;;
   codex)
-    need codex; exec codex "$@" ;;
+    need codex
+    if [ "$local_model" = 1 ]; then
+      model=${PF_LOCAL_MODEL:-qwen3-coder:30b}
+      PF_AGENT="codex:$model"; export PF_AGENT
+      exec codex --oss -c oss_provider=ollama -m "$model" "$@"
+    fi
+    exec codex "$@" ;;
   gemini)
     need gemini; exec gemini "$@" ;;
   copilot)
@@ -52,7 +64,24 @@ case "$tool" in
   cursor)
     need cursor-agent; exec cursor-agent "$@" ;;
   opencode)
-    need opencode; exec opencode "$@" ;;
+    need opencode
+    if [ "$local_model" = 1 ]; then
+      provider=${PF_LOCAL_PROVIDER:-mlx}
+      case "$provider" in
+        mlx)    model=${PF_LOCAL_MODEL:-mlx-community/Qwen3-Coder-30B-A3B-Instruct-4bit}; url=http://127.0.0.1:8080/v1
+                hint="mlx_lm.server --model $model --port 8080" ;;
+        ollama) model=${PF_LOCAL_MODEL:-qwen3-coder:30b}; url=http://127.0.0.1:11434/v1
+                hint="ollama serve   # then: ollama pull $model" ;;
+        *) echo "agent-here: PF_LOCAL_PROVIDER is mlx or ollama" >&2; exit 64 ;;
+      esac
+      if command -v curl >/dev/null 2>&1 && ! curl -sf -o /dev/null "$url/models"; then
+        echo "agent-here: nothing answering at $url. Start it:  $hint" >&2
+        exit 69
+      fi
+      PF_AGENT="opencode:$model"; export PF_AGENT
+      exec opencode -m "$provider/$model" "$@"
+    fi
+    exec opencode "$@" ;;
   junie)
     need junie; exec junie --config-location "$root/.junie/config.json" "$@" ;;
   *)

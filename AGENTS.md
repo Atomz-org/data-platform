@@ -18,7 +18,8 @@ and says where a hook enforces it for you and where only you can.
 | Claude Code — a session, or `@claude` in Actions | `CLAUDE.md` + hooks; the SessionStart hook names this file | on demand |
 | Copilot in VS Code — chat, inline | `.github/copilot-instructions.md` | it points here; `chat.useAgentsMdFile: true` reads it directly |
 | Gemini CLI, Gemini Code Assist | `GEMINI.md` | imports this file |
-| Continue.dev, Ollama, mlx, anything that only takes a system prompt | the operator's prompt | paste this file, or one rule: *follow `AGENTS.md`* |
+| A local model — Qwen on mlx or Ollama | `just local` / `bin/agent-here opencode --local`, or `codex --local` — OpenCode or Codex drives it, with their hooks | as that harness |
+| Continue.dev, anything that only takes a system prompt | the operator's prompt | paste this file, or one rule: *follow `AGENTS.md`* |
 | Any of the above, for the graph, the gate, skills and subagents | `docs/HARNESSES.md` — the generated per-harness configs (one module each under `platform/src/pf/harnesses/`), the skills in `.agents/skills/`, and what each one actually enforces | it points here |
 
 ## 0. Which scope you are in

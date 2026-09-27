@@ -28,6 +28,8 @@ claude *args:       ; @sh bin/claude-here {{args}}
 plugins:            ; @claude plugin validate platform/.claude-plugin/marketplace.json
 # The same footing for any harness whose hooks are wired — docs/HARNESSES.md.
 agent tool *args:   ; @sh bin/agent-here {{tool}} {{args}}
+# OpenCode on a local Qwen (mlx_lm.server on :8080) — gated like any OpenCode session.
+local *args:        ; @sh bin/agent-here opencode --local {{args}}
 
 # tools
 tools g p:          ; @uv run pf tool list {{g}} {{p}}
