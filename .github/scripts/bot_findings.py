@@ -237,6 +237,9 @@ class Finding:
     #: `307-312` when the finding names a span rather than a line. Cited, not
     #: fingerprinted — a span shifts with every rebase.
     span: str = ""
+    #: CodeRabbit's own estimate of the fix — `quick-win` or `heavy-lift` —
+    #: from the classification line. Empty when the bot gives none.
+    effort: str = ""
 
     @property
     def origin(self) -> str:
@@ -270,7 +273,13 @@ def _key(path: str, title: str) -> str:
     return hashlib.sha256(f"{path}|{norm}".encode()).hexdigest()[:16]
 
 
-CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_", re.M)
+CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_.*$", re.M)
+#: The fields of that header line. The severity is not always the second one:
+#: CodeRabbit's Advanced-Tier security findings insert a provenance field —
+#: `_🔒 Security & Privacy_ | _🛡️ Detected with Advanced Tier_ | _🟠 Major_` —
+#: and reading position 2 filed a Major security finding as minor.
+CR_FIELD = re.compile(r"_([^_|]+)_")
+SEVERITY_WORD = re.compile(r"critical|major|minor|trivial|🔴|🟠|🟡|🔵|⚪", re.I)
 # Gitar writes the label as `<b>Quality:</b> …` — the colon sits inside the bold,
 # not after it — but plain `Quality: …` also occurs. Accept the colon on either
 # side, or the tags would be captured into the title.
@@ -292,6 +301,15 @@ def _severity(text: str) -> str:
     return "minor"
 
 
+def _effort(text: str) -> str:
+    t = text.lower()
+    if "quick win" in t:
+        return "quick-win"
+    if "heavy lift" in t:
+        return "heavy-lift"
+    return ""
+
+
 def _kind(blob: str, path: str) -> str:
     t = blob.lower()
     if "security" in t or "cwe-" in t or "injection" in t or "secret" in t:
@@ -308,7 +326,7 @@ def _kind(blob: str, path: str) -> str:
 
 
 def parse(body: str, path: str, line: int | None, login: str,
-          url: str, pr: int) -> list[Finding]:
+          url: str, pr: int, reply: bool = False) -> list[Finding]:
     """One comment holds either one inline finding or several summary ones."""
     bot = "CodeRabbit" if "coderabbit" in login else "Gitar"
     clean = strip_noise(body)
@@ -323,8 +341,26 @@ def parse(body: str, path: str, line: int | None, login: str,
     if bot == "CodeRabbit":
         m = CR_HEAD.search(clean)
         if not m:
-            return []
-        cat, sev = m.group(1), m.group(2)
+            # No classification line. A reply in a thread is conversation —
+            # "addressed in abc123", an answer to a question — not a new
+            # finding. But a comment CodeRabbit opened on a line of the diff is
+            # a finding whatever its format, and dropping it for lacking a
+            # header was how an unlabelled comment never became an issue. File
+            # it as minor; its text still says what it is.
+            if reply or not path or not re.search(r"\w{3}", clean):
+                return []
+            title = next((" ".join(c.split()) for c in CR_TITLE.findall(clean)
+                          if not " ".join(c.split()).endswith(":")), "")
+            if not title:
+                first = next((ln.strip(" *_>#-") for ln in clean.splitlines() if ln.strip()), "")
+                title = " ".join(first.split())[:160]
+            title = title.strip().rstrip(".")
+            if len(title) < 8:
+                return []
+            return [Finding(bot, path, line, title, "minor", _kind(clean, path), clean, url, pr)]
+        fields = CR_FIELD.findall(m.group(0))
+        cat = fields[0]
+        sev = next((f for f in fields[1:] if SEVERITY_WORD.search(f)), m.group(2))
         title = cat
         for cand in CR_TITLE.findall(clean[m.end():]):
             c = " ".join(cand.split())
@@ -333,7 +369,8 @@ def parse(body: str, path: str, line: int | None, login: str,
                 break
         title = title.strip().rstrip(".")
         out.append(Finding(bot, path, line, title, _severity(sev),
-                           _kind(cat + " " + clean, path), clean, url, pr))
+                           _kind(cat + " " + clean, path), clean, url, pr,
+                           effort=_effort(m.group(0))))
     else:
         for m in GITAR_HEAD.finditer(body):
             title = re.sub(r"\s+", " ", m.group(2)).strip()
@@ -529,7 +566,7 @@ def _parse_file_block(block: str, path: str, section: str, url: str,
         out.append(Finding(
             "CodeRabbit", path, int(h.group("start")), title,
             _severity(cat), _kind(cat + " " + clean, path), clean, url, pr,
-            section=section, span=span))
+            section=section, span=span, effort=_effort(cat)))
     return out
 
 
@@ -636,7 +673,64 @@ def labels_for(f: Finding) -> list[str]:
         out.append("bug")
     if f.kind == "docs":
         out.append("documentation")
+    # Priority, area and effort as labels, not only as board fields. The board
+    # needs PROJECTS_TOKEN; without it every issue was filed with no priority
+    # at all, and a P0 security finding read the same as a typo.
+    out.append(priority_label(f))
+    out.append(area_label(f))
+    if f.effort:
+        out.append(f"effort:{f.effort}")
     return out
+
+
+#: Board priority → label. One per issue; `relabel` keeps it that way.
+PRIORITY_LABELS = {
+    "P0 — Critical": "priority:P0",
+    "P1 — High": "priority:P1",
+    "P2 — Medium": "priority:P2",
+    "P3 — Low": "priority:P3",
+}
+
+
+def priority_label(f: Finding) -> str:
+    return PRIORITY_LABELS[priority(f)]
+
+
+def area_label(f: Finding) -> str:
+    return "area:" + re.sub(r"[^a-z0-9]+", "-", category(f).lower()).strip("-")
+
+
+def relabel(have: set[str], want: list[str]) -> tuple[list[str], list[str]]:
+    """(labels to add, labels to remove) to bring an issue to `want`.
+
+    A finding is often reported more than once — inline and in a review body,
+    by two bots, again on the next push — and each report is upserted in turn.
+    So the exclusive groups move in one direction only, or two reports of one
+    defect would flip its labels back and forth on every run:
+
+      priority:*, severity:*   only ever raised; the lower label is removed
+      area:*, effort:*         set once; a later report does not overwrite it
+    """
+    add = [x for x in want if x not in have]
+    remove: list[str] = []
+    rank = {"priority:P0": 0, "priority:P1": 1, "priority:P2": 2, "priority:P3": 3,
+            "severity:major": 0, "severity:minor": 1}
+    for group in ("priority:", "severity:"):
+        new = next((x for x in want if x.startswith(group)), None)
+        old = [x for x in have if x.startswith(group)]
+        if new is None:
+            continue
+        best_old = min(old, key=lambda x: rank.get(x, 9), default=None)
+        if best_old is not None and rank.get(best_old, 9) <= rank.get(new, 9):
+            if new in add:
+                add.remove(new)  # already as high or higher
+            remove += [x for x in old if x != best_old]
+        else:
+            remove += old
+    for group in ("area:", "effort:"):
+        if any(x.startswith(group) for x in have):
+            add = [x for x in add if not x.startswith(group)]
+    return add, sorted(set(remove) - set(add))
 
 
 # ----------------------------------------------------------------- issues ----
@@ -659,6 +753,14 @@ LABELS = [
     ("nitpick", "ededed", "Style or polish, raised in a review body"),
     ("outside-diff", "fef2c0", "Outside the diff — no review thread carries it"),
     (EPIC_LABEL, "0e8a16", "Gathers every finding in one category"),
+    ("priority:P0", "b60205", "Critical — a critical finding, or a major security one"),
+    ("priority:P1", "d93f0b", "High — a major finding, or any bug"),
+    ("priority:P2", "fbca04", "Medium"),
+    ("priority:P3", "c2e0c6", "Low — docs, or a nitpick"),
+    ("effort:quick-win", "bfdadc", "CodeRabbit estimates a quick fix"),
+    ("effort:heavy-lift", "5319e7", "CodeRabbit estimates a large fix"),
+    *[("area:" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-"), "ededed", f"Category: {name}")
+      for name, _ in CATEGORIES],
 ]
 
 _LABELS_READY = False
@@ -928,28 +1030,25 @@ def upsert(f: Finding) -> int | None:
                 # title — one retitle away from being refiled. Adopt it: put the
                 # key in now, and the next run hits the exact index instead.
                 body = f"<!-- {MARK}{f.fingerprint} -->\n\n{body}"
+        have = {x["name"] for x in found.get("labels", [])}
+        add, remove = relabel(have, labels)
         if DRY_RUN:
             changed = "body" if body != (found.get("body") or "") else "nothing"
-            missing = [x for x in labels
-                       if x not in {y["name"] for y in found.get("labels", [])}]
             print(f"  WOULD UPDATE  #{n} {f.title[:56]} "
-                  f"({changed}; +labels {missing or 'none'})")
+                  f"({changed}; +labels {add or 'none'}; -labels {remove or 'none'})")
             return n
         if body != (found.get("body") or ""):
             run(["gh", "issue", "edit", str(n), "--repo", REPO, "--body", body])
             found["body"] = body
         remember(found, [f.fingerprint])
-        have = {x["name"] for x in found.get("labels", [])}
-        add = [x for x in labels if x not in have]
-        # A finding re-reported harder must not stay labelled minor.
-        if "severity:major" in add and "severity:minor" in have:
-            run(["gh", "issue", "edit", str(n), "--repo", REPO,
-                 "--remove-label", "severity:minor"], check=False)
-        if add:
+        if add or remove:
             cmd = ["gh", "issue", "edit", str(n), "--repo", REPO]
             for lab in add:
                 cmd += ["--add-label", lab]
+            for lab in remove:
+                cmd += ["--remove-label", lab]
             run(cmd, check=False)
+            found["labels"] = [{"name": x} for x in (have | set(add)) - set(remove)]
         print(f"  updated #{n}  {f.title[:60]}")
         TALLY["updated"].append(f"#{n} {f.title}")
         return n
@@ -1509,7 +1608,7 @@ def collect(pr: int) -> list[Finding]:
         args = (c.get("path", ""), c.get("line") or c.get("original_line"),
                 login, c["html_url"], pr)
         if any(b in login for b in BOTS):
-            out += parse(c["body"], *args)
+            out += parse(c["body"], *args, reply=bool(c.get("in_reply_to_id")))
         else:
             out += parse_human(
                 c["body"], *args,
@@ -1583,6 +1682,9 @@ def track(findings: list[Finding], board=None) -> None:
 #: mean "a pull request moved"; nothing downstream distinguishes them.
 PR_EVENTS = ("pull_request", "pull_request_target")
 
+#: The events that carry one comment or review. Each reconciles the whole PR.
+COMMENT_EVENTS = ("pull_request_review_comment", "issue_comment", "pull_request_review")
+
 
 def prs_from_event(ev: dict, name: str) -> list[int]:
     if name == "workflow_run":
@@ -1610,32 +1712,24 @@ def main() -> int:
 
     # A single new comment: track it immediately, so a finding is never lost
     # even if the reconcile pass never runs.
-    if name in ("pull_request_review_comment", "issue_comment", "pull_request_review"):
-        c = ev.get("comment") or ev.get("review") or {}
-        login = c.get("user", {}).get("login", "")
+    if name in COMMENT_EVENTS:
+        # A comment event reconciles its whole pull request, not the one comment
+        # in its payload. CodeRabbit posts a review as a burst — a review body
+        # and half a dozen inline comments within a second — and the workflow's
+        # per-PR concurrency group keeps one running run and one pending run:
+        # every run queued in between is cancelled. When each run read only its
+        # own comment, a cancelled run was a finding lost until the next push or
+        # the nightly sweep (PR #584 lost five that way, two of them security
+        # findings). Reading the PR makes whichever run survives file them all;
+        # `upsert` is keyed by fingerprint, so re-reading adds no duplicates.
         if name == "issue_comment" and not (ev.get("issue") or {}).get("pull_request"):
             print("comment is on an issue, not a PR")
             return 0
         pr = (ev.get("pull_request") or ev.get("issue") or {}).get("number")
-        args = (c.get("path", ""), c.get("line") or c.get("original_line"),
-                login, c.get("html_url", ""), pr)
-        if any(b in login for b in BOTS):
-            body = c.get("body", "")
-            # A `pull_request_review` from a bot is the sectioned kind; an
-            # inline comment or a walkthrough is not. Try the sections first
-            # and fall back, rather than branching on the event name — Gitar
-            # sends a review with no sections in it at all.
-            found = (parse_review_body(body, login, c.get("html_url", ""), pr)
-                     if not c.get("path") else [])
-            track(found or parse(body, *args))
-        else:
-            track(parse_human(c.get("body", ""), *args,
-                              requested_changes=c.get("state") == "changes_requested"))
-        return 0
-
+        prs = [pr] if pr else []
     # Reconcile: every other pipeline has finished. File what is new, close
     # what the bots have since marked resolved.
-    if name in ("workflow_run", *PR_EVENTS):
+    elif name in ("workflow_run", *PR_EVENTS):
         prs = [n for n in prs_from_event(ev, name) if n]
     else:
         target = os.environ.get("PR", "").strip()
