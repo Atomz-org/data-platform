@@ -1,0 +1,50 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py codex session",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py codex pre",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py codex post",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py codex stop",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -61,7 +61,24 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"tool_name": "Bash", "tool_input": {"command": t}, "cwd": str(root)}
     ),
+    # Every Codex edit is an apply_patch, its envelope in `command`.
+    "codex": lambda tool, root, t: (
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "apply_patch",
+            "tool_input": {"command": f"*** Begin Patch\n*** Add File: {t}\n+x\n*** End Patch\n"},
+            "tool_use_id": "call_1",
+            "cwd": str(root),
+            "session_id": "s",
+        }
+        if tool == "edit"
+        else {"tool_name": "Bash", "tool_input": {"command": t}, "cwd": str(root), "session_id": "s"}
+    ),
 }
+
+#: Harnesses that prompt a person themselves from generated rules, so their
+#: hook stands aside on an `ask` — the rendered rule is checked instead.
+NATIVE_ASK = {"codex"}
 
 
 def denied(out: tuple[str, str, int]) -> bool:
@@ -103,6 +120,56 @@ def test_every_harness_gets_the_same_verdict(
 ) -> None:
     out = run(harness, "pre", json.dumps(SAMPLES[harness](tool, repo, target)))
     assert denied(out) is expect_deny, f"{harness}: {out}"
+
+
+def test_settings_permissions_reach_the_harnesses_that_do_not_read_them(repo: Path) -> None:
+    """`Edit(vendor/**)` is in `.claude/settings.json`. Claude applies it
+    itself; for everyone else the core does, from the same file."""
+    for h in sorted(SAMPLES):
+        if h == "claude":
+            continue
+        out = run(h, "pre", json.dumps(SAMPLES[h]("edit", repo, "vendor/ecc/x.py")))
+        assert denied(out), f"{h} wrote under vendor/: {out}"
+
+
+def test_ask_rules_never_pass_silently(repo: Path) -> None:
+    """`Bash(git push:*)` asks a person. A harness that can ask from a hook
+    asks; one that cannot refuses; one that prompts natively is handed the
+    rule — none lets it through unasked."""
+    from pf import harness
+
+    t = harness.targets(repo)
+    for h in sorted(SAMPLES):
+        if h == "claude":
+            continue
+        out = run(h, "pre", json.dumps(SAMPLES[h]("bash", repo, "git push origin main")))
+        if h in NATIVE_ASK:
+            assert out == ("", "", 0), h
+            assert any("git push" in body for rel, body in t.items() if f".{h}" in rel or h in rel), h
+        else:
+            assert '"ask"' in out[0] or denied(out), f"{h} let `git push` through: {out}"
+
+
+def test_codex_prompts_from_its_own_rules(repo: Path) -> None:
+    from pf import harness
+
+    rules = harness.targets(repo)[".codex/rules/pf.rules"]
+    assert 'prefix_rule(pattern=["git", "push"], decision="prompt"' in rules
+
+
+def test_codex_shell_scripts_are_read_as_scripts(repo: Path) -> None:
+    """An argv of `["bash", "-lc", "..."]` is one script: the guard must see its words."""
+    p = {"tool_name": "Bash", "tool_input": {"command": ["bash", "-lc", "git commit -n -m x"]}, "cwd": str(repo)}
+    assert denied(run("codex", "pre", json.dumps(p)))
+
+
+def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pf.memory import detect_agent
+
+    for k in ("PF_AGENT", "CLAUDECODE", "GEMINI_CLI"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("CODEX_THREAD_ID", "t")
+    assert detect_agent() == "codex"
 
 
 def test_claude_is_left_to_its_own_permission_lists(repo: Path) -> None:
