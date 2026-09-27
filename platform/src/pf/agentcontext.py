@@ -329,6 +329,11 @@ def refresh(root: str | Path, *, dry_run: bool = False, notes: list[str] | None 
 
         for rel, content in harness.targets(root).items():
             write(root / rel, content)
+        # Skills are linked, not written: a link carries the skill's
+        # supporting files and cannot drift from the toolkit it points into.
+        from pf import harness_assets
+
+        changed.extend(harness_assets.write_links(root))
 
     # The per-scope harness maps — one per group, per project and per report.
     # Read from each scope's settings, the gate, the hooks, its workflow and
