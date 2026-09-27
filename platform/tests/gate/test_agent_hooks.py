@@ -1,0 +1,209 @@
+"""One gate, every harness: the adapters reach the same core and say "no" in
+each harness's own dialect.
+
+  parity              the same action gets the same verdict from every harness
+                        with an adapter. A tool whose adapter drifted would be
+                        gated in name only. Each harness's module adds its
+                        payload to `SAMPLES`; the tests below grow with it.
+
+  permissions are     `.claude/settings.json`'s deny/ask lists reach the tools
+    a source            that do not read that file, resolved the way Claude
+                        resolves them, from the directory holding `.claude/`.
+
+  never fail closed   malformed stdin, an unknown harness, an unknown event —
+                        allow, silently.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+from collections.abc import Callable
+from pathlib import Path
+
+import pytest
+from conftest import REPO_ROOT
+from pf import agenthook, harness_adapters
+from pf.agenthook import BASH, EDIT, READ, WRITE, Call, Rule, bypasses_hooks, command_matches, path_matches
+from pf.harness_adapters import patch_paths, run
+
+
+@pytest.fixture
+def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A repo shape with the real gate.yaml and permissions, and provenance off."""
+    (tmp_path / "platform").mkdir()
+    (tmp_path / "groups" / "acme" / "projects" / "acme-eu" / ".claude").mkdir(parents=True)
+    (tmp_path / "groups" / "acme" / "ontology").mkdir()
+    shutil.copy(REPO_ROOT / "gate.yaml", tmp_path / "gate.yaml")
+    (tmp_path / ".claude").mkdir()
+    shutil.copy(REPO_ROOT / ".claude" / "settings.json", tmp_path / ".claude" / "settings.json")
+    shutil.copy(
+        REPO_ROOT / "groups" / "acme" / "projects" / "acme-eu" / ".claude" / "settings.json",
+        tmp_path / "groups" / "acme" / "projects" / "acme-eu" / ".claude" / "settings.json",
+    )
+    monkeypatch.setenv("PF_NOTIFY", "0")
+    monkeypatch.delenv("CURSOR_VERSION", raising=False)
+    monkeypatch.delenv("CURSOR_PROJECT_DIR", raising=False)
+    # Provenance is the real ledger's business; here it must not write one.
+    monkeypatch.setattr(agenthook, "_record_execution", lambda *a, **k: None)
+    import pf.provenance.ledger as prov
+
+    monkeypatch.setattr(prov, "intent", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("off")))
+    return tmp_path
+
+
+# ------------------------------------------------------------- the payloads --
+#: Per harness: (tool, root, target) → what that harness sends for "write
+#: `target`" (tool="edit") or "run `target`" (tool="bash"), in its own shape.
+SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
+    "claude": lambda tool, root, t: (
+        {"tool_name": "Write", "tool_input": {"file_path": str(root / t)}, "cwd": str(root)}
+        if tool == "edit"
+        else {"tool_name": "Bash", "tool_input": {"command": t}, "cwd": str(root)}
+    ),
+}
+
+
+def denied(out: tuple[str, str, int]) -> bool:
+    stdout, _stderr, code = out
+    if code == 2:
+        return True
+    try:
+        d = json.loads(stdout or "{}")
+    except json.JSONDecodeError:
+        return False
+    hso = d.get("hookSpecificOutput") or {}
+    return (
+        d.get("permission") == "deny"
+        or d.get("permissionDecision") == "deny"
+        or d.get("decision") in ("deny", "block")
+        or hso.get("permissionDecision") == "deny"
+    )
+
+
+def test_every_adapter_has_a_sample() -> None:
+    """A harness with an adapter and no sample is a harness no test gates."""
+    assert set(harness_adapters.ADAPTERS) == set(SAMPLES)
+
+
+# ------------------------------------------------------------------ parity --
+@pytest.mark.parametrize("harness", sorted(SAMPLES))
+@pytest.mark.parametrize(
+    "tool,target,expect_deny",
+    [
+        ("edit", ".env", True),  # gate.yaml denylist
+        ("edit", "platform/src/pf/x.py", False),
+        ("bash", "git commit --no-verify -m x", True),
+        ("bash", 'git commit -m "never use --no-verify"', False),
+        ("bash", "uv run pytest", False),
+    ],
+)
+def test_every_harness_gets_the_same_verdict(
+    repo: Path, harness: str, tool: str, target: str, expect_deny: bool
+) -> None:
+    out = run(harness, "pre", json.dumps(SAMPLES[harness](tool, repo, target)))
+    assert denied(out) is expect_deny, f"{harness}: {out}"
+
+
+def test_claude_is_left_to_its_own_permission_lists(repo: Path) -> None:
+    """Claude Code applies `.claude/settings.json` itself; answering for it
+    here would prompt twice. Every other harness gets the lists from the core."""
+    vendor = SAMPLES["claude"]("edit", repo, "vendor/ecc/x.py")
+    assert not denied(run("claude", "pre", json.dumps(vendor)))
+    other = agenthook.pre(Call("any-other", WRITE, (str(repo / "vendor/ecc/x.py"),), cwd=repo), repo)
+    assert other.decision == "deny" and "Edit(vendor/**)" in other.message
+
+
+def test_an_ask_rule_is_never_a_silent_allow(repo: Path) -> None:
+    v = agenthook.pre(Call("any-other", BASH, command="uv run pytest && git push origin x", cwd=repo), repo)
+    assert v.decision == "ask" and "git push" in v.message
+
+
+def test_a_harness_already_answering_is_not_answered_for_twice(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Cursor runs `.claude/settings.json` hooks too; its own config reaches the core."""
+    monkeypatch.setenv("CURSOR_VERSION", "3.0")
+    assert run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))) == ("", "", 0)
+
+
+def test_a_patch_names_every_file() -> None:
+    patch = (
+        "*** Begin Patch\n*** Update File: a.py\n@@\n-x\n+y\n*** Add File: .env\n+K=v\n"
+        "*** Update File: b.py\n*** Move to: c.py\n*** End Patch\n"
+    )
+    assert patch_paths(patch) == ("a.py", ".env", "b.py", "c.py")
+
+
+def test_one_bad_file_blocks_the_whole_call(repo: Path) -> None:
+    c = Call("any-other", EDIT, (str(repo / "platform/ok.py"), str(repo / ".env")), cwd=repo)
+    assert agenthook.pre(c, repo).decision == "deny"
+
+
+# ------------------------------------------------------------- permissions --
+@pytest.mark.parametrize(
+    "pattern,path,hit",
+    [
+        ("./.env", "/r/.env", True),
+        ("./.env.*", "/r/.env.local", True),
+        ("**/secrets.toml", "/r/groups/a/.dlt/secrets.toml", True),
+        ("**/credentials/**", "/r/x/credentials/key.json", True),
+        ("vendor/**", "/r/vendor/ecc/a/b.py", True),
+        ("vendor/**", "/r/platform/vendor.py", False),
+        ("../*/src/**", "/r/groups/acme/projects/acme-us/src/x.py", True),
+    ],
+)
+def test_paths_resolve_the_way_claude_resolves_them(pattern: str, path: str, hit: bool) -> None:
+    base = Path("/r/groups/acme/projects/acme-eu") if pattern.startswith("../") else Path("/r")
+    assert path_matches(Rule("Read", pattern, base), Path(path)) is hit
+
+
+@pytest.mark.parametrize(
+    "pattern,command,hit",
+    [
+        ("git push:*", "git push origin main", True),
+        ("git push:*", "uv run pytest && git push", True),
+        ("git push:*", "git pushx", False),
+        ("git push:*", "echo 'git push'", False),
+        ("gh pr create:*", "gh pr create --fill", True),
+    ],
+)
+def test_bash_rules_match_a_prefix_per_segment(pattern: str, command: str, hit: bool) -> None:
+    assert command_matches(Rule("Bash", pattern, Path("/r")), command) is hit
+
+
+def test_a_project_session_gets_the_projects_denies(repo: Path) -> None:
+    """acme-eu may not read a sister's source — a rule only its own settings carry."""
+    cwd = repo / "groups" / "acme" / "projects" / "acme-eu"
+    sister = repo / "groups" / "acme" / "projects" / "acme-us" / "src" / "x.py"
+    v = agenthook.permission(Call("any-other", READ, (str(sister),), cwd=cwd), repo)
+    assert v.decision == "deny"
+    v = agenthook.permission(Call("any-other", READ, (str(sister),), cwd=repo), repo)
+    assert v.decision == "allow", "at the root, the project rule does not apply"
+
+
+# ---------------------------------------------------------- never closed --
+@pytest.mark.parametrize("harness", [*sorted(SAMPLES), "nonesuch"])
+@pytest.mark.parametrize("raw", ["", "not json", "[]", '{"tool_name": 7}'])
+def test_garbage_in_is_allowed_out(harness: str, raw: str) -> None:
+    for ev in ("pre", "post", "stop", "bogus"):
+        _out, _err, code = run(harness, ev, raw)
+        assert code == 0, f"{harness}/{ev} failed closed on {raw!r}"
+
+
+@pytest.mark.parametrize(
+    "command,bypasses",
+    [
+        ('git commit -m "note: never use --no-verify here"', False),
+        ("git push -n origin main", False),
+        ("git commit -an -m x", True),
+        ("uv run pytest && git push --no-verify origin main", True),
+    ],
+)
+def test_the_no_verify_guard_is_flag_position_aware(command: str, bypasses: bool) -> None:
+    assert bypasses_hooks(command) is bypasses
+
+
+def test_the_neutral_vocabulary_is_closed() -> None:
+    """Every mapped tool is one the core knows; a typo here is an ungated tool."""
+    known = {EDIT, WRITE, BASH, READ}
+    for h, table in harness_adapters.TOOLS.items():
+        assert set(table.values()) <= known, h
