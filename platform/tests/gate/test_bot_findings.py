@@ -112,3 +112,62 @@ def test_a_comment_on_a_plain_issue_is_ignored(bf, tmp_path: Path, monkeypatch: 
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(ev))
     monkeypatch.setattr(bf, "collect", lambda pr: pytest.fail("not a pull request"))
     assert bf.main() == 0
+
+
+# --------------------------------------------------------------- labels ----
+def test_an_issue_carries_priority_area_and_effort(bf) -> None:
+    """Priority lived only on the project board, which needs PROJECTS_TOKEN —
+    without it every issue was filed with no priority at all."""
+    [f] = bf.parse(ADVANCED_TIER, "platform/src/pf/agenthook.py", 176, "coderabbitai[bot]", "u", 584)
+    labels = bf.labels_for(f)
+    assert {"bot-finding", "coderabbit", "severity:major", "security"} <= set(labels)
+    assert "priority:P0" in labels
+    assert "area:security-secrets" in labels
+    assert "effort:quick-win" in labels
+
+
+def test_every_label_the_script_applies_exists(bf) -> None:
+    """`gh issue create --label X` fails outright when X does not exist."""
+    known = {name for name, _, _ in bf.LABELS}
+    for sev in ("critical", "major", "minor"):
+        for kind in ("security", "bug", "edge-case", "quality", "docs"):
+            for path in ("a.py", "docs/x.md", ".github/scripts/y.py", "platform/tests/t.py", ""):
+                for effort in ("", "quick-win", "heavy-lift"):
+                    f = bf.Finding("CodeRabbit", path, 1, "a title long enough", sev, kind, "", "u", 1, effort=effort)
+                    assert set(bf.labels_for(f)) <= known, bf.labels_for(f)
+
+
+@pytest.mark.parametrize(
+    "have,want,add,remove",
+    [
+        # a new issue's labels go on as they are
+        (set(), ["priority:P1", "severity:major", "area:docs"], ["priority:P1", "severity:major", "area:docs"], []),
+        # re-reported harder: raised, the lower one removed
+        (
+            {"priority:P2", "severity:minor"},
+            ["priority:P0", "severity:major"],
+            ["priority:P0", "severity:major"],
+            ["priority:P2", "severity:minor"],
+        ),
+        # re-reported softer: left where it is
+        ({"priority:P0", "severity:major"}, ["priority:P2", "severity:minor"], [], []),
+        # two priorities from an older run collapse to the higher
+        ({"priority:P1", "priority:P3"}, ["priority:P2"], [], ["priority:P3"]),
+        # area and effort are set once
+        ({"area:docs", "effort:heavy-lift"}, ["area:security-secrets", "effort:quick-win"], [], []),
+    ],
+)
+def test_relabelling_only_ever_raises(bf, have, want, add, remove) -> None:
+    got_add, got_remove = bf.relabel(set(have), want)
+    assert sorted(got_add) == sorted(add) and sorted(got_remove) == sorted(remove)
+
+
+def test_a_headerless_inline_comment_is_still_filed(bf) -> None:
+    body = "**This loop never terminates when the queue is empty.**\n\nThe `while` has no exit."
+    [f] = bf.parse(body, "a.py", 3, "coderabbitai[bot]", "u", 1)
+    assert f.title == "This loop never terminates when the queue is empty" and f.severity == "minor"
+
+
+def test_a_reply_in_a_thread_is_not_a_finding(bf) -> None:
+    body = "**Confirmed — addressed in commit abc1234.**"
+    assert bf.parse(body, "a.py", 3, "coderabbitai[bot]", "u", 1, reply=True) == []
