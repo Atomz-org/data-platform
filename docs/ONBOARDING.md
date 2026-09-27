@@ -222,6 +222,7 @@ Everything after the files lives in one ordered, idempotent list, shared by `pf 
 | `dev serving` | the served dev database and its guardrails, documented in the project rather than assumed |
 | `project atlas` | each project publishes a picture of its own graph, refreshed around its own dbt runs |
 | `architecture map` | every feature of this project, present or absent, so an agent routes instead of reading the tree |
+| `architecture blueprint` | a TOGAF-ordered page of the whole project, derived from its artefacts and stamped so the gate keeps it current |
 | `harness map` | what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it |
 | `conformance` | fail here rather than in BI |
 
@@ -285,7 +286,7 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 
 *The tool*
 
-31 commands and 23 command groups, read from the CLI itself. `uv run pf <command> --help` is always current.
+31 commands and 24 command groups, read from the CLI itself. `uv run pf <command> --help` is always current.
 
 | Command | What it does |
 |---|---|
@@ -327,6 +328,7 @@ Leaving is `pf offboard <group>`: it enumerates everything the family owns from 
 | `pf align` | Onboarding ladder: evaluate → implement → validate, one stage at a time. |
 | `pf arch` | Architecture maps: `build`/`check` for the repository, `pf arch <group> <project>` or `--all` for projects. |
 | `pf artifacts` | Publish and fetch build artefacts (R2/S3). |
+| `pf blueprint` | Every project's architecture blueprint, from its artefacts and an optional docs/blueprint.yaml: `build`/`check`. |
 | `pf code` | The code graph: which function calls which, under `platform/` only. Models, columns, metrics and lineage are `pf kg` — this is the Python structure the data graph has no notion of. |
 | `pf context` | The context every agent reads before its first edit — the entry points (CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, the test index, the repo map — checked and refreshed as one. |
 | `pf group` | Tenant groups: their manifest, lifecycle and readiness. |
