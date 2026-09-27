@@ -34,8 +34,8 @@ The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | **Claude Code** | `CLAUDE.md` + this project's hooks | `.mcp.json` + power-tools plugin + this project's `wren` | hook — `pre_tool_use.py` on every Edit/Write |
 | **Codex CLI** | `AGENTS.md`, natively | `.codex/config.toml` | hook — trusted project only |
 | **Cursor** | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact |
-| **Copilot — VS Code chat** | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only |
-| **Copilot — coding agent** | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | none — `pf gate` in `AGENTS.md` §4 |
+| **Copilot — CLI and VS Code** | `.github/copilot-instructions.md` | `.vscode/mcp.json` | hook (VS Code: Preview) |
+| **Copilot — coding agent** | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only |
 | **Gemini CLI** | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused |
 | **OpenCode** | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only |
 | **Prompt-only (Continue, Ollama, mlx)** | paste `AGENTS.md` | none | none |
