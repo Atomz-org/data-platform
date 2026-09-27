@@ -26,7 +26,7 @@ provenance.
 | Copilot — CLI and VS Code | `.github/copilot-instructions.md` | `.vscode/mcp.json` | hook (VS Code: Preview) | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only | pre-commit, if installed in the runner | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
-| OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
+| OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | hook — plugin | pre-commit | hooks write stages 01–03 | injected into the system prompt | plugin | `.agents/skills/` — toolkits, commands; a group's under the group | `.opencode/agents/` |
 | Prompt-only (Continue, Ollama, mlx) | paste `AGENTS.md` | none | none | pre-commit | none | rule | rule | none | none |
 
 ## The generated configs
@@ -46,6 +46,7 @@ server), rendered into each harness's format. Change the source; regenerate.
 | Copilot (CLI, VS Code, coding agent) | `.github/hooks/pf.json` | `pf context refresh` |
 | Gemini CLI | `.gemini/settings.json` | `pf context refresh` |
 | OpenCode | `.opencode/opencode.json` | `pf context refresh` |
+| OpenCode | `.opencode/plugins/pf-gate.js` | `pf context refresh` |
 
 Plus, from the toolkits (`pf.harness_assets`): every skill linked into
 `.agents/skills/` — the one directory every harness above discovers — the
@@ -55,7 +56,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude|codex|cursor|copilot|gemini [args]
+bin/agent-here claude|codex|cursor|copilot|gemini|opencode [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the

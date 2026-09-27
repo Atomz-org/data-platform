@@ -222,6 +222,8 @@ def detect_agent() -> str:
         return "gemini-cli"
     if env.get("CODEX_THREAD_ID") or env.get("CODEX_SANDBOX"):
         return "codex"
+    if env.get("OPENCODE"):
+        return "opencode"
     if env.get("CURSOR_AGENT"):
         return "cursor"
     if env.get("COPILOT_AGENT_PROMPT"):

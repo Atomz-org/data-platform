@@ -49,6 +49,8 @@ case "$tool" in
     need copilot; exec copilot "$@" ;;
   cursor)
     need cursor-agent; exec cursor-agent "$@" ;;
+  opencode)
+    need opencode; exec opencode "$@" ;;
   *)
     echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
     exit 64 ;;
