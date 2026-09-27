@@ -270,7 +270,13 @@ def _key(path: str, title: str) -> str:
     return hashlib.sha256(f"{path}|{norm}".encode()).hexdigest()[:16]
 
 
-CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_", re.M)
+CR_HEAD = re.compile(r"^_([^_]+)_\s*\|\s*_([^_]+)_.*$", re.M)
+#: The fields of that header line. The severity is not always the second one:
+#: CodeRabbit's Advanced-Tier security findings insert a provenance field —
+#: `_🔒 Security & Privacy_ | _🛡️ Detected with Advanced Tier_ | _🟠 Major_` —
+#: and reading position 2 filed a Major security finding as minor.
+CR_FIELD = re.compile(r"_([^_|]+)_")
+SEVERITY_WORD = re.compile(r"critical|major|minor|trivial|🔴|🟠|🟡|🔵|⚪", re.I)
 # Gitar writes the label as `<b>Quality:</b> …` — the colon sits inside the bold,
 # not after it — but plain `Quality: …` also occurs. Accept the colon on either
 # side, or the tags would be captured into the title.
@@ -324,7 +330,9 @@ def parse(body: str, path: str, line: int | None, login: str,
         m = CR_HEAD.search(clean)
         if not m:
             return []
-        cat, sev = m.group(1), m.group(2)
+        fields = CR_FIELD.findall(m.group(0))
+        cat = fields[0]
+        sev = next((f for f in fields[1:] if SEVERITY_WORD.search(f)), m.group(2))
         title = cat
         for cand in CR_TITLE.findall(clean[m.end():]):
             c = " ".join(cand.split())
@@ -1583,6 +1591,9 @@ def track(findings: list[Finding], board=None) -> None:
 #: mean "a pull request moved"; nothing downstream distinguishes them.
 PR_EVENTS = ("pull_request", "pull_request_target")
 
+#: The events that carry one comment or review. Each reconciles the whole PR.
+COMMENT_EVENTS = ("pull_request_review_comment", "issue_comment", "pull_request_review")
+
 
 def prs_from_event(ev: dict, name: str) -> list[int]:
     if name == "workflow_run":
@@ -1610,32 +1621,24 @@ def main() -> int:
 
     # A single new comment: track it immediately, so a finding is never lost
     # even if the reconcile pass never runs.
-    if name in ("pull_request_review_comment", "issue_comment", "pull_request_review"):
-        c = ev.get("comment") or ev.get("review") or {}
-        login = c.get("user", {}).get("login", "")
+    if name in COMMENT_EVENTS:
+        # A comment event reconciles its whole pull request, not the one comment
+        # in its payload. CodeRabbit posts a review as a burst — a review body
+        # and half a dozen inline comments within a second — and the workflow's
+        # per-PR concurrency group keeps one running run and one pending run:
+        # every run queued in between is cancelled. When each run read only its
+        # own comment, a cancelled run was a finding lost until the next push or
+        # the nightly sweep (PR #584 lost five that way, two of them security
+        # findings). Reading the PR makes whichever run survives file them all;
+        # `upsert` is keyed by fingerprint, so re-reading adds no duplicates.
         if name == "issue_comment" and not (ev.get("issue") or {}).get("pull_request"):
             print("comment is on an issue, not a PR")
             return 0
         pr = (ev.get("pull_request") or ev.get("issue") or {}).get("number")
-        args = (c.get("path", ""), c.get("line") or c.get("original_line"),
-                login, c.get("html_url", ""), pr)
-        if any(b in login for b in BOTS):
-            body = c.get("body", "")
-            # A `pull_request_review` from a bot is the sectioned kind; an
-            # inline comment or a walkthrough is not. Try the sections first
-            # and fall back, rather than branching on the event name — Gitar
-            # sends a review with no sections in it at all.
-            found = (parse_review_body(body, login, c.get("html_url", ""), pr)
-                     if not c.get("path") else [])
-            track(found or parse(body, *args))
-        else:
-            track(parse_human(c.get("body", ""), *args,
-                              requested_changes=c.get("state") == "changes_requested"))
-        return 0
-
+        prs = [pr] if pr else []
     # Reconcile: every other pipeline has finished. File what is new, close
     # what the bots have since marked resolved.
-    if name in ("workflow_run", *PR_EVENTS):
+    elif name in ("workflow_run", *PR_EVENTS):
         prs = [n for n in prs_from_event(ev, name) if n]
     else:
         target = os.environ.get("PR", "").strip()
