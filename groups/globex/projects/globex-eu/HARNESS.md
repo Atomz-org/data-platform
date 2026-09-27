@@ -34,7 +34,7 @@ The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | **Cursor** | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact |
 | **Copilot — VS Code chat** | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only |
 | **Copilot — coding agent** | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | none — `pf gate` in `AGENTS.md` §4 |
-| **Gemini CLI** | `GEMINI.md` | `.gemini/settings.json` | none — commit gate only |
+| **Gemini CLI** | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused |
 | **OpenCode** | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | none — commit gate only |
 | **Prompt-only (Continue, Ollama, mlx)** | paste `AGENTS.md` | none | none |
 
