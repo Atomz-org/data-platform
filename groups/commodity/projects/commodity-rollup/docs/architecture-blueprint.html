@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="pf-blueprint-inputs" content="sha256:16ff3709bcd4f43a9093184d06d41ef8cb9d5a602a05ed19c4250d441b18cbc2">
+<meta name="generator" content="pf blueprint build">
+<title>commodity-rollup Architecture Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  --bg: #F3F5F3;
+  --surface: #FFFFFF;
+  --sunk: #E9EDEA;
+  --ink: #17201D;
+  --muted: #56635E;
+  --line: #D5DCD8;
+  --accent: #1D5C77;
+  --accent-soft: #DCEAF0;
+  --brass: #8E6512;
+  --brass-soft: #F3E8CF;
+  --ok: #2F7D5B;
+  --focus: #1D5C77;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+    --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+    --ok: #6CC19A; --focus: #7DB9D2;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+  --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+  --ok: #6CC19A; --focus: #7DB9D2;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); padding-inline: 16px; }
+.shell { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; padding-block: 32px 80px; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; } nav.index { position: static !important; max-height: none !important; } }
+h1, h2, h3, h4 { font-family: var(--cond); text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 26px; font-weight: 700; line-height: 1.15; }
+h3 { font-size: 19px; font-weight: 600; }
+h4 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 72ch; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow: auto; font-size: 13.5px; }
+nav.index .brand { font-family: var(--cond); font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.index li a { display: grid; grid-template-columns: 34px 1fr; gap: 6px; padding: 5px 8px; border-radius: 6px; text-decoration: none; color: var(--muted); }
+nav.index li a:hover { background: var(--sunk); color: var(--ink); }
+nav.index li a .ph { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 2px; }
+nav.index .sub a { padding-left: 48px; grid-template-columns: 1fr; font-size: 12.5px; }
+
+header.top { display: grid; gap: 18px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 28px; font-variant-numeric: tabular-nums; }
+.stats div { display: grid; }
+.stats b { font-family: var(--cond); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.stats span { font-size: 12.5px; color: var(--muted); }
+.miro { display: grid; gap: 8px; background: var(--accent-soft); border-radius: 10px; padding: 16px 18px; }
+.miro h3 { font-size: 16px; }
+.miro ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 90ch; }
+
+section.phase { padding-top: 44px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+.phase-head { display: grid; gap: 8px; }
+.phase-head .ph { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.phase-head p { color: var(--muted); }
+
+figure.dia { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+figure.dia figcaption { padding: 16px 18px 10px; display: grid; gap: 4px; }
+figure.dia figcaption p { color: var(--muted); font-size: 14px; }
+.tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.canvas { overflow-x: auto; padding: 8px 18px 14px; }
+.canvas pre.mermaid { margin: 0; background: transparent; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.canvas svg { max-width: none !important; height: auto; }
+.canvas.wide svg { min-width: 1100px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 18px 16px; border-top: 1px solid var(--line); align-items: center; }
+button { font: 500 13px/1 var(--sans); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.status { font-size: 12.5px; color: var(--ok); min-height: 1em; }
+.code { display: none; margin: 0 18px 16px; }
+.code.open { display: block; }
+.code textarea { width: 100%; min-height: 220px; font: 12px/1.45 var(--mono); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px; resize: vertical; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+
+.tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+.tablebox .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 14px 18px; align-items: center; }
+.tablebox .head p { color: var(--muted); font-size: 13.5px; }
+.scroll { overflow: auto; max-height: 560px; border-top: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; vertical-align: top; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+th { position: sticky; top: 0; background: var(--sunk); font-family: var(--cond); font-weight: 600; font-size: 13px; z-index: 1; }
+td:first-child { white-space: nowrap; }
+td code { font-size: 12px; }
+input[type="search"], select { font: 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; min-width: 0; }
+
+.explorer { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.explorer .pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.explorer label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.hops { display: grid; gap: 14px; }
+.hop { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+@media (max-width: 600px) { .hop { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.hop .lvl { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 12.5px var(--mono); border-radius: 6px; padding: 4px 8px; color: #fff; cursor: pointer; border: 0; }
+.chip small { opacity: 0.8; }
+.expr { font: 12px/1.5 var(--mono); background: var(--sunk); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.l-raw { background: #8A6A1C; } .l-seed { background: #6B6F2A; } .l-staging { background: #1F6F8B; }
+.l-intermediate { background: #2F7D5B; } .l-mart { background: #243B6B; } .l-report { background: #3E4A8A; }
+.l-semantic { background: #7A3E8E; } .l-util { background: #64748B; } .l-source { background: #475569; } .l-serve { background: #0F766E; } .l-ctl { background: #9F3A38; }
+details > summary { cursor: pointer; font-weight: 500; padding: 0 18px 14px; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<!-- Generated by `pf blueprint build` from docs/blueprint.yaml and the project's artefacts. Do not edit by hand:
+     the next build discards the edit, and `pf blueprint check` judges the page on its inputs. -->
+<div class="shell">
+<nav class="index" aria-label="Architecture phases">
+  <div class="brand">commodity-rollup Architecture Blueprint</div>
+  <ol><li><a href="#prelim"><span class="ph">P</span>Principles</a></li><li><a href="#vision"><span class="ph">A</span>Vision and context</a></li><li><a href="#business"><span class="ph">B</span>Business capabilities</a></li><li><a href="#data"><span class="ph">C</span>Data architecture</a></li><li class="sub"><a href="#conceptual">Conceptual model</a></li><li class="sub"><a href="#physical">Physical ER</a></li><li class="sub"><a href="#lineage">Model lineage</a></li><li class="sub"><a href="#explorer">Lineage explorer</a></li><li class="sub"><a href="#dictionary">Data dictionary</a></li><li><a href="#application"><span class="ph">C</span>Application architecture</a></li><li><a href="#technology"><span class="ph">D</span>Technology architecture</a></li><li><a href="#orchestration"><span class="ph">E/F</span>Orchestration and runs</a></li><li><a href="#governance"><span class="ph">G</span>Governance</a></li><li><a href="#catalogue"><span class="ph">H</span>Catalogues and decisions</a></li></ol>
+</nav>
+<main>
+<header class="top">
+  <div class="eyebrow">commodity · commodity-rollup · TOGAF 10 ADM views</div>
+  <h1>commodity-rollup Architecture Blueprint</h1>
+  <p class="lede">End-to-end architecture of commodity-rollup: data from sisters lands through dlt, is modelled by dbt in DuckDB and measured by MetricFlow, served to Wren, published by Evidence and orchestrated by Dagster. Every diagram is generated from the project's own artefacts and configuration; <code>docs/blueprint.yaml</code> may override any of it.</p>
+  <div class="stats"><div><b>8</b><span>dbt models traced</span></div><div><b>114</b><span>columns with lineage</span></div><div><b>131</b><span>column-to-column edges</span></div><div><b>77</b><span>columns in the dictionary</span></div><div><b>10</b><span>diagrams, each Miro-ready</span></div></div>
+  <div class="miro">
+    <h3>Putting these on a Miro board</h3>
+    <ol>
+      <li><b>Copy for Miro</b> copies the diagram as Mermaid code. In Miro, open the diagram-from-code option (Mermaid) and paste. It arrives as editable shapes and connectors.</li>
+      <li><b>Copy image</b> puts a high-resolution PNG on the clipboard. Paste straight onto the board. Use this where Miro's Mermaid import does not support a diagram type.</li>
+      <li><b>Copy as table</b> copies tab-separated rows. Paste onto the board and Miro creates a table, the same as pasting from a spreadsheet.</li>
+    </ol>
+  </div>
+  <div class="legend" aria-label="Layer colours">
+    <span><i class="l-source"></i>External source</span><span><i class="l-raw"></i>Raw</span><span><i class="l-seed"></i>Reference seed</span>
+    <span><i class="l-staging"></i>Staging</span><span><i class="l-intermediate"></i>Intermediate</span><span><i class="l-mart"></i>Mart</span>
+    <span><i class="l-report"></i>Report board</span><span><i class="l-semantic"></i>Semantic</span><span><i class="l-serve"></i>Serving</span><span><i class="l-ctl"></i>Control and orchestration</span>
+  </div>
+</header>
+<section class="phase" id="prelim"><div class="phase-head"><span class="ph">Preliminary · Architecture principles</span><h2>Architecture principles</h2></div><div class="tablebox" data-table="principles"><div class="head"><div><h3>Principles</h3><p>6 principles</p></div><div><button type="button" data-copy-table="principles">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Principle</th><th>Statement</th><th>Enforced by</th></tr></thead><tbody><tr><td>Business logic does not cross entities</td><td>Own warehouse, dlt, dbt and graph; only a rollup reads sisters, read-only.</td><td>CLAUDE.md, gate</td></tr>
+<tr><td>dlt lands raw, dbt owns meaning</td><td>No transformation in a dlt resource; staging never joins.</td><td>group CLAUDE.md</td></tr>
+<tr><td>Joins come from the ontology</td><td>MDL join conditions are derived from realises edges, not guessed.</td><td>pf semantic mdl</td></tr>
+<tr><td>Generated files come from generators</td><td>Docs, indexes, MDL, pages and this blueprint are regenerated, never hand-edited.</td><td>pre-commit gate</td></tr>
+<tr><td>Agent actions are recorded</td><td>Intent, decision and execution are chained and anchored.</td><td>pf provenance verify</td></tr>
+<tr><td>Controls are named, not asserted</td><td>Each control carries a FINOS AIR id; coverage is derived.</td><td>pf air gate</td></tr></tbody></table></div></div></section><section class="phase" id="vision"><div class="phase-head"><span class="ph">Phase A · Architecture vision</span><h2>System context</h2></div><figure class="dia" data-key="context"><figcaption><span class="tag">A · Context</span><h4>System context</h4></figcaption><div class="canvas"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph ACT[&quot;People&quot;]
+    a1[&quot;Analysts and report readers&quot;]
+    a2[&quot;Data and analytics engineers&quot;]
+    a3[&quot;Governance and risk&quot;]
+  end
+  subgraph EXT[&quot;External data&quot;]
+    x_sisters[&quot;sisters&quot;]:::source
+  end
+  subgraph PF[&quot;commodity-rollup on the data platform&quot;]
+    p1[&quot;Acquire and land&lt;br/&gt;dlt&quot;]:::raw
+    p2[&quot;Model and test&lt;br/&gt;dbt on DuckDB&quot;]:::mart
+    p3[&quot;Measure&lt;br/&gt;MetricFlow · Wren MDL&quot;]:::semantic
+    p4[&quot;Publish&lt;br/&gt;Evidence · Ask the data&quot;]:::serve
+    p5[&quot;Catalogue&lt;br/&gt;OpenMetadata · OKF&quot;]:::serve
+    p6[&quot;Orchestrate&lt;br/&gt;Dagster&quot;]:::ctl
+    p7[&quot;Govern&lt;br/&gt;gate · provenance · AIR&quot;]:::ctl
+  end
+  subgraph AI[&quot;AI services&quot;]
+    c2[&quot;Claude Code sessions&lt;br/&gt;pf MCP server&quot;]
+    c1[&quot;Claude API&lt;br/&gt;wren_planner agent&quot;]
+  end
+  gh[&quot;GitHub&lt;br/&gt;PRs · Actions&quot;]
+  x_sisters --&gt; p1
+  p1 --&gt; p2 --&gt; p3
+  p6 -.-&gt; p1
+  p6 -.-&gt; p2
+  p7 -.-&gt; p2
+  a2 --&gt; p2
+  a2 --&gt; gh
+  a3 --&gt; p7
+  gh --&gt; p7
+  c2 --&gt; p2
+  p3 --&gt; p4
+  p6 -.-&gt; p4
+  a1 --&gt; p4
+  p2 --&gt; p5
+  p6 -.-&gt; p5
+  c1 --&gt; p4
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="business"><div class="phase-head"><span class="ph">Phase B · Business architecture</span><h2>Capability map</h2></div><figure class="dia" data-key="capability"><figcaption><span class="tag">B · Capabilities</span><h4>Capabilities</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph C1[&quot;1 Acquire and land&quot;]
+    direction TB
+    c1_sisters[&quot;sisters&lt;br/&gt;1 table(s)&quot;]:::raw
+  end
+  subgraph C2[&quot;2 Conform&quot;]
+    direction TB
+    c2_staging[&quot;Staging&lt;br/&gt;1 model(s)&quot;]:::mart
+    c2_intermediate[&quot;Intermediate&lt;br/&gt;1 model(s)&quot;]:::mart
+    c2_marts[&quot;Marts&lt;br/&gt;5 model(s)&quot;]:::mart
+    c2_tests[&quot;Data tests&lt;br/&gt;72&quot;]:::mart
+  end
+  subgraph C3[&quot;3 Measure&quot;]
+    direction TB
+    c3_m[&quot;Governed metrics&lt;br/&gt;11&quot;]:::semantic
+    c3_c[&quot;Wren cubes&lt;br/&gt;2&quot;]:::semantic
+  end
+  subgraph C4[&quot;4 Publish and ask&quot;]
+    direction TB
+    c4_d[&quot;Dashboards&lt;br/&gt;13 exposure(s)&quot;]:::serve
+    c4_a[&quot;Conversational analytics&quot;]:::serve
+  end
+  subgraph C5[&quot;5 Decide&quot;]
+    direction TB
+    c5_k[&quot;Knowledge graph and context card&quot;]:::serve
+    c5_d[&quot;Decision records&lt;br/&gt;1&quot;]:::serve
+    c5_c[&quot;Catalogue&lt;br/&gt;OpenMetadata · OKF&quot;]:::serve
+  end
+  subgraph C6[&quot;Across every stage · Governance and change&quot;]
+    direction TB
+    c6_g[&quot;Commit gate and harness maps&quot;]:::ctl
+    c6_p[&quot;Provenance ledger&quot;]:::ctl
+    c6_a[&quot;AI controls · FINOS AIR&quot;]:::ctl
+    c6_r[&quot;Data diff review · Recce&quot;]:::ctl
+  end
+  C1 --&gt; C2 --&gt; C3 --&gt; C4 --&gt; C5
+  C6 -.- C1
+  C6 -.- C5
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="data"><div class="phase-head"><span class="ph">Phase C · Data architecture</span><h2>From ontology to column</h2><p>Four levels: business concepts, the physical models and their joins, lineage between models, and lineage between individual columns.</p></div><figure class="dia" data-key="conceptual" id="conceptual"><figcaption><span class="tag">C · Conceptual</span><h4>Ontology concepts and relations</h4><p>Concepts this project's tables instantiate, their relations and properties, from <code>kg/graph.json</code>.</p></figcaption><div class="canvas"><pre class="mermaid">erDiagram
+  PRICEOBSERVATION }o--|| MARKET : &quot;price_observation_in_market&quot;
+  PRICEOBSERVATION }o--|| COMMODITY : &quot;price_observation_of_commodity&quot;
+  COMMODITY {
+    VARCHAR category &quot;status_enum&quot;
+    VARCHAR commodity_id PK &quot;natural_key&quot;
+    VARCHAR commodity_name &quot;free_text&quot;
+    VARCHAR quote_unit &quot;unit_of_measure&quot;
+    VARCHAR segment &quot;status_enum&quot;
+  }
+  MARKET {
+    VARCHAR country_code &quot;geo_country&quot;
+    VARCHAR currency_code &quot;currency_code&quot;
+    VARCHAR market_code PK &quot;natural_key&quot;
+  }
+  PRICEOBSERVATION {
+    DECIMAL close_price &quot;unit_price&quot;
+    VARCHAR commodity_id &quot;foreign_key&quot;
+    VARCHAR currency_code &quot;currency_code&quot;
+    VARCHAR quote_id PK &quot;natural_key&quot;
+    TIMESTAMP traded_at &quot;event_time&quot;
+    BIGINT volume &quot;quantity&quot;
+  }</pre></div><div class="tools"></div></figure><figure class="dia" data-key="physical" id="physical"><figcaption><span class="tag">C · Logical / physical</span><h4>Mart ER model, as served to Wren</h4><p>All 5 models and 7 relationships in <code>mdl/mdl.json</code>. Each entity shows its primary key, foreign keys, event time and key measures; the full column list is in the data dictionary.</p></figcaption><div class="canvas wide"><pre class="mermaid">erDiagram
+  FCT_LANDED_PRICES_DAILY }o--|| DIM_COMMODITIES : &quot;commodity_id&quot;
+  FCT_MARKET_SPREADS_DAILY }o--|| DIM_COMMODITIES : &quot;commodity_id&quot;
+  RPT_MARKET_COMPARISON_BOARD }o--|| DIM_COMMODITIES : &quot;commodity_id&quot;
+  FCT_LANDED_PRICES_DAILY }o--|| DIM_MARKETS : &quot;market_code&quot;
+  FCT_MARKET_SPREADS_DAILY }o--|| DIM_MARKETS : &quot;market_code&quot;
+  FCT_MARKET_SPREADS_DAILY }o--|| DIM_MARKETS : &quot;cheapest_market_code&quot;
+  RPT_MARKET_COMPARISON_BOARD }o--|| DIM_MARKETS : &quot;market_code&quot;
+  DIM_COMMODITIES {
+    VARCHAR commodity_id PK
+    BIGINT markets_pricing
+    VARCHAR category
+    VARCHAR price_basis
+    VARCHAR quote_unit
+    VARCHAR commodity_name
+    VARCHAR segment
+    VARCHAR exchange
+    MORE more_columns &quot;1 more in the data dictionary&quot;
+  }
+  DIM_MARKETS {
+    VARCHAR market_code PK
+    TIMESTAMP latest_price_date
+    TIMESTAMP first_price_date
+    VARCHAR country_code
+    VARCHAR currency_code
+    BOOLEAN is_reporting
+    VARCHAR market_name
+    VARCHAR home_exchange
+    MORE more_columns &quot;4 more in the data dictionary&quot;
+  }
+  FCT_LANDED_PRICES_DAILY {
+    VARCHAR landed_price_id PK
+    VARCHAR market_code FK &quot;to dim_markets&quot;
+    VARCHAR commodity_id FK &quot;to dim_commodities&quot;
+    TIMESTAMP price_date
+    DECIMAL benchmark_price_usd
+    DECIMAL landed_price_local
+    DECIMAL landed_price_usd_per_quote_unit
+    VARCHAR currency_code
+    MORE more_columns &quot;9 more in the data dictionary&quot;
+  }
+  FCT_MARKET_SPREADS_DAILY {
+    VARCHAR landed_price_id PK
+    VARCHAR market_code FK &quot;to dim_markets&quot;
+    VARCHAR commodity_id FK &quot;to dim_commodities&quot;
+    VARCHAR cheapest_market_code FK &quot;to dim_markets&quot;
+    TIMESTAMP price_date
+    DECIMAL spread_to_cheapest_usd
+    DECIMAL spread_to_cheapest_pct
+    BOOLEAN is_cheapest_market
+    MORE more_columns &quot;4 more in the data dictionary&quot;
+  }
+  RPT_MARKET_COMPARISON_BOARD {
+    VARCHAR board_row_id PK
+    VARCHAR market_code FK &quot;to dim_markets&quot;
+    VARCHAR commodity_id FK &quot;to dim_commodities&quot;
+    TIMESTAMP price_date
+    DECIMAL landed_price_usd_per_quote_unit
+    VARCHAR category
+    DECIMAL spread_to_cheapest_pct
+    BOOLEAN is_stale
+    MORE more_columns &quot;19 more in the data dictionary&quot;
+  }</pre></div><div class="tools"></div></figure><figure class="dia" data-key="lineage" id="lineage"><figcaption><span class="tag">C · Lineage</span><h4>Model-level lineage, source to serving</h4><p>The <code>contains</code> and <code>feeds</code> edges of the knowledge graph, from each external source to the semantic layer and the serving tools.</p></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph SRC[&quot;External sources&quot;]
+    s_sisters[&quot;sisters&quot;]:::source
+  end
+  subgraph L_raw[&quot;Raw · landed&quot;]
+    sisters_landed_prices[&quot;sisters.landed_prices&quot;]:::raw
+  end
+  subgraph L_staging[&quot;Staging&quot;]
+    stg_sisters__landed_prices[&quot;stg_sisters__landed_prices&quot;]:::staging
+  end
+  subgraph L_intermediate[&quot;Intermediate&quot;]
+    int_landed_prices__usd_per_quote_unit[&quot;int_landed_prices__usd_per_quote_unit&quot;]:::intermediate
+  end
+  subgraph L_mart[&quot;Marts&quot;]
+    dim_commodities[&quot;dim_commodities&quot;]:::mart
+    dim_markets[&quot;dim_markets&quot;]:::mart
+    fct_landed_prices_daily[&quot;fct_landed_prices_daily&quot;]:::mart
+    fct_market_spreads_daily[&quot;fct_market_spreads_daily&quot;]:::mart
+  end
+  subgraph L_report[&quot;Report boards&quot;]
+    rpt_market_comparison_board[&quot;rpt_market_comparison_board&quot;]:::report
+  end
+  s_sisters --&gt; sisters_landed_prices
+  dim_commodities --&gt; rpt_market_comparison_board
+  dim_markets --&gt; rpt_market_comparison_board
+  fct_landed_prices_daily --&gt; fct_market_spreads_daily
+  fct_landed_prices_daily --&gt; rpt_market_comparison_board
+  fct_market_spreads_daily --&gt; rpt_market_comparison_board
+  int_landed_prices__usd_per_quote_unit --&gt; fct_landed_prices_daily
+  stg_sisters__landed_prices --&gt; dim_commodities
+  stg_sisters__landed_prices --&gt; dim_markets
+  stg_sisters__landed_prices --&gt; int_landed_prices__usd_per_quote_unit
+  sisters_landed_prices --&gt; stg_sisters__landed_prices
+  subgraph SEM[&quot;Semantic and serving&quot;]
+    mf[&quot;MetricFlow&lt;br/&gt;11 metrics&quot;]:::semantic
+    cubes[&quot;Wren MDL&lt;br/&gt;5 models · 7 joins · 2 cubes&quot;]:::semantic
+    ev[&quot;Evidence site&lt;br/&gt;13 dashboard exposures&quot;]:::serve
+    ask[&quot;Ask the data&quot;]:::serve
+    om[&quot;OpenMetadata catalogue&quot;]:::serve
+  end
+  L_mart --&gt; mf
+  L_mart --&gt; cubes
+  L_mart -.-&gt; om
+  L_report --&gt; ev
+  mf --&gt; ev
+  cubes --&gt; ask
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef staging fill:#1F6F8B,stroke:#1F6F8B,color:#ffffff
+  classDef intermediate fill:#2F7D5B,stroke:#2F7D5B,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef report fill:#3E4A8A,stroke:#3E4A8A,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef util fill:#64748B,stroke:#64748B,color:#ffffff</pre></div><div class="tools"></div></figure><div class="explorer" id="explorer"><div class="phase-head"><h3>Lineage explorer</h3><p>Pick any of the 114 columns: every upstream hop back to its raw source or seed, the SQL at each step, and what reads it downstream. Copy the trace as a Miro diagram or table.</p></div><div class="pick"><label for="ex-model">Model<select id="ex-model"></select></label><label for="ex-col">Column<select id="ex-col"></select></label><button class="primary" id="ex-copy-mmd" type="button">Copy for Miro</button><button id="ex-copy-tsv" type="button">Copy as table</button><span class="status" id="ex-status" role="status"></span></div><div id="ex-expr" class="expr"></div><div class="hops" id="ex-up"></div><div id="ex-down"></div></div><div class="tablebox" data-table="lineage"><div class="head"><div><h3>Full column lineage</h3><p>131 edges, one row per parent column.</p></div><div><button type="button" data-copy-table="lineage">Copy as table</button> <span class="status" role="status"></span></div></div><details><summary>Show the table</summary><div class="scroll" id="lineage-table"></div></details></div><div class="tablebox" data-table="dictionary" id="dictionary"><div class="head"><div><h3>Data dictionary: models served to Wren</h3><p>77 columns with type, key, semantic role and description.</p></div><div><input type="search" data-filter="dictionary" placeholder="Filter rows" aria-label="Filter Data dictionary: models served to Wren"> <button type="button" data-copy-table="dictionary">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Model</th><th>Column</th><th>Type</th><th>Key</th><th>Role</th><th>Description</th></tr></thead><tbody><tr><td>dim_commodities</td><td>commodity_id</td><td>VARCHAR</td><td>PK</td><td>natural_key</td><td></td></tr>
+<tr><td>dim_commodities</td><td>category</td><td>VARCHAR</td><td></td><td>status_enum</td><td></td></tr>
+<tr><td>dim_commodities</td><td>price_basis</td><td>VARCHAR</td><td></td><td>status_enum</td><td></td></tr>
+<tr><td>dim_commodities</td><td>quote_unit</td><td>VARCHAR</td><td></td><td>unit_of_measure</td><td></td></tr>
+<tr><td>dim_commodities</td><td>markets_pricing</td><td>BIGINT</td><td></td><td>quantity</td><td></td></tr>
+<tr><td>dim_commodities</td><td>commodity_name</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_commodities</td><td>segment</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_commodities</td><td>exchange</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_commodities</td><td>unit_dimension</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>market_code</td><td>VARCHAR</td><td>PK</td><td>natural_key</td><td></td></tr>
+<tr><td>dim_markets</td><td>country_code</td><td>VARCHAR</td><td></td><td>geo_country</td><td></td></tr>
+<tr><td>dim_markets</td><td>currency_code</td><td>VARCHAR</td><td></td><td>currency_code</td><td></td></tr>
+<tr><td>dim_markets</td><td>is_reporting</td><td>BOOLEAN</td><td></td><td></td><td>The sister has landed at least one price; false is a registered market nobody has seeded.</td></tr>
+<tr><td>dim_markets</td><td>latest_price_date</td><td>TIMESTAMP</td><td></td><td>event_time</td><td></td></tr>
+<tr><td>dim_markets</td><td>market_name</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>home_exchange</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>timezone</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>project</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>first_price_date</td><td>TIMESTAMP</td><td></td><td>event_time</td><td></td></tr>
+<tr><td>dim_markets</td><td>commodities_priced</td><td>BIGINT</td><td></td><td></td><td></td></tr>
+<tr><td>dim_markets</td><td>landed_price_rows</td><td>BIGINT</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>landed_price_id</td><td>VARCHAR</td><td>PK</td><td>natural_key</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>market_code</td><td>VARCHAR</td><td>FK → dim_markets.market_code</td><td>foreign_key</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>commodity_id</td><td>VARCHAR</td><td>FK → dim_commodities.commodity_id</td><td>foreign_key</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>price_date</td><td>TIMESTAMP</td><td></td><td>event_time</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>currency_code</td><td>VARCHAR</td><td></td><td>currency_code</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>benchmark_price_usd</td><td>DECIMAL</td><td></td><td>unit_price</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>usd_fx_rate</td><td>DECIMAL</td><td></td><td>exchange_rate</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>landed_price_local</td><td>DECIMAL</td><td></td><td>unit_price</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>landed_price_usd_per_quote_unit</td><td>DECIMAL</td><td></td><td>unit_price</td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>import_parity_premium_pct</td><td>DECIMAL</td><td></td><td>rate_fraction</td><td>landed USD per quote unit over the benchmark, minus one. Duty, plus FX timing where a fix was carried forward.</td></tr>
+<tr><td>fct_landed_prices_daily</td><td>price_basis</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>quote_unit</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>market_unit</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>fx_fixed_on</td><td>DATE</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>effective_duty_rate</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>is_import_prohibited</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>fct_landed_prices_daily</td><td>is_duty_rate_confirmed</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>landed_price_id</td><td>VARCHAR</td><td>PK</td><td>natural_key</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>market_code</td><td>VARCHAR</td><td>FK → dim_markets.market_code</td><td>foreign_key</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>commodity_id</td><td>VARCHAR</td><td>FK → dim_commodities.commodity_id</td><td>foreign_key</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>price_date</td><td>TIMESTAMP</td><td></td><td>event_time</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>cheapest_market_code</td><td>VARCHAR</td><td>FK → dim_markets.market_code</td><td>foreign_key</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>spread_to_cheapest_usd</td><td>DECIMAL</td><td></td><td>unit_price</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>spread_to_cheapest_pct</td><td>DECIMAL</td><td></td><td>rate_fraction</td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>is_cheapest_market</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>quote_unit</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>markets_compared</td><td>BIGINT</td><td></td><td></td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>landed_price_usd_per_quote_unit</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>fct_market_spreads_daily</td><td>cheapest_landed_usd</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>board_row_id</td><td>VARCHAR</td><td>PK</td><td>natural_key</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>market_code</td><td>VARCHAR</td><td>FK → dim_markets.market_code</td><td>foreign_key</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>commodity_id</td><td>VARCHAR</td><td>FK → dim_commodities.commodity_id</td><td>foreign_key</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>category</td><td>VARCHAR</td><td></td><td>status_enum</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>landed_price_usd_per_quote_unit</td><td>DECIMAL</td><td></td><td>unit_price</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>spread_to_cheapest_pct</td><td>DECIMAL</td><td></td><td>rate_fraction</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>is_stale</td><td>BOOLEAN</td><td></td><td></td><td>That market&#x27;s latest benchmark is more than four days old.</td></tr>
+<tr><td>rpt_market_comparison_board</td><td>market_name</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>currency_code</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>commodity_name</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>segment</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>price_date</td><td>TIMESTAMP</td><td></td><td>event_time</td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>price_basis</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>benchmark_price_usd</td><td>DOUBLE</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>quote_unit</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>landed_price_local</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>market_unit</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>usd_fx_rate</td><td>DOUBLE</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>effective_duty_rate</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>is_import_prohibited</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>is_duty_rate_confirmed</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>import_parity_premium_pct</td><td>DOUBLE</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>cheapest_market_code</td><td>VARCHAR</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>cheapest_landed_usd</td><td>DECIMAL</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>markets_compared</td><td>BIGINT</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>is_cheapest_market</td><td>BOOLEAN</td><td></td><td></td><td></td></tr>
+<tr><td>rpt_market_comparison_board</td><td>price_age_days</td><td>BIGINT</td><td></td><td></td><td></td></tr></tbody></table></div></div></section><section class="phase" id="application"><div class="phase-head"><span class="ph">Phase C · Application architecture</span><h2>How the tools connect</h2></div><figure class="dia" data-key="application"><figcaption><span class="tag">C · Applications</span><h4>Tool landscape, end to end</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph S[&quot;Sources&quot;]
+    s_sisters[&quot;sisters&quot;]:::source
+  end
+  subgraph ING[&quot;Ingestion · dlt Core&quot;]
+    d1[&quot;dlt sources&lt;br/&gt;commodity_rollup.sources&quot;]:::raw
+  end
+  subgraph WH[&quot;Warehouse · DuckDB&quot;]
+    w1[(&quot;data/commodity_rollup.duckdb&quot;)]:::mart
+  end
+  subgraph TR[&quot;Transformation&quot;]
+    t1[&quot;dbt project&lt;br/&gt;8 models · 72 tests&quot;]:::mart
+    t2[&quot;Recce&lt;br/&gt;PR data diff&quot;]:::ctl
+  end
+  subgraph SEM[&quot;Semantic layer&quot;]
+    m1[&quot;MetricFlow&lt;br/&gt;11 metrics&quot;]:::semantic
+    k1[&quot;pf kg build&lt;br/&gt;kg/graph.json&quot;]:::semantic
+    k2[&quot;pf semantic mdl&lt;br/&gt;mdl/mdl.json · 2 cubes&quot;]:::semantic
+    k3[&quot;OKF bundle&lt;br/&gt;okf/&quot;]:::semantic
+  end
+  subgraph SRV[&quot;Serving&quot;]
+    e1[&quot;pf report build&lt;br/&gt;Evidence site&quot;]:::serve
+    e2[&quot;Ask the data page&quot;]:::serve
+    a1[&quot;pf tool wren api&lt;br/&gt;127.0.0.1:8766&quot;]:::serve
+    a2[&quot;Wren engine&quot;]:::serve
+  end
+  subgraph CAT[&quot;Catalogue&quot;]
+    o1[&quot;OpenMetadata&quot;]:::serve
+  end
+  subgraph ORC[&quot;Orchestration&quot;]
+    g1[&quot;Dagster code location&lt;br/&gt;commodity__commodity-rollup&quot;]:::ctl
+  end
+  s_sisters --&gt; d1
+  d1 --&gt; w1
+  t1 &lt;--&gt; w1
+  t1 --&gt; m1
+  t1 --&gt; k1
+  g1 -.-&gt; d1
+  g1 -.-&gt; t1
+  t1 --&gt; t2
+  k1 --&gt; k2
+  k2 --&gt; a2
+  a2 --&gt;|&quot;read-only SQL&quot;| w1
+  k1 --&gt; k3
+  m1 --&gt; e1
+  w1 --&gt; e1
+  g1 -.-&gt; e1
+  e1 --&gt; e2
+  e2 --&gt; a1
+  a1 --&gt; a2
+  k1 --&gt; o1
+  g1 -.-&gt; o1
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure><figure class="dia" data-key="seq_ask" id="asksequence"><figcaption><span class="tag">C · Interaction</span><h4>Conversational analytics</h4></figcaption><div class="canvas"><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor U as Analyst
+  participant C as Ask the data page
+  participant A as wren api :8766
+  participant P as Planner chain
+  participant X as Wren engine
+  participant W as DuckDB read-only
+  participant Lg as Ledger
+  U-&gt;&gt;C: a question in plain words
+  C-&gt;&gt;A: POST /api/p/commodity/commodity-rollup/ask
+  A-&gt;&gt;P: plan against cubes, labels and formats
+  P--&gt;&gt;A: plan (Claude API, else claude CLI, else rules)
+  A-&gt;&gt;A: repair and validate against catalogue and policy
+  A-&gt;&gt;X: translate the plan to SQL
+  X-&gt;&gt;W: EXPLAIN (dry run)
+  X-&gt;&gt;W: execute
+  W--&gt;&gt;X: rows
+  A-&gt;&gt;Lg: intent, decision, execution
+  A--&gt;&gt;C: rows, chart hint, formats
+  C--&gt;&gt;U: answer and the SQL used
+</pre></div><div class="tools"></div></figure><div class="tablebox" data-table="interfaces"><div class="head"><div><h3>Interface catalogue</h3><p>7 interfaces, with protocol and trigger.</p></div><div><button type="button" data-copy-table="interfaces">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Id</th><th>From</th><th>To</th><th>Protocol</th><th>Trigger</th></tr></thead><tbody><tr><td>I-01</td><td>sisters</td><td>dlt</td><td>HTTPS</td><td>Dagster asset</td></tr>
+<tr><td>I-02</td><td>dlt</td><td>DuckDB raw datasets</td><td>dlt destination</td><td>per load</td></tr>
+<tr><td>I-03</td><td>dbt</td><td>DuckDB</td><td>SQL</td><td>Dagster dbt assets</td></tr>
+<tr><td>I-04</td><td>dbt manifest</td><td>pf kg build</td><td>manifest + YAML meta</td><td>bootstrap, catalog</td></tr>
+<tr><td>I-05</td><td>kg/graph.json</td><td>pf semantic mdl</td><td>JSON projection</td><td>bootstrap</td></tr>
+<tr><td>I-06</td><td>wren api</td><td>DuckDB</td><td>read-only SQL after EXPLAIN</td><td>per question</td></tr>
+<tr><td>I-07</td><td>catalog_sync</td><td>OpenMetadata</td><td>REST</td><td>after a run</td></tr></tbody></table></div></div></section><section class="phase" id="technology"><div class="phase-head"><span class="ph">Phase D · Technology architecture</span><h2>Where it runs</h2></div><figure class="dia" data-key="technology"><figcaption><span class="tag">D · Deployment</span><h4>Processes, ports and stores</h4></figcaption><div class="canvas"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart TB
+  subgraph DEV[&quot;Developer workstation&quot;]
+    cc[&quot;Claude Code session&lt;br/&gt;pf MCP server · hooks&quot;]
+    cli[&quot;pf CLI · uv venv&quot;]
+    ddev[&quot;dagster dev&lt;br/&gt;local SQLite instance&quot;]
+    duck[(&quot;data/commodity_rollup.duckdb&quot;)]
+  end
+  subgraph STACK[&quot;pf_stack container&quot;]
+    ngx[&quot;nginx :8080&quot;]
+    dw[&quot;dagster-webserver :3000&lt;br/&gt;+ dagster-daemon&quot;]
+    cs[&quot;code server&lt;br/&gt;commodity__commodity-rollup&quot;]
+    om[&quot;OpenMetadata :8585&quot;]
+    rc[&quot;recce server&lt;br/&gt;on demand&quot;]
+  end
+  subgraph DATA[&quot;Stateful containers&quot;]
+    pg[(&quot;Postgres :5432&quot;)]
+    es[(&quot;Elasticsearch&quot;)]
+  end
+  subgraph CLOUD[&quot;External services&quot;]
+    gh[&quot;GitHub · Actions&quot;]
+    mkt[&quot;Source APIs&quot;]
+    ant[&quot;Anthropic API&quot;]
+  end
+  ngx --&gt; dw
+  dw --&gt; cs
+  dw --&gt; pg
+  cs --&gt; duck
+  cs --&gt; mkt
+  ddev --&gt; duck
+  cc --&gt; cli
+  cli --&gt; duck
+  cli --&gt; gh
+  ngx --&gt; om
+  om --&gt; pg
+  om --&gt; es
+  cs --&gt; om
+  ngx --&gt; rc
+  cli --&gt; ant
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="orchestration"><div class="phase-head"><span class="ph">Phases E and F · Orchestration and runs</span><h2>Orchestration</h2></div><figure class="dia" data-key="orchestration"><figcaption><span class="tag">E · Orchestration</span><h4>Orchestration</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph J[&quot;Dagster code location commodity__commodity-rollup · writer pool limit 1&quot;]
+    j_sisters[&quot;dlt · sisters&quot;]:::raw
+    j_dbt[&quot;dbt build&lt;br/&gt;models + tests&quot;]:::mart
+    j_ev[&quot;Evidence site&quot;]:::serve
+    j_wr[&quot;wren_semantic_layer&quot;]:::semantic
+    j_okf[&quot;okf bundle&quot;]:::semantic
+    j_om[&quot;catalog_sync&quot;]:::serve
+  end
+  j_sisters --&gt; j_dbt
+  j_dbt --&gt; j_ev
+  j_dbt --&gt; j_wr
+  j_dbt --&gt; j_okf
+  j_dbt --&gt; j_om
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="governance"><div class="phase-head"><span class="ph">Phase G · Implementation governance</span><h2>Controls</h2></div><figure class="dia" data-key="governance"><figcaption><span class="tag">G · Governance</span><h4>Change path and runtime controls</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph CH[&quot;Change path&quot;]
+    c1[&quot;Engineer or agent edits&quot;]
+    c2[&quot;pre-commit gate&lt;br/&gt;file cap · harness maps · blueprint&quot;]:::ctl
+    c3[&quot;Pull request&quot;]
+    c1 --&gt; c2 --&gt; c3
+  end
+  subgraph CI[&quot;GitHub Actions&quot;]
+    w1[&quot;platform-tests&quot;]:::ctl
+    w2[&quot;commodity-rollup&lt;br/&gt;dbt build · tests&quot;]:::ctl
+    w3[&quot;ai-governance&lt;br/&gt;provenance · ASQAV · AIR&quot;]:::ctl
+  end
+  subgraph RT[&quot;Runtime controls&quot;]
+    r1[&quot;Agent action hooks&quot;]:::ctl
+    r2[&quot;SHA-256 chain + anchor&quot;]:::ctl
+    r3[&quot;pf air gate commodity commodity-rollup&quot;]:::ctl
+  end
+  c3 --&gt; w1
+  c3 --&gt; w2
+  c3 --&gt; w3
+  r1 --&gt; r2 --&gt; w3
+  r3 --&gt; w3
+  w1 --&gt; merge[&quot;Merge to main&quot;]
+  w2 --&gt; merge
+  w3 --&gt; merge
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="catalogue"><div class="phase-head"><span class="ph">Phase H · Architecture repository</span><h2>Building blocks and decisions</h2></div><div class="tablebox" data-table="blocks"><div class="head"><div><h3>Solution building blocks</h3><p>11 building blocks.</p></div><div><button type="button" data-copy-table="blocks">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Building block</th><th>Product</th><th>Where</th><th>Notes</th></tr></thead><tbody><tr><td>Data acquisition</td><td>dlt Core</td><td>src/commodity_rollup/sources</td><td>1 source(s)</td></tr>
+<tr><td>Warehouse</td><td>DuckDB</td><td>data/commodity_rollup.duckdb</td><td>One file per project</td></tr>
+<tr><td>Transformation</td><td>dbt Core + dbt-duckdb</td><td>transform/</td><td>8 models, 72 tests</td></tr>
+<tr><td>Metrics</td><td>MetricFlow</td><td>transform/models</td><td>11 metrics</td></tr>
+<tr><td>Knowledge graph</td><td>pf kg</td><td>kg/graph.json</td><td>Models, columns, metrics, concepts, decisions</td></tr>
+<tr><td>Orchestration</td><td>Dagster</td><td>code location commodity__commodity-rollup</td><td>Assets, jobs, schedules</td></tr>
+<tr><td>Semantic projection</td><td>pf semantic mdl + WrenAI</td><td>mdl/mdl.json</td><td>5 models, 2 cubes</td></tr>
+<tr><td>BI</td><td>Evidence</td><td>reporting/</td><td>13 dashboard exposure(s)</td></tr>
+<tr><td>Openmetadata</td><td>OpenMetadata</td><td>catalog/</td><td>enabled in tools.yaml</td></tr>
+<tr><td>Recce</td><td>Recce</td><td>transform/recce.yml</td><td>enabled in tools.yaml</td></tr>
+<tr><td>Knowledge bundle</td><td>OKF</td><td>okf/</td><td>enabled in tools.yaml</td></tr></tbody></table></div></div><div class="tablebox" data-table="decisions"><div class="head"><div><h3>Architecture decisions</h3><p>From the knowledge graph's Decision nodes.</p></div><div><button type="button" data-copy-table="decisions">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Record</th><th>Decision</th><th>Status</th></tr></thead><tbody><tr><td>ADR-0001</td><td>the sisters are the raw stage</td><td>accepted</td></tr></tbody></table></div></div></section>
+<footer><p>Generated by <code>pf blueprint build commodity commodity-rollup</code> from <code>groups/commodity/projects/commodity-rollup</code>. Column lineage is static analysis of SQL: it shows which columns an output is computed from, not row-level provenance.</p></footer>
+</main>
+</div>
+<script id="payload" type="application/json">{"diagrams":{"application":"flowchart LR\n  subgraph S[\"Sources\"]\n    s_sisters[\"sisters\"]:::source\n  end\n  subgraph ING[\"Ingestion \u00b7 dlt Core\"]\n    d1[\"dlt sources<br/>commodity_rollup.sources\"]:::raw\n  end\n  subgraph WH[\"Warehouse \u00b7 DuckDB\"]\n    w1[(\"data/commodity_rollup.duckdb\")]:::mart\n  end\n  subgraph TR[\"Transformation\"]\n    t1[\"dbt project<br/>8 models \u00b7 72 tests\"]:::mart\n    t2[\"Recce<br/>PR data diff\"]:::ctl\n  end\n  subgraph SEM[\"Semantic layer\"]\n    m1[\"MetricFlow<br/>11 metrics\"]:::semantic\n    k1[\"pf kg build<br/>kg/graph.json\"]:::semantic\n    k2[\"pf semantic mdl<br/>mdl/mdl.json \u00b7 2 cubes\"]:::semantic\n    k3[\"OKF bundle<br/>okf/\"]:::semantic\n  end\n  subgraph SRV[\"Serving\"]\n    e1[\"pf report build<br/>Evidence site\"]:::serve\n    e2[\"Ask the data page\"]:::serve\n    a1[\"pf tool wren api<br/>127.0.0.1:8766\"]:::serve\n    a2[\"Wren engine\"]:::serve\n  end\n  subgraph CAT[\"Catalogue\"]\n    o1[\"OpenMetadata\"]:::serve\n  end\n  subgraph ORC[\"Orchestration\"]\n    g1[\"Dagster code location<br/>commodity__commodity-rollup\"]:::ctl\n  end\n  s_sisters --> d1\n  d1 --> w1\n  t1 <--> w1\n  t1 --> m1\n  t1 --> k1\n  g1 -.-> d1\n  g1 -.-> t1\n  t1 --> t2\n  k1 --> k2\n  k2 --> a2\n  a2 -->|\"read-only SQL\"| w1\n  k1 --> k3\n  m1 --> e1\n  w1 --> e1\n  g1 -.-> e1\n  e1 --> e2\n  e2 --> a1\n  a1 --> a2\n  k1 --> o1\n  g1 -.-> o1\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","capability":"flowchart LR\n  subgraph C1[\"1 Acquire and land\"]\n    direction TB\n    c1_sisters[\"sisters<br/>1 table(s)\"]:::raw\n  end\n  subgraph C2[\"2 Conform\"]\n    direction TB\n    c2_staging[\"Staging<br/>1 model(s)\"]:::mart\n    c2_intermediate[\"Intermediate<br/>1 model(s)\"]:::mart\n    c2_marts[\"Marts<br/>5 model(s)\"]:::mart\n    c2_tests[\"Data tests<br/>72\"]:::mart\n  end\n  subgraph C3[\"3 Measure\"]\n    direction TB\n    c3_m[\"Governed metrics<br/>11\"]:::semantic\n    c3_c[\"Wren cubes<br/>2\"]:::semantic\n  end\n  subgraph C4[\"4 Publish and ask\"]\n    direction TB\n    c4_d[\"Dashboards<br/>13 exposure(s)\"]:::serve\n    c4_a[\"Conversational analytics\"]:::serve\n  end\n  subgraph C5[\"5 Decide\"]\n    direction TB\n    c5_k[\"Knowledge graph and context card\"]:::serve\n    c5_d[\"Decision records<br/>1\"]:::serve\n    c5_c[\"Catalogue<br/>OpenMetadata \u00b7 OKF\"]:::serve\n  end\n  subgraph C6[\"Across every stage \u00b7 Governance and change\"]\n    direction TB\n    c6_g[\"Commit gate and harness maps\"]:::ctl\n    c6_p[\"Provenance ledger\"]:::ctl\n    c6_a[\"AI controls \u00b7 FINOS AIR\"]:::ctl\n    c6_r[\"Data diff review \u00b7 Recce\"]:::ctl\n  end\n  C1 --> C2 --> C3 --> C4 --> C5\n  C6 -.- C1\n  C6 -.- C5\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","conceptual":"erDiagram\n  PRICEOBSERVATION }o--|| MARKET : \"price_observation_in_market\"\n  PRICEOBSERVATION }o--|| COMMODITY : \"price_observation_of_commodity\"\n  COMMODITY {\n    VARCHAR category \"status_enum\"\n    VARCHAR commodity_id PK \"natural_key\"\n    VARCHAR commodity_name \"free_text\"\n    VARCHAR quote_unit \"unit_of_measure\"\n    VARCHAR segment \"status_enum\"\n  }\n  MARKET {\n    VARCHAR country_code \"geo_country\"\n    VARCHAR currency_code \"currency_code\"\n    VARCHAR market_code PK \"natural_key\"\n  }\n  PRICEOBSERVATION {\n    DECIMAL close_price \"unit_price\"\n    VARCHAR commodity_id \"foreign_key\"\n    VARCHAR currency_code \"currency_code\"\n    VARCHAR quote_id PK \"natural_key\"\n    TIMESTAMP traded_at \"event_time\"\n    BIGINT volume \"quantity\"\n  }","context":"flowchart LR\n  subgraph ACT[\"People\"]\n    a1[\"Analysts and report readers\"]\n    a2[\"Data and analytics engineers\"]\n    a3[\"Governance and risk\"]\n  end\n  subgraph EXT[\"External data\"]\n    x_sisters[\"sisters\"]:::source\n  end\n  subgraph PF[\"commodity-rollup on the data platform\"]\n    p1[\"Acquire and land<br/>dlt\"]:::raw\n    p2[\"Model and test<br/>dbt on DuckDB\"]:::mart\n    p3[\"Measure<br/>MetricFlow \u00b7 Wren MDL\"]:::semantic\n    p4[\"Publish<br/>Evidence \u00b7 Ask the data\"]:::serve\n    p5[\"Catalogue<br/>OpenMetadata \u00b7 OKF\"]:::serve\n    p6[\"Orchestrate<br/>Dagster\"]:::ctl\n    p7[\"Govern<br/>gate \u00b7 provenance \u00b7 AIR\"]:::ctl\n  end\n  subgraph AI[\"AI services\"]\n    c2[\"Claude Code sessions<br/>pf MCP server\"]\n    c1[\"Claude API<br/>wren_planner agent\"]\n  end\n  gh[\"GitHub<br/>PRs \u00b7 Actions\"]\n  x_sisters --> p1\n  p1 --> p2 --> p3\n  p6 -.-> p1\n  p6 -.-> p2\n  p7 -.-> p2\n  a2 --> p2\n  a2 --> gh\n  a3 --> p7\n  gh --> p7\n  c2 --> p2\n  p3 --> p4\n  p6 -.-> p4\n  a1 --> p4\n  p2 --> p5\n  p6 -.-> p5\n  c1 --> p4\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","governance":"flowchart LR\n  subgraph CH[\"Change path\"]\n    c1[\"Engineer or agent edits\"]\n    c2[\"pre-commit gate<br/>file cap \u00b7 harness maps \u00b7 blueprint\"]:::ctl\n    c3[\"Pull request\"]\n    c1 --> c2 --> c3\n  end\n  subgraph CI[\"GitHub Actions\"]\n    w1[\"platform-tests\"]:::ctl\n    w2[\"commodity-rollup<br/>dbt build \u00b7 tests\"]:::ctl\n    w3[\"ai-governance<br/>provenance \u00b7 ASQAV \u00b7 AIR\"]:::ctl\n  end\n  subgraph RT[\"Runtime controls\"]\n    r1[\"Agent action hooks\"]:::ctl\n    r2[\"SHA-256 chain + anchor\"]:::ctl\n    r3[\"pf air gate commodity commodity-rollup\"]:::ctl\n  end\n  c3 --> w1\n  c3 --> w2\n  c3 --> w3\n  r1 --> r2 --> w3\n  r3 --> w3\n  w1 --> merge[\"Merge to main\"]\n  w2 --> merge\n  w3 --> merge\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","lineage":"flowchart LR\n  subgraph SRC[\"External sources\"]\n    s_sisters[\"sisters\"]:::source\n  end\n  subgraph L_raw[\"Raw \u00b7 landed\"]\n    sisters_landed_prices[\"sisters.landed_prices\"]:::raw\n  end\n  subgraph L_staging[\"Staging\"]\n    stg_sisters__landed_prices[\"stg_sisters__landed_prices\"]:::staging\n  end\n  subgraph L_intermediate[\"Intermediate\"]\n    int_landed_prices__usd_per_quote_unit[\"int_landed_prices__usd_per_quote_unit\"]:::intermediate\n  end\n  subgraph L_mart[\"Marts\"]\n    dim_commodities[\"dim_commodities\"]:::mart\n    dim_markets[\"dim_markets\"]:::mart\n    fct_landed_prices_daily[\"fct_landed_prices_daily\"]:::mart\n    fct_market_spreads_daily[\"fct_market_spreads_daily\"]:::mart\n  end\n  subgraph L_report[\"Report boards\"]\n    rpt_market_comparison_board[\"rpt_market_comparison_board\"]:::report\n  end\n  s_sisters --> sisters_landed_prices\n  dim_commodities --> rpt_market_comparison_board\n  dim_markets --> rpt_market_comparison_board\n  fct_landed_prices_daily --> fct_market_spreads_daily\n  fct_landed_prices_daily --> rpt_market_comparison_board\n  fct_market_spreads_daily --> rpt_market_comparison_board\n  int_landed_prices__usd_per_quote_unit --> fct_landed_prices_daily\n  stg_sisters__landed_prices --> dim_commodities\n  stg_sisters__landed_prices --> dim_markets\n  stg_sisters__landed_prices --> int_landed_prices__usd_per_quote_unit\n  sisters_landed_prices --> stg_sisters__landed_prices\n  subgraph SEM[\"Semantic and serving\"]\n    mf[\"MetricFlow<br/>11 metrics\"]:::semantic\n    cubes[\"Wren MDL<br/>5 models \u00b7 7 joins \u00b7 2 cubes\"]:::semantic\n    ev[\"Evidence site<br/>13 dashboard exposures\"]:::serve\n    ask[\"Ask the data\"]:::serve\n    om[\"OpenMetadata catalogue\"]:::serve\n  end\n  L_mart --> mf\n  L_mart --> cubes\n  L_mart -.-> om\n  L_report --> ev\n  mf --> ev\n  cubes --> ask\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef staging fill:#1F6F8B,stroke:#1F6F8B,color:#ffffff\n  classDef intermediate fill:#2F7D5B,stroke:#2F7D5B,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef report fill:#3E4A8A,stroke:#3E4A8A,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef util fill:#64748B,stroke:#64748B,color:#ffffff","orchestration":"flowchart LR\n  subgraph J[\"Dagster code location commodity__commodity-rollup \u00b7 writer pool limit 1\"]\n    j_sisters[\"dlt \u00b7 sisters\"]:::raw\n    j_dbt[\"dbt build<br/>models + tests\"]:::mart\n    j_ev[\"Evidence site\"]:::serve\n    j_wr[\"wren_semantic_layer\"]:::semantic\n    j_okf[\"okf bundle\"]:::semantic\n    j_om[\"catalog_sync\"]:::serve\n  end\n  j_sisters --> j_dbt\n  j_dbt --> j_ev\n  j_dbt --> j_wr\n  j_dbt --> j_okf\n  j_dbt --> j_om\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n","physical":"erDiagram\n  FCT_LANDED_PRICES_DAILY }o--|| DIM_COMMODITIES : \"commodity_id\"\n  FCT_MARKET_SPREADS_DAILY }o--|| DIM_COMMODITIES : \"commodity_id\"\n  RPT_MARKET_COMPARISON_BOARD }o--|| DIM_COMMODITIES : \"commodity_id\"\n  FCT_LANDED_PRICES_DAILY }o--|| DIM_MARKETS : \"market_code\"\n  FCT_MARKET_SPREADS_DAILY }o--|| DIM_MARKETS : \"market_code\"\n  FCT_MARKET_SPREADS_DAILY }o--|| DIM_MARKETS : \"cheapest_market_code\"\n  RPT_MARKET_COMPARISON_BOARD }o--|| DIM_MARKETS : \"market_code\"\n  DIM_COMMODITIES {\n    VARCHAR commodity_id PK\n    BIGINT markets_pricing\n    VARCHAR category\n    VARCHAR price_basis\n    VARCHAR quote_unit\n    VARCHAR commodity_name\n    VARCHAR segment\n    VARCHAR exchange\n    MORE more_columns \"1 more in the data dictionary\"\n  }\n  DIM_MARKETS {\n    VARCHAR market_code PK\n    TIMESTAMP latest_price_date\n    TIMESTAMP first_price_date\n    VARCHAR country_code\n    VARCHAR currency_code\n    BOOLEAN is_reporting\n    VARCHAR market_name\n    VARCHAR home_exchange\n    MORE more_columns \"4 more in the data dictionary\"\n  }\n  FCT_LANDED_PRICES_DAILY {\n    VARCHAR landed_price_id PK\n    VARCHAR market_code FK \"to dim_markets\"\n    VARCHAR commodity_id FK \"to dim_commodities\"\n    TIMESTAMP price_date\n    DECIMAL benchmark_price_usd\n    DECIMAL landed_price_local\n    DECIMAL landed_price_usd_per_quote_unit\n    VARCHAR currency_code\n    MORE more_columns \"9 more in the data dictionary\"\n  }\n  FCT_MARKET_SPREADS_DAILY {\n    VARCHAR landed_price_id PK\n    VARCHAR market_code FK \"to dim_markets\"\n    VARCHAR commodity_id FK \"to dim_commodities\"\n    VARCHAR cheapest_market_code FK \"to dim_markets\"\n    TIMESTAMP price_date\n    DECIMAL spread_to_cheapest_usd\n    DECIMAL spread_to_cheapest_pct\n    BOOLEAN is_cheapest_market\n    MORE more_columns \"4 more in the data dictionary\"\n  }\n  RPT_MARKET_COMPARISON_BOARD {\n    VARCHAR board_row_id PK\n    VARCHAR market_code FK \"to dim_markets\"\n    VARCHAR commodity_id FK \"to dim_commodities\"\n    TIMESTAMP price_date\n    DECIMAL landed_price_usd_per_quote_unit\n    VARCHAR category\n    DECIMAL spread_to_cheapest_pct\n    BOOLEAN is_stale\n    MORE more_columns \"19 more in the data dictionary\"\n  }","seq_ask":"sequenceDiagram\n  autonumber\n  actor U as Analyst\n  participant C as Ask the data page\n  participant A as wren api :8766\n  participant P as Planner chain\n  participant X as Wren engine\n  participant W as DuckDB read-only\n  participant Lg as Ledger\n  U->>C: a question in plain words\n  C->>A: POST /api/p/commodity/commodity-rollup/ask\n  A->>P: plan against cubes, labels and formats\n  P-->>A: plan (Claude API, else claude CLI, else rules)\n  A->>A: repair and validate against catalogue and policy\n  A->>X: translate the plan to SQL\n  X->>W: EXPLAIN (dry run)\n  X->>W: execute\n  W-->>X: rows\n  A->>Lg: intent, decision, execution\n  A-->>C: rows, chart hint, formats\n  C-->>U: answer and the SQL used\n","technology":"flowchart TB\n  subgraph DEV[\"Developer workstation\"]\n    cc[\"Claude Code session<br/>pf MCP server \u00b7 hooks\"]\n    cli[\"pf CLI \u00b7 uv venv\"]\n    ddev[\"dagster dev<br/>local SQLite instance\"]\n    duck[(\"data/commodity_rollup.duckdb\")]\n  end\n  subgraph STACK[\"pf_stack container\"]\n    ngx[\"nginx :8080\"]\n    dw[\"dagster-webserver :3000<br/>+ dagster-daemon\"]\n    cs[\"code server<br/>commodity__commodity-rollup\"]\n    om[\"OpenMetadata :8585\"]\n    rc[\"recce server<br/>on demand\"]\n  end\n  subgraph DATA[\"Stateful containers\"]\n    pg[(\"Postgres :5432\")]\n    es[(\"Elasticsearch\")]\n  end\n  subgraph CLOUD[\"External services\"]\n    gh[\"GitHub \u00b7 Actions\"]\n    mkt[\"Source APIs\"]\n    ant[\"Anthropic API\"]\n  end\n  ngx --> dw\n  dw --> cs\n  dw --> pg\n  cs --> duck\n  cs --> mkt\n  ddev --> duck\n  cc --> cli\n  cli --> duck\n  cli --> gh\n  ngx --> om\n  om --> pg\n  om --> es\n  cs --> om\n  ngx --> rc\n  cli --> ant\n"},"focus":null,"layers":{"ctl":"#9F3A38","intermediate":"#2F7D5B","mart":"#243B6B","raw":"#8A6A1C","report":"#3E4A8A","seed":"#6B6F2A","semantic":"#7A3E8E","serve":"#0F766E","source":"#475569","staging":"#1F6F8B","util":"#64748B"},"lineage":{"dim_commodities":{"cols":{"category":[[["seed.commodities","category"]],"c.category AS category"],"commodity_id":[[["seed.commodities","commodity_id"]],"c.commodity_id AS commodity_id"],"commodity_name":[[["seed.commodities","commodity_name"]],"c.commodity_name AS commodity_name"],"exchange":[[["seed.commodities","exchange"]],"UPPER(c.exchange) AS exchange"],"markets_pricing":[[["stg_sisters__landed_prices","market_code"]],"COALESCE(mp.markets_pricing, 0) AS markets_pricing"],"price_basis":[[["seed.commodities","yahoo_symbol"]],"CASE WHEN NOT c.yahoo_symbol IS NULL THEN 'futures' ELSE 'indicative' END AS price_basis"],"quote_unit":[[["seed.commodities","quote_unit"]],"c.quote_unit AS quote_unit"],"segment":[[["seed.commodities","segment"]],"c.segment AS segment"],"unit_dimension":[[["seed.units_of_measure","dimension"]],"u.dimension AS unit_dimension"]},"layer":"mart"},"dim_markets":{"cols":{"commodities_priced":[[["stg_sisters__landed_prices","commodity_id"]],"COALESCE(r.commodities_priced, 0) AS commodities_priced"],"country_code":[[["seed.markets","country_code"]],"m.country_code AS country_code"],"currency_code":[[["seed.markets","currency_code"]],"m.currency_code AS currency_code"],"first_price_date":[[["stg_sisters__landed_prices","price_date"]],"r.first_price_date AS first_price_date"],"home_exchange":[[["seed.markets","home_exchange"]],"m.home_exchange AS home_exchange"],"is_reporting":[[["stg_sisters__landed_prices","market_code"]],"NOT r.market_code IS NULL AS is_reporting"],"landed_price_rows":[[],"COALESCE(r.landed_price_rows, 0) AS landed_price_rows"],"latest_price_date":[[["stg_sisters__landed_prices","price_date"]],"r.latest_price_date AS latest_price_date"],"market_code":[[["seed.markets","market_code"]],"m.market_code AS market_code"],"market_name":[[["seed.markets","market_name"]],"m.market_name AS market_name"],"project":[[["seed.markets","project"]],"m.project AS project"],"timezone":[[["seed.markets","timezone"]],"m.timezone AS timezone"]},"layer":"mart"},"fct_landed_prices_daily":{"cols":{"benchmark_price_usd":[[["int_landed_prices__usd_per_quote_unit","benchmark_price_usd"]],"int_landed_prices__usd_per_quote_unit.benchmark_price_usd AS benchmark_price_usd"],"commodity_id":[[["int_landed_prices__usd_per_quote_unit","commodity_id"]],"int_landed_prices__usd_per_quote_unit.commodity_id AS commodity_id"],"currency_code":[[["int_landed_prices__usd_per_quote_unit","currency_code"]],"int_landed_prices__usd_per_quote_unit.currency_code AS currency_code"],"effective_duty_rate":[[["int_landed_prices__usd_per_quote_unit","effective_duty_rate"]],"int_landed_prices__usd_per_quote_unit.effective_duty_rate AS effective_duty_rate"],"fx_fixed_on":[[["int_landed_prices__usd_per_quote_unit","fx_fixed_on"]],"int_landed_prices__usd_per_quote_unit.fx_fixed_on AS fx_fixed_on"],"import_parity_premium_pct":[[["int_landed_prices__usd_per_quote_unit","benchmark_price_usd"],["int_landed_prices__usd_per_quote_unit","landed_price_usd_per_quote_unit"]],"ROUND((int_landed_prices__usd_per_quote_unit.landed_price_usd_per_quote_unit - int_landed_prices__usd_per_quote_unit.benchmark_price_usd) / NULLIF((int_landed_prices__usd_per_quote_unit.benchmark_price_usd), 0), 6) AS im"],"is_duty_rate_confirmed":[[["int_landed_prices__usd_per_quote_unit","is_duty_rate_confirmed"]],"int_landed_prices__usd_per_quote_unit.is_duty_rate_confirmed AS is_duty_rate_confirmed"],"is_import_prohibited":[[["int_landed_prices__usd_per_quote_unit","is_import_prohibited"]],"int_landed_prices__usd_per_quote_unit.is_import_prohibited AS is_import_prohibited"],"landed_price_id":[[["int_landed_prices__usd_per_quote_unit","landed_price_id"]],"int_landed_prices__usd_per_quote_unit.landed_price_id AS landed_price_id"],"landed_price_local":[[["int_landed_prices__usd_per_quote_unit","landed_price_local"]],"int_landed_prices__usd_per_quote_unit.landed_price_local AS landed_price_local"],"landed_price_usd_per_quote_unit":[[["int_landed_prices__usd_per_quote_unit","landed_price_usd_per_quote_unit"]],"CAST(ROUND(int_landed_prices__usd_per_quote_unit.landed_price_usd_per_quote_unit, 6) AS DECIMAL(18, 6)) AS landed_price_usd_per_quote_unit"],"market_code":[[["int_landed_prices__usd_per_quote_unit","market_code"]],"int_landed_prices__usd_per_quote_unit.market_code AS market_code"],"market_unit":[[["int_landed_prices__usd_per_quote_unit","market_unit"]],"int_landed_prices__usd_per_quote_unit.market_unit AS market_unit"],"price_basis":[[["int_landed_prices__usd_per_quote_unit","price_basis"]],"int_landed_prices__usd_per_quote_unit.price_basis AS price_basis"],"price_date":[[["int_landed_prices__usd_per_quote_unit","price_date"]],"int_landed_prices__usd_per_quote_unit.price_date AS price_date"],"quote_unit":[[["int_landed_prices__usd_per_quote_unit","quote_unit"]],"int_landed_prices__usd_per_quote_unit.quote_unit AS quote_unit"],"usd_fx_rate":[[["int_landed_prices__usd_per_quote_unit","usd_fx_rate"]],"int_landed_prices__usd_per_quote_unit.usd_fx_rate AS usd_fx_rate"]},"layer":"mart"},"fct_market_spreads_daily":{"cols":{"cheapest_landed_usd":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_landed_prices_daily","price_date"]],"ranked.cheapest_landed_usd AS cheapest_landed_usd"],"cheapest_market_code":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_landed_prices_daily","market_code"],["fct_landed_prices_daily","price_date"]],"ranked.cheapest_market_code AS cheapest_market_code"],"commodity_id":[[["fct_landed_prices_daily","commodity_id"]],"ranked.commodity_id AS commodity_id"],"is_cheapest_market":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_landed_prices_daily","market_code"],["fct_landed_prices_daily","price_date"]],"ranked.market_code = ranked.cheapest_market_code AS is_cheapest_market"],"landed_price_id":[[["fct_landed_prices_daily","landed_price_id"]],"ranked.landed_price_id AS landed_price_id"],"landed_price_usd_per_quote_unit":[[["fct_landed_prices_daily","landed_price_usd_per_quote_unit"]],"ranked.landed_price_usd_per_quote_unit AS landed_price_usd_per_quote_unit"],"market_code":[[["fct_landed_prices_daily","market_code"]],"ranked.market_code AS market_code"],"markets_compared":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","price_date"]],"ranked.markets_compared AS markets_compared"],"price_date":[[["fct_landed_prices_daily","price_date"]],"ranked.price_date AS price_date"],"quote_unit":[[["fct_landed_prices_daily","quote_unit"]],"ranked.quote_unit AS quote_unit"],"spread_to_cheapest_pct":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_landed_prices_daily","price_date"]],"ROUND((ranked.landed_price_usd_per_quote_unit - ranked.cheapest_landed_usd) / NULLIF((ranked.cheapest_landed_usd), 0), 6) AS spread_to_cheapest_pct"],"spread_to_cheapest_usd":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_landed_prices_daily","price_date"]],"CAST(ROUND(ranked.landed_price_usd_per_quote_unit - ranked.cheapest_landed_usd, 6) AS DECIMAL(18, 6)) AS spread_to_cheapest_usd"]},"layer":"mart"},"int_landed_prices__usd_per_quote_unit":{"cols":{"benchmark_price_usd":[[["stg_sisters__landed_prices","benchmark_price_usd"]],"l.benchmark_price_usd AS benchmark_price_usd"],"commodity_id":[[["stg_sisters__landed_prices","commodity_id"]],"l.commodity_id AS commodity_id"],"currency_code":[[["stg_sisters__landed_prices","currency_code"]],"l.currency_code AS currency_code"],"effective_duty_rate":[[["stg_sisters__landed_prices","effective_duty_rate"]],"l.effective_duty_rate AS effective_duty_rate"],"fx_fixed_on":[[["stg_sisters__landed_prices","fx_fixed_on"]],"l.fx_fixed_on AS fx_fixed_on"],"is_duty_rate_confirmed":[[["stg_sisters__landed_prices","is_duty_rate_confirmed"]],"l.is_duty_rate_confirmed AS is_duty_rate_confirmed"],"is_import_prohibited":[[["stg_sisters__landed_prices","is_import_prohibited"]],"l.is_import_prohibited AS is_import_prohibited"],"landed_price_id":[[["stg_sisters__landed_prices","landed_price_id"]],"l.landed_price_id AS landed_price_id"],"landed_price_local":[[["stg_sisters__landed_prices","landed_price_local"]],"l.landed_price_local AS landed_price_local"],"landed_price_usd_per_quote_unit":[[["seed.units_of_measure","base_units_per_unit"],["stg_sisters__landed_prices","landed_price_local"],["stg_sisters__landed_prices","usd_fx_rate"]],"(l.landed_price_local / NULLIF(l.usd_fx_rate, 0) * qu.base_units_per_unit / NULLIF(mu.base_units_per_unit, 0)) AS landed_price_usd_per_quote_unit"],"market_code":[[["stg_sisters__landed_prices","market_code"]],"l.market_code AS market_code"],"market_unit":[[["stg_sisters__landed_prices","market_unit"]],"l.market_unit AS market_unit"],"price_basis":[[["stg_sisters__landed_prices","price_basis"]],"l.price_basis AS price_basis"],"price_date":[[["stg_sisters__landed_prices","price_date"]],"l.price_date AS price_date"],"quote_unit":[[["stg_sisters__landed_prices","quote_unit"]],"l.quote_unit AS quote_unit"],"usd_fx_rate":[[["stg_sisters__landed_prices","usd_fx_rate"]],"l.usd_fx_rate AS usd_fx_rate"]},"layer":"intermediate"},"metricflow_time_spine":{"cols":{"date_day":[[],"CAST(spine.date_day AS DATE) AS date_day"]},"layer":"util"},"rpt_market_comparison_board":{"cols":{"benchmark_price_usd":[[["fct_landed_prices_daily","benchmark_price_usd"]],"l.benchmark_price_usd AS benchmark_price_usd"],"board_row_id":[[["fct_landed_prices_daily","commodity_id"],["fct_landed_prices_daily","market_code"]],"l.market_code || ':' || l.commodity_id AS board_row_id"],"category":[[["dim_commodities","category"]],"c.category AS category"],"cheapest_landed_usd":[[["fct_market_spreads_daily","cheapest_landed_usd"]],"ch.cheapest_landed_usd AS cheapest_landed_usd"],"cheapest_market_code":[[["fct_market_spreads_daily","cheapest_market_code"]],"ch.cheapest_market_code AS cheapest_market_code"],"commodity_id":[[["fct_landed_prices_daily","commodity_id"]],"l.commodity_id AS commodity_id"],"commodity_name":[[["dim_commodities","commodity_name"]],"c.commodity_name AS commodity_name"],"currency_code":[[["fct_landed_prices_daily","currency_code"]],"l.currency_code AS currency_code"],"effective_duty_rate":[[["fct_landed_prices_daily","effective_duty_rate"]],"l.effective_duty_rate AS effective_duty_rate"],"import_parity_premium_pct":[[["fct_landed_prices_daily","import_parity_premium_pct"]],"l.import_parity_premium_pct AS import_parity_premium_pct"],"is_cheapest_market":[[["fct_landed_prices_daily","market_code"],["fct_market_spreads_daily","cheapest_market_code"]],"l.market_code = ch.cheapest_market_code AS is_cheapest_market"],"is_duty_rate_confirmed":[[["fct_landed_prices_daily","is_duty_rate_confirmed"]],"l.is_duty_rate_confirmed AS is_duty_rate_confirmed"],"is_import_prohibited":[[["fct_landed_prices_daily","is_import_prohibited"]],"l.is_import_prohibited AS is_import_prohibited"],"is_stale":[[["fct_landed_prices_daily","price_date"]],"(DATE_DIFF('DAY', CAST(l.price_date AS TIMESTAMP), CAST(CURRENT_DATE AS TIMESTAMP))) > 4 AS is_stale"],"landed_price_local":[[["fct_landed_prices_daily","landed_price_local"]],"l.landed_price_local AS landed_price_local"],"landed_price_usd_per_quote_unit":[[["fct_landed_prices_daily","landed_price_usd_per_quote_unit"]],"l.landed_price_usd_per_quote_unit AS landed_price_usd_per_quote_unit"],"market_code":[[["fct_landed_prices_daily","market_code"]],"l.market_code AS market_code"],"market_name":[[["dim_markets","market_name"]],"m.market_name AS market_name"],"market_unit":[[["fct_landed_prices_daily","market_unit"]],"l.market_unit AS market_unit"],"markets_compared":[[["fct_market_spreads_daily","markets_compared"]],"ch.markets_compared AS markets_compared"],"price_age_days":[[["fct_landed_prices_daily","price_date"]],"(DATE_DIFF('DAY', CAST(l.price_date AS TIMESTAMP), CAST(CURRENT_DATE AS TIMESTAMP))) AS price_age_days"],"price_basis":[[["fct_landed_prices_daily","price_basis"]],"l.price_basis AS price_basis"],"price_date":[[["fct_landed_prices_daily","price_date"]],"l.price_date AS price_date"],"quote_unit":[[["fct_landed_prices_daily","quote_unit"]],"l.quote_unit AS quote_unit"],"segment":[[["dim_commodities","segment"]],"c.segment AS segment"],"spread_to_cheapest_pct":[[["fct_landed_prices_daily","landed_price_usd_per_quote_unit"],["fct_market_spreads_daily","cheapest_landed_usd"]],"ROUND((l.landed_price_usd_per_quote_unit - ch.cheapest_landed_usd) / NULLIF((ch.cheapest_landed_usd), 0), 6) AS spread_to_cheapest_pct"],"usd_fx_rate":[[["fct_landed_prices_daily","usd_fx_rate"]],"l.usd_fx_rate AS usd_fx_rate"]},"layer":"report"},"stg_sisters__landed_prices":{"cols":{"assessable_value_local":[[["sisters.landed_prices","assessable_value_local"]],"renamed.assessable_value_local AS assessable_value_local"],"benchmark_price_usd":[[["sisters.landed_prices","benchmark_price_usd"]],"renamed.benchmark_price_usd AS benchmark_price_usd"],"benchmark_usd_per_market_unit":[[["sisters.landed_prices","benchmark_usd_per_market_unit"]],"renamed.benchmark_usd_per_market_unit AS benchmark_usd_per_market_unit"],"commodity_id":[[["sisters.landed_prices","commodity_id"]],"renamed.commodity_id AS commodity_id"],"currency_code":[[["sisters.landed_prices","currency_code"]],"renamed.currency_code AS currency_code"],"duty_local":[[["sisters.landed_prices","duty_local"]],"renamed.duty_local AS duty_local"],"effective_duty_rate":[[["sisters.landed_prices","effective_duty_rate"]],"renamed.effective_duty_rate AS effective_duty_rate"],"fx_fixed_on":[[["sisters.landed_prices","fx_fixed_on"]],"renamed.fx_fixed_on AS fx_fixed_on"],"is_duty_rate_confirmed":[[["sisters.landed_prices","is_duty_rate_confirmed"]],"renamed.is_duty_rate_confirmed AS is_duty_rate_confirmed"],"is_import_prohibited":[[["sisters.landed_prices","is_import_prohibited"]],"renamed.is_import_prohibited AS is_import_prohibited"],"landed_price_change_local":[[["sisters.landed_prices","landed_price_change_local"]],"renamed.landed_price_change_local AS landed_price_change_local"],"landed_price_change_pct":[[["sisters.landed_prices","landed_price_change_pct"]],"renamed.landed_price_change_pct AS landed_price_change_pct"],"landed_price_id":[[["sisters.landed_prices","landed_price_id"]],"renamed.landed_price_id AS landed_price_id"],"landed_price_local":[[["sisters.landed_prices","landed_price_local"]],"renamed.landed_price_local AS landed_price_local"],"market_code":[[["sisters.landed_prices","market_code"]],"renamed.market_code AS market_code"],"market_unit":[[["sisters.landed_prices","market_unit"]],"renamed.market_unit AS market_unit"],"price_basis":[[["sisters.landed_prices","price_basis"]],"renamed.price_basis AS price_basis"],"price_date":[[["sisters.landed_prices","price_date"]],"renamed.price_date AS price_date"],"quote_unit":[[["sisters.landed_prices","quote_unit"]],"renamed.quote_unit AS quote_unit"],"usd_fx_rate":[[["sisters.landed_prices","usd_fx_rate"]],"renamed.usd_fx_rate AS usd_fx_rate"]},"layer":"staging"}},"measures":{"fct_landed_prices_daily.benchmark_price_usd":["avg_import_parity_ratio","benchmark_usd_total_where_landed"],"fct_landed_prices_daily.landed_price_usd_per_quote_unit":["avg_import_parity_ratio","avg_landed_price_usd","benchmark_usd_total_where_landed","landed_usd_days","landed_usd_total"],"fct_market_spreads_daily.cheapest_landed_usd":["avg_spread_to_cheapest_ratio","cheapest_usd_total"],"fct_market_spreads_daily.is_cheapest_market":["days_as_cheapest_market"],"fct_market_spreads_daily.spread_to_cheapest_usd":["avg_spread_to_cheapest_ratio","avg_spread_to_cheapest_usd","spread_days","spread_usd_total"]}}</script>
+<script>
+(function () {
+  var P = JSON.parse(document.getElementById("payload").textContent);
+
+  function flash(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.textContent = ""; }, 3500);
+  }
+
+  function copyText(text, statusEl, okMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      flash(statusEl, ok ? okMsg : "Copying was blocked. Use Show code and copy it by hand.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { flash(statusEl, okMsg); }, fallback);
+    } else { fallback(); }
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve, reject) {
+      var clone = svg.cloneNode(true);
+      var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+      var w = vb.length === 4 ? vb[2] : svg.getBoundingClientRect().width;
+      var h = vb.length === 4 ? vb[3] : svg.getBoundingClientRect().height;
+      clone.setAttribute("width", w); clone.setAttribute("height", h);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.style.maxWidth = "none";
+      var data = new XMLSerializer().serializeToString(clone);
+      var img = new Image();
+      img.onload = function () {
+        var scale = 2, c = document.createElement("canvas");
+        c.width = Math.ceil(w * scale); c.height = Math.ceil(h * scale);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.scale(scale, scale); ctx.drawImage(img, 0, 0, w, h);
+        try { c.toBlob(function (b) { b ? resolve(b) : reject(new Error("empty")); }, "image/png"); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = function () { reject(new Error("render")); };
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(data);
+    });
+  }
+
+  function copyImage(fig, statusEl) {
+    var svg = fig.querySelector(".canvas svg");
+    if (!svg) { flash(statusEl, "The diagram has not rendered yet. Try again in a moment."); return; }
+    if (!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)) {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "This browser cannot copy images, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+      return;
+    }
+    var item = new ClipboardItem({ "image/png": svgToPng(svg) });
+    navigator.clipboard.write([item]).then(function () {
+      flash(statusEl, "Image copied. Paste it onto the Miro board.");
+    }, function () {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "Image copy was blocked, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+    });
+  }
+
+  document.querySelectorAll("figure.dia").forEach(function (fig) {
+    var key = fig.getAttribute("data-key");
+    var src = P.diagrams[key];
+    var tools = fig.querySelector(".tools");
+    var status = document.createElement("span"); status.className = "status"; status.setAttribute("role", "status");
+    var b1 = document.createElement("button"); b1.type = "button"; b1.className = "primary"; b1.textContent = "Copy for Miro";
+    var b2 = document.createElement("button"); b2.type = "button"; b2.textContent = "Copy image";
+    var b3 = document.createElement("button"); b3.type = "button"; b3.textContent = "Show code"; b3.setAttribute("aria-expanded", "false");
+    var box = document.createElement("div"); box.className = "code";
+    var ta = document.createElement("textarea"); ta.readOnly = true; ta.value = src; ta.id = "code-" + key; ta.setAttribute("aria-label", "Mermaid code for " + key);
+    box.appendChild(ta);
+    b1.addEventListener("click", function () { copyText(src, status, "Mermaid copied. Paste it into Miro's diagram-from-code option."); });
+    b2.addEventListener("click", function () { copyImage(fig, status); });
+    b3.addEventListener("click", function () {
+      var open = box.classList.toggle("open");
+      b3.textContent = open ? "Hide code" : "Show code"; b3.setAttribute("aria-expanded", String(open));
+    });
+    tools.append(b1, b2, b3, status);
+    fig.appendChild(box);
+  });
+
+  function reEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function kindOf(expr, parent, col) {
+    var bare = expr.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    var re = new RegExp('^(?:[\\w"]+\\.)?"?' + reEsc(parent) + '"?(?:\\s+AS\\s+"?' + reEsc(col) + '"?)?$', "i");
+    return re.test(bare) ? "direct" : "derived";
+  }
+  function lineageRows() {
+    var rows = [["Layer", "Model", "Column", "Parent model", "Parent column", "Kind", "Expression"]];
+    Object.keys(P.lineage).sort().forEach(function (m) {
+      var x = P.lineage[m];
+      Object.keys(x.cols).forEach(function (c) {
+        var parents = x.cols[c][0], expr = x.cols[c][1] || "";
+        if (!parents.length) rows.push([x.layer, m, c, "", "", "literal or generated", expr]);
+        parents.forEach(function (p) {
+          rows.push([x.layer, m, c, p[0], p[1], kindOf(expr, p[1], c), expr]);
+        });
+      });
+    });
+    return rows;
+  }
+  function tableText(key) {
+    if (key === "lineage") return lineageRows().map(function (r) { return r.join("\t"); }).join("\n");
+    var t = document.querySelector('[data-table="' + key + '"] table');
+    if (!t) return "";
+    return Array.prototype.map.call(t.rows, function (tr) {
+      return Array.prototype.map.call(tr.cells, function (td) { return td.textContent.replace(/[\t\n]+/g, " ").trim(); }).join("\t");
+    }).join("\n");
+  }
+  document.querySelectorAll("[data-copy-table]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var status = btn.parentNode.querySelector(".status");
+      copyText(tableText(btn.getAttribute("data-copy-table")), status, "Copied. Paste onto the Miro board to make a table.");
+    });
+  });
+
+  document.querySelectorAll("[data-filter]").forEach(function (input) {
+    var box = input.closest(".tablebox");
+    var trs = Array.prototype.slice.call(box.querySelectorAll("tbody tr"));
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      trs.forEach(function (r) { r.hidden = q && r.textContent.toLowerCase().indexOf(q) === -1; });
+    });
+  });
+
+  // Full lineage table, built when first opened
+  var det = document.querySelector('[data-table="lineage"] details');
+  if (det)
+  det.addEventListener("toggle", function () {
+    var host = document.getElementById("lineage-table");
+    if (!det.open || host.firstChild) return;
+    var lines = lineageRows();
+    var t = document.createElement("table");
+    var head = "<thead><tr>" + lines[0].map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr></thead>";
+    var body = lines.slice(1).map(function (l) {
+      return "<tr>" + l.map(function (v, i) { return "<td>" + (i === 6 ? "<code>" + esc(v) + "</code>" : esc(v)) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    t.innerHTML = head + "<tbody>" + body + "</tbody>";
+    host.appendChild(t);
+  });
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // Lineage explorer
+  var L = P.lineage;
+  var LAYERS = ["raw", "seed", "staging", "intermediate", "mart", "report", "util"];
+  function layerGuess(m) {
+    if (L[m]) return L[m].layer;
+    if (m.indexOf("seed.") === 0) return "seed";
+    if (/^(mcx|yahoo_finance|gold_api)\./.test(m)) return "raw";
+    if (m.indexOf("stg_") === 0) return "staging";
+    if (m.indexOf("int_") === 0) return "intermediate";
+    if (m.indexOf("rpt_") === 0) return "report";
+    if (m.indexOf("fct_") === 0 || m.indexOf("dim_") === 0) return "mart";
+    return "util";
+  }
+  var down = {};
+  Object.keys(L).forEach(function (m) {
+    Object.keys(L[m].cols).forEach(function (c) {
+      L[m].cols[c][0].forEach(function (p) {
+        var k = p[0] + "." + p[1];
+        (down[k] = down[k] || []).push([m, c]);
+      });
+    });
+  });
+  var models = Object.keys(L).sort(function (a, b) {
+    return LAYERS.indexOf(layerGuess(b)) - LAYERS.indexOf(layerGuess(a)) || a.localeCompare(b);
+  });
+  var selM = document.getElementById("ex-model"), selC = document.getElementById("ex-col");
+  if (!models.length || !selM) return;
+  models.forEach(function (m) { var o = document.createElement("option"); o.value = m; o.textContent = m; selM.appendChild(o); });
+  function fillCols(m, pick) {
+    selC.innerHTML = "";
+    Object.keys(L[m].cols).forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = c; selC.appendChild(o); });
+    if (pick && L[m].cols[pick]) selC.value = pick;
+  }
+  function traceUp(m, c) {
+    var seen = {}, levels = [], frontier = [[m, c]], depth = 0;
+    seen[m + "." + c] = true;
+    while (frontier.length && depth < 20) {
+      var next = [];
+      frontier.forEach(function (mc) {
+        var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+        (x ? x[0] : []).forEach(function (p) {
+          var k = p[0] + "." + p[1];
+          if (!seen[k]) { seen[k] = true; next.push(p); }
+        });
+      });
+      if (next.length) levels.push(next);
+      frontier = next; depth++;
+    }
+    return levels;
+  }
+  function chip(m, c) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip l-" + layerGuess(m);
+    b.innerHTML = "<small>" + esc(m) + ".</small>" + esc(c);
+    b.title = "Show lineage for " + m + "." + c;
+    b.addEventListener("click", function () { if (L[m]) { selM.value = m; fillCols(m, c); render(); } });
+    return b;
+  }
+  function currentEdges() {
+    var m = selM.value, c = selC.value, edges = [], seen = {}, stack = [[m, c]];
+    while (stack.length) {
+      var mc = stack.pop(), k = mc[0] + "." + mc[1];
+      if (seen[k]) continue; seen[k] = true;
+      var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+      (x ? x[0] : []).forEach(function (p) { edges.push([p[0], p[1], mc[0], mc[1], x[1]]); stack.push(p); });
+    }
+    return edges;
+  }
+  function mid(s) { return s.replace(/[^A-Za-z0-9_]/g, "_"); }
+  function traceMermaid() {
+    var edges = currentEdges(), byModel = {};
+    function add(m, c) { (byModel[m] = byModel[m] || {})[c] = true; }
+    add(selM.value, selC.value);
+    edges.forEach(function (e) { add(e[0], e[1]); add(e[2], e[3]); });
+    var out = ["flowchart LR"];
+    Object.keys(byModel).sort(function (a, b) { return LAYERS.indexOf(layerGuess(a)) - LAYERS.indexOf(layerGuess(b)); }).forEach(function (m) {
+      out.push("  subgraph " + mid("g_" + m) + '["' + m + '"]');
+      Object.keys(byModel[m]).forEach(function (c) { out.push("    " + mid(m + "__" + c) + '["' + c + '"]:::' + layerGuess(m)); });
+      out.push("  end");
+    });
+    edges.forEach(function (e) { out.push("  " + mid(e[0] + "__" + e[1]) + " --> " + mid(e[2] + "__" + e[3])); });
+    ["raw", "seed", "staging", "intermediate", "mart", "report", "util"].forEach(function (k) { out.push("  classDef " + k + " fill:" + P.layers[k] + ",stroke:" + P.layers[k] + ",color:#ffffff"); });
+    return out.join("\n");
+  }
+  function render() {
+    var m = selM.value, c = selC.value, x = L[m].cols[c];
+    document.getElementById("ex-expr").textContent = m + "." + c + "  =  " + (x[1] || "(column passed through)");
+    var up = document.getElementById("ex-up"); up.innerHTML = "";
+    var levels = traceUp(m, c);
+    if (!levels.length) {
+      var p = document.createElement("p"); p.textContent = "No upstream column: a literal, a generated value or a raw source column."; up.appendChild(p);
+    }
+    levels.forEach(function (lv, i) {
+      var row = document.createElement("div"); row.className = "hop";
+      var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = i === 0 ? "direct parents" : i + 1 + " hops up";
+      var chips = document.createElement("div"); chips.className = "chips";
+      lv.forEach(function (p) { chips.appendChild(chip(p[0], p[1])); });
+      row.append(lab, chips); up.appendChild(row);
+    });
+    var dn = document.getElementById("ex-down"); dn.innerHTML = "";
+    var kids = down[m + "." + c] || [], meas = P.measures[m + "." + c] || [];
+    var row = document.createElement("div"); row.className = "hop";
+    var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = "read by";
+    var chips = document.createElement("div"); chips.className = "chips";
+    kids.forEach(function (k) { chips.appendChild(chip(k[0], k[1])); });
+    meas.forEach(function (ms) { var s = document.createElement("span"); s.className = "chip l-semantic"; s.innerHTML = "<small>metric ·</small>" + esc(ms); chips.appendChild(s); });
+    if (!kids.length && !meas.length) { var n = document.createElement("span"); n.textContent = "Nothing downstream in the dbt project. Report pages may still read it."; n.style.color = "var(--muted)"; chips.appendChild(n); }
+    row.append(lab, chips); dn.appendChild(row);
+  }
+  selM.addEventListener("change", function () { fillCols(selM.value); render(); });
+  selC.addEventListener("change", render);
+  document.getElementById("ex-copy-mmd").addEventListener("click", function () {
+    copyText(traceMermaid(), document.getElementById("ex-status"), "Mermaid for this trace copied.");
+  });
+  document.getElementById("ex-copy-tsv").addEventListener("click", function () {
+    var rows = [["Parent model", "Parent column", "Model", "Column", "Expression"].join("\t")];
+    currentEdges().forEach(function (e) { rows.push(e.map(function (v) { return String(v).replace(/\t|\n/g, " "); }).join("\t")); });
+    copyText(rows.join("\n"), document.getElementById("ex-status"), "Trace copied as a table.");
+  });
+  var start = P.focus && L[P.focus[0]] ? P.focus : [models[0], null];
+  selM.value = start[0]; fillCols(start[0], start[1]); render();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>if (window.mermaid) { mermaid.initialize({ startOnLoad: true }); }</script>
+</body>
+</html>

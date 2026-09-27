@@ -1,0 +1,594 @@
+# The architecture blueprint for commodity-india: what cannot be derived.
+#
+#   pf blueprint build commodity commodity-india   writes docs/mcx-platform-blueprint.html
+#   pf blueprint check commodity commodity-india   is the committed page current?
+#
+# The data diagrams (conceptual and physical ER, model and column lineage, the
+# data dictionary, decisions and every count) are derived from kg/graph.json,
+# mdl/mdl.json and the compiled dbt SQL, so they are not here. This file holds
+# the prose, the narrative diagrams (Mermaid) and three tables.
+#
+# The page is stamped with a fingerprint of this file and of the models, macros,
+# graph, MDL and project Python. A commit that changes any of them without the
+# rebuilt page is refused (gate.yaml `blueprint_required`), and CI fails a PR
+# whose page is stale. Write no counts in this file: they go stale silently.
+output: docs/mcx-platform-blueprint.html
+text:
+  title: MCX Platform Blueprint
+  eyebrow: commodity · commodity-india · TOGAF 10 ADM views
+  lede: 'End-to-end architecture of the MCX commodity pipeline on the data platform: market data from MCX, Yahoo Finance and
+    gold-api lands through dlt, is modelled by dbt in DuckDB, measured by MetricFlow and a Wren semantic layer, served by
+    Evidence and Ask the data, catalogued in OpenMetadata, orchestrated by Dagster and governed end to end. The data diagrams
+    are generated from the project''s own artefacts: <code>kg/graph.json</code>, <code>mdl/mdl.json</code> and the compiled
+    dbt SQL.'
+  principles_title: The rules the architecture holds itself to
+  principles_intro: Each principle is enforced somewhere in code or CI, named in the right column.
+  vision_title: System context
+  vision_intro: Who uses the platform, which external systems feed it, and the capabilities it provides for commodity-india.
+  context_title: People, sources and platform capabilities
+  business_title: Capability map and value stream
+  business_intro: The value stream runs from an MCX session closing to a buying or hedging decision, in five numbered stages.
+    Each stage is carried by one capability group; governance and change control span all of them.
+  capability_title: Market close to decision
+  app_intro: Every component and the direction data or control flows between them. Dotted lines from Dagster are orchestration;
+    the planner chain falls back from the Claude API to the claude CLI to a deterministic rules planner.
+  seq_ask_title: 'Ask the data: the gated road'
+  seq_ask_caption: Claude only plans. SQL comes from the Wren engine over the MDL, is dry-run with EXPLAIN before it executes,
+    and every step is written to the ledger.
+  tech_intro: The shared stack runs in one container behind nginx, with Postgres and Elasticsearch as their own stateful containers.
+    Local development runs <code>dagster dev</code> on :3070 against SQLite and the per-project DuckDB files.
+  orch_title: One job per commodity, one catalogue pass after
+  orch_intro: Each MCX commodity has a schedule and a job. Every step is idempotent, so any commodity can be rerun at any
+    time; concurrent runs queue on the warehouse writer pool instead of colliding.
+  orchestration_title: Asset graph of <code>mcx_gold_ingest</code>
+  seq_daily_title: A daily run, step by step
+  gov_title: Controls on change and at runtime
+  gov_intro: Change is gated at commit and in CI. At runtime, agent actions are chained and anchored, and each AI control
+    carries a FINOS AIR id that <code>pf air gate</code> checks against the project's commitments.
+source_labels:
+  mcx: MCX India bhavcopy<br/>mcxindia.com
+  yahoo_finance: Yahoo Finance<br/>futures and FX
+  gold_api: gold-api.com<br/>spot
+column_focus:
+- model: rpt_mcx_commodity_board
+  column: premium_to_landed_pct
+  why: 'Where MCX meets import parity: the MCX quote against the landed price per lot.'
+- model: rpt_mcx_commodity_board
+  column: return_1d
+  why: 'Daily return on the board: MCX settlement through the continuous back-adjusted series.'
+- model: rpt_mcx_commodity_board
+  column: rsi_14
+  why: RSI(14), computed on roll-free adjusted prices in the smoothed-indicators model.
+- model: fct_landed_prices_daily
+  column: landed_price_local
+  why: 'Landed rupee price: benchmark × USD/INR × (1 + duty), from Yahoo Finance and the reference seeds.'
+- model: rpt_mcx_commodity_board
+  column: put_call_ratio_oi
+  why: 'Options positioning: put/call ratio by open interest from the options bhavcopy.'
+principles:
+- - Business logic does not cross entities
+  - Each project has its own warehouse, dlt, dbt and graph; only the rollup reads sisters, READ_ONLY.
+  - Never read another group or sister project.
+- - dlt lands raw, dbt owns meaning
+  - No transformation in a dlt resource; staging never joins.
+  - ADR-0004
+- - Prices are unit_price, not money
+  - Prices are non-additive; means are ratio metrics within one commodity.
+  - ADR-0002, ADR-0003
+- - Joins come from the ontology
+  - A realises edge binds a physical FK to a named relation; MDL join conditions are derived, not guessed.
+  - projections/mdl.py
+- - Generated files come from generators
+  - Docs, indexes, MDL, pages and cards are regenerated, never hand-edited.
+  - pre-commit gate
+- - Agent actions are recorded
+  - Intent, decision and execution are chained and anchored; agents cannot edit the record.
+  - docs/GOVERNANCE.md
+- - Controls are named, not asserted
+  - Each control carries a FINOS AIR id; coverage is derived at check time.
+  - docs/AIR.md
+- - Rerun anything, converge the same
+  - Every Dagster step is idempotent; dlt resumes from cursors.
+  - defs/mcx.py
+building_blocks:
+- - Data acquisition
+  - dlt Core 1.x
+  - commodity_india.mcx_feed, commodity_shared connectors
+  - One pipeline per MCX commodity; merge on natural key; resumable batches
+- - Warehouse
+  - DuckDB
+  - data/commodity_india.duckdb
+  - One file per project; writer pool limit 1
+- - Transformation
+  - dbt Core + dbt-duckdb
+  - transform/ (commodity_india + commodity_shared)
+  - Models, tests and seeds (main_reference)
+- - Data diff review
+  - Recce
+  - transform/recce.yml, target-base
+  - PR-time data diff; servers on demand :8100+
+- - Metrics
+  - MetricFlow
+  - semantic models in transform/models
+  - Ratio means per ADR-0003
+- - Knowledge graph
+  - pf kg (DuckDB + JSON)
+  - kg/graph.json
+  - Models, columns + roles, metrics, concepts, policies, decisions
+- - Semantic projection
+  - pf semantic mdl
+  - mdl/mdl.json
+  - Models, relationships and one cube per metric-bearing model
+- - Knowledge bundle
+  - OKF
+  - okf/tables/*.md
+  - One page per table, linked to its kg node
+- - BI
+  - Evidence 40 (Svelte 4)
+  - reporting/
+  - Static prerendered site; fmt-rendered audit
+- - Conversational analytics
+  - WrenAI engine + pf wren api
+  - reporting/pages/ask.md, :8766
+  - 'Gated road: plan, policy, dry-run, execute, ledger'
+- - LLM planning
+  - Claude (Anthropic API, claude CLI)
+  - pf.agents.base wren_planner
+  - Plans only; rules planner fallback
+- - Catalogue
+  - OpenMetadata
+  - :8585 via catalog_sync + mcx_catalog
+  - Tables, glossary, tiers, lineage, metrics
+- - Orchestration
+  - Dagster
+  - src/commodity_india/defs/mcx.py
+  - Schedules, jobs, sensor, writer pools
+- - Provenance
+  - pf provenance
+  - provenance/ (agent-denied)
+  - Five stages, SHA-256 chain, RFC 3161 anchor
+- - AI control catalogue
+  - FINOS AI Governance Framework
+  - policy.yaml controls, air.yaml
+  - pf air coverage / pf air gate
+- - Static AI scan
+  - ASQAV (Atomz-org fork)
+  - .asqav.json, ai-governance.yml
+  - Repository config declares how audit writes are spelled
+- - Agent session layer
+  - Claude Code + pf MCP
+  - kg_search, kg_neighbors, kg_path, impact_analysis
+  - Graph-first navigation per project
+- - CI/CD
+  - GitHub Actions
+  - .github/workflows/*.yml
+  - Per-project, governance and findings workflows
+interfaces:
+- - I-01
+  - mcxindia.com bhavcopy
+  - dlt mcx_feed
+  - HTTPS REST (JSON)
+  - Dagster schedule 06:00 IST Tue-Sat, per commodity
+- - I-02
+  - Yahoo Finance
+  - dlt yahoo_finance
+  - HTTPS
+  - Dagster project job
+- - I-03
+  - gold-api.com
+  - dlt gold_api
+  - HTTPS
+  - Dagster project job
+- - I-04
+  - dlt
+  - DuckDB raw datasets
+  - dlt destination (merge)
+  - Per batch commit
+- - I-05
+  - dbt
+  - DuckDB main_* schemas
+  - SQL (dbt-duckdb)
+  - Dagster dbt assets
+- - I-06
+  - dbt manifest
+  - pf kg build
+  - manifest.json + YAML meta
+  - catalog_sync, CLI
+- - I-07
+  - kg/graph.json
+  - pf semantic mdl
+  - JSON projection
+  - catalog_sync, CLI
+- - I-08
+  - MetricFlow
+  - Evidence queries
+  - Compiled SQL with -- format stamps
+  - pf report build
+- - I-09
+  - Evidence page (WrenChat)
+  - wren api
+  - HTTP JSON /api/p/{group}/{project}/
+  - User question
+- - I-10
+  - wren api
+  - Claude API / claude CLI
+  - HTTPS / subprocess, JSON schema
+  - Per question
+- - I-11
+  - wren api / Wren engine
+  - DuckDB
+  - Read-only SQL, EXPLAIN then execute
+  - Per question
+- - I-12
+  - wren api
+  - loop-ledger.json, provenance
+  - Append-only JSON
+  - Per question
+- - I-13
+  - catalog_sync, mcx_catalog
+  - OpenMetadata
+  - REST API, JWT ingestion-bot
+  - Sensor after any MCX job
+- - I-14
+  - Recce
+  - R2
+  - Object storage
+  - PR review
+- - I-15
+  - GitHub Actions
+  - Project board 4
+  - GraphQL ProjectV2
+  - bot-findings workflow
+diagrams:
+  context: |
+    flowchart LR
+      subgraph ACT["People"]
+        a1["Commodity desk analyst"]
+        a2["Procurement and treasury"]
+        a3["Data and analytics engineer"]
+        a4["Governance and risk officer"]
+      end
+      subgraph EXT["External market data"]
+        x1["MCX India<br/>daily bhavcopy"]:::source
+        x2["Yahoo Finance<br/>futures and FX"]:::source
+        x3["gold-api.com<br/>precious-metal spot"]:::source
+      end
+      subgraph PF["commodity-india on the data platform"]
+        p1["Acquire and land<br/>dlt"]:::raw
+        p2["Model and test<br/>dbt on DuckDB"]:::mart
+        p3["Measure<br/>MetricFlow · Wren MDL"]:::semantic
+        p4["Publish<br/>Evidence · Ask the data"]:::serve
+        p5["Catalogue<br/>OpenMetadata · OKF"]:::serve
+        p6["Orchestrate<br/>Dagster"]:::ctl
+        p7["Govern<br/>gate · provenance · AIR · ASQAV"]:::ctl
+      end
+      subgraph AI["AI services"]
+        c1["Claude API<br/>wren_planner agent"]
+        c2["Claude Code sessions<br/>pf MCP server"]
+      end
+      gh["GitHub<br/>PRs · Actions · project board"]
+      x1 --> p1
+      x2 --> p1
+      x3 --> p1
+      p1 --> p2 --> p3 --> p4
+      p2 --> p5
+      p6 -.-> p1
+      p6 -.-> p2
+      p6 -.-> p4
+      p6 -.-> p5
+      p7 -.-> p2
+      p7 -.-> p4
+      a1 --> p4
+      a2 --> p4
+      a3 --> p2
+      a3 --> gh
+      a4 --> p7
+      c1 --> p4
+      c2 --> p2
+      gh --> p7
+      classDef source fill:#475569,stroke:#334155,color:#ffffff
+      classDef raw fill:#8A6A1C,stroke:#6B5214,color:#ffffff
+      classDef mart fill:#243B6B,stroke:#1a2c52,color:#ffffff
+      classDef semantic fill:#7A3E8E,stroke:#5f2f6f,color:#ffffff
+      classDef serve fill:#0F766E,stroke:#0b5b55,color:#ffffff
+      classDef ctl fill:#9F3A38,stroke:#7d2d2b,color:#ffffff
+  capability: |
+    flowchart LR
+      subgraph C1["1 Acquire and land · Market data acquisition"]
+        direction TB
+        c11["MCX settlement per commodity"]:::raw
+        c12["International benchmarks"]:::raw
+        c13["FX fixes"]:::raw
+        c14["Reference seeds<br/>duty · units · lots · products"]:::raw
+      end
+      subgraph C2["2 Conform · Curation and conformance"]
+        direction TB
+        c21["Staging and typing"]:::mart
+        c22["Continuous most-active series<br/>roll and back-adjust"]:::mart
+        c23["Landed import parity<br/>benchmark × USD/INR × duty"]:::mart
+        c24["Data tests and contracts"]:::mart
+      end
+      subgraph C3["3 Measure · Measurement"]
+        direction TB
+        c31["Trading indicators<br/>returns · SMA · RSI · ATR · vol"]:::semantic
+        c32["Options analytics<br/>PCR · max pain · OI walls"]:::semantic
+        c33["Attribution<br/>benchmark · rupee · duty"]:::semantic
+        c34["Governed metrics<br/>MetricFlow"]:::semantic
+      end
+      subgraph C4["4 Publish and ask · Insight delivery"]
+        direction TB
+        c41["Dashboards and boards"]:::serve
+        c42["Conversational analytics"]:::serve
+        c43["Per-metric pages"]:::serve
+      end
+      subgraph C5["5 Decide · Knowledge and catalogue"]
+        direction TB
+        c51["Knowledge graph and context cards"]:::serve
+        c52["Glossary · tiers · lineage"]:::serve
+        c53["Decision records ADR-0001 to 0006"]:::serve
+      end
+      subgraph C6["Across every stage · Governance and change"]
+        direction TB
+        c61["Commit gate and harness maps"]:::ctl
+        c62["Data diff review · Recce"]:::ctl
+        c63["Provenance ledger"]:::ctl
+        c64["AI controls · FINOS AIR · ASQAV"]:::ctl
+      end
+      C1 --> C2 --> C3 --> C4 --> C5
+      C6 -.- C1
+      C6 -.- C5
+      classDef raw fill:#8A6A1C,stroke:#6B5214,color:#ffffff
+      classDef mart fill:#243B6B,stroke:#1a2c52,color:#ffffff
+      classDef semantic fill:#7A3E8E,stroke:#5f2f6f,color:#ffffff
+      classDef serve fill:#0F766E,stroke:#0b5b55,color:#ffffff
+      classDef ctl fill:#9F3A38,stroke:#7d2d2b,color:#ffffff
+  application: |
+    flowchart LR
+      subgraph S["Sources"]
+        s1["mcxindia.com<br/>bhavcopy REST"]:::source
+        s2["Yahoo Finance"]:::source
+        s3["gold-api.com"]:::source
+      end
+      subgraph ING["Ingestion · dlt Core"]
+        d1["commodity_india.mcx_feed<br/>one pipeline per commodity"]:::raw
+        d2["commodity_shared connectors<br/>yahoo_finance · gold_api"]:::raw
+      end
+      subgraph WH["Warehouse · DuckDB file per project"]
+        w1[("data/commodity_india.duckdb<br/>mcx · yahoo_finance · gold_api<br/>main_reference · main_staging<br/>main_intermediate · main_marts")]:::mart
+      end
+      subgraph TR["Transformation"]
+        t1["dbt project commodity_india<br/>+ commodity_shared package<br/>models · tests · seeds"]:::mart
+        t2["Recce<br/>PR data diff vs target-base"]:::ctl
+      end
+      subgraph SEM["Semantic layer"]
+        m1["MetricFlow<br/>governed metrics"]:::semantic
+        k1["pf kg build<br/>kg/graph.json"]:::semantic
+        k2["pf semantic mdl<br/>mdl/mdl.json"]:::semantic
+        k3["OKF bundle<br/>okf/tables/*.md"]:::semantic
+      end
+      subgraph SRV["Serving"]
+        e1["pf report build<br/>Evidence site"]:::serve
+        e2["WrenChat.svelte<br/>Ask the data page"]:::serve
+        a1["pf tool wren api<br/>FastAPI 127.0.0.1:8766"]:::serve
+        a2["Wren engine<br/>workspace · check · cube"]:::serve
+      end
+      subgraph PL["Planner chain"]
+        p1["Claude API<br/>agent wren_planner"]
+        p2["claude CLI<br/>json-schema"]
+        p3["Rules planner<br/>deterministic"]
+      end
+      subgraph CAT["Catalogue"]
+        o1["OpenMetadata :8585<br/>tables · glossary · tiers · lineage"]:::serve
+      end
+      subgraph ORC["Orchestration · Dagster"]
+        g1["Schedules mcx_*_daily<br/>jobs mcx_*_ingest<br/>sensor mcx_catalog_after_run<br/>pool duckdb_writer (limit 1)"]:::ctl
+      end
+      subgraph GOV["Governance"]
+        l1["loop-ledger.json<br/>provenance chain"]:::ctl
+        l2["policy.yaml controls<br/>pf air gate"]:::ctl
+      end
+      s1 --> d1
+      s2 --> d2
+      s3 --> d2
+      d1 --> w1
+      d2 --> w1
+      t1 <--> w1
+      t1 --> t2
+      t1 --> m1
+      t1 --> k1
+      k1 --> k2
+      k1 --> k3
+      m1 --> e1
+      w1 --> e1
+      e1 --> e2
+      e2 -->|"HTTP /api/p/group/project"| a1
+      a1 --> p1
+      p1 -.->|"fallback"| p2
+      p2 -.->|"fallback"| p3
+      k2 --> a2
+      a1 --> a2
+      a2 -->|"read-only SQL"| w1
+      a1 --> l1
+      k1 --> a1
+      k1 --> o1
+      k2 --> o1
+      g1 -.-> d1
+      g1 -.-> t1
+      g1 -.-> e1
+      g1 -.-> a2
+      g1 -.-> o1
+      l2 -.-> a1
+      classDef source fill:#475569,stroke:#334155,color:#ffffff
+      classDef raw fill:#8A6A1C,stroke:#6B5214,color:#ffffff
+      classDef mart fill:#243B6B,stroke:#1a2c52,color:#ffffff
+      classDef semantic fill:#7A3E8E,stroke:#5f2f6f,color:#ffffff
+      classDef serve fill:#0F766E,stroke:#0b5b55,color:#ffffff
+      classDef ctl fill:#9F3A38,stroke:#7d2d2b,color:#ffffff
+  technology: |
+    flowchart TB
+      subgraph DEV["Developer workstation"]
+        cc["Claude Code session<br/>pf MCP server · hooks"]
+        cli["pf CLI · uv venv"]
+        ddev["dagster dev :3070<br/>DAGSTER_HOME=.dagster (SQLite)"]
+        wapi["wren api :8766"]
+        evs["Evidence static build<br/>reporting/build"]
+        duck[("DuckDB files<br/>one per project")]
+      end
+      subgraph STACK["pf_stack container (shared stack)"]
+        ngx["nginx :8080<br/>/ · /dagster/ · /recce/project"]
+        om["OpenMetadata :8585"]
+        dw["dagster-webserver :3000<br/>+ dagster-daemon"]
+        cs["code servers :4000-4007<br/>one per project"]
+        rc["recce servers :8100-8107<br/>started on demand"]
+      end
+      subgraph DATA["Stateful containers"]
+        pg[("Postgres :5432<br/>openmetadata_db<br/>schemas public + dagster")]
+        es[("Elasticsearch<br/>OpenMetadata search")]
+      end
+      subgraph CLOUD["External services"]
+        ant["Anthropic API"]
+        gh["GitHub · Actions · Projects"]
+        r2["R2 object store<br/>Recce state"]
+        mkt["Market data APIs"]
+      end
+      ngx --> om
+      ngx --> dw
+      ngx --> rc
+      dw --> cs
+      om --> pg
+      om --> es
+      dw --> pg
+      cs --> duck
+      ddev --> duck
+      wapi --> duck
+      evs --> duck
+      wapi --> ant
+      cc --> cli
+      cli --> duck
+      cli --> gh
+      rc --> r2
+      cs --> mkt
+      ddev --> mkt
+      cs --> om
+  orchestration: |
+    flowchart LR
+      sch["schedule mcx_gold_daily<br/>06:00 IST Tue-Sat<br/>+3 min per commodity"]:::ctl
+      subgraph J["job mcx_gold_ingest (pool duckdb_writer_commodity-india, limit 1)"]
+        a1["commodity_india/mcx_gold<br/>dlt load, resumable batches"]:::raw
+        a2["mcx_landed_tables<br/>verify 3 raw tables"]:::raw
+        a3["dbt build<br/>stg_mcx__* → int_mcx__* → fct/dim/rpt_mcx_*<br/>+ tests"]:::mart
+        a4["mcx_semantic_layer<br/>MetricFlow answers"]:::semantic
+        a5["mcx_report_site<br/>evidence build + fmt-rendered audit"]:::serve
+        a6["okf · wren_semantic_layer<br/>bundle + Wren workspace check"]:::semantic
+        a1 --> a2 --> a3 --> a4 --> a5
+        a3 --> a6
+      end
+      sen["sensor mcx_catalog_after_run<br/>on success of any MCX job"]:::ctl
+      subgraph K["job mcx_catalog_publish"]
+        b1["catalog_sync<br/>graph · MDL · OM tables · metrics"]:::serve
+        b2["mcx_catalog<br/>glossary · tiers · lineage"]:::serve
+        b1 --> b2
+      end
+      alt1["job mcx_transform_and_report<br/>dbt + Evidence only"]:::ctl
+      alt2["job mcx_all_ingest<br/>every commodity, one downstream pass"]:::ctl
+      sch --> a1
+      a5 --> sen
+      a6 --> sen
+      sen --> b1
+      alt1 -.-> a3
+      alt2 -.-> a1
+      classDef raw fill:#8A6A1C,stroke:#6B5214,color:#ffffff
+      classDef mart fill:#243B6B,stroke:#1a2c52,color:#ffffff
+      classDef semantic fill:#7A3E8E,stroke:#5f2f6f,color:#ffffff
+      classDef serve fill:#0F766E,stroke:#0b5b55,color:#ffffff
+      classDef ctl fill:#9F3A38,stroke:#7d2d2b,color:#ffffff
+  seq_daily: |
+    sequenceDiagram
+      autonumber
+      participant D as Dagster daemon
+      participant L as dlt mcx_feed
+      participant M as MCX bhavcopy API
+      participant W as DuckDB warehouse
+      participant B as dbt build
+      participant F as MetricFlow
+      participant E as Evidence build
+      participant R as Wren check
+      participant O as OpenMetadata
+      D->>L: run mcx_gold_ingest (06:00 IST)
+      L->>M: fetch sessions since each contract cursor
+      M-->>L: futures, options, contract master
+      L->>W: merge on natural key, commit batch + cursor
+      D->>B: dbt build MCX selection
+      B->>W: stg, int, fct, dim, rpt + data tests
+      D->>F: query metrics for the semantic asset
+      F->>W: compiled metric SQL
+      D->>E: pf report build + evidence build
+      E->>W: page queries
+      E-->>D: fmt-rendered audit result
+      D->>R: Wren workspace check + cube canary
+      D->>O: sensor launches mcx_catalog_publish
+      O-->>D: tables, glossary, tiers, lineage published
+  seq_ask: |
+    sequenceDiagram
+      autonumber
+      actor U as Analyst
+      participant C as WrenChat page
+      participant A as wren api :8766
+      participant P as Planner chain
+      participant G as Policy and validate
+      participant X as Wren engine
+      participant W as DuckDB read-only
+      participant Lg as loop-ledger + provenance
+      U->>C: "average gold close last 30 days"
+      C->>A: POST /api/p/commodity/commodity-india/ask
+      A->>A: catalogue = cubes, labels and formats from kg + MDL
+      A->>P: plan the question against the catalogue
+      P->>P: Claude API, else claude CLI, else rules
+      P-->>A: plan (cube, measures, dimensions, filters)
+      A->>G: repair + validate against catalogue and policy
+      G-->>A: allowed
+      A->>X: translate plan to SQL
+      X->>W: EXPLAIN (dry run)
+      W-->>X: ok
+      X->>W: execute
+      W-->>X: rows
+      A->>Lg: intent, decision, execution recorded
+      A-->>C: rows + chart hint + formats
+      C-->>U: answer, chart and the SQL used
+      Note over A,P: up to 3 attempts, then the question is escalated
+  governance: |
+    flowchart LR
+      subgraph CH["Change path"]
+        c1["Engineer or agent edits"]
+        c2["pre-commit gate<br/>12-file cap · harness_required<br/>generated files regenerated"]:::ctl
+        c3["Pull request"]
+        c1 --> c2 --> c3
+      end
+      subgraph CI["GitHub Actions on every PR"]
+        w1["platform-tests<br/>pytest · token budgets"]:::ctl
+        w2["commodity-india<br/>dbt build · tests · Recce"]:::ctl
+        w3["ai-governance<br/>provenance verify · ASQAV scan · AIR baseline"]:::ctl
+        w4["claude-review · bot-findings<br/>findings become issues"]:::ctl
+        w5["vendor-pins · pr-report"]:::ctl
+      end
+      subgraph RT["Runtime controls"]
+        r1["Agent action hooks<br/>intent · decision · execution"]:::ctl
+        r2["SHA-256 chain<br/>RFC 3161 + OpenTimestamps anchor"]:::ctl
+        r3["policy.yaml controls<br/>FINOS AIR ids · EU AI Act · ISO 42001"]:::ctl
+        r4["pf air gate commodity commodity-india<br/>air.yaml commitments"]:::ctl
+      end
+      board["Project board 4<br/>findings by priority and category"]
+      c3 --> w1
+      c3 --> w2
+      c3 --> w3
+      c3 --> w4
+      c3 --> w5
+      w4 --> board
+      r1 --> r2
+      r3 --> r4
+      r2 --> w3
+      r4 --> w3
+      w3 --> merge["Merge to main"]
+      w1 --> merge
+      w2 --> merge
+      classDef ctl fill:#9F3A38,stroke:#7d2d2b,color:#ffffff
