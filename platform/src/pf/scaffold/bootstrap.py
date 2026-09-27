@@ -715,6 +715,16 @@ jobs:
         # exclusion. It is checked where the comparison is honest: `pf harness
         # check` in `agent-context.yml`, which regenerates nothing.
         #
+        # The architecture blueprint (`docs/*blueprint*.html`) joins them for the
+        # reason `okf/**` does: it is a projection of the graph and the MDL, both
+        # excluded, and of a warehouse this runner does not have, so the
+        # blueprint step here rebuilds it from the empty MDL — a data dictionary
+        # of 0 columns against the committed 483 — and the diff says nothing
+        # about drift. It is checked where the comparison is honest:
+        # `test_blueprint.py` in the platform suite compares each committed
+        # page's stamp with the *committed* inputs and regenerates nothing, and
+        # the commit gate (`blueprint_required`) does the same before a push.
+        #
         # `package-lock.yml` is excluded for the opposite reason to all of them:
         # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
@@ -734,6 +744,7 @@ jobs:
               ':(exclude)**/transform/package-lock.yml' \
               ':(exclude)**/kg/architecture.md' \
               ':(exclude)**/HARNESS.md' \
+              ':(exclude)**/docs/*blueprint*.html' \
               ':(exclude)**/transform/tests/expectations/*.sql'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"
@@ -1013,6 +1024,29 @@ def _render_architecture(root: Path, group: str, project: str) -> StepResult:
     return StepResult("architecture map", status, detail)
 
 
+def _render_blueprint(root: Path, group: str, project: str) -> StepResult:
+    """The project's architecture blueprint (`pf.projections.blueprint`).
+
+    Every project gets one, with nothing to configure: the narrative is derived
+    from its sources, enabled tools and graph, and `docs/blueprint.yaml` only
+    overrides. Written here so a newly scaffolded project has a current page —
+    and a stamp the commit gate can judge — from its first bootstrap. Without
+    a warehouse yet, the page is written without column lineage and gains it on
+    the next build that has one; that is not a failure.
+    """
+    from pf.projections import blueprint as bp
+
+    d = _pdir(root, group, project)
+    if not bp.has_blueprint(d):
+        return StepResult(
+            "architecture blueprint", "skipped", "no knowledge graph yet, or disabled in docs/blueprint.yaml"
+        )
+    existed = bp.output_path(d).is_file()
+    out, origin = bp.build(d, group, project)
+    return StepResult("architecture blueprint", "ok" if existed else "created",
+                      f"{out.relative_to(d).as_posix()} · lineage {origin.split(' (')[0]}")
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
     from pf.runtime.dbt_runtime import validate_paths
@@ -1176,6 +1210,12 @@ STEPS: list[Step] = [
         "architecture map",
         "every feature of this project, present or absent, so an agent routes instead of reading the tree",
         _render_architecture,
+    ),
+    Step(
+        "architecture blueprint",
+        "a TOGAF-ordered page of the whole project, derived from its artefacts and stamped "
+        "so the gate keeps it current",
+        _render_blueprint,
     ),
     Step(
         "harness map",

@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="pf-blueprint-inputs" content="sha256:926330c82f139d239344d6d10a071c5e9b52090b1922707710667396a64d8bf7">
+<meta name="generator" content="pf blueprint build">
+<title>zenith-de Architecture Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  --bg: #F3F5F3;
+  --surface: #FFFFFF;
+  --sunk: #E9EDEA;
+  --ink: #17201D;
+  --muted: #56635E;
+  --line: #D5DCD8;
+  --accent: #1D5C77;
+  --accent-soft: #DCEAF0;
+  --brass: #8E6512;
+  --brass-soft: #F3E8CF;
+  --ok: #2F7D5B;
+  --focus: #1D5C77;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+    --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+    --ok: #6CC19A; --focus: #7DB9D2;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+  --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+  --ok: #6CC19A; --focus: #7DB9D2;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); padding-inline: 16px; }
+.shell { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; padding-block: 32px 80px; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; } nav.index { position: static !important; max-height: none !important; } }
+h1, h2, h3, h4 { font-family: var(--cond); text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 26px; font-weight: 700; line-height: 1.15; }
+h3 { font-size: 19px; font-weight: 600; }
+h4 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 72ch; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow: auto; font-size: 13.5px; }
+nav.index .brand { font-family: var(--cond); font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.index li a { display: grid; grid-template-columns: 34px 1fr; gap: 6px; padding: 5px 8px; border-radius: 6px; text-decoration: none; color: var(--muted); }
+nav.index li a:hover { background: var(--sunk); color: var(--ink); }
+nav.index li a .ph { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 2px; }
+nav.index .sub a { padding-left: 48px; grid-template-columns: 1fr; font-size: 12.5px; }
+
+header.top { display: grid; gap: 18px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 28px; font-variant-numeric: tabular-nums; }
+.stats div { display: grid; }
+.stats b { font-family: var(--cond); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.stats span { font-size: 12.5px; color: var(--muted); }
+.miro { display: grid; gap: 8px; background: var(--accent-soft); border-radius: 10px; padding: 16px 18px; }
+.miro h3 { font-size: 16px; }
+.miro ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 90ch; }
+
+section.phase { padding-top: 44px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+.phase-head { display: grid; gap: 8px; }
+.phase-head .ph { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.phase-head p { color: var(--muted); }
+
+figure.dia { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+figure.dia figcaption { padding: 16px 18px 10px; display: grid; gap: 4px; }
+figure.dia figcaption p { color: var(--muted); font-size: 14px; }
+.tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.canvas { overflow-x: auto; padding: 8px 18px 14px; }
+.canvas pre.mermaid { margin: 0; background: transparent; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.canvas svg { max-width: none !important; height: auto; }
+.canvas.wide svg { min-width: 1100px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 18px 16px; border-top: 1px solid var(--line); align-items: center; }
+button { font: 500 13px/1 var(--sans); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.status { font-size: 12.5px; color: var(--ok); min-height: 1em; }
+.code { display: none; margin: 0 18px 16px; }
+.code.open { display: block; }
+.code textarea { width: 100%; min-height: 220px; font: 12px/1.45 var(--mono); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px; resize: vertical; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+
+.tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+.tablebox .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 14px 18px; align-items: center; }
+.tablebox .head p { color: var(--muted); font-size: 13.5px; }
+.scroll { overflow: auto; max-height: 560px; border-top: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; vertical-align: top; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+th { position: sticky; top: 0; background: var(--sunk); font-family: var(--cond); font-weight: 600; font-size: 13px; z-index: 1; }
+td:first-child { white-space: nowrap; }
+td code { font-size: 12px; }
+input[type="search"], select { font: 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; min-width: 0; }
+
+.explorer { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.explorer .pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.explorer label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.hops { display: grid; gap: 14px; }
+.hop { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+@media (max-width: 600px) { .hop { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.hop .lvl { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 12.5px var(--mono); border-radius: 6px; padding: 4px 8px; color: #fff; cursor: pointer; border: 0; }
+.chip small { opacity: 0.8; }
+.expr { font: 12px/1.5 var(--mono); background: var(--sunk); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.l-raw { background: #8A6A1C; } .l-seed { background: #6B6F2A; } .l-staging { background: #1F6F8B; }
+.l-intermediate { background: #2F7D5B; } .l-mart { background: #243B6B; } .l-report { background: #3E4A8A; }
+.l-semantic { background: #7A3E8E; } .l-util { background: #64748B; } .l-source { background: #475569; } .l-serve { background: #0F766E; } .l-ctl { background: #9F3A38; }
+details > summary { cursor: pointer; font-weight: 500; padding: 0 18px 14px; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<!-- Generated by `pf blueprint build` from docs/blueprint.yaml and the project's artefacts. Do not edit by hand:
+     the next build discards the edit, and `pf blueprint check` judges the page on its inputs. -->
+<div class="shell">
+<nav class="index" aria-label="Architecture phases">
+  <div class="brand">zenith-de Architecture Blueprint</div>
+  <ol><li><a href="#prelim"><span class="ph">P</span>Principles</a></li><li><a href="#vision"><span class="ph">A</span>Vision and context</a></li><li><a href="#business"><span class="ph">B</span>Business capabilities</a></li><li><a href="#data"><span class="ph">C</span>Data architecture</a></li><li class="sub"><a href="#conceptual">Conceptual model</a></li><li class="sub"><a href="#physical">Physical ER</a></li><li class="sub"><a href="#lineage">Model lineage</a></li><li class="sub"><a href="#explorer">Lineage explorer</a></li><li class="sub"><a href="#dictionary">Data dictionary</a></li><li><a href="#application"><span class="ph">C</span>Application architecture</a></li><li><a href="#technology"><span class="ph">D</span>Technology architecture</a></li><li><a href="#orchestration"><span class="ph">E/F</span>Orchestration and runs</a></li><li><a href="#governance"><span class="ph">G</span>Governance</a></li><li><a href="#catalogue"><span class="ph">H</span>Catalogues and decisions</a></li></ol>
+</nav>
+<main>
+<header class="top">
+  <div class="eyebrow">zenith · zenith-de · TOGAF 10 ADM views</div>
+  <h1>zenith-de Architecture Blueprint</h1>
+  <p class="lede">End-to-end architecture of zenith-de: data from no source yet lands through dlt, is modelled by dbt in DuckDB and measured by MetricFlow, published by Evidence and orchestrated by Dagster. Every diagram is generated from the project's own artefacts and configuration; <code>docs/blueprint.yaml</code> may override any of it.</p>
+  <div class="stats"><div><b>0</b><span>dbt models traced</span></div><div><b>0</b><span>columns with lineage</span></div><div><b>0</b><span>column-to-column edges</span></div><div><b>0</b><span>columns in the dictionary</span></div><div><b>9</b><span>diagrams, each Miro-ready</span></div></div>
+  <div class="miro">
+    <h3>Putting these on a Miro board</h3>
+    <ol>
+      <li><b>Copy for Miro</b> copies the diagram as Mermaid code. In Miro, open the diagram-from-code option (Mermaid) and paste. It arrives as editable shapes and connectors.</li>
+      <li><b>Copy image</b> puts a high-resolution PNG on the clipboard. Paste straight onto the board. Use this where Miro's Mermaid import does not support a diagram type.</li>
+      <li><b>Copy as table</b> copies tab-separated rows. Paste onto the board and Miro creates a table, the same as pasting from a spreadsheet.</li>
+    </ol>
+  </div>
+  <div class="legend" aria-label="Layer colours">
+    <span><i class="l-source"></i>External source</span><span><i class="l-raw"></i>Raw</span><span><i class="l-seed"></i>Reference seed</span>
+    <span><i class="l-staging"></i>Staging</span><span><i class="l-intermediate"></i>Intermediate</span><span><i class="l-mart"></i>Mart</span>
+    <span><i class="l-report"></i>Report board</span><span><i class="l-semantic"></i>Semantic</span><span><i class="l-serve"></i>Serving</span><span><i class="l-ctl"></i>Control and orchestration</span>
+  </div>
+</header>
+<section class="phase" id="prelim"><div class="phase-head"><span class="ph">Preliminary · Architecture principles</span><h2>Architecture principles</h2></div><div class="tablebox" data-table="principles"><div class="head"><div><h3>Principles</h3><p>6 principles</p></div><div><button type="button" data-copy-table="principles">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Principle</th><th>Statement</th><th>Enforced by</th></tr></thead><tbody><tr><td>Business logic does not cross entities</td><td>Own warehouse, dlt, dbt and graph; only a rollup reads sisters, read-only.</td><td>CLAUDE.md, gate</td></tr>
+<tr><td>dlt lands raw, dbt owns meaning</td><td>No transformation in a dlt resource; staging never joins.</td><td>group CLAUDE.md</td></tr>
+<tr><td>Joins come from the ontology</td><td>MDL join conditions are derived from realises edges, not guessed.</td><td>pf semantic mdl</td></tr>
+<tr><td>Generated files come from generators</td><td>Docs, indexes, MDL, pages and this blueprint are regenerated, never hand-edited.</td><td>pre-commit gate</td></tr>
+<tr><td>Agent actions are recorded</td><td>Intent, decision and execution are chained and anchored.</td><td>pf provenance verify</td></tr>
+<tr><td>Controls are named, not asserted</td><td>Each control carries a FINOS AIR id; coverage is derived.</td><td>pf air gate</td></tr></tbody></table></div></div></section><section class="phase" id="vision"><div class="phase-head"><span class="ph">Phase A · Architecture vision</span><h2>System context</h2></div><figure class="dia" data-key="context"><figcaption><span class="tag">A · Context</span><h4>System context</h4></figcaption><div class="canvas"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph ACT[&quot;People&quot;]
+    a1[&quot;Analysts and report readers&quot;]
+    a2[&quot;Data and analytics engineers&quot;]
+    a3[&quot;Governance and risk&quot;]
+  end
+  subgraph EXT[&quot;External data&quot;]
+    x_none[&quot;No dlt source yet&quot;]:::source
+  end
+  subgraph PF[&quot;zenith-de on the data platform&quot;]
+    p1[&quot;Acquire and land&lt;br/&gt;dlt&quot;]:::raw
+    p2[&quot;Model and test&lt;br/&gt;dbt on DuckDB&quot;]:::mart
+    p3[&quot;Measure&lt;br/&gt;MetricFlow&quot;]:::semantic
+    p4[&quot;Publish&lt;br/&gt;Evidence&quot;]:::serve
+    p5[&quot;Catalogue&lt;br/&gt;OpenMetadata · OKF&quot;]:::serve
+    p6[&quot;Orchestrate&lt;br/&gt;Dagster&quot;]:::ctl
+    p7[&quot;Govern&lt;br/&gt;gate · provenance · AIR&quot;]:::ctl
+  end
+  subgraph AI[&quot;AI services&quot;]
+    c2[&quot;Claude Code sessions&lt;br/&gt;pf MCP server&quot;]
+  end
+  gh[&quot;GitHub&lt;br/&gt;PRs · Actions&quot;]
+  p1 --&gt; p2 --&gt; p3
+  p6 -.-&gt; p1
+  p6 -.-&gt; p2
+  p7 -.-&gt; p2
+  a2 --&gt; p2
+  a2 --&gt; gh
+  a3 --&gt; p7
+  gh --&gt; p7
+  c2 --&gt; p2
+  p3 --&gt; p4
+  p6 -.-&gt; p4
+  a1 --&gt; p4
+  p2 --&gt; p5
+  p6 -.-&gt; p5
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="business"><div class="phase-head"><span class="ph">Phase B · Business architecture</span><h2>Capability map</h2></div><figure class="dia" data-key="capability"><figcaption><span class="tag">B · Capabilities</span><h4>Capabilities</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph C1[&quot;1 Acquire and land&quot;]
+    direction TB
+    c1_none[&quot;No source yet&quot;]:::raw
+  end
+  subgraph C2[&quot;2 Conform&quot;]
+    direction TB
+    c2_tests[&quot;Data tests&lt;br/&gt;2&quot;]:::mart
+  end
+  subgraph C3[&quot;3 Measure&quot;]
+    direction TB
+    c3_m[&quot;Governed metrics&lt;br/&gt;0&quot;]:::semantic
+  end
+  subgraph C4[&quot;4 Publish and ask&quot;]
+    direction TB
+    c4_d[&quot;Dashboards&lt;br/&gt;0 exposure(s)&quot;]:::serve
+  end
+  subgraph C5[&quot;5 Decide&quot;]
+    direction TB
+    c5_k[&quot;Knowledge graph and context card&quot;]:::serve
+    c5_d[&quot;Decision records&lt;br/&gt;0&quot;]:::serve
+    c5_c[&quot;Catalogue&lt;br/&gt;OpenMetadata · OKF&quot;]:::serve
+  end
+  subgraph C6[&quot;Across every stage · Governance and change&quot;]
+    direction TB
+    c6_g[&quot;Commit gate and harness maps&quot;]:::ctl
+    c6_p[&quot;Provenance ledger&quot;]:::ctl
+    c6_a[&quot;AI controls · FINOS AIR&quot;]:::ctl
+    c6_r[&quot;Data diff review · Recce&quot;]:::ctl
+  end
+  C1 --&gt; C2 --&gt; C3 --&gt; C4 --&gt; C5
+  C6 -.- C1
+  C6 -.- C5
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="data"><div class="phase-head"><span class="ph">Phase C · Data architecture</span><h2>From ontology to column</h2><p>Four levels: business concepts, the physical models and their joins, lineage between models, and lineage between individual columns.</p></div><figure class="dia" data-key="conceptual" id="conceptual"><figcaption><span class="tag">C · Conceptual</span><h4>Ontology concepts and relations</h4><p>Concepts this project's tables instantiate, their relations and properties, from <code>kg/graph.json</code>.</p></figcaption><div class="canvas"><pre class="mermaid">erDiagram</pre></div><div class="tools"></div></figure><figure class="dia" data-key="physical" id="physical"><figcaption><span class="tag">C · Logical / physical</span><h4>Mart ER model, as served to Wren</h4><p>All 0 models and 0 relationships in <code>mdl/mdl.json</code>. Each entity shows its primary key, foreign keys, event time and key measures; the full column list is in the data dictionary.</p></figcaption><div class="canvas wide"><pre class="mermaid">erDiagram</pre></div><div class="tools"></div></figure><figure class="dia" data-key="lineage" id="lineage"><figcaption><span class="tag">C · Lineage</span><h4>Model-level lineage, source to serving</h4><p>The <code>contains</code> and <code>feeds</code> edges of the knowledge graph, from each external source to the semantic layer and the serving tools.</p></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph SRC[&quot;External sources&quot;]
+  end
+  data_monitoring_metrics --&gt; metrics_anomaly_score
+  data_monitoring_metrics --&gt; monitors_runs
+  dbt_columns --&gt; dbt_artifacts_hashes
+  dbt_exposures --&gt; dbt_artifacts_hashes
+  dbt_groups --&gt; dbt_artifacts_hashes
+  dbt_invocations --&gt; job_run_results
+  dbt_metrics --&gt; dbt_artifacts_hashes
+  dbt_models --&gt; dbt_artifacts_hashes
+  dbt_models --&gt; model_run_results
+  dbt_run_results --&gt; model_run_results
+  dbt_run_results --&gt; seed_run_results
+  dbt_run_results --&gt; snapshot_run_results
+  dbt_seeds --&gt; dbt_artifacts_hashes
+  dbt_seeds --&gt; seed_run_results
+  dbt_snapshots --&gt; dbt_artifacts_hashes
+  dbt_snapshots --&gt; snapshot_run_results
+  dbt_source_freshness_results --&gt; alerts_dbt_source_freshness
+  dbt_sources --&gt; alerts_dbt_source_freshness
+  dbt_sources --&gt; dbt_artifacts_hashes
+  dbt_tests --&gt; dbt_artifacts_hashes
+  elementary_test_results --&gt; alerts_anomaly_detection
+  elementary_test_results --&gt; alerts_dbt_tests
+  elementary_test_results --&gt; alerts_schema_changes
+  elementary_test_results --&gt; test_result_rows
+  metrics_anomaly_score --&gt; anomaly_threshold_sensitivity
+  model_run_results --&gt; alerts_dbt_models
+  snapshot_run_results --&gt; alerts_dbt_models
+  subgraph SEM[&quot;Semantic and serving&quot;]
+    mf[&quot;MetricFlow&lt;br/&gt;0 metrics&quot;]:::semantic
+    cubes[&quot;Wren MDL&lt;br/&gt;0 models · 0 joins · 0 cubes&quot;]:::semantic
+    ev[&quot;Evidence site&lt;br/&gt;0 dashboard exposures&quot;]:::serve
+    ask[&quot;Ask the data&quot;]:::serve
+    om[&quot;OpenMetadata catalogue&quot;]:::serve
+  end
+  L_mart --&gt; ev
+  mf --&gt; ev
+  cubes --&gt; ask
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef staging fill:#1F6F8B,stroke:#1F6F8B,color:#ffffff
+  classDef intermediate fill:#2F7D5B,stroke:#2F7D5B,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef report fill:#3E4A8A,stroke:#3E4A8A,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef util fill:#64748B,stroke:#64748B,color:#ffffff</pre></div><div class="tools"></div></figure><div class="explorer" id="explorer"><div class="phase-head"><h3>Column lineage</h3><p>Not traced yet. Lineage is read from the compiled dbt SQL and the warehouse's column types, and this page was built where neither was available. Run the project's pipeline, then <code>pf blueprint build zenith zenith-de</code>.</p></div></div><div class="tablebox" data-table="dictionary" id="dictionary"><div class="head"><div><h3>Data dictionary: models served to Wren</h3><p>0 columns with type, key, semantic role and description.</p></div><div><input type="search" data-filter="dictionary" placeholder="Filter rows" aria-label="Filter Data dictionary: models served to Wren"> <button type="button" data-copy-table="dictionary">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Model</th><th>Column</th><th>Type</th><th>Key</th><th>Role</th><th>Description</th></tr></thead><tbody></tbody></table></div></div></section><section class="phase" id="application"><div class="phase-head"><span class="ph">Phase C · Application architecture</span><h2>How the tools connect</h2></div><figure class="dia" data-key="application"><figcaption><span class="tag">C · Applications</span><h4>Tool landscape, end to end</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph S[&quot;Sources&quot;]
+    s_none[&quot;No dlt source yet&quot;]:::source
+  end
+  subgraph ING[&quot;Ingestion · dlt Core&quot;]
+    d1[&quot;dlt sources&lt;br/&gt;zenith_de.sources&quot;]:::raw
+  end
+  subgraph WH[&quot;Warehouse · DuckDB&quot;]
+    w1[(&quot;data/zenith_de.duckdb&quot;)]:::mart
+  end
+  subgraph TR[&quot;Transformation&quot;]
+    t1[&quot;dbt project&lt;br/&gt;31 models · 2 tests&quot;]:::mart
+    t2[&quot;Recce&lt;br/&gt;PR data diff&quot;]:::ctl
+  end
+  subgraph SEM[&quot;Semantic layer&quot;]
+    m1[&quot;MetricFlow&lt;br/&gt;0 metrics&quot;]:::semantic
+    k1[&quot;pf kg build&lt;br/&gt;kg/graph.json&quot;]:::semantic
+    k3[&quot;OKF bundle&lt;br/&gt;okf/&quot;]:::semantic
+  end
+  subgraph SRV[&quot;Serving&quot;]
+    e1[&quot;pf report build&lt;br/&gt;Evidence site&quot;]:::serve
+  end
+  subgraph CAT[&quot;Catalogue&quot;]
+    o1[&quot;OpenMetadata&quot;]:::serve
+  end
+  subgraph ORC[&quot;Orchestration&quot;]
+    g1[&quot;Dagster code location&lt;br/&gt;zenith__zenith-de&quot;]:::ctl
+  end
+  d1 --&gt; w1
+  t1 &lt;--&gt; w1
+  t1 --&gt; m1
+  t1 --&gt; k1
+  g1 -.-&gt; d1
+  g1 -.-&gt; t1
+  t1 --&gt; t2
+  k1 --&gt; k3
+  m1 --&gt; e1
+  w1 --&gt; e1
+  g1 -.-&gt; e1
+  k1 --&gt; o1
+  g1 -.-&gt; o1
+  classDef source fill:#475569,stroke:#475569,color:#ffffff
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure><div class="tablebox" data-table="interfaces"><div class="head"><div><h3>Interface catalogue</h3><p>4 interfaces, with protocol and trigger.</p></div><div><button type="button" data-copy-table="interfaces">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Id</th><th>From</th><th>To</th><th>Protocol</th><th>Trigger</th></tr></thead><tbody><tr><td>I-01</td><td>dlt</td><td>DuckDB raw datasets</td><td>dlt destination</td><td>per load</td></tr>
+<tr><td>I-02</td><td>dbt</td><td>DuckDB</td><td>SQL</td><td>Dagster dbt assets</td></tr>
+<tr><td>I-03</td><td>dbt manifest</td><td>pf kg build</td><td>manifest + YAML meta</td><td>bootstrap, catalog</td></tr>
+<tr><td>I-04</td><td>catalog_sync</td><td>OpenMetadata</td><td>REST</td><td>after a run</td></tr></tbody></table></div></div></section><section class="phase" id="technology"><div class="phase-head"><span class="ph">Phase D · Technology architecture</span><h2>Where it runs</h2></div><figure class="dia" data-key="technology"><figcaption><span class="tag">D · Deployment</span><h4>Processes, ports and stores</h4></figcaption><div class="canvas"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart TB
+  subgraph DEV[&quot;Developer workstation&quot;]
+    cc[&quot;Claude Code session&lt;br/&gt;pf MCP server · hooks&quot;]
+    cli[&quot;pf CLI · uv venv&quot;]
+    ddev[&quot;dagster dev&lt;br/&gt;local SQLite instance&quot;]
+    duck[(&quot;data/zenith_de.duckdb&quot;)]
+  end
+  subgraph STACK[&quot;pf_stack container&quot;]
+    ngx[&quot;nginx :8080&quot;]
+    dw[&quot;dagster-webserver :3000&lt;br/&gt;+ dagster-daemon&quot;]
+    cs[&quot;code server&lt;br/&gt;zenith__zenith-de&quot;]
+    om[&quot;OpenMetadata :8585&quot;]
+    rc[&quot;recce server&lt;br/&gt;on demand&quot;]
+  end
+  subgraph DATA[&quot;Stateful containers&quot;]
+    pg[(&quot;Postgres :5432&quot;)]
+    es[(&quot;Elasticsearch&quot;)]
+  end
+  subgraph CLOUD[&quot;External services&quot;]
+    gh[&quot;GitHub · Actions&quot;]
+    mkt[&quot;Source APIs&quot;]
+  end
+  ngx --&gt; dw
+  dw --&gt; cs
+  dw --&gt; pg
+  cs --&gt; duck
+  cs --&gt; mkt
+  ddev --&gt; duck
+  cc --&gt; cli
+  cli --&gt; duck
+  cli --&gt; gh
+  ngx --&gt; om
+  om --&gt; pg
+  om --&gt; es
+  cs --&gt; om
+  ngx --&gt; rc
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="orchestration"><div class="phase-head"><span class="ph">Phases E and F · Orchestration and runs</span><h2>Orchestration</h2></div><figure class="dia" data-key="orchestration"><figcaption><span class="tag">E · Orchestration</span><h4>Orchestration</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph J[&quot;Dagster code location zenith__zenith-de · writer pool limit 1&quot;]
+    j_none[&quot;no dlt asset yet&quot;]:::raw
+    j_dbt[&quot;dbt build&lt;br/&gt;models + tests&quot;]:::mart
+    j_ev[&quot;Evidence site&quot;]:::serve
+    j_okf[&quot;okf bundle&quot;]:::semantic
+    j_om[&quot;catalog_sync&quot;]:::serve
+  end
+  j_dbt --&gt; j_ev
+  j_dbt --&gt; j_okf
+  j_dbt --&gt; j_om
+  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff
+  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff
+  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff
+  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="governance"><div class="phase-head"><span class="ph">Phase G · Implementation governance</span><h2>Controls</h2></div><figure class="dia" data-key="governance"><figcaption><span class="tag">G · Governance</span><h4>Change path and runtime controls</h4></figcaption><div class="canvas wide"><pre class="mermaid">%%{init: {&quot;flowchart&quot;: {&quot;htmlLabels&quot;: false, &quot;curve&quot;: &quot;basis&quot;}}}%%
+flowchart LR
+  subgraph CH[&quot;Change path&quot;]
+    c1[&quot;Engineer or agent edits&quot;]
+    c2[&quot;pre-commit gate&lt;br/&gt;file cap · harness maps · blueprint&quot;]:::ctl
+    c3[&quot;Pull request&quot;]
+    c1 --&gt; c2 --&gt; c3
+  end
+  subgraph CI[&quot;GitHub Actions&quot;]
+    w1[&quot;platform-tests&quot;]:::ctl
+    w2[&quot;zenith-de&lt;br/&gt;dbt build · tests&quot;]:::ctl
+    w3[&quot;ai-governance&lt;br/&gt;provenance · ASQAV · AIR&quot;]:::ctl
+  end
+  subgraph RT[&quot;Runtime controls&quot;]
+    r1[&quot;Agent action hooks&quot;]:::ctl
+    r2[&quot;SHA-256 chain + anchor&quot;]:::ctl
+    r3[&quot;pf air gate zenith zenith-de&quot;]:::ctl
+  end
+  c3 --&gt; w1
+  c3 --&gt; w2
+  c3 --&gt; w3
+  r1 --&gt; r2 --&gt; w3
+  r3 --&gt; w3
+  w1 --&gt; merge[&quot;Merge to main&quot;]
+  w2 --&gt; merge
+  w3 --&gt; merge
+  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff
+</pre></div><div class="tools"></div></figure></section><section class="phase" id="catalogue"><div class="phase-head"><span class="ph">Phase H · Architecture repository</span><h2>Building blocks and decisions</h2></div><div class="tablebox" data-table="blocks"><div class="head"><div><h3>Solution building blocks</h3><p>10 building blocks.</p></div><div><button type="button" data-copy-table="blocks">Copy as table</button> <span class="status" role="status"></span></div></div><div class="scroll"><table><thead><tr><th>Building block</th><th>Product</th><th>Where</th><th>Notes</th></tr></thead><tbody><tr><td>Data acquisition</td><td>dlt Core</td><td>src/zenith_de/sources</td><td>0 source(s)</td></tr>
+<tr><td>Warehouse</td><td>DuckDB</td><td>data/zenith_de.duckdb</td><td>One file per project</td></tr>
+<tr><td>Transformation</td><td>dbt Core + dbt-duckdb</td><td>transform/</td><td>31 models, 2 tests</td></tr>
+<tr><td>Metrics</td><td>MetricFlow</td><td>transform/models</td><td>0 metrics</td></tr>
+<tr><td>Knowledge graph</td><td>pf kg</td><td>kg/graph.json</td><td>Models, columns, metrics, concepts, decisions</td></tr>
+<tr><td>Orchestration</td><td>Dagster</td><td>code location zenith__zenith-de</td><td>Assets, jobs, schedules</td></tr>
+<tr><td>BI</td><td>Evidence</td><td>reporting/</td><td>0 dashboard exposure(s)</td></tr>
+<tr><td>Openmetadata</td><td>OpenMetadata</td><td>catalog/</td><td>enabled in tools.yaml</td></tr>
+<tr><td>Recce</td><td>Recce</td><td>transform/recce.yml</td><td>enabled in tools.yaml</td></tr>
+<tr><td>Knowledge bundle</td><td>OKF</td><td>okf/</td><td>enabled in tools.yaml</td></tr></tbody></table></div></div></section>
+<footer><p>Generated by <code>pf blueprint build zenith zenith-de</code> from <code>groups/zenith/projects/zenith-de</code>. Column lineage is static analysis of SQL: it shows which columns an output is computed from, not row-level provenance.</p></footer>
+</main>
+</div>
+<script id="payload" type="application/json">{"diagrams":{"application":"flowchart LR\n  subgraph S[\"Sources\"]\n    s_none[\"No dlt source yet\"]:::source\n  end\n  subgraph ING[\"Ingestion \u00b7 dlt Core\"]\n    d1[\"dlt sources<br/>zenith_de.sources\"]:::raw\n  end\n  subgraph WH[\"Warehouse \u00b7 DuckDB\"]\n    w1[(\"data/zenith_de.duckdb\")]:::mart\n  end\n  subgraph TR[\"Transformation\"]\n    t1[\"dbt project<br/>31 models \u00b7 2 tests\"]:::mart\n    t2[\"Recce<br/>PR data diff\"]:::ctl\n  end\n  subgraph SEM[\"Semantic layer\"]\n    m1[\"MetricFlow<br/>0 metrics\"]:::semantic\n    k1[\"pf kg build<br/>kg/graph.json\"]:::semantic\n    k3[\"OKF bundle<br/>okf/\"]:::semantic\n  end\n  subgraph SRV[\"Serving\"]\n    e1[\"pf report build<br/>Evidence site\"]:::serve\n  end\n  subgraph CAT[\"Catalogue\"]\n    o1[\"OpenMetadata\"]:::serve\n  end\n  subgraph ORC[\"Orchestration\"]\n    g1[\"Dagster code location<br/>zenith__zenith-de\"]:::ctl\n  end\n  d1 --> w1\n  t1 <--> w1\n  t1 --> m1\n  t1 --> k1\n  g1 -.-> d1\n  g1 -.-> t1\n  t1 --> t2\n  k1 --> k3\n  m1 --> e1\n  w1 --> e1\n  g1 -.-> e1\n  k1 --> o1\n  g1 -.-> o1\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","capability":"flowchart LR\n  subgraph C1[\"1 Acquire and land\"]\n    direction TB\n    c1_none[\"No source yet\"]:::raw\n  end\n  subgraph C2[\"2 Conform\"]\n    direction TB\n    c2_tests[\"Data tests<br/>2\"]:::mart\n  end\n  subgraph C3[\"3 Measure\"]\n    direction TB\n    c3_m[\"Governed metrics<br/>0\"]:::semantic\n  end\n  subgraph C4[\"4 Publish and ask\"]\n    direction TB\n    c4_d[\"Dashboards<br/>0 exposure(s)\"]:::serve\n  end\n  subgraph C5[\"5 Decide\"]\n    direction TB\n    c5_k[\"Knowledge graph and context card\"]:::serve\n    c5_d[\"Decision records<br/>0\"]:::serve\n    c5_c[\"Catalogue<br/>OpenMetadata \u00b7 OKF\"]:::serve\n  end\n  subgraph C6[\"Across every stage \u00b7 Governance and change\"]\n    direction TB\n    c6_g[\"Commit gate and harness maps\"]:::ctl\n    c6_p[\"Provenance ledger\"]:::ctl\n    c6_a[\"AI controls \u00b7 FINOS AIR\"]:::ctl\n    c6_r[\"Data diff review \u00b7 Recce\"]:::ctl\n  end\n  C1 --> C2 --> C3 --> C4 --> C5\n  C6 -.- C1\n  C6 -.- C5\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","conceptual":"erDiagram","context":"flowchart LR\n  subgraph ACT[\"People\"]\n    a1[\"Analysts and report readers\"]\n    a2[\"Data and analytics engineers\"]\n    a3[\"Governance and risk\"]\n  end\n  subgraph EXT[\"External data\"]\n    x_none[\"No dlt source yet\"]:::source\n  end\n  subgraph PF[\"zenith-de on the data platform\"]\n    p1[\"Acquire and land<br/>dlt\"]:::raw\n    p2[\"Model and test<br/>dbt on DuckDB\"]:::mart\n    p3[\"Measure<br/>MetricFlow\"]:::semantic\n    p4[\"Publish<br/>Evidence\"]:::serve\n    p5[\"Catalogue<br/>OpenMetadata \u00b7 OKF\"]:::serve\n    p6[\"Orchestrate<br/>Dagster\"]:::ctl\n    p7[\"Govern<br/>gate \u00b7 provenance \u00b7 AIR\"]:::ctl\n  end\n  subgraph AI[\"AI services\"]\n    c2[\"Claude Code sessions<br/>pf MCP server\"]\n  end\n  gh[\"GitHub<br/>PRs \u00b7 Actions\"]\n  p1 --> p2 --> p3\n  p6 -.-> p1\n  p6 -.-> p2\n  p7 -.-> p2\n  a2 --> p2\n  a2 --> gh\n  a3 --> p7\n  gh --> p7\n  c2 --> p2\n  p3 --> p4\n  p6 -.-> p4\n  a1 --> p4\n  p2 --> p5\n  p6 -.-> p5\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","governance":"flowchart LR\n  subgraph CH[\"Change path\"]\n    c1[\"Engineer or agent edits\"]\n    c2[\"pre-commit gate<br/>file cap \u00b7 harness maps \u00b7 blueprint\"]:::ctl\n    c3[\"Pull request\"]\n    c1 --> c2 --> c3\n  end\n  subgraph CI[\"GitHub Actions\"]\n    w1[\"platform-tests\"]:::ctl\n    w2[\"zenith-de<br/>dbt build \u00b7 tests\"]:::ctl\n    w3[\"ai-governance<br/>provenance \u00b7 ASQAV \u00b7 AIR\"]:::ctl\n  end\n  subgraph RT[\"Runtime controls\"]\n    r1[\"Agent action hooks\"]:::ctl\n    r2[\"SHA-256 chain + anchor\"]:::ctl\n    r3[\"pf air gate zenith zenith-de\"]:::ctl\n  end\n  c3 --> w1\n  c3 --> w2\n  c3 --> w3\n  r1 --> r2 --> w3\n  r3 --> w3\n  w1 --> merge[\"Merge to main\"]\n  w2 --> merge\n  w3 --> merge\n  classDef ctl fill:#9F3A38,stroke:#9F3A38,color:#ffffff\n","lineage":"flowchart LR\n  subgraph SRC[\"External sources\"]\n  end\n  data_monitoring_metrics --> metrics_anomaly_score\n  data_monitoring_metrics --> monitors_runs\n  dbt_columns --> dbt_artifacts_hashes\n  dbt_exposures --> dbt_artifacts_hashes\n  dbt_groups --> dbt_artifacts_hashes\n  dbt_invocations --> job_run_results\n  dbt_metrics --> dbt_artifacts_hashes\n  dbt_models --> dbt_artifacts_hashes\n  dbt_models --> model_run_results\n  dbt_run_results --> model_run_results\n  dbt_run_results --> seed_run_results\n  dbt_run_results --> snapshot_run_results\n  dbt_seeds --> dbt_artifacts_hashes\n  dbt_seeds --> seed_run_results\n  dbt_snapshots --> dbt_artifacts_hashes\n  dbt_snapshots --> snapshot_run_results\n  dbt_source_freshness_results --> alerts_dbt_source_freshness\n  dbt_sources --> alerts_dbt_source_freshness\n  dbt_sources --> dbt_artifacts_hashes\n  dbt_tests --> dbt_artifacts_hashes\n  elementary_test_results --> alerts_anomaly_detection\n  elementary_test_results --> alerts_dbt_tests\n  elementary_test_results --> alerts_schema_changes\n  elementary_test_results --> test_result_rows\n  metrics_anomaly_score --> anomaly_threshold_sensitivity\n  model_run_results --> alerts_dbt_models\n  snapshot_run_results --> alerts_dbt_models\n  subgraph SEM[\"Semantic and serving\"]\n    mf[\"MetricFlow<br/>0 metrics\"]:::semantic\n    cubes[\"Wren MDL<br/>0 models \u00b7 0 joins \u00b7 0 cubes\"]:::semantic\n    ev[\"Evidence site<br/>0 dashboard exposures\"]:::serve\n    ask[\"Ask the data\"]:::serve\n    om[\"OpenMetadata catalogue\"]:::serve\n  end\n  L_mart --> ev\n  mf --> ev\n  cubes --> ask\n  classDef source fill:#475569,stroke:#475569,color:#ffffff\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef staging fill:#1F6F8B,stroke:#1F6F8B,color:#ffffff\n  classDef intermediate fill:#2F7D5B,stroke:#2F7D5B,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef report fill:#3E4A8A,stroke:#3E4A8A,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n  classDef util fill:#64748B,stroke:#64748B,color:#ffffff","orchestration":"flowchart LR\n  subgraph J[\"Dagster code location zenith__zenith-de \u00b7 writer pool limit 1\"]\n    j_none[\"no dlt asset yet\"]:::raw\n    j_dbt[\"dbt build<br/>models + tests\"]:::mart\n    j_ev[\"Evidence site\"]:::serve\n    j_okf[\"okf bundle\"]:::semantic\n    j_om[\"catalog_sync\"]:::serve\n  end\n  j_dbt --> j_ev\n  j_dbt --> j_okf\n  j_dbt --> j_om\n  classDef raw fill:#8A6A1C,stroke:#8A6A1C,color:#ffffff\n  classDef mart fill:#243B6B,stroke:#243B6B,color:#ffffff\n  classDef semantic fill:#7A3E8E,stroke:#7A3E8E,color:#ffffff\n  classDef serve fill:#0F766E,stroke:#0F766E,color:#ffffff\n","physical":"erDiagram","technology":"flowchart TB\n  subgraph DEV[\"Developer workstation\"]\n    cc[\"Claude Code session<br/>pf MCP server \u00b7 hooks\"]\n    cli[\"pf CLI \u00b7 uv venv\"]\n    ddev[\"dagster dev<br/>local SQLite instance\"]\n    duck[(\"data/zenith_de.duckdb\")]\n  end\n  subgraph STACK[\"pf_stack container\"]\n    ngx[\"nginx :8080\"]\n    dw[\"dagster-webserver :3000<br/>+ dagster-daemon\"]\n    cs[\"code server<br/>zenith__zenith-de\"]\n    om[\"OpenMetadata :8585\"]\n    rc[\"recce server<br/>on demand\"]\n  end\n  subgraph DATA[\"Stateful containers\"]\n    pg[(\"Postgres :5432\")]\n    es[(\"Elasticsearch\")]\n  end\n  subgraph CLOUD[\"External services\"]\n    gh[\"GitHub \u00b7 Actions\"]\n    mkt[\"Source APIs\"]\n  end\n  ngx --> dw\n  dw --> cs\n  dw --> pg\n  cs --> duck\n  cs --> mkt\n  ddev --> duck\n  cc --> cli\n  cli --> duck\n  cli --> gh\n  ngx --> om\n  om --> pg\n  om --> es\n  cs --> om\n  ngx --> rc\n"},"focus":null,"layers":{"ctl":"#9F3A38","intermediate":"#2F7D5B","mart":"#243B6B","raw":"#8A6A1C","report":"#3E4A8A","seed":"#6B6F2A","semantic":"#7A3E8E","serve":"#0F766E","source":"#475569","staging":"#1F6F8B","util":"#64748B"},"lineage":{},"measures":{}}</script>
+<script>
+(function () {
+  var P = JSON.parse(document.getElementById("payload").textContent);
+
+  function flash(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.textContent = ""; }, 3500);
+  }
+
+  function copyText(text, statusEl, okMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      flash(statusEl, ok ? okMsg : "Copying was blocked. Use Show code and copy it by hand.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { flash(statusEl, okMsg); }, fallback);
+    } else { fallback(); }
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve, reject) {
+      var clone = svg.cloneNode(true);
+      var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+      var w = vb.length === 4 ? vb[2] : svg.getBoundingClientRect().width;
+      var h = vb.length === 4 ? vb[3] : svg.getBoundingClientRect().height;
+      clone.setAttribute("width", w); clone.setAttribute("height", h);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.style.maxWidth = "none";
+      var data = new XMLSerializer().serializeToString(clone);
+      var img = new Image();
+      img.onload = function () {
+        var scale = 2, c = document.createElement("canvas");
+        c.width = Math.ceil(w * scale); c.height = Math.ceil(h * scale);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.scale(scale, scale); ctx.drawImage(img, 0, 0, w, h);
+        try { c.toBlob(function (b) { b ? resolve(b) : reject(new Error("empty")); }, "image/png"); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = function () { reject(new Error("render")); };
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(data);
+    });
+  }
+
+  function copyImage(fig, statusEl) {
+    var svg = fig.querySelector(".canvas svg");
+    if (!svg) { flash(statusEl, "The diagram has not rendered yet. Try again in a moment."); return; }
+    if (!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)) {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "This browser cannot copy images, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+      return;
+    }
+    var item = new ClipboardItem({ "image/png": svgToPng(svg) });
+    navigator.clipboard.write([item]).then(function () {
+      flash(statusEl, "Image copied. Paste it onto the Miro board.");
+    }, function () {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "Image copy was blocked, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+    });
+  }
+
+  document.querySelectorAll("figure.dia").forEach(function (fig) {
+    var key = fig.getAttribute("data-key");
+    var src = P.diagrams[key];
+    var tools = fig.querySelector(".tools");
+    var status = document.createElement("span"); status.className = "status"; status.setAttribute("role", "status");
+    var b1 = document.createElement("button"); b1.type = "button"; b1.className = "primary"; b1.textContent = "Copy for Miro";
+    var b2 = document.createElement("button"); b2.type = "button"; b2.textContent = "Copy image";
+    var b3 = document.createElement("button"); b3.type = "button"; b3.textContent = "Show code"; b3.setAttribute("aria-expanded", "false");
+    var box = document.createElement("div"); box.className = "code";
+    var ta = document.createElement("textarea"); ta.readOnly = true; ta.value = src; ta.id = "code-" + key; ta.setAttribute("aria-label", "Mermaid code for " + key);
+    box.appendChild(ta);
+    b1.addEventListener("click", function () { copyText(src, status, "Mermaid copied. Paste it into Miro's diagram-from-code option."); });
+    b2.addEventListener("click", function () { copyImage(fig, status); });
+    b3.addEventListener("click", function () {
+      var open = box.classList.toggle("open");
+      b3.textContent = open ? "Hide code" : "Show code"; b3.setAttribute("aria-expanded", String(open));
+    });
+    tools.append(b1, b2, b3, status);
+    fig.appendChild(box);
+  });
+
+  function reEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function kindOf(expr, parent, col) {
+    var bare = expr.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    var re = new RegExp('^(?:[\\w"]+\\.)?"?' + reEsc(parent) + '"?(?:\\s+AS\\s+"?' + reEsc(col) + '"?)?$', "i");
+    return re.test(bare) ? "direct" : "derived";
+  }
+  function lineageRows() {
+    var rows = [["Layer", "Model", "Column", "Parent model", "Parent column", "Kind", "Expression"]];
+    Object.keys(P.lineage).sort().forEach(function (m) {
+      var x = P.lineage[m];
+      Object.keys(x.cols).forEach(function (c) {
+        var parents = x.cols[c][0], expr = x.cols[c][1] || "";
+        if (!parents.length) rows.push([x.layer, m, c, "", "", "literal or generated", expr]);
+        parents.forEach(function (p) {
+          rows.push([x.layer, m, c, p[0], p[1], kindOf(expr, p[1], c), expr]);
+        });
+      });
+    });
+    return rows;
+  }
+  function tableText(key) {
+    if (key === "lineage") return lineageRows().map(function (r) { return r.join("\t"); }).join("\n");
+    var t = document.querySelector('[data-table="' + key + '"] table');
+    if (!t) return "";
+    return Array.prototype.map.call(t.rows, function (tr) {
+      return Array.prototype.map.call(tr.cells, function (td) { return td.textContent.replace(/[\t\n]+/g, " ").trim(); }).join("\t");
+    }).join("\n");
+  }
+  document.querySelectorAll("[data-copy-table]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var status = btn.parentNode.querySelector(".status");
+      copyText(tableText(btn.getAttribute("data-copy-table")), status, "Copied. Paste onto the Miro board to make a table.");
+    });
+  });
+
+  document.querySelectorAll("[data-filter]").forEach(function (input) {
+    var box = input.closest(".tablebox");
+    var trs = Array.prototype.slice.call(box.querySelectorAll("tbody tr"));
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      trs.forEach(function (r) { r.hidden = q && r.textContent.toLowerCase().indexOf(q) === -1; });
+    });
+  });
+
+  // Full lineage table, built when first opened
+  var det = document.querySelector('[data-table="lineage"] details');
+  if (det)
+  det.addEventListener("toggle", function () {
+    var host = document.getElementById("lineage-table");
+    if (!det.open || host.firstChild) return;
+    var lines = lineageRows();
+    var t = document.createElement("table");
+    var head = "<thead><tr>" + lines[0].map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr></thead>";
+    var body = lines.slice(1).map(function (l) {
+      return "<tr>" + l.map(function (v, i) { return "<td>" + (i === 6 ? "<code>" + esc(v) + "</code>" : esc(v)) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    t.innerHTML = head + "<tbody>" + body + "</tbody>";
+    host.appendChild(t);
+  });
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // Lineage explorer
+  var L = P.lineage;
+  var LAYERS = ["raw", "seed", "staging", "intermediate", "mart", "report", "util"];
+  function layerGuess(m) {
+    if (L[m]) return L[m].layer;
+    if (m.indexOf("seed.") === 0) return "seed";
+    if (/^(mcx|yahoo_finance|gold_api)\./.test(m)) return "raw";
+    if (m.indexOf("stg_") === 0) return "staging";
+    if (m.indexOf("int_") === 0) return "intermediate";
+    if (m.indexOf("rpt_") === 0) return "report";
+    if (m.indexOf("fct_") === 0 || m.indexOf("dim_") === 0) return "mart";
+    return "util";
+  }
+  var down = {};
+  Object.keys(L).forEach(function (m) {
+    Object.keys(L[m].cols).forEach(function (c) {
+      L[m].cols[c][0].forEach(function (p) {
+        var k = p[0] + "." + p[1];
+        (down[k] = down[k] || []).push([m, c]);
+      });
+    });
+  });
+  var models = Object.keys(L).sort(function (a, b) {
+    return LAYERS.indexOf(layerGuess(b)) - LAYERS.indexOf(layerGuess(a)) || a.localeCompare(b);
+  });
+  var selM = document.getElementById("ex-model"), selC = document.getElementById("ex-col");
+  if (!models.length || !selM) return;
+  models.forEach(function (m) { var o = document.createElement("option"); o.value = m; o.textContent = m; selM.appendChild(o); });
+  function fillCols(m, pick) {
+    selC.innerHTML = "";
+    Object.keys(L[m].cols).forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = c; selC.appendChild(o); });
+    if (pick && L[m].cols[pick]) selC.value = pick;
+  }
+  function traceUp(m, c) {
+    var seen = {}, levels = [], frontier = [[m, c]], depth = 0;
+    seen[m + "." + c] = true;
+    while (frontier.length && depth < 20) {
+      var next = [];
+      frontier.forEach(function (mc) {
+        var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+        (x ? x[0] : []).forEach(function (p) {
+          var k = p[0] + "." + p[1];
+          if (!seen[k]) { seen[k] = true; next.push(p); }
+        });
+      });
+      if (next.length) levels.push(next);
+      frontier = next; depth++;
+    }
+    return levels;
+  }
+  function chip(m, c) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip l-" + layerGuess(m);
+    b.innerHTML = "<small>" + esc(m) + ".</small>" + esc(c);
+    b.title = "Show lineage for " + m + "." + c;
+    b.addEventListener("click", function () { if (L[m]) { selM.value = m; fillCols(m, c); render(); } });
+    return b;
+  }
+  function currentEdges() {
+    var m = selM.value, c = selC.value, edges = [], seen = {}, stack = [[m, c]];
+    while (stack.length) {
+      var mc = stack.pop(), k = mc[0] + "." + mc[1];
+      if (seen[k]) continue; seen[k] = true;
+      var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+      (x ? x[0] : []).forEach(function (p) { edges.push([p[0], p[1], mc[0], mc[1], x[1]]); stack.push(p); });
+    }
+    return edges;
+  }
+  function mid(s) { return s.replace(/[^A-Za-z0-9_]/g, "_"); }
+  function traceMermaid() {
+    var edges = currentEdges(), byModel = {};
+    function add(m, c) { (byModel[m] = byModel[m] || {})[c] = true; }
+    add(selM.value, selC.value);
+    edges.forEach(function (e) { add(e[0], e[1]); add(e[2], e[3]); });
+    var out = ["flowchart LR"];
+    Object.keys(byModel).sort(function (a, b) { return LAYERS.indexOf(layerGuess(a)) - LAYERS.indexOf(layerGuess(b)); }).forEach(function (m) {
+      out.push("  subgraph " + mid("g_" + m) + '["' + m + '"]');
+      Object.keys(byModel[m]).forEach(function (c) { out.push("    " + mid(m + "__" + c) + '["' + c + '"]:::' + layerGuess(m)); });
+      out.push("  end");
+    });
+    edges.forEach(function (e) { out.push("  " + mid(e[0] + "__" + e[1]) + " --> " + mid(e[2] + "__" + e[3])); });
+    ["raw", "seed", "staging", "intermediate", "mart", "report", "util"].forEach(function (k) { out.push("  classDef " + k + " fill:" + P.layers[k] + ",stroke:" + P.layers[k] + ",color:#ffffff"); });
+    return out.join("\n");
+  }
+  function render() {
+    var m = selM.value, c = selC.value, x = L[m].cols[c];
+    document.getElementById("ex-expr").textContent = m + "." + c + "  =  " + (x[1] || "(column passed through)");
+    var up = document.getElementById("ex-up"); up.innerHTML = "";
+    var levels = traceUp(m, c);
+    if (!levels.length) {
+      var p = document.createElement("p"); p.textContent = "No upstream column: a literal, a generated value or a raw source column."; up.appendChild(p);
+    }
+    levels.forEach(function (lv, i) {
+      var row = document.createElement("div"); row.className = "hop";
+      var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = i === 0 ? "direct parents" : i + 1 + " hops up";
+      var chips = document.createElement("div"); chips.className = "chips";
+      lv.forEach(function (p) { chips.appendChild(chip(p[0], p[1])); });
+      row.append(lab, chips); up.appendChild(row);
+    });
+    var dn = document.getElementById("ex-down"); dn.innerHTML = "";
+    var kids = down[m + "." + c] || [], meas = P.measures[m + "." + c] || [];
+    var row = document.createElement("div"); row.className = "hop";
+    var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = "read by";
+    var chips = document.createElement("div"); chips.className = "chips";
+    kids.forEach(function (k) { chips.appendChild(chip(k[0], k[1])); });
+    meas.forEach(function (ms) { var s = document.createElement("span"); s.className = "chip l-semantic"; s.innerHTML = "<small>metric ·</small>" + esc(ms); chips.appendChild(s); });
+    if (!kids.length && !meas.length) { var n = document.createElement("span"); n.textContent = "Nothing downstream in the dbt project. Report pages may still read it."; n.style.color = "var(--muted)"; chips.appendChild(n); }
+    row.append(lab, chips); dn.appendChild(row);
+  }
+  selM.addEventListener("change", function () { fillCols(selM.value); render(); });
+  selC.addEventListener("change", render);
+  document.getElementById("ex-copy-mmd").addEventListener("click", function () {
+    copyText(traceMermaid(), document.getElementById("ex-status"), "Mermaid for this trace copied.");
+  });
+  document.getElementById("ex-copy-tsv").addEventListener("click", function () {
+    var rows = [["Parent model", "Parent column", "Model", "Column", "Expression"].join("\t")];
+    currentEdges().forEach(function (e) { rows.push(e.map(function (v) { return String(v).replace(/\t|\n/g, " "); }).join("\t")); });
+    copyText(rows.join("\n"), document.getElementById("ex-status"), "Trace copied as a table.");
+  });
+  var start = P.focus && L[P.focus[0]] ? P.focus : [models[0], null];
+  selM.value = start[0]; fillCols(start[0], start[1]); render();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>if (window.mermaid) { mermaid.initialize({ startOnLoad: true }); }</script>
+</body>
+</html>

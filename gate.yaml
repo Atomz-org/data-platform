@@ -325,6 +325,24 @@ harness_required:
     maps:
       - "groups/{group}/**/HARNESS.md"
 
+# A change to what a project's architecture blueprint is built from lands with
+# the blueprint rebuilt.
+#
+# Every project with a knowledge graph has one — `pf bootstrap` writes it, so a
+# newly scaffolded project does too — unless its optional `docs/blueprint.yaml`
+# says `enabled: false`. `pf blueprint build` derives the page from the graph,
+# the MDL, the compiled dbt SQL, the project's sources and its enabled tools,
+# applies the spec's overrides, and stamps it with a fingerprint of its inputs
+# (`pf.projections.blueprint.INPUTS`: the spec, models, macros, dbt_project.yml,
+# kg/graph.json, mdl/mdl.json, the project's Python and tools.yaml, plus the
+# group's tools.yaml). A run that changes any of those must carry the rebuilt
+# page: a stale stamp is denied, and so is a page rebuilt on disk but not
+# staged. Judged on the fingerprint, so it needs no warehouse; the platform
+# suite's test_blueprint.py fails a pull request whose committed page is stale.
+blueprint_required:
+  - scope: "groups/*/projects/*/**"
+  - scope: "groups/*/tools.yaml"
+
 # A single loop run may not touch more than this many files.
 #
 # Enforced three times, over this one number. `.git/hooks/pre-commit` counts a

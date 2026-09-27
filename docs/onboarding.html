@@ -123,7 +123,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <div class="fact"><dt>Toolkits</dt><dd>26</dd></div>
 <div class="fact"><dt>Pinned upstreams</dt><dd>26</dd></div>
 <div class="fact"><dt>pf commands</dt><dd>31</dd></div>
-<div class="fact"><dt>Tests</dt><dd>1218</dd></div>
+<div class="fact"><dt>Tests</dt><dd>1229</dd></div>
 </dl>
 <section id="model">
 <div class="sect-head">
@@ -337,6 +337,7 @@ uv run pf pr report</code></pre>
 <tr><td><code>dev serving</code></td><td>the served dev database and its guardrails, documented in the project rather than assumed</td></tr>
 <tr><td><code>project atlas</code></td><td>each project publishes a picture of its own graph, refreshed around its own dbt runs</td></tr>
 <tr><td><code>architecture map</code></td><td>every feature of this project, present or absent, so an agent routes instead of reading the tree</td></tr>
+<tr><td><code>architecture blueprint</code></td><td>a TOGAF-ordered page of the whole project, derived from its artefacts and stamped so the gate keeps it current</td></tr>
 <tr><td><code>harness map</code></td><td>what wraps an agent here — settings, gate verdicts, hooks, CI, loops — read from the files that enforce it</td></tr>
 <tr><td><code>conformance</code></td><td>fail here rather than in BI</td></tr>
 </tbody></table></div>
@@ -402,7 +403,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <p class="eyebrow">The tool</p>
 <h2>Every pf command</h2>
 </div>
-<p class="prose">31 commands and 23 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
+<p class="prose">31 commands and 24 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
 <div class="scroll"><table>
 <thead><tr>
 <th>Command</th>
@@ -451,6 +452,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <tr><td><code>pf align</code></td><td>Onboarding ladder: evaluate → implement → validate, one stage at a time.</td></tr>
 <tr><td><code>pf arch</code></td><td>Architecture maps: <code>build</code>/<code>check</code> for the repository, <code>pf arch &lt;group&gt; &lt;project&gt;</code> or <code>--all</code> for projects.</td></tr>
 <tr><td><code>pf artifacts</code></td><td>Publish and fetch build artefacts (R2/S3).</td></tr>
+<tr><td><code>pf blueprint</code></td><td>Every project&#x27;s architecture blueprint, from its artefacts and an optional docs/blueprint.yaml: <code>build</code>/<code>check</code>.</td></tr>
 <tr><td><code>pf code</code></td><td>The code graph: which function calls which, under <code>platform/</code> only. Models, columns, metrics and lineage are <code>pf kg</code> — this is the Python structure the data graph has no notion of.</td></tr>
 <tr><td><code>pf context</code></td><td>The context every agent reads before its first edit — the entry points (CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, the test index, the repo map — checked and refreshed as one.</td></tr>
 <tr><td><code>pf group</code></td><td>Tenant groups: their manifest, lifecycle and readiness.</td></tr>

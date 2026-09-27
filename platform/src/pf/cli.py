@@ -4314,6 +4314,68 @@ def cmd_arch_check() -> None:
     console.print("[green]✓[/] the architecture map matches the repository")
 
 
+# ------------------------------------------------------------- blueprint --
+blueprint_app = typer.Typer(
+    help="Every project's architecture blueprint, from its artefacts and an optional "
+    "docs/blueprint.yaml: `build`/`check`."
+)
+app.add_typer(blueprint_app, name="blueprint")
+
+
+@blueprint_app.command("build")
+def cmd_blueprint_build(
+    group: str = typer.Argument("", help="omit for every project"),
+    project: str = typer.Argument(""),
+) -> None:
+    """Write the page: derived ER, lineage and dictionary, plus the spec's narrative.
+
+    Traces column lineage from the compiled dbt SQL against the warehouse, so it
+    runs after a dbt build. The page is stamped with a fingerprint of its inputs.
+    """
+    from pf.projections import blueprint as bp
+
+    targets = [t for t in _targets(group, project) if bp.has_blueprint(t[2])]
+    if not targets:
+        console.print("[yellow]no project here has a knowledge graph yet (or every spec says enabled: false)[/]")
+        return
+    failed = 0
+    for g, p, d in targets:
+        try:
+            out, origin = bp.build(d, g, p)
+        except (FileNotFoundError, ValueError) as exc:
+            failed += 1
+            console.print(f"[red]✗[/] {g}/{p}: {exc}")
+            continue
+        size = out.stat().st_size // 1024
+        console.print(f"[green]✓[/] {out.relative_to(root())}  [dim]({size} KB · lineage {origin})[/]")
+    if failed:
+        raise typer.Exit(1)
+
+
+@blueprint_app.command("check")
+def cmd_blueprint_check(
+    group: str = typer.Argument("", help="omit for every project"),
+    project: str = typer.Argument(""),
+) -> None:
+    """Is each committed page current with its inputs? Needs no warehouse.
+
+    Recomputes the fingerprint of the spec, models, macros, graph, MDL and
+    project Python and compares it with the page's stamp.
+    """
+    from pf.projections import blueprint as bp
+
+    bad = 0
+    for g, p, d in _targets(group, project):
+        result = bp.check(d, g, p)
+        if result.state == "none":
+            continue
+        ok = result.state == "current"
+        bad += not ok
+        console.print(f"{'[green]✓' if ok else '[red]✗'}[/] {g}/{p}: {result.message}")
+    if bad:
+        raise typer.Exit(1)
+
+
 # ------------------------------------------------------------ onboarding --
 guide_app = typer.Typer(help="The onboarding guide: `build`/`check`, generated from the repository.")
 app.add_typer(guide_app, name="guide")

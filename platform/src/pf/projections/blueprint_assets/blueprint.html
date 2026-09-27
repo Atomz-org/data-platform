@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="pf-blueprint-inputs" content="{{stamp}}">
+<meta name="generator" content="pf blueprint build">
+<title>{{title}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root {
+  --bg: #F3F5F3;
+  --surface: #FFFFFF;
+  --sunk: #E9EDEA;
+  --ink: #17201D;
+  --muted: #56635E;
+  --line: #D5DCD8;
+  --accent: #1D5C77;
+  --accent-soft: #DCEAF0;
+  --brass: #8E6512;
+  --brass-soft: #F3E8CF;
+  --ok: #2F7D5B;
+  --focus: #1D5C77;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+    --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+    --ok: #6CC19A; --focus: #7DB9D2;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E1412; --surface: #151D1A; --sunk: #1B2521; --ink: #E4EBE8; --muted: #9AA8A3;
+  --line: #2A3632; --accent: #7DB9D2; --accent-soft: #17313B; --brass: #D8AE58; --brass-soft: #2E2715;
+  --ok: #6CC19A; --focus: #7DB9D2;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); padding-inline: 16px; }
+.shell { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 40px; padding-block: 32px 80px; }
+@media (max-width: 900px) { .shell { grid-template-columns: minmax(0, 1fr); gap: 16px; } nav.index { position: static !important; max-height: none !important; } }
+h1, h2, h3, h4 { font-family: var(--cond); text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(30px, 4.2vw, 46px); line-height: 1.05; font-weight: 700; }
+h2 { font-size: 26px; font-weight: 700; line-height: 1.15; }
+h3 { font-size: 19px; font-weight: 600; }
+h4 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 72ch; }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+nav.index { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow: auto; font-size: 13.5px; }
+nav.index .brand { font-family: var(--cond); font-weight: 700; font-size: 15px; margin-bottom: 14px; }
+nav.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+nav.index li a { display: grid; grid-template-columns: 34px 1fr; gap: 6px; padding: 5px 8px; border-radius: 6px; text-decoration: none; color: var(--muted); }
+nav.index li a:hover { background: var(--sunk); color: var(--ink); }
+nav.index li a .ph { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 2px; }
+nav.index .sub a { padding-left: 48px; grid-template-columns: 1fr; font-size: 12.5px; }
+
+header.top { display: grid; gap: 18px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 28px; font-variant-numeric: tabular-nums; }
+.stats div { display: grid; }
+.stats b { font-family: var(--cond); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.stats span { font-size: 12.5px; color: var(--muted); }
+.miro { display: grid; gap: 8px; background: var(--accent-soft); border-radius: 10px; padding: 16px 18px; }
+.miro h3 { font-size: 16px; }
+.miro ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 90ch; }
+
+section.phase { padding-top: 44px; display: grid; gap: 20px; scroll-margin-top: 16px; }
+.phase-head { display: grid; gap: 8px; }
+.phase-head .ph { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.phase-head p { color: var(--muted); }
+
+figure.dia { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+figure.dia figcaption { padding: 16px 18px 10px; display: grid; gap: 4px; }
+figure.dia figcaption p { color: var(--muted); font-size: 14px; }
+.tag { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.canvas { overflow-x: auto; padding: 8px 18px 14px; }
+.canvas pre.mermaid { margin: 0; background: transparent; font-family: var(--mono); font-size: 12px; white-space: pre; }
+.canvas svg { max-width: none !important; height: auto; }
+.canvas.wide svg { min-width: 1100px; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 18px 16px; border-top: 1px solid var(--line); align-items: center; }
+button { font: 500 13px/1 var(--sans); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.status { font-size: 12.5px; color: var(--ok); min-height: 1em; }
+.code { display: none; margin: 0 18px 16px; }
+.code.open { display: block; }
+.code textarea { width: 100%; min-height: 220px; font: 12px/1.45 var(--mono); color: var(--ink); background: var(--sunk); border: 1px solid var(--line); border-radius: 8px; padding: 10px; resize: vertical; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 20px; }
+
+.tablebox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; display: grid; }
+.tablebox .head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; padding: 14px 18px; align-items: center; }
+.tablebox .head p { color: var(--muted); font-size: 13.5px; }
+.scroll { overflow: auto; max-height: 560px; border-top: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; vertical-align: top; padding: 7px 12px; border-bottom: 1px solid var(--line); }
+th { position: sticky; top: 0; background: var(--sunk); font-family: var(--cond); font-weight: 600; font-size: 13px; z-index: 1; }
+td:first-child { white-space: nowrap; }
+td code { font-size: 12px; }
+input[type="search"], select { font: 14px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; min-width: 0; }
+
+.explorer { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 16px; }
+.explorer .pick { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.explorer label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.hops { display: grid; gap: 14px; }
+.hop { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+@media (max-width: 600px) { .hop { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.hop .lvl { font-family: var(--mono); font-size: 11.5px; color: var(--brass); padding-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 12.5px var(--mono); border-radius: 6px; padding: 4px 8px; color: #fff; cursor: pointer; border: 0; }
+.chip small { opacity: 0.8; }
+.expr { font: 12px/1.5 var(--mono); background: var(--sunk); border-radius: 8px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
+.l-raw { background: #8A6A1C; } .l-seed { background: #6B6F2A; } .l-staging { background: #1F6F8B; }
+.l-intermediate { background: #2F7D5B; } .l-mart { background: #243B6B; } .l-report { background: #3E4A8A; }
+.l-semantic { background: #7A3E8E; } .l-util { background: #64748B; } .l-source { background: #475569; } .l-serve { background: #0F766E; } .l-ctl { background: #9F3A38; }
+details > summary { cursor: pointer; font-weight: 500; padding: 0 18px 14px; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<!-- Generated by `pf blueprint build` from docs/blueprint.yaml and the project's artefacts. Do not edit by hand:
+     the next build discards the edit, and `pf blueprint check` judges the page on its inputs. -->
+<div class="shell">
+<nav class="index" aria-label="Architecture phases">
+  <div class="brand">{{title}}</div>
+  <ol>{{nav}}</ol>
+</nav>
+<main>
+<header class="top">
+  <div class="eyebrow">{{eyebrow}}</div>
+  <h1>{{title}}</h1>
+  <p class="lede">{{lede}}</p>
+  <div class="stats">{{stats}}</div>
+  <div class="miro">
+    <h3>Putting these on a Miro board</h3>
+    <ol>
+      <li><b>Copy for Miro</b> copies the diagram as Mermaid code. In Miro, open the diagram-from-code option (Mermaid) and paste. It arrives as editable shapes and connectors.</li>
+      <li><b>Copy image</b> puts a high-resolution PNG on the clipboard. Paste straight onto the board. Use this where Miro's Mermaid import does not support a diagram type.</li>
+      <li><b>Copy as table</b> copies tab-separated rows. Paste onto the board and Miro creates a table, the same as pasting from a spreadsheet.</li>
+    </ol>
+  </div>
+  <div class="legend" aria-label="Layer colours">
+    <span><i class="l-source"></i>External source</span><span><i class="l-raw"></i>Raw</span><span><i class="l-seed"></i>Reference seed</span>
+    <span><i class="l-staging"></i>Staging</span><span><i class="l-intermediate"></i>Intermediate</span><span><i class="l-mart"></i>Mart</span>
+    <span><i class="l-report"></i>Report board</span><span><i class="l-semantic"></i>Semantic</span><span><i class="l-serve"></i>Serving</span><span><i class="l-ctl"></i>Control and orchestration</span>
+  </div>
+</header>
+{{body}}
+<footer><p>{{footer}}</p></footer>
+</main>
+</div>
+<script id="payload" type="application/json">{{payload}}</script>
+<script>
+(function () {
+  var P = JSON.parse(document.getElementById("payload").textContent);
+
+  function flash(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.textContent = ""; }, 3500);
+  }
+
+  function copyText(text, statusEl, okMsg) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      flash(statusEl, ok ? okMsg : "Copying was blocked. Use Show code and copy it by hand.");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { flash(statusEl, okMsg); }, fallback);
+    } else { fallback(); }
+  }
+
+  function svgToPng(svg) {
+    return new Promise(function (resolve, reject) {
+      var clone = svg.cloneNode(true);
+      var vb = (svg.getAttribute("viewBox") || "").split(/[\s,]+/).map(Number);
+      var w = vb.length === 4 ? vb[2] : svg.getBoundingClientRect().width;
+      var h = vb.length === 4 ? vb[3] : svg.getBoundingClientRect().height;
+      clone.setAttribute("width", w); clone.setAttribute("height", h);
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.style.maxWidth = "none";
+      var data = new XMLSerializer().serializeToString(clone);
+      var img = new Image();
+      img.onload = function () {
+        var scale = 2, c = document.createElement("canvas");
+        c.width = Math.ceil(w * scale); c.height = Math.ceil(h * scale);
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.scale(scale, scale); ctx.drawImage(img, 0, 0, w, h);
+        try { c.toBlob(function (b) { b ? resolve(b) : reject(new Error("empty")); }, "image/png"); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = function () { reject(new Error("render")); };
+      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(data);
+    });
+  }
+
+  function copyImage(fig, statusEl) {
+    var svg = fig.querySelector(".canvas svg");
+    if (!svg) { flash(statusEl, "The diagram has not rendered yet. Try again in a moment."); return; }
+    if (!(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)) {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "This browser cannot copy images, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+      return;
+    }
+    var item = new ClipboardItem({ "image/png": svgToPng(svg) });
+    navigator.clipboard.write([item]).then(function () {
+      flash(statusEl, "Image copied. Paste it onto the Miro board.");
+    }, function () {
+      copyText(new XMLSerializer().serializeToString(svg), statusEl, "Image copy was blocked, so the SVG code was copied instead. Save it as a .svg file and drag it into Miro.");
+    });
+  }
+
+  document.querySelectorAll("figure.dia").forEach(function (fig) {
+    var key = fig.getAttribute("data-key");
+    var src = P.diagrams[key];
+    var tools = fig.querySelector(".tools");
+    var status = document.createElement("span"); status.className = "status"; status.setAttribute("role", "status");
+    var b1 = document.createElement("button"); b1.type = "button"; b1.className = "primary"; b1.textContent = "Copy for Miro";
+    var b2 = document.createElement("button"); b2.type = "button"; b2.textContent = "Copy image";
+    var b3 = document.createElement("button"); b3.type = "button"; b3.textContent = "Show code"; b3.setAttribute("aria-expanded", "false");
+    var box = document.createElement("div"); box.className = "code";
+    var ta = document.createElement("textarea"); ta.readOnly = true; ta.value = src; ta.id = "code-" + key; ta.setAttribute("aria-label", "Mermaid code for " + key);
+    box.appendChild(ta);
+    b1.addEventListener("click", function () { copyText(src, status, "Mermaid copied. Paste it into Miro's diagram-from-code option."); });
+    b2.addEventListener("click", function () { copyImage(fig, status); });
+    b3.addEventListener("click", function () {
+      var open = box.classList.toggle("open");
+      b3.textContent = open ? "Hide code" : "Show code"; b3.setAttribute("aria-expanded", String(open));
+    });
+    tools.append(b1, b2, b3, status);
+    fig.appendChild(box);
+  });
+
+  function reEsc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+  function kindOf(expr, parent, col) {
+    var bare = expr.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    var re = new RegExp('^(?:[\\w"]+\\.)?"?' + reEsc(parent) + '"?(?:\\s+AS\\s+"?' + reEsc(col) + '"?)?$', "i");
+    return re.test(bare) ? "direct" : "derived";
+  }
+  function lineageRows() {
+    var rows = [["Layer", "Model", "Column", "Parent model", "Parent column", "Kind", "Expression"]];
+    Object.keys(P.lineage).sort().forEach(function (m) {
+      var x = P.lineage[m];
+      Object.keys(x.cols).forEach(function (c) {
+        var parents = x.cols[c][0], expr = x.cols[c][1] || "";
+        if (!parents.length) rows.push([x.layer, m, c, "", "", "literal or generated", expr]);
+        parents.forEach(function (p) {
+          rows.push([x.layer, m, c, p[0], p[1], kindOf(expr, p[1], c), expr]);
+        });
+      });
+    });
+    return rows;
+  }
+  function tableText(key) {
+    if (key === "lineage") return lineageRows().map(function (r) { return r.join("\t"); }).join("\n");
+    var t = document.querySelector('[data-table="' + key + '"] table');
+    if (!t) return "";
+    return Array.prototype.map.call(t.rows, function (tr) {
+      return Array.prototype.map.call(tr.cells, function (td) { return td.textContent.replace(/[\t\n]+/g, " ").trim(); }).join("\t");
+    }).join("\n");
+  }
+  document.querySelectorAll("[data-copy-table]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var status = btn.parentNode.querySelector(".status");
+      copyText(tableText(btn.getAttribute("data-copy-table")), status, "Copied. Paste onto the Miro board to make a table.");
+    });
+  });
+
+  document.querySelectorAll("[data-filter]").forEach(function (input) {
+    var box = input.closest(".tablebox");
+    var trs = Array.prototype.slice.call(box.querySelectorAll("tbody tr"));
+    input.addEventListener("input", function () {
+      var q = input.value.trim().toLowerCase();
+      trs.forEach(function (r) { r.hidden = q && r.textContent.toLowerCase().indexOf(q) === -1; });
+    });
+  });
+
+  // Full lineage table, built when first opened
+  var det = document.querySelector('[data-table="lineage"] details');
+  if (det)
+  det.addEventListener("toggle", function () {
+    var host = document.getElementById("lineage-table");
+    if (!det.open || host.firstChild) return;
+    var lines = lineageRows();
+    var t = document.createElement("table");
+    var head = "<thead><tr>" + lines[0].map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr></thead>";
+    var body = lines.slice(1).map(function (l) {
+      return "<tr>" + l.map(function (v, i) { return "<td>" + (i === 6 ? "<code>" + esc(v) + "</code>" : esc(v)) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    t.innerHTML = head + "<tbody>" + body + "</tbody>";
+    host.appendChild(t);
+  });
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // Lineage explorer
+  var L = P.lineage;
+  var LAYERS = ["raw", "seed", "staging", "intermediate", "mart", "report", "util"];
+  function layerGuess(m) {
+    if (L[m]) return L[m].layer;
+    if (m.indexOf("seed.") === 0) return "seed";
+    if (/^(mcx|yahoo_finance|gold_api)\./.test(m)) return "raw";
+    if (m.indexOf("stg_") === 0) return "staging";
+    if (m.indexOf("int_") === 0) return "intermediate";
+    if (m.indexOf("rpt_") === 0) return "report";
+    if (m.indexOf("fct_") === 0 || m.indexOf("dim_") === 0) return "mart";
+    return "util";
+  }
+  var down = {};
+  Object.keys(L).forEach(function (m) {
+    Object.keys(L[m].cols).forEach(function (c) {
+      L[m].cols[c][0].forEach(function (p) {
+        var k = p[0] + "." + p[1];
+        (down[k] = down[k] || []).push([m, c]);
+      });
+    });
+  });
+  var models = Object.keys(L).sort(function (a, b) {
+    return LAYERS.indexOf(layerGuess(b)) - LAYERS.indexOf(layerGuess(a)) || a.localeCompare(b);
+  });
+  var selM = document.getElementById("ex-model"), selC = document.getElementById("ex-col");
+  if (!models.length || !selM) return;
+  models.forEach(function (m) { var o = document.createElement("option"); o.value = m; o.textContent = m; selM.appendChild(o); });
+  function fillCols(m, pick) {
+    selC.innerHTML = "";
+    Object.keys(L[m].cols).forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = c; selC.appendChild(o); });
+    if (pick && L[m].cols[pick]) selC.value = pick;
+  }
+  function traceUp(m, c) {
+    var seen = {}, levels = [], frontier = [[m, c]], depth = 0;
+    seen[m + "." + c] = true;
+    while (frontier.length && depth < 20) {
+      var next = [];
+      frontier.forEach(function (mc) {
+        var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+        (x ? x[0] : []).forEach(function (p) {
+          var k = p[0] + "." + p[1];
+          if (!seen[k]) { seen[k] = true; next.push(p); }
+        });
+      });
+      if (next.length) levels.push(next);
+      frontier = next; depth++;
+    }
+    return levels;
+  }
+  function chip(m, c) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip l-" + layerGuess(m);
+    b.innerHTML = "<small>" + esc(m) + ".</small>" + esc(c);
+    b.title = "Show lineage for " + m + "." + c;
+    b.addEventListener("click", function () { if (L[m]) { selM.value = m; fillCols(m, c); render(); } });
+    return b;
+  }
+  function currentEdges() {
+    var m = selM.value, c = selC.value, edges = [], seen = {}, stack = [[m, c]];
+    while (stack.length) {
+      var mc = stack.pop(), k = mc[0] + "." + mc[1];
+      if (seen[k]) continue; seen[k] = true;
+      var x = L[mc[0]] && L[mc[0]].cols[mc[1]];
+      (x ? x[0] : []).forEach(function (p) { edges.push([p[0], p[1], mc[0], mc[1], x[1]]); stack.push(p); });
+    }
+    return edges;
+  }
+  function mid(s) { return s.replace(/[^A-Za-z0-9_]/g, "_"); }
+  function traceMermaid() {
+    var edges = currentEdges(), byModel = {};
+    function add(m, c) { (byModel[m] = byModel[m] || {})[c] = true; }
+    add(selM.value, selC.value);
+    edges.forEach(function (e) { add(e[0], e[1]); add(e[2], e[3]); });
+    var out = ["flowchart LR"];
+    Object.keys(byModel).sort(function (a, b) { return LAYERS.indexOf(layerGuess(a)) - LAYERS.indexOf(layerGuess(b)); }).forEach(function (m) {
+      out.push("  subgraph " + mid("g_" + m) + '["' + m + '"]');
+      Object.keys(byModel[m]).forEach(function (c) { out.push("    " + mid(m + "__" + c) + '["' + c + '"]:::' + layerGuess(m)); });
+      out.push("  end");
+    });
+    edges.forEach(function (e) { out.push("  " + mid(e[0] + "__" + e[1]) + " --> " + mid(e[2] + "__" + e[3])); });
+    ["raw", "seed", "staging", "intermediate", "mart", "report", "util"].forEach(function (k) { out.push("  classDef " + k + " fill:" + P.layers[k] + ",stroke:" + P.layers[k] + ",color:#ffffff"); });
+    return out.join("\n");
+  }
+  function render() {
+    var m = selM.value, c = selC.value, x = L[m].cols[c];
+    document.getElementById("ex-expr").textContent = m + "." + c + "  =  " + (x[1] || "(column passed through)");
+    var up = document.getElementById("ex-up"); up.innerHTML = "";
+    var levels = traceUp(m, c);
+    if (!levels.length) {
+      var p = document.createElement("p"); p.textContent = "No upstream column: a literal, a generated value or a raw source column."; up.appendChild(p);
+    }
+    levels.forEach(function (lv, i) {
+      var row = document.createElement("div"); row.className = "hop";
+      var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = i === 0 ? "direct parents" : i + 1 + " hops up";
+      var chips = document.createElement("div"); chips.className = "chips";
+      lv.forEach(function (p) { chips.appendChild(chip(p[0], p[1])); });
+      row.append(lab, chips); up.appendChild(row);
+    });
+    var dn = document.getElementById("ex-down"); dn.innerHTML = "";
+    var kids = down[m + "." + c] || [], meas = P.measures[m + "." + c] || [];
+    var row = document.createElement("div"); row.className = "hop";
+    var lab = document.createElement("div"); lab.className = "lvl"; lab.textContent = "read by";
+    var chips = document.createElement("div"); chips.className = "chips";
+    kids.forEach(function (k) { chips.appendChild(chip(k[0], k[1])); });
+    meas.forEach(function (ms) { var s = document.createElement("span"); s.className = "chip l-semantic"; s.innerHTML = "<small>metric ·</small>" + esc(ms); chips.appendChild(s); });
+    if (!kids.length && !meas.length) { var n = document.createElement("span"); n.textContent = "Nothing downstream in the dbt project. Report pages may still read it."; n.style.color = "var(--muted)"; chips.appendChild(n); }
+    row.append(lab, chips); dn.appendChild(row);
+  }
+  selM.addEventListener("change", function () { fillCols(selM.value); render(); });
+  selC.addEventListener("change", render);
+  document.getElementById("ex-copy-mmd").addEventListener("click", function () {
+    copyText(traceMermaid(), document.getElementById("ex-status"), "Mermaid for this trace copied.");
+  });
+  document.getElementById("ex-copy-tsv").addEventListener("click", function () {
+    var rows = [["Parent model", "Parent column", "Model", "Column", "Expression"].join("\t")];
+    currentEdges().forEach(function (e) { rows.push(e.map(function (v) { return String(v).replace(/\t|\n/g, " "); }).join("\t")); });
+    copyText(rows.join("\n"), document.getElementById("ex-status"), "Trace copied as a table.");
+  });
+  var start = P.focus && L[P.focus[0]] ? P.focus : [models[0], null];
+  selM.value = start[0]; fillCols(start[0], start[1]); render();
+})();
+</script>
+<script src="{{mermaid_src}}"></script>
+<script>if (window.mermaid) { mermaid.initialize({ startOnLoad: true }); }</script>
+</body>
+</html>
