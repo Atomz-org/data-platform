@@ -715,6 +715,16 @@ jobs:
         # exclusion. It is checked where the comparison is honest: `pf harness
         # check` in `agent-context.yml`, which regenerates nothing.
         #
+        # The architecture blueprint (`docs/*blueprint*.html`) joins them for the
+        # reason `okf/**` does: it is a projection of the graph and the MDL, both
+        # excluded, and of a warehouse this runner does not have, so the
+        # blueprint step here rebuilds it from the empty MDL — a data dictionary
+        # of 0 columns against the committed 483 — and the diff says nothing
+        # about drift. It is checked where the comparison is honest:
+        # `test_blueprint.py` in the platform suite compares each committed
+        # page's stamp with the *committed* inputs and regenerates nothing, and
+        # the commit gate (`blueprint_required`) does the same before a push.
+        #
         # `package-lock.yml` is excluded for the opposite reason to all of them:
         # it is reproducible, just not from this repository. `packages.yml` pins
         # ranges (`>=1.3.0, <2.0.0`), so `dbt deps` resolves against the package
@@ -734,6 +744,7 @@ jobs:
               ':(exclude)**/transform/package-lock.yml' \
               ':(exclude)**/kg/architecture.md' \
               ':(exclude)**/HARNESS.md' \
+              ':(exclude)**/docs/*blueprint*.html' \
               ':(exclude)**/transform/tests/expectations/*.sql'; then
             echo "::error::pf bootstrap --all changed tracked files, so the"
             echo "::error::committed tree is behind the scaffold. Run it"
