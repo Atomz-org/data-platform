@@ -85,6 +85,13 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"toolName": "bash", "toolArgs": json.dumps({"command": t}), "cwd": str(root)}
     ),
+    "cursor": lambda tool, root, t: {
+        "hook_event_name": "preToolUse",
+        "tool_name": "Write" if tool == "edit" else "Shell",
+        "tool_input": {"file_path": str(root / t)} if tool == "edit" else {"command": t},
+        "conversation_id": "c",
+        "workspace_roots": [str(root)],
+    },
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
@@ -195,6 +202,19 @@ def test_vscode_edits_are_gated_too(repo: Path, name: str, tool_input: dict) -> 
     """The same file serves VS Code, whose payload is snake_case with its own tool ids."""
     p = {"hook_event_name": "PreToolUse", "tool_name": name, "tool_input": tool_input, "cwd": str(repo)}
     assert denied(run("copilot", "pre", json.dumps(p))), name
+
+
+def test_cursors_refusal_is_in_both_of_its_forms(repo: Path) -> None:
+    """Cursor reads `{"permission": "deny"}`; exit 2 blocks too. Both, so a
+    release that honours only one still refuses."""
+    stdout, stderr, code = run("cursor", "pre", json.dumps(SAMPLES["cursor"]("edit", repo, ".env")))
+    assert code == 2 and json.loads(stdout)["permission"] == "deny" and "denylist" in stderr
+
+
+def test_the_first_cursor_events_still_answer(repo: Path) -> None:
+    """A checkout whose hooks.json still says `shell` gets the same guard."""
+    p = {"command": "git commit -n -m x", "tool_name": "Shell", "tool_input": {"command": "git commit -n -m x"}}
+    assert denied(run("cursor", "shell", json.dumps({**p, "cwd": str(repo)})))
 
 
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:

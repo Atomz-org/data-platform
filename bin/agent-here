@@ -47,6 +47,8 @@ case "$tool" in
     need gemini; exec gemini "$@" ;;
   copilot)
     need copilot; exec copilot "$@" ;;
+  cursor)
+    need cursor-agent; exec cursor-agent "$@" ;;
   *)
     echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
     exit 64 ;;

@@ -13,7 +13,6 @@ You are the **Session** scope: a person is in the loop and you have a shell.
 Ask the graph before reading files — `kg_search`, `kg_neighbors`, `impact_analysis`
 are MCP tools from `.cursor/mcp.json`. Stay inside one project; never read a sister.
 
-Enforcement here is narrower than in Claude Code, and `docs/HARNESSES.md` says how:
-the shell hook blocks `--no-verify`; edits are judged after the fact and again at
-commit by `gate.yaml`. Run `uv run pf gate --paths <files>` before you commit.
-Leave a note before you finish (`AGENTS.md` §5).
+`.cursor/hooks.json` runs the same gate Claude Code runs, before every write, delete,
+shell command and read (`docs/HARNESSES.md`). A refusal is a finding: report it; never
+retry it another way. Leave a note before you finish (`AGENTS.md` §5).
