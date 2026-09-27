@@ -16,11 +16,12 @@ back on allow, exit 2 with a reason on stderr means deny. Anything that goes
 wrong exits 0 — a hook that fails closed on a parse error blocks every command
 in the editor, which is a worse outcome than one missed check.
 
-The `--no-verify` matcher is flag-position-aware: it tokenises the command and
-skips the values of `-m`, `-F`, `--message` and friends, so a commit message
-that *mentions* `--no-verify` is not refused. That false positive is the reason
-the upstream this is ported from (`vendor/ecc`, `scripts/hooks/block-no-verify.js`)
-rewrote its own matcher; it is worth not repeating.
+The matcher is `pf.agenthook.bypasses_hooks`, shared with every harness: it
+reads the command as a shell would, skips git's global options and the values
+of `-m`, `-F` and friends, and also refuses `core.hooksPath` pointed elsewhere.
+A commit message that *mentions* `--no-verify` is not refused — the false
+positive the upstream this is ported from (`vendor/ecc`,
+`scripts/hooks/block-no-verify.js`) rewrote its own matcher over.
 
 Nothing here writes provenance. The chain's stages are written by Claude Code's
 hooks around a tool call that has not yet run; Cursor's `afterFileEdit` fires
@@ -32,13 +33,9 @@ that is the truth this script keeps.
 from __future__ import annotations
 
 import json
-import shlex
 import subprocess
 import sys
 from pathlib import Path
-
-#: Flags whose *next* token is a value and must not be inspected.
-_TAKES_VALUE = {"-m", "--message", "-F", "--file", "-C", "--reuse-message", "--author", "--date"}
 
 
 def repo_root(start: Path) -> Path:
@@ -48,45 +45,23 @@ def repo_root(start: Path) -> Path:
     return start
 
 
-def bypasses_hooks(command: str) -> bool:
-    """True when `command` is a git commit/push that skips hooks.
+def _core_matcher():
+    """The `--no-verify` / `core.hooksPath` matcher, from `pf.agenthook` — one
+    implementation for every harness, so a fix to it is a fix here too."""
+    src = str(Path(__file__).resolve().parents[1] / "src")
+    if src not in sys.path:
+        sys.path.insert(0, src)
+    from pf.agenthook import bypasses_hooks as core
 
-    Only `git commit` and `git push` carry `--no-verify`; `-n` means no-verify
-    for commit alone (for push it is `--dry-run`'s short form on some versions,
-    so it is not treated as a bypass there).
-    """
+    return core
+
+
+def bypasses_hooks(command: str) -> bool:
+    """True when `command` would commit or push past the pre-commit gate."""
     try:
-        toks = shlex.split(command)
-    except ValueError:
-        toks = command.split()
-    # Walk every `git ...` segment: `a && git commit -n` must still be caught.
-    for i, t in enumerate(toks):
-        if t != "git":
-            continue
-        seg = toks[i + 1 :]
-        sub = next((s for s in seg if not s.startswith("-")), "")
-        if sub not in {"commit", "push"}:
-            continue
-        skip = False
-        for s in seg:
-            if skip:
-                skip = False
-                continue
-            if s in _TAKES_VALUE:
-                skip = True
-                continue
-            if s.startswith(("-m", "-F")) and len(s) > 2 and not s.startswith("--"):
-                continue  # `-mMessage` / `-am "..."` style, value attached
-            if s in {"--no-verify", "--no-verify=true"}:
-                return True
-            if sub == "commit" and s == "-n":
-                return True
-        if sub == "commit" and any(
-            s.startswith("-") and not s.startswith("--") and "n" in s[1:] and s not in _TAKES_VALUE for s in seg
-        ):
-            # bundled short flags: `-an`, `-na`
-            return True
-    return False
+        return _core_matcher()(command)
+    except Exception:  # noqa: BLE001 — never fail closed on our own bug
+        return False
 
 
 def _shell(payload: dict, raw: str) -> int:

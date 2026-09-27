@@ -133,53 +133,254 @@ def rel_to(root: Path, path: str, cwd: Path) -> str:
 
 
 # ------------------------------------------------------------ --no-verify --
-#: Flags whose *next* token is a value and must not be inspected.
-_TAKES_VALUE = {"-m", "--message", "-F", "--file", "-C", "--reuse-message", "--author", "--date"}
+# The commit gate is `.git/hooks/pre-commit`. A command gets past it in one of
+# three ways, and the guard refuses all three, wherever in a command line the
+# git invocation sits:
+#
+#   skip it          `git commit --no-verify` / `-n` / `-an`, `git push --no-verify`
+#   point it away    `git -c core.hooksPath=/dev/null commit`, the same through
+#                    `--config-env` or `GIT_CONFIG_*` in the environment, and
+#                    `git config core.hooksPath <dir>` for every later commit
+#   hide it          any of the above inside `sh -c "..."`, `eval`, `$(...)`
+#
+# It reads the command the way a shell would, not as a flat word list. The
+# first version took the first non-flag word after `git` as the subcommand —
+# so `git -C . commit --no-verify` read `.` and walked straight through — and
+# read flags past the end of the git command, so `git commit -m x && ls -ln`
+# was refused as a commit `-n`. Both fixed here: commands are split at shell
+# operators, and git's global options are consumed with their values before
+# the subcommand is read.
+
+#: Characters that end a word and, alone or doubled, separate commands.
+_PUNCT = "();<>|&\n"
+_SEPARATORS = {";", ";;", "&", "&&", "|", "||", "|&", "(", ")", "\n"}
+_REDIRECTS = {">", ">>", "<", "<<", "<<<", "<>", ">&", "<&", "&>", "&>>", ">|"}
+
+#: Words that run the command after them: skipped, with their own options.
+_WRAPPERS = {"command", "builtin", "exec", "env", "sudo", "doas", "nice", "nohup", "time", "xargs", "timeout", "stdbuf"}
+_SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
+
+#: `git` global options whose value is the *next* word when not attached with `=`.
+_GIT_GLOBAL_VALUE = {
+    "-C",
+    "-c",
+    "--git-dir",
+    "--work-tree",
+    "--namespace",
+    "--super-prefix",
+    "--config-env",
+    "--exec-path",
+}
+
+#: Per subcommand: options whose value is the next word (long form) or the rest
+#: of the bundle (short form) — never inspected as flags.
+_COMMIT_SHORT_VALUE = set("mFCctSu")
+_COMMIT_LONG_VALUE = {
+    "--message",
+    "--file",
+    "--reuse-message",
+    "--reedit-message",
+    "--author",
+    "--date",
+    "--template",
+    "--fixup",
+    "--squash",
+    "--trailer",
+    "--cleanup",
+    "--pathspec-from-file",
+    "--gpg-sign",
+    "--untracked-files",
+}
+_PUSH_LONG_VALUE = {"--repo", "--receive-pack", "--exec", "--push-option"}
+_PUSH_SHORT_VALUE = set("o")
+
+#: `git config` forms that only read, or that reset `core.hooksPath` to the default.
+_CONFIG_READ = {
+    "--get",
+    "--get-all",
+    "--get-regexp",
+    "--get-urlmatch",
+    "-l",
+    "--list",
+    "--unset",
+    "--unset-all",
+    "get",
+    "list",
+    "unset",
+}
+
+_HOOKS_PATH = "core.hookspath"
+
+
+def _words(command: str) -> list[str]:
+    lex = shlex.shlex(command, posix=True, punctuation_chars=_PUNCT)
+    lex.whitespace = " \t\r"
+    lex.whitespace_split = True
+    lex.commenters = "#"
+    return list(lex)
+
+
+def _segments(words: list[str]) -> list[list[str]]:
+    out: list[list[str]] = [[]]
+    skip = False
+    for w in words:
+        if skip:
+            skip = False
+            continue
+        if w in _SEPARATORS or (set(w) <= set("();|&\n") and w):
+            out.append([])
+        elif w in _REDIRECTS:
+            skip = True  # the redirect's target is not an argument
+        else:
+            # A backtick opens or closes a command substitution: a command of
+            # its own, so git inside one is in command position.
+            if w.startswith("`"):
+                out.append([])
+            out[-1].append(w.strip("`"))
+            if w.endswith("`") and len(w) > 1:
+                out.append([])
+    return [s for s in out if s]
+
+
+def _names_hooks_path(text: str) -> bool:
+    return _HOOKS_PATH in text.lower()
+
+
+def _git_argv(seg: list[str]) -> tuple[list[str], list[str]] | None:
+    """(the environment assignments, git's argv) when `seg` runs git, else None."""
+    env: list[str] = []
+    i = 0
+    while i < len(seg):
+        w = seg[i]
+        if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", w):
+            env.append(w)
+        elif w in _WRAPPERS:
+            i += 1
+            # the wrapper's own options, and `timeout`'s duration
+            while i < len(seg) and (
+                seg[i].startswith("-")
+                or re.match(r"^\d+[smhd]?$", seg[i])
+                or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", seg[i])
+            ):
+                if re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", seg[i]):
+                    env.append(seg[i])
+                i += 1
+            continue
+        else:
+            break
+        i += 1
+    if i < len(seg) and Path(seg[i]).name == "git":
+        return env, seg[i + 1 :]
+    return None
+
+
+def _shell_scripts(seg: list[str]) -> list[str]:
+    """Command strings run by `sh -c "..."` or `eval ...` in this segment."""
+    if not seg:
+        return []
+    head = Path(seg[0]).name
+    if head == "eval":
+        return [" ".join(seg[1:])]
+    if head in _SHELLS:
+        for j, w in enumerate(seg[1:], 1):
+            if w.startswith("-") and "c" in w[1:] and not w.startswith("--") and j + 1 < len(seg):
+                return [seg[j + 1]]
+    return []
+
+
+def _subcommand(argv: list[str]) -> tuple[str, list[str], bool]:
+    """(subcommand, its args, whether a global option points the hooks away)."""
+    away = False
+    i = 0
+    while i < len(argv):
+        w = argv[i]
+        if w == "--":
+            i += 1
+            break
+        if not w.startswith("-"):
+            break
+        name, eq, val = w.partition("=")
+        if name in _GIT_GLOBAL_VALUE:
+            if not eq and name != "--exec-path":
+                val = argv[i + 1] if i + 1 < len(argv) else ""
+                i += 1
+            if name in ("-c", "--config-env") and _names_hooks_path(val):
+                away = True
+        elif w.startswith("-c") and len(w) > 2 and _names_hooks_path(w):
+            away = True  # `-ccore.hooksPath=...`
+        i += 1
+    sub = argv[i] if i < len(argv) else ""
+    return sub, argv[i + 1 :], away
+
+
+def _skips_verify(sub: str, args: list[str]) -> bool:
+    """Whether `git <sub> <args>` passes `--no-verify` (last of --verify/--no-verify wins)."""
+    short_value = _COMMIT_SHORT_VALUE if sub == "commit" else _PUSH_SHORT_VALUE
+    long_value = _COMMIT_LONG_VALUE if sub == "commit" else _PUSH_LONG_VALUE
+    skipped = False
+    i = 0
+    while i < len(args):
+        w = args[i]
+        i += 1
+        if w == "--":
+            break
+        if w.startswith("--"):
+            name, eq, _ = w.partition("=")
+            if name == "--no-verify":
+                skipped = True
+            elif name == "--verify":
+                skipped = False
+            elif name in long_value and not eq and not name.startswith(("--gpg-sign", "--untracked-files")):
+                i += 1  # its value is the next word
+            continue
+        if w.startswith("-") and len(w) > 1:
+            for k, ch in enumerate(w[1:]):
+                if sub == "commit" and ch == "n":
+                    skipped = True
+                if ch in short_value:
+                    # The rest of the bundle is the value; if there is no rest,
+                    # the next word is — except -S/-u, whose value is optional
+                    # and only ever attached.
+                    if k == len(w) - 2 and ch not in "Su":
+                        i += 1
+                    break
+    return skipped
 
 
 def bypasses_hooks(command: str) -> bool:
-    """True when `command` is a git commit/push that skips hooks.
-
-    Flag-position-aware: it skips the values of `-m`, `-F`, `--message` and
-    friends, so a commit message that *mentions* `--no-verify` is not refused.
-    `-n` is no-verify for commit only; for push it is `--dry-run`.
-    """
+    """True when `command` would commit or push past the pre-commit gate."""
     try:
-        toks = shlex.split(command)
+        words = _words(command)
     except ValueError:
-        toks = command.split()
-    for i, t in enumerate(toks):
-        if t != "git":
+        return False  # an unterminated quote does not run; never fail closed on parsing
+    for seg in _segments(words):
+        if any(bypasses_hooks(script) for script in _shell_scripts(seg)):
+            return True
+        found = _git_argv(seg)
+        if found is None:
             continue
-        seg = toks[i + 1 :]
-        sub = next((s for s in seg if not s.startswith("-")), "")
-        if sub not in {"commit", "push"}:
+        env, argv = found
+        if any(e.startswith("GIT_CONFIG") and _names_hooks_path(e) for e in env):
+            return True
+        sub, args, away = _subcommand(argv)
+        if away:
+            return True
+        if sub == "config":
+            touches = any(_names_hooks_path(a) for a in args)
+            reads = any(a in _CONFIG_READ for a in args)
+            if touches and not reads:
+                return True
             continue
-        skip = False
-        for s in seg:
-            if skip:
-                skip = False
-                continue
-            if s in _TAKES_VALUE:
-                skip = True
-                continue
-            if s.startswith(("-m", "-F")) and len(s) > 2 and not s.startswith("--"):
-                continue  # `-mMessage` / `-am "..."` style, value attached
-            if s in {"--no-verify", "--no-verify=true"}:
-                return True
-            if sub == "commit" and s == "-n":
-                return True
-        if sub == "commit" and any(
-            s.startswith("-") and not s.startswith("--") and "n" in s[1:] and s not in _TAKES_VALUE for s in seg
-        ):
-            return True  # bundled short flags: `-an`, `-na`
+        if sub in ("commit", "push") and _skips_verify(sub, args):
+            return True
     return False
 
 
 NO_VERIFY = (
-    "BLOCKED — `--no-verify` skips the pre-commit gate. gate.yaml's denylist and\n"
-    "maxFiles are enforced there; that flag walks past both. Commit without it;\n"
-    "if the gate is wrong, say why in the commit message and let a person decide.\n"
+    "BLOCKED — this skips the pre-commit gate (`--no-verify`, or `core.hooksPath` pointed\n"
+    "elsewhere). gate.yaml's denylist and maxFiles are enforced there; either walks past\n"
+    "both. Commit without it; if the gate is wrong, say why in the commit message and let\n"
+    "a person decide.\n"
 )
 
 

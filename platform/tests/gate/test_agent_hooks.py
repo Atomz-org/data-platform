@@ -119,9 +119,20 @@ def test_an_ask_rule_is_never_a_silent_allow(repo: Path) -> None:
     assert v.decision == "ask" and "git push" in v.message
 
 
-def test_a_harness_already_answering_is_not_answered_for_twice(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Cursor runs `.claude/settings.json` hooks too; its own config reaches the core."""
+def test_cursor_keeps_the_claude_gate_until_it_has_its_own(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Cursor CLI runs `.claude/settings.json` hooks too. Until a Cursor
+    adapter gates before the action, that imported hook is Cursor's only
+    pre-edit gate, and must still refuse."""
     monkeypatch.setenv("CURSOR_VERSION", "3.0")
+    assert denied(run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))))
+
+
+def test_a_harness_that_gates_itself_is_not_answered_for_twice(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Once Cursor has its own adapter, the imported Claude hook steps aside."""
+    from types import SimpleNamespace
+
+    monkeypatch.setenv("CURSOR_VERSION", "3.0")
+    monkeypatch.setattr(harness_adapters, "_spec", lambda key: SimpleNamespace(adapter=object()))
     assert run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))) == ("", "", 0)
 
 
@@ -192,10 +203,49 @@ def test_garbage_in_is_allowed_out(harness: str, raw: str) -> None:
 @pytest.mark.parametrize(
     "command,bypasses",
     [
+        # a message that mentions the flag is a message
         ('git commit -m "note: never use --no-verify here"', False),
-        ("git push -n origin main", False),
+        ('git commit -m "document core.hooksPath" -F notes.txt', False),
+        ("git commit -mn", False),  # -m's value is "n"
+        ("git push -n origin main", False),  # -n is dry-run for push
+        ("git status --no-verify", False),
+        ("echo hello", False),
+        ('git commit -m "unterminated', False),
+        ("", False),
+        # flags of a *later* command are not git's (CodeRabbit, #584)
+        ("git commit -m x && ls -ln", False),
+        ("git commit -m x && git push -n", False),
+        ("git commit -m x | tee log -n", False),
+        # --no-verify, however it is spelled or placed
+        ("git commit --no-verify -m x", True),
+        ("git commit -am x -n", True),
         ("git commit -an -m x", True),
+        ("git commit -n", True),
+        ("git commit --no-verify --verify -m x", False),  # the last one wins
+        ("git push --no-verify", True),
         ("uv run pytest && git push --no-verify origin main", True),
+        # git's global options before the subcommand (CodeRabbit, #584)
+        ("git -C . commit --no-verify -m x", True),
+        ("git --git-dir .git --work-tree . commit -n", True),
+        ("/usr/bin/git -P commit --no-verify", True),
+        # pointing the hooks away
+        ("git -c core.hooksPath=/dev/null commit -m x", True),
+        ("git -c CORE.HOOKSPATH=/tmp push", True),
+        ("git --config-env=core.hooksPath=HOOKS commit -m x", True),
+        ("GIT_CONFIG_PARAMETERS=\"'core.hooksPath=/x'\" git commit -m x", True),
+        ("env GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/x git commit -m x", True),
+        ("git config core.hooksPath /dev/null", True),
+        ("git config set --local core.hooksPath .nohooks", True),
+        ("git config --get core.hooksPath", False),
+        ("git config --unset core.hooksPath", False),
+        ("git -c user.name=x commit -m y", False),
+        # hidden in another command
+        ('sh -c "git commit --no-verify -m x"', True),
+        ("bash -lc 'git -C . commit -n'", True),
+        ("echo $(git commit -n -m x)", True),
+        ("echo `git commit -n -m x`", True),
+        ("sudo git commit --no-verify", True),
+        ("timeout 30 git push --no-verify", True),
     ],
 )
 def test_the_no_verify_guard_is_flag_position_aware(command: str, bypasses: bool) -> None:

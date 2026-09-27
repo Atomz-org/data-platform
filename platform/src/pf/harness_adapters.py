@@ -275,13 +275,22 @@ def _deferred(c: Call) -> str:
 
 
 def _claude_elsewhere() -> bool:
-    """Cursor's CLI and Copilot also run `.claude/settings.json` hooks. Their own
-    generated configs reach the core already; answering a second time as
+    """Whether a *Claude* hook is really another harness that gates on its own.
+
+    The Cursor CLI also runs `.claude/settings.json` hooks. Once Cursor's own
+    config calls the core before a tool runs, answering a second time as
     "claude" would record every action twice and skip the permission lists
-    that only non-Claude harnesses are given here."""
+    only non-Claude harnesses are given. But until then the imported Claude
+    hook is the only pre-action gate Cursor has, and stepping aside would let
+    a denylisted edit through — so the decision follows whether a Cursor
+    adapter is registered, not merely whether Cursor is the caller.
+    """
     import os
 
-    return bool(os.environ.get("CURSOR_VERSION") or os.environ.get("CURSOR_PROJECT_DIR"))
+    if not (os.environ.get("CURSOR_VERSION") or os.environ.get("CURSOR_PROJECT_DIR")):
+        return False
+    s = _spec("cursor")
+    return bool(s and s.adapter is not None)
 
 
 # -------------------------------------------------------------------- run --
