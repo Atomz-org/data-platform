@@ -240,12 +240,13 @@ def test_an_ask_rule_is_never_a_silent_allow(repo: Path) -> None:
     assert v.decision == "ask" and "git push" in v.message
 
 
-def test_cursor_keeps_the_claude_gate_until_it_has_its_own(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """The Cursor CLI runs `.claude/settings.json` hooks too. Until a Cursor
-    adapter gates before the action, that imported hook is Cursor's only
-    pre-edit gate, and must still refuse."""
+def test_cursor_hands_the_gate_from_the_claude_hook_to_its_own(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """With the Cursor adapter registered, the `.claude/settings.json` hook the
+    Cursor CLI imports steps aside — and Cursor's own `preToolUse` refuses the
+    same edit, so the hand-over leaves nothing ungated."""
     monkeypatch.setenv("CURSOR_VERSION", "3.0")
-    assert denied(run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))))
+    assert run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))) == ("", "", 0)
+    assert denied(run("cursor", "pre", json.dumps(SAMPLES["cursor"]("edit", repo, ".env"))))
 
 
 def test_a_harness_that_gates_itself_is_not_answered_for_twice(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
