@@ -14,7 +14,7 @@ and says where a hook enforces it for you and where only you can.
 
 | How you got here | Your entry point | Reaches this file |
 |---|---|---|
-| Codex, Copilot coding agent, Cursor, Jules, OpenCode, Amp | `AGENTS.md`, natively | you are reading it |
+| Codex, Copilot coding agent, Cursor, Jules, OpenCode, Junie, Amp | `AGENTS.md`, natively | you are reading it |
 | Claude Code — a session, or `@claude` in Actions | `CLAUDE.md` + hooks; the SessionStart hook names this file | on demand |
 | Copilot in VS Code — chat, inline | `.github/copilot-instructions.md` | it points here; `chat.useAgentsMdFile: true` reads it directly |
 | Gemini CLI, Gemini Code Assist | `GEMINI.md` | imports this file |
