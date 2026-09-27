@@ -1013,6 +1013,29 @@ def _render_architecture(root: Path, group: str, project: str) -> StepResult:
     return StepResult("architecture map", status, detail)
 
 
+def _render_blueprint(root: Path, group: str, project: str) -> StepResult:
+    """The project's architecture blueprint (`pf.projections.blueprint`).
+
+    Every project gets one, with nothing to configure: the narrative is derived
+    from its sources, enabled tools and graph, and `docs/blueprint.yaml` only
+    overrides. Written here so a newly scaffolded project has a current page —
+    and a stamp the commit gate can judge — from its first bootstrap. Without
+    a warehouse yet, the page is written without column lineage and gains it on
+    the next build that has one; that is not a failure.
+    """
+    from pf.projections import blueprint as bp
+
+    d = _pdir(root, group, project)
+    if not bp.has_blueprint(d):
+        return StepResult(
+            "architecture blueprint", "skipped", "no knowledge graph yet, or disabled in docs/blueprint.yaml"
+        )
+    existed = bp.output_path(d).is_file()
+    out, origin = bp.build(d, group, project)
+    return StepResult("architecture blueprint", "ok" if existed else "created",
+                      f"{out.relative_to(d).as_posix()} · lineage {origin.split(' (')[0]}")
+
+
 def _validate(root: Path, group: str, project: str) -> StepResult:
     from pf.ontology.validate import validate_project
     from pf.runtime.dbt_runtime import validate_paths
@@ -1176,6 +1199,12 @@ STEPS: list[Step] = [
         "architecture map",
         "every feature of this project, present or absent, so an agent routes instead of reading the tree",
         _render_architecture,
+    ),
+    Step(
+        "architecture blueprint",
+        "a TOGAF-ordered page of the whole project, derived from its artefacts and stamped "
+        "so the gate keeps it current",
+        _render_blueprint,
     ),
     Step(
         "harness map",

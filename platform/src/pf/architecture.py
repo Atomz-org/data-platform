@@ -291,6 +291,16 @@ CORE: tuple[Feature, ...] = (
         made_by="pf arch",
         self_reporting=True,
     ),
+    # Default-on and stamped: the gate (`blueprint_required`) refuses a change to
+    # the page's inputs without the page, so present-and-stale cannot be merged.
+    Feature(
+        "blueprint",
+        "architecture blueprint",
+        "semantics",
+        "TOGAF-ordered, Miro-ready page: ER, model and column lineage, tools, deployment, governance",
+        ("docs/*blueprint*.html", "docs/blueprint.yaml"),
+        made_by="pf blueprint build",
+    ),
     Feature(
         "atlas",
         "project atlas",

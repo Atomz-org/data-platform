@@ -408,6 +408,7 @@ def check_paths(
     results.extend(check_evidence(paths, root, added))
     results.extend(check_record_immutability(paths, root, added))
     results.extend(check_harness(paths, root))
+    results.extend(check_blueprint(paths, root))
     return results
 
 
@@ -746,6 +747,76 @@ def check_harness(paths: list[str], root: Path) -> list[GateResult]:
                     f"regenerated for {reached[rel]} but not in this run — `git add {rel}`",
                 )
             )
+    return out
+
+
+def check_blueprint(paths: list[str], root: Path) -> list[GateResult]:
+    """A change to what a project's blueprint is built from lands with the page
+    rebuilt — `gate.yaml`'s `blueprint_required`.
+
+    Every project with a knowledge graph has a blueprint unless its
+    `docs/blueprint.yaml` says `enabled: false`. A changed path inside such a
+    project that is one of its inputs (`pf.projections.blueprint.INPUTS`), or
+    the page itself, puts the project in judgement — and a group's tools.yaml
+    puts every sister in judgement (`GROUP_INPUTS`): the page's
+    stamp must equal the fingerprint of the inputs as they stand, and a page
+    rebuilt on disk but left out of the run is refused, because the commit
+    would lack it. Judged on the fingerprint alone, so no warehouse is needed —
+    the rebuild does, and the message names the verb.
+    """
+    policy = load_policy(root)
+    rules = [x for x in (policy.get("blueprint_required") or []) if isinstance(x, dict)]
+    if not rules:
+        return []
+    try:
+        from pf.projections import blueprint as bp
+    except Exception:  # noqa: BLE001 — a gate must not fail closed on an import
+        return []
+    norm = [_norm(p) for p in paths]
+    reached: dict[tuple[str, str], str] = {}
+    for p in norm:
+        if not any(_glob(p, str(r.get("scope") or "")) for r in rules):
+            continue
+        m = _SCOPE.match(p)
+        if not m:
+            continue
+        group, project = m.group(1), m.group(2)
+        if not project:
+            # A group-level input (its tools.yaml) changes every sister's page.
+            if p[len(f"groups/{group}/"):] in bp.GROUP_INPUTS:
+                for spec_home in sorted((root / "groups" / group / "projects").glob("*/kg/graph.json")):
+                    if bp.has_blueprint(spec_home.parents[1]):
+                        reached.setdefault((group, spec_home.parents[1].name), p)
+            continue
+        project_dir = root / "groups" / group / "projects" / project
+        if not bp.has_blueprint(project_dir):
+            continue
+        inner = p[len(f"groups/{group}/projects/{project}/"):]
+        try:
+            page = bp.output_path(project_dir).relative_to(project_dir).as_posix()
+        except Exception:  # noqa: BLE001 — a spec that does not parse is judged below
+            page = ""
+        if bp.is_input(inner) or inner == page:
+            reached.setdefault((group, project), p)
+    out: list[GateResult] = []
+    for (group, project), why in sorted(reached.items()):
+        project_dir = root / "groups" / group / "projects" / project
+        label = f"blueprint_required:{group}/{project}"
+        try:
+            result = bp.check(project_dir, group, project)
+        except Exception as exc:  # noqa: BLE001 — a broken spec is a finding, not a crash
+            out.append(GateResult("deny", label, why, f"docs/blueprint.yaml cannot be read: {exc}"))
+            continue
+        rel = f"groups/{group}/projects/{project}/{result.output}"
+        if result.state != "current":
+            out.append(
+                GateResult(
+                    "deny", label, rel,
+                    f"stale against {why} — {result.message}; the page lands with the change it describes",
+                )
+            )
+        elif rel not in norm and _map_state(root, rel) in ("unstaged", "untracked"):
+            out.append(GateResult("deny", label, rel, f"rebuilt for {why} but not in this run — `git add {rel}`"))
     return out
 
 
