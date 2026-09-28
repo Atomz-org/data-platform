@@ -72,7 +72,7 @@ flowchart LR
 flowchart TB
     A["annotations<br/>contracts/annotations.yaml<br/>1"]:::platform
     O["ontology<br/>platform + group + project"]:::platform
-    P["policy rules<br/>32"]:::platform
+    P["policy rules<br/>35"]:::platform
     K["knowledge graph<br/>kg_search · impact_analysis"]:::platform
     subgraph LG["what it stops"]
         direction TB
@@ -125,7 +125,7 @@ flowchart TB
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | Wren workspace | ✓ 3 | `mdl/wren` | the semantic layer as an LLM may read it: restricted columns withheld, rules and remembered questions beside it |
 | **governance** | | | |
-| project policy | ✓ 32 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
+| project policy | ✓ 35 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
