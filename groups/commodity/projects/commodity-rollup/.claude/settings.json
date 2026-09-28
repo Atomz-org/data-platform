@@ -76,7 +76,9 @@
       "Bash(wren:*)",
       "Bash(pf tool openmetadata:*)",
       "Bash(metadata:*)",
-      "Bash(pf tool okf:*)"
+      "Bash(pf tool okf:*)",
+      "Bash(pf govern:*)",
+      "Bash(pf dora:*)"
     ]
   },
   "hooks": {
