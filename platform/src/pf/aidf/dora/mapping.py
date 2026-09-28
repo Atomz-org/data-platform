@@ -20,6 +20,11 @@ CHECK_KINDS: tuple[str, ...] = (
     "prowler", "trivy", "provenance", "file", "declaration", "workflow", "air", "live_github",
 )
 
+#: Prowler providers an entity may name. The four clouds carry the DORA
+#: framework's own requirement ids; `github` and `cloudflare` are mapped by
+#: check-id prefix (GitHub has no entry in the framework, Cloudflare does).
+PROVIDERS: tuple[str, ...] = ("aws", "azure", "gcp", "kubernetes", "github", "cloudflare")
+
 
 @dataclass(frozen=True)
 class Check:

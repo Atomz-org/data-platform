@@ -216,6 +216,12 @@ def _run_prowler(provider: str, cfg: AidfConfig, out_dir: Path, inputs: _Inputs)
         return
     fw = str((cfg.dora.get("prowler") or {}).get("compliance") or "")
     args = [exe, provider]
+    if provider == "github":
+        gh = cfg.dora.get("github") or {}
+        if gh.get("organization"):
+            args += ["--organization", str(gh["organization"])]
+        for repo in gh.get("repositories") or []:
+            args += ["--repository", str(repo)]
     try:
         listed = subprocess.run([exe, provider, "--list-compliance"], capture_output=True, text=True,
                                 timeout=120, check=False).stdout
@@ -232,18 +238,19 @@ def _run_prowler(provider: str, cfg: AidfConfig, out_dir: Path, inputs: _Inputs)
     try:
         proc = subprocess.run(args, capture_output=True, text=True, timeout=3600, check=False)
     except (OSError, subprocess.SubprocessError) as exc:
-        inputs.tools["prowler"] = f"failed: {exc}"
+        inputs.tools[f"prowler:{provider}"] = f"failed: {exc}"
         return
     if proc.returncode not in (0, 3):
-        inputs.tools["prowler"] = f"exit {proc.returncode}: {proc.stderr.strip()[-300:]}"
+        inputs.tools[f"prowler:{provider}"] = f"exit {proc.returncode}: {proc.stderr.strip()[-300:]}"
         return
     files = sorted(out_dir.glob(f"{stem}*.ocsf.json"))
     if not files:
-        inputs.tools["prowler"] = "ran, but wrote no OCSF file"
+        inputs.tools[f"prowler:{provider}"] = "ran, but wrote no OCSF file"
         return
-    inputs.findings = ocsf_mod.load_findings(files[-1])
-    inputs.files["ocsf"] = str(files[-1])
-    inputs.tools["prowler"] = f"ran ({len(inputs.findings)} findings)"
+    found = ocsf_mod.load_findings(files[-1])
+    inputs.findings = (inputs.findings or []) + found
+    inputs.files[f"ocsf:{provider}"] = str(files[-1])
+    inputs.tools[f"prowler:{provider}"] = f"ran ({len(found)} findings)"
 
 
 def _run_trivy(root: Path, out_dir: Path, cfg: AidfConfig, inputs: _Inputs) -> None:
@@ -418,23 +425,33 @@ def _judge(check: Check, *, root: Path, cfg: AidfConfig, inputs: _Inputs, live: 
 
     elif kind == "prowler":
         if inputs.findings is None:
-            res.detail = (f"no Prowler scan ({inputs.tools.get('prowler', 'no provider declared')})")
+            ran = ", ".join(f"{k.split(':', 1)[-1]}: {v}" for k, v in inputs.tools.items() if k.startswith("prowler"))
+            res.detail = f"no Prowler scan ({ran or 'no provider declared'})"
         else:
             thr = str((cfg.dora.get("prowler") or {}).get("severity_threshold") or "high").upper()
-            prefixes = check.prefixes_for(cfg.provider) if cfg.provider else []
             keys = check.compliance_keys or ["dora"]
             wanted = set(check.requirements)
+
+            def _by_prefix(f: ocsf_mod.Finding) -> bool:
+                # Each finding is judged by the provider it came from — one
+                # audit may hold a gcp scan and a github scan side by side.
+                # A finding the framework stamped is placed by its stamp only:
+                # a prefix must not move an Art. 9 finding onto Art. 8.
+                if any(f.requirements(k) for k in keys):
+                    return False
+                return any(f.check_id.startswith(p) for p in check.prefixes_for(f.provider or cfg.provider))
+
             # The framework's own mapping when the scan carried it (a run with
             # `--compliance dora_2022_2554` stamps every finding with the
             # DORA-Art ids it evidences); the check-id prefixes otherwise.
             by_requirement = [f for f in inputs.findings
                               if wanted and any(f.requirements(k) & wanted for k in keys)]
-            matched = by_requirement or [f for f in inputs.findings
-                                         if prefixes and any(f.check_id.startswith(p) for p in prefixes)]
+            matched = by_requirement + [f for f in inputs.findings if f not in by_requirement and _by_prefix(f)]
             failing = [f for f in matched if f.failed and _SEV_RANK.get(f.severity, 0) >= _SEV_RANK.get(thr, 3)]
             # `mapped_by` is 1 when the framework's own requirement ids did the
             # mapping and 0 when the prefixes did — the report says which.
             res.counts = {"matched": len(matched), "failing": len(failing), "mapped_by": 1 if by_requirement else 0}
+            res.evidence = [v for k, v in inputs.files.items() if k.startswith("ocsf")]
             res.evidence = [inputs.files.get("ocsf", "")]
             if failing:
                 res.status = "fail"
@@ -447,6 +464,7 @@ def _judge(check: Check, *, root: Path, cfg: AidfConfig, inputs: _Inputs, live: 
                 res.detail = "scan ran but exercised none of this article's checks"
                 if inputs.prowler_note:
                     res.detail += f" ({inputs.prowler_note})"
+            res.evidence = res.evidence or [v for k, v in inputs.files.items() if k.startswith("ocsf")]
 
     elif kind == "live_github":
         if live:
@@ -468,7 +486,7 @@ def run_audit(
     config: AidfConfig | None = None,
     mapping: Mapping | None = None,
     provider: str | None = None,
-    ocsf: Path | None = None,
+    ocsf: Path | list[Path] | None = None,
     vulns: Path | None = None,
     sbom: Path | None = None,
     out_dir: Path | None = None,
@@ -489,14 +507,20 @@ def run_audit(
 
     inputs = _Inputs()
     # -- gather
-    if ocsf is not None:
-        inputs.findings = ocsf_mod.load_findings(ocsf)
-        inputs.files["ocsf"] = str(ocsf)
-        inputs.tools["prowler"] = f"ingested {Path(ocsf).name} ({len(inputs.findings)} findings)"
-    elif run_tools and cfg.provider and cfg.in_scope:
-        _run_prowler(cfg.provider, cfg, out_dir, inputs)
+    ocsf_files = [Path(p) for p in ([ocsf] if isinstance(ocsf, (str, Path)) else (ocsf or []))]
+    if ocsf_files:
+        inputs.findings = []
+        for f in ocsf_files:
+            found = ocsf_mod.load_findings(f)
+            inputs.findings += found
+            provs = sorted({x.provider for x in found if x.provider}) or ["?"]
+            inputs.files[f"ocsf:{'+'.join(provs)}"] = str(f)
+            inputs.tools[f"prowler:{'+'.join(provs)}"] = f"ingested {f.name} ({len(found)} findings)"
+    elif run_tools and cfg.providers and cfg.in_scope:
+        for prov in cfg.providers:
+            _run_prowler(prov, cfg, out_dir, inputs)
     else:
-        inputs.tools["prowler"] = "skipped (no provider declared)" if not cfg.provider else "skipped"
+        inputs.tools["prowler"] = "skipped (no provider declared)" if not cfg.providers else "skipped"
 
     if sbom is not None:
         inputs.sbom_path = Path(sbom)
@@ -516,7 +540,9 @@ def run_audit(
         inputs.prov_error = f"{type(exc).__name__}: {exc}"[:200]
 
     # -- judge
-    report = AuditReport(group, project, datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"), cfg.provider, cfg.in_scope,
+    scanned = sorted({f.provider for f in (inputs.findings or []) if f.provider}) or cfg.providers
+    report = AuditReport(group, project, datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         ", ".join(scanned) if scanned else "", cfg.in_scope,
                          tools=inputs.tools, inputs=inputs.files, out_dir=str(out_dir))
     for art in m.articles:
         applies, reason = cfg.article_applies(art.id)

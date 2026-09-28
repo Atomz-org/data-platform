@@ -65,6 +65,15 @@ dora:
   # Empty means no infrastructure scan runs and the Prowler-evidenced checks
   # report `unverified` — never `pass`.
   provider: ""
+  # Further Prowler providers scanned beside the cloud and judged in the same
+  # audit: `github` (the organisation and repositories — branch protection,
+  # required reviews, MFA, Actions permissions; RTS Art. 16 and Art. 9) and
+  # `cloudflare` (the account behind the R2 artefact store). May only grow.
+  extra_providers: []
+  # Scope for the GitHub scan; empty scans everything the token can see.
+  github:
+    organization: ""
+    repositories: []
   prowler:
     # The Prowler compliance framework to request. If the installed Prowler does
     # not list it for the provider, the runner falls back to the check ids the

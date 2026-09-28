@@ -68,6 +68,7 @@ _ONLY_GROW = (
     "runtime.system_schemas",
     "runtime.elevated.paths",
     "dora.sbom.severity",
+    "dora.extra_providers",
 )
 #: Booleans that may only be switched *on* (True is the stricter state).
 _ONLY_ON = ("runtime.budgets.trip_circuit_breaker_on_breach",)
@@ -242,6 +243,13 @@ class AidfConfig:
     @property
     def provider(self) -> str:
         return str(self.dora.get("provider") or "")
+
+    @property
+    def providers(self) -> list[str]:
+        """The cloud first, then every extra provider, each once."""
+        out = [self.provider] if self.provider else []
+        out += [str(p) for p in (self.dora.get("extra_providers") or []) if str(p) not in out]
+        return out
 
     def article_applies(self, article_id: str) -> tuple[bool, str]:
         spec = (self.dora.get("articles") or {}).get(str(article_id)) or {}

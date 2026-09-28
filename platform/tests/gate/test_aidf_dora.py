@@ -42,11 +42,19 @@ def test_statutory_matrix_is_well_formed() -> None:
     assert len(ids) == len(set(ids))
 
 
-def test_every_prowler_check_maps_every_provider() -> None:
+def test_every_prowler_check_maps_every_cloud() -> None:
+    """A cloud-scoped check names prefixes for all four clouds; a check scoped
+    to one provider (`scope: [github]`) names that provider and nothing else."""
     for c in load_mapping().checks():
-        if c.kind == "prowler":
-            for provider in ("aws", "azure", "gcp", "kubernetes"):
-                assert c.prefixes_for(provider), f"{c.id} has no {provider} check prefixes"
+        if c.kind != "prowler":
+            continue
+        scope = c.spec.get("scope")
+        if scope:
+            assert all(c.prefixes_for(p) for p in scope), f"{c.id} scoped to {scope} but names no prefixes for it"
+            assert not any(c.prefixes_for(p) for p in ("aws", "azure", "gcp", "kubernetes")), f"{c.id} is scoped"
+            continue
+        for provider in ("aws", "azure", "gcp", "kubernetes"):
+            assert c.prefixes_for(provider), f"{c.id} has no {provider} check prefixes"
 
 
 # ------------------------------------------------------------------ OCSF --
@@ -341,12 +349,58 @@ def test_named_requirements_exist_in_the_pinned_framework() -> None:
 def test_prefixes_name_real_check_namespaces() -> None:
     """Every check-id prefix in the matrix names a service Prowler actually has,
     so a typo cannot quietly match nothing forever."""
+    from pf.aidf.dora.mapping import PROVIDERS
+
     services = REPO_ROOT / "vendor" / "prowler" / "prowler" / "providers"
     for c in load_mapping().checks():
         if c.kind != "prowler":
             continue
-        for provider in ("aws", "azure", "gcp", "kubernetes"):
+        for provider in PROVIDERS:
             have = {p.name for p in (services / provider / "services").iterdir() if p.is_dir()}
             for prefix in c.prefixes_for(provider):
                 svc = prefix.split("_", 1)[0]
                 assert svc in have, f"{c.id}: {provider} prefix {prefix!r} names no service"
+
+
+# ------------------------------------------------ several providers, one audit --
+
+def test_each_finding_is_judged_by_its_own_provider(repo: Path, tmp_path: Path) -> None:
+    """A gcp scan and a github scan ingested together: the github finding lands
+    on the RTS Art. 16 posture check by its own provider, the gcp one on Art. 9
+    by its DORA stamp, and the report names both."""
+    _overlay(repo, {"dora": {"provider": "gcp", "extra_providers": ["github"], "owner": "risk@example.com"}})
+    gcp = tmp_path / "gcp.ocsf.json"
+    gcp.write_text(json.dumps([{"status_code": "FAIL", "severity": "High", "cloud": {"provider": "gcp"},
+                                "unmapped": {"check_id": "iam_sa_no_administrative_privileges",
+                                             "compliance": {"DORA-2022/2554": ["DORA-Art9"]}}}]))
+    gh = tmp_path / "github.ocsf.json"
+    gh.write_text(json.dumps([
+        {"status_code": "FAIL", "severity": "High", "cloud": {"provider": "github"},
+         "unmapped": {"check_id": "repository_default_branch_requires_signed_commits"}},
+        {"status_code": "PASS", "severity": "Medium", "cloud": {"provider": "github"},
+         "unmapped": {"check_id": "organization_members_mfa_required"}},
+    ]))
+    rep = run_audit(repo, "g", "p", ocsf=[gcp, gh], run_tools=False, today=TODAY)
+    assert rep.provider == "gcp, github"
+    posture = _check(rep, "rts-16-github-posture")
+    assert posture.status == "fail" and "signed_commits" in posture.detail and posture.counts["mapped_by"] == 0
+    iam = _check(rep, "dora-9-iam")
+    assert iam.status == "fail" and iam.counts["matched"] == 2, "the stamped gcp finding plus the github MFA check"
+    assert _check(rep, "dora-8-asset-inventory").status == "unverified"
+    assert {k.split(":")[0] for k in rep.tools} >= {"prowler", "trivy"} or any(k.startswith("prowler:") for k in rep.tools)
+
+
+def test_extra_providers_only_grow_and_are_validated(tmp_path: Path) -> None:
+    from pf.aidf.config import load
+    from pf.aidf.dora.mapping import PROVIDERS
+
+    root = tmp_path
+    (root / "groups" / "g" / "projects" / "p" / "governance").mkdir(parents=True)
+    (root / "platform").mkdir()
+    (root / "groups" / "g" / "aidf.yaml").write_text(yaml.safe_dump({"dora": {"extra_providers": ["github"]}}))
+    (root / "groups" / "g" / "projects" / "p" / "governance" / "aidf.yaml").write_text(
+        yaml.safe_dump({"dora": {"provider": "gcp", "extra_providers": ["cloudflare"]}}))
+    cfg = load(root, "g", "p")
+    assert cfg.providers == ["gcp", "github", "cloudflare"], "the cloud first, then every extra, none dropped"
+    assert set(cfg.providers) <= set(PROVIDERS)
+    assert "github" in PROVIDERS and "cloudflare" in PROVIDERS

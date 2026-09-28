@@ -200,14 +200,15 @@ def dora_matrix(as_json: bool = typer.Option(False, "--json")) -> None:
 def dora_check() -> None:
     """The matrix is well-formed and every entity's DORA config resolves. The CI step."""
     from pf.aidf.config import AidfConfigError, entities, load
-    from pf.aidf.dora.mapping import load_mapping, validate_mapping
+    from pf.aidf.dora.mapping import PROVIDERS, load_mapping, validate_mapping
 
     problems = validate_mapping(load_mapping())
     for g, p in entities(root()):
         try:
             cfg = load(root(), g, p)
-            if cfg.provider and cfg.provider not in ("aws", "azure", "gcp", "kubernetes"):
-                problems.append(f"{g}/{p}: unknown provider {cfg.provider!r}")
+            for prov in cfg.providers:
+                if prov not in PROVIDERS:
+                    problems.append(f"{g}/{p}: unknown provider {prov!r} (one of {', '.join(PROVIDERS)})")
         except AidfConfigError as exc:
             problems.append(f"{g}/{p}: {exc}")
     for line in problems:
@@ -221,7 +222,8 @@ def dora_check() -> None:
 def dora_audit(
     group: str | None = typer.Argument(None), project: str | None = typer.Argument(None),
     provider: str = typer.Option("", "--provider", help="aws | azure | gcp | kubernetes; overrides aidf.yaml"),
-    ocsf: Path | None = typer.Option(None, "--ocsf", help="Prowler OCSF JSON to ingest instead of running Prowler"),
+    ocsf: list[Path] | None = typer.Option(None, "--ocsf", help="Prowler OCSF JSON to ingest instead of running "
+                                                             "Prowler; repeat for several scans (gcp + github)"),
     vulns: Path | None = typer.Option(None, "--vulns", help="Trivy JSON or CycloneDX with vulnerabilities to ingest"),
     sbom: Path | None = typer.Option(None, "--sbom", help="A CycloneDX SBOM produced elsewhere"),
     out: Path | None = typer.Option(None, "--out", help="Where to write; default <project>/governance/dora"),
@@ -236,7 +238,7 @@ def dora_audit(
 
     worst = 0
     for g, p in _entities(group, project):
-        rep = run_audit(root(), g, p, provider=provider or None, ocsf=ocsf, vulns=vulns, sbom=sbom,
+        rep = run_audit(root(), g, p, provider=provider or None, ocsf=ocsf or None, vulns=vulns, sbom=sbom,
                         out_dir=out if (out and group and project) else None, run_tools=run_tools, live=live,
                         record=record)
         worst = max(worst, rep.exit_code)

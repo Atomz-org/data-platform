@@ -94,8 +94,7 @@
             ],
             "gcp": [
               "cloudresourcemanager_",
-              "serviceusage_",
-              "iam_"
+              "serviceusage_"
             ],
             "kubernetes": [
               "core_",
@@ -158,6 +157,12 @@
               "apiserver_",
               "scheduler_",
               "controllermanager_"
+            ],
+            "github": [
+              "organization_members_mfa_required",
+              "organization_default_repository_permission_strict",
+              "organization_repository_creation_limited",
+              "organization_repository_deletion_limited"
             ]
           },
           "description": "Least-privilege IAM, MFA, secret hygiene and encryption at rest.",
@@ -199,6 +204,11 @@
               "kubelet_",
               "core_",
               "apiserver_"
+            ],
+            "cloudflare": [
+              "firewall_",
+              "zone_",
+              "dns_"
             ]
           },
           "description": "Security groups, VPC boundaries and external ingress limits.",
@@ -470,6 +480,24 @@
           "kind": "live_github",
           "aspect": "branch_protection",
           "description": "The default branch requires a pull request, passing checks and no force pushes."
+        },
+        {
+          "id": "rts-16-github-posture",
+          "kind": "prowler",
+          "scope": [
+            "github"
+          ],
+          "prefixes": {
+            "github": [
+              "repository_default_branch_",
+              "repository_secret_scanning_enabled",
+              "repository_dependency_scanning_enabled",
+              "repository_has_codeowners_file",
+              "githubactions_workflow_security_scan",
+              "organization_default_workflow_permissions_read_only"
+            ]
+          },
+          "description": "The organisation's repositories require protected default branches, reviews, signed commits and status checks, scan secrets and dependencies, and limit Actions permissions (Prowler github provider)."
         },
         {
           "id": "rts-16-commit-gate",
