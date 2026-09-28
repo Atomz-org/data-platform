@@ -129,7 +129,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/ask.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 11 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 12 | `docs/aidf.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/globex_eu/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -144,7 +144,7 @@ flowchart TB
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
 | okf | ✓ | `okf/index.md` | Open Knowledge Format: the semantic layer as portable, validated context for agents. |
 
-**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `aidf`, `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
 
 **Tools enabled:** `elementary`, `expectations`, `okf`, `openmetadata`, `recce`, `wren`
 
