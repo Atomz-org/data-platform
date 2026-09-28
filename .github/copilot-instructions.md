@@ -17,9 +17,11 @@ Your scope, in Copilot's terms:
   add a dependency, a model, a column or a generated file from a completion.
   A lesson you cannot write goes in a one-line `NOTE(memory):` comment for
   the person to turn into a note.
-- **Chat in agent mode → Session.** You have a shell and a person. There is
-  no PreToolUse hook here, so run the gate yourself before committing:
-  `uv run pf gate --paths "$(git diff --cached --name-only | tr '\n' ',')"`.
+- **Chat in agent mode → Session.** You have a shell and a person.
+  `.github/hooks/pf.json` runs the same gate Claude Code runs before each tool
+  call (VS Code: hooks are Preview; `chat.useHooks`). A refusal is a finding:
+  report it, never re-route it. If the hooks did not load, run the gate yourself
+  before committing: `uv run pf gate --paths "$(git diff --cached --name-only | tr '\n' ',')"`.
 - **The coding agent on an issue → Autonomous.** No one answers. Run every
   check in `AGENTS.md` §4, push the branch and describe it, leave a note
   (§5). Your environment is `.github/workflows/copilot-setup-steps.yml`.

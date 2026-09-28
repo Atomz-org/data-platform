@@ -79,6 +79,12 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"tool_name": "run_shell_command", "tool_input": {"command": t}, "cwd": str(root)}
     ),
+    # Copilot CLI, camelCase: `toolArgs` is a JSON *string*.
+    "copilot": lambda tool, root, t: (
+        {"toolName": "create", "toolArgs": json.dumps({"path": str(root / t), "file_text": "x"}), "cwd": str(root)}
+        if tool == "edit"
+        else {"toolName": "bash", "toolArgs": json.dumps({"command": t}), "cwd": str(root)}
+    ),
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
@@ -174,6 +180,21 @@ def test_gemini_reads_are_permission_checked(repo: Path) -> None:
     sister = repo / "groups" / "acme" / "projects" / "acme-us" / "src" / "x.py"
     p = {"tool_name": "read_file", "tool_input": {"file_path": str(sister)}, "cwd": str(cwd)}
     assert denied(run("gemini", "pre", json.dumps(p)))
+
+
+@pytest.mark.parametrize(
+    "name,tool_input",
+    [
+        ("create_file", {"filePath": ".env", "content": "x"}),
+        ("replace_string_in_file", {"filePath": ".env", "oldString": "a", "newString": "b"}),
+        ("multi_replace_string_in_file", {"replacements": [{"filePath": "ok.py"}, {"filePath": ".env"}]}),
+        ("apply_patch", {"input": "*** Begin Patch\n*** Update File: .env\n*** End Patch\n"}),
+    ],
+)
+def test_vscode_edits_are_gated_too(repo: Path, name: str, tool_input: dict) -> None:
+    """The same file serves VS Code, whose payload is snake_case with its own tool ids."""
+    p = {"hook_event_name": "PreToolUse", "tool_name": name, "tool_input": tool_input, "cwd": str(repo)}
+    assert denied(run("copilot", "pre", json.dumps(p))), name
 
 
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:

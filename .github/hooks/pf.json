@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot session",
+        "bash": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot session",
+        "timeout": 60,
+        "timeoutSec": 60
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot pre",
+        "bash": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot pre",
+        "timeout": 60,
+        "timeoutSec": 60
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot post",
+        "bash": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot post",
+        "timeout": 60,
+        "timeoutSec": 60
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot stop",
+        "bash": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py copilot stop",
+        "timeout": 60,
+        "timeoutSec": 60
+      }
+    ]
+  }
+}
