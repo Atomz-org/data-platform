@@ -1,16 +1,30 @@
 {
   "version": 1,
   "hooks": {
-    "beforeShellExecution": [
+    "sessionStart": [
       {
-        "command": "uv run python platform/hooks/cursor_hook.py shell",
-        "description": "gate.yaml cannot be bypassed: block --no-verify"
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py cursor session",
+        "timeout": 30
       }
     ],
-    "afterFileEdit": [
+    "preToolUse": [
       {
-        "command": "uv run python platform/hooks/cursor_hook.py edit",
-        "description": "gate.yaml verdict for the edited file (advisory \u2014 Cursor has no pre-edit hook)"
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py cursor pre",
+        "matcher": "Write|Edit|Delete|Shell|Read",
+        "timeout": 60
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py cursor post",
+        "matcher": "Write|Edit|Delete|Shell",
+        "timeout": 60
+      }
+    ],
+    "stop": [
+      {
+        "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py cursor stop",
+        "timeout": 30
       }
     ]
   }

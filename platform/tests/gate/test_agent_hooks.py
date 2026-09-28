@@ -85,6 +85,13 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"toolName": "bash", "toolArgs": json.dumps({"command": t}), "cwd": str(root)}
     ),
+    "cursor": lambda tool, root, t: {
+        "hook_event_name": "preToolUse",
+        "tool_name": "Write" if tool == "edit" else "Shell",
+        "tool_input": {"file_path": str(root / t)} if tool == "edit" else {"command": t},
+        "conversation_id": "c",
+        "workspace_roots": [str(root)],
+    },
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
@@ -197,6 +204,19 @@ def test_vscode_edits_are_gated_too(repo: Path, name: str, tool_input: dict) -> 
     assert denied(run("copilot", "pre", json.dumps(p))), name
 
 
+def test_cursors_refusal_is_in_both_of_its_forms(repo: Path) -> None:
+    """Cursor reads `{"permission": "deny"}`; exit 2 blocks too. Both, so a
+    release that honours only one still refuses."""
+    stdout, stderr, code = run("cursor", "pre", json.dumps(SAMPLES["cursor"]("edit", repo, ".env")))
+    assert code == 2 and json.loads(stdout)["permission"] == "deny" and "denylist" in stderr
+
+
+def test_the_first_cursor_events_still_answer(repo: Path) -> None:
+    """A checkout whose hooks.json still says `shell` gets the same guard."""
+    p = {"command": "git commit -n -m x", "tool_name": "Shell", "tool_input": {"command": "git commit -n -m x"}}
+    assert denied(run("cursor", "shell", json.dumps({**p, "cwd": str(repo)})))
+
+
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     from pf.memory import detect_agent
 
@@ -220,12 +240,13 @@ def test_an_ask_rule_is_never_a_silent_allow(repo: Path) -> None:
     assert v.decision == "ask" and "git push" in v.message
 
 
-def test_cursor_keeps_the_claude_gate_until_it_has_its_own(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """The Cursor CLI runs `.claude/settings.json` hooks too. Until a Cursor
-    adapter gates before the action, that imported hook is Cursor's only
-    pre-edit gate, and must still refuse."""
+def test_cursor_hands_the_gate_from_the_claude_hook_to_its_own(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """With the Cursor adapter registered, the `.claude/settings.json` hook the
+    Cursor CLI imports steps aside — and Cursor's own `preToolUse` refuses the
+    same edit, so the hand-over leaves nothing ungated."""
     monkeypatch.setenv("CURSOR_VERSION", "3.0")
-    assert denied(run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))))
+    assert run("claude", "pre", json.dumps(SAMPLES["claude"]("edit", repo, ".env"))) == ("", "", 0)
+    assert denied(run("cursor", "pre", json.dumps(SAMPLES["cursor"]("edit", repo, ".env"))))
 
 
 def test_a_harness_that_gates_itself_is_not_answered_for_twice(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:

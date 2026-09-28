@@ -22,7 +22,7 @@ provenance.
 |---|---|---|---|---|---|---|---|---|---|
 | Claude Code | `CLAUDE.md` + hooks | `.mcp.json` + power-tools plugin | hook — `pre_tool_use.py` on every Edit/Write | pre-commit | hooks write stages 01–03 | injected on turn one | `session_start.sh` | plugins — every toolkit | power-tools plugin |
 | Codex CLI | `AGENTS.md`, natively | `.codex/config.toml` | hook — trusted project only | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.codex/agents/` |
-| Cursor | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
+| Cursor | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | hook | pre-commit | hooks write stages 01–03 | injected on turn one | sessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.cursor/agents/` |
 | Copilot — CLI and VS Code | `.github/copilot-instructions.md` | `.vscode/mcp.json` | hook (VS Code: Preview) | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only | pre-commit, if installed in the runner | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
@@ -55,7 +55,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude|codex|copilot|gemini [args]
+bin/agent-here claude|codex|cursor|copilot|gemini [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -75,9 +75,8 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 
 - **Codex** loads `.codex/` — hooks, rules, MCP — only for a trusted project.
   Trust the checkout once when Codex asks. Untrusted, it has the commit gate only.
-**Cursor** — `beforeShellExecution` can block and `afterFileEdit` cannot, so
-  `platform/hooks/cursor_hook.py` blocks `--no-verify` before it runs and reports
-  `gate.yaml`'s verdict on an edit after the edit has happened.
+- **Cursor** cloud agents do not run `sessionStart`: they are gated but get no
+  turn-one context.
 - **Copilot coding agent** reads `.github/hooks/` from the default branch: a
   hook change reaches it after the merge, not on the branch that makes it.
 - **Copilot in VS Code** runs hooks as a Preview feature (`chat.useHooks`).
