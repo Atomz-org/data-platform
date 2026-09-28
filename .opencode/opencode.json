@@ -39,5 +39,13 @@
         "PF_PROJECT_DIR": "."
       }
     }
+  },
+  "permission": {
+    "bash": {
+      "git push*": "ask",
+      "gh pr create*": "ask",
+      "gh pr merge*": "ask",
+      "git submodule update*": "ask"
+    }
   }
 }

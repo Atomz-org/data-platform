@@ -92,11 +92,17 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         "conversation_id": "c",
         "workspace_roots": [str(root)],
     },
+    # What the plugin forwards: OpenCode's tool id, args, callID.
+    "opencode": lambda tool, root, t: (
+        {"tool": "write", "args": {"filePath": str(root / t), "content": "x"}, "callID": "c1", "cwd": str(root)}
+        if tool == "edit"
+        else {"tool": "bash", "args": {"command": t}, "callID": "c2", "cwd": str(root)}
+    ),
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
 #: hook stands aside on an `ask` — the rendered rule is checked instead.
-NATIVE_ASK = {"codex"}
+NATIVE_ASK = {"codex", "opencode"}
 
 
 def denied(out: tuple[str, str, int]) -> bool:
@@ -215,6 +221,19 @@ def test_the_first_cursor_events_still_answer(repo: Path) -> None:
     """A checkout whose hooks.json still says `shell` gets the same guard."""
     p = {"command": "git commit -n -m x", "tool_name": "Shell", "tool_input": {"command": "git commit -n -m x"}}
     assert denied(run("cursor", "shell", json.dumps({**p, "cwd": str(repo)})))
+
+
+def test_opencode_prompts_from_its_own_config(repo: Path) -> None:
+    from pf import harness
+
+    oc = json.loads(harness.targets(repo)[".opencode/opencode.json"])
+    assert oc["permission"]["bash"]["git push*"] == "ask"
+
+
+def test_opencode_patches_are_read_file_by_file(repo: Path) -> None:
+    patch = "*** Begin Patch\n*** Update File: platform/ok.py\n*** Add File: .env\n*** End Patch\n"
+    p = {"tool": "apply_patch", "args": {"patchText": patch}, "callID": "c3", "cwd": str(repo)}
+    assert denied(run("opencode", "pre", json.dumps(p)))
 
 
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:
