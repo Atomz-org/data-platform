@@ -142,6 +142,10 @@ def test_every_structured_target_parses_in_its_own_format(tmp_path: Path) -> Non
     assert set(codex_hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
     assert "apply_patch" in codex_hooks["PreToolUse"][0]["matcher"]
 
+    gemini_hooks = json.loads(r[".gemini/settings.json"])["hooks"]
+    assert set(gemini_hooks) == {"BeforeTool", "AfterTool", "SessionStart", "AfterAgent"}
+    assert all("$GEMINI_PROJECT_DIR" in ev[0]["hooks"][0]["command"] for ev in gemini_hooks.values())
+
 
 def test_rendering_is_deterministic_and_check_names_each_drift(tmp_path: Path) -> None:
     """Compared byte for byte in CI, so two renders must agree; and the check

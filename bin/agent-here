@@ -43,6 +43,8 @@ case "$tool" in
     exec sh "$here/claude-here" "$@" ;;
   codex)
     need codex; exec codex "$@" ;;
+  gemini)
+    need gemini; exec gemini "$@" ;;
   *)
     echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
     exit 64 ;;
