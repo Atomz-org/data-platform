@@ -41,6 +41,8 @@ need() { command -v "$1" >/dev/null 2>&1 || { echo "agent-here: '$1' is not on P
 case "$tool" in
   claude)
     exec sh "$here/claude-here" "$@" ;;
+  codex)
+    need codex; exec codex "$@" ;;
   *)
     echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
     exit 64 ;;

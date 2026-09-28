@@ -138,6 +138,10 @@ def test_every_structured_target_parses_in_its_own_format(tmp_path: Path) -> Non
 
     assert all(CURSOR_HOOK in h["command"] for ev in hooks.values() for h in ev)
 
+    codex_hooks = json.loads(r[".codex/hooks.json"])["hooks"]
+    assert set(codex_hooks) == {"SessionStart", "PreToolUse", "PostToolUse", "Stop"}
+    assert "apply_patch" in codex_hooks["PreToolUse"][0]["matcher"]
+
 
 def test_rendering_is_deterministic_and_check_names_each_drift(tmp_path: Path) -> None:
     """Compared byte for byte in CI, so two renders must agree; and the check

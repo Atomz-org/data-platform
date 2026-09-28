@@ -21,7 +21,7 @@ provenance.
 | Harness | Entry point | Graph (MCP) | Pre-tool gate | Commit gate | Provenance | Memory | Session context | Skills | Subagents |
 |---|---|---|---|---|---|---|---|---|---|
 | Claude Code | `CLAUDE.md` + hooks | `.mcp.json` + power-tools plugin | hook — `pre_tool_use.py` on every Edit/Write | pre-commit | hooks write stages 01–03 | injected on turn one | `session_start.sh` | plugins — every toolkit | power-tools plugin |
-| Codex CLI | `AGENTS.md`, natively | `.codex/config.toml` | none — commit gate only | pre-commit | none | rule — `pf memory show` | rule — `AGENTS.md` §1 | `.agents/skills/` — toolkits, commands; a group's under the group | none |
+| Codex CLI | `AGENTS.md`, natively | `.codex/config.toml` | hook — trusted project only | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.codex/agents/` |
 | Cursor | `AGENTS.md` + `.cursor/rules/` | `.cursor/mcp.json` | partial — shell: `--no-verify` blocked; edits: verdict after the fact | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Copilot — VS Code chat | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none — commit gate only | pre-commit | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | none — `pf gate` in `AGENTS.md` §4 | pre-commit, if installed in the runner | none | rule | rule | `.agents/skills/` — toolkits, commands; a group's under the group | none |
@@ -37,6 +37,8 @@ server), rendered into each harness's format. Change the source; regenerate.
 | Harness | File | Regenerate with |
 |---|---|---|
 | Codex CLI | `.codex/config.toml` | `pf context refresh` |
+| Codex CLI | `.codex/hooks.json` | `pf context refresh` |
+| Codex CLI | `.codex/rules/pf.rules` | `pf context refresh` |
 | Cursor | `.cursor/mcp.json` | `pf context refresh` |
 | Cursor | `.cursor/hooks.json` | `pf context refresh` |
 | Cursor | `.cursor/rules/data-platform.mdc` | `pf context refresh` |
@@ -52,7 +54,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude [args]
+bin/agent-here claude|codex [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -70,6 +72,8 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 
 ## Where a harness only half honours its config
 
+- **Codex** loads `.codex/` — hooks, rules, MCP — only for a trusted project.
+  Trust the checkout once when Codex asks. Untrusted, it has the commit gate only.
 **Cursor** — `beforeShellExecution` can block and `afterFileEdit` cannot, so
   `platform/hooks/cursor_hook.py` blocks `--no-verify` before it runs and reports
   `gate.yaml`'s verdict on an edit after the edit has happened.
