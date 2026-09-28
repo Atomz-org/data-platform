@@ -8,6 +8,9 @@ nightly issue hygiene that keeps the tracker honest — one platform layer,
 This page is the reference. `docs/GOVERNANCE.md` is the provenance chain the
 engine writes to, `docs/AIR.md` the control catalogue the DORA audit reads,
 `docs/AI-GOVERNANCE-ARCHITECTURE.md` the six planes this layer sits on.
+`docs/dora-articles.html` is the article map: what Articles 8 to 12 and RTS
+Article 16 mean for this platform's own estate, with the check behind each and
+an example per article (also published as an artifact, "DORA Article Map").
 
 ```
                         agent (Claude · Cursor · Copilot · Gemini · Codex · local Qwen)
@@ -259,46 +262,39 @@ and its audit reports `not_applicable`, with the reason printed, never `pass`.
 | job | when | does |
 |---|---|---|
 | `supply-chain` | nightly 02:00 UTC · dispatch · pull requests touching `uv.lock`, `pyproject.toml`, `**/governance/aidf.yaml`, `pf/aidf/**` | Trivy SBOM + scan, then `pf dora audit` for every entity; exit 1 blocks the PR on a fixable Critical/High past its window |
-| `infrastructure` | nightly · dispatch, never on a pull request | `uv tool install prowler`; the cloud scan for `vars.DORA_PROWLER_PROVIDER` with its credential; the GitHub posture scan when `secrets.DORA_GITHUB_TOKEN` is set; one `pf dora audit` over every scan that produced output |
+| `infrastructure` | nightly · dispatch, never on a pull request | `uv tool install prowler`; one independent scan per credential that is present — AWS, GCP, Kubernetes, Cloudflare (Prowler for the edge plus `pf dora r2` for the buckets), GitHub — then one `pf dora audit` over every scan that produced output |
 
-The two scans in `infrastructure` are independent. No credential or scan step
-can abort the job: each records its outcome, the audit judges whatever ran, the
-evidence is archived, and only the last step decides the colour of the run —
-red when a scan that *was* configured did not run or an entity breached an
-article, a warning when nothing is configured. So a `gcp` provider with no GCP
-secret yet costs Articles 8 to 11 (`unverified`) and nothing else: the GitHub
-posture scan still runs and RTS Art. 16 is still evidenced.
-
-Both archive `governance/dora/**`, the scans and `provenance/chain.jsonl` as
-one artifact. The `runtime-governance` job in `ai-governance.yml` runs the
-engine's attack tests, `pf govern check` and `pf dora check` on every pull
-request.
+Each scan in `infrastructure` is switched on by its own credential and runs
+independently of the others. No credential or scan step can abort the job:
+each records its outcome, the audit judges whatever ran, the evidence is
+archived, and only the last step decides the colour of the run — red when a
+scan that *was* configured did not run or an entity breached an article, a
+warning when nothing is configured. So an AWS role that fails to assume costs
+the AWS articles (`unverified`) and nothing else: the Cloudflare and GitHub
+scans still run and are still judged. A manual dispatch can restrict the run
+to a subset with the `scans` input (`cloudflare,github`).
 
 #### Configuring the scans
 
-Variables are plain text and visible in logs; tokens and keys are secrets.
-Both live under the repository's Settings, "Secrets and variables", "Actions"
-(or `gh variable set` / `gh secret set`).
+There is no provider variable. A scan runs when its credential exists.
+Variables are plain text and visible in logs; tokens, keys and role names are
+secrets. Both live under the repository's Settings, "Secrets and variables",
+"Actions" (or `gh variable set` / `gh secret set`).
 
-| setting | kind | value |
-|---|---|---|
-| `DORA_PROWLER_PROVIDER` | variable | the cloud Prowler audits: `aws`, `azure`, `gcp` or `kubernetes`. Never a token. |
-| `DORA_GCP_WORKLOAD_IDENTITY_PROVIDER` + `DORA_GCP_SERVICE_ACCOUNT` | secrets | keyless GCP auth: the pool provider resource name (`projects/<n>/locations/global/workloadIdentityPools/<pool>/providers/<p>`) and the service account e-mail it may impersonate. Preferred. |
-| `DORA_GCP_CREDENTIALS_JSON` | secret | a service-account key, only when no federation is set up |
-| `DORA_GCP_PROJECT_IDS` | variable | optional, space-separated project ids to scan; empty scans every project the account can see |
-| `DORA_AWS_ROLE_ARN`, `DORA_AWS_REGION` | secret, variable | the OIDC role for `aws` and its region |
-| `DORA_KUBECONFIG_B64` | secret | a base64 kubeconfig for `kubernetes` |
-| `DORA_GITHUB_TOKEN` | secret | a fine-grained PAT for the GitHub posture scan: organisation members and administration read, repository administration and metadata read, Actions read. The run's own `GITHUB_TOKEN` cannot see organisation settings. |
-| `DORA_GITHUB_ORGANIZATION` | variable | optional; defaults to the repository's owner |
+| scan | switch (secret) | also | evidences |
+|---|---|---|---|
+| AWS | `DORA_AWS_ROLE_ARN` — an IAM role trusting GitHub OIDC (`repo:Atomz-org/data-platform:*`) with `SecurityAudit` and `ViewOnlyAccess` | variable `DORA_AWS_REGION` (default `eu-west-1`) | Art. 8-12 for the AWS account, stamped by Prowler's DORA framework |
+| GCP | `DORA_GCP_WORKLOAD_IDENTITY_PROVIDER` + `DORA_GCP_SERVICE_ACCOUNT` (keyless, preferred) or `DORA_GCP_CREDENTIALS_JSON` (a key) | variable `DORA_GCP_PROJECT_IDS`, space-separated; service account needs `roles/viewer` + `roles/iam.securityReviewer` | Art. 8-12 for the GCP projects |
+| Kubernetes | `DORA_KUBECONFIG_B64` — a base64 kubeconfig for a read-only service account | | Art. 8-11 for the cluster, by check-id prefix |
+| Cloudflare | `DORA_CLOUDFLARE_API_TOKEN` — an API token with Zone: Read, DNS: Read and Workers R2 Storage: Read | variable `DORA_CLOUDFLARE_ACCOUNT_ID` (else derived from `PF_ARTIFACTS_ENDPOINT` for R2) | the edge (zones, DNS, WAF, TLS) through Prowler, stamped; every R2 bucket through `pf dora r2`: public r2.dev domain off (Art. 9), custom-domain TLS (Art. 9), no wildcard CORS (Art. 9), lifecycle declared (Art. 12), inventory (Art. 8) |
+| GitHub | `DORA_GITHUB_TOKEN` — a fine-grained PAT: organisation members and administration read; repository administration, metadata and Actions read | variable `DORA_GITHUB_ORGANIZATION` (default: the repository owner) | RTS Art. 16 repository posture; Art. 9 organisation access controls. The run's own `GITHUB_TOKEN` cannot see organisation settings. |
 
-The GCP service account needs Prowler's documented read-only roles on the
-scanned projects or the organisation: `roles/viewer` plus
-`roles/iam.securityReviewer`, and the APIs Prowler reads enabled. The
-workload-identity route needs the pool provider to trust
-`repo:Atomz-org/data-platform:ref:refs/heads/main` (and any branch you
-dispatch from). Nothing else has to change for a new project: the scan is per
-account, the audit is per entity, and each entity's `governance/aidf.yaml`
-says which provider and extra providers apply to it.
+The AWS and Cloudflare scans are what this platform's own estate most likely
+needs: the artefact store is R2, and a production warehouse on AWS (Redshift)
+or its S3 landing zone is one `pf.runtime.targets` entry away. Nothing else
+has to change for a new project: the scan is per account, the audit is per
+entity, and each entity's `governance/aidf.yaml` says which providers apply to
+it under `dora.provider` and `dora.extra_providers`.
 
 ## Pillar 3 — issue hygiene
 
@@ -345,9 +341,10 @@ paid that price with `openmetadata-ingestion` and documents it in
 `pyproject.toml`. So they are a *command* and an *optional import*, from the pin:
 
 ```bash
-# Prowler — a command, isolated. From PyPI at the pinned version, or from the pin itself:
-uv tool install "prowler==5.44.0"
-uv tool install --editable ./vendor/prowler
+# Prowler — a command, isolated, from the pin itself (the fork head, 5.44.0, is ahead of
+# the last PyPI release, so PyPI cannot serve it):
+uv tool install ./vendor/prowler --python 3.12
+"$(uv tool dir --bin)/prowler" --version        # uv's bin dir is not on every shell's PATH
 
 # Guardrails — an optional import for the adapter, per invocation:
 OTEL_SDK_DISABLED=true uv run --with ./vendor/guardrails python -c \
@@ -377,6 +374,11 @@ What pinning the real code taught, and what the code now does about it:
   under `unmapped.compliance["DORA-2022/2554"]`, and the audit maps findings to
   articles by those ids first, falling back to check-id prefixes only when the
   stamp is absent (a scan run without the framework, or kubernetes).
+- **Prowler's `cloudflare` provider reads the edge, not R2.** Its checks are
+  zones, DNS records and the WAF (`zone_*`, `dns_record_*`). The artefact
+  store's buckets are covered by the platform's own `pf dora r2`, which asks the
+  Cloudflare API for each bucket's managed public domain, custom domains, CORS
+  and lifecycle and writes the same OCSF shape with check ids prefixed `r2_`.
 - **Prowler's `github` provider reads the organisation itself** — branch
   protection, required reviews, signed commits, secret and dependency scanning,
   Actions permissions, members' MFA. GitHub is not in the DORA framework file,

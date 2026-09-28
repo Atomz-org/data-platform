@@ -45,9 +45,20 @@ had a home here, and building beside them would have produced a second chain
   (PAT in `DORA_GITHUB_TOKEN`; repo checks → RTS-16, org checks → Art. 9) and
   `cloudflare`. GitHub Actions cannot read `secrets` in `if:` — dora.yml maps
   them to job `env` and tests `env.X != ''` instead. Every credential and scan
-  step is `continue-on-error`; a "ready?" step explains a skipped cloud scan,
-  the audit runs `if: always()` over whatever produced output, and the final
-  `Outcome` step alone fails the job — never a step in the middle.
+  step is `continue-on-error`; one `switches` step decides which scans are on
+  (credential present), the audit runs `if: always()` over whatever produced
+  output, and the final `Outcome` step alone fails the job. There is no
+  provider variable. Prowler's cloudflare provider has no R2 checks;
+  `pf dora r2` (pf.aidf.dora.r2, urllib, injectable fetch) covers the buckets.
+  `uv tool install` puts `prowler` in `$(uv tool dir --bin)`, not on the Bash
+  tool's PATH — call it by absolute path in a session. `prowler==5.44.0` is not
+  on PyPI (fork head ahead of the release): install from the pin,
+  `uv tool install ./vendor/prowler --python 3.12`.
+- Prowler 5's OCSF has no `unmapped.check_id`: the check name is
+  `metadata.event_code`, `finding_info.uid` is a composite
+  (`prowler-github-<check>-<account>-…`), the readable resource is
+  `resources[].name`. Learned from a real `prowler github --organization
+  Atomz-org` run (232 findings, 12 repos); `test_prowler_5_output_shape_is_read_correctly` pins it.
 - `pf dora audit` reports `unverified` for anything it could not run; it is
   never a pass. Generated evidence lives in `**/governance/dora/` (gitignored,
   gate-denied, CI-archived with the matrix sha256 in the chain).
