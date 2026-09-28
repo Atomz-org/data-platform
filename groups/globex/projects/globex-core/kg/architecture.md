@@ -65,7 +65,7 @@ flowchart LR
 flowchart TB
     A["annotations<br/>contracts/annotations.yaml<br/>none yet"]:::neutral
     O["ontology<br/>platform + group + project"]:::platform
-    P["policy rules<br/>32"]:::platform
+    P["policy rules<br/>35"]:::platform
     K["knowledge graph<br/>kg_search · impact_analysis"]:::platform
     subgraph LG["what it stops"]
         direction TB
@@ -118,7 +118,7 @@ flowchart TB
 | catalog export | ✓ | `catalog/openmetadata.json` | OpenMetadata ingestion, for a company that runs one |
 | Wren workspace | ✓ 3 | `mdl/wren` | the semantic layer as an LLM may read it: restricted columns withheld, rules and remembered questions beside it |
 | **governance** | | | |
-| project policy | ✓ 32 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
+| project policy | ✓ 35 | `governance/policy.yaml` | the third ontology layer; may only tighten platform and group |
 | otop manifest | ✓ 15 | `governance/otop.json` | policy and evidence as an OpenTopology graph, schema-validated |
 | project rules | ✓ | `CLAUDE.md` | the rules the graph cannot encode; loaded every session |
 | agent permissions | ✓ | `.claude/settings.json` | the deny list and the PreToolUse hook — sisters unreadable by policy |
@@ -129,7 +129,7 @@ flowchart TB
 | **delivery** | | | |
 | exposures | **gap** | `transform/models/utils/_utils__models.yml` | who reads the output — impact analysis stops at the mart without them — `/using-dbt` |
 | Evidence BI | ✓ | `reporting/pages/ask.md` | dashboards as a projection of the metrics, never restating logic |
-| capability docs | ✓ 11 | `docs/air.md` | one page per capability, explaining what it wired in |
+| capability docs | ✓ 12 | `docs/aidf.md` | one page per capability, explaining what it wired in |
 | published pages | — | `*.html` | standalone HTML about this project, kept beside what it describes — `written by hand` |
 | **operate** | | | |
 | Dagster definitions | ✓ | `src/globex_core/definitions.py` | assets come from the runtime factory; the project supplies logic |
@@ -144,7 +144,7 @@ flowchart TB
 | air | ✓ | `air.yaml` | AI control baseline: declare it in air.yaml, gate the merge on it. |
 | okf | ✓ | `okf/index.md` | Open Knowledge Format: the semantic layer as portable, validated context for agents. |
 
-**Capabilities:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
+**Capabilities:** `aidf`, `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`
 
 **Tools enabled:** `elementary`, `expectations`, `okf`, `openmetadata`, `recce`, `wren`
 

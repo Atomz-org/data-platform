@@ -22,7 +22,19 @@ profile: {}
 # Start from `pf air baseline commodity commodity-us --suggest`, which proposes
 # only what already passes — a ratchet against regression rather than a wall of
 # work nobody agreed to. Accepting the proposal stays a person's act.
-baseline: []
+baseline:
+  - AIR-DET-1      # AI Data Leakage Prevention and Detection
+  - AIR-DET-4      # AI System Observability
+  - AIR-PREV-5     # System Acceptance Testing
+  - AIR-PREV-6     # Data Quality & Classification/Sensitivity
+  - AIR-PREV-7     # Legal and Contractual Frameworks for AI Systems
+  - AIR-PREV-12    # Role-Based Access Control for AI Data
+  - AIR-DET-16     # Preserving Source Data Access Controls in AI Systems
+  - AIR-PREV-18    # Agent Authority Least Privilege Framework
+  - AIR-PREV-19    # Tool Chain Validation and Sanitization
+  - AIR-DET-21     # Agent Decision Audit and Explainability
+  - AIR-PREV-22    # Multi-Agent Isolation and Segmentation
+  - AIR-PREV-23    # Agentic System Credential Protection Framework
 
 # Controls consciously not taken. `reason` and `owner` are both required: an
 # acceptance without a reason is a gap with better formatting, and one without

@@ -1609,3 +1609,139 @@ upstreams:
         why: >
           Nobody here runs them. A generated config for a tool nobody opens is
           drift waiting for a reader who trusts it.
+
+  # -------------------------------------------------------------- aidf -----
+  # The two upstreams docs/AIDF.md names: the validator framework the runtime
+  # governance engine binds to, and the cloud scanner the DORA audit drives.
+  # Both are our own forks under Atomz-org — the pin must not depend on an
+  # upstream account (asqav-compliance above is why) — and both are pinned
+  # shallow: prowler is 340 MB at depth 1.
+  #
+  # Neither is a workspace dependency. guardrails-ai brings litellm, openai and
+  # langchain-core; prowler brings boto3, azure and google SDK ranges. One
+  # resolution cannot hold either beside dlt, dagster and dbt — the
+  # openmetadata-ingestion lesson in pyproject.toml — so the platform code
+  # imports neither: pf.aidf.validators is pure Python, pf.aidf.guardrails_adapter
+  # binds when `guardrails` is importable (`uv run --with ./vendor/guardrails`),
+  # pf.aidf.dora.audit finds `prowler` on PATH (`uv tool install`).
+  - id: guardrails
+    summary: "validator base the atomz/* SQL-AST and PII validators register against"
+    name: Guardrails AI
+    url: https://github.com/Atomz-org/guardrails
+    path: vendor/guardrails
+    branch: main
+    licence: Apache-2.0
+    role: reference
+    why: >
+      The AI governance blueprint this platform implements (docs/AIDF.md) names
+      Guardrails as the validation engine: a `Validator` with a `validate()`
+      returning `PassResult` or `FailResult`, registered under a name and
+      composed onto a `Guard` built from a Pydantic contract. Our engine does
+      not depend on it — the contract, the SQL AST check and the PII scrub are
+      `pf.aidf.schemas` and `pf.aidf.validators`, pure Python, and the ledger
+      records their verdicts without Guardrails in the process. What we take is
+      the *binding*: `pf.aidf.guardrails_adapter` registers our two validators
+      as `atomz/ast_sql_validator` and `atomz/pii_scrubber` and builds a
+      `Guard.from_pydantic(MartMetricContract)` over them, so a caller whose LLM
+      already runs through Guardrails gets the platform's rules in that pipeline
+      rather than a second one beside it.
+
+      Pinned at 0.11.0 (fork head, 2026-08-26). The API the adapter binds to
+      moved once already: `PassResult` / `FailResult` / `ValidationResult` now
+      come from the separate `guardrails_ai.types` distribution and are
+      re-exported by `guardrails.validator_base`, which is the import the
+      adapter uses on purpose — it is the stable surface, and a rename there is
+      exactly what `pf vendor drift` should name.
+    adopted:
+      - upstream: guardrails/validator_base.py
+        kind: port
+        ours:
+          - platform/src/pf/aidf/guardrails_adapter.py
+          - platform/src/pf/aidf/validators.py
+        note: >
+          `Validator`, `register_validator` and the result types are what the
+          adapter subclasses and returns; the validation *logic* is ported into
+          `pf.aidf.validators` so the gate works with guardrails absent. Upstream
+          changing `validate(value, metadata)`'s signature or the result classes
+          breaks the adapter and nothing else.
+      - upstream: guardrails/guard.py
+        kind: shape
+        ours: [platform/src/pf/aidf/guardrails_adapter.py]
+        note: >
+          `Guard.from_pydantic(...).use(...)` is the composition `build_guard`
+          returns. Shape only: the adapter calls two methods and reads nothing
+          from the file.
+    declined:
+      - what: The Guardrails Hub and its hosted validators.
+        why: >
+          Hub validators are fetched at install time from a service, which is a
+          runtime dependency on a third party inside the merge gate — the
+          objection this repository makes to every unpinned upstream. The two
+          validators the platform needs are ours, registered locally.
+      - what: Guardrails as the engine's decision maker.
+        why: >
+          A Guard raises or re-asks; it does not write a DECISION record, hold
+          for a person, or trip a breaker. The engine owns the verdict and the
+          ledger; Guardrails is one way to reach it.
+
+  - id: prowler
+    summary: "cloud security scanner behind DORA Articles 8-11; its OCSF output is the contract"
+    name: Prowler
+    url: https://github.com/Atomz-org/prowler
+    path: vendor/prowler
+    branch: master
+    licence: Apache-2.0
+    role: reference
+    why: >
+      DORA Articles 8-11 — asset inventory, protection, detection, backups — are
+      facts about a cloud account that only a scanner can produce. Prowler is the
+      one the blueprint names and the one that ships a DORA framework:
+      `prowler/compliance/dora_2022_2554.json`, universal across providers, is
+      what `pf dora audit` requests with `--compliance dora_2022_2554` and falls
+      back from (to check-id prefix mapping) when a pinned version stops listing
+      it. The audit drives the CLI and reads its OCSF Detection Finding output;
+      it imports nothing from the package.
+
+      Pinned at 5.44.0 (fork head, 2026-09-28), shallow. Installed isolated
+      (`uv tool install prowler` in dora.yml) rather than from the submodule, so
+      the runner's environment matches what an operator would install; the pin
+      is the contract we check drift against, not the artefact we run — the
+      same split as recce.
+    adopted:
+      - upstream: prowler/lib/outputs/ocsf/ocsf.py
+        kind: parity
+        ours: [platform/src/pf/aidf/dora/ocsf.py]
+        note: >
+          The field names our parser reads — `status_code`, `severity`,
+          `finding_info`, `cloud.provider`, `resources[].uid`, and
+          `unmapped.check_id` / `unmapped.compliance` — are set here. A rename
+          upstream makes every finding read as unknown status, which the audit
+          would report as `unverified` rather than pass, but it should be caught
+          at the pin bump, not in a nightly report.
+      - upstream: prowler/compliance/dora_2022_2554.json
+        kind: parity
+        ours:
+          - platform/src/pf/aidf/data/mappings.json
+          - platform/src/pf/aidf/data/defaults.yaml
+        note: >
+          The framework name `dora.prowler.compliance` requests, and the source
+          of the compliance key our article mapping matches on
+          (`compliance_keys: ["dora"]`). If upstream renames or splits it per
+          provider, `defaults.yaml` and the mapping follow.
+      - upstream: prowler/lib/cli/parser.py
+        kind: shape
+        ours: [platform/src/pf/aidf/dora/audit.py, .github/workflows/dora.yml]
+        note: >
+          The flags the runner and the workflow pass: `-M json-ocsf`, `-o`, `-F`,
+          `--compliance`, `--list-compliance`, `--ignore-exit-code-3`.
+    declined:
+      - what: Prowler's own dashboard, API and SaaS.
+        why: >
+          The evidence lives in each entity's `governance/dora/` matrix and in
+          the provenance chain, archived by CI. A second store of findings with
+          its own retention is a second account of the same fact.
+      - what: Running Prowler on pull requests.
+        why: >
+          It needs cloud credentials, and a pull request from a fork must never
+          hold them. Nightly and on demand only; a pull request gets the
+          supply-chain job.

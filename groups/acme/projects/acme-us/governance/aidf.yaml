@@ -1,0 +1,54 @@
+# AI governance & DORA overlay for acme/acme-us.
+#
+# Layers over `groups/acme/aidf.yaml` (if present) and the platform floor in
+# platform/src/pf/aidf/data/defaults.yaml, and MAY ONLY TIGHTEN: lower a budget,
+# shorten a patch window, add a validator, narrow the mart pattern. Loosening
+# raises AidfRelaxation at load time. An article can be marked out of scope only
+# with a reason and an owner.
+#
+#   pf govern check acme acme-us      # the resolved configuration
+#   pf govern evaluate acme acme-us --payload p.json --role metric-gap-harvester
+#   pf dora audit acme acme-us        # the evidence matrix -> governance/dora/
+#
+# docs/aidf.md in this project and docs/AIDF.md at the root say the rest.
+version: 1
+
+runtime:
+  # sqlglot dialect the entity's SQL is parsed in. Set it when the production
+  # warehouse is not DuckDB: snowflake | bigquery | postgres | redshift | ...
+  # sql_dialect: duckdb
+  #
+  # The mart naming convention here, if there is one. Tightens the floor.
+  # mart_pattern: "^(fct|dim|agg)_[a-z0-9_]+$"
+  #
+  # Targets a person must approve, and the roles exempt from that.
+  # elevated:
+  #   paths: ["governance/metrics/regulatory_*/**"]
+  #   roles: ["lead_risk_officer"]
+  {}
+
+dora:
+  # Who is accountable for this entity's ICT risk framework (Art. 5).
+  owner: PackMaaan
+  # Which cloud Prowler audits for this entity. Empty: no infrastructure scan,
+  # and the Prowler-evidenced checks report `unverified`.
+  provider: ""
+  # Out of scope? Say so with a reason; the audit reports N/A, never PASS.
+  # in_scope: false
+  # out_of_scope_reason: Not a financial entity or a critical ICT provider under Art. 2.
+  #
+  # Accepted vulnerabilities, each dated and owned. An expired entry is a
+  # finding again.
+  # sbom:
+  #   exceptions:
+  #     - id: CVE-2025-00000
+  #       reason: Not reachable; the affected code path is never imported.
+  #       owner: someone@example.com
+  #       expires: 2027-01-01
+  #
+  # Articles that do not apply to this entity, with a reason and an owner.
+  # articles:
+  #   "28":
+  #     applies: false
+  #     reason: No ICT third-party provider holds this entity's data.
+  #     owner: someone@example.com

@@ -26,7 +26,7 @@ What sits between an agent and this project, in the order it meets it. Every lin
 - `ducklake` — this project's `.mcp.json`
 - `wren` — this project's `.mcp.json`
 
-The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
+The `pf` server exposes 31 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
 
 **By harness** — `docs/HARNESSES.md`'s rows, as they hold here. *Rule* means nothing checks; the commit gate is the backstop.
 
@@ -50,7 +50,7 @@ This project's own `.mcp.json` adds `ducklake`, `wren` for Claude Code only; the
 
 **Asks first:** `gh pr create`, `git push`.
 
-**Allowed without asking** (30): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, `npm run dev`, `npm run sources`, `pf air`, `pf align`, `pf artifacts`, `pf ask`, `pf dialect`, `pf evals-gate`, `pf logs`, `pf loop`, `pf report`, `pf tool okf`, `pf tool openmetadata`, `pf tool recce`, `pf tool wren`, `recce debug`, `recce run`, `recce server`, `uv run pf`, `wren`.
+**Allowed without asking** (32): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, `npm run dev`, `npm run sources`, ... +20 more in `.claude/settings.json`.
 
 **The gate**, as it judges this project: `gate.yaml` plus `gate.capabilities.yaml`, applied to representative paths (real where the project has them) as a `pf work` session is judged. *Denied*: the hook exits 2 and the commit gate refuses. *Impact first*: the hook prints the blast radius and the commit gate runs impact analysis.
 
@@ -118,12 +118,12 @@ A commit may touch at most **12 files** (`maxFiles`) and is blocked at severity 
 
 Repository-wide, whatever the change touches:
 
-- `ai-governance` (every pull request · daily): `provenance`, `anchor`, `compliance-scan`, `air-baseline`
+- `ai-governance` (every pull request · daily): `provenance`, `anchor`, `compliance-scan`, `air-baseline`, `runtime-governance`
 - `claude-review` (every pull request): `review`
 - `pr-report` (every pull request): `report`
 - `agent-context` (every pull request): entry points, memory and test indexes, repo map, guide and these maps are current
 
-Only when platform paths change: `copilot-setup-steps`, `platform-tests`, `platform`, `vendor-pins`.
+Only when platform paths change: `copilot-setup-steps`, `dora`, `platform-tests`, `platform`, `vendor-pins`.
 
 ## 5. On a schedule — the loops
 
@@ -148,11 +148,11 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 ## 6. Recorded and judged
 
 - **Provenance.** The hooks write INTENT, DECISION and EXECUTION into `provenance/` — gitignored, denied, hash-chained, time-anchored; `pf provenance verify` audits it.
-- **AI controls.** `air.yaml` commits to 0 controls and accepts 0, merged over the group's; `pf air gate commodity commodity-rollup` blocks on a failing baseline control. The register is generated to `governance/air-register.md`.
-- **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
+- **AI controls.** `air.yaml` commits to 12 controls and accepts 0, merged over the group's; `pf air gate commodity commodity-rollup` blocks on a failing baseline control. The register is generated to `governance/air-register.md`.
+- **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-output-passes-contract`, `agent-settings-schema-valid`, `agent-sql-is-read-only`, `dora-patch-window-enforced`, `entity-isolation-enforced`, `vendor-is-read-only`.
 - **Evals.** 0 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals commodity commodity-rollup` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align commodity commodity-rollup`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 1 ADR in `decisions/`; 9 capability pages in `docs/`.
+- **Decisions.** 1 ADR in `decisions/`; 10 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 
@@ -174,7 +174,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/commodit
 - `recce` — dbt PR review — diff a change against a captured baseline. (from the group; denies 3; impact-gates 1; CI `recce`; a Dagster asset; a dev server on port 8000/)
 - `wren` — MDL semantic layer — project it, inspect it, ask questions through it. (from the group; denies 5; a Dagster asset)
 
-**Capabilities present:** `air`, `ducklake`, `evidence`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `wren`.
+**Capabilities present:** `aidf`, `air`, `ducklake`, `evidence`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `wren`.
 
 ## Gaps
 

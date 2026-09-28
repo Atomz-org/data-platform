@@ -13,6 +13,13 @@ dependencies = [
   # not matched by eye — see pf.vendor.verify.
   "jsonschema>=4.20",
   "pydantic>=2.7",
+  # The governance engine parses every agent-written SQL definition into an
+  # AST before it is accepted (pf.aidf.validators). Already resolved through
+  # dagster-dbt and Wren; declared here because a package that imports it must
+  # say so, or the day those two stop pulling it the gate stops parsing. The
+  # workspace override in the root pyproject.toml pins the floor and keeps
+  # sqlglotc out — see there for why.
+  "sqlglot>=25",
   "typer>=0.12",
   "rich>=13",
   "fastapi>=0.115",

@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DORA Article Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F2F4F6; --card: #FFFFFF; --tint: #E4ECF3; --ink: #17202B; --muted: #5B6675;
+    --rule: #C9D1DA; --accent: #0F6E56; --accent-soft: #DCEFE8; --flag: #B5451B; --flag-soft: #F6E1D8;
+    --warn: #8A6100; --warn-soft: #F5EBCF; --na: #6B7683; --na-soft: #E7EAEE; --code: #EEF1F4;
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0F141A; --card: #161D25; --tint: #1B2632; --ink: #E6EAEE; --muted: #98A3B0;
+      --rule: #2A343F; --accent: #4FBF9A; --accent-soft: #143528; --flag: #E07A55; --flag-soft: #3A2118;
+      --warn: #D9A93A; --warn-soft: #362C10; --na: #8E99A6; --na-soft: #222B35; --code: #1C252F;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0F141A; --card: #161D25; --tint: #1B2632; --ink: #E6EAEE; --muted: #98A3B0;
+    --rule: #2A343F; --accent: #4FBF9A; --accent-soft: #143528; --flag: #E07A55; --flag-soft: #3A2118;
+    --warn: #D9A93A; --warn-soft: #362C10; --na: #8E99A6; --na-soft: #222B35; --code: #1C252F;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2rem, 4.5vw, 3.1rem); font-variation-settings: "opsz" 144; }
+  h2 { font-size: 1.55rem; margin-block: 2.4rem 0.6rem; }
+  h3 { font-size: 1.12rem; margin-block: 1.2rem 0.3rem; font-family: var(--body); font-weight: 600; }
+  p { margin: 0 0 0.9rem; max-width: 68ch; }
+  ul { margin: 0 0 0.9rem; padding-left: 1.2rem; max-width: 70ch; }
+  li { margin-bottom: 0.3rem; }
+  code, .id { font-family: var(--mono); font-size: 0.86em; background: var(--code); padding: 0.05em 0.35em; border-radius: 3px; }
+  pre { font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; background: var(--code); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 0 0 1rem; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .lede { font-size: 1.15rem; color: var(--muted); max-width: 62ch; margin-top: 0.8rem; }
+  .eyebrow { font-family: var(--body); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .estate { border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin-block: 1.4rem 0; background: var(--card); }
+  .estate header { background: var(--tint); padding: 12px 16px; border-bottom: 1px solid var(--rule); }
+  .estate header h2 { margin: 0; font-size: 1.15rem; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-top: 1px solid var(--rule); }
+  th { font-family: var(--body); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; border-top: 0; }
+  tbody tr:first-child td { border-top: 0; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .article { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 32px; padding-block: 1.6rem; border-top: 1px solid var(--rule); }
+  .article:first-of-type { border-top: 0; }
+  .margin .no { font-family: var(--display); font-size: 2.6rem; font-weight: 700; line-height: 1; font-variation-settings: "opsz" 144; }
+  .margin .reg { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+  .margin .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.9rem; }
+  .pill { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid transparent; }
+  .pill.auto { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .pill.partial { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+  .pill.manual { background: var(--na-soft); color: var(--na); border-color: var(--na); }
+  .body h2 { margin-top: 0; font-size: 1.5rem; }
+  .statute { border-left: 3px solid var(--rule); padding-left: 14px; color: var(--muted); font-style: italic; margin-block: 0.6rem 1rem; max-width: 66ch; }
+  .statute em { font-style: normal; color: var(--ink); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-block: 0.4rem 1rem; }
+  .box { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+  .box h3 { margin-top: 0; }
+  .box ul { margin-bottom: 0; }
+  .ev { margin: 0; padding: 0; list-style: none; }
+  .ev li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding-block: 5px; border-top: 1px dashed var(--rule); margin: 0; }
+  .ev li:first-child { border-top: 0; }
+  .st { font-family: var(--mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 3px; margin-top: 3px; white-space: nowrap; }
+  .st.pass { background: var(--accent-soft); color: var(--accent); }
+  .st.fail { background: var(--flag-soft); color: var(--flag); }
+  .st.unv { background: var(--warn-soft); color: var(--warn); }
+  .st.na { background: var(--na-soft); color: var(--na); }
+  .ex { background: var(--tint); border-radius: 8px; padding: 12px 16px; margin-block: 0.6rem 0.4rem; }
+  .ex .eyebrow { margin-bottom: 4px; }
+  .ex p:last-child { margin-bottom: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 18px; font-size: 0.9rem; color: var(--muted); margin-block: 0.6rem 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    .article { grid-template-columns: 1fr; gap: 0.6rem; }
+    .margin { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+    .margin .no { font-size: 2rem; }
+    .margin .pills { margin-top: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">Regulation (EU) 2022/2554 · RTS (EU) 2024/1774 · Atomz-org/data-platform</p>
+  <h1>DORA Article Map</h1>
+  <p class="lede">What Articles 8 to 12 and RTS Article 16 ask, what each one means for this data platform's actual estate, which automated check produces the evidence, and what stays a person's job.</p>
+
+  <section class="estate" aria-labelledby="estate-h">
+    <header><h2 id="estate-h">The estate these articles apply to</h2></header>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>ICT asset</th><th>Where it lives here</th><th>Articles it falls under</th><th>Evidence source</th></tr></thead>
+        <tbody>
+          <tr><td>Entity warehouses</td><td>one DuckDB per project under <code>groups/&lt;g&gt;/projects/&lt;p&gt;/data/</code>; production adapters (Snowflake, BigQuery, Redshift…) declared per project, inert until selected</td><td>8, 9, 12</td><td>knowledge graph, dbt manifest, Prowler when the warehouse's cloud account is scanned</td></tr>
+          <tr><td>Pipelines and models</td><td>dlt sources in <code>src/</code>, dbt models in <code>transform/</code>, per entity</td><td>8, RTS 16</td><td><code>kg/graph.json</code>, the pre-commit gate, CI</td></tr>
+          <tr><td>Artefact store</td><td>Cloudflare R2 bucket (<code>PF_ARTIFACTS_BUCKET</code>): review baselines, recorded diffs, <code>recce_state.json</code> with compared rows</td><td>8, 9, 12</td><td><code>pf dora r2</code>, Prowler cloudflare (edge)</td></tr>
+          <tr><td>Source, CI and identity</td><td>GitHub organisation <code>Atomz-org</code>: repositories, Actions, members</td><td>9, RTS 16, 17, 24</td><td>Prowler github, branch-protection API, the workflows themselves</td></tr>
+          <tr><td>Control plane</td><td>Dagster and OpenMetadata containers (<code>platform/Containerfile.stack</code>) wherever they are hosted; an AWS or GCP account when one is used</td><td>8–12</td><td>Prowler aws / gcp / kubernetes when that account's credential is configured</td></tr>
+          <tr><td>Agent actions</td><td><code>provenance/chain.jsonl</code> and RFC 3161 / OpenTimestamps anchors</td><td>10, 11, 12</td><td><code>pf provenance verify</code>, anchor coverage</td></tr>
+          <tr><td>Dependencies and upstreams</td><td><code>uv.lock</code>; 27 pinned submodules under <code>vendor/</code></td><td>7, 13, 28, RTS 10</td><td>Trivy scan and patch policy, <code>pf vendor verify</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="legend" aria-label="status legend">
+    <span><span class="st pass">PASS</span> evidence produced and holds</span>
+    <span><span class="st fail">FAIL</span> evidence produced and does not</span>
+    <span><span class="st unv">UNVERIFIED</span> the check could not run here; never counted as a pass</span>
+    <span><span class="st na">N/A</span> declared out of scope with a reason and an owner</span>
+  </div>
+
+  <!-- ======================================================= Article 8 -->
+  <section class="article" id="art8">
+    <div class="margin">
+      <div class="no">8</div>
+      <div class="reg">DORA Art. 8</div>
+      <div class="pills"><span class="pill auto">automated</span><span class="pill manual">classification manual</span></div>
+    </div>
+    <div class="body">
+      <h2>Identification</h2>
+      <p class="statute">Identify, classify and adequately document all ICT-supported business functions, roles and responsibilities, the information assets and ICT assets supporting them, and their dependencies. Keep the inventories, review them at least yearly and after every major change. <em>(Art. 8(1), (4), (6))</em></p>
+      <h3>What it means for this platform</h3>
+      <p>The inventory already exists as code, and that is the point. Each entity's knowledge graph is the record of its information assets: every source, model, column, metric, exposure and the lineage between them, rebuilt by <code>pf kg build</code> and checked current in CI by <code>pf kg check --strict</code>. A dbt model that lands without its graph rebuilt turns the pull request red, so the inventory cannot quietly age. The ICT assets are the entity's warehouse, its pipelines, the artefact store bucket and whatever cloud account hosts the control plane.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">dora-8-graph</span> — <code>groups/jaffle/projects/jaffle-shop/kg/graph.json</code> present and current</span></li>
+            <li><span class="st unv">UNVERIFIED</span><span><span class="id">dora-8-asset-inventory</span> — Prowler inventory and configuration-recording checks (<code>config_recorder…</code>, <code>resourceexplorer2_…</code> on AWS; <code>cloudresourcemanager_…</code> on GCP); unverified until a cloud credential is configured</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">r2_bucket_inventoried</span> — one finding per R2 bucket from <code>pf dora r2</code>, the artefact store's inventory</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>Classifying business functions by criticality: which marts feed regulatory or financial reporting and which are analytical convenience. The graph knows the lineage, not the consequence.</li>
+            <li>Naming an owner per entity (<code>dora.owner</code> in <code>governance/aidf.yaml</code>, Art. 5) so the inventory has someone accountable for it.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>A new mart <code>fct_settlements</code> is added to <em>acme-eu</em> without rebuilding the graph. The project's <code>kg-current</code> CI job fails, the architecture map is stale, and <code>dora-8-graph</code> stays green only because the merge is blocked first. The article is satisfied by the gate, not by a yearly review.</p></div>
+    </div>
+  </section>
+
+  <!-- ======================================================= Article 9 -->
+  <section class="article" id="art9">
+    <div class="margin">
+      <div class="no">9</div>
+      <div class="reg">DORA Art. 9</div>
+      <div class="pills"><span class="pill auto">automated</span><span class="pill partial">cloud pending</span></div>
+    </div>
+    <div class="body">
+      <h2>Protection and prevention</h2>
+      <p class="statute">Continuously monitor and control the security of ICT systems; minimise the impact of ICT risk through appropriate tools, policies and procedures. Ensure security of the means of transfer of data, minimise the risk of corruption, loss or unauthorised access, and implement policies limiting physical and logical access to what is needed for legitimate functions — strong authentication, encryption, network segmentation, secure configuration. <em>(Art. 9(1)–(4))</em></p>
+      <h3>What it means for this platform</h3>
+      <p>Three surfaces carry data here, and each has an access boundary that a check can read. The repository: <code>gate.yaml</code> denies credential files, warehouses and the provenance record to every agent in every session, and a project session cannot write shared infrastructure. The artefact store: a bucket whose managed public domain must stay off, whose CORS must not admit any origin, and whose custom domains must enforce TLS 1.2 or newer. The organisation: members with multi-factor authentication, default repository permissions kept strict, repository creation and deletion limited. When a cloud account hosts the control plane, its IAM, KMS and network posture joins through Prowler with the DORA framework's own stamps.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">dora-9-secrets-gate</span> — <code>gate.yaml</code> denylist covers <code>.env*</code>, <code>**/secrets.toml</code>, <code>**/*_key*</code>, <code>provenance/**</code></span></li>
+            <li><span class="st fail">FAIL</span><span><span class="id">dora-9-iam</span> ← <span class="id">r2_bucket_public_access_disabled</span> — the r2.dev domain on a bucket is enabled: every object is world-readable</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">dora-9-iam</span> ← <span class="id">organization_members_mfa_required</span> — the GitHub organisation requires MFA</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">dora-9-network</span> ← <span class="id">zone_ssl_strict</span>, <span class="id">zone_min_tls_version_secure</span>, <span class="id">zone_waf_enabled</span> — the Cloudflare zones</span></li>
+            <li><span class="st unv">UNVERIFIED</span><span><span class="id">dora-9-iam</span> / <span class="id">dora-9-network</span> — AWS or GCP IAM, KMS, security groups; unverified until that account's credential is configured</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>The written access-control policy the checks enforce fragments of: who may hold the R2 token, who is an organisation owner, how a leaver is offboarded (<code>pf offboard</code> exists for the platform side).</li>
+            <li>Scoping the R2 API token to one bucket and read-only where possible; a check can see the bucket's posture, not the token's blast radius.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>The nightly <code>pf dora r2</code> finds the <code>scratch</code> bucket with its r2.dev domain enabled. The finding carries <code>status_code: FAIL</code>, <code>severity: High</code>, <code>check_id: r2_bucket_public_access_disabled</code>. The audit places it on Article 9 by its <code>r2_</code> prefix, <code>dora-9-iam</code> reads FAIL, every entity that lists <code>cloudflare</code> under <code>dora.extra_providers</code> shows it, and the run goes red. Disabling the managed domain in the Cloudflare dashboard turns it green the next night; nothing in the repository changes.</p></div>
+    </div>
+  </section>
+
+  <!-- ====================================================== Article 10 -->
+  <section class="article" id="art10">
+    <div class="margin">
+      <div class="no">10</div>
+      <div class="reg">DORA Art. 10</div>
+      <div class="pills"><span class="pill auto">automated</span><span class="pill partial">cloud pending</span></div>
+    </div>
+    <div class="body">
+      <h2>Detection</h2>
+      <p class="statute">Have mechanisms to promptly detect anomalous activities, including ICT network performance issues and ICT-related incidents, and to identify potential material single points of failure. Detection mechanisms enable multiple layers of control, define alert thresholds and criteria to trigger response, and have sufficient resources to monitor user activity and ICT anomalies. <em>(Art. 10(1)–(3))</em></p>
+      <h3>What it means for this platform</h3>
+      <p>Detection here is the loops. <code>freshness-triage</code> watches every source for staleness and volume anomalies on a two-hour cadence, <code>pii-audit</code> looks for personal data reaching a mart unmasked, <code>impact-sentinel</code> computes the blast radius of uncommitted changes, <code>dashboard-coverage</code> finds pages naming metrics that do not exist. Each has a token budget, a circuit breaker that opens after three consecutive failures, and a ledger, and its observations are filed as issues that close on the next clean run. For a cloud account, Prowler's logging and threat-detection checks join: CloudTrail and GuardDuty, Cloud Logging and Security Command Center, Cloudflare's bot fight mode and browser integrity check.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">dora-10-loops</span> — <code>LOOP.md</code> declares the monitors, their cadence and the breaker; <code>loop-observations.yml</code> files what they find</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">dora-10-logging</span> ← <span class="id">zone_bot_fight_mode_enabled</span>, <span class="id">zone_browser_integrity_check_enabled</span> — anomaly detection at the edge</span></li>
+            <li><span class="st unv">UNVERIFIED</span><span><span class="id">dora-10-logging</span> — <span class="id">cloudtrail_multi_region_enabled</span>, <span class="id">guardduty_is_enabled</span>, <span class="id">logging_sink_created</span>; unverified until a cloud credential is configured</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>Alert thresholds are declared per loop and per group (<code>groups/&lt;g&gt;/loops.yaml</code>) and every waiver needs a reason. Deciding what a threshold should be is the business's call.</li>
+            <li>Watching the watcher: the breaker latches after three failures and a person clears it with a reason. An open breaker nobody reads is a detection gap this page cannot close.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>Monday morning, <code>freshness-triage</code> reports <code>futures_prices</code> stale on <em>commodity-india</em>. The group's <code>CLAUDE.md</code> says futures do not settle at weekends, the loop's memory carries that rule, and the finding is annotated rather than raised. The same loop, the same table, on a Wednesday: an issue labelled <code>loop-observation</code> opens within the run, and closes itself when the feed catches up. Detection and the threshold are both written down.</p></div>
+    </div>
+  </section>
+
+  <!-- ====================================================== Article 11 -->
+  <section class="article" id="art11">
+    <div class="margin">
+      <div class="no">11</div>
+      <div class="reg">DORA Art. 11</div>
+      <div class="pills"><span class="pill partial">partly automated</span><span class="pill manual">plans manual</span></div>
+    </div>
+    <div class="body">
+      <h2>Response and recovery</h2>
+      <p class="statute">Put in place a comprehensive ICT business continuity policy, with response and recovery plans that ensure continuity of critical functions, respond to and resolve ICT-related incidents so as to limit damage, activate containment measures, and estimate impacts. Test the plans, run post-incident reviews, and keep crisis communication in place. <em>(Art. 11(1)–(7))</em></p>
+      <h3>What it means for this platform</h3>
+      <p>Containment for an autonomous system means stopping the agents. <code>pf provenance revoke</code> is the kill switch: it is honoured before any INTENT record is written, regardless of enforcement flags, and reinstating it is a recorded action. The governance engine's circuit breaker is the per-entity version. Continuity of the data itself rests on the warehouses being rebuildable from raw with <code>pf seed</code> and a dbt build, the artefact store holding the reviewed baselines outside the checkout, and, for a cloud account, backups and deletion protection that Prowler can read. Cloudflare's Always Online serving cached pages when an origin is down is the edge's small contribution.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">dora-11-kill-switch</span> — revocation armed, honoured before INTENT; the attack tests in <code>test_provenance.py</code> prove it</span></li>
+            <li><span class="st unv">UNVERIFIED</span><span><span class="id">dora-11-backups</span> — <span class="id">backup_plans_exist</span>, <span class="id">rds_instance_backup_enabled</span>, <span class="id">cloudsql_instance_automated_backups</span>; unverified until a cloud credential is configured</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>The continuity policy itself: recovery time and recovery point objectives per entity, who declares an incident, who speaks to counterparties (<code>groups/&lt;g&gt;/notify.yaml</code> holds the channel, Art. 14; the plan is prose).</li>
+            <li>Testing recovery: rebuilding an entity from raw on a clean machine, on a schedule, with the timing recorded. A rebuild that has never been rehearsed is a plan, not a capability.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>A loop starts proposing metrics that reference columns no mart has. Three rejections trip the entity's breaker (<code>CIRCUIT_BROKEN</code> in the chain); if the pattern spreads, <code>pf provenance revoke --reason "runaway proposals"</code> stops every agent on the platform, and every attempt after it is a recorded refusal. The post-incident review reads the chain, not a log someone remembered to keep.</p></div>
+    </div>
+  </section>
+
+  <!-- ====================================================== Article 12 -->
+  <section class="article" id="art12">
+    <div class="margin">
+      <div class="no">12</div>
+      <div class="reg">DORA Art. 12</div>
+      <div class="pills"><span class="pill auto">automated</span><span class="pill manual">restoration test manual</span></div>
+    </div>
+    <div class="body">
+      <h2>Backup policies, restoration and recovery</h2>
+      <p class="statute">Develop and document backup policies and procedures specifying the scope of the data subject to backup and the minimum frequency, and restoration and recovery procedures. Backup systems that ensure integrity and are logically and physically segregated from the source; restoration tested periodically. <em>(Art. 12(1)–(3))</em></p>
+      <h3>What it means for this platform</h3>
+      <p>Two things are worth protecting against loss or alteration here, and they are protected differently. The record of what agents did is a SHA-256 hash chain whose head is anchored to an RFC 3161 timestamp authority and OpenTimestamps: altering any record breaks every link after it, and the anchor proves when the head existed. That is integrity, which Article 12 asks of backups explicitly. The data is rebuildable from source, so its backup policy is the raw landing zone plus the artefact store, and the retention of that store is what the R2 lifecycle check reads. A bucket with no lifecycle rule has an undeclared retention.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">dora-12-chain</span> — every record hash-linked from genesis, every action with all three stages</span></li>
+            <li><span class="st fail">FAIL</span><span><span class="id">dora-12-anchor</span> — never anchored; <code>pf provenance anchor</code> where the ledger lives fixes it</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">dora-12-r2-retention</span> ← <span class="id">r2_bucket_lifecycle_configured</span> — the artefact bucket declares its retention</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>Writing the scope and frequency down: what raw data is retained where, for how long, and that <code>pf provenance export</code> archives are taken on a cadence.</li>
+            <li>Restoring on purpose: rebuild an entity's warehouse and compare row counts against the last export. The check can prove the chain; only a rehearsal proves the restore.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>A record in <code>provenance/chain.jsonl</code> is edited by hand to remove a rejected metric proposal. <code>pf provenance verify</code> reports the hash break at that sequence and every later record as unverifiable against the last anchor; <code>dora-12-chain</code> reads FAIL and the nightly run is red. The regulation's "integrity of backups" is met by making tampering evident, not by asking people not to.</p></div>
+    </div>
+  </section>
+
+  <!-- ==================================================== RTS Art. 16 -->
+  <section class="article" id="rts16">
+    <div class="margin">
+      <div class="no">16</div>
+      <div class="reg">RTS (EU) 2024/1774 Art. 16</div>
+      <div class="pills"><span class="pill auto">automated</span></div>
+    </div>
+    <div class="body">
+      <h2>ICT systems acquisition, development and maintenance</h2>
+      <p class="statute">Adopt a policy governing the acquisition, development and maintenance of ICT systems: security requirements identified before development, source code tested and reviewed, environments separated so that changes are tested before production, source code integrity protected, and vulnerabilities in third-party components handled. <em>(RTS Art. 16(1)–(4))</em></p>
+      <h3>How this differs from Article 9</h3>
+      <p>Article 9 protects the assets and who may reach them. RTS Article 16 governs how the software that handles them is changed. A repository can have perfect access control and still merge untested SQL straight to production; this article is about that path.</p>
+      <h3>What it means for this platform</h3>
+      <p>Every change here passes the same path. A commit meets the pre-commit gate: the path policy, the twelve-file cap, and the rule that a new platform module lands with a test in the same commit. A pull request meets CI: the platform suite, the graph currency check, the impact gate for anything a model depends on, the provenance chain's attack tests, and now the governance engine's own. Environments are separated by dbt target: <code>dev</code>, <code>ci</code> and <code>base</code> are DuckDB for every project and a production adapter loads only when selected. Third-party code is pinned under <code>vendor/</code> and verified, and the dependency tree is scanned nightly against a patch window. What the repository cannot see about itself, Prowler's github provider reads from the organisation: whether the default branch is protected, reviews are required, commits are signed, secrets and dependencies are scanned, Actions permissions are read-only by default.</p>
+      <div class="grid2">
+        <div class="box">
+          <h3>Automated evidence</h3>
+          <ul class="ev">
+            <li><span class="st pass">PASS</span><span><span class="id">rts-16-commit-gate</span> — <code>platform/hooks/pre_commit.sh</code> runs <code>pf gate</code> on every commit</span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">rts-16-runtime-governance</span> — <code>ai-governance.yml</code> runs the engine's attack tests and <code>pf govern check</code></span></li>
+            <li><span class="st fail">FAIL</span><span><span class="id">rts-16-github-posture</span> ← <span class="id">repository_default_branch_requires_signed_commits</span> — signed commits not required on <code>data-platform</code></span></li>
+            <li><span class="st pass">PASS</span><span><span class="id">rts-16-github-posture</span> ← <span class="id">repository_default_branch_status_checks_required</span>, <span class="id">repository_secret_scanning_enabled</span></span></li>
+            <li><span class="st unv">UNVERIFIED</span><span><span class="id">rts-16-branch-protection</span> — the branch-protection API, read only with <code>--live</code> and a token; the nightly job passes both</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>What stays a person's</h3>
+          <ul>
+            <li>Deciding the policy the checks enforce: how many approvals a change to a regulatory mart needs, whether signed commits become mandatory, who may bypass protection (nobody, ideally: <span class="id">repository_default_branch_protection_applies_to_admins</span> reads that).</li>
+            <li>Security requirements before development: the elevated paths and roles in each entity's <code>governance/aidf.yaml</code> are where "this mart needs a person" is declared.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>The nightly GitHub scan reports <span class="id">repository_default_branch_requires_multiple_approvals</span> FAIL on <code>Atomz-org/data-platform</code>: one approval suffices on <code>main</code>. The finding lands on <code>rts-16-github-posture</code>, the matrix names the repository, and the fix is a branch-protection setting, not a commit. The next night the row reads PASS and the evidence, with the date it changed, is in the archived matrix and the provenance chain that recorded the audit.</p></div>
+    </div>
+  </section>
+
+  <!-- ============================================== switching scans on -->
+  <h2 id="settings">Switching each scan on</h2>
+  <p>Every scan in the nightly job is independent and is switched on by the presence of its own credential. Today only the GitHub scan is active; the others stay off, report <span class="st unv">UNVERIFIED</span> for their articles, and cost nothing, until the setting below exists. Add them one at a time, in any order. A credential is always a <strong>secret</strong>; a name, a region or an id is a <strong>variable</strong>. Both live under the repository's Settings, "Secrets and variables", "Actions", or through <code>gh secret set</code> and <code>gh variable set</code>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Scan</th><th>Today</th><th>Secret (the switch)</th><th>Variables</th><th>What the credential needs</th><th>Unlocks</th></tr></thead>
+      <tbody>
+        <tr><td>GitHub</td><td><span class="st pass">ACTIVE</span></td><td><code>DORA_GITHUB_TOKEN</code></td><td><code>DORA_GITHUB_ORGANIZATION</code> (default: the repository owner)</td><td>fine-grained PAT: organisation members and administration read; repository administration, metadata and Actions read</td><td>RTS Art. 16 repository posture; Art. 9 organisation access controls</td></tr>
+        <tr><td>AWS</td><td><span class="st unv">PENDING</span></td><td><code>DORA_AWS_ROLE_ARN</code></td><td><code>DORA_AWS_REGION</code> (default <code>eu-west-1</code>)</td><td>an IAM role whose trust policy accepts GitHub OIDC for <code>repo:Atomz-org/data-platform:*</code>, with the managed policies <code>SecurityAudit</code> and <code>ViewOnlyAccess</code></td><td>Art. 8–12 for the AWS account, findings stamped by Prowler's DORA framework</td></tr>
+        <tr><td>GCP</td><td><span class="st unv">PENDING</span></td><td><code>DORA_GCP_WORKLOAD_IDENTITY_PROVIDER</code> + <code>DORA_GCP_SERVICE_ACCOUNT</code> (keyless, preferred) — or <code>DORA_GCP_CREDENTIALS_JSON</code> (a key)</td><td><code>DORA_GCP_PROJECT_IDS</code> (space-separated; empty scans every visible project)</td><td>a workload identity pool provider trusting the repository, and a service account with <code>roles/viewer</code> and <code>roles/iam.securityReviewer</code> on the projects or organisation</td><td>Art. 8–12 for the GCP projects</td></tr>
+        <tr><td>Cloudflare (edge + R2)</td><td><span class="st unv">PENDING</span></td><td><code>DORA_CLOUDFLARE_API_TOKEN</code></td><td><code>DORA_CLOUDFLARE_ACCOUNT_ID</code> (32-hex; else derived from <code>PF_ARTIFACTS_ENDPOINT</code>)</td><td>an API token with Zone: Read, DNS: Read and Workers R2 Storage: Read on the account</td><td>zones, DNS and WAF through Prowler (stamped); every R2 bucket through <code>pf dora r2</code>: Art. 8, 9, 12</td></tr>
+        <tr><td>Kubernetes</td><td><span class="st unv">PENDING</span></td><td><code>DORA_KUBECONFIG_B64</code></td><td>—</td><td>a base64-encoded kubeconfig for a read-only service account</td><td>Art. 8–11 for the cluster, by check-id prefix</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The commands, for when each cloud is ready:</p>
+  <pre><code># AWS
+gh secret   set DORA_AWS_ROLE_ARN            --repo Atomz-org/data-platform   # arn:aws:iam::&lt;account&gt;:role/&lt;dora-audit&gt;
+gh variable set DORA_AWS_REGION --body eu-west-1 --repo Atomz-org/data-platform
+
+# GCP, keyless
+gh secret   set DORA_GCP_WORKLOAD_IDENTITY_PROVIDER --repo Atomz-org/data-platform   # projects/&lt;n&gt;/locations/global/workloadIdentityPools/&lt;pool&gt;/providers/&lt;p&gt;
+gh secret   set DORA_GCP_SERVICE_ACCOUNT            --repo Atomz-org/data-platform   # dora-audit@&lt;project&gt;.iam.gserviceaccount.com
+gh variable set DORA_GCP_PROJECT_IDS --body "&lt;project-a&gt; &lt;project-b&gt;" --repo Atomz-org/data-platform
+
+# Cloudflare
+gh secret   set DORA_CLOUDFLARE_API_TOKEN  --repo Atomz-org/data-platform
+gh variable set DORA_CLOUDFLARE_ACCOUNT_ID --body &lt;32-hex-account-id&gt; --repo Atomz-org/data-platform
+
+# Kubernetes
+base64 &lt; ~/.kube/dora-readonly.yaml | gh secret set DORA_KUBECONFIG_B64 --repo Atomz-org/data-platform
+
+# Run one scan on its own, or a subset, without waiting for the night
+gh workflow run dora.yml --ref main -f scans=cloudflare
+gh workflow run dora.yml --ref main -f scans=aws,github</code></pre>
+  <p>A scan whose credential is present but broken turns the run red and names itself in the last step; the other scans still run and are still judged. A scan with no credential is simply off. Nothing here is per project: the scan is per account, the audit is per entity, and each entity's <code>governance/aidf.yaml</code> lists the providers that apply to it under <code>dora.provider</code> and <code>dora.extra_providers</code>.</p>
+
+  <!-- ============================================== how a finding lands -->
+  <h2>How a finding becomes an article status</h2>
+  <p>Every scan writes OCSF Detection Findings, Prowler's and the platform's own alike. The audit reads three things from each: its status, its severity, and how it maps to an article. A finding a scan ran with <code>--compliance dora_2022_2554</code> arrives stamped with the requirement ids it evidences, and that stamp is authoritative. A finding without a stamp, from GitHub or from <code>pf dora r2</code>, is placed by its check-id prefix. Then the rule is simple: any failing finding at or above the entity's severity threshold fails the check; findings exercised with none failing pass it; a check with no findings at all stays unverified.</p>
+  <pre><code>{
+  "status_code": "FAIL",  "severity": "High",
+  "cloud": {"provider": "cloudflare"},
+  "resources": [{"uid": "r2://&lt;account&gt;/scratch", "type": "r2_bucket"}],
+  "unmapped": {"check_id": "r2_bucket_public_access_disabled", "compliance": {}}
+}
+   │  r2_ prefix → dora-9-iam (Art. 9, protection and prevention)
+   ▼
+| Art. 9 Protection and prevention | … | **FAIL** | FAIL `dora-9-iam` — 1 failing check(s) ≥ HIGH: r2_bucket_public_access_disabled |</code></pre>
+  <p>Each entity's resolved <code>governance/aidf.yaml</code> decides the threshold, which providers apply, and which articles it has declared out of scope with a reason and an owner. The matrix is written to <code>governance/dora/matrix.md</code> per entity, archived by the nightly run for four hundred days, and recorded to the provenance chain with its SHA-256, so a report and the chain cite each other.</p>
+
+  <h2>Coverage at a glance</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Article</th><th>Automated here</th><th>Needs a cloud credential</th><th>Stays manual</th></tr></thead>
+      <tbody>
+        <tr><td>8 Identification</td><td>knowledge graph currency, R2 bucket inventory</td><td>account inventory, configuration recording</td><td>criticality classification, owner</td></tr>
+        <tr><td>9 Protection</td><td>path gate, R2 public access / TLS / CORS, org MFA and permissions, zone TLS and WAF</td><td>IAM, KMS, security groups, encryption at rest</td><td>access-control policy, token scoping</td></tr>
+        <tr><td>10 Detection</td><td>loops with breaker and ledger, observations as issues, edge anomaly checks</td><td>audit logging, threat detection</td><td>thresholds, reading the breaker</td></tr>
+        <tr><td>11 Response</td><td>kill switch, per-entity breaker</td><td>backups, deletion protection</td><td>continuity plan, RTO/RPO, recovery rehearsal</td></tr>
+        <tr><td>12 Backup</td><td>chain integrity, anchor coverage, R2 lifecycle</td><td>—</td><td>backup scope and frequency in writing, restoration test</td></tr>
+        <tr><td>RTS 16 Development</td><td>commit gate, CI suites, environment separation, vendor pins, repository posture</td><td>—</td><td>approval policy, signed-commit mandate, bypass rules</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <p>Generated for <code>Atomz-org/data-platform</code> from the statutory matrix in <code>platform/src/pf/aidf/data/mappings.json</code>. <code>pf dora matrix</code> prints the authoritative mapping; <code>docs/AIDF.md</code> is the reference for the framework, <code>docs/GOVERNANCE.md</code> for the provenance chain. The example statuses above illustrate how each check reads; the nightly run's summary shows the real ones for each entity.</p>
+  </footer>
+</div>
+
+</body>
+</html>

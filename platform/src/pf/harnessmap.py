@@ -1175,6 +1175,20 @@ def _md_table(header: list[str], rows: list[list[str]]) -> list[str]:
     return out
 
 
+def _cmds_capped(allow: list[str], keep: int = 12) -> str:
+    """The first `keep` allowed commands and a count of the rest.
+
+    The map is read against HARNESS_BUDGET, and a project with the aidf
+    capability allows thirty-odd commands: naming every one costs more of that
+    budget than the fact is worth, since an agent about to run one asks the
+    settings file, not this map. The count keeps the size honest.
+    """
+    names = _cmds(allow).split(", ") if allow else []
+    if len(names) <= keep:
+        return ", ".join(names) or "nothing"
+    return ", ".join(names[:keep]) + f", ... +{len(names) - keep} more in `.claude/settings.json`"
+
+
 def _cmds(allow: list[str]) -> str:
     """`Bash(pf report:*)` → `pf report`, joined."""
     names = []
@@ -1296,7 +1310,7 @@ def render_project(p: Project) -> str:
         "",
         "**Asks first:** " + (_cmds(p.ask) or "nothing") + ".",
         "",
-        f"**Allowed without asking** ({len(p.allow)}): " + (_cmds(p.allow) or "nothing") + ".",
+        f"**Allowed without asking** ({len(p.allow)}): " + _cmds_capped(p.allow) + ".",
         "",
         (
             "**The gate**, as it judges this project: `gate.yaml` plus `gate.capabilities.yaml`, applied "
