@@ -40,6 +40,11 @@ had a home here, and building beside them would have produced a second chain
 - Prowler 5.44 ships `prowler/compliance/dora_2022_2554.json` (universal: aws,
   azure, gcp, alibabacloud, cloudflare — no kubernetes) with ids `DORA-Art<N>`;
   the audit maps by those ids first and by check-id prefix only as fallback.
+  One audit ingests several scans (`--ocsf` repeated) and judges each finding by
+  its own `cloud.provider`; `dora.extra_providers` (grow-only) adds `github`
+  (PAT in `DORA_GITHUB_TOKEN`; repo checks → RTS-16, org checks → Art. 9) and
+  `cloudflare`. GitHub Actions cannot read `secrets` in `if:` — dora.yml maps
+  them to job `env` and tests `env.X != ''` instead.
 - `pf dora audit` reports `unverified` for anything it could not run; it is
   never a pass. Generated evidence lives in `**/governance/dora/` (gitignored,
   gate-denied, CI-archived with the matrix sha256 in the chain).
