@@ -238,7 +238,8 @@ def test_the_scorecard_says_rule_where_nothing_enforces() -> None:
     card = harness.render_scorecard()
     assert "| Codex CLI |" in card and "trusted project" in card, "Codex's trust caveat must be on the page"
     assert "default branch" in card, "the coding agent's caveat must be on the page"
-    assert "| Prompt-only" in card and "| none |" in card, "a tool with no hook is shown as having none"
+    assert "prompt-only" in card and "none — no hook exists" in card, "a tool with no hook is shown as having none"
+    assert "Local model" in card and "as its harness" in card, "a local model is gated by its harness, and says so"
     assert "*rule*" in card, "the word that carries the meaning must be defined on the page"
 
 

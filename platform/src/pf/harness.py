@@ -226,12 +226,14 @@ CLAUDE_ROW = Harness(
     "power-tools plugin",
 )
 
+#: A local model is not here: it runs inside a harness with hooks
+#: (`pf.harnesses.local`). What is left is a tool with no hook at all.
 PROMPT_ONLY_ROW = Harness(
-    "Prompt-only (Continue, Ollama, mlx)",
-    "paste `AGENTS.md`",
+    "Jules; prompt-only tools (Continue, a bare model)",
+    "`AGENTS.md` / paste `AGENTS.md`",
     "none",
-    "none",
-    "pre-commit",
+    "none — no hook exists",
+    "pre-commit; CI on the pull request",
     "none",
     "rule",
     "rule",
@@ -321,6 +323,7 @@ def render_scorecard() -> str:
         "",
         "```bash",
         f"bin/agent-here {'|'.join(['claude', *launch])} [args]",
+        *(line for s in specs() for line in s.sessions),
         "```",
         "",
         "Each harness finds its generated config from the checkout on its own; the",

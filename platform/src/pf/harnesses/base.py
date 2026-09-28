@@ -51,3 +51,5 @@ class Spec:
     providers: Mapping[str, dict[str, Any]] = field(default_factory=dict)
     #: `bin/agent-here <launch>` starts it; empty when the launcher does not.
     launch: str = ""
+    #: Further launcher lines worth printing on the scorecard.
+    sessions: tuple[str, ...] = ()
