@@ -31,8 +31,15 @@ had a home here, and building beside them would have produced a second chain
   (tool `aidf.breaker`). No side file, by design.
 - Prowler, Trivy, sentence-transformers and guardrails-ai are commands or
   isolated installs, never workspace deps — the openmetadata antlr lesson. The
-  Atomz-org forks of guardrails and prowler did not exist on 2026-09-28; the
-  submodule commands are in docs/AIDF.md for a human to run into `vendor/`.
+  Atomz-org forks are pinned shallow at `vendor/guardrails` (0.11.0) and
+  `vendor/prowler` (5.44.0, 340 MB at depth 1) and registered; `uv run --with
+  ./vendor/guardrails` and `uv tool install` are how they are used.
+- Guardrails 0.11: `Guard.for_pydantic` (not `from_pydantic`), and `Guard.use`
+  on the same `on=` path *replaces* validators — bind per field. Set
+  `OTEL_SDK_DISABLED=true` or it exports spans to a Guardrails endpoint.
+- Prowler 5.44 ships `prowler/compliance/dora_2022_2554.json` (universal: aws,
+  azure, gcp, alibabacloud, cloudflare — no kubernetes) with ids `DORA-Art<N>`;
+  the audit maps by those ids first and by check-id prefix only as fallback.
 - `pf dora audit` reports `unverified` for anything it could not run; it is
   never a pass. Generated evidence lives in `**/governance/dora/` (gitignored,
   gate-denied, CI-archived with the matrix sha256 in the chain).

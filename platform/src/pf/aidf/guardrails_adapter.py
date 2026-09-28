@@ -88,16 +88,38 @@ def register() -> dict[str, type]:
     return dict(_REGISTERED)
 
 
+#: The string fields of each contract, which is where the PII scrubber looks.
+#: A Guard attaches validators to a JSON path, and `use()` on the same path
+#: *replaces* what was there, so each field gets one call carrying every
+#: validator that applies to it.
+_STRING_FIELDS: dict[str, tuple[str, ...]] = {
+    "mart_metric": ("mart_name", "metric_name", "label", "sql_definition", "filter_expression", "rationale",
+                    "author_agent"),
+    "semantic_model": ("name", "mart_name", "description", "primary_entity", "author_agent"),
+}
+_SQL_FIELDS: dict[str, tuple[str, ...]] = {"mart_metric": ("sql_definition", "filter_expression"), "semantic_model": ()}
+
+
 def build_guard(allowed_columns: set[str] | None = None, dialect: str = "duckdb", contract: str = "mart_metric"):
     """A Guardrails `Guard` over the platform contract with both validators on
-    `on_fail="exception"`. For callers whose LLM already runs through Guardrails."""
+    `on_fail="exception"`. For callers whose LLM already runs through Guardrails.
+
+    Validators are bound per field (`on="$.sql_definition"`), not to the whole
+    output: a structured Guard hands field-level validators the field's value,
+    and the SQL validator must see the SQL, not the JSON around it.
+    """
     from guardrails import Guard
 
     from pf.aidf.schemas import CONTRACTS
 
     kinds = register()
-    return (
-        Guard.from_pydantic(output_class=CONTRACTS[contract])
-        .use(kinds["atomz/ast_sql_validator"](allowed_columns=allowed_columns, dialect=dialect, on_fail="exception"))
-        .use(kinds["atomz/pii_scrubber"](on_fail="exception"))
-    )
+    sql_cls, pii_cls = kinds["atomz/ast_sql_validator"], kinds["atomz/pii_scrubber"]
+    # 0.11 renamed the constructor; older releases have only the old name.
+    factory = getattr(Guard, "for_pydantic", None) or Guard.from_pydantic
+    guard = factory(output_class=CONTRACTS[contract])
+    for field in _STRING_FIELDS.get(contract, ()):
+        validators = [pii_cls(on_fail="exception")]
+        if field in _SQL_FIELDS.get(contract, ()):
+            validators.append(sql_cls(allowed_columns=allowed_columns, dialect=dialect, on_fail="exception"))
+        guard = guard.use(*validators, on=f"$.{field}")
+    return guard

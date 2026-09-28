@@ -289,68 +289,65 @@ board included.
 
 ## Supply chain: the Atomz-org forks
 
-The blueprint pins forks of Guardrails and Prowler as submodules. Two facts
-decided how that landed:
+Both frameworks the blueprint names are pinned the way every other upstream
+here is pinned — our own forks under `Atomz-org`, shallow submodules under
+`vendor/`, registered in `platform/src/pf/vendor/registry.yaml`, reviewed into
+`vendor.lock.json`, indexed in `docs/VENDOR-CARD.md`:
 
-1. **`vendor/` is read-only for agents and adding a pin is a human decision**
-   (AGENTS.md §2, `CLAUDE.md`). The commands are here for the person who runs
-   them.
-2. **Neither `Atomz-org/guardrails` nor `Atomz-org/prowler` existed on
-   2026-09-28.** Fork them first (`gh repo fork guardrails-ai/guardrails --org
-   Atomz-org --clone=false`, same for `prowler-cloud/prowler`).
+| pin | at | licence | what we take |
+|---|---|---|---|
+| `vendor/guardrails` | guardrails-ai 0.11.0 (fork head 2026-08-26) | Apache-2.0 | `guardrails/validator_base.py` (`port`), `guardrails/guard.py` (`shape`) |
+| `vendor/prowler` | prowler 5.44.0 (fork head 2026-09-28) | Apache-2.0 | `prowler/lib/outputs/ocsf/ocsf.py` (`parity`), `prowler/compliance/dora_2022_2554.json` (`parity`), `prowler/lib/cli/parser.py` (`shape`) |
 
-Add the pins the way every other upstream here is pinned — shallow, under
-`vendor/`, recorded in the registry:
+`pf vendor verify` checks the paths still exist at the pin, `pf vendor drift`
+names the files of ours to re-read when a bump moves them, and the parity tests
+in `platform/tests/gate/test_aidf_dora.py` check the matrix against the pinned
+framework itself. Bumping either pin is `git submodule update --remote` plus
+`pf vendor approve` in a reviewed pull request — a human's, as the router says.
 
-```bash
-git submodule add --depth 1 -b main https://github.com/Atomz-org/guardrails.git vendor/guardrails
-git submodule add --depth 1 -b master https://github.com/Atomz-org/prowler.git vendor/prowler
-git config -f .gitmodules submodule.vendor/guardrails.shallow true
-git config -f .gitmodules submodule.vendor/prowler.shallow true
-git submodule update --init --depth 1 vendor/guardrails vendor/prowler
-uv run pf vendor verify          # after adding both to platform/src/pf/vendor/registry.yaml
-```
-
-Registry entries, in the shape the file uses (`kind: port` for guardrails —
-`pf/aidf/validators.py` reimplements the two validators; `kind: shape` for
-prowler — the audit drives the CLI and reads OCSF, it takes no file):
-
-```yaml
-  guardrails:
-    path: vendor/guardrails
-    url: https://github.com/Atomz-org/guardrails
-    why: Validator base and registration API the atomz/* validators bind to.
-    adoptions:
-      - upstream: guardrails/validator_base.py
-        ours: platform/src/pf/aidf/guardrails_adapter.py
-        kind: port
-  prowler:
-    path: vendor/prowler
-    url: https://github.com/Atomz-org/prowler
-    why: The infrastructure scanner behind Articles 8-11; OCSF output contract.
-    adoptions:
-      - upstream: prowler/lib/outputs/ocsf/ocsf.py
-        ours: platform/src/pf/aidf/dora/ocsf.py
-        kind: shape
-```
-
-**Wiring with uv — deliberately not in the workspace lockfile.** Both
-packages pin dependency ranges (litellm, openai, boto3, azure, google SDKs)
-that one resolution cannot hold beside dlt, dagster and dbt; the repository
-already paid that price once with `openmetadata-ingestion` and documents it in
-`pyproject.toml`. So they are used as *commands* and *optional imports*:
+**Neither is a workspace dependency, by design.** Both pin dependency ranges
+(litellm, openai and langchain-core; boto3 and the Azure and Google SDKs) that
+one resolution cannot hold beside dlt, dagster and dbt; the repository already
+paid that price with `openmetadata-ingestion` and documents it in
+`pyproject.toml`. So they are a *command* and an *optional import*, from the pin:
 
 ```bash
-# Prowler — a command, from the pin, isolated
-uv tool install --editable ./vendor/prowler          # or: uv tool install "prowler==5.10.0"
+# Prowler — a command, isolated. From PyPI at the pinned version, or from the pin itself:
+uv tool install "prowler==5.44.0"
+uv tool install --editable ./vendor/prowler
 
-# Guardrails — an optional import for the adapter, from the pin, per invocation
-uv run --with ./vendor/guardrails python -c "from pf.aidf.guardrails_adapter import register; print(register())"
+# Guardrails — an optional import for the adapter, per invocation:
+OTEL_SDK_DISABLED=true uv run --with ./vendor/guardrails python -c \
+  "from pf.aidf.guardrails_adapter import build_guard; print(build_guard({'amount'}))"
 ```
+
+Nothing in the engine or the audit changes either way: the validators are pure
+Python, the adapter activates when `guardrails` imports, the audit finds
+`prowler` on PATH.
+
+What pinning the real code taught, and what the code now does about it:
+
+- **Guardrails 0.11 renamed `Guard.from_pydantic` to `Guard.for_pydantic`**, and
+  `Guard.use()` *replaces* the validators on a path rather than adding to them.
+  The adapter uses whichever constructor exists and binds validators per field
+  (`on="$.sql_definition"`), so the SQL validator sees the SQL and not the JSON
+  around it. Proven against the pin: a `DROP TABLE`, a column the catalogue
+  lacks and an e-mail address in the rationale each raise; a clean payload
+  parses.
+- **Guardrails phones home.** It exports OpenTelemetry spans to a Guardrails
+  endpoint by default; `OTEL_SDK_DISABLED=true` (or `guardrails configure
+  --disable-metrics`) keeps a governance check from becoming an outbound call.
+- **Prowler ships a DORA framework** — `prowler/compliance/dora_2022_2554.json`,
+  universal across aws, azure, gcp, alibabacloud and cloudflare (not
+  kubernetes), with requirement ids `DORA-Art5` … `DORA-Art45`. A scan run with
+  `--compliance dora_2022_2554` stamps every finding with the ids it evidences
+  under `unmapped.compliance["DORA-2022/2554"]`, and the audit maps findings to
+  articles by those ids first, falling back to check-id prefixes only when the
+  stamp is absent (a scan run without the framework, or kubernetes).
 
 If a future decision does want them resolvable in the workspace, the wiring is
-a `[tool.uv.sources]` block with an extra, and it must be made together with a
-fresh `uv lock` and the resolution it produces reviewed:
+a `[tool.uv.sources]` block with an extra, made together with a fresh
+`uv lock` whose resolution is reviewed:
 
 ```toml
 [project.optional-dependencies]
@@ -361,10 +358,6 @@ compliance = ["prowler"]
 guardrails-ai = { path = "vendor/guardrails", editable = true }
 prowler = { path = "vendor/prowler", editable = true }
 ```
-
-Nothing in the engine or the audit changes either way: the validators are pure
-Python, the adapter activates when `guardrails` imports, the audit finds
-`prowler` on PATH.
 
 ## Runbook
 
@@ -406,12 +399,14 @@ uv run pf dora audit jaffle jaffle-shop              # matrix in groups/jaffle/p
 
 ## Known gaps
 
-- Prowler's own DORA framework name is configurable and falls back to
-  prefix mapping; the prefix tables in `mappings.json` are a starting set and
-  should be reviewed against the check list of the Prowler version pinned.
+- The check-id prefix tables in `mappings.json` are the fallback for scans
+  without the DORA stamp and for kubernetes; a parity test pins each prefix to
+  a real Prowler service, but the article each one *belongs* to is our reading,
+  not the framework's.
 - `rts-16-branch-protection` needs `--live` and a token; the nightly job
   passes both, pull requests do not.
-- The forks do not exist yet; until they do, `guardrails_adapter.register()`
-  raises with an install hint and the audit reports Prowler `not installed`.
+- Prowler is pinned but not installed in a developer checkout; the audit
+  reports it `not installed` there and `unverified` for Articles 8-11 until
+  `uv tool install` or the nightly job runs it.
 - The harness maps are at their token budget (jaffle-shop 3999/4000); the
   next workflow or capability added needs the renderer to cap a section.

@@ -37,6 +37,11 @@ class Check:
     def compliance_keys(self) -> list[str]:
         return [str(k).lower() for k in self.spec.get("compliance_keys", [])]
 
+    @property
+    def requirements(self) -> list[str]:
+        """Requirement ids in the scanner's own framework (`DORA-Art9`)."""
+        return [str(r) for r in self.spec.get("requirements", [])]
+
 
 @dataclass(frozen=True)
 class Article:

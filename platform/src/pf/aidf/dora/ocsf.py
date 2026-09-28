@@ -44,6 +44,15 @@ class Finding:
         """Does any compliance framework name on this finding contain `key`?"""
         return any(key in k.lower() for k in (self.compliance or {}))
 
+    def requirements(self, key: str) -> set[str]:
+        """Requirement ids this finding is mapped to, under every framework whose
+        name contains `key` — `{"DORA-Art9"}` for a DORA-mapped IAM check."""
+        out: set[str] = set()
+        for k, ids in (self.compliance or {}).items():
+            if key in k.lower():
+                out.update(str(i) for i in ids)
+        return out
+
 
 def _sev(entry: dict[str, Any]) -> str:
     s = entry.get("severity")

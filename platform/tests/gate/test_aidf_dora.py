@@ -297,3 +297,56 @@ def test_generated_evidence_is_denied_to_hand_edits() -> None:
     assert r.blocked and "denylist" in r.rule
     assert not check_path("groups/g/projects/p/governance/aidf.yaml", REPO_ROOT).blocked
     assert check_path("groups/g/projects/p/governance/aidf.yaml", REPO_ROOT).verdict == "warn", "impact first"
+
+
+# ------------------------------------------------- parity with pinned Prowler --
+PROWLER_DORA = REPO_ROOT / "vendor" / "prowler" / "prowler" / "compliance" / "dora_2022_2554.json"
+
+
+def test_requirement_ids_come_from_the_framework_when_present(repo: Path, tmp_path: Path) -> None:
+    """A finding stamped with DORA-Art9 lands on Article 9 whatever its check id;
+    without the stamp the prefixes decide."""
+    _overlay(repo, {"dora": {"provider": "aws", "owner": "risk@example.com"}})
+    stamped = [{"status_code": "FAIL", "severity": "High", "cloud": {"provider": "aws"},
+                "unmapped": {"check_id": "some_new_check_nobody_prefixed",
+                             "compliance": {"DORA-2022/2554": ["DORA-Art9"]}}}]
+    f = tmp_path / "stamped.ocsf.json"
+    f.write_text(json.dumps(stamped))
+    rep = run_audit(repo, "g", "p", ocsf=f, run_tools=False, today=TODAY)
+    iam = _check(rep, "dora-9-iam")
+    assert iam.status == "fail" and iam.counts["mapped_by"] == 1
+    assert _check(rep, "dora-10-logging").status == "unverified", "not stamped for Art. 10, no prefix match"
+
+
+@pytest.mark.skipif(not PROWLER_DORA.exists(), reason="vendor/prowler not checked out")
+def test_named_requirements_exist_in_the_pinned_framework() -> None:
+    """`kind: parity` in the vendor registry, made a check: every DORA-Art id the
+    matrix names is one the pinned Prowler framework defines, the framework file
+    is the one `defaults.yaml` requests, and its name is what `cites("dora")`
+    matches on."""
+    from pf.aidf.config import defaults
+
+    fw = json.loads(PROWLER_DORA.read_text(encoding="utf-8"))
+    ids = {r["id"] for r in fw["requirements"]}
+    named = {req for c in load_mapping().checks() for req in c.requirements}
+    assert named and named <= ids, sorted(named - ids)
+    assert defaults()["dora"]["prowler"]["compliance"] == PROWLER_DORA.stem
+    assert "dora" in fw["framework"].lower()
+    providers = {p for r in fw["requirements"] for p in (r.get("checks") or {})}
+    assert {"aws", "azure", "gcp"} <= providers, "the prefix fallback must stay for providers the framework lacks"
+    assert "kubernetes" not in providers, "kubernetes has no DORA checks upstream; the mapping's k8s prefixes are the only route"
+
+
+@pytest.mark.skipif(not PROWLER_DORA.exists(), reason="vendor/prowler not checked out")
+def test_prefixes_name_real_check_namespaces() -> None:
+    """Every check-id prefix in the matrix names a service Prowler actually has,
+    so a typo cannot quietly match nothing forever."""
+    services = REPO_ROOT / "vendor" / "prowler" / "prowler" / "providers"
+    for c in load_mapping().checks():
+        if c.kind != "prowler":
+            continue
+        for provider in ("aws", "azure", "gcp", "kubernetes"):
+            have = {p.name for p in (services / provider / "services").iterdir() if p.is_dir()}
+            for prefix in c.prefixes_for(provider):
+                svc = prefix.split("_", 1)[0]
+                assert svc in have, f"{c.id}: {provider} prefix {prefix!r} names no service"

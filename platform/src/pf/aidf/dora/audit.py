@@ -422,12 +422,19 @@ def _judge(check: Check, *, root: Path, cfg: AidfConfig, inputs: _Inputs, live: 
         else:
             thr = str((cfg.dora.get("prowler") or {}).get("severity_threshold") or "high").upper()
             prefixes = check.prefixes_for(cfg.provider) if cfg.provider else []
-            keys = check.compliance_keys
-            matched = [f for f in inputs.findings
-                       if (prefixes and any(f.check_id.startswith(p) for p in prefixes))
-                       or (keys and any(f.cites(k) for k in keys) and not prefixes)]
+            keys = check.compliance_keys or ["dora"]
+            wanted = set(check.requirements)
+            # The framework's own mapping when the scan carried it (a run with
+            # `--compliance dora_2022_2554` stamps every finding with the
+            # DORA-Art ids it evidences); the check-id prefixes otherwise.
+            by_requirement = [f for f in inputs.findings
+                              if wanted and any(f.requirements(k) & wanted for k in keys)]
+            matched = by_requirement or [f for f in inputs.findings
+                                         if prefixes and any(f.check_id.startswith(p) for p in prefixes)]
             failing = [f for f in matched if f.failed and _SEV_RANK.get(f.severity, 0) >= _SEV_RANK.get(thr, 3)]
-            res.counts = {"matched": len(matched), "failing": len(failing)}
+            # `mapped_by` is 1 when the framework's own requirement ids did the
+            # mapping and 0 when the prefixes did — the report says which.
+            res.counts = {"matched": len(matched), "failing": len(failing), "mapped_by": 1 if by_requirement else 0}
             res.evidence = [inputs.files.get("ocsf", "")]
             if failing:
                 res.status = "fail"
