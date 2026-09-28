@@ -195,6 +195,12 @@ graphify-out/
 # generated. Rebuild with `pf air register <group> <project>`.
 **/governance/air-register.md
 
+# Written by `pf dora audit` for each entity: the DORA evidence matrix and the
+# Prowler/Trivy inputs it was judged from. Generated and timestamped, so git
+# never carries it — CI archives it as a run artifact and the provenance chain
+# records its SHA-256. The gate denies hand-edits (pf.capabilities `aidf`).
+**/governance/dora/
+
 # Wren's derived memory index, one per project workspace (`mdl/wren/.wren/`).
 # `mdl/wren/knowledge/sql/*.md` is the source of truth and is tracked; the index
 # is rebuilt from it by `pf tool wren index`. The LLM-facing manifest beside it
