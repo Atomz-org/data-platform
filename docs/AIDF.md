@@ -8,9 +8,12 @@ nightly issue hygiene that keeps the tracker honest — one platform layer,
 This page is the reference. `docs/GOVERNANCE.md` is the provenance chain the
 engine writes to, `docs/AIR.md` the control catalogue the DORA audit reads,
 `docs/AI-GOVERNANCE-ARCHITECTURE.md` the six planes this layer sits on.
-`docs/dora-articles.html` is the article map: what Articles 8 to 12 and RTS
-Article 16 mean for this platform's own estate, with the check behind each and
-an example per article (also published as an artifact, "DORA Article Map").
+Two companion pages, each also published as an artifact of the same name:
+`docs/ai-governance-map.html` ("AI Governance Map") walks the seven steps every
+agent proposal takes through pillar one, with an example per step;
+`docs/dora-articles.html` ("DORA Article Map") explains what Articles 8 to 12
+and RTS Article 16 mean for this platform's own estate, the check behind each,
+and the secrets and variables that switch each scan on.
 
 ```
                         agent (Claude · Cursor · Copilot · Gemini · Codex · local Qwen)

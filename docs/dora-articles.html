@@ -329,6 +329,43 @@
     </div>
   </section>
 
+  <!-- ============================================== switching scans on -->
+  <h2 id="settings">Switching each scan on</h2>
+  <p>Every scan in the nightly job is independent and is switched on by the presence of its own credential. Today only the GitHub scan is active; the others stay off, report <span class="st unv">UNVERIFIED</span> for their articles, and cost nothing, until the setting below exists. Add them one at a time, in any order. A credential is always a <strong>secret</strong>; a name, a region or an id is a <strong>variable</strong>. Both live under the repository's Settings, "Secrets and variables", "Actions", or through <code>gh secret set</code> and <code>gh variable set</code>.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Scan</th><th>Today</th><th>Secret (the switch)</th><th>Variables</th><th>What the credential needs</th><th>Unlocks</th></tr></thead>
+      <tbody>
+        <tr><td>GitHub</td><td><span class="st pass">ACTIVE</span></td><td><code>DORA_GITHUB_TOKEN</code></td><td><code>DORA_GITHUB_ORGANIZATION</code> (default: the repository owner)</td><td>fine-grained PAT: organisation members and administration read; repository administration, metadata and Actions read</td><td>RTS Art. 16 repository posture; Art. 9 organisation access controls</td></tr>
+        <tr><td>AWS</td><td><span class="st unv">PENDING</span></td><td><code>DORA_AWS_ROLE_ARN</code></td><td><code>DORA_AWS_REGION</code> (default <code>eu-west-1</code>)</td><td>an IAM role whose trust policy accepts GitHub OIDC for <code>repo:Atomz-org/data-platform:*</code>, with the managed policies <code>SecurityAudit</code> and <code>ViewOnlyAccess</code></td><td>Art. 8–12 for the AWS account, findings stamped by Prowler's DORA framework</td></tr>
+        <tr><td>GCP</td><td><span class="st unv">PENDING</span></td><td><code>DORA_GCP_WORKLOAD_IDENTITY_PROVIDER</code> + <code>DORA_GCP_SERVICE_ACCOUNT</code> (keyless, preferred) — or <code>DORA_GCP_CREDENTIALS_JSON</code> (a key)</td><td><code>DORA_GCP_PROJECT_IDS</code> (space-separated; empty scans every visible project)</td><td>a workload identity pool provider trusting the repository, and a service account with <code>roles/viewer</code> and <code>roles/iam.securityReviewer</code> on the projects or organisation</td><td>Art. 8–12 for the GCP projects</td></tr>
+        <tr><td>Cloudflare (edge + R2)</td><td><span class="st unv">PENDING</span></td><td><code>DORA_CLOUDFLARE_API_TOKEN</code></td><td><code>DORA_CLOUDFLARE_ACCOUNT_ID</code> (32-hex; else derived from <code>PF_ARTIFACTS_ENDPOINT</code>)</td><td>an API token with Zone: Read, DNS: Read and Workers R2 Storage: Read on the account</td><td>zones, DNS and WAF through Prowler (stamped); every R2 bucket through <code>pf dora r2</code>: Art. 8, 9, 12</td></tr>
+        <tr><td>Kubernetes</td><td><span class="st unv">PENDING</span></td><td><code>DORA_KUBECONFIG_B64</code></td><td>—</td><td>a base64-encoded kubeconfig for a read-only service account</td><td>Art. 8–11 for the cluster, by check-id prefix</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The commands, for when each cloud is ready:</p>
+  <pre><code># AWS
+gh secret   set DORA_AWS_ROLE_ARN            --repo Atomz-org/data-platform   # arn:aws:iam::&lt;account&gt;:role/&lt;dora-audit&gt;
+gh variable set DORA_AWS_REGION --body eu-west-1 --repo Atomz-org/data-platform
+
+# GCP, keyless
+gh secret   set DORA_GCP_WORKLOAD_IDENTITY_PROVIDER --repo Atomz-org/data-platform   # projects/&lt;n&gt;/locations/global/workloadIdentityPools/&lt;pool&gt;/providers/&lt;p&gt;
+gh secret   set DORA_GCP_SERVICE_ACCOUNT            --repo Atomz-org/data-platform   # dora-audit@&lt;project&gt;.iam.gserviceaccount.com
+gh variable set DORA_GCP_PROJECT_IDS --body "&lt;project-a&gt; &lt;project-b&gt;" --repo Atomz-org/data-platform
+
+# Cloudflare
+gh secret   set DORA_CLOUDFLARE_API_TOKEN  --repo Atomz-org/data-platform
+gh variable set DORA_CLOUDFLARE_ACCOUNT_ID --body &lt;32-hex-account-id&gt; --repo Atomz-org/data-platform
+
+# Kubernetes
+base64 &lt; ~/.kube/dora-readonly.yaml | gh secret set DORA_KUBECONFIG_B64 --repo Atomz-org/data-platform
+
+# Run one scan on its own, or a subset, without waiting for the night
+gh workflow run dora.yml --ref main -f scans=cloudflare
+gh workflow run dora.yml --ref main -f scans=aws,github</code></pre>
+  <p>A scan whose credential is present but broken turns the run red and names itself in the last step; the other scans still run and are still judged. A scan with no credential is simply off. Nothing here is per project: the scan is per account, the audit is per entity, and each entity's <code>governance/aidf.yaml</code> lists the providers that apply to it under <code>dora.provider</code> and <code>dora.extra_providers</code>.</p>
+
   <!-- ============================================== how a finding lands -->
   <h2>How a finding becomes an article status</h2>
   <p>Every scan writes OCSF Detection Findings, Prowler's and the platform's own alike. The audit reads three things from each: its status, its severity, and how it maps to an article. A finding a scan ran with <code>--compliance dora_2022_2554</code> arrives stamped with the requirement ids it evidences, and that stamp is authoritative. A finding without a stamp, from GitHub or from <code>pf dora r2</code>, is placed by its check-id prefix. Then the rule is simple: any failing finding at or above the entity's severity threshold fails the check; findings exercised with none failing pass it; a check with no findings at all stays unverified.</p>
