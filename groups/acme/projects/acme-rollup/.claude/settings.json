@@ -76,7 +76,9 @@
       "Bash(pf logs:*)",
       "Bash(pf align:*)",
       "Bash(pf evals-gate:*)",
-      "Bash(pf tool okf:*)"
+      "Bash(pf tool okf:*)",
+      "Bash(pf govern:*)",
+      "Bash(pf dora:*)"
     ],
     "ask": [
       "Bash(git push:*)",
