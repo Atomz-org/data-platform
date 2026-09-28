@@ -2,7 +2,7 @@
   "version": 1,
   "regulation": "Regulation (EU) 2022/2554 (DORA) with Commission Delegated Regulation (EU) 2024/1774 (RTS on ICT risk management)",
   "check_kinds": {
-    "prowler": "Failing Prowler findings mapped to this article by the DORA framework's requirement ids (`unmapped.compliance`, e.g. DORA-Art9) when the scan ran with `--compliance dora_2022_2554`, else by check-id prefix; `unverified` when no scan ran.",
+    "prowler": "Failing Prowler findings mapped to this article by the DORA framework's requirement ids (`unmapped.compliance`, e.g. DORA-Art9) when the scan ran with `--compliance dora_2022_2554`, else by check-id prefix; `unverified` when no scan ran. Check ids prefixed `r2_` come from the platform's own R2 scan (`pf dora r2`), emitted in the same OCSF shape with provider `cloudflare`.",
     "trivy": "The dependency and image vulnerability scan judged against the RTS Art. 10 patch policy.",
     "provenance": "The agent-action ledger: chain integrity, stage completeness, anchor coverage (pf provenance verify).",
     "file": "A repository or entity file that must exist; `{group}` and `{project}` are bound from the entity.",
@@ -100,6 +100,10 @@
               "core_",
               "kubelet_",
               "apiserver_"
+            ],
+            "cloudflare": [
+              "r2_bucket_inventoried",
+              "zone_"
             ]
           },
           "description": "Cloud resources are discovered and configuration recording is on.",
@@ -163,6 +167,10 @@
               "organization_default_repository_permission_strict",
               "organization_repository_creation_limited",
               "organization_repository_deletion_limited"
+            ],
+            "cloudflare": [
+              "r2_bucket_public_access_disabled",
+              "r2_bucket_cors_not_wildcard"
             ]
           },
           "description": "Least-privilege IAM, MFA, secret hygiene and encryption at rest.",
@@ -206,9 +214,18 @@
               "apiserver_"
             ],
             "cloudflare": [
-              "firewall_",
-              "zone_",
-              "dns_"
+              "r2_bucket_custom_domain_tls_secure",
+              "zone_ssl_strict",
+              "zone_min_tls_version_secure",
+              "zone_tls_1_3_enabled",
+              "zone_hsts_enabled",
+              "zone_https_redirect_enabled",
+              "zone_universal_ssl_enabled",
+              "zone_waf_",
+              "zone_firewall_",
+              "zone_rate_limiting_enabled",
+              "zone_dnssec_enabled",
+              "dns_record_"
             ]
           },
           "description": "Security groups, VPC boundaries and external ingress limits.",
@@ -259,6 +276,11 @@
               "apiserver_audit",
               "kubelet_event",
               "apiserver_"
+            ],
+            "cloudflare": [
+              "zone_bot_fight_mode_enabled",
+              "zone_browser_integrity_check_enabled",
+              "zone_security_under_attack_disabled"
             ]
           },
           "description": "Audit logging, threat detection and alerting are on for the entity's cloud account.",
@@ -308,6 +330,9 @@
             ],
             "kubernetes": [
               "etcd_"
+            ],
+            "cloudflare": [
+              "zone_always_online_disabled"
             ]
           },
           "description": "Backups, versioning and deletion protection on the entity's data stores.",
@@ -340,6 +365,19 @@
           "kind": "provenance",
           "aspect": "anchors",
           "description": "The chain head is anchored to an RFC 3161 timestamp authority and OpenTimestamps; records since the last anchor are flagged."
+        },
+        {
+          "id": "dora-12-r2-retention",
+          "kind": "prowler",
+          "scope": [
+            "cloudflare"
+          ],
+          "prefixes": {
+            "cloudflare": [
+              "r2_bucket_lifecycle_configured"
+            ]
+          },
+          "description": "Every R2 bucket of the artefact store declares a lifecycle (retention) policy, so what is kept and for how long is written down (pf dora r2)."
         }
       ]
     },

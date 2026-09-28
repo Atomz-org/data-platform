@@ -218,6 +218,43 @@ def dora_check() -> None:
     raise typer.Exit(1 if problems else 0)
 
 
+@dora_app.command("r2")
+def dora_r2(
+    out: Path = typer.Option(Path(".tmp/dora/prowler_cloudflare_r2.ocsf.json"), "--out",
+                             help="Where to write the OCSF findings; feed it to `pf dora audit --ocsf`"),
+    account_id: str = typer.Option("", "--account-id",
+                                   help="Cloudflare account id; default from env or PF_ARTIFACTS_ENDPOINT"),
+) -> None:
+    """Judge every R2 bucket in the account — public access, TLS, CORS, lifecycle — as OCSF findings.
+
+    Prowler's cloudflare provider covers zones, DNS and the WAF and has no R2
+    checks; the artefact store lives in R2, so this is the platform's own scan.
+    Needs CLOUDFLARE_API_TOKEN (or DORA_CLOUDFLARE_API_TOKEN) with
+    'Workers R2 Storage: Read'.
+    """
+    from pf.aidf.dora import r2
+
+    token = r2.token_from_env()
+    acct = account_id or r2.account_id_from_env()
+    if not token:
+        console.print("[red]no CLOUDFLARE_API_TOKEN / DORA_CLOUDFLARE_API_TOKEN in the environment[/]")
+        raise typer.Exit(2)
+    if not acct:
+        console.print("[red]no account id: pass --account-id, set CLOUDFLARE_ACCOUNT_ID, "
+                      "or set PF_ARTIFACTS_ENDPOINT[/]")
+        raise typer.Exit(2)
+    try:
+        findings = r2.scan(acct, r2.http_fetch(token))
+    except r2.R2AccessError as exc:
+        console.print(f"[red]{exc}[/]")
+        raise typer.Exit(1) from exc
+    path = r2.write_ocsf(findings, root() / out if not out.is_absolute() else out)
+    s = r2.summary(findings)
+    console.print(f"[green]{s['buckets']} bucket(s)[/] · {s['pass']} pass · {s['fail']} fail · "
+                  f"{s['manual']} manual → {path}")
+    raise typer.Exit(1 if s["fail"] else 0)
+
+
 @dora_app.command("audit")
 def dora_audit(
     group: str | None = typer.Argument(None), project: str | None = typer.Argument(None),

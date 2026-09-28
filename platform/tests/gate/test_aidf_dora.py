@@ -358,6 +358,8 @@ def test_prefixes_name_real_check_namespaces() -> None:
         for provider in PROVIDERS:
             have = {p.name for p in (services / provider / "services").iterdir() if p.is_dir()}
             for prefix in c.prefixes_for(provider):
+                if prefix.startswith("r2_"):
+                    continue  # the platform's own R2 scan, not a Prowler service
                 svc = prefix.split("_", 1)[0]
                 assert svc in have, f"{c.id}: {provider} prefix {prefix!r} names no service"
 
@@ -404,3 +406,139 @@ def test_extra_providers_only_grow_and_are_validated(tmp_path: Path) -> None:
     assert cfg.providers == ["gcp", "github", "cloudflare"], "the cloud first, then every extra, none dropped"
     assert set(cfg.providers) <= set(PROVIDERS)
     assert "github" in PROVIDERS and "cloudflare" in PROVIDERS
+
+
+# ------------------------------------------------------------------ R2 scan --
+def _cf(responses: dict[str, object]):
+    """A fake Cloudflare API: path -> result. Missing paths answer 404-shaped."""
+    calls: list[str] = []
+
+    def fetch(path: str) -> dict:
+        calls.append(path)
+        if path in responses:
+            return {"success": True, "errors": [], "result": responses[path]}
+        return {"success": False, "errors": [{"code": 404, "message": "not found"}], "result": None}
+
+    fetch.calls = calls  # type: ignore[attr-defined]
+    return fetch
+
+
+def test_r2_scan_judges_every_bucket() -> None:
+    from pf.aidf.dora import r2
+
+    acct = "a" * 32
+    fetch = _cf({
+        f"/accounts/{acct}/r2/buckets": {"buckets": [
+            {"name": "data-platform", "location": "WEUR", "creation_date": "2026-09-01T00:00:00Z"},
+            {"name": "scratch", "location": "auto", "creation_date": "2026-09-20T00:00:00Z"},
+        ]},
+        f"/accounts/{acct}/r2/buckets/data-platform/domains/managed": {"enabled": False},
+        f"/accounts/{acct}/r2/buckets/data-platform/domains/custom": {"domains": [{"domain": "art.example.com", "minTLS": "1.2"}]},
+        f"/accounts/{acct}/r2/buckets/data-platform/cors": {"rules": [{"allowed": {"origins": ["https://app.example.com"]}}]},
+        f"/accounts/{acct}/r2/buckets/data-platform/lifecycle": {"rules": [{"id": "expire-old", "enabled": True}]},
+        f"/accounts/{acct}/r2/buckets/scratch/domains/managed": {"enabled": True},
+        f"/accounts/{acct}/r2/buckets/scratch/domains/custom": {"domains": []},
+        f"/accounts/{acct}/r2/buckets/scratch/cors": {"rules": [{"allowed": {"origins": ["*"]}}]},
+        f"/accounts/{acct}/r2/buckets/scratch/lifecycle": {"rules": []},
+    })
+    findings = r2.scan(acct, fetch)
+    by = {(f["resources"][0]["name"], f["unmapped"]["check_id"]): f["status_code"] for f in findings}
+    assert by[("data-platform", "r2_bucket_inventoried")] == "PASS"
+    assert by[("data-platform", "r2_bucket_public_access_disabled")] == "PASS"
+    assert by[("data-platform", "r2_bucket_custom_domain_tls_secure")] == "PASS"
+    assert by[("data-platform", "r2_bucket_cors_not_wildcard")] == "PASS"
+    assert by[("data-platform", "r2_bucket_lifecycle_configured")] == "PASS"
+    assert by[("scratch", "r2_bucket_public_access_disabled")] == "FAIL", "r2.dev enabled: world-readable"
+    assert by[("scratch", "r2_bucket_cors_not_wildcard")] == "FAIL"
+    assert by[("scratch", "r2_bucket_lifecycle_configured")] == "FAIL"
+    assert ("scratch", "r2_bucket_custom_domain_tls_secure") not in by, "no custom domain, no verdict about one"
+    assert all(f["cloud"]["provider"] == "cloudflare" for f in findings)
+    assert r2.summary(findings) == {"buckets": 2, "pass": 6, "fail": 3, "manual": 0}
+    assert "Bearer" not in json.dumps(findings)
+
+
+def test_r2_scan_reports_not_hides_an_unreadable_call() -> None:
+    from pf.aidf.dora import r2
+
+    acct = "b" * 32
+    fetch = _cf({f"/accounts/{acct}/r2/buckets": {"buckets": [{"name": "x"}]}})  # every sub-call 404s
+    findings = r2.scan(acct, fetch)
+    by = {f["unmapped"]["check_id"]: f["status_code"] for f in findings}
+    assert by["r2_bucket_public_access_disabled"] == "MANUAL", "unreadable is not a pass"
+    assert "r2_bucket_cors_not_wildcard" not in by and "r2_bucket_lifecycle_configured" not in by
+
+
+def test_r2_scan_refuses_without_the_account_listing() -> None:
+    from pf.aidf.dora import r2
+
+    with pytest.raises(r2.R2AccessError):
+        r2.scan("c" * 32, _cf({}))
+
+
+def test_r2_account_id_is_derived_from_the_artefact_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    from pf.aidf.dora import r2
+
+    monkeypatch.delenv("DORA_CLOUDFLARE_ACCOUNT_ID", raising=False)
+    monkeypatch.delenv("CLOUDFLARE_ACCOUNT_ID", raising=False)
+    monkeypatch.setenv("PF_ARTIFACTS_ENDPOINT", f"https://{'d' * 32}.r2.cloudflarestorage.com")
+    assert r2.account_id_from_env() == "d" * 32
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "e" * 32)
+    assert r2.account_id_from_env() == "e" * 32
+
+
+def test_r2_findings_flow_into_the_audit(repo: Path, tmp_path: Path) -> None:
+    from pf.aidf.dora import r2
+
+    acct = "f" * 32
+    fetch = _cf({
+        f"/accounts/{acct}/r2/buckets": {"buckets": [{"name": "data-platform"}]},
+        f"/accounts/{acct}/r2/buckets/data-platform/domains/managed": {"enabled": True},
+        f"/accounts/{acct}/r2/buckets/data-platform/domains/custom": {"domains": []},
+        f"/accounts/{acct}/r2/buckets/data-platform/cors": {"rules": []},
+        f"/accounts/{acct}/r2/buckets/data-platform/lifecycle": {"rules": [{"id": "keep-400d"}]},
+    })
+    out = r2.write_ocsf(r2.scan(acct, fetch), tmp_path / "r2.ocsf.json")
+    _overlay(repo, {"dora": {"extra_providers": ["cloudflare"], "owner": "risk@example.com"}})
+    rep = run_audit(repo, "g", "p", ocsf=[out], run_tools=False, today=TODAY)
+    assert _check(rep, "dora-9-iam").status == "fail", "a public r2.dev bucket is an access-control failure"
+    assert _check(rep, "dora-12-r2-retention").status == "pass"
+    assert _check(rep, "dora-8-asset-inventory").status == "pass", "the inventory finding exercises Art. 8"
+    assert rep.provider == "cloudflare"
+
+
+# ----------------------------------------------- the shape Prowler 5 really writes --
+REAL_PROWLER_5 = {
+    "activity_name": "Create", "class_name": "Detection Finding",
+    "status_code": "FAIL", "status": "New", "severity": "Critical", "severity_id": 5,
+    "status_detail": "Organization Atomz-org does not require members to have two-factor authentication enabled.",
+    "metadata": {"event_code": "organization_members_mfa_required", "product": {"name": "Prowler"}, "version": "1.4.0"},
+    "finding_info": {"uid": "prowler-github-organization_members_mfa_required-Atomz-org-Atomz-org-Atomz-org",
+                     "title": "Organization requires members to have two-factor authentication enabled"},
+    "cloud": {"account": {"name": "Atomz-org", "uid": "Atomz-org"}, "provider": "github", "region": "Atomz-org"},
+    "resources": [{"uid": "313147314", "name": "Atomz-org", "type": "NotDefined", "region": "Atomz-org"}],
+    "unmapped": {"provider": "github", "compliance": {"CIS-1.2.0": ["1.3.4", "1.3.5"]}, "categories": []},
+}
+
+
+def test_prowler_5_output_shape_is_read_correctly() -> None:
+    """Captured from a real `prowler github` run of 2026-09-28: no
+    `unmapped.check_id`, the check name in `metadata.event_code`, a composite
+    `finding_info.uid`, the readable resource in `resources[].name`. The first
+    parser fell back to the uid and no prefix could match."""
+    f = ocsf.normalise(REAL_PROWLER_5)
+    assert f.check_id == "organization_members_mfa_required"
+    assert f.provider == "github" and f.failed and f.severity == "CRITICAL"
+    assert f.resource == "Atomz-org"
+    assert f.cites("cis") and not f.cites("dora")
+    # And the uid fallback, for a producer that writes neither field:
+    stripped = {**REAL_PROWLER_5, "metadata": {}, "unmapped": {"provider": "github"}}
+    assert ocsf.normalise(stripped).check_id.startswith("organization_members_mfa_required")
+
+
+def test_real_github_finding_lands_on_article_9(repo: Path, tmp_path: Path) -> None:
+    f = tmp_path / "gh.ocsf.json"
+    f.write_text(json.dumps([REAL_PROWLER_5]))
+    _overlay(repo, {"dora": {"extra_providers": ["github"], "owner": "risk@example.com"}})
+    rep = run_audit(repo, "g", "p", ocsf=[f], run_tools=False, today=TODAY)
+    iam = _check(rep, "dora-9-iam")
+    assert iam.status == "fail" and "organization_members_mfa_required" in iam.detail

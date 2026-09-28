@@ -72,22 +72,40 @@ def _status(entry: dict[str, Any]) -> str:
     return "UNKNOWN"
 
 
+def _check_id(entry: dict[str, Any], unmapped: dict[str, Any], info: dict[str, Any], provider: str) -> str:
+    """The check name, from the field Prowler actually writes it to.
+
+    Prowler 5 puts it in `metadata.event_code` (`organization_members_mfa_required`);
+    our own scans and older shapes put it in `unmapped.check_id`. The
+    `finding_info.uid` is the last resort and is a composite —
+    `prowler-github-organization_members_mfa_required-Atomz-org-…` — so the
+    provider prefix is stripped from it before it can be matched.
+    """
+    for candidate in (unmapped.get("check_id"), (entry.get("metadata") or {}).get("event_code"), entry.get("check_id")):
+        if candidate:
+            return str(candidate).strip()
+    uid = str(info.get("uid") or "").strip()
+    prefix = f"prowler-{provider}-" if provider else "prowler-"
+    return uid[len(prefix):] if uid.startswith(prefix) else uid
+
+
 def normalise(entry: dict[str, Any]) -> Finding:
     unmapped = entry.get("unmapped") or {}
     info = entry.get("finding_info") or {}
     cloud = entry.get("cloud") or {}
     resources = entry.get("resources") or []
-    check_id = str(unmapped.get("check_id") or info.get("uid") or entry.get("check_id") or "").strip()
+    provider = str(cloud.get("provider") or unmapped.get("provider") or entry.get("provider") or "").lower()
     compliance = unmapped.get("compliance") if isinstance(unmapped.get("compliance"), dict) else None
     if compliance is not None:
         compliance = {str(k): [str(x) for x in (v if isinstance(v, list) else [v])] for k, v in compliance.items()}
+    first = resources[0] if resources and isinstance(resources[0], dict) else {}
     return Finding(
-        check_id=check_id,
+        check_id=_check_id(entry, unmapped, info, provider),
         status=_status(entry),
         severity=_sev(entry),
-        provider=str(cloud.get("provider") or entry.get("provider") or "").lower(),
+        provider=provider,
         title=str(info.get("title") or entry.get("title") or "")[:200],
-        resource=str((resources[0].get("uid") if resources and isinstance(resources[0], dict) else "") or "")[:200],
+        resource=str(first.get("name") or first.get("uid") or "")[:200],
         compliance=compliance,
     )
 
