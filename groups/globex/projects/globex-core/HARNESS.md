@@ -47,7 +47,7 @@ This project's own `.mcp.json` adds `wren` for Claude Code only; the other harne
 
 **Asks first:** `gh pr create`, `git push`.
 
-**Allowed without asking** (33): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `edr monitor`, `edr report`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, `npm run dev`, `npm run sources`, `pf air`, `pf align`, `pf artifacts`, `pf ask`, `pf evals-gate`, `pf logs`, `pf loop`, `pf report`, `pf tool elementary`, `pf tool expectations`, `pf tool okf`, `pf tool openmetadata`, `pf tool recce`, `pf tool wren`, `recce debug`, `recce run`, `recce server`, `uv run pf`, `wren`.
+**Allowed without asking** (35): `dbt build`, `dbt ls`, `dbt parse`, `dbt test`, `edr monitor`, `edr report`, `gh pr diff`, `gh pr view`, `metadata`, `mf list`, `mf query`, `npm run build`, ... +23 more in `.claude/settings.json`.
 
 **The gate**, as it judges this project: `gate.yaml` plus `gate.capabilities.yaml`, applied to representative paths (real where the project has them) as a `pf work` session is judged. *Denied*: the hook exits 2 and the commit gate refuses. *Impact first*: the hook prints the blast radius and the commit gate runs impact analysis.
 
@@ -144,11 +144,11 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/globex/n
 ## 6. Recorded and judged
 
 - **Provenance.** The hooks write INTENT, DECISION and EXECUTION into `provenance/` — gitignored, denied, hash-chained, time-anchored; `pf provenance verify` audits it.
-- **AI controls.** `air.yaml` commits to 0 controls and accepts 0, merged over the group's; `pf air gate globex globex-core` blocks on a failing baseline control. The register is generated to `governance/air-register.md`.
-- **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-settings-schema-valid`, `entity-isolation-enforced`, `vendor-is-read-only`.
+- **AI controls.** `air.yaml` commits to 12 controls and accepts 0, merged over the group's; `pf air gate globex globex-core` blocks on a failing baseline control. The register is generated to `governance/air-register.md`.
+- **Policy.** `governance/policy.yaml` layers over the group's and the platform floor and may only tighten; the capabilities present add `agent-output-passes-contract`, `agent-settings-schema-valid`, `agent-sql-is-read-only`, `dora-patch-window-enforced`, `entity-isolation-enforced`, `vendor-is-read-only`.
 - **Evals.** 0 hand-written cases in `evals/cases/`, generated ones gitignored; `pf evals globex globex-core` runs them, `pf evals-gate` on an agent-surface change.
 - **The onboarding ladder.** `pf align globex globex-core`: `import` → `ontology` → `dialect` → `layers` → `metrics` → `review`; each stage may write only its own globs.
-- **Decisions.** 0 ADRs in `decisions/`; 11 capability pages in `docs/`.
+- **Decisions.** 0 ADRs in `decisions/`; 12 capability pages in `docs/`.
 
 ## 7. The subprojects, and their harness
 
@@ -172,7 +172,7 @@ Loop memory: `decisions/loop-memory.yaml`, 0 entries. Delivery: `groups/globex/n
 - `recce` — dbt PR review — diff a change against a captured baseline. (from the group; denies 3; impact-gates 1; CI `recce`; a Dagster asset; a dev server on port 8000/)
 - `wren` — MDL semantic layer — project it, inspect it, ask questions through it. (from the group; denies 5; a Dagster asset)
 
-**Capabilities present:** `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`.
+**Capabilities present:** `aidf`, `air`, `elementary`, `evidence`, `expectations`, `github`, `governance`, `loops`, `okf`, `openmetadata`, `recce`, `snowflake`, `wren`.
 
 ## Gaps
 
