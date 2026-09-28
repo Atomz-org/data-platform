@@ -259,7 +259,15 @@ and its audit reports `not_applicable`, with the reason printed, never `pass`.
 | job | when | does |
 |---|---|---|
 | `supply-chain` | nightly 02:00 UTC · dispatch · pull requests touching `uv.lock`, `pyproject.toml`, `**/governance/aidf.yaml`, `pf/aidf/**` | Trivy SBOM + scan, then `pf dora audit` for every entity; exit 1 blocks the PR on a fixable Critical/High past its window |
-| `infrastructure` | nightly · dispatch, never on a pull request | `uv tool install prowler`; the cloud scan for `vars.DORA_PROWLER_PROVIDER` with its credential; the GitHub posture scan when `secrets.DORA_GITHUB_TOKEN` is set; one `pf dora audit` over every scan that ran; a warning when nothing is configured |
+| `infrastructure` | nightly · dispatch, never on a pull request | `uv tool install prowler`; the cloud scan for `vars.DORA_PROWLER_PROVIDER` with its credential; the GitHub posture scan when `secrets.DORA_GITHUB_TOKEN` is set; one `pf dora audit` over every scan that produced output |
+
+The two scans in `infrastructure` are independent. No credential or scan step
+can abort the job: each records its outcome, the audit judges whatever ran, the
+evidence is archived, and only the last step decides the colour of the run —
+red when a scan that *was* configured did not run or an entity breached an
+article, a warning when nothing is configured. So a `gcp` provider with no GCP
+secret yet costs Articles 8 to 11 (`unverified`) and nothing else: the GitHub
+posture scan still runs and RTS Art. 16 is still evidenced.
 
 Both archive `governance/dora/**`, the scans and `provenance/chain.jsonl` as
 one artifact. The `runtime-governance` job in `ai-governance.yml` runs the

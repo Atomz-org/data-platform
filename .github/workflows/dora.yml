@@ -150,9 +150,14 @@ jobs:
   infrastructure:
     name: Infrastructure (Art. 8-11) and GitHub posture (RTS Art. 16)
     # Never on a pull request — this job holds credentials, and a pull request
-    # from a fork must never see them. Nightly and on demand. Inside, each
-    # scan runs only when its configuration is present, and the summary says
-    # which ran; a scan that did not run leaves its articles `unverified`.
+    # from a fork must never see them. Nightly and on demand.
+    #
+    # The scans are independent of each other on purpose. A missing GCP secret
+    # must not cost the GitHub evidence, so no credential or scan step is
+    # allowed to abort the job: each records its outcome, the audit judges
+    # whatever produced output, the evidence is archived — and only then, as
+    # the last step, does the job fail if a scan that *was* configured did not
+    # run. Nothing configured is a warning; configured and broken is red.
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
@@ -184,9 +189,11 @@ jobs:
       - name: Prowler
         run: uv tool install "prowler==${PROWLER_VERSION}"
 
-      # ---- cloud credentials, one block per provider ------------------------
+      # ---- cloud credentials, one block per provider, none of them fatal ------
       - name: AWS credentials (OIDC)
+        id: aws
         if: env.PROVIDER == 'aws'
+        continue-on-error: true
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.DORA_AWS_ROLE_ARN }}
@@ -195,36 +202,56 @@ jobs:
       # Workload identity federation first — keyless, the recommended shape —
       # and a service-account key only when no federation is configured.
       - name: GCP credentials (workload identity)
+        id: gcp_wif
         if: env.PROVIDER == 'gcp' && env.GCP_WIF_PROVIDER != ''
+        continue-on-error: true
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: GCP credentials (service-account key)
+        id: gcp_key
         if: env.PROVIDER == 'gcp' && env.GCP_WIF_PROVIDER == '' && env.GCP_CREDENTIALS_JSON != ''
+        continue-on-error: true
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ env.GCP_CREDENTIALS_JSON }}
 
-      - name: GCP credentials missing
-        if: env.PROVIDER == 'gcp' && env.GCP_WIF_PROVIDER == '' && env.GCP_CREDENTIALS_JSON == ''
-        run: |
-          echo "::error title=GCP credentials not configured::DORA_PROWLER_PROVIDER is gcp but neither DORA_GCP_WORKLOAD_IDENTITY_PROVIDER + DORA_GCP_SERVICE_ACCOUNT nor DORA_GCP_CREDENTIALS_JSON is set. See docs/AIDF.md."
-          exit 1
-
       - name: Kubernetes credentials
+        id: k8s
         if: env.PROVIDER == 'kubernetes'
+        continue-on-error: true
         env:
           KUBECONFIG_B64: ${{ secrets.DORA_KUBECONFIG_B64 }}
         run: |
-          if [ -z "$KUBECONFIG_B64" ]; then
-            echo "::error::DORA_KUBECONFIG_B64 is not set; the kubernetes scan cannot authenticate"; exit 1
-          fi
+          if [ -z "$KUBECONFIG_B64" ]; then echo "DORA_KUBECONFIG_B64 is not set"; exit 1; fi
           mkdir -p "$HOME/.kube" && echo "$KUBECONFIG_B64" | base64 -d > "$HOME/.kube/config" && chmod 600 "$HOME/.kube/config"
 
-      # Azure authenticates through `azure/login`; add the step here with the
-      # secret it needs when an entity declares that provider.
+      # Azure authenticates through `azure/login`; add the step here, with
+      # `id: azure` and `continue-on-error: true`, when an entity declares it.
+
+      # One place decides whether the cloud scan may run, and says why not.
+      - name: Cloud credentials ready?
+        id: cloud
+        if: always()
+        run: |
+          ready=false; why=""
+          case "$PROVIDER" in
+            "")         why="no DORA_PROWLER_PROVIDER set" ;;
+            aws)        [ "${{ steps.aws.outcome }}" = "success" ] && ready=true || why="OIDC role assumption failed or DORA_AWS_ROLE_ARN unset" ;;
+            gcp)        if [ "${{ steps.gcp_wif.outcome }}" = "success" ] || [ "${{ steps.gcp_key.outcome }}" = "success" ]; then ready=true
+                        elif [ -z "$GCP_WIF_PROVIDER" ] && [ -z "$GCP_CREDENTIALS_JSON" ]; then why="neither DORA_GCP_WORKLOAD_IDENTITY_PROVIDER + DORA_GCP_SERVICE_ACCOUNT nor DORA_GCP_CREDENTIALS_JSON is set"
+                        else why="GCP authentication failed (see the credentials step)"; fi ;;
+            kubernetes) [ "${{ steps.k8s.outcome }}" = "success" ] && ready=true || why="kubeconfig missing or unreadable" ;;
+            azure)      why="no azure/login step is wired yet" ;;
+            *)          why="unknown provider '$PROVIDER'" ;;
+          esac
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          echo "why=$why" >> "$GITHUB_OUTPUT"
+          if [ -n "$PROVIDER" ] && [ "$ready" != true ]; then
+            echo "::warning title=Cloud scan skipped::$PROVIDER — $why. Articles 8-11 read 'unverified' for this run. See docs/AIDF.md, 'Configuring the scans'."
+          fi
 
       # ---- the cloud scan -----------------------------------------------------
       # Exit 3 means "findings failed", which is the normal outcome of a scan
@@ -232,7 +259,9 @@ jobs:
       # per entity. The DORA framework is requested when this Prowler lists it,
       # so every finding is stamped with the DORA-Art ids it evidences.
       - name: Prowler — cloud
-        if: env.PROVIDER != ''
+        id: cloud_scan
+        if: always() && steps.cloud.outputs.ready == 'true'
+        continue-on-error: true
         run: |
           mkdir -p .tmp/dora
           fw="dora_2022_2554"
@@ -245,50 +274,52 @@ jobs:
             prowler "$PROVIDER" -M json-ocsf -o .tmp/dora -F "prowler_${PROVIDER}" --ignore-exit-code-3 $extra
           fi
 
-      # ---- the GitHub scan ----------------------------------------------------
+      # ---- the GitHub scan, independent of everything above ------------------
       # The organisation and its repositories: branch protection, required
       # reviews, signed commits, MFA, Actions permissions. Read with a
-      # fine-grained PAT (repository administration: read, organisation
-      # members: read) in DORA_GITHUB_TOKEN — never the run's GITHUB_TOKEN,
-      # which cannot see organisation settings.
+      # fine-grained PAT (organisation members and administration: read;
+      # repository administration, metadata and Actions: read) in
+      # DORA_GITHUB_TOKEN — never the run's GITHUB_TOKEN, which cannot see
+      # organisation settings.
       - name: Prowler — GitHub
-        if: env.GITHUB_PERSONAL_ACCESS_TOKEN != ''
+        id: github_scan
+        if: always() && env.GITHUB_PERSONAL_ACCESS_TOKEN != ''
+        continue-on-error: true
         run: |
           mkdir -p .tmp/dora
           prowler github --organization "$GITHUB_SCAN_ORG" -M json-ocsf -o .tmp/dora -F prowler_github --ignore-exit-code-3
 
-      - name: Nothing configured
-        if: env.PROVIDER == '' && env.GITHUB_PERSONAL_ACCESS_TOKEN == ''
-        run: |
-          echo "::warning title=DORA infrastructure scan not configured::Set DORA_PROWLER_PROVIDER (aws | azure | gcp | kubernetes) with its credential secret, and/or DORA_GITHUB_TOKEN for the GitHub posture scan. Articles 8-11 and RTS Art. 16 read 'unverified' until then — never 'pass'."
-          {
-            echo "## DORA infrastructure evidence"
-            echo
-            echo "**Not configured.** No cloud provider and no GitHub token, so no scan ran; Articles 8-11 are unverified."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      # One audit per entity over every scan that ran, so a gcp finding and a
-      # github finding land on their articles side by side in one matrix.
+      # ---- judge whatever ran -------------------------------------------------
+      # One audit per entity over every scan that produced output, so a gcp
+      # finding and a github finding land on their articles side by side in one
+      # matrix. A scan that did not run leaves its articles `unverified`.
       - name: Judge against every entity's article scope
         id: audit
-        if: env.PROVIDER != '' || env.GITHUB_PERSONAL_ACCESS_TOKEN != ''
+        if: always()
         run: |
           set +e
           args=""
           for f in .tmp/dora/prowler_*.ocsf.json; do [ -f "$f" ] && args="$args --ocsf $f"; done
-          if [ -z "$args" ]; then echo "::error::no OCSF output found under .tmp/dora"; exit 1; fi
-          uv run pf dora audit $args ${PROVIDER:+--provider "$PROVIDER"} --no-run --live | tee .tmp/dora/audit.log
-          code=${PIPESTATUS[0]}
-          echo "exit=$code" >> "$GITHUB_OUTPUT"
-          exit $code
+          if [ -z "$args" ]; then
+            echo "no scan produced output; the audit runs on repository and ledger evidence alone"
+            uv run pf dora audit --no-run --live | tee .tmp/dora/audit.log
+          else
+            uv run pf dora audit $args ${PROVIDER:+--provider "$PROVIDER"} --no-run --live | tee .tmp/dora/audit.log
+          fi
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Step summary
-        if: always() && (env.PROVIDER != '' || env.GITHUB_PERSONAL_ACCESS_TOKEN != '')
+        if: always()
         run: |
+          mark() { case "$1" in success) echo "ran";; failure) echo "**FAILED**";; skipped|"") echo "skipped";; *) echo "$1";; esac; }
           {
-            echo "## DORA infrastructure evidence — ${PROVIDER:-no cloud}${GITHUB_PERSONAL_ACCESS_TOKEN:+ + github}"
+            echo "## DORA infrastructure evidence"
             echo
-            echo "Exit \`${{ steps.audit.outputs.exit }}\`."
+            echo "| scan | outcome |"
+            echo "|---|---|"
+            echo "| cloud (${PROVIDER:-none}) | $(mark '${{ steps.cloud_scan.outcome }}')${{ steps.cloud.outputs.why && format(' — {0}', steps.cloud.outputs.why) || '' }} |"
+            echo "| github (${GITHUB_SCAN_ORG}) | $([ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ] && mark '${{ steps.github_scan.outcome }}' || echo 'skipped — no DORA_GITHUB_TOKEN') |"
+            echo "| audit | exit \`${{ steps.audit.outputs.exit }}\` (0 clean or gaps only, 1 a breached article) |"
             echo
             for m in groups/*/projects/*/governance/dora/matrix.md; do
               [ -f "$m" ] || continue
@@ -311,3 +342,18 @@ jobs:
             .tmp/dora/
             groups/*/projects/*/governance/dora/
             provenance/chain.jsonl
+
+      # Last, so the evidence above is always produced and archived first:
+      # red when a scan that was configured did not run, or an entity breached
+      # an article; a warning, not a failure, when nothing was configured.
+      - name: Outcome
+        if: always()
+        run: |
+          failed=""
+          if [ -n "$PROVIDER" ] && [ "${{ steps.cloud_scan.outcome }}" != "success" ]; then failed="$failed cloud($PROVIDER)"; fi
+          if [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ] && [ "${{ steps.github_scan.outcome }}" != "success" ]; then failed="$failed github"; fi
+          if [ -z "$PROVIDER" ] && [ -z "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
+            echo "::warning title=DORA infrastructure scan not configured::Set DORA_PROWLER_PROVIDER (aws | azure | gcp | kubernetes) with its credential secret, and/or DORA_GITHUB_TOKEN for the GitHub posture scan. Articles 8-11 and RTS Art. 16 read 'unverified' until then — never 'pass'."
+          fi
+          if [ -n "$failed" ]; then echo "::error title=Configured scan did not run::$failed"; fi
+          [ -z "$failed" ] && [ "${{ steps.audit.outputs.exit }}" = "0" ]
