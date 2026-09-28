@@ -13,6 +13,8 @@
 #   - scratch files stay in `.tmp/` (TMPDIR), the rule Claude's settings inject;
 #   - memory notes are attributed (`PF_AGENT`), because not every harness
 #     leaves a mark of its own in the shells it spawns;
+#   - Junie is handed `.junie/config.json` — it ignores a project's hooks unless
+#     started with `--config-location`;
 #   - a missing commit gate is said out loud, since it is the backstop for all.
 #
 # Not named after any harness, deliberately: on PATH, a launcher that shadows
@@ -51,6 +53,8 @@ case "$tool" in
     need cursor-agent; exec cursor-agent "$@" ;;
   opencode)
     need opencode; exec opencode "$@" ;;
+  junie)
+    need junie; exec junie --config-location "$root/.junie/config.json" "$@" ;;
   *)
     echo "agent-here: unknown harness '$tool' — see docs/HARNESSES.md" >&2
     exit 64 ;;

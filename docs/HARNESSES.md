@@ -27,6 +27,7 @@ provenance.
 | Copilot — coding agent | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only | pre-commit, if installed in the runner | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.github/agents/` |
 | Gemini CLI | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused | pre-commit | hooks write stages 01–03 | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | `.gemini/agents/` |
 | OpenCode | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | hook — plugin | pre-commit | hooks write stages 01–03 | injected into the system prompt | plugin | `.agents/skills/` — toolkits, commands; a group's under the group | `.opencode/agents/` |
+| Junie CLI | `AGENTS.md` | none — `pf mcp` by hand | hook — via `bin/agent-here junie` only | pre-commit | none — no post-tool event | injected on turn one | SessionStart hook | `.agents/skills/` — toolkits, commands; a group's under the group | none |
 | Prompt-only (Continue, Ollama, mlx) | paste `AGENTS.md` | none | none | pre-commit | none | rule | rule | none | none |
 
 ## The generated configs
@@ -47,6 +48,7 @@ server), rendered into each harness's format. Change the source; regenerate.
 | Gemini CLI | `.gemini/settings.json` | `pf context refresh` |
 | OpenCode | `.opencode/opencode.json` | `pf context refresh` |
 | OpenCode | `.opencode/plugins/pf-gate.js` | `pf context refresh` |
+| Junie CLI | `.junie/config.json` | `pf context refresh` |
 
 Plus, from the toolkits (`pf.harness_assets`): every skill linked into
 `.agents/skills/` — the one directory every harness above discovers — the
@@ -56,7 +58,7 @@ the format of each harness that declares one.
 ## Start a session
 
 ```bash
-bin/agent-here claude|codex|cursor|copilot|gemini|opencode [args]
+bin/agent-here claude|codex|cursor|copilot|gemini|opencode|junie [args]
 ```
 
 Each harness finds its generated config from the checkout on its own; the
@@ -83,6 +85,9 @@ uv run pytest platform/tests/gate/test_agent_hooks.py   # every harness, same ve
 - **Copilot in VS Code** runs hooks as a Preview feature (`chat.useHooks`).
 - **Gemini CLI** cannot ask a person from a hook, so an `ask` rule (`git push`)
   is refused there with a note to have the person run it.
+- **Junie** ignores project hooks unless started with `--config-location`, which
+  is what `bin/agent-here junie` passes. It has no post-tool event, so it writes
+  no provenance: an INTENT nothing closes would be a dangling action.
 
 Claiming more than this would leave a tool believing it is gated when it is
 not, which is the one outcome worse than an ungated tool that knows it.

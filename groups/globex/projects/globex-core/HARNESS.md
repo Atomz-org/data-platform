@@ -36,6 +36,7 @@ The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metri
 | **Copilot — coding agent** | `.github/copilot-instructions.md` + `copilot-setup-steps.yml` | repository settings, not a file | hook — default branch only |
 | **Gemini CLI** | `GEMINI.md` | `.gemini/settings.json` | hook — ask is refused |
 | **OpenCode** | `AGENTS.md` via `opencode.json` | `.opencode/opencode.json` | hook — plugin |
+| **Junie CLI** | `AGENTS.md` | none — `pf mcp` by hand | hook — via `bin/agent-here junie` only |
 | **Prompt-only (Continue, Ollama, mlx)** | paste `AGENTS.md` | none | none |
 
 This project's own `.mcp.json` adds `wren` for Claude Code only; the other harnesses' configs are rendered from the root `.mcp.json`.

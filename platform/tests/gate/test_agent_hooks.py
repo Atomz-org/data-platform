@@ -98,6 +98,12 @@ SAMPLES: dict[str, Callable[[str, Path, str], dict]] = {
         if tool == "edit"
         else {"tool": "bash", "args": {"command": t}, "callID": "c2", "cwd": str(root)}
     ),
+    # Junie's names are Claude's.
+    "junie": lambda tool, root, t: (
+        {"tool_name": "Write", "tool_input": {"file_path": str(root / t)}, "cwd": str(root)}
+        if tool == "edit"
+        else {"tool_name": "Bash", "tool_input": {"command": t}, "cwd": str(root)}
+    ),
 }
 
 #: Harnesses that prompt a person themselves from generated rules, so their
@@ -234,6 +240,18 @@ def test_opencode_patches_are_read_file_by_file(repo: Path) -> None:
     patch = "*** Begin Patch\n*** Update File: platform/ok.py\n*** Add File: .env\n*** End Patch\n"
     p = {"tool": "apply_patch", "args": {"patchText": patch}, "callID": "c3", "cwd": str(repo)}
     assert denied(run("opencode", "pre", json.dumps(p)))
+
+
+def test_junie_is_gated_but_writes_no_provenance(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """No post-tool event: an INTENT would never be closed. The gate still runs."""
+    import pf.provenance.ledger as prov
+
+    def boom(*a, **k):
+        raise AssertionError("junie must not open a provenance action")
+
+    monkeypatch.setattr(prov, "intent", boom)
+    assert denied(run("junie", "pre", json.dumps(SAMPLES["junie"]("edit", repo, ".env"))))
+    assert run("junie", "pre", json.dumps(SAMPLES["junie"]("edit", repo, "platform/ok.py")))[2] == 0
 
 
 def test_codex_is_named_in_memory(monkeypatch: pytest.MonkeyPatch) -> None:

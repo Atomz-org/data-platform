@@ -1,0 +1,38 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py junie session",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py junie pre",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet --project \"$(git rev-parse --show-toplevel)\" python \"$(git rev-parse --show-toplevel)\"/platform/hooks/agent_hook.py junie stop",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
