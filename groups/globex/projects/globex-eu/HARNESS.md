@@ -23,7 +23,7 @@ What sits between an agent and this project, in the order it meets it. Every lin
 - `pf` — power-tools plugin · `pf mcp`, scoped to this project by `PF_PROJECT_DIR`
 - `wren` — this project's `.mcp.json`
 
-The `pf` server exposes 29 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
+The `pf` server exposes 31 tools; hot: `kg_search`, `kg_neighbors`, `query_metrics`, `ask_metric_question`, `impact_analysis`, `list_tables`. Ask the graph before reading files.
 
 **By harness** — `docs/HARNESSES.md`'s rows, as they hold here. *Rule* means nothing checks; the commit gate is the backstop.
 
@@ -115,12 +115,12 @@ A commit may touch at most **12 files** (`maxFiles`) and is blocked at severity 
 
 Repository-wide, whatever the change touches:
 
-- `ai-governance` (every pull request · daily): `provenance`, `anchor`, `compliance-scan`, `air-baseline`
+- `ai-governance` (every pull request · daily): `provenance`, `anchor`, `compliance-scan`, `air-baseline`, `runtime-governance`
 - `claude-review` (every pull request): `review`
 - `pr-report` (every pull request): `report`
 - `agent-context` (every pull request): entry points, memory and test indexes, repo map, guide and these maps are current
 
-Only when platform paths change: `copilot-setup-steps`, `platform-tests`, `platform`, `vendor-pins`.
+Only when platform paths change: `copilot-setup-steps`, `dora`, `platform-tests`, `platform`, `vendor-pins`.
 
 ## 5. On a schedule — the loops
 

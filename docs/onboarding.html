@@ -123,7 +123,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 18px;
 <div class="fact"><dt>Toolkits</dt><dd>26</dd></div>
 <div class="fact"><dt>Pinned upstreams</dt><dd>26</dd></div>
 <div class="fact"><dt>pf commands</dt><dd>31</dd></div>
-<div class="fact"><dt>Tests</dt><dd>1279</dd></div>
+<div class="fact"><dt>Tests</dt><dd>1368</dd></div>
 </dl>
 <section id="model">
 <div class="sect-head">
@@ -350,6 +350,7 @@ uv run pf pr report</code></pre>
 <th>Contributes</th>
 </tr></thead>
 <tbody>
+<tr><td><code>aidf</code></td><td>on by default</td><td>2 file(s) · gate rules · settings</td></tr>
 <tr><td><code>air</code></td><td>on by default</td><td>2 file(s) · ci: air-baseline · gate rules · settings</td></tr>
 <tr><td><code>bigquery</code></td><td>opt-in</td><td>2 file(s) · settings · env: BIGQUERY_PROJECT</td></tr>
 <tr><td><code>clickhouse</code></td><td>opt-in</td><td>2 file(s) · settings · env: CLICKHOUSE_HOST, CLICKHOUSE_PASSWORD</td></tr>
@@ -403,7 +404,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <p class="eyebrow">The tool</p>
 <h2>Every pf command</h2>
 </div>
-<p class="prose">31 commands and 24 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
+<p class="prose">31 commands and 26 command groups, read from the CLI itself. <code>uv run pf &lt;command&gt; --help</code> is always current.</p>
 <div class="scroll"><table>
 <thead><tr>
 <th>Command</th>
@@ -455,6 +456,8 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 <tr><td><code>pf blueprint</code></td><td>Every project&#x27;s architecture blueprint, from its artefacts and an optional docs/blueprint.yaml: <code>build</code>/<code>check</code>.</td></tr>
 <tr><td><code>pf code</code></td><td>The code graph: which function calls which, under <code>platform/</code> only. Models, columns, metrics and lineage are <code>pf kg</code> — this is the Python structure the data graph has no notion of.</td></tr>
 <tr><td><code>pf context</code></td><td>The context every agent reads before its first edit — the entry points (CLAUDE.md, AGENTS.md, GEMINI.md, the Copilot file), the memory index, the test index, the repo map — checked and refreshed as one.</td></tr>
+<tr><td><code>pf dora</code></td><td>DORA (EU 2022/2554) evidence: infrastructure, supply chain, ledger, repository.</td></tr>
+<tr><td><code>pf govern</code></td><td>Runtime AI governance: contracts, validators, the action gate and the breaker.</td></tr>
 <tr><td><code>pf group</code></td><td>Tenant groups: their manifest, lifecycle and readiness.</td></tr>
 <tr><td><code>pf guide</code></td><td>The onboarding guide: <code>build</code>/<code>check</code>, generated from the repository.</td></tr>
 <tr><td><code>pf harness</code></td><td>Harness maps: <code>build</code>/<code>check</code> for every scope; <code>pf harness &lt;group&gt; [&lt;project&gt;]</code> for one.</td></tr>
@@ -486,6 +489,7 @@ uv run pf align status &lt;group&gt; &lt;project&gt;</code></pre>
 </tr></thead>
 <tbody>
 <tr><td><code>docs/AI-GOVERNANCE-ARCHITECTURE.md</code></td><td>AI governance architecture</td></tr>
+<tr><td><code>docs/AIDF.md</code></td><td>AI governance &amp; DORA compliance framework (AIDF)</td></tr>
 <tr><td><code>docs/AIR.md</code></td><td>AI risk and controls</td></tr>
 <tr><td><code>docs/ARCHITECTURE-MAPS.md</code></td><td>The per-project architecture map</td></tr>
 <tr><td><code>docs/ARCHITECTURE.md</code></td><td>The platform, drawn from the platform</td></tr>
