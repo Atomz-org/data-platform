@@ -1,0 +1,269 @@
+# DORA (Regulation (EU) 2022/2554) evidence for every entity, on a schedule and
+# on the changes that can move it.
+#
+# Two jobs, because the two kinds of evidence come from different places and
+# fail for different reasons:
+#
+#   supply-chain    RTS (EU) 2024/1774 Art. 10. The dependency tree of this
+#                   checkout, as a CycloneDX SBOM, scanned by Trivy and judged
+#                   by each entity's patch policy (`dora.sbom` in its resolved
+#                   aidf.yaml — zero tolerance on fixable Critical/High by
+#                   default, exceptions dated and owned). Runs on every pull
+#                   request that changes the lockfile, so a vulnerable pin
+#                   cannot merge, and nightly, so a CVE published against a pin
+#                   already on `main` turns the run red the next morning.
+#
+#   infrastructure  Articles 8-11. Prowler over the cloud account an entity
+#                   declares (`dora.provider`), findings mapped to articles by
+#                   the statutory matrix (`pf dora matrix`). Nightly and on
+#                   demand only — it needs cloud credentials a pull request
+#                   from a fork must never see — and skipped with a warning
+#                   when no provider is configured, because "no scan ran" must
+#                   never read as "no findings".
+#
+# Both end in `pf dora audit`, which writes each entity's evidence matrix
+# (`governance/dora/matrix.md`), records the audit to a provenance chain with
+# the matrix's SHA-256, and exits non-zero on a failing article. The matrices,
+# the scans and the chain are archived as one run artifact: an auditor gets the
+# report, the inputs it was judged from, and the hash that ties them together.
+#
+# Prowler and Trivy are commands, installed isolated — never workspace
+# dependencies. `pyproject.toml` says why for the other tools of that shape.
+name: DORA compliance
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 02:00 UTC, daily
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Override the provider for every entity (aws | azure | gcp | kubernetes); empty uses each aidf.yaml"
+        type: string
+        default: ""
+      live:
+        description: "Also read repository settings (branch protection) through the GitHub API"
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - "uv.lock"
+      - "pyproject.toml"
+      - "platform/pyproject.toml"
+      - "groups/*/projects/*/pyproject.toml"
+      - "platform/src/pf/aidf/**"
+      - "**/governance/aidf.yaml"
+      - "groups/*/aidf.yaml"
+      - ".github/workflows/dora.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dora-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TRIVY_VERSION: ${{ vars.DORA_TRIVY_VERSION || 'v0.65.0' }}
+  PROWLER_VERSION: ${{ vars.DORA_PROWLER_VERSION || '5.10.0' }}
+
+jobs:
+  supply-chain:
+    name: Supply chain (RTS Art. 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      - name: Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          cache: true
+
+      # The bill of materials first, then the scan *of the bill*, so what was
+      # judged is exactly what is archived. Every severity is collected; which
+      # ones block is the entity's policy, applied by `pf dora audit`, not a
+      # scanner flag — a flag cannot carry a dated exception or a grace window.
+      - name: SBOM and vulnerability scan
+        run: |
+          mkdir -p .tmp/dora
+          trivy fs --format cyclonedx --output .tmp/dora/sbom.cdx.json --quiet .
+          trivy sbom --format json --severity CRITICAL,HIGH,MEDIUM,LOW \
+                --output .tmp/dora/vulnerabilities.json --quiet .tmp/dora/sbom.cdx.json
+          python3 - <<'PY'
+          import json
+          doc = json.load(open(".tmp/dora/vulnerabilities.json"))
+          n = sum(len(r.get("Vulnerabilities") or []) for r in doc.get("Results") or [])
+          comps = len(json.load(open(".tmp/dora/sbom.cdx.json")).get("components") or [])
+          print(f"{comps} components in the SBOM, {n} vulnerabilities at any severity")
+          PY
+
+      # One audit per entity: the same scan, each entity's own patch policy,
+      # exceptions and article scope. Non-zero when any entity's window is
+      # breached, which is what blocks a pull request here.
+      - name: Judge against every entity's patch policy
+        id: audit
+        run: |
+          set +e
+          uv run pf dora audit --vulns .tmp/dora/vulnerabilities.json --sbom .tmp/dora/sbom.cdx.json \
+                --no-run ${{ inputs.live == true && '--live' || '' }} | tee .tmp/dora/audit.log
+          code=${PIPESTATUS[0]}
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## DORA supply-chain evidence"
+            echo
+            echo "Exit \`${{ steps.audit.outputs.exit }}\` — 0 is clean or gaps-only, 1 is a breached article."
+            echo
+            for m in groups/*/projects/*/governance/dora/matrix.md; do
+              [ -f "$m" ] || continue
+              echo "<details><summary>$(echo "$m" | cut -d/ -f2,4)</summary>"
+              echo
+              cat "$m"
+              echo
+              echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dora-supply-chain-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 400
+          path: |
+            .tmp/dora/
+            groups/*/projects/*/governance/dora/
+            provenance/chain.jsonl
+
+  infrastructure:
+    name: Infrastructure (Art. 8-11)
+    # Never on a pull request — this job holds cloud credentials — and never
+    # when nothing is configured. The `vars` gate is the on/off switch: set
+    # DORA_PROWLER_PROVIDER to the provider the entities declare, and the
+    # matching credential secret below.
+    if: github.event_name != 'pull_request' && vars.DORA_PROWLER_PROVIDER != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # OIDC for the cloud role; no long-lived key in a secret
+    env:
+      PROVIDER: ${{ inputs.provider || vars.DORA_PROWLER_PROVIDER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      # Isolated, pinned, never in the workspace lockfile. Prowler pins boto3,
+      # azure and google SDK ranges that would fight dlt and dagster over one
+      # resolution, exactly as openmetadata-ingestion did.
+      - name: Prowler
+        run: uv tool install "prowler==${PROWLER_VERSION}"
+
+      - name: AWS credentials (OIDC)
+        if: env.PROVIDER == 'aws'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.DORA_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.DORA_AWS_REGION || 'eu-west-1' }}
+
+      - name: Kubernetes credentials
+        if: env.PROVIDER == 'kubernetes'
+        env:
+          KUBECONFIG_B64: ${{ secrets.DORA_KUBECONFIG_B64 }}
+        run: |
+          if [ -z "$KUBECONFIG_B64" ]; then
+            echo "::error::DORA_KUBECONFIG_B64 is not set; the kubernetes scan cannot authenticate"; exit 1
+          fi
+          mkdir -p "$HOME/.kube" && echo "$KUBECONFIG_B64" | base64 -d > "$HOME/.kube/config" && chmod 600 "$HOME/.kube/config"
+
+      # Azure and GCP authenticate through their login actions; add the step
+      # for the provider an entity declares, with the secret it needs. Prowler
+      # reads the ambient credential either way.
+
+      # The scan. Exit 3 means "findings failed", which is the normal outcome of
+      # a scan worth running; the audit below decides what that means per
+      # article and per entity.
+      - name: Prowler scan
+        run: |
+          mkdir -p .tmp/dora
+          fw="dora_2022_2554"
+          if prowler "$PROVIDER" --list-compliance 2>/dev/null | grep -q "$fw"; then
+            prowler "$PROVIDER" --compliance "$fw" -M json-ocsf -o .tmp/dora -F prowler --ignore-exit-code-3
+          else
+            echo "::notice::Prowler ${PROWLER_VERSION} lists no '$fw' framework for $PROVIDER; running the full check set and mapping by check id"
+            prowler "$PROVIDER" -M json-ocsf -o .tmp/dora -F prowler --ignore-exit-code-3
+          fi
+          ls -la .tmp/dora
+
+      - name: Judge against every entity's article scope
+        id: audit
+        run: |
+          set +e
+          ocsf=$(ls .tmp/dora/prowler*.ocsf.json | head -1)
+          uv run pf dora audit --ocsf "$ocsf" --provider "$PROVIDER" --no-run --live | tee .tmp/dora/audit.log
+          code=${PIPESTATUS[0]}
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## DORA infrastructure evidence — $PROVIDER"
+            echo
+            echo "Exit \`${{ steps.audit.outputs.exit }}\`."
+            echo
+            for m in groups/*/projects/*/governance/dora/matrix.md; do
+              [ -f "$m" ] || continue
+              echo "<details><summary>$(echo "$m" | cut -d/ -f2,4)</summary>"
+              echo
+              cat "$m"
+              echo
+              echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dora-infrastructure-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 400
+          path: |
+            .tmp/dora/
+            groups/*/projects/*/governance/dora/
+            provenance/chain.jsonl
+
+  # Reported, never silent: when the infrastructure job is switched off, say
+  # so where the run is read, so an empty artifact list is not mistaken for a
+  # clean account.
+  infrastructure-skipped:
+    name: Infrastructure (not configured)
+    if: github.event_name != 'pull_request' && vars.DORA_PROWLER_PROVIDER == ''
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::warning title=DORA infrastructure scan not configured::Set the repository variable DORA_PROWLER_PROVIDER (aws | azure | gcp | kubernetes) and its credential secret to enable the Prowler job. Articles 8-11 read 'unverified' until then — never 'pass'."
+          {
+            echo "## DORA infrastructure evidence"
+            echo
+            echo "**Not configured.** No provider is declared, so no cloud scan ran and Articles 8-11 are unverified."
+          } >> "$GITHUB_STEP_SUMMARY"

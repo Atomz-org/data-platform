@@ -1,0 +1,299 @@
+"""DORA evidence: the matrix is well-formed, every input shape is read, the
+patch policy is arithmetic, and the audit never reports a pass it did not earn.
+
+  unverified is not pass       a missing tool, a missing scan or a missing
+                                 ledger reads `unverified`, counts against
+                                 `pass_with_gaps`, and never as `pass`
+
+  out of scope is declared     an article or an entity is N/A only with a
+                                 reason and an owner, and the reason is printed
+
+  the matrix cites the chain   the audit is itself a recorded action carrying
+                                 the matrix's SHA-256
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+from datetime import date
+from pathlib import Path
+
+import pytest
+import yaml
+from conftest import REPO_ROOT
+from pf.aidf.dora import ocsf, sbom
+from pf.aidf.dora.audit import TOOL_AUDIT, run_audit
+from pf.aidf.dora.mapping import CHECK_KINDS, load_mapping, validate_mapping
+from pf.provenance import actions, report
+
+TODAY = date(2026, 9, 28)
+
+
+# --------------------------------------------------------------- mapping --
+
+def test_statutory_matrix_is_well_formed() -> None:
+    m = load_mapping()
+    assert validate_mapping(m) == []
+    assert {a.id for a in m.articles} >= {"5", "6", "8", "9", "10", "12", "17", "24", "25", "28", "RTS-10", "RTS-16"}
+    assert all(c.kind in CHECK_KINDS for c in m.checks())
+    assert set(m.kinds) == set(CHECK_KINDS), "every kind the matrix may use is documented"
+    ids = [c.id for c in m.checks()]
+    assert len(ids) == len(set(ids))
+
+
+def test_every_prowler_check_maps_every_provider() -> None:
+    for c in load_mapping().checks():
+        if c.kind == "prowler":
+            for provider in ("aws", "azure", "gcp", "kubernetes"):
+                assert c.prefixes_for(provider), f"{c.id} has no {provider} check prefixes"
+
+
+# ------------------------------------------------------------------ OCSF --
+OCSF = [
+    {"status_code": "FAIL", "severity": "High", "cloud": {"provider": "aws"},
+     "finding_info": {"title": "IAM root MFA"}, "unmapped": {"check_id": "iam_root_mfa_enabled",
+                                                              "compliance": {"CIS-1.5": ["1.5"]}},
+     "resources": [{"uid": "arn:aws:iam::1:root"}]},
+    {"status_code": "PASS", "severity": "Medium", "cloud": {"provider": "aws"},
+     "unmapped": {"check_id": "cloudtrail_multi_region_enabled"}},
+    {"status_code": "FAIL", "severity": "Low", "cloud": {"provider": "aws"},
+     "unmapped": {"check_id": "ec2_securitygroup_default_restrict_traffic"}},
+    {"status": "FAIL", "severity_id": 5, "provider": "aws", "check_id": "backup_plans_exist"},
+]
+
+
+def test_ocsf_array_and_ndjson_read_the_same(tmp_path: Path) -> None:
+    arr = tmp_path / "a.ocsf.json"
+    arr.write_text(json.dumps(OCSF))
+    nd = tmp_path / "b.ocsf.json"
+    nd.write_text("\n".join(json.dumps(x) for x in OCSF) + "\n")
+    a, b = ocsf.load_findings(arr), ocsf.load_findings(nd)
+    assert [f.check_id for f in a] == [f.check_id for f in b]
+    assert a[0].failed and a[0].severity == "HIGH" and a[0].provider == "aws" and a[0].resource.startswith("arn:")
+    assert a[3].severity == "CRITICAL", "severity_id is understood when severity is absent"
+    s = ocsf.summarise(a)
+    assert s["total"] == 4 and s["fail"] == 3 and s["fail_high"] == 1 and s["fail_critical"] == 1 and s["pass"] == 1
+
+
+# ------------------------------------------------------------------ SBOM --
+TRIVY = {"Results": [{"Target": "uv.lock", "Vulnerabilities": [
+    {"VulnerabilityID": "CVE-2026-0001", "PkgName": "requests", "InstalledVersion": "2.31", "FixedVersion": "2.32",
+     "Severity": "CRITICAL", "PublishedDate": "2026-09-01T00:00:00Z"},
+    {"VulnerabilityID": "CVE-2026-0002", "PkgName": "urllib3", "InstalledVersion": "1.26", "FixedVersion": "",
+     "Severity": "HIGH", "PublishedDate": "2026-01-01T00:00:00Z"},
+    {"VulnerabilityID": "CVE-2026-0003", "PkgName": "pyyaml", "InstalledVersion": "6.0", "FixedVersion": "6.1",
+     "Severity": "MEDIUM", "PublishedDate": "2026-09-20T00:00:00Z"},
+    {"VulnerabilityID": "CVE-2026-0004", "PkgName": "jinja2", "InstalledVersion": "3.1", "FixedVersion": "3.2",
+     "Severity": "HIGH", "PublishedDate": "2026-09-27T00:00:00Z"},
+]}]}
+
+CDX = {"bomFormat": "CycloneDX", "specVersion": "1.5",
+       "components": [{"bom-ref": "pkg:pypi/requests@2.31", "name": "requests", "version": "2.31"}],
+       "vulnerabilities": [{"id": "CVE-2026-0001", "published": "2026-09-01T00:00:00Z",
+                            "ratings": [{"severity": "critical"}],
+                            "affects": [{"ref": "pkg:pypi/requests@2.31", "versions": [{"version": "2.32", "status": "unaffected"}]}]}]}
+
+
+def test_trivy_and_cyclonedx_parse(tmp_path: Path) -> None:
+    t = tmp_path / "trivy.json"
+    t.write_text(json.dumps(TRIVY))
+    c = tmp_path / "bom.cdx.json"
+    c.write_text(json.dumps(CDX))
+    tv = sbom.load_vulnerabilities(t)
+    cv = sbom.load_vulnerabilities(c)
+    assert len(tv) == 4 and tv[0].fixable and not tv[1].fixable
+    assert len(cv) == 1 and cv[0].id == "CVE-2026-0001" and cv[0].fixed == "2.32" and cv[0].severity == "CRITICAL"
+
+
+def test_patch_policy_is_arithmetic(tmp_path: Path) -> None:
+    t = tmp_path / "trivy.json"
+    t.write_text(json.dumps(TRIVY))
+    vulns = sbom.load_trivy(t)
+    seven = {"critical": 0, "high": 7, "medium": 30, "low": 90}
+    policy = sbom.PatchPolicy.from_config({"severity": ["CRITICAL", "HIGH"], "ignore_unfixed": True,
+                                           "grace_days": seven})
+    v = sbom.assess(vulns, policy, TODAY)
+    assert [x.id for x in v.blocking] == ["CVE-2026-0001"], "critical, fixable, 27 days old, zero grace"
+    assert [x.id for x in v.unfixed] == ["CVE-2026-0002"], "high but unfixable: tracked, not blocked"
+    assert {x.id for x in v.advisory} == {"CVE-2026-0003", "CVE-2026-0004"}, "medium is advisory; high inside 7d grace"
+    assert v.ok is False
+
+    # An exception moves it out of blocking; an expired one puts it back and is itself reported.
+    excepted = sbom.PatchPolicy.from_config({"grace_days": seven, "exceptions": [
+        {"id": "CVE-2026-0001", "reason": "not reachable", "owner": "a@b.c", "expires": "2027-01-01"}]})
+    assert sbom.assess(vulns, excepted, TODAY).ok
+    expired = sbom.PatchPolicy.from_config({"grace_days": seven, "exceptions": [
+        {"id": "CVE-2026-0001", "reason": "not reachable", "owner": "a@b.c", "expires": "2026-01-01"}]})
+    e = sbom.assess(vulns, expired, TODAY)
+    assert not e.ok and [x.id for x in e.expired_exceptions] == ["CVE-2026-0001"]
+
+    # Zero tolerance — the platform floor: a high inside a 7-day window blocks when the window is 0.
+    zero = sbom.PatchPolicy.from_config({})
+    assert {x.id for x in sbom.assess(vulns, zero, TODAY).blocking} == {"CVE-2026-0001", "CVE-2026-0004"}
+
+
+def test_unknown_publish_date_is_outside_every_window() -> None:
+    v = sbom.Vulnerability("CVE-X", "p", "1", "2", "HIGH", published=None)
+    assert sbom.assess([v], sbom.PatchPolicy(grace_days={"high": 365}), TODAY).blocking == [v]
+
+
+# ----------------------------------------------------------------- audit --
+
+@pytest.fixture()
+def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    for name in ("gate.yaml", "gate.capabilities.yaml", "loop-constraints.md", "LOOP.md", "vendor.lock.json"):
+        shutil.copy(REPO_ROOT / name, tmp_path / name)
+    (tmp_path / "platform" / "hooks").mkdir(parents=True)
+    (tmp_path / "platform" / "hooks" / "pre_commit.sh").write_text("#!/bin/sh\n")
+    (tmp_path / "platform" / "src" / "pf" / "vendor").mkdir(parents=True)
+    (tmp_path / "platform" / "src" / "pf" / "vendor" / "registry.yaml").write_text("version: 1\n")
+    (tmp_path / ".memory").mkdir()
+    (tmp_path / ".memory" / "MEMORY.md").write_text("# memory\n")
+    wf = tmp_path / ".github" / "workflows"
+    wf.mkdir(parents=True)
+    for name in ("loop-observations.yml", "bot-findings.yml", "platform-tests.yml", "ai-governance.yml",
+                 "dora.yml", "vendor-pins.yml"):
+        shutil.copy(REPO_ROOT / ".github" / "workflows" / name, wf / name)
+    pdir = tmp_path / "groups" / "g" / "projects" / "p"
+    (pdir / "governance").mkdir(parents=True)
+    (pdir / "governance" / "policy.yaml").write_text("policies: []\n")
+    (pdir / "kg").mkdir()
+    (pdir / "kg" / "graph.json").write_text('{"nodes": [], "edges": []}')
+    (tmp_path / "groups" / "g" / "ontology").mkdir()
+    (tmp_path / "groups" / "g" / "notify.yaml").write_text("version: 1\n")
+    (tmp_path / "groups" / "g" / "air.yaml").write_text("version: 1\nbaseline: []\naccepted: []\n")
+    monkeypatch.setenv("PF_AGENT", "test-agent")
+    return tmp_path
+
+
+def _overlay(repo: Path, doc: dict) -> None:
+    (repo / "groups" / "g" / "projects" / "p" / "governance" / "aidf.yaml").write_text(yaml.safe_dump(doc))
+
+
+def _check(rep, check_id: str):
+    for a in rep.articles:
+        for c in a.checks:
+            if c.check_id == check_id:
+                return c
+    raise KeyError(check_id)
+
+
+def test_audit_with_nothing_installed_is_gaps_not_pass(repo: Path) -> None:
+    rep = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    assert rep.overall in ("pass_with_gaps", "fail")
+    assert _check(rep, "dora-8-asset-inventory").status == "unverified"
+    assert _check(rep, "dora-7-sbom").status == "unverified"
+    assert _check(rep, "rts-16-branch-protection").status == "unverified"
+    assert _check(rep, "dora-5-owner").status == "fail", "no owner declared"
+    assert _check(rep, "dora-6-air-baseline").status == "fail", "empty baseline is a gap, not a pass"
+    assert _check(rep, "dora-8-graph").status == "pass"
+    assert _check(rep, "dora-24-suite").status == "pass"
+    assert _check(rep, "rts-16-commit-gate").status == "pass"
+    counts = rep.counts()
+    assert counts["unverified"] > 0 and counts["pass"] > 0
+
+
+def test_audit_writes_matrix_and_records_to_the_chain(repo: Path) -> None:
+    rep = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    out = repo / "groups" / "g" / "projects" / "p" / "governance" / "dora"
+    assert (out / "matrix.json").exists() and (out / "matrix.md").exists()
+    doc = json.loads((out / "matrix.json").read_text())
+    assert doc["action_id"] == rep.action_id and doc["matrix_sha256"] == rep.matrix_sha256
+    st = actions(repo)[rep.action_id]
+    assert st["execution"].payload["status"] == "ok" and rep.matrix_sha256 in st["execution"].payload["detail"]
+    assert {r.tool for r in (st["intent"], st["decision"], st["execution"])} == {TOOL_AUDIT}
+    md = (out / "matrix.md").read_text()
+    assert "UNVERIFIED" in md and "never counted as a pass" in md
+    assert report(repo).ok
+
+
+def test_provenance_articles_read_the_ledger(repo: Path) -> None:
+    first = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    assert _check(first, "dora-12-chain").status == "unverified", "an empty ledger is not evidence"
+    second = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    assert _check(second, "dora-12-chain").status == "pass", "the first audit's own record is now evidence"
+    assert _check(second, "dora-12-anchor").status == "fail", "never anchored"
+    assert _check(second, "dora-11-kill-switch").status == "pass"
+
+
+def test_ingested_prowler_findings_fail_the_right_article(repo: Path, tmp_path: Path) -> None:
+    _overlay(repo, {"dora": {"provider": "aws", "owner": "risk@example.com"}})
+    f = tmp_path / "findings.ocsf.json"
+    f.write_text(json.dumps(OCSF))
+    rep = run_audit(repo, "g", "p", ocsf=f, run_tools=False, today=TODAY)
+    assert _check(rep, "dora-9-iam").status == "fail" and "iam_root_mfa_enabled" in _check(rep, "dora-9-iam").detail
+    assert _check(rep, "dora-10-logging").status == "pass", "cloudtrail passed"
+    assert _check(rep, "dora-9-network").status == "pass", "a LOW failure is below the HIGH threshold"
+    assert _check(rep, "dora-11-backups").status == "fail", "severity_id 5 is critical"
+    assert _check(rep, "dora-5-owner").status == "pass"
+    assert rep.prowler["gate"] == "fail" and "critical" in rep.prowler["breached"]
+    assert rep.overall == "fail" and rep.exit_code == 1
+
+
+def test_ingested_vulnerabilities_judge_the_patch_window(repo: Path, tmp_path: Path) -> None:
+    v = tmp_path / "trivy.json"
+    v.write_text(json.dumps(TRIVY))
+    rep = run_audit(repo, "g", "p", vulns=v, run_tools=False, today=TODAY)
+    c = _check(rep, "rts-10-patch-window")
+    assert c.status == "fail" and "CVE-2026-0001" in c.detail
+    assert _check(rep, "dora-13-vuln-feed").status == "pass"
+    assert rep.sbom["blocking"][0]["id"] == "CVE-2026-0001"
+    assert "CVE-2026-0001" in (repo / "groups" / "g" / "projects" / "p" / "governance" / "dora" / "matrix.md").read_text()
+
+    # Excepting the critical is not enough: the floor is zero tolerance on
+    # High too, and CVE-2026-0004 is High, fixable and one day old. Both need
+    # a dated, owned exception before the window reads clean.
+    _overlay(repo, {"dora": {"sbom": {"exceptions": [
+        {"id": "CVE-2026-0001", "reason": "unreachable", "owner": "a@b.c", "expires": "2027-01-01"}]}}})
+    rep2 = run_audit(repo, "g", "p", vulns=v, run_tools=False, today=TODAY)
+    assert _check(rep2, "rts-10-patch-window").status == "fail"
+    assert "CVE-2026-0004" in _check(rep2, "rts-10-patch-window").detail
+    _overlay(repo, {"dora": {"sbom": {"exceptions": [
+        {"id": "CVE-2026-0001", "reason": "unreachable", "owner": "a@b.c", "expires": "2027-01-01"},
+        {"id": "CVE-2026-0004", "reason": "template never rendered from user input", "owner": "a@b.c",
+         "expires": "2026-12-01"}]}}})
+    rep3 = run_audit(repo, "g", "p", vulns=v, run_tools=False, today=TODAY)
+    assert _check(rep3, "rts-10-patch-window").status == "pass"
+    assert _check(rep3, "rts-10-patch-window").counts["excepted"] == 2
+
+
+def test_article_opt_out_is_printed_with_its_reason(repo: Path) -> None:
+    _overlay(repo, {"dora": {"articles": {"28": {"applies": False, "reason": "no third-party ICT provider",
+                                                  "owner": "risk@example.com"}}}})
+    rep = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    art = next(a for a in rep.articles if a.id == "28")
+    assert art.status == "not_applicable" and all(c.status == "not_applicable" for c in art.checks)
+    assert "no third-party ICT provider" in rep.to_markdown()
+
+
+def test_out_of_scope_entity_is_not_applicable_not_pass(repo: Path) -> None:
+    _overlay(repo, {"dora": {"in_scope": False, "out_of_scope_reason": "not a financial entity", "owner": "a@b.c"}})
+    rep = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+    assert rep.overall == "not_applicable" and rep.exit_code == 0
+    assert all(a.status == "not_applicable" for a in rep.articles)
+    assert "not a financial entity" in rep.to_markdown()
+
+
+def test_matrix_json_carries_no_floats(repo: Path) -> None:
+    rep = run_audit(repo, "g", "p", run_tools=False, today=TODAY)
+
+    def walk(x):
+        if isinstance(x, float):
+            raise AssertionError("float in the matrix")
+        if isinstance(x, dict):
+            for v in x.values():
+                walk(v)
+        if isinstance(x, list):
+            for v in x:
+                walk(v)
+    walk(rep.to_dict())
+
+
+def test_generated_evidence_is_denied_to_hand_edits() -> None:
+    from pf.loops.gate import check_path
+
+    r = check_path("groups/g/projects/p/governance/dora/matrix.json", REPO_ROOT)
+    assert r.blocked and "denylist" in r.rule
+    assert not check_path("groups/g/projects/p/governance/aidf.yaml", REPO_ROOT).blocked
+    assert check_path("groups/g/projects/p/governance/aidf.yaml", REPO_ROOT).verdict == "warn", "impact first"

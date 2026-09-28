@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "regulation": "Regulation (EU) 2022/2554 (DORA) with Commission Delegated Regulation (EU) 2024/1774 (RTS on ICT risk management)",
+  "check_kinds": {
+    "prowler": "Failing Prowler findings mapped to this article by compliance key or check-id prefix; `unverified` when no scan ran.",
+    "trivy": "The dependency and image vulnerability scan judged against the RTS Art. 10 patch policy.",
+    "provenance": "The agent-action ledger: chain integrity, stage completeness, anchor coverage (pf provenance verify).",
+    "file": "A repository or entity file that must exist; `{group}` and `{project}` are bound from the entity.",
+    "declaration": "A value in the entity's resolved aidf.yaml that must be set.",
+    "workflow": "A GitHub Actions workflow that must exist and carry the named step.",
+    "air": "The entity's committed AI-control baseline (air.yaml) and its gate.",
+    "live_github": "Repository settings read through the GitHub API; only with --live and a token, otherwise `unverified`."
+  },
+  "articles": [
+    {
+      "id": "5",
+      "title": "Governance and organisation",
+      "requirement": "The management body defines, approves and oversees the ICT risk management framework and names accountability for it.",
+      "checks": [
+        {"id": "dora-5-owner", "kind": "declaration", "key": "dora.owner",
+         "description": "An accountable owner is named for this entity's ICT risk framework."},
+        {"id": "dora-5-policy-layer", "kind": "file", "path": "groups/{group}/projects/{project}/governance/policy.yaml",
+         "description": "The entity carries its own policy overlay, reviewed like code."}
+      ]
+    },
+    {
+      "id": "6",
+      "title": "ICT risk management framework",
+      "requirement": "A sound, comprehensive and well-documented ICT risk management framework, reviewed at least yearly and on major incidents.",
+      "checks": [
+        {"id": "dora-6-air-baseline", "kind": "air",
+         "description": "The entity commits to a control baseline in air.yaml and `pf air gate` blocks a regression of it."},
+        {"id": "dora-6-constraints", "kind": "file", "path": "loop-constraints.md",
+         "description": "Binding runtime constraints for autonomous agents are written down and read at every loop start."}
+      ]
+    },
+    {
+      "id": "7",
+      "title": "ICT systems, protocols and tools",
+      "requirement": "ICT systems, protocols and tools are appropriate, reliable, of sufficient capacity and technologically resilient.",
+      "checks": [
+        {"id": "dora-7-sbom", "kind": "trivy", "aspect": "sbom",
+         "description": "A CycloneDX software bill of materials exists for the platform's dependency tree."},
+        {"id": "dora-7-vendor-pins", "kind": "file", "path": "vendor.lock.json",
+         "description": "Every vendored upstream is pinned and its adoption recorded (pf vendor verify)."}
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Identification",
+      "requirement": "Identify, classify and document all ICT-supported business functions, information assets and ICT assets, and their dependencies; review at least yearly.",
+      "checks": [
+        {"id": "dora-8-asset-inventory", "kind": "prowler",
+         "compliance_keys": ["dora"], "prefixes": {
+           "aws": ["account_", "config_", "resourceexplorer2_", "organizations_", "trustedadvisor_"],
+           "azure": ["defender_", "policy_", "subscription_"],
+           "gcp": ["cloudasset_", "iam_", "compute_project"],
+           "kubernetes": ["core_", "kubelet_", "apiserver_"]},
+         "description": "Cloud resources are discovered and configuration recording is on."},
+        {"id": "dora-8-graph", "kind": "file", "path": "groups/{group}/projects/{project}/kg/graph.json",
+         "description": "The entity's data assets, dependencies and lineage are in its knowledge graph, rebuilt and checked in CI."}
+      ]
+    },
+    {
+      "id": "9",
+      "title": "Protection and prevention",
+      "requirement": "Security policies, access control, MFA, encryption, network segmentation and secure configuration, continuously monitored.",
+      "checks": [
+        {"id": "dora-9-iam", "kind": "prowler", "compliance_keys": ["dora"], "prefixes": {
+           "aws": ["iam_", "kms_", "secretsmanager_", "s3_bucket_default_encryption", "s3_bucket_public", "ec2_ebs_volume_encryption", "rds_instance_storage_encrypted"],
+           "azure": ["iam_", "entra_", "keyvault_", "storage_", "sqlserver_tde"],
+           "gcp": ["iam_", "kms_", "gcs_bucket_", "cloudsql_instance_"],
+           "kubernetes": ["rbac_", "etcd_", "apiserver_", "scheduler_", "controllermanager_"]},
+         "description": "Least-privilege IAM, MFA, secret hygiene and encryption at rest."},
+        {"id": "dora-9-network", "kind": "prowler", "compliance_keys": ["dora"], "prefixes": {
+           "aws": ["ec2_securitygroup_", "ec2_networkacl_", "vpc_", "elb_", "elbv2_", "cloudfront_", "apigateway_"],
+           "azure": ["network_", "vm_", "appservice_", "aks_network"],
+           "gcp": ["compute_firewall_", "compute_network_", "compute_instance_", "gke_"],
+           "kubernetes": ["kubelet_", "core_networkpolicy", "apiserver_"]},
+         "description": "Security groups, VPC boundaries and external ingress limits."},
+        {"id": "dora-9-secrets-gate", "kind": "file", "path": "gate.yaml",
+         "description": "The path gate denies credential files and generated artefacts to every agent in every session."}
+      ]
+    },
+    {
+      "id": "10",
+      "title": "Detection",
+      "requirement": "Mechanisms to promptly detect anomalous activities, with multiple layers of control and defined alert thresholds.",
+      "checks": [
+        {"id": "dora-10-logging", "kind": "prowler", "compliance_keys": ["dora"], "prefixes": {
+           "aws": ["cloudtrail_", "cloudwatch_", "guardduty_", "securityhub_", "accessanalyzer_", "inspector2_"],
+           "azure": ["monitor_", "defender_", "app_insights"],
+           "gcp": ["logging_", "monitoring_", "scc_"],
+           "kubernetes": ["apiserver_audit", "kubelet_event"]},
+         "description": "Audit logging, threat detection and alerting are on for the entity's cloud account."},
+        {"id": "dora-10-loops", "kind": "file", "path": "LOOP.md",
+         "description": "Deterministic monitors (freshness, PII, drift, vendor) run on a cadence with a circuit breaker and a ledger."}
+      ]
+    },
+    {
+      "id": "11",
+      "title": "Response and recovery",
+      "requirement": "ICT business continuity policy, response and recovery plans, tested and reviewed.",
+      "checks": [
+        {"id": "dora-11-backups", "kind": "prowler", "compliance_keys": ["dora"], "prefixes": {
+           "aws": ["backup_", "rds_instance_backup", "rds_instance_deletion_protection", "ec2_ebs_snapshot", "dynamodb_tables_pitr", "s3_bucket_object_versioning"],
+           "azure": ["vm_backup", "storage_blob_soft_delete", "sqlserver_recovery"],
+           "gcp": ["cloudsql_instance_automated_backups", "compute_instance_snapshot"],
+           "kubernetes": ["etcd_backup"]},
+         "description": "Backups, versioning and deletion protection on the entity's data stores."},
+        {"id": "dora-11-kill-switch", "kind": "provenance", "aspect": "revocation",
+         "description": "Agent execution can be revoked platform-wide (pf provenance revoke) and revocation is honoured before any intent is written."}
+      ]
+    },
+    {
+      "id": "12",
+      "title": "Backup policies and procedures, restoration and recovery",
+      "requirement": "Backup policies specify scope and frequency; records are integrity-protected; restoration is tested.",
+      "checks": [
+        {"id": "dora-12-chain", "kind": "provenance", "aspect": "integrity",
+         "description": "The agent-action ledger is a SHA-256 hash chain: every record links to the one before, every action has all three stages."},
+        {"id": "dora-12-anchor", "kind": "provenance", "aspect": "anchors",
+         "description": "The chain head is anchored to an RFC 3161 timestamp authority and OpenTimestamps; records since the last anchor are flagged."}
+      ]
+    },
+    {
+      "id": "13",
+      "title": "Learning and evolving",
+      "requirement": "Gather information on vulnerabilities and threats, conduct post-incident reviews, and feed lessons back into the framework.",
+      "checks": [
+        {"id": "dora-13-memory", "kind": "file", "path": ".memory/MEMORY.md",
+         "description": "Lessons are recorded as memory notes per module and indexed; the index is checked in CI."},
+        {"id": "dora-13-vuln-feed", "kind": "trivy", "aspect": "scan",
+         "description": "Dependency vulnerabilities are scanned nightly and on every lockfile change."}
+      ]
+    },
+    {
+      "id": "14",
+      "title": "Communication",
+      "requirement": "Crisis communication plans and channels to staff, clients and counterparts.",
+      "checks": [
+        {"id": "dora-14-notify", "kind": "file", "path": "groups/{group}/notify.yaml",
+         "description": "The family has a declared notification channel for loop findings and questions."}
+      ]
+    },
+    {
+      "id": "17",
+      "title": "ICT-related incident management process",
+      "requirement": "Detect, manage and notify ICT-related incidents; record all incidents and significant cyber threats.",
+      "checks": [
+        {"id": "dora-17-observations", "kind": "workflow", "file": "loop-observations.yml", "contains": "loop-observation",
+         "description": "Loop observations are filed as issues, updated in place and closed on the next clean run."},
+        {"id": "dora-17-findings", "kind": "workflow", "file": "bot-findings.yml", "contains": "issues",
+         "description": "Review findings become tracked issues with priority, effort and an owner."}
+      ]
+    },
+    {
+      "id": "24",
+      "title": "General requirements for digital operational resilience testing",
+      "requirement": "A risk-based testing programme, run by independent parties, with findings prioritised and remediated.",
+      "checks": [
+        {"id": "dora-24-suite", "kind": "workflow", "file": "platform-tests.yml", "contains": "pytest platform/tests",
+         "description": "The platform suite runs on every pull request that touches shared code."},
+        {"id": "dora-24-governance-ci", "kind": "workflow", "file": "ai-governance.yml", "contains": "pf provenance verify",
+         "description": "The provenance chain, the static governance scan and the control baseline run in CI."}
+      ]
+    },
+    {
+      "id": "25",
+      "title": "Testing of ICT tools and systems",
+      "requirement": "Vulnerability assessments and scans, source code reviews, scenario-based tests and penetration testing where appropriate.",
+      "checks": [
+        {"id": "dora-25-dora-audit", "kind": "workflow", "file": "dora.yml", "contains": "pf dora audit",
+         "description": "The infrastructure and supply-chain audit runs nightly and on demand, and its evidence is archived."},
+        {"id": "dora-25-vuln-scan", "kind": "trivy", "aspect": "policy",
+         "description": "No fixable Critical or High vulnerability is older than its patch window."}
+      ]
+    },
+    {
+      "id": "28",
+      "title": "General principles on managing ICT third-party risk",
+      "requirement": "A register of information on all contractual arrangements with ICT third-party providers, and due diligence on each.",
+      "checks": [
+        {"id": "dora-28-vendor-registry", "kind": "file", "path": "platform/src/pf/vendor/registry.yaml",
+         "description": "Every borrowed upstream is registered with what was taken, how tightly, and why."},
+        {"id": "dora-28-vendor-drift", "kind": "workflow", "file": "vendor-pins.yml", "contains": "vendor",
+         "description": "Upstream drift against every pin is checked on a schedule."}
+      ]
+    },
+    {
+      "id": "RTS-10",
+      "title": "RTS 2024/1774 Art. 10 — Vulnerability and patch management",
+      "requirement": "Identify and evaluate vulnerabilities, track their remediation, and deploy patches within a defined and risk-based timeframe.",
+      "checks": [
+        {"id": "rts-10-patch-window", "kind": "trivy", "aspect": "policy",
+         "description": "Every fixable vulnerability is patched within the grace window its severity allows, or carries a dated, owned exception."}
+      ]
+    },
+    {
+      "id": "RTS-16",
+      "title": "RTS 2024/1774 Art. 16 — ICT systems acquisition, development and maintenance",
+      "requirement": "Secure development practices, source code review, testing before production, and segregation of environments.",
+      "checks": [
+        {"id": "rts-16-branch-protection", "kind": "live_github", "aspect": "branch_protection",
+         "description": "The default branch requires a pull request, passing checks and no force pushes."},
+        {"id": "rts-16-commit-gate", "kind": "file", "path": "platform/hooks/pre_commit.sh",
+         "description": "Every commit passes the path gate, the evidence rule and the file cap before it lands."},
+        {"id": "rts-16-runtime-governance", "kind": "workflow", "file": "ai-governance.yml", "contains": "pf govern check",
+         "description": "Agent output contracts, SQL AST checks and PII redaction are tested in CI for every entity."}
+      ]
+    }
+  ]
+}
