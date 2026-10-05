@@ -46,6 +46,26 @@ night over every open finding:
    Milestone is left alone: nothing about a finding says which one it belongs
    to, and a guessed milestone is worse than none.
 
+3. **Semantic duplicates** (optional). The lexical pass above needs a shared
+   title or fingerprint to even look at a pair. With `sentence-transformers`
+   installed (`HYGIENE_EMBEDDINGS=auto`, the workflow's default) every pair of
+   open findings is compared by embedding cosine as well:
+
+       cosine >= 0.85   duplicate — same rules as above: the newer is closed as
+                        a duplicate of the older, never a bundle, never a
+                        `not-duplicate` pair, only within one file (or pathless)
+       cosine >= 0.75   `possible-duplicate`, for a person
+
+   Without the package the pass is skipped and says so; the lexical pass is
+   unchanged. Thresholds: `HYGIENE_SEMANTIC_SAME`, `HYGIENE_SEMANTIC_MAYBE`.
+
+4. **Labels -> project fields, for every open issue** — not only findings.
+   `priority:high` sets the board's Priority to High, `effort:quick-win` sets
+   Effort to Low, `area:security` sets Category to Security, per
+   `DEFAULT_FIELD_MAP` (override with `HYGIENE_LABEL_FIELDS`, a JSON object of
+   field -> {label -> option}). Needs PROJECTS_TOKEN; skipped with a warning
+   otherwise. `HYGIENE_SYNC_ALL_ISSUES=0` turns it off.
+
 Idempotent: a second run the same night changes nothing. `DRY_RUN=1` prints
 every change instead of making it.
 """
@@ -75,6 +95,16 @@ ASSIGN = os.environ.get("HYGIENE_ASSIGN_PR_AUTHOR", "1") not in ("0", "", "false
 POSSIBLE = "possible-duplicate"
 NOT_DUP = "not-duplicate"
 SAME, MAYBE = 0.75, 0.45
+#: Embedding-cosine thresholds for the semantic pass. Higher than the lexical
+#: ones on purpose: two different defects in the same file read alike to an
+#: embedding far more often than they share a fingerprint.
+SEMANTIC_SAME = float(os.environ.get("HYGIENE_SEMANTIC_SAME", "0.85"))
+SEMANTIC_MAYBE = float(os.environ.get("HYGIENE_SEMANTIC_MAYBE", "0.75"))
+#: `auto` uses sentence-transformers when importable, `off` skips the pass,
+#: anything else is a model name.
+EMBEDDINGS = os.environ.get("HYGIENE_EMBEDDINGS", "auto").strip()
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+SYNC_ALL = os.environ.get("HYGIENE_SYNC_ALL_ISSUES", "1") not in ("0", "", "false")
 
 PRIORITY_FIELD = {"priority:P0": "Urgent", "priority:P1": "High", "priority:P2": "Medium", "priority:P3": "Low"}
 EFFORT_FIELD = {"effort:quick-win": "Low", "effort:heavy-lift": "High"}
@@ -85,7 +115,10 @@ EXTRA_LABELS = [
 ]
 
 TALLY: dict[str, list[str]] = {
-    k: [] for k in ("closed", "flagged", "labelled", "typed", "fields", "parented", "boarded", "assigned", "warnings")
+    k: []
+    for k in (
+        "closed", "flagged", "labelled", "typed", "fields", "parented", "boarded", "assigned", "synced", "warnings",
+    )
 }
 
 
@@ -165,6 +198,77 @@ def similarity(a: dict, b: dict) -> float:
     if not ta or not tb:
         return 0.0
     return difflib.SequenceMatcher(None, ta.split(), tb.split(), autojunk=False).ratio()
+
+
+# ---------------------------------------------------------------- semantic --
+class Embedder:
+    """sentence-transformers behind one method, so a test can hand in a fake."""
+
+    def __init__(self, model_name: str) -> None:
+        from sentence_transformers import SentenceTransformer  # heavy; imported only when asked for
+
+        self.model = SentenceTransformer(model_name)
+        self.name = model_name
+
+    def encode(self, texts: list[str]) -> list[list[float]]:
+        return [list(map(float, v)) for v in self.model.encode(texts, normalize_embeddings=True)]
+
+
+def embedder() -> Embedder | None:
+    """The configured embedder, or None (and a note) when the pass is off or
+    the package is absent. Never raises: the lexical pass must still run."""
+    if EMBEDDINGS.lower() in ("off", "0", "false", "no"):
+        return None
+    name = DEFAULT_MODEL if EMBEDDINGS.lower() == "auto" else EMBEDDINGS
+    try:
+        return Embedder(name)
+    except Exception as exc:  # noqa: BLE001 — a missing package or model is a skipped pass, not a failed sweep
+        if EMBEDDINGS.lower() != "auto":
+            warn(f"semantic pass skipped: {name}: {str(exc)[:120]}")
+        else:
+            print(f"semantic pass skipped: sentence-transformers not available ({type(exc).__name__})")
+        return None
+
+
+def cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(y * y for y in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
+
+
+def semantic_text(i: dict) -> str:
+    return f"{i.get('title') or ''}. {finding_text(i)}"
+
+
+def semantic_groups(issues: list[dict], emb: Embedder | None) -> list[list[tuple[dict, float]]]:
+    """Pairs an embedding thinks are one defect, in the shape `duplicate_groups`
+    returns: the older issue first with 1.0, the newer with its cosine.
+
+    The same guards as the lexical pass: `not-duplicate` and epics never
+    join a group, and two reports only pair within one file — or when one of
+    them names no file at all. Different files are different defects however
+    similar the prose.
+    """
+    if emb is None:
+        return []
+    pool = [i for i in issues if not (labels_of(i) & {NOT_DUP, bf.EPIC_LABEL})]
+    if len(pool) < 2:
+        return []
+    vectors = emb.encode([semantic_text(i) for i in pool])
+    out: list[list[tuple[dict, float]]] = []
+    for x in range(len(pool)):
+        for y in range(x + 1, len(pool)):
+            a, b = pool[x], pool[y]
+            pa, pb = path_of(a), path_of(b)
+            if pa and pb and pa != pb:
+                continue
+            score = cosine(vectors[x], vectors[y])
+            if score < SEMANTIC_MAYBE:
+                continue
+            older, newer = sorted((a, b), key=lambda i: i["number"])
+            out.append([(older, 1.0), (newer, round(score, 4))])
+    return out
 
 
 # -------------------------------------------------------------- duplicates --
@@ -308,17 +412,31 @@ def bundled(i: dict) -> bool:
     return bool(m and int(m.group(1)) > 1) or len(bf.GITAR_HEAD.findall(body)) > 1
 
 
-def dedupe(issues: list[dict]) -> set[int]:
-    """Returns the issue numbers closed, so the sidebar pass skips them."""
+def dedupe(issues: list[dict], emb: Embedder | None = None) -> set[int]:
+    """Returns the issue numbers closed, so the sidebar pass skips them.
+
+    The lexical pass first, then the semantic one over whatever is still
+    open; a pair the first pass already decided is not re-judged by the second.
+    """
     closed: set[int] = set()
-    for group in duplicate_groups(issues):
-        canon = group[0][0]
-        for other, score in group[1:]:
-            if score >= SAME and not (bundled(canon) or bundled(other)):
-                close_duplicate(canon, other, score)
-                closed.add(other["number"])
-            elif score >= MAYBE:
-                flag_possible(canon, other, score)
+    decided: set[frozenset[int]] = set()
+
+    def judge(groups, same: float, maybe: float) -> None:
+        for group in groups:
+            canon = group[0][0]
+            for other, score in group[1:]:
+                key = frozenset((canon["number"], other["number"]))
+                if key in decided or other["number"] in closed or canon["number"] in closed:
+                    continue
+                decided.add(key)
+                if score >= same and not (bundled(canon) or bundled(other)):
+                    close_duplicate(canon, other, score)
+                    closed.add(other["number"])
+                elif score >= maybe:
+                    flag_possible(canon, other, score)
+
+    judge(duplicate_groups(issues), SAME, MAYBE)
+    judge(semantic_groups([i for i in issues if i["number"] not in closed], emb), SEMANTIC_SAME, SEMANTIC_MAYBE)
     return closed
 
 
@@ -500,6 +618,93 @@ def put_on_board(board, i: dict) -> None:
     TALLY["boarded"].append(f"#{i['number']}")
 
 
+# --------------------------------------------------------- label -> field --
+#: Board field -> {label -> option}. A label that is not here sets nothing;
+#: an option the board lacks is skipped by `bf.set_fields`, never created.
+DEFAULT_FIELD_MAP: dict[str, dict[str, str]] = {
+    "Priority": {
+        "priority:P0": "Urgent", "priority:P1": "High", "priority:P2": "Medium", "priority:P3": "Low",
+        "priority:urgent": "Urgent", "priority:critical": "Urgent", "priority:high": "High",
+        "priority:medium": "Medium", "priority:low": "Low",
+    },
+    "Effort": {
+        "effort:quick-win": "Low", "effort:heavy-lift": "High",
+        "effort:low": "Low", "effort:medium": "Medium", "effort:high": "High",
+    },
+    # `area:<x>` -> Category "<X>", title-cased; listed explicitly where the
+    # board's option is not the label's title case.
+    "Category": {"area:security": "Security", "area:correctness": "Correctness", "area:performance": "Performance",
+                 "area:reliability": "Reliability", "area:data-quality": "Data quality", "area:docs": "Docs"},
+}
+
+
+def field_map() -> dict[str, dict[str, str]]:
+    raw = os.environ.get("HYGIENE_LABEL_FIELDS", "").strip()
+    if not raw:
+        return DEFAULT_FIELD_MAP
+    try:
+        parsed = json.loads(raw)
+    except ValueError as exc:
+        warn(f"HYGIENE_LABEL_FIELDS is not JSON ({exc}); using the default map")
+        return DEFAULT_FIELD_MAP
+    if not isinstance(parsed, dict) or not all(isinstance(v, dict) for v in parsed.values()):
+        warn("HYGIENE_LABEL_FIELDS must be {field: {label: option}}; using the default map")
+        return DEFAULT_FIELD_MAP
+    return parsed
+
+
+def field_values(labels: set[str], fmap: dict[str, dict[str, str]] | None = None) -> dict[str, str]:
+    """What the board should say about an issue with these labels. Pure.
+
+    One value per field; when two labels disagree the lexically first label
+    wins, so the result does not depend on the order GitHub returned them.
+    A generic `area:<x>` falls back to the title-cased `<x>`.
+    """
+    fmap = fmap or DEFAULT_FIELD_MAP
+    want: dict[str, str] = {}
+    for field, table in fmap.items():
+        hits = sorted(lab for lab in labels if lab in table)
+        if hits:
+            want[field] = table[hits[0]]
+        elif field == "Category":
+            areas = sorted(lab for lab in labels if lab.startswith("area:"))
+            if areas:
+                want[field] = areas[0].split(":", 1)[1].replace("-", " ").capitalize()
+    return want
+
+
+def all_open_issues() -> list[dict]:
+    out = bf.run(["gh", "issue", "list", "--repo", bf.REPO, "--state", "open", "--limit", "2000",
+                  "--json", "number,title,labels,id"])
+    return json.loads(out or "[]")
+
+
+def sync_label_fields(board, issues: list[dict], fmap: dict[str, dict[str, str]] | None = None) -> int:
+    """Set the board's fields from each issue's labels. Returns how many issues
+    had something to set. In a dry run nothing is written and nothing is even
+    added to the board — `board_item` is a mutation too."""
+    if board is None:
+        return 0
+    n = 0
+    for i in issues:
+        want = field_values(labels_of(i), fmap)
+        if not want:
+            continue
+        n += 1
+        desc = ", ".join(f"{k}={v}" for k, v in sorted(want.items()))
+        if DRY_RUN:
+            say("synced", f"set {desc} on #{i['number']} from its labels")
+            continue
+        try:
+            item = bf.board_item(board, i["number"])
+            if item:
+                bf.set_fields(board, item, want)
+                say("synced", f"set {desc} on #{i['number']} from its labels")
+        except Exception as exc:  # noqa: BLE001 — one bad issue must not stop the sweep
+            warn(f"#{i['number']}: field sync: {str(exc)[:160]}")
+    return n
+
+
 # -------------------------------------------------------------------- main --
 def summary() -> None:
     path = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -513,6 +718,7 @@ def summary() -> None:
         "parented": "epics attached",
         "boarded": "on the board",
         "assigned": "assigned",
+        "synced": "label → field syncs (all issues)",
         "warnings": "warnings",
     }
     lines += [f"| {names[k]} | {len(v)} |" for k, v in TALLY.items()]
@@ -539,7 +745,10 @@ def main() -> int:
     issues = open_findings()
     print(f"{len(issues)} open finding(s)")
 
-    closed = dedupe(issues)
+    emb = embedder()
+    if emb is not None:
+        print(f"semantic pass: {emb.name} (same >= {SEMANTIC_SAME}, maybe >= {SEMANTIC_MAYBE})")
+    closed = dedupe(issues, emb)
     live = [i for i in issues if i["number"] not in closed and bf.EPIC_LABEL not in labels_of(i)]
 
     token = ORG_TOKEN or os.environ.get("GH_TOKEN", "")
@@ -560,6 +769,14 @@ def main() -> int:
             put_on_board(board, i)
         except Exception as exc:  # noqa: BLE001 — one bad issue must not stop the sweep
             warn(f"#{i['number']}: {str(exc)[:160]}")
+
+    if SYNC_ALL:
+        if board is None:
+            warn("label → field sync skipped: PROJECTS_TOKEN not set")
+        else:
+            everything = [i for i in all_open_issues() if i["number"] not in closed]
+            print(f"{len(everything)} open issue(s) for the label → field sync")
+            sync_label_fields(board, everything, field_map())
     summary()
     return 0
 

@@ -1,0 +1,22 @@
+# How `pf dora audit` drives Prowler. This is our profile, read by
+# pf.aidf.dora.audit to build the command line; it is not a file Prowler reads.
+#
+# Prowler is a *command*, installed isolated (`uv tool install prowler`), never a
+# workspace dependency: it pins boto3, azure and google SDK ranges that one
+# lockfile cannot hold beside dlt and dagster — the same reason
+# openmetadata-ingestion and the Elementary CLI are not extras in pyproject.toml.
+framework:
+  name: DORA-EU-2022-2554
+  version: "1.0.0"
+  description: Digital Operational Resilience Act — infrastructure evidence for Articles 8-12
+
+execution:
+  # Requested first. When the installed Prowler does not list it for the
+  # provider, the runner falls back to the check ids the statutory mapping
+  # names and maps findings to articles itself.
+  compliance: dora_2022_2554
+  output_formats: [json-ocsf]
+  # Findings below this severity are recorded but never fail an article.
+  severity_threshold: high
+  # Extra arguments appended verbatim; an entity's aidf.yaml may add to them.
+  extra_args: []

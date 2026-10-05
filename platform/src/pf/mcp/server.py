@@ -304,6 +304,42 @@ def validate_annotations() -> str:
     return f"{len(issues)} issue(s):\n" + "\n".join(f"  {i}" for i in issues)
 
 
+# ------------------------------------------------------- governance -------
+def govern_metric(payload_json: str, role: str, target: str = "", contract: str = "mart_metric") -> str:
+    """Submit a metric or semantic-model proposal through the governance engine.
+
+    The payload must be a JSON object matching MartMetricContract (or
+    SemanticModelContract with contract="semantic_model"); `pf govern schema`
+    prints it. The engine checks the action gate, the contract, the SQL AST
+    against this project's catalogue and a PII scrub, records the outcome to
+    the provenance chain, and only then writes the file. Returns the outcome
+    as JSON: status PASS | REJECT | ESCALATED | CIRCUIT_BROKEN, the findings,
+    the action id and the chain position.
+    """
+    from pf.aidf.engine import BudgetExceeded, GovernanceEngine
+
+    group, project, _ = active_project()
+    try:
+        out = GovernanceEngine(obs.repo_root(), group, project).evaluate(
+            payload_json, role=role, target=target, contract=contract)
+    except BudgetExceeded as exc:
+        return json.dumps({"status": "CIRCUIT_BROKEN", "ok": False, "message": str(exc)})
+    return json.dumps(out.to_dict(), default=str)
+
+
+def govern_prompt(mart_name: str, metric_name: str) -> str:
+    """The dispatch prompt for a metric sub-agent: this project's catalogue for
+    the mart, its SQL dialect, and the exact schema the answer must satisfy."""
+    from pf.aidf import catalog
+    from pf.aidf.config import load
+    from pf.aidf.prompts import metric_prompt
+
+    group, project, pdir = active_project()
+    cfg = load(obs.repo_root(), group, project)
+    cols = catalog.columns_for(pdir, mart_name) or set()
+    return metric_prompt(group, project, mart_name, metric_name, cols, cfg.dialect)
+
+
 # --------------------------------------------------------- toolkits -------
 def list_toolkits() -> str:
     """Installed platform toolkits (skills available to this session)."""
@@ -469,6 +505,8 @@ TOOLS = {
     "impact_analysis": impact_analysis,
     "ontology_classes": ontology_classes,
     "validate_annotations": validate_annotations,
+    "govern_metric": govern_metric,
+    "govern_prompt": govern_prompt,
     "list_toolkits": list_toolkits,
     "toolkit_info": toolkit_info,
 }

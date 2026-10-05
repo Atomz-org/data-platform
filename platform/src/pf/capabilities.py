@@ -647,6 +647,115 @@ KG_CURRENT_JOB = """\
 """
 
 
+# ----------------------------------------------------------------- aidf -----
+# Seeded, and inert on arrival: every value below repeats the platform floor
+# (`platform/src/pf/aidf/data/defaults.yaml`) or is commented out, so applying
+# this capability to a project — new or backfilled — changes no verdict. The
+# file exists so the entity's decisions have a place to land: its cloud, its
+# owner, its mart convention, the articles that do not apply to it.
+AIDF_CONFIG = """\
+# AI governance & DORA overlay for {{group}}/{{project}}.
+#
+# Layers over `groups/{{group}}/aidf.yaml` (if present) and the platform floor in
+# platform/src/pf/aidf/data/defaults.yaml, and MAY ONLY TIGHTEN: lower a budget,
+# shorten a patch window, add a validator, narrow the mart pattern. Loosening
+# raises AidfRelaxation at load time. An article can be marked out of scope only
+# with a reason and an owner.
+#
+#   pf govern check {{group}} {{project}}      # the resolved configuration
+#   pf govern evaluate {{group}} {{project}} --payload p.json --role metric-gap-harvester
+#   pf dora audit {{group}} {{project}}        # the evidence matrix -> governance/dora/
+#
+# docs/aidf.md in this project and docs/AIDF.md at the root say the rest.
+version: 1
+
+runtime:
+  # sqlglot dialect the entity's SQL is parsed in. Set it when the production
+  # warehouse is not DuckDB: snowflake | bigquery | postgres | redshift | ...
+  # sql_dialect: duckdb
+  #
+  # The mart naming convention here, if there is one. Tightens the floor.
+  # mart_pattern: "^(fct|dim|agg)_[a-z0-9_]+$"
+  #
+  # Targets a person must approve, and the roles exempt from that.
+  # elevated:
+  #   paths: ["governance/metrics/regulatory_*/**"]
+  #   roles: ["lead_risk_officer"]
+  {}
+
+dora:
+  # Who is accountable for this entity's ICT risk framework (Art. 5).
+  owner: ""
+  # Which cloud Prowler audits for this entity. Empty: no infrastructure scan,
+  # and the Prowler-evidenced checks report `unverified`.
+  provider: ""
+  # Out of scope? Say so with a reason; the audit reports N/A, never PASS.
+  # in_scope: false
+  # out_of_scope_reason: Not a financial entity or a critical ICT provider under Art. 2.
+  #
+  # Accepted vulnerabilities, each dated and owned. An expired entry is a
+  # finding again.
+  # sbom:
+  #   exceptions:
+  #     - id: CVE-2025-00000
+  #       reason: Not reachable; the affected code path is never imported.
+  #       owner: someone@example.com
+  #       expires: 2027-01-01
+  #
+  # Articles that do not apply to this entity, with a reason and an owner.
+  # articles:
+  #   "28":
+  #     applies: false
+  #     reason: No ICT third-party provider holds this entity's data.
+  #     owner: someone@example.com
+"""
+
+AIDF_DOCS = """\
+# AI governance & DORA — {{project}}
+
+Every agent output that becomes a metric or a semantic model here goes through
+the governance engine, and every outcome is a hash-linked record in the
+repository's provenance chain. This project is governed by the platform floor
+plus `groups/{{group}}/aidf.yaml` plus `governance/aidf.yaml` in this directory,
+each layer tightening the one before.
+
+## Runtime governance
+
+```
+pf govern check {{group}} {{project}}            what governs this entity, and the breaker's state
+pf govern schema mart_metric                   the JSON an agent must produce
+pf govern prompt {{group}} {{project}} <mart> <metric>   the dispatch prompt, with this mart's catalogue
+pf govern evaluate {{group}} {{project}} --payload p.json --role metric-gap-harvester
+pf govern breaker {{group}} {{project}} [--reset --reason "..."]
+```
+
+An evaluation ends in one of four states, each written to the chain:
+
+| status | decision / execution | meaning |
+|---|---|---|
+| `PASS` | allow / ok | every check holds; the record was written under `governance/metrics/` |
+| `REJECT` | deny / blocked | a check failed; the findings are in the record, the payload is not |
+| `ESCALATED` | hold / blocked | elevated target; `pf provenance approve <id>` then resubmit `--approved` |
+| `CIRCUIT_BROKEN` | deny / blocked | too many consecutive rejections; a person resets with a reason |
+
+The MCP tools `govern_metric` and `govern_prompt` are the same engine for any
+harness that speaks MCP.
+
+## DORA evidence
+
+```
+pf dora matrix                       which article each check evidences
+pf dora audit {{group}} {{project}}  run what can run, judge every check, write governance/dora/matrix.md
+pf dora audit {{group}} {{project}} --ocsf findings.ocsf.json --vulns trivy.json   ingest scans run elsewhere
+```
+
+`governance/dora/` is generated and gitignored; CI archives it and the chain
+records its SHA-256. A check the audit could not run here reads `unverified`
+and is never counted as a pass. `docs/AIDF.md` at the repository root is the
+full reference, including the statutory mapping and the supply-chain policy.
+"""
+
+
 CAPABILITIES: dict[str, Capability] = {
     "air": Capability(
         name="air",
@@ -850,6 +959,83 @@ CAPABILITIES: dict[str, Capability] = {
             # it is the same conflict of interest as editing gate.yaml.
             "denylist": ["**/.github/workflows/**"],
         },
+        default_enabled=True,
+    ),
+    "aidf": Capability(
+        name="aidf",
+        description="Runtime AI governance (contracts, SQL AST, PII, action gate, breaker) and DORA evidence "
+        "(EU 2022/2554), for this entity.",
+        files={
+            "governance/aidf.yaml": AIDF_CONFIG,
+            "docs/aidf.md": AIDF_DOCS,
+        },
+        # The overlay is the entity's to own, like governance/policy.yaml.
+        preserve=("governance/aidf.yaml",),
+        settings={
+            "permissions": {
+                "allow": [
+                    "Bash(pf govern:*)",
+                    "Bash(pf dora:*)",
+                ]
+            },
+        },
+        gate={
+            # The evidence matrix and the scans it was judged from. Written by
+            # `pf dora audit`, timestamped, gitignored; a hand edit is a report
+            # that disagrees with the chain record of it.
+            "denylist": ["**/governance/dora/**"],
+            # Changing what governs an entity — its budgets, its roles, its
+            # patch windows, which articles apply — is a governance decision.
+            # It stays editable; the blast radius gets reported first.
+            "impact_required": ["**/governance/aidf.yaml"],
+        },
+        policies=(
+            {
+                "id": "agent-output-passes-contract",
+                "intent": (
+                    "A metric or semantic model an agent proposes is data the platform will "
+                    "compute from. Accepting it on the model's word — a coerced type, an extra "
+                    "field, a column that does not exist — makes the mistake permanent and "
+                    "invisible. The contract is strict, the SQL is parsed, the columns are "
+                    "checked against the catalogue, and nothing is written before the chain "
+                    "records the verdict."
+                ),
+                "applies_to": {"artifact_glob": "**/governance/metrics/**"},
+                "constraint": "governed_write",
+                "params": {"contract": "MartMetricContract", "validators": "schema, sql_ast, pii"},
+                "severity": "error",
+                "enforced_by": ["pf.aidf.engine:GovernanceEngine", "pf.aidf.validators:SqlAstValidator"],
+                "evidence": ["pf govern evaluate", "pf provenance verify"],
+            },
+            {
+                "id": "agent-sql-is-read-only",
+                "intent": (
+                    "A metric definition reads a mart. One that creates, alters, inserts, "
+                    "reads a system catalogue or opens a file is not a metric, whatever it "
+                    "is called, and the parser can tell before the warehouse does."
+                ),
+                "applies_to": {"artifact_glob": "**/governance/metrics/**"},
+                "constraint": "sql_read_only",
+                "severity": "error",
+                "enforced_by": ["pf.aidf.validators:SqlAstValidator"],
+                "evidence": ["pf govern evaluate"],
+            },
+            {
+                "id": "dora-patch-window-enforced",
+                "intent": (
+                    "RTS (EU) 2024/1774 Art. 10: a fixable vulnerability is patched within a "
+                    "risk-based window or carries a dated, owned exception. A window nobody "
+                    "measures is a policy in prose."
+                ),
+                "applies_to": {"artifact_glob": "uv.lock"},
+                "constraint": "patch_window",
+                "params": {"grace_days": "critical 0, high 0, medium 30, low 90"},
+                "severity": "error",
+                "enforced_by": ["pf.aidf.dora.sbom:assess", ".github/workflows/dora.yml"],
+                "evidence": ["pf dora audit"],
+            },
+        ),
+        requires=("governance", "air"),
         default_enabled=True,
     ),
 }

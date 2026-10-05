@@ -309,3 +309,53 @@ jobs:
               uv run pf air gate "$group" "$(basename "$p")"
             done
           done
+
+  # Pillar one of docs/AIDF.md: the runtime governance engine that every agent
+  # metric or semantic model goes through, and the DORA configuration every
+  # entity resolves to. Two questions, both answered from the checkout alone:
+  #
+  #   * does the engine still refuse what it must — mutating SQL, a
+  #     hallucinated column, a secret in the rationale, a role writing where it
+  #     may not — and record every verdict in the pairing `pf provenance
+  #     verify` checks?
+  #   * does every entity's aidf.yaml (or its absence) resolve to a
+  #     configuration that only tightens the platform floor, and does the
+  #     statutory matrix still name only checks the audit can evaluate?
+  #
+  # Blocking. Unlike the ASQAV scan this is behaviour, not vocabulary: the
+  # tests attack the engine and the checks read the real overlays.
+  runtime-governance:
+    name: Runtime governance & DORA config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      - name: Attack the engine
+        run: >
+          uv run pytest -q
+          platform/tests/gate/test_aidf_config.py
+          platform/tests/gate/test_aidf_validators.py
+          platform/tests/gate/test_aidf_engine.py
+          platform/tests/gate/test_aidf_dora.py
+
+      - name: Every entity resolves, and only tightens
+        run: |
+          uv run pf govern check
+          uv run pf dora check
+
+      - name: Statutory matrix
+        run: |
+          {
+            echo "## DORA statutory matrix"
+            echo
+            echo '```'
+            uv run pf dora matrix
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

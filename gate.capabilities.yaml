@@ -28,9 +28,11 @@ denylist:
 - '**/mdl/wren/wren_project.yml'
 - '**/mdl/wren/target/**'
 - '**/mdl/wren/.wren/**'
+- '**/governance/dora/**'
 impact_required:
 - '**/reporting/pages/**'
 - '**/transform/recce.yml'
 - '**/governance/policy.yaml'
 - '**/transform/tests/expectations/**'
 - '**/air.yaml'
+- '**/governance/aidf.yaml'

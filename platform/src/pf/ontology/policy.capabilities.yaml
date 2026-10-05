@@ -8,48 +8,6 @@
 # To change a rule here, change the `policies=` on the capability that declares
 # it — the `_capability` key on each entry names which one.
 policies:
-- id: money-amount-bounded
-  intent: A monetary column with no lower bound accepts the negative row that a refund, a
-    sign flip or a bad join produces, and it reaches a metric as a quietly smaller number.
-    The currency rule makes the amount interpretable; this makes it credible.
-  applies_to:
-    role: money_amount
-  constraint: range_asserted
-  params:
-    suggested: dbt_expectations.expect_column_values_to_be_between
-  severity: warning
-  enforced_by: []
-  evidence:
-  - dbt test
-  _capability: data-quality
-- id: source-declares-freshness
-  intent: A mart is stale because its source was. Monitoring the mart names the wrong artefact
-    to go fix, and monitoring nothing means the first report of a stopped pipeline comes from
-    whoever opened the dashboard.
-  applies_to:
-    artifact_glob: '**/transform/models/**/_*__sources.yml'
-  constraint: freshness_declared
-  severity: warning
-  enforced_by: []
-  evidence:
-  - dbt source freshness
-  - dbt test
-  _capability: data-quality
-- id: anomaly-tests-do-not-gate-merge
-  intent: "An anomaly test judges data; a merge gate judges code. Wiring a statistical test\
-    \ into the gate blocks a correct change because yesterday's load was small, and the cure\
-    \ is always to weaken the test \u2014 which is how the monitoring stops working."
-  applies_to:
-    artifact_glob: '**/.github/workflows/**'
-  constraint: not_in_gate
-  params:
-    excludes: elementary anomaly tests
-  severity: error
-  enforced_by:
-  - pf.capabilities:IMPACT_JOB
-  evidence:
-  - pf impact-gate
-  _capability: data-quality
 - id: entity-isolation-enforced
   intent: "Business logic does not transfer between entities. A session that can read a sister\
     \ project will carry an assumption across \u2014 a grain, a status enum, a revenue definition\
@@ -96,3 +54,93 @@ policies:
   evidence:
   - pf bootstrap
   _capability: governance
+- id: agent-output-passes-contract
+  intent: "A metric or semantic model an agent proposes is data the platform will compute\
+    \ from. Accepting it on the model's word \u2014 a coerced type, an extra field, a column\
+    \ that does not exist \u2014 makes the mistake permanent and invisible. The contract is\
+    \ strict, the SQL is parsed, the columns are checked against the catalogue, and nothing\
+    \ is written before the chain records the verdict."
+  applies_to:
+    artifact_glob: '**/governance/metrics/**'
+  constraint: governed_write
+  params:
+    contract: MartMetricContract
+    validators: schema, sql_ast, pii
+  severity: error
+  enforced_by:
+  - pf.aidf.engine:GovernanceEngine
+  - pf.aidf.validators:SqlAstValidator
+  evidence:
+  - pf govern evaluate
+  - pf provenance verify
+  _capability: aidf
+- id: agent-sql-is-read-only
+  intent: A metric definition reads a mart. One that creates, alters, inserts, reads a system
+    catalogue or opens a file is not a metric, whatever it is called, and the parser can tell
+    before the warehouse does.
+  applies_to:
+    artifact_glob: '**/governance/metrics/**'
+  constraint: sql_read_only
+  severity: error
+  enforced_by:
+  - pf.aidf.validators:SqlAstValidator
+  evidence:
+  - pf govern evaluate
+  _capability: aidf
+- id: dora-patch-window-enforced
+  intent: 'RTS (EU) 2024/1774 Art. 10: a fixable vulnerability is patched within a risk-based
+    window or carries a dated, owned exception. A window nobody measures is a policy in prose.'
+  applies_to:
+    artifact_glob: uv.lock
+  constraint: patch_window
+  params:
+    grace_days: critical 0, high 0, medium 30, low 90
+  severity: error
+  enforced_by:
+  - pf.aidf.dora.sbom:assess
+  - .github/workflows/dora.yml
+  evidence:
+  - pf dora audit
+  _capability: aidf
+- id: money-amount-bounded
+  intent: A monetary column with no lower bound accepts the negative row that a refund, a
+    sign flip or a bad join produces, and it reaches a metric as a quietly smaller number.
+    The currency rule makes the amount interpretable; this makes it credible.
+  applies_to:
+    role: money_amount
+  constraint: range_asserted
+  params:
+    suggested: dbt_expectations.expect_column_values_to_be_between
+  severity: warning
+  enforced_by: []
+  evidence:
+  - dbt test
+  _capability: data-quality
+- id: source-declares-freshness
+  intent: A mart is stale because its source was. Monitoring the mart names the wrong artefact
+    to go fix, and monitoring nothing means the first report of a stopped pipeline comes from
+    whoever opened the dashboard.
+  applies_to:
+    artifact_glob: '**/transform/models/**/_*__sources.yml'
+  constraint: freshness_declared
+  severity: warning
+  enforced_by: []
+  evidence:
+  - dbt source freshness
+  - dbt test
+  _capability: data-quality
+- id: anomaly-tests-do-not-gate-merge
+  intent: "An anomaly test judges data; a merge gate judges code. Wiring a statistical test\
+    \ into the gate blocks a correct change because yesterday's load was small, and the cure\
+    \ is always to weaken the test \u2014 which is how the monitoring stops working."
+  applies_to:
+    artifact_glob: '**/.github/workflows/**'
+  constraint: not_in_gate
+  params:
+    excludes: elementary anomaly tests
+  severity: error
+  enforced_by:
+  - pf.capabilities:IMPACT_JOB
+  evidence:
+  - pf impact-gate
+  _capability: data-quality

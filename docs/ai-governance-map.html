@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Governance Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #F2F4F6; --card: #FFFFFF; --tint: #E4ECF3; --ink: #17202B; --muted: #5B6675;
+    --rule: #C9D1DA; --accent: #0F6E56; --accent-soft: #DCEFE8; --flag: #B5451B; --flag-soft: #F6E1D8;
+    --warn: #8A6100; --warn-soft: #F5EBCF; --na: #6B7683; --na-soft: #E7EAEE; --code: #EEF1F4;
+    --display: "Fraunces", Georgia, "Times New Roman", serif;
+    --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper: #0F141A; --card: #161D25; --tint: #1B2632; --ink: #E6EAEE; --muted: #98A3B0;
+      --rule: #2A343F; --accent: #4FBF9A; --accent-soft: #143528; --flag: #E07A55; --flag-soft: #3A2118;
+      --warn: #D9A93A; --warn-soft: #362C10; --na: #8E99A6; --na-soft: #222B35; --code: #1C252F;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper: #0F141A; --card: #161D25; --tint: #1B2632; --ink: #E6EAEE; --muted: #98A3B0;
+    --rule: #2A343F; --accent: #4FBF9A; --accent-soft: #143528; --flag: #E07A55; --flag-soft: #3A2118;
+    --warn: #D9A93A; --warn-soft: #362C10; --na: #8E99A6; --na-soft: #222B35; --code: #1C252F;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; }
+  h1, h2, h3 { font-family: var(--display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2rem, 4.5vw, 3.1rem); font-variation-settings: "opsz" 144; }
+  h2 { font-size: 1.55rem; margin-block: 2.4rem 0.6rem; }
+  h3 { font-size: 1.12rem; margin-block: 1.2rem 0.3rem; font-family: var(--body); font-weight: 600; }
+  p { margin: 0 0 0.9rem; max-width: 68ch; }
+  ul { margin: 0 0 0.9rem; padding-left: 1.2rem; max-width: 70ch; }
+  li { margin-bottom: 0.3rem; }
+  code, .id { font-family: var(--mono); font-size: 0.86em; background: var(--code); padding: 0.05em 0.35em; border-radius: 3px; }
+  pre { font-family: var(--mono); font-size: 0.8rem; line-height: 1.5; background: var(--code); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; margin: 0 0 1rem; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .lede { font-size: 1.15rem; color: var(--muted); max-width: 62ch; margin-top: 0.8rem; }
+  .eyebrow { font-family: var(--body); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-block: 1.4rem 0.4rem; }
+  .flow .step { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+  .flow .step .n { font-family: var(--display); font-weight: 700; font-size: 1.4rem; line-height: 1; color: var(--accent); }
+  .flow .step .t { font-weight: 600; margin-top: 4px; }
+  .flow .step .d { color: var(--muted); font-size: 0.86rem; margin-top: 2px; line-height: 1.35; }
+  .statuses { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-block: 0.6rem 1.2rem; }
+  .status { border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; background: var(--card); }
+  .status .pair { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .st { font-family: var(--mono); font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 3px; white-space: nowrap; }
+  .st.pass { background: var(--accent-soft); color: var(--accent); }
+  .st.fail { background: var(--flag-soft); color: var(--flag); }
+  .st.unv { background: var(--warn-soft); color: var(--warn); }
+  .st.na { background: var(--na-soft); color: var(--na); }
+  .stage { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 32px; padding-block: 1.6rem; border-top: 1px solid var(--rule); }
+  .margin .no { font-family: var(--display); font-size: 2.6rem; font-weight: 700; line-height: 1; font-variation-settings: "opsz" 144; }
+  .margin .reg { color: var(--muted); font-size: 0.85rem; margin-top: 0.3rem; }
+  .margin .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.9rem; }
+  .pill { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; border: 1px solid transparent; }
+  .pill.auto { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .pill.partial { background: var(--warn-soft); color: var(--warn); border-color: var(--warn); }
+  .pill.manual { background: var(--na-soft); color: var(--na); border-color: var(--na); }
+  .body h2 { margin-top: 0; font-size: 1.5rem; }
+  .statute { border-left: 3px solid var(--rule); padding-left: 14px; color: var(--muted); font-style: italic; margin-block: 0.6rem 1rem; max-width: 66ch; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-block: 0.4rem 1rem; }
+  .box { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+  .box h3 { margin-top: 0; }
+  .box ul { margin-bottom: 0; }
+  .ex { background: var(--tint); border-radius: 8px; padding: 12px 16px; margin-block: 0.6rem 0.4rem; }
+  .ex .eyebrow { margin-bottom: 4px; }
+  .ex p:last-child, .ex pre:last-child { margin-bottom: 0; }
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-top: 1px solid var(--rule); }
+  th { font-family: var(--body); font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; border-top: 0; }
+  tbody tr:first-child td { border-top: 0; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (max-width: 720px) {
+    body { font-size: 16px; }
+    .stage { grid-template-columns: 1fr; gap: 0.6rem; }
+    .margin { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+    .margin .no { font-size: 2rem; }
+    .margin .pills { margin-top: 0; }
+  }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <p class="eyebrow">Pillar one of the AIDF · pf govern · Atomz-org/data-platform</p>
+  <h1>AI Governance Map</h1>
+  <p class="lede">What happens between an agent proposing a metric and that metric existing: the seven steps every proposal takes, what each one refuses, what the ledger keeps, and what a person still decides. Every entity, every harness, one engine.</p>
+
+  <div class="flow" aria-label="the seven steps">
+    <div class="step"><div class="n">1</div><div class="t">Budget</div><div class="d">at most 50 evaluations per invocation</div></div>
+    <div class="step"><div class="n">2</div><div class="t">Breaker</div><div class="d">open after 3 rejections in a row, read from the chain</div></div>
+    <div class="step"><div class="n">3</div><div class="t">Gate</div><div class="d">gate.yaml, then this role's paths, then elevation</div></div>
+    <div class="step"><div class="n">4</div><div class="t">Contract</div><div class="d">strict JSON: types, fields, identifiers, the entity's mart pattern</div></div>
+    <div class="step"><div class="n">5</div><div class="t">Validators</div><div class="d">SQL parsed, columns checked against the graph, PII scrubbed</div></div>
+    <div class="step"><div class="n">6</div><div class="t">Ledger</div><div class="d">intent → decision → execution, SHA-256 linked</div></div>
+    <div class="step"><div class="n">7</div><div class="t">Write</div><div class="d">the canonical record, only after the chain has it</div></div>
+  </div>
+
+  <h2>Four ways a proposal ends</h2>
+  <p>Every path reaches the provenance chain, and each ends in the pairing the chain audit checks: a denied or held decision must be followed by a blocked execution, an allowed one by a successful execution. A rejection that executed anyway, or one that was never written, would fail <code>pf provenance verify</code>.</p>
+  <div class="statuses">
+    <div class="status"><span class="st pass">PASS</span><div class="pair">decision allow · execution ok</div><p>Every check holds. The record is written under <code>governance/metrics/&lt;mart&gt;/&lt;metric&gt;.json</code> and the chain position is returned.</p></div>
+    <div class="status"><span class="st fail">REJECT</span><div class="pair">decision deny · execution blocked</div><p>A check failed. The findings are in the record; the payload is not, only its SHA-256.</p></div>
+    <div class="status"><span class="st unv">ESCALATED</span><div class="pair">decision hold · execution blocked</div><p>The target is elevated. A person approves the action id, the agent resubmits with it.</p></div>
+    <div class="status"><span class="st na">CIRCUIT_BROKEN</span><div class="pair">decision deny · execution blocked</div><p>Too many rejections in a row for this entity. A person resets the breaker with a reason, and the reset is itself a chain record.</p></div>
+  </div>
+
+  <!-- ======================================================= the gate -->
+  <section class="stage" id="gate">
+    <div class="margin"><div class="no">3</div><div class="reg">Action gate</div><div class="pills"><span class="pill auto">enforced</span></div></div>
+    <div class="body">
+      <h2>May this role write this path?</h2>
+      <p class="statute">Blueprint: path permission verification against gate.yaml; immutable roots for provenance/, gate.yaml, loop-constraints.md and .github/; human elevation for protected analytics.</p>
+      <p>Three questions in a fixed order. First the repository's own path policy, <code>gate.yaml</code>, consulted as a project session: credential files, generated artefacts, the provenance record, shared platform code are denied to an agent whatever else is configured, and nothing in the engine can widen that. Second, the entity's roles: <code>governance/aidf.yaml</code> says which agent may write under which globs. The floor lets <code>metric-gap-harvester</code> write under <code>governance/metrics/**</code> and <code>platform_orchestrator</code> under that and <code>governance/semantic/**</code>; a role that is not declared may write nothing. Third, elevation: a target matching one of the entity's elevated paths, by a role not in its elevated roles, is held for a person rather than refused or allowed.</p>
+      <div class="grid2">
+        <div class="box"><h3>Refused by name, always</h3><ul><li><code>provenance/</code>, <code>.github/</code>, <code>vendor/</code>, <code>platform/</code></li><li><code>gate.yaml</code>, <code>gate.capabilities.yaml</code>, <code>loop-constraints.md</code>, <code>LOOP.md</code></li><li><code>pyproject.toml</code>, <code>uv.lock</code>, <code>AGENTS.md</code>, <code>CLAUDE.md</code></li><li>any target with <code>..</code> or an absolute path: not a project path at all</li></ul></div>
+        <div class="box"><h3>Declared per entity</h3><pre><code>runtime:
+  roles:
+    metric-gap-harvester:
+      targets: ["governance/metrics/**"]
+  elevated:
+    paths: ["governance/metrics/regulatory_*/**"]
+    roles: ["lead_risk_officer"]</code></pre></div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>The harvester proposes <code>capital_ratio</code> on <code>regulatory_capital</code> for acme-eu, whose overlay lists <code>governance/metrics/regulatory_*/**</code> as elevated. The gate answers <code>hold / human_oversight</code>; the chain records intent, the hold and a blocked execution; the outcome is <span class="st unv">ESCALATED</span> with the action id. A risk officer runs <code>pf provenance approve &lt;id&gt; --note "reviewed"</code>, the harvester resubmits with <code>--approved &lt;id&gt;</code>, and the same payload now passes with the decision reading <code>allow / human_oversight</code>. Nothing was written in between.</p></div>
+    </div>
+  </section>
+
+  <!-- ==================================================== the contract -->
+  <section class="stage" id="contract">
+    <div class="margin"><div class="no">4</div><div class="reg">Contract</div><div class="pills"><span class="pill auto">enforced</span></div></div>
+    <div class="body">
+      <h2>Does the payload have the shape a metric has?</h2>
+      <p class="statute">Blueprint: schema enforcement with Pydantic v2 strict models — MartMetricContract, SemanticModelContract.</p>
+      <p>Strict, frozen and closed, and validated in strict <em>JSON</em> mode because that is the mode an agent's output is in: a number must be a JSON number, a string a JSON string, an unknown field is a rejection rather than a silent drop, an enum arrives as its value and a timestamp as RFC 3339 text. The mart name is not a platform constant. The floor accepts any snake_case identifier and each entity tightens it in its overlay (<code>mart_pattern: "^fct_[a-z0-9_]+$"</code>), so one class serves a thousand marts under a dozen naming conventions.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Rule</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td><code>mart_name</code></td><td>2–128 chars, the entity's pattern</td><td>a mart outside the convention is a typo or a guess</td></tr>
+            <tr><td><code>metric_name</code></td><td>snake_case, 2–64 chars</td><td>it becomes a MetricFlow identifier</td></tr>
+            <tr><td><code>aggregation_type</code></td><td>SUM · COUNT · COUNT_DISTINCT · AVG · MIN · MAX · MEDIAN · PERCENTILE · RATIO · DERIVED, exact case</td><td>the operator fixes the calculation's meaning</td></tr>
+            <tr><td><code>sql_definition</code></td><td>5–4096 chars; judged by the AST validator next</td><td>bounded so a prompt injection cannot arrive as a definition</td></tr>
+            <tr><td><code>dependent_columns</code></td><td>1–64 identifiers, no repeats; must cover what the SQL reads</td><td>the agent's own claim of what it touched, checked against the truth</td></tr>
+            <tr><td><code>author_agent</code></td><td>the loop, harness or person</td><td>who to ask</td></tr>
+            <tr><td><code>status</code>, <code>created_at_utc</code></td><td>defaults <code>provisional</code> and now, UTC only</td><td>a metric is provisional until a person verifies it</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><pre><code>{"mart_name": "orders", "metric_name": "order_count", "aggregation_type": "COUNT",
+ "sql_definition": "SELECT COUNT(order_id) FROM orders",
+ "dependent_columns": ["order_id"], "author_agent": "metric-gap-harvester"}</code></pre><p>Passes. The same payload with <code>"aggregation_type": "count"</code> is rejected at this step with <code>schema / enum</code> at <code>aggregation_type</code>; with <code>"override_gate": true</code> added, with <code>schema / extra_forbidden</code>. Nothing further runs on a payload that has no shape.</p></div>
+    </div>
+  </section>
+
+  <!-- ================================================== the validators -->
+  <section class="stage" id="validators">
+    <div class="margin"><div class="no">5</div><div class="reg">Validators</div><div class="pills"><span class="pill auto">enforced</span></div></div>
+    <div class="body">
+      <h2>Is the SQL a read-only projection of real columns, and is there anything in it that should not leave?</h2>
+      <p class="statute">Blueprint: semantic AST SQL validation to detect hallucinated columns and tables, and automated PII masking and confidential token redaction.</p>
+      <p>The SQL is parsed with sqlglot in the entity's dialect (DuckDB by default; Snowflake, BigQuery, Postgres when the overlay says so), not matched with a regular expression. The catalogue it is checked against is the entity's own knowledge graph, the same <code>kg/graph.json</code> the impact gate reads, so the engine never has to be told a schema and never trusts the agent's account of one. When no catalogue is available the decision record says <code>catalog: absent</code>; it does not pass silently.</p>
+      <div class="grid2">
+        <div class="box"><h3>The AST validator refuses</h3><ul>
+          <li>DDL, DML, transaction control, <code>COPY</code>, <code>ATTACH</code>, <code>SET</code>, <code>PRAGMA</code>, anything the parser could not classify</li>
+          <li>a second statement after a semicolon</li>
+          <li><code>SELECT *</code> and <code>t.*</code> (<code>COUNT(*)</code> is fine)</li>
+          <li><code>information_schema</code>, <code>pg_catalog</code>, <code>sys</code>, <code>duckdb_internal</code></li>
+          <li><code>read_parquet</code>, <code>read_csv</code>, <code>getenv</code>, <code>glob</code>, external scans</li>
+          <li>a column or table the catalogue does not have</li>
+          <li>a column the SQL reads that <code>dependent_columns</code> does not declare</li>
+        </ul></div>
+        <div class="box"><h3>The PII scrubber refuses</h3><ul>
+          <li>private keys, AWS access keys, GitHub tokens, JWTs, bearer tokens</li>
+          <li><code>password =</code>, <code>api_key:</code> and similar with a value</li>
+          <li>e-mail addresses, IPv4 addresses, IBANs</li>
+          <li>in every string field of the payload, with the field's path</li>
+        </ul><p style="margin-top:0.6rem">It reports the kind and the offset, never the value, so a rejection record cannot become the leak it prevented. An entity may allow-list a documented service address with a regex; each entry is a decision.</p></div>
+      </div>
+      <div class="ex"><p class="eyebrow">Example</p><p>On jaffle-shop the graph says <code>orders</code> has <code>order_id</code>, <code>customer_id</code>, <code>order_date</code>, <code>amount</code>, <code>status</code>. A proposal with <code>SELECT SUM(customer_ltv) FROM orders</code> is rejected: <code>sql_ast / hallucinated_column: ['customer_ltv']</code>. A proposal whose rationale reads <em>"ask jo@example.com if unsure"</em> is rejected with <code>pii / email at offset 4 (14 chars)</code>, and the address is in neither the chain nor the finding. A proposal reading <code>SELECT SUM(amount) FROM orders WHERE status = 'paid'</code> with <code>dependent_columns: ["amount"]</code> is rejected with <code>undeclared_column: ['status']</code>: it read more than it admitted.</p></div>
+    </div>
+  </section>
+
+  <!-- ====================================================== the ledger -->
+  <section class="stage" id="ledger">
+    <div class="margin"><div class="no">6</div><div class="reg">Ledger</div><div class="pills"><span class="pill auto">enforced</span></div></div>
+    <div class="body">
+      <h2>What is kept, and what is deliberately not</h2>
+      <p class="statute">Blueprint: append a verification payload to the provenance/ chain with a SHA-256 link; a strictly monotonic sequence, a previous hash, a status in {PASS, REJECT, CIRCUIT_BROKEN, ESCALATED}.</p>
+      <p>The engine writes into the chain the platform already had, <code>provenance/chain.jsonl</code>, five stages, RFC 3161 and OpenTimestamps anchors, rather than a second ledger beside it. Three records per proposal share one action id. The intent carries the role, the contract and the payload's SHA-256. The decision carries the verdict, the rule that produced it, and the findings. The execution carries the status and, on a pass, the written record's own SHA-256. The payload itself is never written to the chain: an auditor can prove which bytes were judged without the ledger holding an e-mail address the scrubber caught.</p>
+      <div class="ex"><p class="eyebrow">Example — the three records of one rejection, as the chain holds them</p><pre><code>{"seq": 22931, "stage": "intent",    "action_id": "2d934cfc…", "tool": "aidf.metric",
+ "target": "groups/jaffle/projects/jaffle-shop/governance/metrics/orders/ltv.json",
+ "payload": {"role": "metric-gap-harvester", "contract": "mart_metric", "payload_sha256": "9f1c…"},
+ "prev": "6a0e…", "hash": "b3d1…"}
+{"seq": 22932, "stage": "decision",  "payload": {"verdict": "deny", "rule": "aidf:sql_ast",
+ "findings": [{"validator": "sql_ast", "code": "hallucinated_column", "path": "sql_definition",
+               "message": "column(s) not in this mart's catalogue: ['customer_ltv']"}]}, "prev": "b3d1…", …}
+{"seq": 22933, "stage": "execution", "payload": {"status": "blocked", "aidf_status": "REJECT",
+ "role": "metric-gap-harvester"}, "prev": "…", …}</code></pre></div>
+      <p>The breaker keeps no file of its own. It counts consecutive <code>REJECT</code> executions for the entity backwards through the chain until it meets a <code>PASS</code> or a reset marker, so a restart cannot forget the count and deleting a file cannot clear it. <code>pf govern breaker &lt;group&gt; &lt;project&gt; --reset --reason "fixture mart"</code> writes the marker, with the reason and the actor.</p>
+    </div>
+  </section>
+
+  <!-- ================================================== the entity model -->
+  <h2>One engine, every entity, every harness</h2>
+  <p>The engine is built from <code>(group, project)</code> and nothing else. Its rules come from three layers, each tightening the one before, and a project with no overlay at all is governed by the floor: a project scaffolded before this existed is not ungoverned, and every project <code>pf new-project</code> creates gets the seeded, inert overlay from the default-enabled <code>aidf</code> capability.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Layer</th><th>File</th><th>May only</th></tr></thead>
+      <tbody>
+        <tr><td>Platform floor</td><td><code>platform/src/pf/aidf/data/defaults.yaml</code></td><td>be the baseline for every entity</td></tr>
+        <tr><td>Family</td><td><code>groups/&lt;group&gt;/aidf.yaml</code> (optional)</td><td rowspan="2">lower a budget, shorten a patch window, add a validator, narrow the mart pattern, add elevated paths, decline an article with a reason and an owner. Loosening raises <code>AidfRelaxation</code> at load time.</td></tr>
+        <tr><td>Entity</td><td><code>groups/&lt;group&gt;/projects/&lt;project&gt;/governance/aidf.yaml</code> (seeded)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grid2">
+    <div class="box"><h3>From a shell</h3><pre><code>pf govern check [group [project]]
+pf govern schema mart_metric
+pf govern prompt &lt;g&gt; &lt;p&gt; &lt;mart&gt; &lt;metric&gt;
+pf govern evaluate &lt;g&gt; &lt;p&gt; --payload p.json \
+   --role metric-gap-harvester [--no-write]
+pf govern breaker &lt;g&gt; &lt;p&gt; [--reset --reason ".."]
+
+exit 0 PASS · 1 REJECT · 2 ESCALATED · 3 CIRCUIT_BROKEN</code></pre></div>
+    <div class="box"><h3>From any harness that speaks MCP</h3><p>The <code>pf</code> server exposes <code>govern_metric(payload_json, role, target, contract)</code> and <code>govern_prompt(mart_name, metric_name)</code>. Claude Code, Cursor, Copilot, Codex, Gemini CLI and a local Qwen through OpenCode all reach the same engine; there is no per-vendor code path, which is what makes the framework model-agnostic. The prompt embeds the contract's JSON schema, so what a model is told and what judges it cannot drift apart.</p></div>
+  </div>
+  <h3>What each scope does with it</h3>
+  <ul>
+    <li><strong>Session</strong> (Claude Code, Codex CLI, Cursor agent, Gemini CLI): produce contract JSON and submit it through <code>pf govern evaluate</code> or <code>govern_metric</code>; never write under <code>governance/metrics/</code> by hand.</li>
+    <li><strong>Autonomous</strong> (<code>@claude</code> in Actions, Jules, the Copilot coding agent): a REJECT is final for the run, so fix the payload and never the rule; ESCALATED waits for a person; CIRCUIT_BROKEN ends the run and the pull request says so.</li>
+    <li><strong>Inline</strong> (completions): reference only columns the file or the architecture map already names; never DDL or DML; never <code>provenance/</code>, <code>gate.yaml</code>, <code>LOOP.md</code>, <code>.github/</code>.</li>
+    <li><strong>Local model</strong> (Qwen on mlx or Ollama): emit a verification block naming the tables and columns you intend to use and confirm each against the approved list before the JSON.</li>
+    <li><strong>CI glue</strong> (any model writing workflows): <code>uv run</code>, <code>uv sync</code>, <code>uvx</code> only; commands like prowler, trivy and guardrails are installed isolated, never added to the workspace lockfile.</li>
+  </ul>
+
+  <h2>Where the blueprint's pieces landed</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Blueprint said</th><th>Here</th><th>Difference, and why</th></tr></thead>
+      <tbody>
+        <tr><td><code>governance/schemas/mart_metric.py</code></td><td><code>pf/aidf/schemas.py</code></td><td>the mart pattern is per entity through validation context, not <code>^adv_</code> for everyone</td></tr>
+        <tr><td><code>governance/validators/*.py</code> as Guardrails validators</td><td><code>pf/aidf/validators.py</code> + <code>guardrails_adapter.py</code></td><td>pure Python, no Guardrails import in the gate; the adapter registers <code>atomz/ast_sql_validator</code> and <code>atomz/pii_scrubber</code> against the pinned fork when asked, proven on 0.11.0</td></tr>
+        <tr><td><code>governance/gate_enforcer.py</code></td><td><code>pf/aidf/gate.py</code> over <code>pf.loops.gate</code></td><td>one path policy, consulted first; roles and elevation are entity configuration</td></tr>
+        <tr><td><code>governance/provenance.py</code>, <code>chain_000001.json</code></td><td><code>pf.provenance</code>, unchanged</td><td>the chain existed with five stages and anchors; a second ledger is what the repository's protocol forbids</td></tr>
+        <tr><td><code>governance/circuit_breaker.py</code></td><td><code>pf/aidf/breaker.py</code></td><td>state is read from the chain, never a side file</td></tr>
+        <tr><td><code>governance/engine.py</code></td><td><code>pf/aidf/engine.py</code></td><td>same order; every branch recorded; the payload never is</td></tr>
+        <tr><td><code>gate.yaml</code> <code>policies:</code> with roles</td><td><code>gate.yaml</code> unchanged + <code>aidf.yaml</code> <code>runtime.roles</code></td><td>path rules stay in the one gate the hooks and CI already read</td></tr>
+        <tr><td><code>ai_governance_gate.yml</code></td><td>job <code>runtime-governance</code> in <code>ai-governance.yml</code></td><td>runs the engine's attack tests, <code>pf govern check</code> and <code>pf dora check</code> on every pull request</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Settings</h2>
+  <p>None. Pillar one needs no secret and no variable: it runs from the checkout, reads the entity's overlay and knowledge graph, and writes to the chain the hooks already write to. The only choices are in each entity's <code>governance/aidf.yaml</code>, and each one may only tighten the floor:</p>
+  <pre><code>runtime:
+  sql_dialect: snowflake                      # when the production warehouse is not DuckDB
+  mart_pattern: "^(fct|dim|agg)_[a-z0-9_]+$"  # the entity's convention
+  validators: [schema, sql_ast, pii]          # may grow, never shrink
+  roles: { metric-gap-harvester: { targets: ["governance/metrics/**"] } }
+  elevated: { paths: ["governance/metrics/regulatory_*/**"], roles: ["lead_risk_officer"] }
+  pii: { allow: ["svc-metrics@example\\.com"] }
+  budgets: { max_iterations_per_invocation: 50, max_consecutive_validation_failures: 3 }</code></pre>
+  <p>Two knobs deserve a person's attention rather than a default: the <strong>elevated paths</strong>, which are where "this mart needs a human" is declared, and the <strong>mart pattern</strong>, which is the cheapest hallucination check there is.</p>
+
+  <h2>What stays a person's</h2>
+  <ul>
+    <li>Verifying a metric. Everything the engine accepts is <code>provisional</code>; <code>verified</code> is a status a person sets after reading the SQL and the numbers.</li>
+    <li>Approving an elevated write, and resetting a breaker, each with a reason that the chain keeps.</li>
+    <li>Deciding an entity's roles, its elevated paths and its mart pattern.</li>
+    <li>Reading the chain. <code>pf provenance verify</code> proves it holds together; only a reader notices that what it holds is wrong.</li>
+  </ul>
+
+  <footer>
+    <p>Generated for <code>Atomz-org/data-platform</code>. <code>docs/AIDF.md</code> is the reference for the framework, <code>docs/GOVERNANCE.md</code> for the provenance chain, <code>docs/dora-articles.html</code> for pillar two. The engine's tests are <code>platform/tests/gate/test_aidf_engine.py</code>; every example above is one of them.</p>
+  </footer>
+</div>
+
+</body>
+</html>

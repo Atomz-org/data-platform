@@ -110,6 +110,14 @@
       "branch": "main",
       "commit": "7572eb82ca22a9cf4407e16743a32a5c28d43533"
     },
+    "guardrails": {
+      "adopted": {
+        "guardrails/guard.py": "331bace1e910b6f1fe9fc9b269ffbf1d10b84452",
+        "guardrails/validator_base.py": "ce091d09a7825340a8372b9c37b3060c64ddeea4"
+      },
+      "branch": "main",
+      "commit": "06d0ff2c5f9bcb493d976b76f885e37e41ce845d"
+    },
     "loop-engineering": {
       "adopted": {
         "LOOP.md": "ecf6c89c7a6427eace7401d3f24bd177ed34e39c",
@@ -168,6 +176,15 @@
       },
       "branch": "main",
       "commit": "dd4088f9a355a43931fa9a3cf9e077b5513e4049"
+    },
+    "prowler": {
+      "adopted": {
+        "prowler/compliance/dora_2022_2554.json": "3b828059da090a2c456b359082d810549f6c85cd",
+        "prowler/lib/cli/parser.py": "68c08e8f6b5fb049df26aa43fb60d2951691bded",
+        "prowler/lib/outputs/ocsf/ocsf.py": "1c679d117f8c497fe607bc4daf0234c254aa1b87"
+      },
+      "branch": "master",
+      "commit": "d5136f364c01e928339660ba7aca320df1d42dea"
     },
     "recce": {
       "adopted": {
