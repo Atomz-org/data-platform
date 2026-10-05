@@ -1,0 +1,416 @@
+# DORA (Regulation (EU) 2022/2554) evidence for every entity, on a schedule and
+# on the changes that can move it.
+#
+# Two jobs, because the two kinds of evidence come from different places and
+# fail for different reasons:
+#
+#   supply-chain    RTS (EU) 2024/1774 Art. 10. The dependency tree of this
+#                   checkout, as a CycloneDX SBOM, scanned by Trivy and judged
+#                   by each entity's patch policy (`dora.sbom` in its resolved
+#                   aidf.yaml — zero tolerance on fixable Critical/High by
+#                   default, exceptions dated and owned). Runs on every pull
+#                   request that changes the lockfile, so a vulnerable pin
+#                   cannot merge, and nightly, so a CVE published against a pin
+#                   already on `main` turns the run red the next morning.
+#
+#   infrastructure  Articles 8-11. Prowler over the cloud account an entity
+#                   declares (`dora.provider`), findings mapped to articles by
+#                   the statutory matrix (`pf dora matrix`). Nightly and on
+#                   demand only — it needs cloud credentials a pull request
+#                   from a fork must never see — and skipped with a warning
+#                   when no provider is configured, because "no scan ran" must
+#                   never read as "no findings".
+#
+# Both end in `pf dora audit`, which writes each entity's evidence matrix
+# (`governance/dora/matrix.md`), records the audit to a provenance chain with
+# the matrix's SHA-256, and exits non-zero on a failing article. The matrices,
+# the scans and the chain are archived as one run artifact: an auditor gets the
+# report, the inputs it was judged from, and the hash that ties them together.
+#
+# Prowler and Trivy are commands, installed isolated — never workspace
+# dependencies. `pyproject.toml` says why for the other tools of that shape.
+name: DORA compliance
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 02:00 UTC, daily
+  workflow_dispatch:
+    inputs:
+      scans:
+        description: "Comma-separated subset to run this time (aws,gcp,kubernetes,cloudflare,github); empty runs every scan that has a credential"
+        type: string
+        default: ""
+      live:
+        description: "Also read repository settings (branch protection) through the GitHub API"
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - "uv.lock"
+      - "pyproject.toml"
+      - "platform/pyproject.toml"
+      - "groups/*/projects/*/pyproject.toml"
+      - "platform/src/pf/aidf/**"
+      - "**/governance/aidf.yaml"
+      - "groups/*/aidf.yaml"
+      - ".github/workflows/dora.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dora-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # A release with binaries, not merely a tag: v0.65.0 was tagged and never
+  # published, and the installer 404s on it. Verified against get.trivy.dev.
+  TRIVY_VERSION: ${{ vars.DORA_TRIVY_VERSION || 'v0.74.0' }}
+  # The PyPI fallback only; the job installs from vendor/prowler when it can.
+  PROWLER_VERSION: ${{ vars.DORA_PROWLER_VERSION || '5.43.0' }}
+
+jobs:
+  supply-chain:
+    name: Supply chain (RTS Art. 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      - name: Trivy
+        # By sha, as ai-governance.yml argues for: a tag is a moving reference.
+        # v0.2.3 never existed (the tags are v0.2.6, v0.3.0 — broken upstream —
+        # and v0.3.1), which failed this job before its first step.
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          cache: true
+
+      # The bill of materials first, then the scan *of the bill*, so what was
+      # judged is exactly what is archived. Every severity is collected; which
+      # ones block is the entity's policy, applied by `pf dora audit`, not a
+      # scanner flag — a flag cannot carry a dated exception or a grace window.
+      - name: SBOM and vulnerability scan
+        run: |
+          mkdir -p .tmp/dora
+          trivy fs --format cyclonedx --output .tmp/dora/sbom.cdx.json --quiet .
+          trivy sbom --format json --severity CRITICAL,HIGH,MEDIUM,LOW \
+                --output .tmp/dora/vulnerabilities.json --quiet .tmp/dora/sbom.cdx.json
+          python3 - <<'PY'
+          import json
+          doc = json.load(open(".tmp/dora/vulnerabilities.json"))
+          n = sum(len(r.get("Vulnerabilities") or []) for r in doc.get("Results") or [])
+          comps = len(json.load(open(".tmp/dora/sbom.cdx.json")).get("components") or [])
+          print(f"{comps} components in the SBOM, {n} vulnerabilities at any severity")
+          PY
+
+      # One audit per entity: the same scan, each entity's own patch policy,
+      # exceptions and article scope. Non-zero when any entity's window is
+      # breached, which is what blocks a pull request here.
+      - name: Judge against every entity's patch policy
+        id: audit
+        run: |
+          set +e
+          uv run pf dora audit --vulns .tmp/dora/vulnerabilities.json --sbom .tmp/dora/sbom.cdx.json \
+                --no-run ${{ inputs.live == true && '--live' || '' }} | tee .tmp/dora/audit.log
+          code=${PIPESTATUS[0]}
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Step summary
+        if: always()
+        run: |
+          {
+            echo "## DORA supply-chain evidence"
+            echo
+            echo "Exit \`${{ steps.audit.outputs.exit }}\` — 0 is clean or gaps-only, 1 is a breached article."
+            echo
+            for m in groups/*/projects/*/governance/dora/matrix.md; do
+              [ -f "$m" ] || continue
+              echo "<details><summary>$(echo "$m" | cut -d/ -f2,4)</summary>"
+              echo
+              cat "$m"
+              echo
+              echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dora-supply-chain-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 400
+          path: |
+            .tmp/dora/
+            groups/*/projects/*/governance/dora/
+            provenance/chain.jsonl
+
+  infrastructure:
+    name: Infrastructure (Art. 8-12) and GitHub posture (RTS Art. 16)
+    # Never on a pull request — this job holds credentials, and a pull request
+    # from a fork must never see them. Nightly and on demand.
+    #
+    # One block per scan, and each is switched on by the presence of its own
+    # credential — there is no provider variable to set. The blocks are
+    # independent of each other on purpose: a missing GCP secret must not cost
+    # the GitHub evidence, and a broken Cloudflare token must not cost AWS. No
+    # credential or scan step may abort the job; each records its outcome, the
+    # audit judges whatever produced output, the evidence is archived, and only
+    # the last step colours the run — red when a scan that *was* configured did
+    # not run or an entity breached an article, a warning when nothing is.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # OIDC for the AWS role and GCP workload identity; no long-lived key needed
+    env:
+      SCANS: ${{ inputs.scans }}
+      # Secrets are not readable in `if:`; mapped to env so the steps can test presence.
+      AWS_ROLE_ARN: ${{ secrets.DORA_AWS_ROLE_ARN }}
+      AWS_REGION: ${{ vars.DORA_AWS_REGION || 'eu-west-1' }}
+      GCP_WIF_PROVIDER: ${{ secrets.DORA_GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.DORA_GCP_SERVICE_ACCOUNT }}
+      GCP_CREDENTIALS_JSON: ${{ secrets.DORA_GCP_CREDENTIALS_JSON }}
+      GCP_PROJECT_IDS: ${{ vars.DORA_GCP_PROJECT_IDS }}
+      KUBECONFIG_B64: ${{ secrets.DORA_KUBECONFIG_B64 }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.DORA_CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.DORA_CLOUDFLARE_ACCOUNT_ID }}
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.DORA_GITHUB_TOKEN }}
+      GITHUB_SCAN_ORG: ${{ vars.DORA_GITHUB_ORGANIZATION || github.repository_owner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync
+
+      # Isolated, never in the workspace lockfile: Prowler pins boto3, azure and
+      # google SDK ranges that would fight dlt and dagster over one resolution,
+      # exactly as openmetadata-ingestion did. Installed *from the pin* — the
+      # vendor/prowler submodule this repository reviewed — so the code that
+      # produces the evidence is the code `pf vendor verify` checked, and a
+      # fork head that is ahead of the last PyPI release (5.44.0 was, on
+      # 2026-09-28) is still installable. PyPI is the fallback when the pin
+      # cannot be fetched, at the version the variable names.
+      - name: Prowler
+        run: |
+          if git submodule update --init --depth 1 vendor/prowler 2>/dev/null && [ -f vendor/prowler/pyproject.toml ]; then
+            uv tool install ./vendor/prowler --python 3.12
+          else
+            echo "::warning::vendor/prowler could not be checked out; installing prowler==${PROWLER_VERSION} from PyPI instead"
+            uv tool install "prowler==${PROWLER_VERSION}" --python 3.12
+          fi
+          "$(uv tool dir --bin)/prowler" --version
+          echo "$(uv tool dir --bin)" >> "$GITHUB_PATH"
+
+      # Which scans are on: a credential is present and, on a manual run,
+      # the scan was asked for. One place, so the summary and the outcome
+      # step read the same answer.
+      - name: Which scans are configured?
+        id: switches
+        run: |
+          want() { [ -z "$SCANS" ] || echo ",$SCANS," | tr -d ' ' | grep -q ",$1,"; }
+          on() { echo "$1=$2" >> "$GITHUB_OUTPUT"; echo "$1: $2"; }
+          on aws        "$( [ -n "$AWS_ROLE_ARN" ] && want aws && echo true || echo false )"
+          on gcp        "$( { [ -n "$GCP_WIF_PROVIDER" ] || [ -n "$GCP_CREDENTIALS_JSON" ]; } && want gcp && echo true || echo false )"
+          on kubernetes "$( [ -n "$KUBECONFIG_B64" ] && want kubernetes && echo true || echo false )"
+          on cloudflare "$( [ -n "$CLOUDFLARE_API_TOKEN" ] && want cloudflare && echo true || echo false )"
+          on github     "$( [ -n "$GITHUB_PERSONAL_ACCESS_TOKEN" ] && want github && echo true || echo false )"
+          mkdir -p .tmp/dora
+
+      # ---- AWS ------------------------------------------------------------------
+      - name: AWS credentials (OIDC)
+        id: aws_auth
+        if: steps.switches.outputs.aws == 'true'
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prowler — AWS
+        id: aws_scan
+        if: always() && steps.switches.outputs.aws == 'true' && steps.aws_auth.outcome == 'success'
+        continue-on-error: true
+        run: |
+          fw="dora_2022_2554"
+          if prowler aws --list-compliance 2>/dev/null | grep -q "$fw"; then
+            prowler aws --compliance "$fw" -M json-ocsf -o .tmp/dora -F prowler_aws --ignore-exit-code-3
+          else
+            prowler aws -M json-ocsf -o .tmp/dora -F prowler_aws --ignore-exit-code-3
+          fi
+
+      # ---- GCP ------------------------------------------------------------------
+      # Workload identity federation first — keyless, the recommended shape —
+      # and a service-account key only when no federation is configured.
+      - name: GCP credentials (workload identity)
+        id: gcp_wif
+        if: always() && steps.switches.outputs.gcp == 'true' && env.GCP_WIF_PROVIDER != ''
+        continue-on-error: true
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: GCP credentials (service-account key)
+        id: gcp_key
+        if: always() && steps.switches.outputs.gcp == 'true' && env.GCP_WIF_PROVIDER == ''
+        continue-on-error: true
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ env.GCP_CREDENTIALS_JSON }}
+
+      - name: Prowler — GCP
+        id: gcp_scan
+        if: always() && steps.switches.outputs.gcp == 'true' && (steps.gcp_wif.outcome == 'success' || steps.gcp_key.outcome == 'success')
+        continue-on-error: true
+        run: |
+          fw="dora_2022_2554"
+          extra=""
+          [ -n "$GCP_PROJECT_IDS" ] && extra="--project-id $GCP_PROJECT_IDS"
+          if prowler gcp --list-compliance 2>/dev/null | grep -q "$fw"; then
+            prowler gcp --compliance "$fw" -M json-ocsf -o .tmp/dora -F prowler_gcp --ignore-exit-code-3 $extra
+          else
+            prowler gcp -M json-ocsf -o .tmp/dora -F prowler_gcp --ignore-exit-code-3 $extra
+          fi
+
+      # ---- Kubernetes -----------------------------------------------------------
+      - name: Prowler — Kubernetes
+        id: kubernetes_scan
+        if: always() && steps.switches.outputs.kubernetes == 'true'
+        continue-on-error: true
+        run: |
+          mkdir -p "$HOME/.kube" && echo "$KUBECONFIG_B64" | base64 -d > "$HOME/.kube/config" && chmod 600 "$HOME/.kube/config"
+          prowler kubernetes -M json-ocsf -o .tmp/dora -F prowler_kubernetes --ignore-exit-code-3
+
+      # ---- Cloudflare: the edge through Prowler, R2 through the platform --------
+      # Prowler's cloudflare provider reads zones, DNS and the WAF; it has no R2
+      # checks, and R2 is where the artefact store lives (docs/ARTIFACTS.md).
+      # `pf dora r2` asks the Cloudflare API about every bucket — public r2.dev
+      # domain, custom-domain TLS, CORS, lifecycle — and writes the same OCSF
+      # shape, so both land in one audit. The token needs Zone: Read, DNS: Read
+      # and Workers R2 Storage: Read on the account. The DORA framework covers
+      # cloudflare, so Prowler's findings arrive stamped with their articles.
+      - name: Prowler — Cloudflare edge
+        id: cloudflare_scan
+        if: always() && steps.switches.outputs.cloudflare == 'true'
+        continue-on-error: true
+        run: |
+          fw="dora_2022_2554"
+          extra=""
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && extra="--account-id $CLOUDFLARE_ACCOUNT_ID"
+          if prowler cloudflare --list-compliance 2>/dev/null | grep -q "$fw"; then
+            prowler cloudflare --compliance "$fw" -M json-ocsf -o .tmp/dora -F prowler_cloudflare --ignore-exit-code-3 $extra
+          else
+            prowler cloudflare -M json-ocsf -o .tmp/dora -F prowler_cloudflare --ignore-exit-code-3 $extra
+          fi
+
+      - name: R2 buckets (pf dora r2)
+        id: r2_scan
+        if: always() && steps.switches.outputs.cloudflare == 'true'
+        continue-on-error: true
+        run: uv run pf dora r2 --out .tmp/dora/prowler_cloudflare_r2.ocsf.json ${CLOUDFLARE_ACCOUNT_ID:+--account-id "$CLOUDFLARE_ACCOUNT_ID"} || [ $? -eq 1 ]
+
+      # ---- GitHub ---------------------------------------------------------------
+      # The organisation and its repositories: branch protection, required
+      # reviews, signed commits, MFA, Actions permissions. Read with a
+      # fine-grained PAT (organisation members and administration: read;
+      # repository administration, metadata and Actions: read) in
+      # DORA_GITHUB_TOKEN — never the run's GITHUB_TOKEN, which cannot see
+      # organisation settings.
+      - name: Prowler — GitHub
+        id: github_scan
+        if: always() && steps.switches.outputs.github == 'true'
+        continue-on-error: true
+        run: prowler github --organization "$GITHUB_SCAN_ORG" -M json-ocsf -o .tmp/dora -F prowler_github --ignore-exit-code-3
+
+      # ---- judge whatever ran -----------------------------------------------------
+      # One audit per entity over every scan that produced output, so an aws
+      # finding, an R2 finding and a github finding land on their articles side
+      # by side in one matrix. A scan that did not run leaves its articles
+      # `unverified`.
+      - name: Judge against every entity's article scope
+        id: audit
+        if: always()
+        run: |
+          set +e
+          args=""
+          for f in .tmp/dora/prowler_*.ocsf.json; do [ -f "$f" ] && args="$args --ocsf $f"; done
+          if [ -z "$args" ]; then
+            echo "no scan produced output; the audit runs on repository and ledger evidence alone"
+          fi
+          uv run pf dora audit $args --no-run --live | tee .tmp/dora/audit.log
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Step summary
+        if: always()
+        run: |
+          row() { # name, configured, outcome
+            local state
+            if [ "$2" != "true" ]; then state="not configured"
+            else case "$3" in success) state="ran";; failure) state="**FAILED**";; skipped) state="**skipped — its credential step failed**";; *) state="$3";; esac; fi
+            echo "| $1 | $state |"
+          }
+          {
+            echo "## DORA infrastructure evidence"
+            echo
+            echo "| scan | outcome |"
+            echo "|---|---|"
+            row "aws" "${{ steps.switches.outputs.aws }}" "${{ steps.aws_scan.outcome }}"
+            row "gcp" "${{ steps.switches.outputs.gcp }}" "${{ steps.gcp_scan.outcome }}"
+            row "kubernetes" "${{ steps.switches.outputs.kubernetes }}" "${{ steps.kubernetes_scan.outcome }}"
+            row "cloudflare edge" "${{ steps.switches.outputs.cloudflare }}" "${{ steps.cloudflare_scan.outcome }}"
+            row "cloudflare R2" "${{ steps.switches.outputs.cloudflare }}" "${{ steps.r2_scan.outcome }}"
+            row "github ($GITHUB_SCAN_ORG)" "${{ steps.switches.outputs.github }}" "${{ steps.github_scan.outcome }}"
+            echo "| audit | exit \`${{ steps.audit.outputs.exit }}\` (0 clean or gaps only, 1 a breached article) |"
+            echo
+            for m in groups/*/projects/*/governance/dora/matrix.md; do
+              [ -f "$m" ] || continue
+              echo "<details><summary>$(echo "$m" | cut -d/ -f2,4)</summary>"
+              echo
+              cat "$m"
+              echo
+              echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dora-infrastructure-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 400
+          path: |
+            .tmp/dora/
+            groups/*/projects/*/governance/dora/
+            provenance/chain.jsonl
+
+      # Last, so the evidence above is always produced and archived first.
+      - name: Outcome
+        if: always()
+        run: |
+          failed=""
+          [ "${{ steps.switches.outputs.aws }}" = "true" ]        && [ "${{ steps.aws_scan.outcome }}" != "success" ]        && failed="$failed aws"
+          [ "${{ steps.switches.outputs.gcp }}" = "true" ]        && [ "${{ steps.gcp_scan.outcome }}" != "success" ]        && failed="$failed gcp"
+          [ "${{ steps.switches.outputs.kubernetes }}" = "true" ] && [ "${{ steps.kubernetes_scan.outcome }}" != "success" ] && failed="$failed kubernetes"
+          [ "${{ steps.switches.outputs.cloudflare }}" = "true" ] && [ "${{ steps.cloudflare_scan.outcome }}" != "success" ] && failed="$failed cloudflare-edge"
+          [ "${{ steps.switches.outputs.cloudflare }}" = "true" ] && [ "${{ steps.r2_scan.outcome }}" != "success" ]         && failed="$failed cloudflare-r2"
+          [ "${{ steps.switches.outputs.github }}" = "true" ]     && [ "${{ steps.github_scan.outcome }}" != "success" ]     && failed="$failed github"
+          configured="${{ steps.switches.outputs.aws }}${{ steps.switches.outputs.gcp }}${{ steps.switches.outputs.kubernetes }}${{ steps.switches.outputs.cloudflare }}${{ steps.switches.outputs.github }}"
+          if ! echo "$configured" | grep -q true; then
+            echo "::warning title=DORA infrastructure scan not configured::No scan has a credential. Set DORA_AWS_ROLE_ARN, the DORA_GCP_* pair, DORA_KUBECONFIG_B64, DORA_CLOUDFLARE_API_TOKEN and/or DORA_GITHUB_TOKEN. Articles 8-12 and RTS Art. 16 read 'unverified' until then — never 'pass'."
+          fi
+          if [ -n "$failed" ]; then echo "::error title=Configured scan did not run::$failed"; fi
+          [ -z "$failed" ] && [ "${{ steps.audit.outputs.exit }}" = "0" ]

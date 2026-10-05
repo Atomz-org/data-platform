@@ -35,7 +35,12 @@ from pf.vendor.model import Upstream, load_registry
 # Raised from 900 when the twenty-second upstream was pinned: the card is one
 # row per upstream, so it grows with the estate rather than with prose, and
 # the rows are what make it useful. `pf tokens` checks it on every PR.
-VENDOR_CARD_BUDGET = 1000
+#
+# Raised from 1000 when guardrails and prowler were pinned for the AIDF layer
+# (docs/AIDF.md): twenty-five rows sat at 988, two more rows is the roster
+# growing, which is the case above that says recalibrate rather than trim.
+# Room for about six more before the next deliberate look.
+VENDOR_CARD_BUDGET = 1100
 
 ROLE_ORDER = {"spec": 0, "skills": 1, "shape": 2, "reference": 3}
 

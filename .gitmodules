@@ -106,3 +106,13 @@
 	path = vendor/ecc
 	url = https://github.com/dockerai09-ai/ECC
 	branch = main
+[submodule "vendor/guardrails"]
+	path = vendor/guardrails
+	url = https://github.com/Atomz-org/guardrails.git
+	branch = main
+	shallow = true
+[submodule "vendor/prowler"]
+	path = vendor/prowler
+	url = https://github.com/Atomz-org/prowler.git
+	branch = master
+	shallow = true

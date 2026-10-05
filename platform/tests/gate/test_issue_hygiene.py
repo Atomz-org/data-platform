@@ -149,3 +149,113 @@ def test_priority_and_effort_fields_follow_the_labels(hy, capsys) -> None:
     }
     hy.set_fields(issue(23, "t", "a.py", "x", labels=["priority:P0", "effort:heavy-lift"]), already, fields)
     assert capsys.readouterr().out == "", "already right: nothing to write"
+
+
+# ----------------------------------------------------------------- semantic --
+class _FakeEmbedder:
+    """Vectors by keyword, so a test can say which pairs are 'the same'."""
+
+    name = "fake"
+
+    def __init__(self, axes: dict[str, list[float]]) -> None:
+        self.axes = axes
+
+    def encode(self, texts: list[str]) -> list[list[float]]:
+        out = []
+        for t in texts:
+            v = next((vec for key, vec in self.axes.items() if key in t.lower()), [0.0, 0.0, 1.0])
+            out.append(v)
+        return out
+
+
+def test_semantic_pass_pairs_by_embedding_within_one_file(hy) -> None:
+    emb = _FakeEmbedder({"torn line": [1.0, 0.0, 0.0], "unrelated": [0.0, 1.0, 0.0]})
+    a = issue(20, "read_all() crashes", "pf/chain.py", "a torn line crashes verify")
+    b = issue(21, "verify blows up on partial writes", "pf/chain.py", "a torn line crashes verify too")
+    c = issue(22, "something unrelated", "pf/chain.py", "unrelated defect")
+    d = issue(23, "read_all() crashes", "pf/other.py", "a torn line crashes verify")
+    groups = hy.semantic_groups([a, b, c, d], emb)
+    pairs = {(g[0][0]["number"], g[1][0]["number"]): g[1][1] for g in groups}
+    assert pairs == {(20, 21): 1.0}, "same file, same meaning — and never across files"
+    assert hy.duplicate_groups([a, b]) == [], "the lexical pass could not see this pair: titles differ"
+
+
+def test_semantic_thresholds_close_or_flag(hy, monkeypatch) -> None:
+    emb = _FakeEmbedder({"first": [1.0, 0.0, 0.0], "second": [0.8, 0.6, 0.0]})  # cosine 0.8
+    a = issue(30, "first thing", "pf/x.py", "first defect")
+    b = issue(31, "second thing", "pf/x.py", "second defect")
+    closed_calls, flagged_calls = [], []
+    monkeypatch.setattr(hy, "close_duplicate", lambda c, o, s: closed_calls.append((c["number"], o["number"], s)))
+    monkeypatch.setattr(hy, "flag_possible", lambda c, o, s: flagged_calls.append((c["number"], o["number"], s)))
+    assert hy.dedupe([a, b], emb) == set()
+    assert closed_calls == [] and flagged_calls == [(30, 31, 0.8)], "0.8 is possible, not certain"
+    monkeypatch.setattr(hy, "SEMANTIC_SAME", 0.7)
+    assert hy.dedupe([a, b], emb) == {31}
+    assert closed_calls == [(30, 31, 0.8)]
+
+
+def test_not_duplicate_and_bundles_are_respected_by_the_semantic_pass(hy, monkeypatch) -> None:
+    emb = _FakeEmbedder({"same": [1.0, 0.0, 0.0]})
+    a = issue(40, "same one", "pf/x.py", "same defect")
+    b = issue(41, "same two", "pf/x.py", "same defect", labels=("not-duplicate",))
+    assert hy.semantic_groups([a, b], emb) == []
+    c = issue(42, "same three", "", "same defect / 3 findings")
+    closed = []
+    monkeypatch.setattr(hy, "close_duplicate", lambda *x: closed.append(x))
+    monkeypatch.setattr(hy, "flag_possible", lambda *x: None)
+    assert hy.dedupe([a, c], emb) == set(), "a bundle is never closed"
+
+
+def test_without_an_embedder_the_semantic_pass_is_empty(hy) -> None:
+    a = issue(50, "x", "pf/x.py", "same defect")
+    b = issue(51, "y", "pf/x.py", "same defect")
+    assert hy.semantic_groups([a, b], None) == []
+    assert hy.dedupe([a, b], None) == set()
+
+
+def test_embedder_is_never_fatal(hy, monkeypatch) -> None:
+    monkeypatch.setattr(hy, "EMBEDDINGS", "auto")
+    monkeypatch.setattr(hy, "Embedder", lambda name: (_ for _ in ()).throw(ImportError("no torch")))
+    assert hy.embedder() is None
+    monkeypatch.setattr(hy, "EMBEDDINGS", "off")
+    assert hy.embedder() is None
+
+
+# ------------------------------------------------------- label -> field --
+def test_labels_map_to_board_fields(hy) -> None:
+    fv = hy.field_values({"priority:high", "effort:quick-win", "area:security", "loop-observation"})
+    assert fv == {"Priority": "High", "Effort": "Low", "Category": "Security"}
+    assert hy.field_values({"priority:P0"}) == {"Priority": "Urgent"}
+    assert hy.field_values({"area:lineage"}) == {"Category": "Lineage"}, "an unlisted area still title-cases"
+    assert hy.field_values({"bug"}) == {}
+    assert hy.field_values({"priority:P1", "priority:P3"}) == {"Priority": "High"}, "deterministic when labels disagree"
+
+
+def test_field_map_override_must_be_well_formed(hy, monkeypatch) -> None:
+    monkeypatch.setenv("HYGIENE_LABEL_FIELDS", '{"Priority": {"sev:1": "Urgent"}}')
+    assert hy.field_map() == {"Priority": {"sev:1": "Urgent"}}
+    assert hy.field_values({"sev:1"}, hy.field_map()) == {"Priority": "Urgent"}
+    monkeypatch.setenv("HYGIENE_LABEL_FIELDS", "not json")
+    assert hy.field_map() == hy.DEFAULT_FIELD_MAP
+
+
+def test_dry_run_sync_adds_nothing_to_the_board(hy, monkeypatch) -> None:
+    def boom(*a, **k):
+        raise AssertionError("a dry run must not touch the board")
+
+    monkeypatch.setattr(hy.bf, "board_item", boom)
+    monkeypatch.setattr(hy.bf, "set_fields", boom)
+    issues = [issue(60, "a", "pf/x.py", "d", labels=("priority:high",)), issue(61, "b", "pf/x.py", "d")]
+    assert hy.sync_label_fields(("PID", {}), issues) == 1
+    assert hy.TALLY["synced"] and "Priority=High" in hy.TALLY["synced"][0]
+    assert hy.sync_label_fields(None, issues) == 0
+
+
+def test_live_sync_writes_the_mapped_fields(hy, monkeypatch) -> None:
+    monkeypatch.setattr(hy, "DRY_RUN", False)
+    written = []
+    monkeypatch.setattr(hy.bf, "board_item", lambda board, n: f"ITEM{n}")
+    monkeypatch.setattr(hy.bf, "set_fields", lambda board, item, want: written.append((item, want)))
+    issues = [issue(70, "a", "pf/x.py", "d", labels=("priority:P2", "effort:heavy-lift"))]
+    assert hy.sync_label_fields(("PID", {}), issues) == 1
+    assert written == [("ITEM70", {"Priority": "Medium", "Effort": "High"})]

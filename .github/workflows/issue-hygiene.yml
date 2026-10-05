@@ -14,6 +14,16 @@
 #                Relationships (the category epic as parent), Assignees (the
 #                author of the PR it was raised on), and Projects (the board).
 #
+# Two passes were added on 2026-09-28 (docs/AIDF.md, pillar three):
+#
+#   semantic     every pair of open findings compared by sentence-transformers
+#                embedding cosine as well as by text — >= 0.85 closes, >= 0.75
+#                flags. The model is installed isolated with uv in the step
+#                below and cached; without it the pass is skipped and says so.
+#   fields       every open issue — not only findings — has its board fields
+#                set from its labels (priority:*, effort:*, area:*). Needs
+#                PROJECTS_TOKEN, like the rest of the board.
+#
 # `.github/scripts/issue_hygiene.py` says what each rule is and why.
 #
 # ## Why two crons
@@ -54,6 +64,9 @@ permissions:
   contents: read
   issues: write
   pull-requests: read
+  # The board is an org ProjectV2, reached with PROJECTS_TOKEN; this is for the
+  # repository-level projects the GITHUB_TOKEN can see.
+  repository-projects: write
 
 jobs:
   sweep:
@@ -83,9 +96,39 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: .github/scripts
 
+      # The embedding model, in its own environment: torch is ~200 MB even on
+      # CPU and has no business in the workspace lockfile. `uv` rather than
+      # `pip` so the same tool installs everything here. The model weights
+      # are cached between nights.
+      - uses: astral-sh/setup-uv@v5
+        if: steps.when.outputs.run == 'true' && vars.HYGIENE_EMBEDDINGS != 'off'
+
+      - uses: actions/cache@v4
+        if: steps.when.outputs.run == 'true' && vars.HYGIENE_EMBEDDINGS != 'off'
+        with:
+          path: ~/.cache/huggingface
+          key: hygiene-embeddings-${{ vars.HYGIENE_EMBEDDINGS || 'auto' }}
+
+      - name: Embeddings for the semantic pass
+        id: emb
+        if: steps.when.outputs.run == 'true' && vars.HYGIENE_EMBEDDINGS != 'off'
+        run: |
+          uv venv .emb --quiet
+          if uv pip install --python .emb/bin/python --quiet                --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple                "torch>=2.2" "sentence-transformers>=3" ; then
+            echo "python=.emb/bin/python" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::sentence-transformers could not be installed; the semantic pass is skipped tonight"
+            echo "python=python3" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Merge duplicates and fill the sidebar
         if: steps.when.outputs.run == 'true'
         env:
+          HYGIENE_EMBEDDINGS: ${{ vars.HYGIENE_EMBEDDINGS || 'auto' }}
+          HYGIENE_SEMANTIC_SAME: ${{ vars.HYGIENE_SEMANTIC_SAME || '0.85' }}
+          HYGIENE_SEMANTIC_MAYBE: ${{ vars.HYGIENE_SEMANTIC_MAYBE || '0.75' }}
+          HYGIENE_LABEL_FIELDS: ${{ vars.HYGIENE_LABEL_FIELDS }}
+          HYGIENE_SYNC_ALL_ISSUES: ${{ vars.HYGIENE_SYNC_ALL_ISSUES || '1' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_FIELDS_TOKEN: ${{ secrets.ISSUE_FIELDS_TOKEN }}
           PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
@@ -95,4 +138,4 @@ jobs:
           HYGIENE_ASSIGN_PR_AUTHOR: ${{ vars.HYGIENE_ASSIGN_PR_AUTHOR || '1' }}
           # A scheduled run acts; a manual one previews unless told otherwise.
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
-        run: python3 .github/scripts/issue_hygiene.py
+        run: ${{ steps.emb.outputs.python || 'python3' }} .github/scripts/issue_hygiene.py

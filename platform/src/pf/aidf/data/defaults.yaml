@@ -1,0 +1,107 @@
+# Platform floor for the AI governance & DORA framework (pf.aidf).
+#
+# Every entity — every project in every group, and every project `pf new-project`
+# will ever scaffold — is governed by this file before it declares anything of
+# its own. A group's `aidf.yaml` and a project's `governance/aidf.yaml` layer over
+# it and MAY ONLY TIGHTEN: a budget can go down, a grace window can shrink, a
+# validator can be added, an article can be marked out of scope only with a
+# reason and an owner. Loosening raises `AidfRelaxation` at load time, the same
+# guard `policy.yaml` overlays go through.
+#
+# Nothing here names a company, a mart or a column. Business logic does not
+# transfer between entities, and neither does a governance rule that assumes one.
+version: 1
+
+runtime:
+  # The dialect sqlglot parses agent SQL in. DuckDB is what `dev`, `ci` and
+  # `base` are for every project; a project on a production warehouse sets its
+  # own (snowflake, bigquery, postgres, ...). Names are sqlglot's.
+  sql_dialect: duckdb
+  # What a mart identifier may look like. The floor is any snake_case name; a
+  # project with a prefix convention (`adv_`, `fct_`) tightens it here.
+  mart_pattern: "^[a-z][a-z0-9_]{1,127}$"
+  # `SELECT *` is not an explicit projection: it cannot be checked against the
+  # catalogue, and a column added upstream changes what the metric means.
+  allow_star: false
+  # Schemas an agent-written metric may never read. System catalogues are how a
+  # hallucinated query goes looking for what the mart does not have.
+  system_schemas: [information_schema, pg_catalog, sys, system, duckdb_internal]
+  # Which roles may write where, project-relative. A role that is not listed may
+  # write nothing through the engine; a listed role may write only under its
+  # globs. The path gate (`gate.yaml`) is consulted first and cannot be widened
+  # from here.
+  roles:
+    metric-gap-harvester:
+      targets: ["governance/metrics/**"]
+    platform_orchestrator:
+      targets: ["governance/metrics/**", "governance/semantic/**"]
+  # Targets that need a person. A write under one of these globs by a role not
+  # in `elevated.roles` is recorded as `hold` and waits for
+  # `pf provenance approve <action_id>`; it never executes on the agent's word.
+  elevated:
+    paths: []
+    roles: []
+  # Validators in the order they run. `schema` is the Pydantic contract and is
+  # always first; the others are `pf.aidf.validators` names.
+  validators: [schema, sql_ast, pii]
+  pii:
+    # Regexes whose matches are not findings — a documented service account
+    # address, a test fixture. Each one is a decision; keep the list short.
+    allow: []
+  budgets:
+    max_iterations_per_invocation: 50
+    max_consecutive_validation_failures: 3
+    trip_circuit_breaker_on_breach: true
+
+dora:
+  # Regulation (EU) 2022/2554 applies to financial entities and their critical
+  # ICT third-party providers. A project that is out of scope says so with a
+  # reason and an owner, and its audit reports `not_applicable` rather than
+  # silently passing.
+  in_scope: true
+  # The accountable person for this entity's ICT risk framework (Art. 5).
+  owner: ""
+  # Which cloud Prowler audits for this entity: aws | azure | gcp | kubernetes.
+  # Empty means no infrastructure scan runs and the Prowler-evidenced checks
+  # report `unverified` — never `pass`.
+  provider: ""
+  # Further Prowler providers scanned beside the cloud and judged in the same
+  # audit: `github` (the organisation and repositories — branch protection,
+  # required reviews, MFA, Actions permissions; RTS Art. 16 and Art. 9) and
+  # `cloudflare` (the account behind the R2 artefact store). May only grow.
+  extra_providers: []
+  # Scope for the GitHub scan; empty scans everything the token can see.
+  github:
+    organization: ""
+    repositories: []
+  prowler:
+    # The Prowler compliance framework to request. If the installed Prowler does
+    # not list it for the provider, the runner falls back to the check ids the
+    # statutory mapping names and maps findings itself.
+    compliance: dora_2022_2554
+    severity_threshold: high
+    # Failing findings at or above these counts fail the audit.
+    fail_on: {critical: 1, high: 1, medium: 5}
+  # RTS (EU) 2024/1774 Art. 10 — vulnerability and patch management.
+  sbom:
+    tool: trivy
+    # Severities the scan blocks on. Lower ones are reported.
+    severity: [CRITICAL, HIGH]
+    # A vulnerability with no fix available cannot be patched; it is tracked,
+    # not blocked on.
+    ignore_unfixed: true
+    # Days a fixable vulnerability may stay unpatched before it blocks. Zero is
+    # zero tolerance. An entity may shorten these, never lengthen them.
+    grace_days: {critical: 0, high: 0, medium: 30, low: 90}
+    # Accepted vulnerabilities. Every entry needs `id`, `reason`, `owner` and an
+    # `expires` date; an expired exception is a finding again.
+    exceptions: []
+  # Per-article overrides. Only `applies: false` is understood, and it needs a
+  # `reason` and an `owner`:
+  #
+  # articles:
+  #   "28":
+  #     applies: false
+  #     reason: No ICT third-party provider holds this entity's data.
+  #     owner: someone@example.com
+  articles: {}

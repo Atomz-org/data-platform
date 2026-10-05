@@ -575,6 +575,26 @@ def test_the_harness_maps_stay_inside_their_budget() -> None:
         assert n <= harnessmap.HARNESS_BUDGET, f"{s.label}: ~{n} tokens — cap a section rather than the budget"
 
 
+def test_the_allow_list_is_the_section_that_is_capped() -> None:
+    """Twelve commands are named and the rest counted: the settings file holds the list, the map holds its size."""
+    few = [f"Bash(pf {c}:*)" for c in "abcdefghijkl"]
+    assert harnessmap._cmds_capped([]) == "nothing"
+    assert harnessmap._cmds_capped(few) == harnessmap._cmds(few)
+    assert harnessmap._cmds_capped(few).count("`pf ") == 12
+    many = [*few, "Bash(pf m:*)", "Bash(pf n:*)", "Bash(pf o:*)"]
+    out = harnessmap._cmds_capped(many)
+    assert out == harnessmap._cmds(few) + ", ... +3 more in `.claude/settings.json`"
+    assert "`pf m`" not in out
+    scope = _first_scope("project")
+    if scope is None:
+        return
+    p = harnessmap.gather_project(REPO_ROOT, scope.group, scope.project)
+    line = next(ln for ln in harnessmap.render_project(p).splitlines() if ln.startswith("**Allowed without asking**"))
+    assert line.count("`") <= 2 * 12 + 2, "the rendered map names at most twelve, plus the settings path"
+    if len(p.allow) > 12:
+        assert "more in `.claude/settings.json`" in line
+
+
 def test_a_bare_project_renders_and_names_what_it_lacks(tmp_path: Path) -> None:
     """The state at scaffold time — no settings, no graph, no workflow — is a list of named gaps, not a crash."""
     (tmp_path / "groups" / "demo" / "projects" / "demo-us").mkdir(parents=True)

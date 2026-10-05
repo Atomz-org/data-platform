@@ -5355,6 +5355,16 @@ from pf.air.cli import air_app  # noqa: E402 — registered after `app` exists
 app.add_typer(air_app, name="air")
 
 
+# ------------------------------------------------------------------ AIDF --
+# Runtime AI governance (`pf govern`) and DORA evidence (`pf dora`). Same
+# arrangement as AIR: the command groups live in `pf.aidf.cli`, beside the
+# engine and the audit they drive, and this module only registers them.
+from pf.aidf.cli import dora_app, govern_app  # noqa: E402 — registered after `app` exists
+
+app.add_typer(govern_app, name="govern")
+app.add_typer(dora_app, name="dora")
+
+
 # --------------------------------------------------------------- groups --
 # A group is an object with an owner, a lifecycle and a set of promises about
 # its data — `pf.groups` says why. These commands are the only way that object
