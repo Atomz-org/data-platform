@@ -22,6 +22,9 @@ from pathlib import Path
 import pytest
 import yaml
 from conftest import REPO_ROOT
+from typer.testing import CliRunner
+
+from pf import cli
 from pf.aidf.dora import ocsf, sbom
 from pf.aidf.dora.audit import TOOL_AUDIT, run_audit
 from pf.aidf.dora.mapping import CHECK_KINDS, load_mapping, validate_mapping
@@ -223,6 +226,26 @@ def test_provenance_articles_read_the_ledger(repo: Path) -> None:
     assert _check(second, "dora-12-chain").status == "pass", "the first audit's own record is now evidence"
     assert _check(second, "dora-12-anchor").status == "fail", "never anchored"
     assert _check(second, "dora-11-kill-switch").status == "pass"
+
+
+def test_aggregate_cli_audit_does_not_self_contaminate_provenance(repo: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A family-wide audit shares one runtime ledger in the checkout.
+
+    Recording the first entity would make the second entity treat that brand-new
+    audit record as pre-existing provenance and fail on missing anchors. The CLI
+    must leave aggregate audits as report-only runs.
+    """
+    (repo / "groups" / "g" / "air.yaml").write_text("version: 1\nbaseline: [AIR-DET-21]\naccepted: []\n")
+    _overlay(repo, {"dora": {"owner": "risk@example.com"}})
+    shutil.copytree(repo / "groups" / "g" / "projects" / "p", repo / "groups" / "g" / "projects" / "q")
+    monkeypatch.chdir(repo)
+
+    res = CliRunner().invoke(cli.app, ["dora", "audit", "g", "--no-run"])
+
+    assert res.exit_code == 0, res.output
+    assert "PASS_WITH_GAPS g/p" in res.output
+    assert "PASS_WITH_GAPS g/q" in res.output
+    assert report(repo).records == 0, "aggregate mode must not record shared-ledger evidence"
 
 
 def test_ingested_prowler_findings_fail_the_right_article(repo: Path, tmp_path: Path) -> None:

@@ -273,11 +273,18 @@ def dora_audit(
     """Run the audit for one entity, one family, or every entity in the checkout."""
     from pf.aidf.dora.audit import run_audit
 
+    entities = _entities(group, project)
+    # Aggregate audits share one runtime ledger in this checkout. Recording the
+    # first entity would make later entities judge that brand-new audit record as
+    # pre-existing provenance, which turns "no anchor here yet" into a false
+    # failure. Record only single-entity audits; aggregate CI runs archive the
+    # matrices and their scan inputs instead.
+    record_each = record and len(entities) == 1
     worst = 0
-    for g, p in _entities(group, project):
+    for g, p in entities:
         rep = run_audit(root(), g, p, provider=provider or None, ocsf=ocsf or None, vulns=vulns, sbom=sbom,
                         out_dir=out if (out and group and project) else None, run_tools=run_tools, live=live,
-                        record=record)
+                        record=record_each)
         worst = max(worst, rep.exit_code)
         if as_json:
             print(json.dumps(rep.to_dict(), indent=2, sort_keys=True))

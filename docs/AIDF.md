@@ -210,10 +210,13 @@ pf dora check                                         matrix well-formed, every 
 
 Outputs land in `groups/<g>/projects/<p>/governance/dora/` — `matrix.json`,
 `matrix.md`, and the scans they were judged from. The directory is generated
-and gitignored; CI archives it (400-day retention) and the audit is recorded to
-the provenance chain as action `aidf.dora` carrying the matrix's SHA-256. The
-JSON names the action id and the hash, so a report and the chain cite each
-other.
+and gitignored; CI archives it (400-day retention). A single-entity audit is
+recorded to the provenance chain as action `aidf.dora` carrying the matrix's
+SHA-256. Aggregate audits across a family or the whole checkout stay
+report-only: one shared runtime ledger would make the first entity's audit look
+like pre-existing provenance for the next one, which is how a clean checkout
+turned "never anchored" into a false cross-entity failure. The JSON names the
+action id and the hash whenever a single-entity run records itself.
 
 Prowler and Trivy are *commands*, installed isolated — the same rule as
 `openmetadata-ingestion` and the Elementary CLI, for the same reason (one
