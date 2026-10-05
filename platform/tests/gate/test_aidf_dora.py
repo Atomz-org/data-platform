@@ -22,13 +22,12 @@ from pathlib import Path
 import pytest
 import yaml
 from conftest import REPO_ROOT
-from typer.testing import CliRunner
-
 from pf import cli
 from pf.aidf.dora import ocsf, sbom
 from pf.aidf.dora.audit import TOOL_AUDIT, run_audit
 from pf.aidf.dora.mapping import CHECK_KINDS, load_mapping, validate_mapping
 from pf.provenance import actions, report
+from typer.testing import CliRunner
 
 TODAY = date(2026, 9, 28)
 
